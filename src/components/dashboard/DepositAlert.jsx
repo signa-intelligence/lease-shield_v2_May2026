@@ -1,6 +1,7 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Clock, CheckCircle2, Wallet } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
