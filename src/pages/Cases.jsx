@@ -7,6 +7,8 @@ import { Scale, AlertCircle, Clock, CheckCircle2, UserCheck, Plus, Zap, Crown } 
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -18,6 +20,7 @@ const STATUS_CONFIG = {
 };
 
 export default function Cases() {
+  const navigate = useNavigate();
   const { hasAccess: hasPriorityQueue } = useFeatureAccess('priority_queue');
   const { hasAccess: hasMemberPrice } = useFeatureAccess('resolve_member_price');
 
@@ -46,7 +49,7 @@ export default function Cases() {
             <p className="text-slate-600">Track your dispute cases</p>
           </div>
           
-          <Button size="lg" className="bg-blue-600 hover:bg-blue-700 shadow-lg">
+          <Button size="lg" className="bg-blue-600 hover:bg-blue-700 shadow-lg" onClick={() => navigate(createPageUrl("ResolveCase"))}>
             <Plus className="w-5 h-5 mr-2" />
             Open New Case
           </Button>
@@ -87,7 +90,7 @@ export default function Cases() {
                   </p>
                 </div>
               )}
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => navigate(createPageUrl("ResolveCase"))}>
                 <Plus className="w-5 h-5 mr-2" />
                 Open Your First Case
               </Button>

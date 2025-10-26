@@ -291,6 +291,17 @@ export default function DepositTracker() {
                       </div>
                     )}
 
+                    {hasLineNotify && deposit.status === 'tracking' && (
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-sm text-blue-800 flex items-center gap-2">
+                          <Bell className="w-4 h-4" />
+                          <span>
+                            {daysRemaining <= 30 ? '30-day' : daysRemaining <= 7 ? '7-day' : 'Automated'} reminder will be sent via LINE & Email
+                          </span>
+                        </p>
+                      </div>
+                    )}
+
                     {deposit.status === 'tracking' && (
                       <div className="flex gap-3 mt-6">
                         <Button
