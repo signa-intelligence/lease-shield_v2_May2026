@@ -4,47 +4,112 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Download, Copy, Check } from "lucide-react";
+import { ArrowLeft, Download, Copy, Check, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+
+const TEMPLATE_SCHEMAS = {
+  deposit_request: {
+    fields: [
+      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
+      { name: 'landlord_name', label: 'Landlord Name', type: 'text', required: true },
+      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
+      { name: 'lease_end_date', label: 'Lease End Date', type: 'date', required: true },
+      { name: 'deposit_amount', label: 'Deposit Amount (฿)', type: 'number', required: true },
+      { name: 'bank_details', label: 'Bank Account Details', type: 'textarea', required: false },
+    ]
+  },
+  deposit_late: {
+    fields: [
+      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
+      { name: 'landlord_name', label: 'Landlord Name', type: 'text', required: true },
+      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
+      { name: 'days_overdue', label: 'Days Overdue', type: 'number', required: true },
+      { name: 'deposit_amount', label: 'Deposit Amount (฿)', type: 'number', required: true },
+    ]
+  },
+  repair_dispute: {
+    fields: [
+      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
+      { name: 'landlord_name', label: 'Landlord Name', type: 'text', required: true },
+      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
+      { name: 'itemized_costs', label: 'Disputed Charges (itemized)', type: 'textarea', required: true },
+      { name: 'evidence_refs', label: 'Evidence References', type: 'textarea', required: false },
+    ]
+  },
+  pdpa_request: {
+    fields: [
+      { name: 'name', label: 'Your Full Name', type: 'text', required: true },
+      { name: 'id_number', label: 'ID Number (optional)', type: 'text', required: false },
+      { name: 'lease_period', label: 'Lease Period', type: 'text', required: true },
+      { name: 'requested_documents', label: 'Requested Documents', type: 'textarea', required: true },
+    ]
+  },
+  pre_move_out: {
+    fields: [
+      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
+      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
+      { name: 'planned_move_out_date', label: 'Planned Move-Out Date', type: 'date', required: true },
+    ]
+  },
+  handover_check: {
+    fields: [
+      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
+      { name: 'date', label: 'Inspection Date', type: 'date', required: true },
+      { name: 'attendee_names', label: 'Attendees (tenant, landlord)', type: 'text', required: true },
+    ]
+  },
+  contract_clarification: {
+    fields: [
+      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
+      { name: 'landlord_name', label: 'Landlord Name', type: 'text', required: true },
+      { name: 'clauses_in_question', label: 'Clauses Needing Clarification', type: 'textarea', required: true },
+    ]
+  },
+};
+
+const TEMPLATE_PROMPTS = {
+  deposit_request: "Generate a polite, neutral letter in both English and Thai requesting return of the rental deposit. Tone: professional, non-confrontational, compliance-based. Include Thai Civil & Commercial Code generic references without giving legal advice.",
+  deposit_late: "Generate English and Thai reminder noting overdue days and asking for timeline and reasoned deductions. Professional and firm but not threatening.",
+  repair_dispute: "Generate English and Thai letter disputing charges with evidence references; neutral and factual. Focus on reasonableness and documentation.",
+  pdpa_request: "Generate English and Thai PDPA request for personal data and copies of signed lease; neutral tone citing Thai PDPA rights.",
+  pre_move_out: "Generate English and Thai notice confirming move-out date and scheduling inspection. Professional and cooperative tone.",
+  handover_check: "Generate bilingual checklist with rooms, items, meter readings, photo slots. Format as structured table/checklist.",
+  contract_clarification: "Generate English and Thai questions asking landlord/agent to clarify specific clauses. Respectful and inquisitive tone.",
+};
 
 export default function TemplateForm() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
-  const templateId = urlParams.get('templateId');
+  const templateId = urlParams.get('templateId') || 'deposit_request';
   
   const [generating, setGenerating] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState('');
   const [copied, setCopied] = useState(false);
-  const [formData, setFormData] = useState({
-    landlord_name: '',
-    property_address: '',
-    issue_description: '',
-    additional_details: ''
-  });
+  const [language, setLanguage] = useState('both');
+  const [formData, setFormData] = useState({});
+
+  const schema = TEMPLATE_SCHEMAS[templateId] || TEMPLATE_SCHEMAS.deposit_request;
 
   const handleGenerate = async (e) => {
     e.preventDefault();
     setGenerating(true);
 
     try {
+      const prompt = TEMPLATE_PROMPTS[templateId];
+      const fieldValues = schema.fields.map(f => `${f.label}: ${formData[f.name] || 'N/A'}`).join('\n');
+      
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Generate a professional, formal letter for a tenant in Thailand. 
+        prompt: `${prompt}
 
-Template type: ${templateId}
-Landlord name: ${formData.landlord_name}
-Property address: ${formData.property_address}
-Issue: ${formData.issue_description}
-Additional details: ${formData.additional_details}
+Language: ${language === 'both' ? 'Generate both English and Thai versions' : language === 'en' ? 'English only' : 'Thai only'}
 
-Create a well-structured, polite but firm letter that clearly states the tenant's concerns and requests. Include:
-- Proper formal greeting
-- Clear statement of the issue
-- Reference to relevant tenant rights or lease terms
-- Specific request for action
-- Professional closing
-- Placeholder for tenant signature and date`,
+Input Data:
+${fieldValues}
+
+Format the letter professionally with proper headers, body paragraphs, and closing. If bilingual, provide both versions clearly separated.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -65,6 +130,10 @@ Create a well-structured, polite but firm letter that clearly states the tenant'
     navigator.clipboard.writeText(generatedLetter);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleInputChange = (name, value) => {
+    setFormData({ ...formData, [name]: value });
   };
 
   return (
@@ -92,52 +161,58 @@ Create a well-structured, polite but firm letter that clearly states the tenant'
             <CardContent className="p-6">
               <form onSubmit={handleGenerate} className="space-y-4">
                 <div>
-                  <Label htmlFor="landlord">Landlord/Property Manager Name</Label>
-                  <Input
-                    id="landlord"
-                    required
-                    value={formData.landlord_name}
-                    onChange={(e) => setFormData({...formData, landlord_name: e.target.value})}
-                    placeholder="Mr. John Smith"
-                  />
+                  <Label htmlFor="language">Language</Label>
+                  <Select value={language} onValueChange={setLanguage}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="both">English + Thai</SelectItem>
+                      <SelectItem value="en">English Only</SelectItem>
+                      <SelectItem value="th">Thai Only</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div>
-                  <Label htmlFor="address">Property Address</Label>
-                  <Input
-                    id="address"
-                    required
-                    value={formData.property_address}
-                    onChange={(e) => setFormData({...formData, property_address: e.target.value})}
-                    placeholder="123 Main Street, Bangkok"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="issue">Issue Description</Label>
-                  <Textarea
-                    id="issue"
-                    required
-                    value={formData.issue_description}
-                    onChange={(e) => setFormData({...formData, issue_description: e.target.value})}
-                    placeholder="Briefly describe the issue..."
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="details">Additional Details (Optional)</Label>
-                  <Textarea
-                    id="details"
-                    value={formData.additional_details}
-                    onChange={(e) => setFormData({...formData, additional_details: e.target.value})}
-                    placeholder="Any additional context or information..."
-                    rows={3}
-                  />
-                </div>
+
+                {schema.fields.map((field) => (
+                  <div key={field.name}>
+                    <Label htmlFor={field.name}>
+                      {field.label}
+                      {field.required && <span className="text-red-600 ml-1">*</span>}
+                    </Label>
+                    {field.type === 'textarea' ? (
+                      <Textarea
+                        id={field.name}
+                        required={field.required}
+                        value={formData[field.name] || ''}
+                        onChange={(e) => handleInputChange(field.name, e.target.value)}
+                        rows={4}
+                      />
+                    ) : (
+                      <Input
+                        id={field.name}
+                        type={field.type}
+                        required={field.required}
+                        value={formData[field.name] || ''}
+                        onChange={(e) => handleInputChange(field.name, e.target.value)}
+                      />
+                    )}
+                  </div>
+                ))}
+
                 <Button 
                   type="submit" 
                   className="w-full bg-blue-600 hover:bg-blue-700"
                   disabled={generating}
                 >
-                  {generating ? 'Generating Letter...' : 'Generate Letter'}
+                  {generating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating Letter...
+                    </>
+                  ) : (
+                    'Generate Letter'
+                  )}
                 </Button>
               </form>
             </CardContent>
@@ -161,7 +236,7 @@ Create a well-structured, polite but firm letter that clearly states the tenant'
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="bg-white border border-slate-200 rounded-lg p-6 font-serif whitespace-pre-wrap">
+                <div className="bg-white border border-slate-200 rounded-lg p-6 font-serif whitespace-pre-wrap max-h-96 overflow-y-auto">
                   {generatedLetter}
                 </div>
               </CardContent>

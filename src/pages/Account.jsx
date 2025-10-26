@@ -6,8 +6,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
+
+const PLAN_DETAILS = [
+  {
+    key: 'lite',
+    label: 'Lite',
+    price: '฿390/mo',
+    benefits: ['Full AI Report', 'Alerts', 'Basic templates', 'Basic storage']
+  },
+  {
+    key: 'protect',
+    label: 'Protect',
+    price: '฿690/mo',
+    benefits: ['Evidence Vault', 'Maintenance Tracker', 'Deposit Shield', 'Templates Full', 'LINE Reminders']
+  },
+  {
+    key: 'secure',
+    label: 'Secure',
+    price: '฿1,290/mo',
+    benefits: ['Priority Support', 'Priority Scan', 'Advanced reminders', 'Expanded storage']
+  }
+];
 
 export default function Account() {
   const queryClient = useQueryClient();
@@ -178,18 +199,45 @@ export default function Account() {
                 )}
               </div>
               
-              {user?.plan_tier === 'free' && (
-                <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-200">
-                  <h3 className="font-bold text-slate-900 mb-2 flex items-center gap-2">
-                    <Crown className="w-5 h-5 text-purple-600" />
-                    Upgrade for Full Protection
-                  </h3>
-                  <p className="text-sm text-slate-600 mb-4">
-                    Unlock all features, priority support, and unlimited scans
+              {user?.plan_tier === 'free' ? (
+                <div className="space-y-4">
+                  {PLAN_DETAILS.map((plan) => (
+                    <div key={plan.key} className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                            <Crown className="w-5 h-5 text-purple-600" />
+                            {plan.label}
+                          </h3>
+                          <p className="text-2xl font-bold text-purple-600">{plan.price}</p>
+                        </div>
+                        <Button className="bg-gradient-to-r from-purple-600 to-purple-700">
+                          Subscribe
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {plan.benefits.map((benefit, idx) => (
+                          <div key={idx} className="flex items-center gap-1 text-xs text-slate-700">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            {benefit}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <p className="text-sm text-emerald-800 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    All {user?.plan_tier} features active
                   </p>
-                  <Button className="w-full bg-gradient-to-r from-purple-600 to-purple-700">
-                    View Plans
-                  </Button>
+                  {user?.plan_tier === 'protect' || user?.plan_tier === 'secure' && (
+                    <p className="text-xs text-emerald-700 mt-2 flex items-center gap-1">
+                      <Bell className="w-3 h-3" />
+                      LINE notifications enabled
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>

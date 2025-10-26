@@ -1,53 +1,75 @@
-
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { FileCheck, ArrowLeft, Mail, AlertCircle, FileText, Shield, Scale } from "lucide-react";
+import { FileCheck, ArrowLeft, Mail, AlertCircle, FileText, Shield, Scale, Clock, ClipboardCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FeatureGate, useFeatureAccess } from "../components/shared/FeatureGate";
 
 const TEMPLATES = [
   {
-    id: 'deposit_return',
+    id: 'deposit_request',
     title: 'Deposit Return Request',
-    description: 'Formal letter requesting the return of your security deposit',
+    description: 'Polite formal letter requesting return of security deposit (EN/TH)',
     icon: Shield,
     tier: 'lite',
-    category: 'Deposit'
+    category: 'Deposit',
+    languages: ['en', 'th']
   },
   {
-    id: 'maintenance_request',
-    title: 'Maintenance Request',
-    description: 'Report and request repairs for property issues',
-    icon: AlertCircle,
+    id: 'deposit_late',
+    title: 'Late Deposit Return Reminder',
+    description: 'Follow-up reminder for overdue deposit return with timeline request',
+    icon: Clock,
     tier: 'lite',
-    category: 'Maintenance'
+    category: 'Deposit',
+    languages: ['en', 'th']
   },
   {
-    id: 'lease_termination',
-    title: 'Lease Termination Notice',
-    description: 'Provide notice of intent to vacate the property',
+    id: 'repair_dispute',
+    title: 'Repair Cost Dispute',
+    description: 'Dispute unfair repair charges with evidence references',
+    icon: AlertCircle,
+    tier: 'protect',
+    category: 'Dispute',
+    languages: ['en', 'th']
+  },
+  {
+    id: 'pdpa_request',
+    title: 'PDPA Data Request',
+    description: 'Request personal data and lease documents under PDPA',
     icon: FileText,
     tier: 'protect',
-    category: 'Lease'
+    category: 'Legal',
+    languages: ['en', 'th']
   },
   {
-    id: 'complaint_formal',
-    title: 'Formal Complaint Letter',
-    description: 'Professional complaint to landlord or property manager',
+    id: 'pre_move_out',
+    title: 'Pre-Move-Out Notice',
+    description: 'Formal notice of move-out date and inspection request',
     icon: Mail,
-    tier: 'protect',
-    category: 'Dispute'
+    tier: 'lite',
+    category: 'Move-Out',
+    languages: ['en', 'th']
   },
   {
-    id: 'dispute_escalation',
-    title: 'Dispute Escalation',
-    description: 'Escalate unresolved issues to authorities',
-    icon: Scale,
+    id: 'handover_check',
+    title: 'Handover Inspection Checklist',
+    description: 'Comprehensive checklist for property handover with photo slots',
+    icon: ClipboardCheck,
     tier: 'protect',
-    category: 'Dispute'
+    category: 'Move-Out',
+    languages: ['en', 'th']
+  },
+  {
+    id: 'contract_clarification',
+    title: 'Contract Clarification Request',
+    description: 'Request clarification on specific lease clauses',
+    icon: Scale,
+    tier: 'lite',
+    category: 'Lease',
+    languages: ['en', 'th']
   },
 ];
 
@@ -78,7 +100,7 @@ export default function Templates() {
               <FileCheck className="w-7 h-7 text-blue-600" />
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Letter Templates</h1>
             </div>
-            <p className="text-slate-600">Professional letters for tenants</p>
+            <p className="text-slate-600">Professional bilingual letters for tenants</p>
           </div>
         </div>
 
@@ -99,10 +121,19 @@ export default function Templates() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-bold text-lg text-slate-900">{template.title}</h3>
-                        <Badge variant="outline" className="ml-2">
-                          {template.category}
-                        </Badge>
+                        <div>
+                          <h3 className="font-bold text-lg text-slate-900 mb-1">{template.title}</h3>
+                          <div className="flex gap-2 mb-2">
+                            <Badge variant="outline" className="text-xs">
+                              {template.category}
+                            </Badge>
+                            {template.languages.map(lang => (
+                              <Badge key={lang} variant="outline" className="text-xs">
+                                {lang.toUpperCase()}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                       <p className="text-sm text-slate-600 mb-3">{template.description}</p>
                       {hasAccess ? (
@@ -111,7 +142,7 @@ export default function Templates() {
                           className="bg-blue-600 hover:bg-blue-700"
                           onClick={() => navigate(createPageUrl("TemplateForm") + `?templateId=${template.id}`)}
                         >
-                          Use Template
+                          Generate Letter
                         </Button>
                       ) : (
                         <Badge className="bg-purple-100 text-purple-700">
