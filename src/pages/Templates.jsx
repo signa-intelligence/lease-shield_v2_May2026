@@ -1,9 +1,10 @@
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { FileCheck, ArrowLeft, Mail, AlertCircle, FileText, Shield } from "lucide-react";
+import { FileCheck, ArrowLeft, Mail, AlertCircle, FileText, Shield, Scale } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FeatureGate, useFeatureAccess } from "../components/shared/FeatureGate";
 
