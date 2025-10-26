@@ -5,39 +5,6 @@ import { Home, Upload, Shield, FileText, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
-const navTabs = [
-  {
-    key: "home",
-    label: "Home",
-    route: createPageUrl("Dashboard"),
-    icon: Home,
-  },
-  {
-    key: "scan",
-    label: "Scan",
-    route: createPageUrl("UploadScan"),
-    icon: Upload,
-  },
-  {
-    key: "deposit",
-    label: "Deposit",
-    route: createPageUrl("DepositTracker"),
-    icon: Shield,
-  },
-  {
-    key: "docs",
-    label: "Documents",
-    route: createPageUrl("DocumentVault"),
-    icon: FileText,
-  },
-  {
-    key: "account",
-    label: "Account",
-    route: createPageUrl("Account"),
-    icon: User,
-  },
-];
-
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
 
@@ -46,6 +13,41 @@ export default function Layout({ children, currentPageName }) {
     queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000,
   });
+
+  const language = user?.language || 'en';
+  
+  const navTabs = [
+    {
+      key: "home",
+      label: language === 'th' ? "หน้าหลัก" : "Home",
+      route: createPageUrl("Dashboard"),
+      icon: Home,
+    },
+    {
+      key: "scan",
+      label: language === 'th' ? "สแกน" : "Scan",
+      route: createPageUrl("UploadScan"),
+      icon: Upload,
+    },
+    {
+      key: "deposit",
+      label: language === 'th' ? "เงินมัดจำ" : "Deposit",
+      route: createPageUrl("DepositTracker"),
+      icon: Shield,
+    },
+    {
+      key: "docs",
+      label: language === 'th' ? "เอกสาร" : "Documents",
+      route: createPageUrl("DocumentVault"),
+      icon: FileText,
+    },
+    {
+      key: "account",
+      label: language === 'th' ? "บัญชี" : "Account",
+      route: createPageUrl("Account"),
+      icon: User,
+    },
+  ];
 
   const isActiveTab = (route) => {
     return location.pathname === route;
@@ -101,6 +103,15 @@ export default function Layout({ children, currentPageName }) {
           })}
         </div>
       </nav>
+
+      {/* Disclaimer Footer */}
+      <div className="fixed bottom-20 md:bottom-24 left-0 right-0 bg-slate-800/95 backdrop-blur-sm text-white py-2 px-4 text-center z-40">
+        <p className="text-xs opacity-90">
+          {language === 'th' 
+            ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
+            : "We are not a law firm and do not provide legal advice."}
+        </p>
+      </div>
     </div>
   );
 }

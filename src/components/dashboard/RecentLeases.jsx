@@ -7,7 +7,28 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-export default function RecentLeases({ leases }) {
+export default function RecentLeases({ leases, language = 'en' }) {
+  const t = {
+    en: {
+      title: "Recent Leases",
+      viewAll: "View All",
+      noLeases: "No leases uploaded yet",
+      uploadFirst: "Upload Your First Lease",
+      uploaded: "Uploaded",
+      month: "month"
+    },
+    th: {
+      title: "สัญญาเช่าล่าสุด",
+      viewAll: "ดูทั้งหมด",
+      noLeases: "ยังไม่มีการอัปโหลดสัญญาเช่า",
+      uploadFirst: "อัปโหลดสัญญาเช่าแรกของคุณ",
+      uploaded: "อัปโหลดแล้ว",
+      month: "เดือน"
+    }
+  };
+
+  const strings = t[language];
+
   const getStatusIcon = (status) => {
     const icons = {
       uploaded: Clock,
@@ -32,11 +53,11 @@ export default function RecentLeases({ leases }) {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600" />
-            Recent Leases
+            {strings.title}
           </CardTitle>
-          <Link to={createPageUrl("Leases")}>
+          <Link to={createPageUrl("UploadScan")}>
             <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-              View All
+              {strings.viewAll}
             </Button>
           </Link>
         </div>
@@ -45,10 +66,10 @@ export default function RecentLeases({ leases }) {
         {leases.length === 0 ? (
           <div className="text-center py-8">
             <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500 mb-4">No leases uploaded yet</p>
-            <Link to={createPageUrl("Leases")}>
+            <p className="text-slate-500 mb-4">{strings.noLeases}</p>
+            <Link to={createPageUrl("UploadScan")}>
               <Button className="bg-blue-600 hover:bg-blue-700">
-                Upload Your First Lease
+                {strings.uploadFirst}
               </Button>
             </Link>
           </div>
@@ -64,12 +85,12 @@ export default function RecentLeases({ leases }) {
                       <div className="flex items-center gap-2 mb-1">
                         <StatusIcon className="w-4 h-4 text-blue-600" />
                         <span className="font-semibold text-slate-900">
-                          {lease.property_address || 'Lease Agreement'}
+                          {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
                         </span>
                       </div>
                       {lease.rent_amount && (
                         <p className="text-sm text-slate-600">
-                          ฿{lease.rent_amount.toLocaleString()}/month
+                          ฿{lease.rent_amount.toLocaleString()}/{strings.month}
                         </p>
                       )}
                     </div>
@@ -78,7 +99,7 @@ export default function RecentLeases({ leases }) {
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>Uploaded {format(new Date(lease.created_date), 'MMM d, yyyy')}</span>
+                    <span>{strings.uploaded} {format(new Date(lease.created_date), 'MMM d, yyyy')}</span>
                     {lease.start_date && lease.end_date && (
                       <span>
                         {format(new Date(lease.start_date), 'MMM yyyy')} - {format(new Date(lease.end_date), 'MMM yyyy')}
