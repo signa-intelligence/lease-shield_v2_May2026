@@ -20,6 +20,7 @@ import { FeatureGate, useFeatureAccess } from "../components/shared/FeatureGate"
 
 export default function DepositTracker() {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     deposit_amount: '',
     deposit_paid_date: '',
@@ -250,6 +251,7 @@ export default function DepositTracker() {
                       </div>
                     </div>
                   </CardHeader>
+                  
                   <CardContent className="p-6">
                     <div className="grid md:grid-cols-3 gap-6">
                       <div>
