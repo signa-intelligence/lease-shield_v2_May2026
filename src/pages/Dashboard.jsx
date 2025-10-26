@@ -1,0 +1,137 @@
+import React from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+
+import StatsCard from "../components/dashboard/StatsCard";
+import DepositAlert from "../components/dashboard/DepositAlert";
+import RecentLeases from "../components/dashboard/RecentLeases";
+
+export default function Dashboard() {
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: leases = [] } = useQuery({
+    queryKey: ['leases'],
+    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
+    enabled: !!user,
+  });
+
+  const { data: deposits = [] } = useQuery({
+    queryKey: ['deposits'],
+    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
+    enabled: !!user,
+  });
+
+  const { data: cases = [] } = useQuery({
+    queryKey: ['cases'],
+    queryFn: () => base44.entities.Case.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  const activeDeposits = deposits.filter(d => d.status === 'tracking');
+  const activeCases = cases.filter(c => !['closed'].includes(c.status));
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      <div className="max-w-7xl mx-auto p-6 md:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="w-8 h-8 text-blue-600" />
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
+              Welcome back, {user?.full_name?.split(' ')[0] || 'User'}
+            </h1>
+          </div>
+          <p className="text-slate-600 text-lg">
+            Your rental protection dashboard
+          </p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatsCard
+            title="Active Leases"
+            value={leases.length}
+            icon={FileText}
+            bgGradient="bg-blue-500"
+            trend="+2 this month"
+            trendUp={true}
+          />
+          <StatsCard
+            title="Deposits Tracked"
+            value={`฿${activeDeposits.reduce((sum, d) => sum + d.deposit_amount, 0).toLocaleString()}`}
+            icon={Wallet}
+            bgGradient="bg-emerald-500"
+          />
+          <StatsCard
+            title="Active Cases"
+            value={activeCases.length}
+            icon={Scale}
+            bgGradient="bg-purple-500"
+          />
+          <StatsCard
+            title="Protection Score"
+            value="85%"
+            icon={Shield}
+            bgGradient="bg-amber-500"
+            trend="+5%"
+            trendUp={true}
+          />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-6 md:p-8 mb-8 shadow-xl">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-white">
+              <h2 className="text-2xl font-bold mb-2">Protect Your Rights</h2>
+              <p className="text-blue-100 text-sm md:text-base">
+                Upload your lease for instant AI-powered analysis and risk assessment
+              </p>
+            </div>
+            <Link to={createPageUrl("Leases")}>
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg font-semibold px-8">
+                Upload Lease
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <RecentLeases leases={leases} />
+          </div>
+          <div>
+            <DepositAlert deposits={deposits} />
+          </div>
+        </div>
+
+        {/* Upgrade Banner */}
+        {user?.plan_tier === 'free' && (
+          <div className="mt-8 bg-gradient-to-r from-purple-600 to-purple-800 rounded-2xl p-6 md:p-8 shadow-xl">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="text-white">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-6 h-6" />
+                  <h3 className="text-xl font-bold">Upgrade to Premium</h3>
+                </div>
+                <p className="text-purple-100 text-sm">
+                  Get unlimited lease scans, priority case handling, and expert legal support
+                </p>
+              </div>
+              <Button size="lg" className="bg-white text-purple-600 hover:bg-purple-50 shadow-lg font-semibold px-8">
+                View Plans
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

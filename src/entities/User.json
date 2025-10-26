@@ -1,0 +1,46 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "country": {
+      "type": "string",
+      "description": "Country"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "en",
+        "th"
+      ],
+      "default": "en"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "active",
+        "cancelled"
+      ],
+      "default": "none"
+    },
+    "plan_tier": {
+      "type": "string",
+      "enum": [
+        "free",
+        "lite",
+        "protect",
+        "secure"
+      ],
+      "default": "free"
+    },
+    "plan_renews_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Plan renewal date"
+    }
+  }
+}

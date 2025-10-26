@@ -1,0 +1,30 @@
+{
+  "name": "Document",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "lease",
+        "receipt",
+        "photo",
+        "video",
+        "letter",
+        "other"
+      ],
+      "description": "Type of document"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to the document"
+    },
+    "label": {
+      "type": "string",
+      "description": "Custom label for the document"
+    }
+  },
+  "required": [
+    "type",
+    "file_url"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "name": "DepositTracker",
+  "type": "object",
+  "properties": {
+    "deposit_amount": {
+      "type": "number",
+      "description": "Amount of security deposit"
+    },
+    "deposit_paid_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When deposit was paid"
+    },
+    "expected_return_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Expected return date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "tracking",
+        "returned",
+        "dispute"
+      ],
+      "default": "tracking"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    },
+    "property_address": {
+      "type": "string",
+      "description": "Property address"
+    }
+  },
+  "required": [
+    "deposit_amount",
+    "deposit_paid_date",
+    "expected_return_date"
+  ]
+}

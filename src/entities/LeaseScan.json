@@ -1,0 +1,58 @@
+{
+  "name": "LeaseScan",
+  "type": "object",
+  "properties": {
+    "lease_id": {
+      "type": "string",
+      "description": "Reference to the lease"
+    },
+    "scan_preview": {
+      "type": "object",
+      "description": "Preview of scan results"
+    },
+    "scan_full": {
+      "type": "object",
+      "description": "Complete scan analysis"
+    },
+    "risk_score": {
+      "type": "integer",
+      "description": "Risk score from 0-100",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ]
+          },
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "description": "AI-generated summary"
+    },
+    "version": {
+      "type": "string",
+      "description": "Scan version"
+    }
+  },
+  "required": [
+    "lease_id"
+  ]
+}
