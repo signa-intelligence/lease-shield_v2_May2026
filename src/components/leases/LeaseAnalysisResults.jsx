@@ -1,9 +1,10 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle2, Info, AlertCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info, AlertCircle, Download, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { FeatureGate } from "../shared/FeatureGate";
 
 export default function LeaseAnalysisResults({ scan, onSave }) {
   const getRiskColor = (score) => {
@@ -106,6 +107,26 @@ export default function LeaseAnalysisResults({ scan, onSave }) {
         </Card>
       )}
 
+      {/* Full Report - Gated Feature */}
+      <FeatureGate feature="full_report">
+        <Card className="border-none shadow-lg bg-gradient-to-br from-purple-50 to-blue-50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900 mb-1">Detailed Analysis Report</h3>
+                <p className="text-sm text-slate-600">
+                  Comprehensive breakdown with legal recommendations
+                </p>
+              </div>
+              <Button className="bg-gradient-to-r from-purple-600 to-purple-700">
+                <FileText className="w-4 h-4 mr-2" />
+                View Full Report
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </FeatureGate>
+
       {/* Action Buttons */}
       <div className="flex gap-3">
         <Button
@@ -116,13 +137,29 @@ export default function LeaseAnalysisResults({ scan, onSave }) {
           <CheckCircle2 className="w-5 h-5 mr-2" />
           Save Analysis
         </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          className="border-slate-300"
+        <FeatureGate 
+          feature="full_report"
+          fallback={
+            <Button
+              variant="outline"
+              size="lg"
+              disabled
+              className="border-slate-300 opacity-50"
+            >
+              <Download className="w-5 h-5 mr-2" />
+              Download Report (Premium)
+            </Button>
+          }
         >
-          Download Report
-        </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="border-slate-300"
+          >
+            <Download className="w-5 h-5 mr-2" />
+            Download Report
+          </Button>
+        </FeatureGate>
       </div>
     </div>
   );

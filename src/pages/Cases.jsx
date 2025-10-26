@@ -3,9 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Scale, AlertCircle, Clock, CheckCircle2, UserCheck, Plus } from "lucide-react";
+import { Scale, AlertCircle, Clock, CheckCircle2, UserCheck, Plus, Zap, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { useFeatureAccess } from "../components/shared/FeatureGate";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -17,6 +18,9 @@ const STATUS_CONFIG = {
 };
 
 export default function Cases() {
+  const { hasAccess: hasPriorityQueue } = useFeatureAccess('priority_queue');
+  const { hasAccess: hasMemberPrice } = useFeatureAccess('resolve_member_price');
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -48,6 +52,26 @@ export default function Cases() {
           </Button>
         </div>
 
+        {/* Premium Features Banner */}
+        {(hasPriorityQueue || hasMemberPrice) && (
+          <Card className="mb-6 border-none shadow-lg bg-gradient-to-r from-purple-500 to-purple-700 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <Crown className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg mb-1">Premium Case Benefits</h3>
+                  <div className="flex gap-3 text-sm text-purple-50">
+                    {hasMemberPrice && <span>• Member pricing on success fees</span>}
+                    {hasPriorityQueue && <span>• Priority case handling</span>}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {cases.length === 0 ? (
           <Card className="border-none shadow-xl">
             <CardContent className="p-12 text-center">
@@ -56,6 +80,13 @@ export default function Cases() {
               <p className="text-slate-600 mb-6">
                 Need help with a dispute? Our team is here to support you.
               </p>
+              {hasMemberPrice && (
+                <div className="bg-emerald-50 rounded-xl p-4 mb-6 border border-emerald-200">
+                  <p className="text-sm text-emerald-800 font-medium">
+                    ✓ As a member, you get reduced success fees on all cases
+                  </p>
+                </div>
+              )}
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-5 h-5 mr-2" />
                 Open Your First Case
@@ -85,10 +116,18 @@ export default function Cases() {
                           </p>
                         </div>
                       </div>
-                      <Badge className={`${statusConfig.color} border flex items-center gap-1`}>
-                        <StatusIcon className="w-4 h-4" />
-                        {statusConfig.label}
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge className={`${statusConfig.color} border flex items-center gap-1`}>
+                          <StatusIcon className="w-4 h-4" />
+                          {statusConfig.label}
+                        </Badge>
+                        {caseItem.fast_track && hasPriorityQueue && (
+                          <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                            <Zap className="w-3 h-3 mr-1" />
+                            Fast Track
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   
@@ -128,7 +167,7 @@ export default function Cases() {
                           )}
                           {caseItem.is_member_at_creation && (
                             <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
-                              Member
+                              Member Rate
                             </Badge>
                           )}
                         </div>
@@ -138,6 +177,19 @@ export default function Cases() {
                     {caseItem.summary && (
                       <div className="p-4 bg-slate-50 rounded-xl mb-4">
                         <p className="text-sm text-slate-700">{caseItem.summary}</p>
+                      </div>
+                    )}
+
+                    {caseItem.success_fee_rate > 0 && (
+                      <div className="p-4 bg-blue-50 rounded-xl mb-4 border border-blue-200">
+                        <p className="text-sm text-blue-800">
+                          Success fee: <span className="font-bold">{caseItem.success_fee_rate}%</span>
+                          {caseItem.is_member_at_creation && hasMemberPrice && (
+                            <span className="ml-2 text-emerald-600 font-medium">
+                              (Member discount applied ✓)
+                            </span>
+                          )}
+                        </p>
                       </div>
                     )}
 

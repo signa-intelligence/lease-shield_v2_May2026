@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wallet, Plus, Calendar, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { Wallet, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Shield, Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format, differenceInDays } from "date-fns";
 import {
@@ -17,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { FeatureGate, useFeatureAccess } from "../components/shared/FeatureGate";
 
 export default function DepositTracker() {
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -29,6 +29,8 @@ export default function DepositTracker() {
   });
   
   const queryClient = useQueryClient();
+  const { hasAccess: hasDepositShield } = useFeatureAccess('deposit_shield');
+  const { hasAccess: hasLineNotify } = useFeatureAccess('line_notify_enabled');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -177,6 +179,31 @@ export default function DepositTracker() {
           </Dialog>
         </div>
 
+        {/* Deposit Shield Feature Banner */}
+        <FeatureGate feature="deposit_shield">
+          <Card className="mb-6 border-none shadow-lg bg-gradient-to-r from-emerald-500 to-emerald-700 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <Shield className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg mb-1">Deposit Shield Active</h3>
+                  <p className="text-emerald-50 text-sm">
+                    Your deposits are protected with automatic reminders and dispute assistance
+                  </p>
+                </div>
+                {hasLineNotify && (
+                  <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
+                    <Bell className="w-4 h-4 mr-2" />
+                    LINE Notify
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </FeatureGate>
+
         <div className="grid gap-6">
           {deposits.length === 0 ? (
             <Card className="border-none shadow-xl">
@@ -210,9 +237,17 @@ export default function DepositTracker() {
                           )}
                         </div>
                       </div>
-                      <Badge className={`${getStatusColor(deposit.status)} border`}>
-                        {deposit.status.toUpperCase()}
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge className={`${getStatusColor(deposit.status)} border`}>
+                          {deposit.status.toUpperCase()}
+                        </Badge>
+                        {hasDepositShield && deposit.status === 'tracking' && (
+                          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                            <Shield className="w-3 h-3 mr-1" />
+                            Protected
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-6">
