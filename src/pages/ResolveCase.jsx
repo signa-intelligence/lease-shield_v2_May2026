@@ -7,68 +7,65 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Scale, AlertCircle, Upload, CheckCircle2, Crown, Zap, DollarSign } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { Scale, Upload, AlertCircle, CheckCircle2, Crown, Zap, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
 
 export default function ResolveCase() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState({
-    dispute_amount: '',
-    summary: '',
-    fast_track: false,
-    letter_pack: false,
-    files: []
-  });
+  const { hasAccess: isMember } = useFeatureAccess('resolve_member_price');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  const { hasAccess: hasMemberPrice } = useFeatureAccess('resolve_member_price');
-  const isMember = user?.plan_tier && ['lite', 'protect', 'secure'].includes(user.plan_tier);
-  
-  const baseFee = isMember ? 1490 : 2490;
-  const successFeeRate = isMember ? 10 : 15;
+  const [formData, setFormData] = useState({
+    dispute_amount: '',
+    summary: '',
+    fast_track: false,
+    letter_pack: false
+  });
+
+  const basePrice = isMember ? 1490 : 2490;
+  const successFee = isMember ? 10 : 15;
+  const fastTrackPrice = 300;
+  const letterPackPrice = 900;
+
+  const totalUpfront = basePrice + 
+    (formData.fast_track ? fastTrackPrice : 0) +
+    (formData.letter_pack ? letterPackPrice : 0);
 
   const createCaseMutation = useMutation({
-    mutationFn: async (data) => {
-      const caseData = await base44.entities.Case.create({
-        dispute_amount: parseFloat(data.dispute_amount),
-        summary: data.summary,
-        fast_track: data.fast_track,
-        letter_pack: data.letter_pack,
-        is_member_at_creation: isMember,
-        success_fee_rate: successFeeRate,
-        status: 'intake'
-      });
-
-      return caseData;
+    mutationFn: async (caseData) => {
+      return await base44.entities.Case.create(caseData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cases'] });
-      navigate(createPageUrl("Account"));
+      alert('Case submitted successfully! We will contact you within 24 hours.');
+      setFormData({
+        dispute_amount: '',
+        summary: '',
+        fast_track: false,
+        letter_pack: false
+      });
+      setFiles([]);
     },
   });
 
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    setUploading(true);
+  const handleFileChange = async (e) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0) return;
 
+    setUploading(true);
     try {
-      const uploadPromises = files.map(file => 
+      const uploadPromises = selectedFiles.map(file => 
         base44.integrations.Core.UploadFile({ file })
       );
       const results = await Promise.all(uploadPromises);
-      setFormData({
-        ...formData,
-        files: [...formData.files, ...results.map(r => r.file_url)]
-      });
+      setFiles([...files, ...results.map(r => r.file_url)]);
     } catch (error) {
       console.error('Upload failed:', error);
     } finally {
@@ -76,56 +73,67 @@ export default function ResolveCase() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    createCaseMutation.mutate(formData);
+    
+    // Create case
+    await createCaseMutation.mutateAsync({
+      dispute_amount: parseFloat(formData.dispute_amount) || 0,
+      summary: formData.summary,
+      is_member_at_creation: isMember,
+      success_fee_rate: successFee,
+      fast_track: formData.fast_track,
+      letter_pack: formData.letter_pack,
+      status: 'intake'
+    });
+
+    // In production, redirect to payment
+    alert(`Redirecting to payment: ฿${totalUpfront.toLocaleString()}`);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <Scale className="w-7 h-7 text-blue-600" />
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Open Dispute Case</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Resolve My Case</h1>
           </div>
-          <p className="text-slate-600">Get professional help resolving your rental dispute</p>
+          <p className="text-slate-600">Professional dispute resolution service</p>
         </div>
 
-        {/* Pricing Card */}
-        <Card className="mb-6 border-none shadow-lg bg-gradient-to-br from-blue-50 to-purple-50">
+        {/* Pricing Banner */}
+        <Card className="mb-6 border-none shadow-xl bg-gradient-to-r from-purple-500 to-purple-700 text-white">
           <CardContent className="p-6">
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-bold text-lg text-slate-900 mb-2">Service Fees</h3>
-                {isMember && (
-                  <Badge className="bg-emerald-100 text-emerald-700 mb-3">
-                    <Crown className="w-3 h-3 mr-1" />
-                    Member Discount Applied
-                  </Badge>
-                )}
+                <h3 className="text-xl font-bold mb-1">Transparent Pricing</h3>
+                <p className="text-purple-100 text-sm">No hidden fees • Success-based model</p>
               </div>
-              <DollarSign className="w-8 h-8 text-purple-600" />
+              {isMember && (
+                <Badge className="bg-white/20 text-white border-white/30">
+                  <Crown className="w-3 h-3 mr-1" />
+                  Member Rate
+                </Badge>
+              )}
             </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">Base Fee:</span>
-                <span className="text-2xl font-bold text-slate-900">
-                  ฿{baseFee.toLocaleString()}
-                </span>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                <p className="text-purple-100 text-sm mb-1">Upfront Fee</p>
+                <p className="text-3xl font-bold">฿{basePrice.toLocaleString()}</p>
+                <p className="text-xs text-purple-100 mt-1">One-time case fee</p>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-600">Success Fee:</span>
-                <span className="font-semibold text-slate-900">{successFeeRate}% of recovered amount</span>
+              <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                <p className="text-purple-100 text-sm mb-1">Success Fee</p>
+                <p className="text-3xl font-bold">{successFee}%</p>
+                <p className="text-xs text-purple-100 mt-1">Only if we win</p>
               </div>
             </div>
-
             {!isMember && (
-              <div className="mt-4 p-3 bg-purple-100 rounded-lg border border-purple-200">
-                <p className="text-sm text-purple-800">
-                  <CheckCircle2 className="w-4 h-4 inline mr-1" />
-                  Save ฿1,000 and get 10% success fee with a membership plan
+              <div className="mt-4 p-3 bg-white/10 rounded-lg">
+                <p className="text-sm flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Members save ฿1,000 + get 5% lower success fee
                 </p>
               </div>
             )}
@@ -133,25 +141,24 @@ export default function ResolveCase() {
         </Card>
 
         {/* Case Form */}
-        <Card className="border-none shadow-lg">
-          <CardHeader className="border-b border-slate-100">
+        <Card className="border-none shadow-xl mb-6">
+          <CardHeader className="border-b">
             <CardTitle>Case Details</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <Label htmlFor="amount">Dispute Amount (฿)</Label>
+                <Label htmlFor="dispute_amount">Dispute Amount (฿)</Label>
                 <Input
-                  id="amount"
+                  id="dispute_amount"
                   type="number"
                   required
                   value={formData.dispute_amount}
                   onChange={(e) => setFormData({...formData, dispute_amount: e.target.value})}
                   placeholder="e.g. 10000"
-                  className="text-lg"
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  The amount you're disputing (e.g., withheld deposit, overcharges)
+                  Amount you're trying to recover
                 </p>
               </div>
 
@@ -162,107 +169,150 @@ export default function ResolveCase() {
                   required
                   value={formData.summary}
                   onChange={(e) => setFormData({...formData, summary: e.target.value})}
-                  placeholder="Describe your issue in detail..."
+                  placeholder="Describe your dispute: What happened? What amount do you want back? What evidence do you have?"
                   rows={6}
-                  className="resize-none"
                 />
-                <p className="text-xs text-slate-500 mt-1">
-                  Include dates, amounts, and what you've tried so far
-                </p>
               </div>
 
               <div>
                 <Label>Supporting Documents</Label>
-                <div className="mt-2 border-2 border-dashed border-slate-300 rounded-xl p-6 hover:border-blue-400 transition-colors">
+                <div className="mt-2 border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
                   <input
                     type="file"
                     multiple
-                    onChange={handleFileUpload}
+                    onChange={handleFileChange}
                     className="hidden"
                     id="file-upload"
                     accept=".pdf,.jpg,.jpeg,.png"
                   />
-                  <label htmlFor="file-upload" className="cursor-pointer block text-center">
+                  <label htmlFor="file-upload" className="cursor-pointer">
                     <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                     <p className="text-sm text-slate-600">
-                      {uploading ? 'Uploading...' : 'Click to upload evidence (lease, photos, receipts, etc.)'}
+                      {uploading ? 'Uploading...' : 'Click to upload lease, receipts, photos, emails'}
                     </p>
+                    <p className="text-xs text-slate-400 mt-1">PDF, JPG, PNG • Max 10MB each</p>
                   </label>
-                  {formData.files.length > 0 && (
-                    <div className="mt-3">
-                      <p className="text-sm text-emerald-600 font-medium">
-                        <CheckCircle2 className="w-4 h-4 inline mr-1" />
-                        {formData.files.length} file(s) uploaded
-                      </p>
-                    </div>
-                  )}
                 </div>
+                {files.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {files.map((url, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span className="text-sm text-slate-700 flex-1 truncate">
+                          Document {idx + 1} uploaded
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Add-ons */}
-              <div className="space-y-3 p-4 bg-slate-50 rounded-xl">
-                <h4 className="font-semibold text-slate-900 mb-3">Optional Services</h4>
+              <div className="space-y-3">
+                <Label>Optional Add-ons</Label>
                 
-                <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200">
+                <div className="flex items-start space-x-3 p-4 border border-slate-200 rounded-xl hover:border-blue-300 transition-colors">
                   <Checkbox
                     id="fast_track"
                     checked={formData.fast_track}
                     onCheckedChange={(checked) => setFormData({...formData, fast_track: checked})}
                   />
                   <div className="flex-1">
-                    <label htmlFor="fast_track" className="font-medium text-slate-900 cursor-pointer flex items-center gap-2">
+                    <label htmlFor="fast_track" className="flex items-center gap-2 cursor-pointer">
                       <Zap className="w-4 h-4 text-amber-600" />
-                      Fast Track (+฿500)
+                      <span className="font-semibold text-slate-900">Fast Track 24h</span>
+                      <Badge variant="outline" className="ml-auto">+฿300</Badge>
                     </label>
-                    <p className="text-xs text-slate-500">Priority handling, 24-48hr response time</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Priority queue - ops response within 24 hours
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200">
+                <div className="flex items-start space-x-3 p-4 border border-slate-200 rounded-xl hover:border-blue-300 transition-colors">
                   <Checkbox
                     id="letter_pack"
                     checked={formData.letter_pack}
                     onCheckedChange={(checked) => setFormData({...formData, letter_pack: checked})}
                   />
                   <div className="flex-1">
-                    <label htmlFor="letter_pack" className="font-medium text-slate-900 cursor-pointer flex items-center gap-2">
+                    <label htmlFor="letter_pack" className="flex items-center gap-2 cursor-pointer">
                       <Scale className="w-4 h-4 text-blue-600" />
-                      Letter Pack (+฿300)
+                      <span className="font-semibold text-slate-900">Legal Letter Pack</span>
+                      <Badge variant="outline" className="ml-auto">+฿900</Badge>
                     </label>
-                    <p className="text-xs text-slate-500">Professional demand letters in EN & TH</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      3 formal demand letters drafted by legal team
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Total */}
               <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-slate-900">Total Due Now:</span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-slate-900">Total Upfront Payment</span>
                   <span className="text-2xl font-bold text-blue-600">
-                    ฿{(
-                      baseFee + 
-                      (formData.fast_track ? 500 : 0) + 
-                      (formData.letter_pack ? 300 : 0)
-                    ).toLocaleString()}
+                    ฿{totalUpfront.toLocaleString()}
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 mt-2">
-                  + {successFeeRate}% success fee on recovered amount
+                <p className="text-xs text-slate-600">
+                  + {successFee}% success fee if case is won • Full refund if we can't help
                 </p>
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-lg py-6"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-lg py-6"
                 disabled={createCaseMutation.isPending}
               >
-                {createCaseMutation.isPending ? 'Opening Case...' : 'Open Case & Proceed to Payment'}
+                {createCaseMutation.isPending ? 'Submitting...' : `Proceed to Payment • ฿${totalUpfront.toLocaleString()}`}
               </Button>
-
-              <p className="text-xs text-center text-slate-500">
-                By opening a case, you agree to our <a href="#" className="text-blue-600 underline">Terms of Service</a>
-              </p>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* How It Works */}
+        <Card className="border-none shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-lg">How Resolve Works</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="font-bold text-blue-600">1</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-slate-900 mb-1">Submit Case</h4>
+                  <p className="text-sm text-slate-600">
+                    Provide details and evidence. Our ops team reviews within 24-48 hours.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="font-bold text-blue-600">2</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-slate-900 mb-1">Strategy & Negotiation</h4>
+                  <p className="text-sm text-slate-600">
+                    We draft letters, negotiate with landlord, and guide you through the process.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="font-bold text-blue-600">3</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-slate-900 mb-1">Resolution</h4>
+                  <p className="text-sm text-slate-600">
+                    Success fee only applies if we recover your money. No win, no additional fee.
+                  </p>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

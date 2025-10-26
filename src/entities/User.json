@@ -42,5 +42,6 @@
       "format": "date-time",
       "description": "Plan renewal date"
     }
-  }
+  },
+  "required": []
 }

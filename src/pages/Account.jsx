@@ -6,27 +6,60 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 
 const PLAN_DETAILS = [
   {
     key: 'lite',
     label: 'Lite',
-    price: '฿390/mo',
-    benefits: ['Full AI Report', 'Alerts', 'Basic templates', 'Basic storage']
+    price: '฿390',
+    priceNum: 390,
+    interval: '/month',
+    benefits: [
+      'Full AI Lease Reports',
+      'Risk Score Analysis',
+      'Email Alerts',
+      'Basic Letter Templates',
+      'Basic Document Storage'
+    ],
+    color: 'from-blue-500 to-blue-600',
+    icon: Zap
   },
   {
     key: 'protect',
     label: 'Protect',
-    price: '฿690/mo',
-    benefits: ['Evidence Vault', 'Maintenance Tracker', 'Deposit Shield', 'Templates Full', 'LINE Reminders']
+    price: '฿690',
+    priceNum: 690,
+    interval: '/month',
+    benefits: [
+      'Everything in Lite',
+      'Deposit Shield Tracker',
+      'Automated Reminders',
+      'Full Letter Templates',
+      'Evidence Vault',
+      'LINE Notifications'
+    ],
+    color: 'from-emerald-500 to-emerald-600',
+    icon: Shield,
+    popular: true
   },
   {
     key: 'secure',
     label: 'Secure',
-    price: '฿1,290/mo',
-    benefits: ['Priority Support', 'Priority Scan', 'Advanced reminders', 'Expanded storage']
+    price: '฿1,290',
+    priceNum: 1290,
+    interval: '/month',
+    benefits: [
+      'Everything in Protect',
+      'Priority Case Queue',
+      'Priority AI Scanning',
+      'Advanced Reminders',
+      'Expanded Storage',
+      'Premium Support'
+    ],
+    color: 'from-purple-500 to-purple-600',
+    icon: Crown
   }
 ];
 
@@ -68,20 +101,25 @@ export default function Account() {
     updateProfileMutation.mutate(formData);
   };
 
+  const handleSubscribe = (planKey) => {
+    // In production, this would redirect to Stripe Checkout
+    alert(`Subscription to ${planKey} plan will be implemented with Stripe Checkout`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <User className="w-7 h-7 text-blue-600" />
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900">My Account</h1>
           </div>
-          <p className="text-slate-600">Manage your profile and settings</p>
+          <p className="text-slate-600">Manage your profile and subscription</p>
         </div>
 
-        <div className="space-y-4">
+        <div className="grid lg:grid-cols-3 gap-6 mb-6">
           {/* Profile Card */}
-          <Card className="border-none shadow-xl">
+          <Card className="lg:col-span-2 border-none shadow-xl">
             <CardHeader className="border-b pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
@@ -175,84 +213,124 @@ export default function Account() {
             </CardContent>
           </Card>
 
-          {/* Subscription Card */}
+          {/* Current Plan Summary */}
           <Card className="border-none shadow-xl">
             <CardHeader className="border-b pb-4">
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <Shield className="w-5 h-5 text-blue-600" />
-                Subscription
+                Current Plan
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm text-slate-500 mb-2">Current Plan</p>
-                  <PlanBadge tier={user?.plan_tier} />
-                </div>
+              <div className="text-center mb-4">
+                <PlanBadge tier={user?.plan_tier} />
+                <p className="text-3xl font-bold text-slate-900 mt-3">
+                  {user?.plan_tier === 'free' ? 'Free' : 
+                   PLAN_DETAILS.find(p => p.key === user?.plan_tier)?.price || '—'}
+                </p>
                 {user?.subscription_status === 'active' && user?.plan_renews_at && (
-                  <div className="text-right">
-                    <p className="text-xs text-slate-500 mb-1">Renews</p>
-                    <p className="font-semibold text-slate-900 text-sm">
-                      {new Date(user.plan_renews_at).toLocaleDateString()}
-                    </p>
-                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Renews {new Date(user.plan_renews_at).toLocaleDateString()}
+                  </p>
                 )}
               </div>
               
-              {user?.plan_tier === 'free' ? (
-                <div className="space-y-4">
-                  {PLAN_DETAILS.map((plan) => (
-                    <div key={plan.key} className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                            <Crown className="w-5 h-5 text-purple-600" />
-                            {plan.label}
-                          </h3>
-                          <p className="text-2xl font-bold text-purple-600">{plan.price}</p>
-                        </div>
-                        <Button className="bg-gradient-to-r from-purple-600 to-purple-700">
-                          Subscribe
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {plan.benefits.map((benefit, idx) => (
-                          <div key={idx} className="flex items-center gap-1 text-xs text-slate-700">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                            {benefit}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                  <p className="text-sm text-emerald-800 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" />
-                    All {user?.plan_tier} features active
-                  </p>
-                  {user?.plan_tier === 'protect' || user?.plan_tier === 'secure' && (
-                    <p className="text-xs text-emerald-700 mt-2 flex items-center gap-1">
-                      <Bell className="w-3 h-3" />
-                      LINE notifications enabled
+              {user?.plan_tier !== 'free' && user?.subscription_status === 'active' ? (
+                <div className="space-y-2">
+                  <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <p className="text-sm text-emerald-800 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" />
+                      All features active
                     </p>
+                  </div>
+                  {(user?.plan_tier === 'protect' || user?.plan_tier === 'secure') && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-800 flex items-center gap-1">
+                        <Bell className="w-3 h-3" />
+                        LINE reminders enabled
+                      </p>
+                    </div>
                   )}
                 </div>
+              ) : (
+                <Button 
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700"
+                  onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  Upgrade Now
+                </Button>
               )}
             </CardContent>
           </Card>
-
-          {/* Logout */}
-          <Button
-            variant="outline"
-            className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-            onClick={() => base44.auth.logout()}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
         </div>
+
+        {/* Subscription Plans */}
+        <div id="plans-section" className="mb-6">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Choose Your Plan</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {PLAN_DETAILS.map((plan) => {
+              const Icon = plan.icon;
+              const isCurrentPlan = user?.plan_tier === plan.key;
+              
+              return (
+                <Card 
+                  key={plan.key} 
+                  className={`border-none shadow-xl relative overflow-hidden ${
+                    plan.popular ? 'ring-2 ring-purple-500' : ''
+                  }`}
+                >
+                  {plan.popular && (
+                    <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                      POPULAR
+                    </div>
+                  )}
+                  <CardHeader className={`bg-gradient-to-r ${plan.color} text-white p-6`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon className="w-6 h-6" />
+                      <CardTitle className="text-xl">{plan.label}</CardTitle>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-bold">{plan.price}</span>
+                      <span className="text-sm opacity-90">{plan.interval}</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <ul className="space-y-3 mb-6">
+                      {plan.benefits.map((benefit, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm text-slate-700">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                          <span>{benefit}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {isCurrentPlan ? (
+                      <Button disabled className="w-full" variant="outline">
+                        Current Plan
+                      </Button>
+                    ) : (
+                      <Button 
+                        className={`w-full bg-gradient-to-r ${plan.color} hover:opacity-90`}
+                        onClick={() => handleSubscribe(plan.key)}
+                      >
+                        Subscribe to {plan.label}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Logout */}
+        <Button
+          variant="outline"
+          className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+          onClick={() => base44.auth.logout()}
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Logout
+        </Button>
       </div>
     </div>
   );
