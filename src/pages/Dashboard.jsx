@@ -2,7 +2,6 @@ import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -122,7 +121,7 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - FIXED CTA */}
         <div className="bg-gradient-to-r from-ls-forest to-emerald-800 rounded-2xl p-6 md:p-8 mb-8 shadow-xl">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-white">
@@ -132,9 +131,25 @@ export default function Dashboard() {
               </p>
             </div>
             <Link to={createPageUrl("UploadScan")}>
-              <Button size="lg" className="bg-ls-gold hover:bg-amber-600 text-ls-charcoal shadow-lg font-semibold px-8">
+              <button
+                style={{
+                  backgroundColor: '#C7A338',
+                  color: '#1A1D1F',
+                  padding: '14px 32px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#d4af37'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
+              >
                 {strings.uploadLease}
-              </Button>
+              </button>
             </Link>
           </div>
         </div>
@@ -149,7 +164,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Upgrade Banner */}
+        {/* Upgrade Banner - FIXED CTA */}
         {user?.plan_tier === 'free' && (
           <div className="mt-8 bg-gradient-to-r from-ls-gold to-amber-600 rounded-2xl p-6 md:p-8 shadow-xl">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -163,9 +178,25 @@ export default function Dashboard() {
                 </p>
               </div>
               <Link to={createPageUrl("Account")}>
-                <Button size="lg" className="bg-ls-forest hover:bg-emerald-900 text-white shadow-lg font-semibold px-8">
+                <button
+                  style={{
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF',
+                    padding: '14px 32px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                >
                   {strings.viewPlans}
-                </Button>
+                </button>
               </Link>
             </div>
           </div>

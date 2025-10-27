@@ -2,7 +2,6 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle2, Info, AlertCircle, Download, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { FeatureGate } from "../shared/FeatureGate";
 
@@ -118,47 +117,112 @@ export default function LeaseAnalysisResults({ scan, onSave }) {
                   Comprehensive breakdown with legal recommendations
                 </p>
               </div>
-              <Button className="bg-gradient-to-r from-purple-600 to-purple-700">
-                <FileText className="w-4 h-4 mr-2" />
+              <button
+                style={{
+                  backgroundColor: '#9333EA',
+                  color: '#FFFFFF',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#7e22ce'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#9333EA'}
+              >
+                <FileText style={{ width: '16px', height: '16px' }} />
                 View Full Report
-              </Button>
+              </button>
             </div>
           </CardContent>
         </Card>
       </FeatureGate>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - FIXED CTAs */}
       <div className="flex gap-3">
-        <Button
+        <button
           onClick={onSave}
-          size="lg"
-          className="flex-1 bg-emerald-600 hover:bg-emerald-700 shadow-lg"
+          style={{
+            flex: 1,
+            backgroundColor: '#10B981',
+            color: '#FFFFFF',
+            padding: '14px 24px',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            fontSize: '16px',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = '#059669'}
+          onMouseLeave={(e) => e.target.style.backgroundColor = '#10B981'}
         >
-          <CheckCircle2 className="w-5 h-5 mr-2" />
+          <CheckCircle2 style={{ width: '20px', height: '20px' }} />
           Save Analysis
-        </Button>
+        </button>
         <FeatureGate 
           feature="full_report"
           fallback={
-            <Button
-              variant="outline"
-              size="lg"
+            <button
               disabled
-              className="border-slate-300 opacity-50"
+              style={{
+                backgroundColor: '#E5E7EB',
+                color: '#9CA3AF',
+                padding: '14px 24px',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                border: '1px solid #D1D5DB',
+                cursor: 'not-allowed',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                opacity: 0.6
+              }}
             >
-              <Download className="w-5 h-5 mr-2" />
+              <Download style={{ width: '20px', height: '20px' }} />
               Download Report (Premium)
-            </Button>
+            </button>
           }
         >
-          <Button
-            variant="outline"
-            size="lg"
-            className="border-slate-300"
+          <button
+            style={{
+              backgroundColor: '#FFFFFF',
+              color: '#1A1D1F',
+              padding: '14px 24px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              border: '2px solid #D1D5DB',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#F3F4F6';
+              e.target.style.borderColor = '#9CA3AF';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#FFFFFF';
+              e.target.style.borderColor = '#D1D5DB';
+            }}
           >
-            <Download className="w-5 h-5 mr-2" />
+            <Download style={{ width: '20px', height: '20px' }} />
             Download Report
-          </Button>
+          </button>
         </FeatureGate>
       </div>
     </div>

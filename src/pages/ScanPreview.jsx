@@ -4,7 +4,6 @@ import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ArrowLeft, ExternalLink, Download, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 import LeaseAnalysisResults from "../components/leases/LeaseAnalysisResults";
 
@@ -40,7 +39,6 @@ export default function ScanPreview() {
   const handleDownloadPdf = async () => {
     setDownloadingPdf(true);
     try {
-      // Generate PDF report using AI
       const pdfResult = await base44.integrations.Core.InvokeLLM({
         prompt: `Create a professional PDF-ready lease risk report with the following structure:
 
@@ -81,8 +79,6 @@ Format this as a well-structured, professional document in both English and Thai
         }
       });
 
-      // In a real implementation, you would convert this to PDF
-      // For now, we'll create a text document
       const blob = new Blob([pdfResult.report_text], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -117,9 +113,23 @@ Format this as a well-structured, professional document in both English and Thai
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center">
           <p className="text-slate-600 mb-4">Scan not found</p>
-          <Button onClick={() => navigate(createPageUrl("UploadScan"))}>
+          <button 
+            onClick={() => navigate(createPageUrl("UploadScan"))}
+            style={{
+              backgroundColor: '#3B82F6',
+              color: '#FFFFFF',
+              padding: '10px 20px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
+          >
             Back to Upload
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -129,13 +139,26 @@ Format this as a well-structured, professional document in both English and Thai
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="outline"
-            size="icon"
+          <button
             onClick={() => navigate(createPageUrl("UploadScan"))}
+            style={{
+              backgroundColor: '#FFFFFF',
+              color: '#1A1D1F',
+              width: '40px',
+              height: '40px',
+              borderRadius: '8px',
+              border: '1px solid #D1D5DB',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#F3F4F6'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#FFFFFF'}
           >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+            <ArrowLeft style={{ width: '20px', height: '20px' }} />
+          </button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-slate-900">Scan Results</h1>
             {lease?.property_address && (
@@ -145,30 +168,65 @@ Format this as a well-structured, professional document in both English and Thai
           <div className="flex gap-2">
             {lease?.file_url && (
               <a href={lease.file_url} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm">
-                  <ExternalLink className="w-4 h-4 mr-2" />
+                <button
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    color: '#1A1D1F',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    border: '1px solid #D1D5DB',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#F3F4F6'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#FFFFFF'}
+                >
+                  <ExternalLink style={{ width: '16px', height: '16px' }} />
                   View Original
-                </Button>
+                </button>
               </a>
             )}
-            <Button 
-              variant="outline" 
-              size="sm"
+            <button 
               onClick={handleDownloadPdf}
               disabled={downloadingPdf}
+              style={{
+                backgroundColor: downloadingPdf ? '#E5E7EB' : '#FFFFFF',
+                color: downloadingPdf ? '#9CA3AF' : '#1A1D1F',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontWeight: '600',
+                fontSize: '14px',
+                border: '1px solid #D1D5DB',
+                cursor: downloadingPdf ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                if (!downloadingPdf) e.target.style.backgroundColor = '#F3F4F6';
+              }}
+              onMouseLeave={(e) => {
+                if (!downloadingPdf) e.target.style.backgroundColor = '#FFFFFF';
+              }}
             >
               {downloadingPdf ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />
                   Generating...
                 </>
               ) : (
                 <>
-                  <Download className="w-4 h-4 mr-2" />
+                  <Download style={{ width: '16px', height: '16px' }} />
                   Download PDF
                 </>
               )}
-            </Button>
+            </button>
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -112,8 +113,26 @@ export default function DepositTracker() {
           
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
-              <button className="px-6 py-3 bg-ls-forest hover:bg-emerald-800 text-white rounded-lg shadow-lg font-semibold transition-colors flex items-center gap-2">
-                <Plus className="w-5 h-5" />
+              <button 
+                style={{
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+              >
+                <Plus style={{ width: '20px', height: '20px' }} />
                 Add Deposit
               </button>
             </DialogTrigger>
@@ -172,7 +191,22 @@ export default function DepositTracker() {
                     rows={3}
                   />
                 </div>
-                <button type="submit" className="w-full px-4 py-3 bg-ls-forest hover:bg-emerald-800 text-white rounded-lg font-semibold transition-colors">
+                <button 
+                  type="submit" 
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                >
                   Track Deposit
                 </button>
               </form>
@@ -212,8 +246,27 @@ export default function DepositTracker() {
                 <Wallet className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-ls-charcoal mb-2">No Deposits Tracked</h3>
                 <p className="text-slate-600 mb-6">Start tracking your security deposits to get return reminders</p>
-                <button onClick={() => setShowAddDialog(true)} className="px-6 py-3 bg-ls-forest hover:bg-emerald-800 text-white rounded-lg font-semibold transition-colors inline-flex items-center gap-2">
-                  <Plus className="w-5 h-5" />
+                <button 
+                  onClick={() => setShowAddDialog(true)} 
+                  style={{
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                >
+                  <Plus style={{ width: '20px', height: '20px' }} />
                   Add Your First Deposit
                 </button>
               </CardContent>
@@ -309,9 +362,29 @@ export default function DepositTracker() {
                             id: deposit.id, 
                             data: { status: 'returned' } 
                           })}
-                          className="flex-1 px-4 py-2 border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                          style={{
+                            flex: 1,
+                            backgroundColor: '#FFFFFF',
+                            color: '#10B981',
+                            padding: '10px 16px',
+                            borderRadius: '8px',
+                            fontWeight: 'bold',
+                            border: '2px solid #10B981',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#D1FAE5';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = '#FFFFFF';
+                          }}
                         >
-                          <CheckCircle2 className="w-4 h-4" />
+                          <CheckCircle2 style={{ width: '16px', height: '16px' }} />
                           Mark Returned
                         </button>
                         <button
@@ -319,9 +392,29 @@ export default function DepositTracker() {
                             id: deposit.id, 
                             data: { status: 'dispute' } 
                           })}
-                          className="flex-1 px-4 py-2 border-2 border-red-600 text-red-600 hover:bg-red-50 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                          style={{
+                            flex: 1,
+                            backgroundColor: '#FFFFFF',
+                            color: '#EF4444',
+                            padding: '10px 16px',
+                            borderRadius: '8px',
+                            fontWeight: 'bold',
+                            border: '2px solid #EF4444',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#FEE2E2';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = '#FFFFFF';
+                          }}
                         >
-                          <AlertTriangle className="w-4 h-4" />
+                          <AlertTriangle style={{ width: '16px', height: '16px' }} />
                           Open Dispute
                         </button>
                       </div>
