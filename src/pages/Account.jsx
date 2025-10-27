@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, FileText, Download, Loader2, AlertCircle } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 
@@ -71,6 +72,7 @@ export default function Account() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -134,8 +136,41 @@ export default function Account() {
     }
   };
 
+  const handleExportData = async () => {
+    setExporting(true);
+    try {
+      const response = await base44.functions.invoke('exportUserData');
+      
+      // Create blob from response data
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lease_shield_data_export_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export data. Please try again or contact support.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const currentPlanTier = user?.plan_tier || 'free';
   const isFree = currentPlanTier === 'free';
+
+  // Helper function for page URLs (assuming simple routing or external links)
+  const createPageUrl = (pageName) => {
+    switch (pageName) {
+      case "PrivacyPolicy":
+        return "https://www.leaseshield.asia/privacy-policy"; // Replace with actual URL
+      default:
+        return "#";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
@@ -563,6 +598,162 @@ export default function Account() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Data Privacy & Rights Section - NEW */}
+        <Card className="mb-6 border-none shadow-xl">
+          <CardHeader className="border-b" style={{ backgroundColor: '#ECEFED' }}>
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <Shield className="w-5 h-5 text-ls-forest" />
+              Data Privacy & Your Rights
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {/* Privacy Policy Link */}
+              <div style={{
+                padding: '16px',
+                backgroundColor: '#ECEFED',
+                borderRadius: '12px',
+                borderLeft: '4px solid #0C3B2E'
+              }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: '#0C3B2E',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-ls-charcoal">Privacy Policy</p>
+                      <p className="text-sm text-slate-600">Learn how we protect your data</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => window.open(createPageUrl("PrivacyPolicy"), '_blank')}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '2px solid #0C3B2E',
+                      backgroundColor: '#FFFFFF',
+                      color: '#0C3B2E',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#0C3B2E';
+                      e.target.style.color = '#FFFFFF';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#FFFFFF';
+                      e.target.style.color = '#0C3B2E';
+                    }}
+                  >
+                    View Policy
+                  </button>
+                </div>
+              </div>
+
+              {/* Export Data (PDPA Right to Portability) */}
+              <div style={{
+                padding: '16px',
+                backgroundColor: '#ECEFED',
+                borderRadius: '12px',
+                borderLeft: '4px solid #C7A338'
+              }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: '#C7A338',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Download className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-ls-charcoal">Export My Data</p>
+                      <p className="text-sm text-slate-600">Download all your personal data (PDPA compliant)</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleExportData}
+                    disabled={exporting}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '2px solid #C7A338',
+                      backgroundColor: exporting ? '#ECEFED' : '#FFFFFF',
+                      color: exporting ? '#94a3b8' : '#C7A338',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      cursor: exporting ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!exporting) {
+                        e.target.style.backgroundColor = '#C7A338';
+                        e.target.style.color = '#FFFFFF';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!exporting) {
+                        e.target.style.backgroundColor = '#FFFFFF';
+                        e.target.style.color = '#C7A338';
+                      }
+                    }}
+                  >
+                    {exporting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Exporting...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        Export
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Delete Account Notice */}
+              <div style={{
+                padding: '16px',
+                backgroundColor: '#FEE2E2',
+                borderRadius: '12px',
+                borderLeft: '4px solid #DC2626'
+              }}>
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-red-900 mb-1">Need to Delete Your Account?</p>
+                    <p className="text-sm text-red-800 mb-2">
+                      To exercise your right to erasure under PDPA, please contact us at <strong>privacy@leaseshield.asia</strong>
+                    </p>
+                    <p className="text-xs text-red-700">
+                      We will securely delete all your data within 30 days.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="mb-6">
           <NotificationSettings 
