@@ -31,100 +31,110 @@ Deno.serve(async (req) => {
         daysOverdue: Math.abs(daysDiff)
       };
 
+      let messageText = '';
+      let subject = '';
+
       // 30-day reminder
       if (daysDiff === 30) {
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: user.email,
-          subject: language === 'th' ? 
-            'อีก 30 วันถึงกำหนดคืนเงินมัดจำ' : 
-            'Deposit due back in 30 days',
-          body: language === 'th' ?
-            `ระบบแจ้งเตือน: ถึงกำหนดคืนเงินมัดจำในอีก 30 วัน
+        subject = language === 'th' ? 
+          'อีก 30 วันถึงกำหนดคืนเงินมัดจำ' : 
+          'Deposit due back in 30 days';
+        
+        messageText = language === 'th' ?
+          `🔔 แจ้งเตือน Lease Shield\n\nถึงกำหนดคืนเงินมัดจำในอีก 30 วัน\n\n` +
+          `💰 จำนวน: ฿${notificationData.depositAmount.toLocaleString()}\n` +
+          `🏠 ทรัพย์สิน: ${notificationData.propertyAddress || 'ไม่ระบุ'}\n` +
+          `📅 กำหนดคืน: ${notificationData.expectedDate}\n\n` +
+          `💡 แนะนำ: แนบใบเสร็จและรูปภาพใน Evidence Vault ของคุณ` :
+          
+          `🔔 Lease Shield Reminder\n\nYour deposit is due back in 30 days\n\n` +
+          `💰 Amount: ฿${notificationData.depositAmount.toLocaleString()}\n` +
+          `🏠 Property: ${notificationData.propertyAddress || 'N/A'}\n` +
+          `📅 Expected: ${notificationData.expectedDate}\n\n` +
+          `💡 Tip: Keep receipts and photos in your Evidence Vault`;
 
-ทรัพย์สิน: ${notificationData.propertyAddress || 'ไม่ระบุ'}
-จำนวน: ฿${notificationData.depositAmount.toLocaleString()}
-กำหนดคืน: ${notificationData.expectedDate}
-
-กรุณาแนบใบเสร็จและรูปภาพใน Evidence Vault ของคุณ
-
-— Lease Shield` :
-            `Reminder — Your lease deposit of ฿${notificationData.depositAmount.toLocaleString()} is scheduled for return in 30 days.
-
-Property: ${notificationData.propertyAddress || 'N/A'}
-Expected Return: ${notificationData.expectedDate}
-
-Please ensure receipts and photos are stored in your Evidence Vault.
-
-— Lease Shield`
-        });
         notifications.push({ user: user.email, type: '30d', deposit: deposit.id });
       }
 
       // 7-day reminder
-      if (daysDiff === 7) {
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: user.email,
-          subject: language === 'th' ? 
-            'อีก 7 วันครบกำหนดคืนเงินมัดจำ' : 
-            '7 days until deposit return deadline',
-          body: language === 'th' ?
-            `ระบบแจ้งเตือน: อีก 7 วันครบกำหนดคืนเงินมัดจำ
+      else if (daysDiff === 7) {
+        subject = language === 'th' ? 
+          'อีก 7 วันครบกำหนดคืนเงินมัดจำ' : 
+          '7 days until deposit return deadline';
+        
+        messageText = language === 'th' ?
+          `⚠️ แจ้งเตือนสุดท้าย Lease Shield\n\nอีก 7 วันครบกำหนดคืนเงินมัดจำ\n\n` +
+          `💰 จำนวน: ฿${notificationData.depositAmount.toLocaleString()}\n` +
+          `🏠 ทรัพย์สิน: ${notificationData.propertyAddress || 'ไม่ระบุ'}\n` +
+          `📅 กำหนดคืน: ${notificationData.expectedDate}\n\n` +
+          `📝 หากยังไม่ได้รับเงิน สามารถสร้างจดหมายร้องขอได้ทันที` :
+          
+          `⚠️ Lease Shield Final Reminder\n\n7 days until deposit return deadline\n\n` +
+          `💰 Amount: ฿${notificationData.depositAmount.toLocaleString()}\n` +
+          `🏠 Property: ${notificationData.propertyAddress || 'N/A'}\n` +
+          `📅 Expected: ${notificationData.expectedDate}\n\n` +
+          `📝 Generate a Deposit Return Request letter if needed`;
 
-ทรัพย์สิน: ${notificationData.propertyAddress || 'ไม่ระบุ'}
-จำนวน: ฿${notificationData.depositAmount.toLocaleString()}
-กำหนดคืน: ${notificationData.expectedDate}
-
-หากยังไม่ได้รับเงิน คุณสามารถสร้างจดหมายร้องขอได้ทันที
-
-— Lease Shield` :
-            `Final reminder — Your deposit of ฿${notificationData.depositAmount.toLocaleString()} should be returned within 7 days.
-
-Property: ${notificationData.propertyAddress || 'N/A'}
-Expected Return: ${notificationData.expectedDate}
-
-If there's an issue, you can generate a Deposit Return Request letter from your Documents section.
-
-— Lease Shield`
-        });
         notifications.push({ user: user.email, type: '7d', deposit: deposit.id });
       }
 
       // Overdue (1 day after expected return)
-      if (daysDiff === -1) {
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: user.email,
-          subject: language === 'th' ? 
-            'ยังไม่ได้รับเงินมัดจำคืน - ดำเนินการด่วน' : 
-            'Deposit Not Returned - Action Required',
-          body: language === 'th' ?
-            `เงินมัดจำจำนวน ฿${notificationData.depositAmount.toLocaleString()} ของคุณยังไม่ได้รับคืน
+      else if (daysDiff === -1) {
+        subject = language === 'th' ? 
+          'ยังไม่ได้รับเงินมัดจำคืน - ดำเนินการด่วน' : 
+          'Deposit Not Returned - Action Required';
+        
+        messageText = language === 'th' ?
+          `🚨 แจ้งเตือนด่วน Lease Shield\n\nยังไม่ได้รับเงินมัดจำคืน\n\n` +
+          `💰 จำนวน: ฿${notificationData.depositAmount.toLocaleString()}\n` +
+          `🏠 ทรัพย์สิน: ${notificationData.propertyAddress || 'ไม่ระบุ'}\n` +
+          `⏰ เกินกำหนด: ${notificationData.daysOverdue} วัน\n\n` +
+          `📋 แนะนำให้ดำเนินการ:\n` +
+          `1. สร้างจดหมายเตือนคืนเงินมัดจำ\n` +
+          `2. ส่งทางไปรษณีย์ลงทะเบียน\n` +
+          `3. พิจารณาเปิดคดี Resolve` :
+          
+          `🚨 Lease Shield Urgent Alert\n\nDeposit not returned\n\n` +
+          `💰 Amount: ฿${notificationData.depositAmount.toLocaleString()}\n` +
+          `🏠 Property: ${notificationData.propertyAddress || 'N/A'}\n` +
+          `⏰ Overdue: ${notificationData.daysOverdue} days\n\n` +
+          `📋 Recommended Actions:\n` +
+          `1. Generate Late Return Reminder letter\n` +
+          `2. Send via registered mail\n` +
+          `3. Consider opening a Resolve case`;
 
-ทรัพย์สิน: ${notificationData.propertyAddress || 'ไม่ระบุ'}
-เกินกำหนดมาแล้ว: ${notificationData.daysOverdue} วัน
-
-แนะนำให้ดำเนินการ:
-1. สร้างจดหมายเตือนคืนเงินมัดจำ
-2. ส่งทางไปรษณีย์ลงทะเบียน
-3. หากไม่ได้รับการตอบกลับ พิจารณาเปิดคดี Resolve
-
-ดูเทมเพลต: https://app.leaseshield.asia/documents/templates
-
-— Lease Shield` :
-            `Your deposit of ฿${notificationData.depositAmount.toLocaleString()} was not returned on the expected date.
-
-Property: ${notificationData.propertyAddress || 'N/A'}
-Days Overdue: ${notificationData.daysOverdue}
-
-Recommended Actions:
-1. Generate a "Late Deposit Return Reminder" letter
-2. Send via registered mail
-3. If no response, consider opening a Resolve case
-
-View Templates: https://app.leaseshield.asia/documents/templates
-
-— Lease Shield`
-        });
         notifications.push({ user: user.email, type: 'overdue', deposit: deposit.id });
+      }
+
+      // Send notification if we have a message
+      if (messageText) {
+        // Send via LINE if connected and enabled
+        if (user.line_messaging_token && user.line_notifications) {
+          try {
+            await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              userId: user.line_messaging_token,
+              message: messageText
+            });
+          } catch (lineError) {
+            console.error('LINE send failed:', lineError);
+            // Fall back to email if LINE fails
+            if (user.email_notifications) {
+              await base44.asServiceRole.integrations.Core.SendEmail({
+                to: user.email,
+                subject: subject,
+                body: messageText
+              });
+            }
+          }
+        }
+        // Send via email if LINE not available or email notifications enabled
+        else if (user.email_notifications) {
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            to: user.email,
+            subject: subject,
+            body: messageText
+          });
+        }
       }
     }
 
