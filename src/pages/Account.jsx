@@ -116,13 +116,13 @@ export default function Account() {
 
     setSubscribing(true);
     try {
-      const { url } = await base44.functions.invoke('createCheckout', {
+      const response = await base44.functions.invoke('createCheckout', {
         priceId: plan.priceId,
         mode: 'subscription'
       });
       
-      if (url) {
-        window.location.href = url;
+      if (response.data?.url) {
+        window.location.href = response.data.url;
       }
     } catch (error) {
       console.error('Subscription error:', error);
@@ -131,6 +131,9 @@ export default function Account() {
       setSubscribing(false);
     }
   };
+
+  const currentPlanTier = user?.plan_tier || 'free';
+  const isFree = currentPlanTier === 'free';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
@@ -144,7 +147,6 @@ export default function Account() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
-          {/* Profile Card */}
           <Card className="lg:col-span-2 border-none shadow-xl">
             <CardHeader className="border-b pb-4">
               <div className="flex items-center justify-between">
@@ -239,7 +241,6 @@ export default function Account() {
             </CardContent>
           </Card>
 
-          {/* Current Plan Summary - FIXED VERSION */}
           <Card className="border-none shadow-xl overflow-hidden">
             <CardHeader className="border-b pb-4">
               <CardTitle className="text-lg font-bold flex items-center gap-2">
@@ -250,11 +251,10 @@ export default function Account() {
             <CardContent className="p-6">
               <div className="text-center mb-4">
                 <div className="mb-3">
-                  <PlanBadge tier={user?.plan_tier} />
+                  <PlanBadge tier={currentPlanTier} />
                 </div>
                 <p className="text-3xl font-bold text-ls-charcoal">
-                  {user?.plan_tier === 'free' ? 'Free' : 
-                   PLAN_DETAILS.find(p => p.key === user?.plan_tier)?.price || '—'}
+                  {isFree ? 'Free' : PLAN_DETAILS.find(p => p.key === currentPlanTier)?.price || '—'}
                 </p>
                 {user?.subscription_status === 'active' && user?.plan_renews_at && (
                   <p className="text-xs text-slate-500 mt-2">
@@ -263,23 +263,23 @@ export default function Account() {
                 )}
               </div>
               
-              {user?.plan_tier === 'free' ? (
+              {isFree ? (
                 <div className="space-y-3">
-                  <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                    <p className="text-sm text-amber-800 font-semibold mb-2">
+                  <div style={{ padding: '12px', backgroundColor: '#FEF3C7', borderRadius: '8px', border: '1px solid #FCD34D' }}>
+                    <p style={{ fontSize: '14px', color: '#92400E', fontWeight: '600', marginBottom: '8px' }}>
                       Free Plan Includes:
                     </p>
-                    <ul className="text-xs text-amber-700 space-y-1">
+                    <ul style={{ fontSize: '12px', color: '#B45309', lineHeight: '1.5' }}>
                       <li>• 1 Lease Scan</li>
                       <li>• Basic Risk Report</li>
                       <li>• Limited Features</li>
                     </ul>
                   </div>
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-800 font-semibold mb-1">
+                  <div style={{ padding: '12px', backgroundColor: '#DBEAFE', borderRadius: '8px', border: '1px solid: #93C5FD' }}>
+                    <p style={{ fontSize: '14px', color: '#1E40AF', fontWeight: '600', marginBottom: '4px' }}>
                       🚀 Upgrade to get:
                     </p>
-                    <ul className="text-xs text-blue-700 space-y-1">
+                    <ul style={{ fontSize: '12px', color: '#1E3A8A', lineHeight: '1.5' }}>
                       <li>• Unlimited AI Scans</li>
                       <li>• Deposit Shield Tracker</li>
                       <li>• Automated Reminders</li>
@@ -295,6 +295,7 @@ export default function Account() {
                       color: '#1A1D1F',
                       borderRadius: '8px',
                       fontWeight: 'bold',
+                      fontSize: '14px',
                       border: 'none',
                       cursor: 'pointer',
                       boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
@@ -309,31 +310,26 @@ export default function Account() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {user?.plan_tier !== 'free' && user?.subscription_status === 'active' ? (
-                    <div className="space-y-2">
-                      <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                        <p className="text-sm text-emerald-800 flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4" />
-                          All features active
-                        </p>
-                      </div>
-                      {(user?.plan_tier === 'protect' || user?.plan_tier === 'secure') && (
-                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <p className="text-xs text-blue-800 flex items-center gap-1">
-                            <Bell className="w-3 h-3" />
-                            LINE reminders enabled
-                          </p>
-                        </div>
-                      )}
+                  <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <p className="text-sm text-emerald-800 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" />
+                      All features active
+                    </p>
+                  </div>
+                  {(currentPlanTier === 'protect' || currentPlanTier === 'secure') && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-800 flex items-center gap-1">
+                        <Bell className="w-3 h-3" />
+                        LINE reminders enabled
+                      </p>
                     </div>
-                  ) : null}
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Notification Settings */}
         <div className="mb-6">
           <NotificationSettings 
             user={user} 
@@ -341,13 +337,12 @@ export default function Account() {
           />
         </div>
 
-        {/* Subscription Plans */}
         <div id="plans-section" className="mb-6">
           <h2 className="text-2xl font-bold text-ls-charcoal mb-4">Choose Your Plan</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
-              const isCurrentPlan = user?.plan_tier === plan.key;
+              const isCurrentPlan = currentPlanTier === plan.key;
               
               return (
                 <Card 
@@ -400,7 +395,6 @@ export default function Account() {
           </div>
         </div>
 
-        {/* Logout */}
         <Button
           variant="outline"
           className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
