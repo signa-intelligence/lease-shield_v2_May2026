@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Sparkles, Lock } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 
@@ -78,6 +78,7 @@ export default function Account() {
   });
 
   const [formData, setFormData] = useState({
+    full_name: user?.full_name || '',
     phone: user?.phone || '',
     country: user?.country || '',
     language: user?.language || 'en'
@@ -86,6 +87,7 @@ export default function Account() {
   React.useEffect(() => {
     if (user) {
       setFormData({
+        full_name: user.full_name || '',
         phone: user.phone || '',
         country: user.country || '',
         language: user.language || 'en'
@@ -138,85 +140,285 @@ export default function Account() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
       <div className="max-w-5xl mx-auto">
-        <div className="mb-6">
+        {/* Animated Header */}
+        <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <User className="w-7 h-7 text-ls-forest" />
-            <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">My Account</h1>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              background: 'linear-gradient(135deg, #0C3B2E, #047857)',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 6px rgba(12, 59, 46, 0.2)'
+            }}>
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">My Account</h1>
+              <p className="text-slate-600 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-ls-gold" />
+                Manage your profile and subscription
+              </p>
+            </div>
           </div>
-          <p className="text-slate-600">Manage your profile and subscription</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
-          <Card className="lg:col-span-2 border-none shadow-xl">
-            <CardHeader className="border-b pb-4">
+          {/* Personal Information Card - Enhanced Design */}
+          <Card className="lg:col-span-2 border-none shadow-xl" style={{
+            background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)'
+          }}>
+            <CardHeader className="border-b pb-4" style={{
+              background: 'linear-gradient(to right, #f1f5f9, #e2e8f0)',
+              borderRadius: '12px 12px 0 0'
+            }}>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    background: 'linear-gradient(135deg, #0C3B2E, #047857)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Settings className="w-4 h-4 text-white" />
+                  </div>
                   Personal Information
                 </CardTitle>
                 {!isEditing && (
-                  <Button size="sm" variant="outline" onClick={() => setIsEditing(true)} className="border-ls-forest text-ls-forest hover:bg-ls-forest hover:text-white">
-                    Edit
-                  </Button>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '2px solid #0C3B2E',
+                      backgroundColor: '#FFFFFF',
+                      color: '#0C3B2E',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#0C3B2E';
+                      e.target.style.color = '#FFFFFF';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#FFFFFF';
+                      e.target.style.color = '#0C3B2E';
+                    }}
+                  >
+                    Edit Profile
+                  </button>
                 )}
               </div>
             </CardHeader>
             <CardContent className="p-6">
               {!isEditing ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 bg-ls-stone rounded-lg">
-                    <User className="w-5 h-5 text-ls-forest" />
-                    <div className="flex-1">
-                      <p className="text-xs text-slate-500">Full Name</p>
-                      <p className="font-semibold text-ls-charcoal">{user?.full_name}</p>
+                <div className="space-y-4">
+                  {/* Name Display */}
+                  <div style={{
+                    padding: '16px',
+                    background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
+                    borderRadius: '12px',
+                    border: '1px solid #bbf7d0'
+                  }}>
+                    <div className="flex items-center gap-3">
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        background: 'linear-gradient(135deg, #0C3B2E, #047857)',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <User className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-emerald-700 mb-1">Full Name</p>
+                        <p className="font-bold text-ls-charcoal text-lg">{user?.full_name}</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-ls-stone rounded-lg">
-                    <Mail className="w-5 h-5 text-ls-forest" />
-                    <div className="flex-1">
-                      <p className="text-xs text-slate-500">Email</p>
-                      <p className="font-semibold text-ls-charcoal">{user?.email}</p>
+
+                  {/* Email Display */}
+                  <div style={{
+                    padding: '16px',
+                    background: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+                    borderRadius: '12px',
+                    border: '1px solid #bfdbfe'
+                  }}>
+                    <div className="flex items-center gap-3">
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Mail className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-blue-700 mb-1">Email</p>
+                        <p className="font-bold text-ls-charcoal">{user?.email}</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-ls-stone rounded-lg">
-                    <Phone className="w-5 h-5 text-ls-forest" />
-                    <div className="flex-1">
-                      <p className="text-xs text-slate-500">Phone</p>
-                      <p className="font-semibold text-ls-charcoal">{user?.phone || 'Not provided'}</p>
+
+                  {/* Phone Display */}
+                  <div style={{
+                    padding: '16px',
+                    background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                    borderRadius: '12px',
+                    border: '1px solid #fcd34d'
+                  }}>
+                    <div className="flex items-center gap-3">
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Phone className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-amber-700 mb-1">Phone</p>
+                        <p className="font-bold text-ls-charcoal">{user?.phone || 'Not provided'}</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-ls-stone rounded-lg">
-                    <Globe className="w-5 h-5 text-ls-forest" />
-                    <div className="flex-1">
-                      <p className="text-xs text-slate-500">Language</p>
-                      <p className="font-semibold text-ls-charcoal">
-                        {user?.language === 'th' ? 'ไทย (Thai)' : 'English'}
-                      </p>
+
+                  {/* Language Display */}
+                  <div style={{
+                    padding: '16px',
+                    background: 'linear-gradient(135deg, #fae8ff, #f3e8ff)',
+                    borderRadius: '12px',
+                    border: '1px solid #e9d5ff'
+                  }}>
+                    <div className="flex items-center gap-3">
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        background: 'linear-gradient(135deg, #a855f7, #9333ea)',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Globe className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-purple-700 mb-1">Language</p>
+                        <p className="font-bold text-ls-charcoal">
+                          {user?.language === 'th' ? 'ไทย (Thai)' : 'English'}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Name Input */}
                   <div>
-                    <Label htmlFor="phone">Phone Number</Label>
+                    <Label htmlFor="full_name" className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                      <User className="w-4 h-4 text-ls-forest" />
+                      Full Name
+                    </Label>
+                    <Input
+                      id="full_name"
+                      value={formData.full_name}
+                      onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                      placeholder="Your full name"
+                      style={{
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+
+                  {/* Email Display (Read-only) */}
+                  <div>
+                    <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-blue-600" />
+                      Email
+                    </Label>
+                    <div style={{
+                      padding: '10px 12px',
+                      backgroundColor: '#f1f5f9',
+                      borderRadius: '8px',
+                      border: '2px solid #e2e8f0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <Lock className="w-4 h-4 text-slate-400" />
+                      <span style={{ color: '#64748b', fontSize: '14px' }}>{user?.email}</span>
+                      <span style={{
+                        marginLeft: 'auto',
+                        fontSize: '11px',
+                        color: '#94a3b8',
+                        fontStyle: 'italic'
+                      }}>
+                        Cannot be changed
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Phone Input */}
+                  <div>
+                    <Label htmlFor="phone" className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-amber-600" />
+                      Phone Number
+                    </Label>
                     <Input
                       id="phone"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       placeholder="+66 XX XXX XXXX"
+                      style={{
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        fontSize: '14px'
+                      }}
                     />
                   </div>
+
+                  {/* Country Input */}
                   <div>
-                    <Label htmlFor="country">Country</Label>
+                    <Label htmlFor="country" className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-purple-600" />
+                      Country
+                    </Label>
                     <Input
                       id="country"
                       value={formData.country}
                       onChange={(e) => setFormData({...formData, country: e.target.value})}
                       placeholder="Thailand"
+                      style={{
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        fontSize: '14px'
+                      }}
                     />
                   </div>
+
+                  {/* Language Select */}
                   <div>
-                    <Label htmlFor="language">Language</Label>
+                    <Label htmlFor="language" className="text-sm font-semibold text-slate-700 mb-2">Language</Label>
                     <Select value={formData.language} onValueChange={(value) => setFormData({...formData, language: value})}>
                       <SelectTrigger>
                         <SelectValue />
@@ -227,24 +429,91 @@ export default function Account() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex gap-2">
-                    <Button type="submit" className="flex-1 bg-ls-forest hover:bg-emerald-900">
-                      <Save className="w-4 h-4 mr-2" />
-                      Save
-                    </Button>
-                    <Button type="button" variant="outline" onClick={() => setIsEditing(false)} className="border-ls-charcoal">
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="submit"
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #0C3B2E, #047857)',
+                        color: '#FFFFFF',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'translateY(-2px)';
+                        e.target.style.boxShadow = '0 6px 8px rgba(12, 59, 46, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
+                      }}
+                    >
+                      <Save className="w-4 h-4" />
+                      Save Changes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      style={{
+                        padding: '12px 24px',
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        border: '2px solid #e2e8f0',
+                        backgroundColor: '#FFFFFF',
+                        color: '#64748b',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#f8fafc';
+                        e.target.style.borderColor = '#cbd5e1';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = '#FFFFFF';
+                        e.target.style.borderColor = '#e2e8f0';
+                      }}
+                    >
                       Cancel
-                    </Button>
+                    </button>
                   </div>
                 </form>
               )}
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-xl overflow-hidden">
-            <CardHeader className="border-b pb-4">
+          {/* Current Plan Card - Enhanced */}
+          <Card className="border-none shadow-xl overflow-hidden" style={{
+            background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)'
+          }}>
+            <CardHeader className="border-b pb-4" style={{
+              background: 'linear-gradient(to right, #f1f5f9, #e2e8f0)',
+              borderRadius: '12px 12px 0 0'
+            }}>
               <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <Shield className="w-5 h-5 text-ls-forest" />
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  background: 'linear-gradient(135deg, #0C3B2E, #047857)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Shield className="w-4 h-4 text-white" />
+                </div>
                 Current Plan
               </CardTitle>
             </CardHeader>
