@@ -14,6 +14,7 @@ import TemplateForm from './pages/TemplateForm';
 import ResolveCase from './pages/ResolveCase';
 import Account from './pages/Account';
 import AdminConsole from './pages/AdminConsole';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import Layout from './Layout.jsx';
 
 
@@ -34,6 +35,7 @@ export const PAGES = {
     "ResolveCase": ResolveCase,
     "Account": Account,
     "AdminConsole": AdminConsole,
+    "PrivacyPolicy": PrivacyPolicy,
 }
 
 export const pagesConfig = {
