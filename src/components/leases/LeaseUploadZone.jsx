@@ -1,6 +1,5 @@
 import React from "react";
 import { Upload, FileText, Camera } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
   const fileInputRef = React.useRef(null);
@@ -38,25 +37,22 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
         </p>
         
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button
-            size="lg"
+          <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="bg-ls-forest hover:bg-emerald-800 text-white shadow-lg font-semibold"
+            className="px-6 py-3 bg-ls-forest hover:bg-emerald-800 text-white rounded-lg shadow-lg font-semibold transition-colors flex items-center justify-center gap-2"
           >
-            <FileText className="w-5 h-5 mr-2" />
+            <FileText className="w-5 h-5" />
             Browse Files
-          </Button>
-          <Button
-            size="lg"
+          </button>
+          <button
             type="button"
-            variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-ls-forest text-ls-forest hover:bg-ls-forest hover:text-white font-semibold shadow-sm"
+            className="px-6 py-3 border-2 border-ls-forest bg-white text-ls-forest hover:bg-ls-forest hover:text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
           >
-            <Camera className="w-5 h-5 mr-2" />
+            <Camera className="w-5 h-5" />
             Take Photo
-          </Button>
+          </button>
         </div>
         
         <p className="text-xs text-slate-400 mt-6">
