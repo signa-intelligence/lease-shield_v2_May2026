@@ -60,11 +60,28 @@ export default function AdminConsole() {
     setSeedResult(null);
 
     try {
-      const result = await base44.functions.invoke('seedDemoData');
-      setSeedResult(result.data);
+      const response = await base44.functions.invoke('seedDemoData');
+      console.log('Seed response:', response);
+      
+      if (response.data) {
+        setSeedResult(response.data);
+      } else {
+        setError('No data returned from seed function');
+      }
     } catch (err) {
-      setError(err.message || 'Failed to seed demo data');
-      console.error(err);
+      console.error('Seed error:', err);
+      
+      // Extract detailed error info
+      const errorMessage = err.response?.data?.error || err.message || 'Unknown error';
+      const errorDetails = err.response?.data?.details || '';
+      const errorStep = err.response?.data?.step || '';
+      
+      setError({
+        message: errorMessage,
+        details: errorDetails,
+        step: errorStep,
+        fullError: JSON.stringify(err.response?.data || err, null, 2)
+      });
     } finally {
       setSeeding(false);
     }
@@ -161,7 +178,32 @@ export default function AdminConsole() {
             {error && (
               <Alert variant="destructive" className="mt-4">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>
+                  <div className="font-semibold mb-2">
+                    {typeof error === 'string' ? error : error.message}
+                  </div>
+                  {error.step && (
+                    <div className="text-xs mb-2">
+                      <strong>Step:</strong> {error.step}
+                    </div>
+                  )}
+                  {error.details && (
+                    <details className="text-xs mt-2">
+                      <summary className="cursor-pointer font-semibold">Error Details</summary>
+                      <pre className="mt-2 p-2 bg-red-100 rounded overflow-x-auto">
+                        {error.details}
+                      </pre>
+                    </details>
+                  )}
+                  {error.fullError && (
+                    <details className="text-xs mt-2">
+                      <summary className="cursor-pointer font-semibold">Full Error (Debug)</summary>
+                      <pre className="mt-2 p-2 bg-red-100 rounded overflow-x-auto max-h-64">
+                        {error.fullError}
+                      </pre>
+                    </details>
+                  )}
+                </AlertDescription>
               </Alert>
             )}
 
