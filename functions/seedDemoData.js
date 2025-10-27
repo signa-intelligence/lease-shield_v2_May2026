@@ -1,55 +1,66 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
+const SAMPLE_LEASE_EN = `RESIDENTIAL LEASE AGREEMENT - Bangkok
+
+TERMS:
+1. DEPOSIT: Tenant shall pay a security deposit equal to THREE (3) months' rent. 
+   Landlord may retain deposit for ANY REASON at sole discretion.
+
+2. REPAIRS: Tenant is responsible for ALL REPAIRS regardless of cause.
+
+3. EARLY TERMINATION: Any early termination forfeits ENTIRE deposit with no refund.
+
+4. LATE PAYMENT: Late payment fee of 10% per day (compounding).
+
+5. ENTRY: Landlord may enter premises at ANY TIME without prior notice.
+
+Monthly Rent: 15,000 THB
+Deposit: 45,000 THB
+Term: 12 months from August 1, 2025`;
+
 Deno.serve(async (req) => {
   try {
     console.log('=== START: Seed Demo Data ===');
     
-    // Step 1: Initialize base44
-    console.log('Step 1: Initializing base44...');
     const base44 = createClientFromRequest(req);
-    
-    // Step 2: Get current user
-    console.log('Step 2: Getting current user...');
     const currentUser = await base44.auth.me();
+    
     console.log('Current user:', currentUser?.email, 'Role:', currentUser?.role);
     
-    // Step 3: Check admin
     if (currentUser?.role !== 'admin') {
-      console.log('ERROR: User is not admin');
       return Response.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
     }
     
-    console.log('Step 3: User is admin, proceeding...');
+    console.log('Creating demo data for current user:', currentUser.email);
     
-    // Step 4: Create first demo user
-    console.log('Step 4: Creating first demo user...');
-    const userEn = await base44.asServiceRole.entities.User.create({
-      full_name: "Demo Tenant EN",
-      email: `demo.en.${Date.now()}@leaseshield.asia`,
-      country: "Thailand",
-      language: "en",
-      subscription_status: "active",
-      plan_tier: "protect"
-    });
-    console.log('SUCCESS: Created EN user:', userEn.id);
-    
-    // Step 5: Create deposit for first user
-    console.log('Step 5: Creating deposit for EN user...');
-    const depositEn = await base44.asServiceRole.entities.DepositTracker.create({
-      created_by: userEn.email,
+    // Create deposit tracker
+    console.log('Step 1: Creating deposit tracker...');
+    const deposit1 = await base44.asServiceRole.entities.DepositTracker.create({
+      created_by: currentUser.email,
       deposit_amount: 45000,
       deposit_paid_date: "2025-08-01",
       expected_return_date: "2026-08-01",
       status: "tracking",
       property_address: "Unit 123, Sample Condo, Sukhumvit",
-      notes: "Seed: Demo deposit"
+      notes: "Demo: Standard condo - 3 months deposit"
     });
-    console.log('SUCCESS: Created deposit:', depositEn.id);
+    console.log('Created deposit:', deposit1.id);
     
-    // Step 6: Create simple lease
-    console.log('Step 6: Creating lease...');
-    const leaseEn = await base44.asServiceRole.entities.Lease.create({
-      created_by: userEn.email,
+    const deposit2 = await base44.asServiceRole.entities.DepositTracker.create({
+      created_by: currentUser.email,
+      deposit_amount: 30000,
+      deposit_paid_date: "2025-07-15",
+      expected_return_date: "2026-07-15",
+      status: "tracking",
+      property_address: "Room 456, Demo Apartment, Ladprao",
+      notes: "Demo: Apartment - tracking status"
+    });
+    console.log('Created deposit:', deposit2.id);
+    
+    // Create lease
+    console.log('Step 2: Creating lease...');
+    const lease = await base44.asServiceRole.entities.Lease.create({
+      created_by: currentUser.email,
       file_url: "inline://seed-demo-en",
       status: "uploaded",
       language_detected: "en",
@@ -59,38 +70,95 @@ Deno.serve(async (req) => {
       start_date: "2025-08-01",
       end_date: "2026-08-01"
     });
-    console.log('SUCCESS: Created lease:', leaseEn.id);
+    console.log('Created lease:', lease.id);
     
-    console.log('=== SUCCESS: Basic seed complete ===');
+    // AI Analysis
+    console.log('Step 3: Running AI analysis...');
+    const analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt: `Analyze this lease for risks. Extract risky clauses.
+
+Lease text:
+${SAMPLE_LEASE_EN}
+
+Return JSON with flags array and risk assessment.`,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          risk_score: { type: "integer", minimum: 0, maximum: 100 },
+          summary: { type: "string" },
+          top_flags: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                severity: { type: "string" },
+                category: { type: "string" },
+                description: { type: "string" }
+              }
+            }
+          }
+        }
+      }
+    });
+    console.log('AI analysis complete, risk score:', analysis.risk_score);
+    
+    // Create scan
+    console.log('Step 4: Creating lease scan...');
+    const scan = await base44.asServiceRole.entities.LeaseScan.create({
+      lease_id: lease.id,
+      risk_score: analysis.risk_score || 75,
+      flags: analysis.top_flags || [],
+      summary: analysis.summary || "Demo lease with multiple high-risk clauses requiring attention.",
+      scan_preview: analysis,
+      scan_full: { flags: analysis.top_flags || [], analysis: "Demo scan" },
+      version: "seed-v1"
+    });
+    console.log('Created scan:', scan.id);
+    
+    // Update lease status
+    await base44.asServiceRole.entities.Lease.update(lease.id, { status: "scanned" });
+    
+    // Create case
+    console.log('Step 5: Creating resolve case...');
+    const demoCase = await base44.asServiceRole.entities.Case.create({
+      created_by: currentUser.email,
+      lease_id: lease.id,
+      status: "active",
+      dispute_amount: 18000,
+      summary: "Demo: Deposit withheld due to unspecified cleaning fees. Landlord claiming damage without evidence.",
+      is_member_at_creation: true,
+      success_fee_rate: 10,
+      fast_track: true,
+      letter_pack: true
+    });
+    console.log('Created case:', demoCase.id);
+    
+    console.log('=== SUCCESS: Demo data seeded ===');
     
     return Response.json({ 
       success: true, 
-      message: "Basic demo data created successfully",
+      message: "Demo data created successfully for your account",
       results: {
-        users_created: 1,
-        deposits_created: 1,
+        users_created: 0,
+        deposits_created: 2,
         leases_created: 1,
-        scans_created: 0,
-        cases_created: 0
+        scans_created: 1,
+        cases_created: 1
       },
-      demo_user: {
-        email: userEn.email,
-        id: userEn.id
+      demo_credentials: {
+        note: "Demo data created for your current account: " + currentUser.email
       }
     });
 
   } catch (error) {
-    console.error('=== ERROR: Seed Demo Data Failed ===');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    console.error('Error object:', JSON.stringify(error, null, 2));
+    console.error('=== ERROR: Seed Failed ===');
+    console.error('Error:', error.message);
+    console.error('Stack:', error.stack);
     
     return Response.json({ 
       error: error.message || 'Unknown error',
-      errorName: error.name,
       details: error.stack,
-      step: 'Check function logs in dashboard for full details'
+      step: 'Check function logs for details'
     }, { status: 500 });
   }
 });
