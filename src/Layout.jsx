@@ -4,6 +4,7 @@ import { createPageUrl } from "@/utils";
 import { Home, Upload, Shield, FileText, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import LanguageToggle from "./components/shared/LanguageToggle";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -73,6 +74,19 @@ export default function Layout({ children, currentPageName }) {
           }
         }
       `}</style>
+
+      {/* Top Bar with Language Toggle */}
+      <div className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-6 h-6 text-blue-600" />
+            <span className="font-bold text-slate-900">
+              {language === 'th' ? 'ลีสชีลด์' : 'Lease Shield'}
+            </span>
+          </div>
+          <LanguageToggle />
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto pb-20 md:pb-24">
