@@ -121,12 +121,36 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Quick Actions - FIXED CTA */}
-        <div className="bg-gradient-to-r from-ls-forest to-emerald-800 rounded-2xl p-6 md:p-8 mb-8 shadow-xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-white">
-              <h2 className="text-2xl font-bold mb-2">{strings.protectRights}</h2>
-              <p className="text-emerald-50 text-sm md:text-base">
+        {/* Quick Actions - FIXED with inline styles */}
+        <div style={{
+          background: 'linear-gradient(to right, #0C3B2E, #047857)',
+          borderRadius: '16px',
+          padding: '32px',
+          marginBottom: '32px',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '24px',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ flex: 1, minWidth: '250px' }}>
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#FFFFFF',
+                marginBottom: '8px'
+              }}>
+                {strings.protectRights}
+              </h2>
+              <p style={{
+                fontSize: '16px',
+                color: '#D1FAE5',
+                lineHeight: '1.5'
+              }}>
                 {strings.uploadCta}
               </p>
             </div>
@@ -164,16 +188,39 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Upgrade Banner - FIXED CTA */}
+        {/* Upgrade Banner - FIXED with inline styles */}
         {user?.plan_tier === 'free' && (
-          <div className="mt-8 bg-gradient-to-r from-ls-gold to-amber-600 rounded-2xl p-6 md:p-8 shadow-xl">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="text-ls-charcoal">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-6 h-6" />
-                  <h3 className="text-xl font-bold">{strings.upgradePremium}</h3>
+          <div style={{
+            marginTop: '32px',
+            background: 'linear-gradient(to right, #C7A338, #d97706)',
+            borderRadius: '16px',
+            padding: '32px',
+            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '24px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ flex: 1, minWidth: '250px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <TrendingUp style={{ width: '24px', height: '24px', color: '#1A1D1F' }} />
+                  <h3 style={{
+                    fontSize: '20px',
+                    fontWeight: 'bold',
+                    color: '#1A1D1F'
+                  }}>
+                    {strings.upgradePremium}
+                  </h3>
                 </div>
-                <p className="text-ls-charcoal/80 text-sm">
+                <p style={{
+                  fontSize: '14px',
+                  color: '#292524',
+                  opacity: 0.8
+                }}>
                   {strings.upgradeDesc}
                 </p>
               </div>
