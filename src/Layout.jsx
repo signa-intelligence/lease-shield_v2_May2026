@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -16,6 +16,7 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const language = user?.language || 'en';
+  const isAdmin = user?.role === 'admin';
   
   const navTabs = [
     {
@@ -50,6 +51,16 @@ export default function Layout({ children, currentPageName }) {
     },
   ];
 
+  // Add Admin Console for admin users
+  if (isAdmin) {
+    navTabs.push({
+      key: "admin",
+      label: "Admin",
+      route: createPageUrl("AdminConsole"),
+      icon: Settings,
+    });
+  }
+
   const isActiveTab = (route) => {
     return location.pathname === route;
   };
@@ -83,6 +94,11 @@ export default function Layout({ children, currentPageName }) {
             <span className="font-bold text-slate-900">
               {language === 'th' ? 'ลีสชีลด์' : 'Lease Shield'}
             </span>
+            {isAdmin && (
+              <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded">
+                ADMIN
+              </span>
+            )}
           </div>
           <LanguageToggle />
         </div>
@@ -95,7 +111,7 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Bottom Navigation Tabs */}
       <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-2xl z-50">
-        <div className="flex items-center justify-around px-2 py-2 md:py-3">
+        <div className={`flex items-center justify-around px-2 py-2 md:py-3 ${isAdmin ? 'overflow-x-auto' : ''}`}>
           {navTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = isActiveTab(tab.route);
@@ -104,14 +120,14 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={tab.key}
                 to={tab.route}
-                className={`flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 flex-1 ${
+                className={`flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 flex-1 min-w-[60px] ${
                   isActive
                     ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105"
                     : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <Icon className={`w-5 h-5 mb-1 ${isActive ? 'animate-pulse' : ''}`} />
-                <span className="text-xs font-medium">{tab.label}</span>
+                <span className="text-xs font-medium whitespace-nowrap">{tab.label}</span>
               </Link>
             );
           })}
