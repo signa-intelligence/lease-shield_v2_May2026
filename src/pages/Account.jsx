@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Sparkles, Lock } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 
@@ -140,13 +140,13 @@ export default function Account() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
       <div className="max-w-5xl mx-auto">
-        {/* Animated Header */}
+        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div style={{
               width: '48px',
               height: '48px',
-              background: 'linear-gradient(135deg, #0C3B2E, #047857)',
+              backgroundColor: '#0C3B2E',
               borderRadius: '12px',
               display: 'flex',
               alignItems: 'center',
@@ -157,36 +157,22 @@ export default function Account() {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">My Account</h1>
-              <p className="text-slate-600 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-ls-gold" />
-                Manage your profile and subscription
-              </p>
+              <p className="text-slate-600">Manage your profile and subscription</p>
             </div>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
-          {/* Personal Information Card - Enhanced Design */}
+          {/* Personal Information Card */}
           <Card className="lg:col-span-2 border-none shadow-xl" style={{
-            background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)'
+            backgroundColor: '#FFFFFF'
           }}>
             <CardHeader className="border-b pb-4" style={{
-              background: 'linear-gradient(to right, #f1f5f9, #e2e8f0)',
-              borderRadius: '12px 12px 0 0'
+              backgroundColor: '#ECEFED'
             }}>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    background: 'linear-gradient(135deg, #0C3B2E, #047857)',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <Settings className="w-4 h-4 text-white" />
-                  </div>
+                  <Settings className="w-5 h-5 text-ls-forest" />
                   Personal Information
                 </CardTitle>
                 {!isEditing && (
@@ -204,11 +190,13 @@ export default function Account() {
                       transition: 'all 0.2s'
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#0C3B2E';
+                      e.target.style.backgroundColor = '#C7A338';
+                      e.target.style.borderColor = '#C7A338';
                       e.target.style.color = '#FFFFFF';
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.backgroundColor = '#FFFFFF';
+                      e.target.style.borderColor = '#0C3B2E';
                       e.target.style.color = '#0C3B2E';
                     }}
                   >
@@ -219,19 +207,19 @@ export default function Account() {
             </CardHeader>
             <CardContent className="p-6">
               {!isEditing ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Name Display */}
                   <div style={{
                     padding: '16px',
-                    background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
+                    backgroundColor: '#ECEFED',
                     borderRadius: '12px',
-                    border: '1px solid #bbf7d0'
+                    borderLeft: '4px solid #0C3B2E'
                   }}>
                     <div className="flex items-center gap-3">
                       <div style={{
                         width: '40px',
                         height: '40px',
-                        background: 'linear-gradient(135deg, #0C3B2E, #047857)',
+                        backgroundColor: '#0C3B2E',
                         borderRadius: '10px',
                         display: 'flex',
                         alignItems: 'center',
@@ -240,7 +228,7 @@ export default function Account() {
                         <User className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-emerald-700 mb-1">Full Name</p>
+                        <p className="text-xs font-semibold text-slate-500 mb-1">Full Name</p>
                         <p className="font-bold text-ls-charcoal text-lg">{user?.full_name}</p>
                       </div>
                     </div>
@@ -249,15 +237,15 @@ export default function Account() {
                   {/* Email Display */}
                   <div style={{
                     padding: '16px',
-                    background: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+                    backgroundColor: '#ECEFED',
                     borderRadius: '12px',
-                    border: '1px solid #bfdbfe'
+                    borderLeft: '4px solid #C7A338'
                   }}>
                     <div className="flex items-center gap-3">
                       <div style={{
                         width: '40px',
                         height: '40px',
-                        background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                        backgroundColor: '#C7A338',
                         borderRadius: '10px',
                         display: 'flex',
                         alignItems: 'center',
@@ -266,7 +254,7 @@ export default function Account() {
                         <Mail className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-blue-700 mb-1">Email</p>
+                        <p className="text-xs font-semibold text-slate-500 mb-1">Email</p>
                         <p className="font-bold text-ls-charcoal">{user?.email}</p>
                       </div>
                     </div>
@@ -275,15 +263,15 @@ export default function Account() {
                   {/* Phone Display */}
                   <div style={{
                     padding: '16px',
-                    background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                    backgroundColor: '#ECEFED',
                     borderRadius: '12px',
-                    border: '1px solid #fcd34d'
+                    borderLeft: '4px solid #0C3B2E'
                   }}>
                     <div className="flex items-center gap-3">
                       <div style={{
                         width: '40px',
                         height: '40px',
-                        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                        backgroundColor: '#0C3B2E',
                         borderRadius: '10px',
                         display: 'flex',
                         alignItems: 'center',
@@ -292,7 +280,7 @@ export default function Account() {
                         <Phone className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-amber-700 mb-1">Phone</p>
+                        <p className="text-xs font-semibold text-slate-500 mb-1">Phone</p>
                         <p className="font-bold text-ls-charcoal">{user?.phone || 'Not provided'}</p>
                       </div>
                     </div>
@@ -301,15 +289,15 @@ export default function Account() {
                   {/* Language Display */}
                   <div style={{
                     padding: '16px',
-                    background: 'linear-gradient(135deg, #fae8ff, #f3e8ff)',
+                    backgroundColor: '#ECEFED',
                     borderRadius: '12px',
-                    border: '1px solid #e9d5ff'
+                    borderLeft: '4px solid #1A1D1F'
                   }}>
                     <div className="flex items-center gap-3">
                       <div style={{
                         width: '40px',
                         height: '40px',
-                        background: 'linear-gradient(135deg, #a855f7, #9333ea)',
+                        backgroundColor: '#1A1D1F',
                         borderRadius: '10px',
                         display: 'flex',
                         alignItems: 'center',
@@ -318,7 +306,7 @@ export default function Account() {
                         <Globe className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-purple-700 mb-1">Language</p>
+                        <p className="text-xs font-semibold text-slate-500 mb-1">Language</p>
                         <p className="font-bold text-ls-charcoal">
                           {user?.language === 'th' ? 'ไทย (Thai)' : 'English'}
                         </p>
@@ -330,7 +318,7 @@ export default function Account() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Name Input */}
                   <div>
-                    <Label htmlFor="full_name" className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                    <Label htmlFor="full_name" className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
                       <User className="w-4 h-4 text-ls-forest" />
                       Full Name
                     </Label>
@@ -340,7 +328,7 @@ export default function Account() {
                       onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                       placeholder="Your full name"
                       style={{
-                        border: '2px solid #e2e8f0',
+                        border: '2px solid #ECEFED',
                         borderRadius: '8px',
                         padding: '10px 12px',
                         fontSize: '14px'
@@ -350,25 +338,25 @@ export default function Account() {
 
                   {/* Email Display (Read-only) */}
                   <div>
-                    <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-blue-600" />
+                    <Label className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-ls-gold" />
                       Email
                     </Label>
                     <div style={{
                       padding: '10px 12px',
-                      backgroundColor: '#f1f5f9',
+                      backgroundColor: '#ECEFED',
                       borderRadius: '8px',
-                      border: '2px solid #e2e8f0',
+                      border: '2px solid #ECEFED',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px'
                     }}>
                       <Lock className="w-4 h-4 text-slate-400" />
-                      <span style={{ color: '#64748b', fontSize: '14px' }}>{user?.email}</span>
+                      <span style={{ color: '#1A1D1F', fontSize: '14px' }}>{user?.email}</span>
                       <span style={{
                         marginLeft: 'auto',
                         fontSize: '11px',
-                        color: '#94a3b8',
+                        color: '#64748b',
                         fontStyle: 'italic'
                       }}>
                         Cannot be changed
@@ -378,8 +366,8 @@ export default function Account() {
 
                   {/* Phone Input */}
                   <div>
-                    <Label htmlFor="phone" className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-amber-600" />
+                    <Label htmlFor="phone" className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-ls-forest" />
                       Phone Number
                     </Label>
                     <Input
@@ -388,7 +376,7 @@ export default function Account() {
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       placeholder="+66 XX XXX XXXX"
                       style={{
-                        border: '2px solid #e2e8f0',
+                        border: '2px solid #ECEFED',
                         borderRadius: '8px',
                         padding: '10px 12px',
                         fontSize: '14px'
@@ -398,8 +386,8 @@ export default function Account() {
 
                   {/* Country Input */}
                   <div>
-                    <Label htmlFor="country" className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-purple-600" />
+                    <Label htmlFor="country" className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-ls-forest" />
                       Country
                     </Label>
                     <Input
@@ -408,7 +396,7 @@ export default function Account() {
                       onChange={(e) => setFormData({...formData, country: e.target.value})}
                       placeholder="Thailand"
                       style={{
-                        border: '2px solid #e2e8f0',
+                        border: '2px solid #ECEFED',
                         borderRadius: '8px',
                         padding: '10px 12px',
                         fontSize: '14px'
@@ -418,7 +406,7 @@ export default function Account() {
 
                   {/* Language Select */}
                   <div>
-                    <Label htmlFor="language" className="text-sm font-semibold text-slate-700 mb-2">Language</Label>
+                    <Label htmlFor="language" className="text-sm font-semibold text-ls-charcoal mb-2">Language</Label>
                     <Select value={formData.language} onValueChange={(value) => setFormData({...formData, language: value})}>
                       <SelectTrigger>
                         <SelectValue />
@@ -441,7 +429,7 @@ export default function Account() {
                         fontWeight: 'bold',
                         fontSize: '16px',
                         border: 'none',
-                        background: 'linear-gradient(135deg, #0C3B2E, #047857)',
+                        backgroundColor: '#0C3B2E',
                         color: '#FFFFFF',
                         cursor: 'pointer',
                         boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)',
@@ -452,10 +440,12 @@ export default function Account() {
                         gap: '8px'
                       }}
                       onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#C7A338';
                         e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 6px 8px rgba(12, 59, 46, 0.4)';
+                        e.target.style.boxShadow = '0 6px 8px rgba(199, 163, 56, 0.4)';
                       }}
                       onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = '#0C3B2E';
                         e.target.style.transform = 'translateY(0)';
                         e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
                       }}
@@ -471,19 +461,17 @@ export default function Account() {
                         borderRadius: '8px',
                         fontWeight: 'bold',
                         fontSize: '16px',
-                        border: '2px solid #e2e8f0',
+                        border: '2px solid #ECEFED',
                         backgroundColor: '#FFFFFF',
-                        color: '#64748b',
+                        color: '#1A1D1F',
                         cursor: 'pointer',
                         transition: 'all 0.2s'
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#f8fafc';
-                        e.target.style.borderColor = '#cbd5e1';
+                        e.target.style.backgroundColor = '#ECEFED';
                       }}
                       onMouseLeave={(e) => {
                         e.target.style.backgroundColor = '#FFFFFF';
-                        e.target.style.borderColor = '#e2e8f0';
                       }}
                     >
                       Cancel
@@ -494,26 +482,15 @@ export default function Account() {
             </CardContent>
           </Card>
 
-          {/* Current Plan Card - Enhanced */}
+          {/* Current Plan Card */}
           <Card className="border-none shadow-xl overflow-hidden" style={{
-            background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)'
+            backgroundColor: '#FFFFFF'
           }}>
             <CardHeader className="border-b pb-4" style={{
-              background: 'linear-gradient(to right, #f1f5f9, #e2e8f0)',
-              borderRadius: '12px 12px 0 0'
+              backgroundColor: '#ECEFED'
             }}>
               <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  background: 'linear-gradient(135deg, #0C3B2E, #047857)',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Shield className="w-4 h-4 text-white" />
-                </div>
+                <Shield className="w-5 h-5 text-ls-forest" />
                 Current Plan
               </CardTitle>
             </CardHeader>
@@ -534,34 +511,22 @@ export default function Account() {
               
               {isFree ? (
                 <div className="space-y-3">
-                  <div style={{ padding: '12px', backgroundColor: '#FEF3C7', borderRadius: '8px', border: '1px solid #FCD34D' }}>
-                    <p style={{ fontSize: '14px', color: '#92400E', fontWeight: '600', marginBottom: '8px' }}>
+                  <div style={{ padding: '12px', backgroundColor: '#ECEFED', borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
+                    <p style={{ fontSize: '14px', color: '#1A1D1F', fontWeight: '600', marginBottom: '8px' }}>
                       Free Plan Includes:
                     </p>
-                    <ul style={{ fontSize: '12px', color: '#B45309', lineHeight: '1.5' }}>
+                    <ul style={{ fontSize: '12px', color: '#1A1D1F', lineHeight: '1.5' }}>
                       <li>• 1 Lease Scan</li>
                       <li>• Basic Risk Report</li>
                       <li>• Limited Features</li>
-                    </ul>
-                  </div>
-                  <div style={{ padding: '12px', backgroundColor: '#DBEAFE', borderRadius: '8px', border: '1px solid #93C5FD' }}>
-                    <p style={{ fontSize: '14px', color: '#1E40AF', fontWeight: '600', marginBottom: '4px' }}>
-                      🚀 Upgrade to get:
-                    </p>
-                    <ul style={{ fontSize: '12px', color: '#1E3A8A', lineHeight: '1.5' }}>
-                      <li>• Unlimited AI Scans</li>
-                      <li>• Deposit Shield Tracker</li>
-                      <li>• Automated Reminders</li>
-                      <li>• Letter Templates</li>
-                      <li>• LINE Notifications</li>
                     </ul>
                   </div>
                   <button 
                     style={{
                       width: '100%',
                       padding: '12px 16px',
-                      background: 'linear-gradient(to right, #C7A338, #d4af37)',
-                      color: '#1A1D1F',
+                      backgroundColor: '#C7A338',
+                      color: '#FFFFFF',
                       borderRadius: '8px',
                       fontWeight: 'bold',
                       fontSize: '14px',
@@ -571,24 +536,24 @@ export default function Account() {
                       transition: 'all 0.2s'
                     }}
                     onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
-                    onMouseEnter={(e) => e.target.style.background = 'linear-gradient(to right, #d4af37, #C7A338)'}
-                    onMouseLeave={(e) => e.target.style.background = 'linear-gradient(to right, #C7A338, #d4af37)'}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
                   >
                     Upgrade Now
                   </button>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                    <p className="text-sm text-emerald-800 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4" />
+                  <div style={{ padding: '12px', backgroundColor: '#ECEFED', borderRadius: '8px', borderLeft: '4px solid #0C3B2E' }}>
+                    <p className="text-sm text-ls-charcoal flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-ls-forest" />
                       All features active
                     </p>
                   </div>
                   {(currentPlanTier === 'protect' || currentPlanTier === 'secure') && (
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-xs text-blue-800 flex items-center gap-1">
-                        <Bell className="w-3 h-3" />
+                    <div style={{ padding: '12px', backgroundColor: '#ECEFED', borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
+                      <p className="text-xs text-ls-charcoal flex items-center gap-1">
+                        <Bell className="w-3 h-3 text-ls-gold" />
                         LINE reminders enabled
                       </p>
                     </div>
@@ -631,7 +596,7 @@ export default function Account() {
                       top: 0,
                       right: 0,
                       backgroundColor: '#C7A338',
-                      color: '#1A1D1F',
+                      color: '#FFFFFF',
                       fontSize: '12px',
                       fontWeight: 'bold',
                       padding: '4px 12px',
@@ -679,7 +644,7 @@ export default function Account() {
                           alignItems: 'flex-start', 
                           gap: '8px',
                           fontSize: '14px',
-                          color: '#334155'
+                          color: '#1A1D1F'
                         }}>
                           <CheckCircle2 style={{ 
                             width: '16px', 
@@ -703,9 +668,9 @@ export default function Account() {
                           borderRadius: '8px',
                           fontWeight: 'bold',
                           fontSize: '16px',
-                          border: '2px solid #D1D5DB',
-                          backgroundColor: '#F3F4F6',
-                          color: '#9CA3AF',
+                          border: '2px solid #ECEFED',
+                          backgroundColor: '#ECEFED',
+                          color: '#64748b',
                           cursor: 'not-allowed'
                         }}
                       >
