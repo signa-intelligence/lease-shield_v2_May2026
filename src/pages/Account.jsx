@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +15,6 @@ const PLAN_DETAILS = [
     label: 'Lite',
     price: '฿390',
     priceNum: 390,
-    paymentLink: 'https://buy.stripe.com/YOUR_LITE_LINK',  // Get from Stripe Dashboard
     interval: '/month',
     benefits: [
       'Full AI Lease Reports',
@@ -33,7 +31,6 @@ const PLAN_DETAILS = [
     label: 'Protect',
     price: '฿690',
     priceNum: 690,
-    paymentLink: 'https://buy.stripe.com/YOUR_PROTECT_LINK',
     interval: '/month',
     benefits: [
       'Everything in Lite',
@@ -52,7 +49,6 @@ const PLAN_DETAILS = [
     label: 'Secure',
     price: '฿1,290',
     priceNum: 1290,
-    paymentLink: 'https://buy.stripe.com/YOUR_SECURE_LINK',
     interval: '/month',
     benefits: [
       'Everything in Protect',
@@ -105,24 +101,9 @@ export default function Account() {
     updateProfileMutation.mutate(formData);
   };
 
-  const handleSubscribe = async (planKey) => {
-    const plan = PLAN_DETAILS.find(p => p.key === planKey);
-    if (!plan) {
-      console.error('Plan not found for key:', planKey);
-      alert('Selected plan not found. Please try again.');
-      return;
-    }
-
-    // Ensure user data is available before proceeding
-    if (!user || !user.email) {
-      console.error('User email missing for checkout. User:', user);
-      alert('Unable to initiate checkout: User email is incomplete. Please log in again.');
-      return;
-    }
-
-    // Redirect to Stripe Payment Link with prefilled email
-    const checkoutUrl = `${plan.paymentLink}?prefilled_email=${encodeURIComponent(user.email)}`;
-    window.location.href = checkoutUrl;
+  const handleSubscribe = (planKey) => {
+    // In production, this would redirect to Stripe Checkout
+    alert(`Subscription to ${planKey} plan will be implemented with Stripe Checkout`);
   };
 
   return (
