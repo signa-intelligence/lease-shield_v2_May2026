@@ -51,7 +51,6 @@ export default function Layout({ children, currentPageName }) {
     },
   ];
 
-  // Add Admin Console for admin users
   if (isAdmin) {
     navTabs.push({
       key: "admin",
@@ -66,13 +65,27 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen flex flex-col bg-ls-stone">
       <style>{`
         :root {
-          --primary: 222.2 47.4% 31.2%;
-          --primary-foreground: 210 40% 98%;
-          --accent: 160 84.1% 39.4%;
+          --ls-forest: #0C3B2E;
+          --ls-gold: #C7A338;
+          --ls-charcoal: #1A1D1F;
+          --ls-stone: #ECEFED;
+          --ls-white: #FFFFFF;
+          
+          --primary: 166 60% 15%;
+          --primary-foreground: 0 0% 100%;
+          --accent: 45 55% 50%;
           --accent-foreground: 0 0% 100%;
+        }
+        
+        body {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+          font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
         }
         
         @media (min-width: 768px) {
@@ -86,16 +99,20 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Top Bar with Language Toggle */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
+      {/* Top Bar with Logo */}
+      <div className="bg-white border-b border-ls-stone shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-blue-600" />
-            <span className="font-bold text-slate-900">
-              {language === 'th' ? 'ลีสชีลด์' : 'Lease Shield'}
+          <div className="flex items-center gap-3">
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
+              alt="Lease Shield"
+              className="h-8 w-8"
+            />
+            <span className="font-bold text-ls-forest text-lg">
+              {language === 'th' ? 'ลีสชีลด์' : 'LEASE SHIELD'}
             </span>
             {isAdmin && (
-              <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded">
+              <span className="ml-2 px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded">
                 ADMIN
               </span>
             )}
@@ -110,7 +127,7 @@ export default function Layout({ children, currentPageName }) {
       </main>
 
       {/* Bottom Navigation Tabs */}
-      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-2xl z-50">
+      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-ls-stone shadow-2xl z-50">
         <div className={`flex items-center justify-around px-2 py-2 md:py-3 ${isAdmin ? 'overflow-x-auto' : ''}`}>
           {navTabs.map((tab) => {
             const Icon = tab.icon;
@@ -122,8 +139,8 @@ export default function Layout({ children, currentPageName }) {
                 to={tab.route}
                 className={`flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 flex-1 min-w-[60px] ${
                   isActive
-                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105"
-                    : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-ls-forest text-white shadow-lg scale-105"
+                    : "text-ls-charcoal hover:bg-ls-stone"
                 }`}
               >
                 <Icon className={`w-5 h-5 mb-1 ${isActive ? 'animate-pulse' : ''}`} />
@@ -135,7 +152,7 @@ export default function Layout({ children, currentPageName }) {
       </nav>
 
       {/* Disclaimer Footer */}
-      <div className="fixed bottom-20 md:bottom-24 left-0 right-0 bg-slate-800/95 backdrop-blur-sm text-white py-2 px-4 text-center z-40">
+      <div className="fixed bottom-20 md:bottom-24 left-0 right-0 bg-ls-charcoal/95 backdrop-blur-sm text-white py-2 px-4 text-center z-40">
         <p className="text-xs opacity-90">
           {language === 'th' 
             ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
