@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -89,6 +88,11 @@ export default function Layout({ children, currentPageName }) {
           font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
         }
         
+        /* Bottom tabs styling with safe area support */
+        .bottom-tabs {
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        
         @media (min-width: 768px) {
           .bottom-tabs {
             max-width: 600px;
@@ -96,6 +100,7 @@ export default function Layout({ children, currentPageName }) {
             transform: translateX(-50%);
             border-radius: 24px;
             margin-bottom: 16px;
+            padding-bottom: 0;
           }
         }
       `}</style>
@@ -122,28 +127,32 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto pb-32 md:pb-36">
+      {/* Main Content - Adjusted padding to account for bottom nav */}
+      <main className="flex-1 overflow-auto" style={{
+        paddingBottom: `calc(${isAdmin ? '100px' : '96px'} + env(safe-area-inset-bottom, 0px))`
+      }}>
         {children}
       </main>
 
-      {/* Disclaimer Footer - Clean design with forest green text */}
+      {/* Disclaimer Footer - Positioned above bottom nav */}
       <div style={{
         position: 'fixed',
-        bottom: isAdmin ? '84px' : '80px',
+        bottom: `calc(${isAdmin ? '84px' : '80px'} + env(safe-area-inset-bottom, 0px))`,
         left: 0,
         right: 0,
         padding: '12px 16px',
         textAlign: 'center',
         zIndex: 40,
-        backgroundColor: 'transparent'
+        backgroundColor: 'transparent',
+        pointerEvents: 'none'
       }}>
         <p style={{
           fontSize: '11px',
           fontWeight: '500',
           margin: 0,
           color: '#0C3B2E',
-          opacity: 0.8
+          opacity: 0.8,
+          pointerEvents: 'auto'
         }}>
           {language === 'th' 
             ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
@@ -162,9 +171,9 @@ export default function Layout({ children, currentPageName }) {
         </p>
       </div>
 
-      {/* Bottom Navigation Tabs */}
+      {/* Bottom Navigation Tabs - Now with safe area padding */}
       <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-ls-stone shadow-2xl z-50">
-        <div className={`flex items-center justify-around px-2 py-2 md:py-3 ${isAdmin ? 'overflow-x-auto' : ''}`}>
+        <div className={`flex items-center justify-around px-2 pt-2 pb-2 ${isAdmin ? 'overflow-x-auto' : ''}`}>
           {navTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = isActiveTab(tab.route);
