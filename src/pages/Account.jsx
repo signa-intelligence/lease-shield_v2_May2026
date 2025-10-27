@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, FileText, Download, Loader2, AlertCircle } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2 } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
+import { createPageUrl } from "@/utils";
 
 const PLAN_DETAILS = [
   {
@@ -141,7 +141,6 @@ export default function Account() {
     try {
       const response = await base44.functions.invoke('exportUserData');
       
-      // Create blob from response data
       const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -161,16 +160,6 @@ export default function Account() {
 
   const currentPlanTier = user?.plan_tier || 'free';
   const isFree = currentPlanTier === 'free';
-
-  // Helper function for page URLs (assuming simple routing or external links)
-  const createPageUrl = (pageName) => {
-    switch (pageName) {
-      case "PrivacyPolicy":
-        return "https://www.leaseshield.asia/privacy-policy"; // Replace with actual URL
-      default:
-        return "#";
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
@@ -599,7 +588,7 @@ export default function Account() {
           </Card>
         </div>
 
-        {/* Data Privacy & Rights Section - NEW */}
+        {/* Data Privacy & Rights Section */}
         <Card className="mb-6 border-none shadow-xl">
           <CardHeader className="border-b" style={{ backgroundColor: '#ECEFED' }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
@@ -616,7 +605,7 @@ export default function Account() {
                 borderRadius: '12px',
                 borderLeft: '4px solid #0C3B2E'
               }}>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-3">
                   <div className="flex items-center gap-3">
                     <div style={{
                       width: '40px',
@@ -668,7 +657,7 @@ export default function Account() {
                 borderRadius: '12px',
                 borderLeft: '4px solid #C7A338'
               }}>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-3">
                   <div className="flex items-center gap-3">
                     <div style={{
                       width: '40px',
@@ -797,7 +786,6 @@ export default function Account() {
                     </div>
                   )}
                   
-                  {/* Header with plan name and price */}
                   <div style={{
                     backgroundColor: plan.bgColor,
                     padding: '24px',
@@ -819,7 +807,6 @@ export default function Account() {
                     </div>
                   </div>
 
-                  {/* Benefits list */}
                   <div style={{ padding: '24px' }}>
                     <ul style={{ 
                       listStyle: 'none', 
@@ -849,7 +836,6 @@ export default function Account() {
                       ))}
                     </ul>
                     
-                    {/* Subscribe button */}
                     {isCurrentPlan ? (
                       <button
                         disabled
