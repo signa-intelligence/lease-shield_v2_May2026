@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -261,30 +262,58 @@ export default function Account() {
                 )}
               </div>
               
-              {user?.plan_tier !== 'free' && user?.subscription_status === 'active' ? (
-                <div className="space-y-2">
-                  <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                    <p className="text-sm text-emerald-800 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4" />
-                      All features active
+              {user?.plan_tier === 'free' ? (
+                <div className="space-y-3">
+                  <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                    <p className="text-sm text-amber-800 font-semibold mb-2">
+                      Free Plan Includes:
                     </p>
+                    <ul className="text-xs text-amber-700 space-y-1">
+                      <li>• 1 Lease Scan</li>
+                      <li>• Basic Risk Report</li>
+                      <li>• Limited Features</li>
+                    </ul>
                   </div>
-                  {(user?.plan_tier === 'protect' || user?.plan_tier === 'secure') && (
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-xs text-blue-800 flex items-center gap-1">
-                        <Bell className="w-3 h-3" />
-                        LINE reminders enabled
-                      </p>
-                    </div>
-                  )}
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800 font-semibold mb-1">
+                      🚀 Upgrade to get:
+                    </p>
+                    <ul className="text-xs text-blue-700 space-y-1">
+                      <li>• Unlimited AI Scans</li>
+                      <li>• Deposit Shield Tracker</li>
+                      <li>• Automated Reminders</li>
+                      <li>• Letter Templates</li>
+                      <li>• LINE Notifications</li>
+                    </ul>
+                  </div>
+                  <button 
+                    className="w-full px-4 py-3 bg-gradient-to-r from-ls-gold to-amber-600 hover:from-amber-600 hover:to-ls-gold text-ls-charcoal rounded-lg font-bold shadow-lg transition-all"
+                    onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    Upgrade Now
+                  </button>
                 </div>
               ) : (
-                <Button 
-                  className="w-full bg-gradient-to-r from-ls-gold to-amber-600 hover:from-amber-600 hover:to-ls-gold text-ls-charcoal font-bold"
-                  onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  Upgrade Now
-                </Button>
+                <div className="space-y-2">
+                  {user?.plan_tier !== 'free' && user?.subscription_status === 'active' ? (
+                    <div className="space-y-2">
+                      <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <p className="text-sm text-emerald-800 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" />
+                          All features active
+                        </p>
+                      </div>
+                      {(user?.plan_tier === 'protect' || user?.plan_tier === 'secure') && (
+                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <p className="text-xs text-blue-800 flex items-center gap-1">
+                            <Bell className="w-3 h-3" />
+                            LINE reminders enabled
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
               )}
             </CardContent>
           </Card>
