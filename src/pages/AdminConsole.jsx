@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -153,7 +154,7 @@ export default function AdminConsole() {
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-slate-600 mb-4">
-              Create demo users with pre-analyzed leases, deposit trackers, and case data for testing.
+              Create demo leases, deposit trackers, and cases for testing.
             </p>
             <div className="flex gap-3">
               <Button
@@ -213,17 +214,14 @@ export default function AdminConsole() {
                 <AlertDescription className="text-emerald-800">
                   <div className="font-semibold mb-2">Demo data seeded successfully!</div>
                   <div className="text-sm space-y-1">
-                    <p>✓ {seedResult.results?.users_created || 0} demo users created</p>
-                    <p>✓ {seedResult.results?.leases_created || 0} leases with AI analysis</p>
                     <p>✓ {seedResult.results?.deposits_created || 0} deposit trackers</p>
+                    <p>✓ {seedResult.results?.leases_created || 0} leases with AI analysis</p>
                     <p>✓ {seedResult.results?.scans_created || 0} lease scans completed</p>
                     <p>✓ {seedResult.results?.cases_created || 0} resolve cases</p>
                   </div>
-                  {seedResult.demo_credentials && (
+                  {seedResult.demo_credentials?.note && (
                     <div className="mt-3 p-3 bg-white rounded border border-emerald-300">
-                      <p className="font-semibold text-xs mb-2">Demo User Credentials:</p>
-                      <p className="text-xs">EN: {seedResult.demo_credentials.en.email}</p>
-                      <p className="text-xs">TH: {seedResult.demo_credentials.th.email}</p>
+                      <p className="text-xs text-slate-600">{seedResult.demo_credentials.note}</p>
                     </div>
                   )}
                 </AlertDescription>
