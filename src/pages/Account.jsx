@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -240,8 +239,8 @@ export default function Account() {
             </CardContent>
           </Card>
 
-          {/* Current Plan Summary */}
-          <Card className="border-none shadow-xl">
+          {/* Current Plan Summary - FIXED VERSION */}
+          <Card className="border-none shadow-xl overflow-hidden">
             <CardHeader className="border-b pb-4">
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <Shield className="w-5 h-5 text-ls-forest" />
@@ -250,8 +249,10 @@ export default function Account() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-center mb-4">
-                <PlanBadge tier={user?.plan_tier} />
-                <p className="text-3xl font-bold text-ls-charcoal mt-3">
+                <div className="mb-3">
+                  <PlanBadge tier={user?.plan_tier} />
+                </div>
+                <p className="text-3xl font-bold text-ls-charcoal">
                   {user?.plan_tier === 'free' ? 'Free' : 
                    PLAN_DETAILS.find(p => p.key === user?.plan_tier)?.price || '—'}
                 </p>
@@ -287,8 +288,21 @@ export default function Account() {
                     </ul>
                   </div>
                   <button 
-                    className="w-full px-4 py-3 bg-gradient-to-r from-ls-gold to-amber-600 hover:from-amber-600 hover:to-ls-gold text-ls-charcoal rounded-lg font-bold shadow-lg transition-all"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: 'linear-gradient(to right, #C7A338, #d4af37)',
+                      color: '#1A1D1F',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                      transition: 'all 0.2s'
+                    }}
                     onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
+                    onMouseEnter={(e) => e.target.style.background = 'linear-gradient(to right, #d4af37, #C7A338)'}
+                    onMouseLeave={(e) => e.target.style.background = 'linear-gradient(to right, #C7A338, #d4af37)'}
                   >
                     Upgrade Now
                   </button>
