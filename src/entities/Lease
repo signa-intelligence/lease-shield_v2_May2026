@@ -1,0 +1,99 @@
+{
+  "name": "Lease",
+  "type": "object",
+  "properties": {
+    "file_url": {
+      "type": "string",
+      "description": "URL to the uploaded lease document"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "uploaded",
+        "scanned",
+        "paid"
+      ],
+      "default": "uploaded",
+      "description": "Current processing status"
+    },
+    "language_detected": {
+      "type": "string",
+      "enum": [
+        "en",
+        "th",
+        "mixed"
+      ],
+      "description": "Language detected in the lease"
+    },
+    "property_address": {
+      "type": "string",
+      "description": "Property address from lease"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Lease start date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Lease end date"
+    },
+    "rent_amount": {
+      "type": "number",
+      "description": "Monthly rent amount"
+    },
+    "deposit_amount": {
+      "type": "number",
+      "description": "Security deposit amount"
+    }
+  },
+  "required": [
+    "file_url"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": {
+          "$ne": "guest"
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
