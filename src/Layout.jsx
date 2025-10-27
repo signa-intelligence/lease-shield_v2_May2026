@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -147,6 +148,17 @@ export default function Layout({ children, currentPageName }) {
           {language === 'th' 
             ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
             : "We are not a law firm and do not provide legal advice."}
+          {" • "}
+          <Link 
+            to={createPageUrl("PrivacyPolicy")}
+            style={{
+              color: '#0C3B2E',
+              textDecoration: 'underline',
+              fontWeight: '600'
+            }}
+          >
+            {language === 'th' ? 'นโยบายความเป็นส่วนตัว' : 'Privacy Policy'}
+          </Link>
         </p>
       </div>
 
