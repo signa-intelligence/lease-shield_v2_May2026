@@ -170,9 +170,25 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </nav>
 
-      {/* Disclaimer Footer */}
-      <div className="fixed bottom-20 md:bottom-24 left-0 right-0 bg-ls-charcoal/95 backdrop-blur-sm text-white py-2 px-4 text-center z-40">
-        <p className="text-xs opacity-90">
+      {/* Disclaimer Footer - FIXED with inline styles */}
+      <div style={{
+        position: 'fixed',
+        bottom: isAdmin ? '84px' : '80px',
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(26, 29, 31, 0.95)',
+        backdropFilter: 'blur(8px)',
+        color: '#FFFFFF',
+        padding: '8px 16px',
+        textAlign: 'center',
+        zIndex: 40
+      }}>
+        <p style={{
+          fontSize: '12px',
+          opacity: 0.9,
+          margin: 0,
+          color: '#FFFFFF'
+        }}>
           {language === 'th' 
             ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
             : "We are not a law firm and do not provide legal advice."}
