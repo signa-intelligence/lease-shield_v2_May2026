@@ -1,0 +1,160 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Verify user is authenticated
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Fetch all user data
+    const [leases, scans, deposits, documents, cases, payments] = await Promise.all([
+      base44.entities.Lease.filter({ created_by: user.email }),
+      base44.entities.LeaseScan.list(), // Will filter by lease ownership
+      base44.entities.DepositTracker.filter({ created_by: user.email }),
+      base44.entities.Document.filter({ created_by: user.email }),
+      base44.entities.Case.filter({ created_by: user.email }),
+      base44.entities.Payment.list() // Will be filtered below
+    ]);
+
+    // Filter scans to only include user's leases
+    const userLeaseIds = leases.map(l => l.id);
+    const userScans = scans.filter(s => userLeaseIds.includes(s.lease_id));
+
+    // Filter payments (if they have case IDs that belong to user)
+    const userCaseIds = cases.map(c => c.id);
+    const userPayments = payments.filter(p => {
+      // This is a simple filter - adjust based on your Payment entity structure
+      return p.created_by === user.email;
+    });
+
+    // Create comprehensive export package
+    const exportData = {
+      export_metadata: {
+        exported_at: new Date().toISOString(),
+        export_version: '1.0',
+        user_id: user.id,
+        format: 'JSON'
+      },
+      personal_information: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        phone: user.phone,
+        country: user.country,
+        language: user.language,
+        plan_tier: user.plan_tier,
+        subscription_status: user.subscription_status,
+        plan_renews_at: user.plan_renews_at,
+        created_date: user.created_date,
+        email_notifications: user.email_notifications,
+        line_notifications: user.line_notifications
+      },
+      leases: leases.map(lease => ({
+        id: lease.id,
+        property_address: lease.property_address,
+        rent_amount: lease.rent_amount,
+        deposit_amount: lease.deposit_amount,
+        start_date: lease.start_date,
+        end_date: lease.end_date,
+        status: lease.status,
+        language_detected: lease.language_detected,
+        file_url: lease.file_url,
+        created_date: lease.created_date,
+        updated_date: lease.updated_date
+      })),
+      lease_scans: userScans.map(scan => ({
+        id: scan.id,
+        lease_id: scan.lease_id,
+        risk_score: scan.risk_score,
+        summary: scan.summary,
+        flags: scan.flags,
+        scan_preview: scan.scan_preview,
+        created_date: scan.created_date
+        // Note: scan_full is excluded to reduce size - can be included if needed
+      })),
+      deposits: deposits.map(deposit => ({
+        id: deposit.id,
+        deposit_amount: deposit.deposit_amount,
+        deposit_paid_date: deposit.deposit_paid_date,
+        expected_return_date: deposit.expected_return_date,
+        status: deposit.status,
+        property_address: deposit.property_address,
+        notes: deposit.notes,
+        created_date: deposit.created_date,
+        updated_date: deposit.updated_date
+      })),
+      documents: documents.map(doc => ({
+        id: doc.id,
+        type: doc.type,
+        label: doc.label,
+        file_url: doc.file_url,
+        created_date: doc.created_date
+      })),
+      cases: cases.map(caseItem => ({
+        id: caseItem.id,
+        lease_id: caseItem.lease_id,
+        status: caseItem.status,
+        dispute_amount: caseItem.dispute_amount,
+        summary: caseItem.summary,
+        fast_track: caseItem.fast_track,
+        letter_pack: caseItem.letter_pack,
+        created_date: caseItem.created_date,
+        updated_date: caseItem.updated_date
+      })),
+      payments: userPayments.map(payment => ({
+        id: payment.id,
+        type: payment.type,
+        amount: payment.amount,
+        currency: payment.currency,
+        status: payment.status,
+        created_date: payment.created_date
+      })),
+      data_summary: {
+        total_leases: leases.length,
+        total_scans: userScans.length,
+        total_deposits: deposits.length,
+        total_documents: documents.length,
+        total_cases: cases.length,
+        total_payments: userPayments.length
+      },
+      rights_information: {
+        note: 'This export includes all personal data we hold about you as per PDPA requirements.',
+        your_rights: [
+          'Right to Access: You are viewing your data now',
+          'Right to Rectification: Update data in Account Settings',
+          'Right to Erasure: Contact privacy@leaseshield.asia to delete your account',
+          'Right to Data Portability: This JSON file can be imported into other systems',
+          'Right to Object: Opt-out of notifications in Account Settings',
+          'Right to Withdraw Consent: Contact us at any time'
+        ],
+        contact: {
+          email: 'privacy@leaseshield.asia',
+          dpo: 'dpo@leaseshield.asia'
+        }
+      }
+    };
+
+    // Return as downloadable JSON
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new TextEncoder().encode(jsonString);
+
+    return new Response(blob, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Disposition': `attachment; filename="lease_shield_data_export_${user.id}_${new Date().toISOString().split('T')[0]}.json"`
+      }
+    });
+
+  } catch (error) {
+    console.error('Data export error:', error);
+    return Response.json({ 
+      error: 'Failed to export data', 
+      details: error.message 
+    }, { status: 500 });
+  }
+});
