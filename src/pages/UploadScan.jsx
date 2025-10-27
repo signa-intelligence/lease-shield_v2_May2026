@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -24,6 +25,8 @@ export default function UploadScan() {
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
+
+  const language = user?.language || 'en';
 
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
@@ -52,7 +55,7 @@ export default function UploadScan() {
     const file = files[0];
     
     if (!file.type.includes('pdf') && !file.type.includes('image')) {
-      setError('Please upload a PDF or image file');
+      setError(language === 'th' ? 'กรุณาอัปโหลดไฟล์ PDF หรือรูปภาพ' : 'Please upload a PDF or image file');
       return;
     }
 
@@ -68,65 +71,111 @@ export default function UploadScan() {
 
       setAnalyzing(true);
       
-      const scanResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this lease agreement thoroughly and extract key information. Identify any potential issues or unfair clauses that could harm the tenant. 
-        
-        Provide:
-        1. A risk score from 0-100 (0 = very safe, 100 = very risky)
-        2. List of flags with severity (critical, high, medium, low), category, and description
-        3. A summary of the overall lease quality
-        4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)`,
+      // Step 1: Extract and classify clauses
+      const analysisResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are an assistant that analyzes Thai/English residential lease contracts.
+Extract risky/illegal/unfair clauses, missing protections, and compliance gaps.
+
+IMPORTANT:
+- Keep neutral, not anti-landlord.
+- This is documentation guidance, not legal advice.
+- If text is Thai, respond primarily in Thai with short English gloss.
+- If text is English, respond primarily in English with short Thai gloss.
+
+Analyze this lease agreement thoroughly and identify any potential issues or unfair clauses.`,
         file_urls: [file_url],
         response_json_schema: {
           type: "object",
           properties: {
-            risk_score: { type: "integer" },
             flags: {
               type: "array",
               items: {
                 type: "object",
                 properties: {
+                  id: { type: "string" },
+                  title: { type: "string" },
                   severity: { type: "string", enum: ["low", "medium", "high", "critical"] },
-                  category: { type: "string" },
-                  description: { type: "string" }
+                  evidence: { type: "string" },
+                  explanation: { type: "string" },
+                  recommendation: { type: "string" }
                 }
               }
             },
-            summary: { type: "string" },
-            property_address: { type: "string" },
-            start_date: { type: "string" },
-            end_date: { type: "string" },
-            rent_amount: { type: "number" },
-            deposit_amount: { type: "number" },
-            language_detected: { type: "string", enum: ["en", "th", "mixed"] }
+            missing_items: {
+              type: "array",
+              items: { type: "string" }
+            },
+            key_terms: {
+              type: "object",
+              properties: {
+                property_address: { type: "string" },
+                deposit_amount: { type: "number" },
+                rent_amount: { type: "number" },
+                start_date: { type: "string" },
+                end_date: { type: "string" },
+                language_detected: { type: "string", enum: ["en", "th", "mixed"] }
+              }
+            }
           }
         }
       });
 
-      await base44.entities.Lease.update(lease.id, {
-        status: 'scanned',
-        property_address: scanResult.property_address,
-        start_date: scanResult.start_date,
-        end_date: scanResult.end_date,
-        rent_amount: scanResult.rent_amount,
-        deposit_amount: scanResult.deposit_amount,
-        language_detected: scanResult.language_detected
+      // Step 2: Calculate risk score and summary
+      const scoreResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `Given the flags JSON, compute:
+- risk_score: integer 0..100 (0 = very safe, 100 = very risky)
+- summary: <= 180 characters
+- top_flags: top 5 flag ids/titles
+
+Return JSON with these fields.
+Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            risk_score: { type: "integer", minimum: 0, maximum: 100 },
+            summary: { type: "string" },
+            top_flags: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  severity: { type: "string" },
+                  category: { type: "string" },
+                  description: { type: "string" }
+                }
+              }
+            }
+          }
+        }
       });
 
+      // Update lease with extracted data
+      await base44.entities.Lease.update(lease.id, {
+        status: 'scanned',
+        property_address: analysisResult.key_terms?.property_address,
+        start_date: analysisResult.key_terms?.start_date,
+        end_date: analysisResult.key_terms?.end_date,
+        rent_amount: analysisResult.key_terms?.rent_amount,
+        deposit_amount: analysisResult.key_terms?.deposit_amount,
+        language_detected: analysisResult.key_terms?.language_detected
+      });
+
+      // Create scan preview
       const scan = await base44.entities.LeaseScan.create({
         lease_id: lease.id,
-        risk_score: scanResult.risk_score,
-        flags: scanResult.flags || [],
-        summary: scanResult.summary,
-        scan_full: scanResult,
-        version: '1.0'
+        risk_score: scoreResult.risk_score,
+        flags: scoreResult.top_flags || [],
+        summary: scoreResult.summary,
+        scan_preview: scoreResult,
+        scan_full: analysisResult,
+        version: 'v1'
       });
 
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
       
     } catch (err) {
-      setError('Failed to analyze lease. Please try again.');
+      setError(language === 'th' ? 'การวิเคราะห์สัญญาล้มเหลว กรุณาลองอีกครั้ง' : 'Failed to analyze lease. Please try again.');
       console.error(err);
     } finally {
       setUploading(false);

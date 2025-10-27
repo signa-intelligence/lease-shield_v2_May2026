@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -60,10 +61,16 @@ Deno.serve(async (req) => {
               });
 
               // Send notification email
+              const language = user.language || 'en';
+              const subject = language === 'th' ? 'แพ็กเกจ Lease Shield ของคุณเปิดใช้งานแล้ว' : 'Your Lease Shield Plan is Active';
+              const body = language === 'th' ? 
+                `สวัสดี ${user.full_name},\n\nแพ็กเกจ ${planTier} ของคุณเปิดใช้งานแล้ว\nเข้าดูรายงาน AI และ Deposit Shield ได้ตลอดเวลา\n\n— ทีม Lease Shield` :
+                `Hi ${user.full_name},\n\nYour Lease Shield ${planTier.toUpperCase()} plan is now active.\nYou can view your AI report and Deposit Shield dashboard anytime.\n\n— The Lease Shield Team`;
+
               await base44.asServiceRole.integrations.Core.SendEmail({
                 to: user.email,
-                subject: 'Your Lease Shield Plan is Active',
-                body: `Your ${planTier.toUpperCase()} plan is now active. Thank you for subscribing!`
+                subject,
+                body
               });
             }
           }
@@ -107,7 +114,7 @@ Deno.serve(async (req) => {
         const customerId = session.customer;
         const metadata = session.metadata || {};
         
-        // Handle case payment
+        // Handle case payment (Resolve service)
         if (metadata.case_id) {
           const caseId = metadata.case_id;
           
@@ -124,11 +131,29 @@ Deno.serve(async (req) => {
             status: 'active'
           });
 
+          // Get user for language preference
+          const users = await base44.asServiceRole.entities.User.list();
+          const user = users.find(u => u.stripe_customer_id === customerId);
+
+          if (user) {
+            const language = user.language || 'en';
+            const subject = language === 'th' ? 'เคสของคุณเริ่มดำเนินการแล้ว' : 'Your Resolve Case Has Started';
+            const body = language === 'th' ?
+              `เคส Resolve ของคุณเริ่มดำเนินการแล้ว\nทีมงานจะติดต่อคุณภายใน 24-48 ชั่วโมง\n\n— Lease Shield` :
+              `Your Resolve case has started.\nOur team will contact you within 24-48 hours.\n\n— Lease Shield`;
+
+            await base44.asServiceRole.integrations.Core.SendEmail({
+              to: user.email,
+              subject,
+              body
+            });
+          }
+
           // Notify ops team
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: 'ops@leaseshield.asia',
             subject: 'New Resolve Case Payment Confirmed',
-            body: `Case ${caseId} payment confirmed. Amount: ฿${session.amount_total / 100}`
+            body: `Case ${caseId} payment confirmed. Amount: ฿${session.amount_total / 100}\n\nPlease review and assign.`
           });
         }
         break;

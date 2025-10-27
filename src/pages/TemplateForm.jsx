@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,13 +72,34 @@ const TEMPLATE_SCHEMAS = {
 };
 
 const TEMPLATE_PROMPTS = {
-  deposit_request: "Generate a polite, neutral letter in both English and Thai requesting return of the rental deposit. Tone: professional, non-confrontational, compliance-based. Include Thai Civil & Commercial Code generic references without giving legal advice.",
-  deposit_late: "Generate English and Thai reminder noting overdue days and asking for timeline and reasoned deductions. Professional and firm but not threatening.",
-  repair_dispute: "Generate English and Thai letter disputing charges with evidence references; neutral and factual. Focus on reasonableness and documentation.",
-  pdpa_request: "Generate English and Thai PDPA request for personal data and copies of signed lease; neutral tone citing Thai PDPA rights.",
-  pre_move_out: "Generate English and Thai notice confirming move-out date and scheduling inspection. Professional and cooperative tone.",
-  handover_check: "Generate bilingual checklist with rooms, items, meter readings, photo slots. Format as structured table/checklist.",
-  contract_clarification: "Generate English and Thai questions asking landlord/agent to clarify specific clauses. Respectful and inquisitive tone.",
+  deposit_request: `Draft a polite, neutral, **non-legal** deposit return request in EN and TH.
+Include facts (dates, amounts), cite tenancy best practices, and ask for return within 7 days.
+End with contact details. Keep it professional and concise.
+Format with clear sections for English and Thai.`,
+  
+  deposit_late: `Write a courteous overdue reminder (EN and TH). Mention the days overdue,
+request a timeline, ask for itemized deductions if any. Neutral tone.
+Format with clear sections for English and Thai.`,
+  
+  repair_dispute: `Draft a neutral dispute letter in EN/TH contesting repair charges.
+Include itemized costs and evidence references. Documentation tone; no legal advice.
+Format with clear sections for English and Thai.`,
+  
+  pdpa_request: `Draft EN/TH request under PDPA to obtain personal data and copies of lease & receipts.
+Cite PDPA generally without legal advice. Keep neutral and professional.
+Format with clear sections for English and Thai.`,
+  
+  pre_move_out: `Prepare a clear pre-move-out notice in EN/TH confirming the move-out date,
+scheduling inspection, and listing keys/cleaning expectations.
+Format with clear sections for English and Thai.`,
+  
+  handover_check: `Generate a bilingual checklist with: rooms/items, condition notes, meter readings, 
+photo attachment slots, and signature lines. Format as a structured inspection form.
+Include sections for both English and Thai.`,
+  
+  contract_clarification: `Draft EN/TH questions asking for clarification of specific lease clauses.
+Neutral, documentation tone. No legal advice.
+Format with clear sections for English and Thai.`
 };
 
 export default function TemplateForm() {
@@ -109,7 +131,13 @@ Language: ${language === 'both' ? 'Generate both English and Thai versions' : la
 Input Data:
 ${fieldValues}
 
-Format the letter professionally with proper headers, body paragraphs, and closing. If bilingual, provide both versions clearly separated.`,
+IMPORTANT: 
+- This is documentation guidance, not legal advice
+- Keep neutral tone for both parties
+- Format professionally with proper headers and sections
+- If bilingual, clearly separate English and Thai sections
+
+Generate the letter now.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -121,6 +149,7 @@ Format the letter professionally with proper headers, body paragraphs, and closi
       setGeneratedLetter(result.letter);
     } catch (error) {
       console.error('Failed to generate letter:', error);
+      alert('Failed to generate letter. Please try again.');
     } finally {
       setGenerating(false);
     }
