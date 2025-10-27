@@ -137,14 +137,33 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={tab.key}
                 to={tab.route}
-                className={`flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 flex-1 min-w-[60px] ${
-                  isActive
-                    ? "bg-ls-forest text-white shadow-lg scale-105"
-                    : "text-ls-charcoal hover:bg-ls-stone"
-                }`}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  transition: 'all 0.2s',
+                  flex: 1,
+                  minWidth: '60px',
+                  backgroundColor: isActive ? '#0C3B2E' : 'transparent',
+                  color: isActive ? '#FFFFFF' : '#1A1D1F',
+                  textDecoration: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = '#ECEFED';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }
+                }}
               >
-                <Icon className={`w-5 h-5 mb-1 ${isActive ? 'animate-pulse' : ''}`} />
-                <span className="text-xs font-medium whitespace-nowrap">{tab.label}</span>
+                <Icon className="w-5 h-5 mb-1" style={{ animation: isActive ? 'pulse 2s infinite' : 'none' }} />
+                <span style={{ fontSize: '12px', fontWeight: '500', whiteSpace: 'nowrap' }}>{tab.label}</span>
               </Link>
             );
           })}

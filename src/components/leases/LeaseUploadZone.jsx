@@ -25,8 +25,20 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
       />
       
       <div className="text-center">
-        <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-ls-forest to-emerald-700 rounded-2xl flex items-center justify-center shadow-lg">
-          <Upload className="w-10 h-10 text-white" />
+        <div 
+          style={{
+            width: '80px',
+            height: '80px',
+            margin: '0 auto 24px',
+            background: 'linear-gradient(to bottom right, #0C3B2E, #14532d)',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+          }}
+        >
+          <Upload style={{ width: '40px', height: '40px', color: '#FFFFFF' }} />
         </div>
         
         <h3 className="text-2xl font-bold text-ls-charcoal mb-3">
@@ -57,7 +69,7 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
             onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
             onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
           >
-            <FileText className="w-5 h-5" />
+            <FileText style={{ width: '20px', height: '20px' }} />
             Browse Files
           </button>
           <button
@@ -85,7 +97,7 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
               e.target.style.color = '#0C3B2E';
             }}
           >
-            <Camera className="w-5 h-5" />
+            <Camera style={{ width: '20px', height: '20px' }} />
             Take Photo
           </button>
         </div>
