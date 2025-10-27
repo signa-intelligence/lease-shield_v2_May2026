@@ -40,17 +40,19 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button
             size="lg"
+            type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="bg-ls-forest hover:bg-emerald-900 shadow-lg"
+            className="bg-ls-forest hover:bg-emerald-800 text-white shadow-lg font-semibold"
           >
             <FileText className="w-5 h-5 mr-2" />
             Browse Files
           </Button>
           <Button
             size="lg"
+            type="button"
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            className="border-ls-forest text-ls-forest hover:bg-ls-forest hover:text-white"
+            className="border-2 border-ls-forest text-ls-forest hover:bg-ls-forest hover:text-white font-semibold shadow-sm"
           >
             <Camera className="w-5 h-5 mr-2" />
             Take Photo
