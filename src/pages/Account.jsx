@@ -16,7 +16,7 @@ const PLAN_DETAILS = [
     label: 'Lite',
     price: '฿390',
     priceNum: 390,
-    priceId: 'price_1SM6qtQwoI6NhlUxgDDy2LuJ',
+    paymentLink: 'https://buy.stripe.com/YOUR_LITE_LINK',  // Get from Stripe Dashboard
     interval: '/month',
     benefits: [
       'Full AI Lease Reports',
@@ -33,7 +33,7 @@ const PLAN_DETAILS = [
     label: 'Protect',
     price: '฿690',
     priceNum: 690,
-    priceId: 'price_1SM6rhQwoI6NhlUxZIN3WekE',
+    paymentLink: 'https://buy.stripe.com/YOUR_PROTECT_LINK',
     interval: '/month',
     benefits: [
       'Everything in Lite',
@@ -52,7 +52,7 @@ const PLAN_DETAILS = [
     label: 'Secure',
     price: '฿1,290',
     priceNum: 1290,
-    priceId: 'price_1SM6t9QwoI6NhlUxy5Pl7Rrq',
+    paymentLink: 'https://buy.stripe.com/YOUR_SECURE_LINK',
     interval: '/month',
     benefits: [
       'Everything in Protect',
@@ -114,23 +114,15 @@ export default function Account() {
     }
 
     // Ensure user data is available before proceeding
-    if (!user || !user.email || !user.id) {
-      console.error('User data missing for checkout. User:', user);
-      alert('Unable to initiate checkout: User information is incomplete. Please log in again.');
+    if (!user || !user.email) {
+      console.error('User email missing for checkout. User:', user);
+      alert('Unable to initiate checkout: User email is incomplete. Please log in again.');
       return;
     }
 
-    try {
-      // Create Stripe checkout session
-      // The `test_` prefix here is used as per the outline's instruction.
-      // In a production environment, you would typically use a backend to create Stripe Checkout Sessions
-      // for security and to handle more complex scenarios.
-      const checkoutUrl = `https://buy.stripe.com/test_${plan.priceId}?prefilled_email=${user.email}&client_reference_id=${user.id}`;
-      window.location.href = checkoutUrl;
-    } catch (error) {
-      console.error('Failed to initiate checkout:', error);
-      alert('Failed to start checkout. Please try again.');
-    }
+    // Redirect to Stripe Payment Link with prefilled email
+    const checkoutUrl = `${plan.paymentLink}?prefilled_email=${encodeURIComponent(user.email)}`;
+    window.location.href = checkoutUrl;
   };
 
   return (
