@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
+import NotificationSettings from "../components/settings/NotificationSettings";
 
 const PLAN_DETAILS = [
   {
@@ -104,6 +105,10 @@ export default function Account() {
   const handleSubmit = (e) => {
     e.preventDefault();
     updateProfileMutation.mutate(formData);
+  };
+
+  const handleNotificationUpdate = (data) => {
+    updateProfileMutation.mutate(data);
   };
 
   const handleSubscribe = async (planKey) => {
@@ -284,6 +289,14 @@ export default function Account() {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Notification Settings */}
+        <div className="mb-6">
+          <NotificationSettings 
+            user={user} 
+            onUpdate={handleNotificationUpdate}
+          />
         </div>
 
         {/* Subscription Plans */}

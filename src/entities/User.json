@@ -45,6 +45,20 @@
     "stripe_customer_id": {
       "type": "string",
       "description": "Stripe customer ID"
+    },
+    "line_notify_token": {
+      "type": "string",
+      "description": "LINE Notify access token"
+    },
+    "email_notifications": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable email notifications"
+    },
+    "line_notifications": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable LINE notifications"
     }
   },
   "required": []
