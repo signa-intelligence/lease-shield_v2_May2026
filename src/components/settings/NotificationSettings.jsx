@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 export default function NotificationSettings({ user, onUpdate }) {
   const [emailNotifications, setEmailNotifications] = useState(user?.email_notifications ?? true);
   const [lineNotifications, setLineNotifications] = useState(user?.line_notifications ?? false);
-  const hasLineToken = !!user?.line_notify_token;
+  const hasLineToken = !!user?.line_messaging_token;
 
   const handleSave = () => {
     onUpdate({
@@ -18,8 +18,10 @@ export default function NotificationSettings({ user, onUpdate }) {
   };
 
   const handleLineConnect = () => {
-    // TODO: Implement LINE OAuth flow when credentials are available
-    alert('LINE Notify integration coming soon!');
+    // Redirect to LINE Official Account add friend flow
+    const lineOfficialAccountId = '@071vchfv'; // Your LINE Official Account ID
+    const addFriendUrl = `https://line.me/R/ti/p/${lineOfficialAccountId}`;
+    window.open(addFriendUrl, '_blank');
   };
 
   return (
@@ -48,7 +50,7 @@ export default function NotificationSettings({ user, onUpdate }) {
           />
         </div>
 
-        {/* LINE Notify */}
+        {/* LINE Messaging API */}
         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -56,7 +58,7 @@ export default function NotificationSettings({ user, onUpdate }) {
                 <span className="text-white font-bold text-sm">LINE</span>
               </div>
               <div>
-                <p className="font-semibold text-slate-900">LINE Notify</p>
+                <p className="font-semibold text-slate-900">LINE Notifications</p>
                 {hasLineToken ? (
                   <Badge className="bg-emerald-100 text-emerald-700 mt-1">Connected</Badge>
                 ) : (
@@ -72,16 +74,21 @@ export default function NotificationSettings({ user, onUpdate }) {
             )}
           </div>
           <p className="text-sm text-slate-600 mb-3">
-            Get instant deposit reminders via LINE messaging
+            Get instant deposit reminders via LINE Official Account
           </p>
           {!hasLineToken && (
-            <Button 
-              size="sm" 
-              className="bg-emerald-600 hover:bg-emerald-700"
-              onClick={handleLineConnect}
-            >
-              Connect LINE Notify
-            </Button>
+            <>
+              <Button 
+                size="sm" 
+                className="bg-emerald-600 hover:bg-emerald-700 mb-2"
+                onClick={handleLineConnect}
+              >
+                Add Lease Shield on LINE
+              </Button>
+              <p className="text-xs text-slate-500">
+                After adding, send "connect {user?.email}" to link your account
+              </p>
+            </>
           )}
         </div>
 

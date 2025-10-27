@@ -46,9 +46,9 @@
       "type": "string",
       "description": "Stripe customer ID"
     },
-    "line_notify_token": {
+    "line_messaging_token": {
       "type": "string",
-      "description": "LINE Notify access token"
+      "description": "LINE Messaging API user ID"
     },
     "email_notifications": {
       "type": "boolean",
