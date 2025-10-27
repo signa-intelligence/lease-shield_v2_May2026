@@ -13,6 +13,7 @@ import Templates from './pages/Templates';
 import TemplateForm from './pages/TemplateForm';
 import ResolveCase from './pages/ResolveCase';
 import Account from './pages/Account';
+import AdminConsole from './pages/AdminConsole';
 import Layout from './Layout.jsx';
 
 
@@ -32,6 +33,7 @@ export const PAGES = {
     "TemplateForm": TemplateForm,
     "ResolveCase": ResolveCase,
     "Account": Account,
+    "AdminConsole": AdminConsole,
 }
 
 export const pagesConfig = {
