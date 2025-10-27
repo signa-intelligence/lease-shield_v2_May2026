@@ -36,11 +36,26 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
           Drag and drop your lease document here, or click to browse
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-6 py-3 bg-ls-forest hover:bg-emerald-800 text-white rounded-lg shadow-lg font-semibold transition-colors flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: '#0C3B2E',
+              color: '#FFFFFF',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              fontWeight: '600',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
           >
             <FileText className="w-5 h-5" />
             Browse Files
@@ -48,7 +63,27 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-6 py-3 border-2 border-ls-forest bg-white text-ls-forest hover:bg-ls-forest hover:text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: '#FFFFFF',
+              color: '#0C3B2E',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              fontWeight: '600',
+              border: '2px solid #0C3B2E',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#0C3B2E';
+              e.target.style.color = '#FFFFFF';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#FFFFFF';
+              e.target.style.color = '#0C3B2E';
+            }}
           >
             <Camera className="w-5 h-5" />
             Take Photo
