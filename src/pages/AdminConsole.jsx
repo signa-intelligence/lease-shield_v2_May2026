@@ -1,16 +1,33 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Database, Users, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Shield, Database, Users, AlertCircle, CheckCircle2, Loader2, Crown, Mail, Calendar } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AdminConsole() {
   const [seeding, setSeeding] = useState(false);
   const [seedResult, setSeedResult] = useState(null);
   const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -35,6 +52,20 @@ export default function AdminConsole() {
       };
     },
     enabled: !!user && user.role === 'admin'
+  });
+
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: !!user && user.role === 'admin'
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+    },
   });
 
   // Redirect if not admin
@@ -66,13 +97,14 @@ export default function AdminConsole() {
       
       if (response.data) {
         setSeedResult(response.data);
+        queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
       } else {
         setError('No data returned from seed function');
       }
     } catch (err) {
       console.error('Seed error:', err);
       
-      // Extract detailed error info
       const errorMessage = err.response?.data?.error || err.message || 'Unknown error';
       const errorDetails = err.response?.data?.details || '';
       const errorStep = err.response?.data?.step || '';
@@ -88,9 +120,46 @@ export default function AdminConsole() {
     }
   };
 
+  const handleUpdateUserRole = async (userId, newRole) => {
+    if (!confirm(`Change user role to ${newRole}?`)) return;
+    updateUserMutation.mutate({ userId, data: { role: newRole } });
+  };
+
+  const handleUpdateUserPlan = async (userId, newPlan) => {
+    if (!confirm(`Change user plan to ${newPlan}?`)) return;
+    updateUserMutation.mutate({ 
+      userId, 
+      data: { 
+        plan_tier: newPlan,
+        subscription_status: newPlan === 'free' ? 'none' : 'active'
+      } 
+    });
+  };
+
+  const getPlanBadge = (tier) => {
+    const configs = {
+      free: { label: 'Free', color: 'bg-gray-100 text-gray-700' },
+      lite: { label: 'Lite', color: 'bg-blue-100 text-blue-700' },
+      protect: { label: 'Protect', color: 'bg-emerald-100 text-emerald-700' },
+      secure: { label: 'Secure', color: 'bg-purple-100 text-purple-700' }
+    };
+    const config = configs[tier] || configs.free;
+    return <Badge className={config.color}>{config.label}</Badge>;
+  };
+
+  const getStatusBadge = (status) => {
+    const configs = {
+      active: { label: 'Active', color: 'bg-emerald-100 text-emerald-700' },
+      cancelled: { label: 'Cancelled', color: 'bg-amber-100 text-amber-700' },
+      none: { label: 'None', color: 'bg-gray-100 text-gray-700' }
+    };
+    const config = configs[status] || configs.none;
+    return <Badge className={config.color}>{config.label}</Badge>;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Shield className="w-8 h-8 text-blue-600" />
@@ -226,6 +295,103 @@ export default function AdminConsole() {
                   )}
                 </AlertDescription>
               </Alert>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* User Management */}
+        <Card className="border-none shadow-xl mb-6">
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              User Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allUsers.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">{u.full_name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-slate-400" />
+                          <span className="text-sm">{u.email}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getPlanBadge(u.plan_tier)}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(u.subscription_status)}
+                      </TableCell>
+                      <TableCell>
+                        {u.role === 'admin' ? (
+                          <Badge className="bg-purple-100 text-purple-700">
+                            <Crown className="w-3 h-3 mr-1" />
+                            Admin
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">User</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <Calendar className="w-4 h-4" />
+                          {format(new Date(u.created_date), 'MMM d, yyyy')}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Select 
+                            value={u.plan_tier} 
+                            onValueChange={(value) => handleUpdateUserPlan(u.id, value)}
+                          >
+                            <SelectTrigger className="w-24 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="free">Free</SelectItem>
+                              <SelectItem value="lite">Lite</SelectItem>
+                              <SelectItem value="protect">Protect</SelectItem>
+                              <SelectItem value="secure">Secure</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {u.role !== 'admin' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdateUserRole(u.id, 'admin')}
+                              className="h-8 text-xs"
+                            >
+                              Make Admin
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            
+            {allUsers.length === 0 && (
+              <div className="text-center py-8 text-slate-500">
+                No users found
+              </div>
             )}
           </CardContent>
         </Card>
