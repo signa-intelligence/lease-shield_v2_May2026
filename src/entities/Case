@@ -1,0 +1,56 @@
+{
+  "name": "Case",
+  "type": "object",
+  "properties": {
+    "lease_id": {
+      "type": "string",
+      "description": "Related lease"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "intake",
+        "pending",
+        "active",
+        "waiting",
+        "user_action",
+        "closed"
+      ],
+      "default": "intake"
+    },
+    "dispute_amount": {
+      "type": "number",
+      "description": "Amount in dispute"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Case summary"
+    },
+    "ops_assigned": {
+      "type": "string",
+      "description": "Assigned ops team member ID"
+    },
+    "is_member_at_creation": {
+      "type": "boolean",
+      "default": false
+    },
+    "success_fee_rate": {
+      "type": "number",
+      "default": 0
+    },
+    "fast_track": {
+      "type": "boolean",
+      "default": false
+    },
+    "letter_pack": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}
