@@ -122,9 +122,33 @@ export default function Layout({ children, currentPageName }) {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto pb-20 md:pb-24">
+      <main className="flex-1 overflow-auto pb-32 md:pb-36">
         {children}
       </main>
+
+      {/* Disclaimer Footer - Clean design with forest green text */}
+      <div style={{
+        position: 'fixed',
+        bottom: isAdmin ? '84px' : '80px',
+        left: 0,
+        right: 0,
+        padding: '12px 16px',
+        textAlign: 'center',
+        zIndex: 40,
+        backgroundColor: 'transparent'
+      }}>
+        <p style={{
+          fontSize: '11px',
+          fontWeight: '500',
+          margin: 0,
+          color: '#0C3B2E',
+          opacity: 0.8
+        }}>
+          {language === 'th' 
+            ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
+            : "We are not a law firm and do not provide legal advice."}
+        </p>
+      </div>
 
       {/* Bottom Navigation Tabs */}
       <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-ls-stone shadow-2xl z-50">
@@ -169,31 +193,6 @@ export default function Layout({ children, currentPageName }) {
           })}
         </div>
       </nav>
-
-      {/* Disclaimer Footer - FIXED with inline styles */}
-      <div style={{
-        position: 'fixed',
-        bottom: isAdmin ? '84px' : '80px',
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(26, 29, 31, 0.95)',
-        backdropFilter: 'blur(8px)',
-        color: '#FFFFFF',
-        padding: '8px 16px',
-        textAlign: 'center',
-        zIndex: 40
-      }}>
-        <p style={{
-          fontSize: '12px',
-          opacity: 0.9,
-          margin: 0,
-          color: '#FFFFFF'
-        }}>
-          {language === 'th' 
-            ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
-            : "We are not a law firm and do not provide legal advice."}
-        </p>
-      </div>
     </div>
   );
 }
