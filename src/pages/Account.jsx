@@ -25,7 +25,7 @@ const PLAN_DETAILS = [
       'Basic Letter Templates',
       'Basic Document Storage'
     ],
-    color: 'from-ls-forest to-emerald-700',
+    bgColor: '#0C3B2E',
     icon: Zap
   },
   {
@@ -43,7 +43,7 @@ const PLAN_DETAILS = [
       'Evidence Vault',
       'LINE Notifications'
     ],
-    color: 'from-ls-gold to-amber-600',
+    bgColor: '#C7A338',
     icon: Shield,
     popular: true
   },
@@ -62,7 +62,7 @@ const PLAN_DETAILS = [
       'Expanded Storage',
       'Premium Support'
     ],
-    color: 'from-ls-charcoal to-slate-800',
+    bgColor: '#1A1D1F',
     icon: Crown
   }
 ];
@@ -275,7 +275,7 @@ export default function Account() {
                       <li>• Limited Features</li>
                     </ul>
                   </div>
-                  <div style={{ padding: '12px', backgroundColor: '#DBEAFE', borderRadius: '8px', border: '1px solid: #93C5FD' }}>
+                  <div style={{ padding: '12px', backgroundColor: '#DBEAFE', borderRadius: '8px', border: '1px solid #93C5FD' }}>
                     <p style={{ fontSize: '14px', color: '#1E40AF', fontWeight: '600', marginBottom: '4px' }}>
                       🚀 Upgrade to get:
                     </p>
@@ -345,51 +345,133 @@ export default function Account() {
               const isCurrentPlan = currentPlanTier === plan.key;
               
               return (
-                <Card 
-                  key={plan.key} 
-                  className={`border-none shadow-xl relative overflow-hidden ${
-                    plan.popular ? 'ring-2 ring-ls-gold' : ''
-                  }`}
+                <div 
+                  key={plan.key}
+                  style={{
+                    position: 'relative',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                    border: plan.popular ? '2px solid #C7A338' : 'none',
+                    backgroundColor: '#FFFFFF'
+                  }}
                 >
                   {plan.popular && (
-                    <div className="absolute top-0 right-0 bg-gradient-to-r from-ls-gold to-amber-600 text-ls-charcoal text-xs font-bold px-3 py-1 rounded-bl-lg">
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      backgroundColor: '#C7A338',
+                      color: '#1A1D1F',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      padding: '4px 12px',
+                      borderBottomLeftRadius: '8px'
+                    }}>
                       POPULAR
                     </div>
                   )}
-                  <CardHeader className={`bg-gradient-to-r ${plan.color} text-white p-6`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icon className="w-6 h-6" />
-                      <CardTitle className="text-xl">{plan.label}</CardTitle>
+                  
+                  {/* Header with plan name and price */}
+                  <div style={{
+                    backgroundColor: plan.bgColor,
+                    padding: '24px',
+                    color: '#FFFFFF'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <Icon style={{ width: '24px', height: '24px', color: '#FFFFFF' }} />
+                      <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', margin: 0 }}>
+                        {plan.label}
+                      </h3>
                     </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-bold">{plan.price}</span>
-                      <span className="text-sm opacity-90">{plan.interval}</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                      <span style={{ fontSize: '36px', fontWeight: 'bold', color: '#FFFFFF' }}>
+                        {plan.price}
+                      </span>
+                      <span style={{ fontSize: '14px', color: '#FFFFFF', opacity: 0.9 }}>
+                        {plan.interval}
+                      </span>
                     </div>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <ul className="space-y-3 mb-6">
+                  </div>
+
+                  {/* Benefits list */}
+                  <div style={{ padding: '24px' }}>
+                    <ul style={{ 
+                      listStyle: 'none', 
+                      padding: 0, 
+                      margin: '0 0 24px 0',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px'
+                    }}>
                       {plan.benefits.map((benefit, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-slate-700">
-                          <CheckCircle2 className="w-4 h-4 text-ls-forest flex-shrink-0 mt-0.5" />
+                        <li key={idx} style={{ 
+                          display: 'flex', 
+                          alignItems: 'flex-start', 
+                          gap: '8px',
+                          fontSize: '14px',
+                          color: '#334155'
+                        }}>
+                          <CheckCircle2 style={{ 
+                            width: '16px', 
+                            height: '16px', 
+                            color: '#0C3B2E',
+                            flexShrink: 0,
+                            marginTop: '2px'
+                          }} />
                           <span>{benefit}</span>
                         </li>
                       ))}
                     </ul>
+                    
+                    {/* Subscribe button */}
                     {isCurrentPlan ? (
-                      <Button disabled className="w-full" variant="outline">
+                      <button
+                        disabled
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: '2px solid #D1D5DB',
+                          backgroundColor: '#F3F4F6',
+                          color: '#9CA3AF',
+                          cursor: 'not-allowed'
+                        }}
+                      >
                         Current Plan
-                      </Button>
+                      </button>
                     ) : (
-                      <Button 
-                        className={`w-full bg-gradient-to-r ${plan.color} hover:opacity-90 text-white font-bold`}
+                      <button
                         onClick={() => handleSubscribe(plan.key)}
                         disabled={subscribing}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: 'none',
+                          backgroundColor: plan.bgColor,
+                          color: '#FFFFFF',
+                          cursor: subscribing ? 'not-allowed' : 'pointer',
+                          opacity: subscribing ? 0.7 : 1,
+                          transition: 'opacity 0.2s',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!subscribing) e.target.style.opacity = '0.9';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!subscribing) e.target.style.opacity = '1';
+                        }}
                       >
                         {subscribing ? 'Processing...' : `Subscribe to ${plan.label}`}
-                      </Button>
+                      </button>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>
