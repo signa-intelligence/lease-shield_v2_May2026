@@ -70,8 +70,11 @@ const SAMPLE_LEASE_TH = `สัญญาเช่าที่พักอาศ�
 
 Deno.serve(async (req) => {
   try {
+    console.log('=== Seed Demo Data Started ===');
     const base44 = createClientFromRequest(req);
     const currentUser = await base44.auth.me();
+    
+    console.log('Current user:', currentUser?.email, 'Role:', currentUser?.role);
     
     // Only admins can seed data
     if (currentUser?.role !== 'admin') {
@@ -88,6 +91,7 @@ Deno.serve(async (req) => {
     };
 
     // A) Create two demo users
+    console.log('Step A: Creating demo users...');
     const userEn = await base44.asServiceRole.entities.User.create({
       full_name: "Demo Tenant EN",
       email: `demo.en.${Date.now()}@leaseshield.asia`,
@@ -96,6 +100,7 @@ Deno.serve(async (req) => {
       subscription_status: "active",
       plan_tier: "protect"
     });
+    console.log('Created EN user:', userEn.id);
     results.users.push(userEn);
 
     const userTh = await base44.asServiceRole.entities.User.create({
@@ -106,9 +111,11 @@ Deno.serve(async (req) => {
       subscription_status: "active",
       plan_tier: "lite"
     });
+    console.log('Created TH user:', userTh.id);
     results.users.push(userTh);
 
     // B) Seed deposit trackers
+    console.log('Step B: Creating deposit trackers...');
     const depositEn = await base44.asServiceRole.entities.DepositTracker.create({
       created_by: userEn.email,
       deposit_amount: 45000,
@@ -118,6 +125,7 @@ Deno.serve(async (req) => {
       property_address: "Unit 123, Sample Condo, Sukhumvit",
       notes: "Seed: Standard condo - 3 months deposit"
     });
+    console.log('Created EN deposit:', depositEn.id);
     results.deposits.push(depositEn);
 
     const depositTh = await base44.asServiceRole.entities.DepositTracker.create({
@@ -129,10 +137,14 @@ Deno.serve(async (req) => {
       property_address: "ห้อง 456 คอนโดตัวอย่าง ลาดพร้าว",
       notes: "Seed: Apartment - 3 เดือน"
     });
+    console.log('Created TH deposit:', depositTh.id);
     results.deposits.push(depositTh);
 
     // C) Seed lease scans from inline text
+    console.log('Step C: Creating leases with AI analysis...');
+    
     // English lease
+    console.log('Creating EN lease...');
     const leaseEn = await base44.asServiceRole.entities.Lease.create({
       created_by: userEn.email,
       file_url: "inline://seed-demo-en",
@@ -144,9 +156,11 @@ Deno.serve(async (req) => {
       start_date: "2025-08-01",
       end_date: "2026-08-01"
     });
+    console.log('Created EN lease:', leaseEn.id);
     results.leases.push(leaseEn);
 
     // Analyze English lease
+    console.log('Analyzing EN lease with AI...');
     const analysisEn = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `You analyze Thai/English residential leases for fairness and compliance.
 Extract risky/illegal/unfair clauses, missing protections.
@@ -183,7 +197,9 @@ ${SAMPLE_LEASE_EN}`,
         }
       }
     });
+    console.log('EN analysis complete, flags count:', analysisEn.flags?.length || 0);
 
+    console.log('Calculating EN risk score...');
     const scoreEn = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `From flags JSON, return { "risk_score":0..100, "summary":"<=180 chars", "top_flags":[...] }
 Flags: ${JSON.stringify(analysisEn.flags)}`,
@@ -206,6 +222,7 @@ Flags: ${JSON.stringify(analysisEn.flags)}`,
         }
       }
     });
+    console.log('EN risk score:', scoreEn.risk_score);
 
     const scanEn = await base44.asServiceRole.entities.LeaseScan.create({
       lease_id: leaseEn.id,
@@ -216,11 +233,14 @@ Flags: ${JSON.stringify(analysisEn.flags)}`,
       scan_full: analysisEn,
       version: "seed-v1"
     });
+    console.log('Created EN scan:', scanEn.id);
     results.scans.push(scanEn);
 
     await base44.asServiceRole.entities.Lease.update(leaseEn.id, { status: "scanned" });
+    console.log('Updated EN lease status to scanned');
 
     // Thai lease
+    console.log('Creating TH lease...');
     const leaseTh = await base44.asServiceRole.entities.Lease.create({
       created_by: userTh.email,
       file_url: "inline://seed-demo-th",
@@ -232,8 +252,10 @@ Flags: ${JSON.stringify(analysisEn.flags)}`,
       start_date: "2025-07-15",
       end_date: "2026-07-15"
     });
+    console.log('Created TH lease:', leaseTh.id);
     results.leases.push(leaseTh);
 
+    console.log('Analyzing TH lease with AI...');
     const analysisTh = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `คุณวิเคราะห์สัญญาเช่าที่พักอาศัยภาษาไทย/อังกฤษเพื่อหาความเป็นธรรมและการปฏิบัติตามกฎหมาย
 สกัดข้อกำหนดที่มีความเสี่ยง/ผิดกฎหมาย/ไม่เป็นธรรม และการคุ้มครองที่ขาดหายไป
@@ -270,7 +292,9 @@ ${SAMPLE_LEASE_TH}`,
         }
       }
     });
+    console.log('TH analysis complete, flags count:', analysisTh.flags?.length || 0);
 
+    console.log('Calculating TH risk score...');
     const scoreTh = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `จากข้อมูล flags JSON คืนค่า { "risk_score":0..100, "summary":"<=180 อักษร", "top_flags":[...] }
 Flags: ${JSON.stringify(analysisTh.flags)}`,
@@ -293,6 +317,7 @@ Flags: ${JSON.stringify(analysisTh.flags)}`,
         }
       }
     });
+    console.log('TH risk score:', scoreTh.risk_score);
 
     const scanTh = await base44.asServiceRole.entities.LeaseScan.create({
       lease_id: leaseTh.id,
@@ -303,11 +328,14 @@ Flags: ${JSON.stringify(analysisTh.flags)}`,
       scan_full: analysisTh,
       version: "seed-v1"
     });
+    console.log('Created TH scan:', scanTh.id);
     results.scans.push(scanTh);
 
     await base44.asServiceRole.entities.Lease.update(leaseTh.id, { status: "scanned" });
+    console.log('Updated TH lease status to scanned');
 
     // D) Seed Resolve cases
+    console.log('Step D: Creating resolve cases...');
     const caseEn = await base44.asServiceRole.entities.Case.create({
       created_by: userEn.email,
       lease_id: leaseEn.id,
@@ -319,6 +347,7 @@ Flags: ${JSON.stringify(analysisTh.flags)}`,
       fast_track: true,
       letter_pack: true
     });
+    console.log('Created EN case:', caseEn.id);
     results.cases.push(caseEn);
 
     const caseTh = await base44.asServiceRole.entities.Case.create({
@@ -332,8 +361,10 @@ Flags: ${JSON.stringify(analysisTh.flags)}`,
       fast_track: false,
       letter_pack: false
     });
+    console.log('Created TH case:', caseTh.id);
     results.cases.push(caseTh);
 
+    console.log('=== Seed Demo Data Complete ===');
     return Response.json({ 
       success: true, 
       message: "Demo data seeded successfully",
@@ -351,7 +382,13 @@ Flags: ${JSON.stringify(analysisTh.flags)}`,
     });
 
   } catch (error) {
-    console.error('Seed error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('=== Seed Demo Data Error ===');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    return Response.json({ 
+      error: error.message,
+      details: error.stack,
+      step: 'Check server logs for details'
+    }, { status: 500 });
   }
 });
