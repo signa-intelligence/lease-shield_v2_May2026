@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -113,10 +112,10 @@ export default function DepositTracker() {
           
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
-              <Button size="lg" className="bg-ls-forest hover:bg-emerald-900 shadow-lg">
-                <Plus className="w-5 h-5 mr-2" />
+              <button className="px-6 py-3 bg-ls-forest hover:bg-emerald-800 text-white rounded-lg shadow-lg font-semibold transition-colors flex items-center gap-2">
+                <Plus className="w-5 h-5" />
                 Add Deposit
-              </Button>
+              </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
@@ -173,9 +172,9 @@ export default function DepositTracker() {
                     rows={3}
                   />
                 </div>
-                <Button type="submit" className="w-full bg-ls-forest hover:bg-emerald-900">
+                <button type="submit" className="w-full px-4 py-3 bg-ls-forest hover:bg-emerald-800 text-white rounded-lg font-semibold transition-colors">
                   Track Deposit
-                </Button>
+                </button>
               </form>
             </DialogContent>
           </Dialog>
@@ -196,10 +195,10 @@ export default function DepositTracker() {
                   </p>
                 </div>
                 {hasLineNotify && (
-                  <Button variant="outline" className="bg-white/20 border-white/30 text-ls-charcoal hover:bg-white/40">
-                    <Bell className="w-4 h-4 mr-2" />
+                  <button className="px-4 py-2 bg-white/20 border border-white/30 text-ls-charcoal hover:bg-white/40 rounded-lg transition-colors flex items-center gap-2">
+                    <Bell className="w-4 h-4" />
                     LINE Notify
-                  </Button>
+                  </button>
                 )}
               </div>
             </CardContent>
@@ -213,10 +212,10 @@ export default function DepositTracker() {
                 <Wallet className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-ls-charcoal mb-2">No Deposits Tracked</h3>
                 <p className="text-slate-600 mb-6">Start tracking your security deposits to get return reminders</p>
-                <Button onClick={() => setShowAddDialog(true)} className="bg-ls-forest hover:bg-emerald-900">
-                  <Plus className="w-5 h-5 mr-2" />
+                <button onClick={() => setShowAddDialog(true)} className="px-6 py-3 bg-ls-forest hover:bg-emerald-800 text-white rounded-lg font-semibold transition-colors inline-flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
                   Add Your First Deposit
-                </Button>
+                </button>
               </CardContent>
             </Card>
           ) : (
@@ -305,30 +304,26 @@ export default function DepositTracker() {
 
                     {deposit.status === 'tracking' && (
                       <div className="flex gap-3 mt-6">
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <button
                           onClick={() => updateDepositMutation.mutate({ 
                             id: deposit.id, 
                             data: { status: 'returned' } 
                           })}
-                          className="flex-1"
+                          className="flex-1 px-4 py-2 border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                         >
-                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          <CheckCircle2 className="w-4 h-4" />
                           Mark Returned
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        </button>
+                        <button
                           onClick={() => updateDepositMutation.mutate({ 
                             id: deposit.id, 
                             data: { status: 'dispute' } 
                           })}
-                          className="flex-1 text-red-600 hover:text-red-700"
+                          className="flex-1 px-4 py-2 border-2 border-red-600 text-red-600 hover:bg-red-50 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                         >
-                          <AlertTriangle className="w-4 h-4 mr-2" />
+                          <AlertTriangle className="w-4 h-4" />
                           Open Dispute
-                        </Button>
+                        </button>
                       </div>
                     )}
                   </CardContent>
