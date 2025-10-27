@@ -9,7 +9,7 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bg
       <div className="p-6 relative z-10">
         <div className="flex justify-between items-start mb-4">
           <div className={`p-3 rounded-xl ${bgGradient} bg-opacity-10`}>
-            <Icon className={`w-6 h-6 ${bgGradient.replace('bg-', 'text-')}`} />
+            <Icon className="w-6 h-6 text-white" />
           </div>
           {trend && (
             <div className={`flex items-center gap-1 text-sm font-medium ${trendUp ? 'text-emerald-600' : 'text-red-600'}`}>
@@ -20,7 +20,7 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bg
         </div>
         <div>
           <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-slate-900">{value}</p>
+          <p className="text-3xl font-bold text-ls-charcoal">{value}</p>
         </div>
       </div>
     </Card>

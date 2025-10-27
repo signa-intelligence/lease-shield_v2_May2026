@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -99,20 +100,20 @@ export default function DepositTracker() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-6 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <Wallet className="w-8 h-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-slate-900">Deposit Tracker</h1>
+              <Wallet className="w-8 h-8 text-ls-forest" />
+              <h1 className="text-3xl font-bold text-ls-charcoal">Deposit Tracker</h1>
             </div>
             <p className="text-slate-600">Monitor your security deposits</p>
           </div>
           
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 shadow-lg">
+              <Button size="lg" className="bg-ls-forest hover:bg-emerald-900 shadow-lg">
                 <Plus className="w-5 h-5 mr-2" />
                 Add Deposit
               </Button>
@@ -172,7 +173,7 @@ export default function DepositTracker() {
                     rows={3}
                   />
                 </div>
-                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+                <Button type="submit" className="w-full bg-ls-forest hover:bg-emerald-900">
                   Track Deposit
                 </Button>
               </form>
@@ -182,7 +183,7 @@ export default function DepositTracker() {
 
         {/* Deposit Shield Feature Banner */}
         <FeatureGate feature="deposit_shield">
-          <Card className="mb-6 border-none shadow-lg bg-gradient-to-r from-emerald-500 to-emerald-700 text-white">
+          <Card className="mb-6 border-none shadow-lg bg-gradient-to-r from-ls-gold to-amber-600 text-ls-charcoal">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -190,12 +191,12 @@ export default function DepositTracker() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-lg mb-1">Deposit Shield Active</h3>
-                  <p className="text-emerald-50 text-sm">
+                  <p className="text-ls-charcoal/80 text-sm">
                     Your deposits are protected with automatic reminders and dispute assistance
                   </p>
                 </div>
                 {hasLineNotify && (
-                  <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
+                  <Button variant="outline" className="bg-white/20 border-white/30 text-ls-charcoal hover:bg-white/40">
                     <Bell className="w-4 h-4 mr-2" />
                     LINE Notify
                   </Button>
@@ -210,9 +211,9 @@ export default function DepositTracker() {
             <Card className="border-none shadow-xl">
               <CardContent className="p-12 text-center">
                 <Wallet className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">No Deposits Tracked</h3>
+                <h3 className="text-xl font-bold text-ls-charcoal mb-2">No Deposits Tracked</h3>
                 <p className="text-slate-600 mb-6">Start tracking your security deposits to get return reminders</p>
-                <Button onClick={() => setShowAddDialog(true)} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={() => setShowAddDialog(true)} className="bg-ls-forest hover:bg-emerald-900">
                   <Plus className="w-5 h-5 mr-2" />
                   Add Your First Deposit
                 </Button>
@@ -224,7 +225,7 @@ export default function DepositTracker() {
               const isUrgent = daysRemaining <= 30 && deposit.status === 'tracking';
               
               return (
-                <Card key={deposit.id} className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${isUrgent ? 'ring-2 ring-amber-400' : ''}`}>
+                <Card key={deposit.id} className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${isUrgent ? 'ring-2 ring-ls-gold' : ''}`}>
                   <CardHeader className="border-b border-slate-100 pb-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">

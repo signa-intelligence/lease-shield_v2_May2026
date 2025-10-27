@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -158,12 +159,12 @@ export default function AdminConsole() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-slate-900">Admin Console</h1>
+            <Shield className="w-8 h-8 text-ls-forest" />
+            <h1 className="text-3xl font-bold text-ls-charcoal">Admin Console</h1>
           </div>
           <p className="text-slate-600">System management and demo data tools</p>
         </div>
@@ -229,7 +230,7 @@ export default function AdminConsole() {
               <Button
                 onClick={handleSeedDemo}
                 disabled={seeding}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-ls-forest hover:bg-emerald-900"
               >
                 {seeding ? (
                   <>

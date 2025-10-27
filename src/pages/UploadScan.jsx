@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -196,12 +197,12 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <Upload className="w-7 h-7 text-blue-600" />
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+            <Upload className="w-7 h-7 text-ls-forest" />
+            <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">
               {language === 'th' ? 'อัปโหลดและสแกน' : 'Upload & Scan'}
             </h1>
           </div>
@@ -221,8 +222,8 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
           <div className="p-6 md:p-8">
             {uploading || analyzing ? (
               <div className="text-center py-12">
-                <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">
+                <Loader2 className="w-16 h-16 animate-spin text-ls-forest mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-ls-charcoal mb-2">
                   {uploading 
                     ? (language === 'th' ? 'กำลังอัปโหลดสัญญา...' : 'Uploading Lease...') 
                     : (language === 'th' ? 'กำลังวิเคราะห์สัญญา...' : 'Analyzing Agreement...')}
@@ -246,8 +247,8 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
         {leases.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <History className="w-5 h-5 text-slate-600" />
-              <h2 className="text-lg font-bold text-slate-900">
+              <History className="w-5 h-5 text-ls-forest" />
+              <h2 className="text-lg font-bold text-ls-charcoal">
                 {language === 'th' ? 'การสแกนล่าสุด' : 'Recent Scans'}
               </h2>
             </div>
@@ -256,9 +257,9 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
                 <Card key={lease.id} className="p-4 border-none shadow-md hover:shadow-lg transition-all duration-300">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1">
-                      <FileText className="w-5 h-5 text-blue-600" />
+                      <FileText className="w-5 h-5 text-ls-forest" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900 truncate">
+                        <p className="font-semibold text-ls-charcoal truncate">
                           {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
                         </p>
                         <p className="text-sm text-slate-500">

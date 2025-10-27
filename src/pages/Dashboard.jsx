@@ -75,13 +75,13 @@ export default function Dashboard() {
   const strings = t[language];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone">
       <div className="max-w-7xl mx-auto p-6 md:p-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
+            <Shield className="w-8 h-8 text-ls-forest" />
+            <h1 className="text-3xl md:text-4xl font-bold text-ls-charcoal">
               {strings.welcome}, {user?.full_name?.split(' ')[0] || 'User'}
             </h1>
           </div>
@@ -96,7 +96,7 @@ export default function Dashboard() {
             title={strings.activeLeases}
             value={leases.length}
             icon={FileText}
-            bgGradient="bg-blue-500"
+            bgGradient="bg-gradient-to-br from-ls-forest to-emerald-800"
             trend={`+2 ${strings.thisMonth}`}
             trendUp={true}
           />
@@ -104,35 +104,35 @@ export default function Dashboard() {
             title={strings.depositsTracked}
             value={`฿${activeDeposits.reduce((sum, d) => sum + d.deposit_amount, 0).toLocaleString()}`}
             icon={Wallet}
-            bgGradient="bg-emerald-500"
+            bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
           />
           <StatsCard
             title={strings.activeCases}
             value={activeCases.length}
             icon={Scale}
-            bgGradient="bg-purple-500"
+            bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
           />
           <StatsCard
             title={strings.protectionScore}
             value="85%"
             icon={Shield}
-            bgGradient="bg-amber-500"
+            bgGradient="bg-gradient-to-br from-emerald-600 to-emerald-700"
             trend="+5%"
             trendUp={true}
           />
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-6 md:p-8 mb-8 shadow-xl">
+        <div className="bg-gradient-to-r from-ls-forest to-emerald-800 rounded-2xl p-6 md:p-8 mb-8 shadow-xl">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-white">
               <h2 className="text-2xl font-bold mb-2">{strings.protectRights}</h2>
-              <p className="text-blue-100 text-sm md:text-base">
+              <p className="text-emerald-50 text-sm md:text-base">
                 {strings.uploadCta}
               </p>
             </div>
             <Link to={createPageUrl("UploadScan")}>
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg font-semibold px-8">
+              <Button size="lg" className="bg-ls-gold hover:bg-amber-600 text-ls-charcoal shadow-lg font-semibold px-8">
                 {strings.uploadLease}
               </Button>
             </Link>
@@ -151,19 +151,19 @@ export default function Dashboard() {
 
         {/* Upgrade Banner */}
         {user?.plan_tier === 'free' && (
-          <div className="mt-8 bg-gradient-to-r from-purple-600 to-purple-800 rounded-2xl p-6 md:p-8 shadow-xl">
+          <div className="mt-8 bg-gradient-to-r from-ls-gold to-amber-600 rounded-2xl p-6 md:p-8 shadow-xl">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="text-white">
+              <div className="text-ls-charcoal">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-6 h-6" />
                   <h3 className="text-xl font-bold">{strings.upgradePremium}</h3>
                 </div>
-                <p className="text-purple-100 text-sm">
+                <p className="text-ls-charcoal/80 text-sm">
                   {strings.upgradeDesc}
                 </p>
               </div>
               <Link to={createPageUrl("Account")}>
-                <Button size="lg" className="bg-white text-purple-600 hover:bg-purple-50 shadow-lg font-semibold px-8">
+                <Button size="lg" className="bg-ls-forest hover:bg-emerald-900 text-white shadow-lg font-semibold px-8">
                   {strings.viewPlans}
                 </Button>
               </Link>

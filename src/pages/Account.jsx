@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -26,7 +25,7 @@ const PLAN_DETAILS = [
       'Basic Letter Templates',
       'Basic Document Storage'
     ],
-    color: 'from-blue-500 to-blue-600',
+    color: 'from-ls-forest to-emerald-700',
     icon: Zap
   },
   {
@@ -44,7 +43,7 @@ const PLAN_DETAILS = [
       'Evidence Vault',
       'LINE Notifications'
     ],
-    color: 'from-emerald-500 to-emerald-600',
+    color: 'from-ls-gold to-amber-600',
     icon: Shield,
     popular: true
   },
@@ -63,7 +62,7 @@ const PLAN_DETAILS = [
       'Expanded Storage',
       'Premium Support'
     ],
-    color: 'from-purple-500 to-purple-600',
+    color: 'from-ls-charcoal to-slate-800',
     icon: Crown
   }
 ];
@@ -134,12 +133,12 @@ export default function Account() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <User className="w-7 h-7 text-blue-600" />
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">My Account</h1>
+            <User className="w-7 h-7 text-ls-forest" />
+            <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">My Account</h1>
           </div>
           <p className="text-slate-600">Manage your profile and subscription</p>
         </div>
@@ -154,7 +153,7 @@ export default function Account() {
                   Personal Information
                 </CardTitle>
                 {!isEditing && (
-                  <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+                  <Button size="sm" variant="outline" onClick={() => setIsEditing(true)} className="border-ls-forest text-ls-forest hover:bg-ls-forest hover:text-white">
                     Edit
                   </Button>
                 )}
@@ -163,32 +162,32 @@ export default function Account() {
             <CardContent className="p-6">
               {!isEditing ? (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                    <User className="w-5 h-5 text-slate-500" />
+                  <div className="flex items-center gap-3 p-3 bg-ls-stone rounded-lg">
+                    <User className="w-5 h-5 text-ls-forest" />
                     <div className="flex-1">
                       <p className="text-xs text-slate-500">Full Name</p>
-                      <p className="font-semibold text-slate-900">{user?.full_name}</p>
+                      <p className="font-semibold text-ls-charcoal">{user?.full_name}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                    <Mail className="w-5 h-5 text-slate-500" />
+                  <div className="flex items-center gap-3 p-3 bg-ls-stone rounded-lg">
+                    <Mail className="w-5 h-5 text-ls-forest" />
                     <div className="flex-1">
                       <p className="text-xs text-slate-500">Email</p>
-                      <p className="font-semibold text-slate-900">{user?.email}</p>
+                      <p className="font-semibold text-ls-charcoal">{user?.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                    <Phone className="w-5 h-5 text-slate-500" />
+                  <div className="flex items-center gap-3 p-3 bg-ls-stone rounded-lg">
+                    <Phone className="w-5 h-5 text-ls-forest" />
                     <div className="flex-1">
                       <p className="text-xs text-slate-500">Phone</p>
-                      <p className="font-semibold text-slate-900">{user?.phone || 'Not provided'}</p>
+                      <p className="font-semibold text-ls-charcoal">{user?.phone || 'Not provided'}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                    <Globe className="w-5 h-5 text-slate-500" />
+                  <div className="flex items-center gap-3 p-3 bg-ls-stone rounded-lg">
+                    <Globe className="w-5 h-5 text-ls-forest" />
                     <div className="flex-1">
                       <p className="text-xs text-slate-500">Language</p>
-                      <p className="font-semibold text-slate-900">
+                      <p className="font-semibold text-ls-charcoal">
                         {user?.language === 'th' ? 'ไทย (Thai)' : 'English'}
                       </p>
                     </div>
@@ -227,11 +226,11 @@ export default function Account() {
                     </Select>
                   </div>
                   <div className="flex gap-2">
-                    <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                    <Button type="submit" className="flex-1 bg-ls-forest hover:bg-emerald-900">
                       <Save className="w-4 h-4 mr-2" />
                       Save
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+                    <Button type="button" variant="outline" onClick={() => setIsEditing(false)} className="border-ls-charcoal">
                       Cancel
                     </Button>
                   </div>
@@ -244,14 +243,14 @@ export default function Account() {
           <Card className="border-none shadow-xl">
             <CardHeader className="border-b pb-4">
               <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <Shield className="w-5 h-5 text-blue-600" />
+                <Shield className="w-5 h-5 text-ls-forest" />
                 Current Plan
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-center mb-4">
                 <PlanBadge tier={user?.plan_tier} />
-                <p className="text-3xl font-bold text-slate-900 mt-3">
+                <p className="text-3xl font-bold text-ls-charcoal mt-3">
                   {user?.plan_tier === 'free' ? 'Free' : 
                    PLAN_DETAILS.find(p => p.key === user?.plan_tier)?.price || '—'}
                 </p>
@@ -281,7 +280,7 @@ export default function Account() {
                 </div>
               ) : (
                 <Button 
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700"
+                  className="w-full bg-gradient-to-r from-ls-gold to-amber-600 hover:from-amber-600 hover:to-ls-gold text-ls-charcoal font-bold"
                   onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   Upgrade Now
@@ -301,7 +300,7 @@ export default function Account() {
 
         {/* Subscription Plans */}
         <div id="plans-section" className="mb-6">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">Choose Your Plan</h2>
+          <h2 className="text-2xl font-bold text-ls-charcoal mb-4">Choose Your Plan</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
@@ -311,11 +310,11 @@ export default function Account() {
                 <Card 
                   key={plan.key} 
                   className={`border-none shadow-xl relative overflow-hidden ${
-                    plan.popular ? 'ring-2 ring-purple-500' : ''
+                    plan.popular ? 'ring-2 ring-ls-gold' : ''
                   }`}
                 >
                   {plan.popular && (
-                    <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                    <div className="absolute top-0 right-0 bg-gradient-to-r from-ls-gold to-amber-600 text-ls-charcoal text-xs font-bold px-3 py-1 rounded-bl-lg">
                       POPULAR
                     </div>
                   )}
@@ -333,7 +332,7 @@ export default function Account() {
                     <ul className="space-y-3 mb-6">
                       {plan.benefits.map((benefit, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm text-slate-700">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                          <CheckCircle2 className="w-4 h-4 text-ls-forest flex-shrink-0 mt-0.5" />
                           <span>{benefit}</span>
                         </li>
                       ))}
@@ -344,7 +343,7 @@ export default function Account() {
                       </Button>
                     ) : (
                       <Button 
-                        className={`w-full bg-gradient-to-r ${plan.color} hover:opacity-90`}
+                        className={`w-full bg-gradient-to-r ${plan.color} hover:opacity-90 text-white font-bold`}
                         onClick={() => handleSubscribe(plan.key)}
                         disabled={subscribing}
                       >
