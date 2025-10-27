@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ const PLAN_DETAILS = [
     label: 'Lite',
     price: '฿390',
     priceNum: 390,
+    priceId: 'price_1SM6qtQwoI6NhlUxgDDy2LuJ',
     interval: '/month',
     benefits: [
       'Full AI Lease Reports',
@@ -31,6 +33,7 @@ const PLAN_DETAILS = [
     label: 'Protect',
     price: '฿690',
     priceNum: 690,
+    priceId: 'price_1SM6rhQwoI6NhlUxZIN3WekE',
     interval: '/month',
     benefits: [
       'Everything in Lite',
@@ -49,6 +52,7 @@ const PLAN_DETAILS = [
     label: 'Secure',
     price: '฿1,290',
     priceNum: 1290,
+    priceId: 'price_1SM6t9QwoI6NhlUxy5Pl7Rrq',
     interval: '/month',
     benefits: [
       'Everything in Protect',
@@ -66,6 +70,7 @@ const PLAN_DETAILS = [
 export default function Account() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -101,9 +106,26 @@ export default function Account() {
     updateProfileMutation.mutate(formData);
   };
 
-  const handleSubscribe = (planKey) => {
-    // In production, this would redirect to Stripe Checkout
-    alert(`Subscription to ${planKey} plan will be implemented with Stripe Checkout`);
+  const handleSubscribe = async (planKey) => {
+    const plan = PLAN_DETAILS.find(p => p.key === planKey);
+    if (!plan) return;
+
+    setSubscribing(true);
+    try {
+      const { url } = await base44.functions.invoke('createCheckout', {
+        priceId: plan.priceId,
+        mode: 'subscription'
+      });
+      
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      alert('Failed to start subscription. Please try again.');
+    } finally {
+      setSubscribing(false);
+    }
   };
 
   return (
@@ -311,8 +333,9 @@ export default function Account() {
                       <Button 
                         className={`w-full bg-gradient-to-r ${plan.color} hover:opacity-90`}
                         onClick={() => handleSubscribe(plan.key)}
+                        disabled={subscribing}
                       >
-                        Subscribe to {plan.label}
+                        {subscribing ? 'Processing...' : `Subscribe to ${plan.label}`}
                       </Button>
                     )}
                   </CardContent>

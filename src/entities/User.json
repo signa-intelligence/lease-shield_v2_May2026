@@ -41,6 +41,10 @@
       "type": "string",
       "format": "date-time",
       "description": "Plan renewal date"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID"
     }
   },
   "required": []
