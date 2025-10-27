@@ -109,6 +109,7 @@ export default function TemplateForm() {
   
   const [generating, setGenerating] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState('');
+  const [generatedDocId, setGeneratedDocId] = useState(null);
   const [copied, setCopied] = useState(false);
   const [language, setLanguage] = useState('both');
   const [formData, setFormData] = useState({});
@@ -123,6 +124,7 @@ export default function TemplateForm() {
       const prompt = TEMPLATE_PROMPTS[templateId];
       const fieldValues = schema.fields.map(f => `${f.label}: ${formData[f.name] || 'N/A'}`).join('\n');
       
+      // Step 1: Generate letter using AI
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `${prompt}
 
@@ -147,6 +149,25 @@ Generate the letter now.`,
       });
 
       setGeneratedLetter(result.letter);
+
+      // Step 2: Save document to database
+      const templateTitles = {
+        deposit_request: 'Deposit Return Request',
+        deposit_late: 'Late Deposit Return Reminder',
+        repair_dispute: 'Repair Cost Dispute',
+        pdpa_request: 'PDPA Data Request',
+        pre_move_out: 'Pre-Move-Out Notice',
+        handover_check: 'Handover Inspection Checklist',
+        contract_clarification: 'Contract Clarification Request'
+      };
+
+      const doc = await base44.entities.Document.create({
+        type: 'letter',
+        label: templateTitles[templateId] || 'Generated Letter'
+      });
+
+      setGeneratedDocId(doc.id);
+      
     } catch (error) {
       console.error('Failed to generate letter:', error);
       alert('Failed to generate letter. Please try again.');
@@ -159,6 +180,18 @@ Generate the letter now.`,
     navigator.clipboard.writeText(generatedLetter);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([generatedLetter], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${templateId}_${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
   };
 
   const handleInputChange = (name, value) => {
@@ -257,7 +290,7 @@ Generate the letter now.`,
                       {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
                       {copied ? 'Copied!' : 'Copy'}
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={handleDownload}>
                       <Download className="w-4 h-4 mr-2" />
                       Download
                     </Button>

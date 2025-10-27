@@ -1,15 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import LeaseAnalysisResults from "../components/leases/LeaseAnalysisResults";
 
 export default function ScanPreview() {
   const navigate = useNavigate();
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const urlParams = new URLSearchParams(window.location.search);
   const scanId = urlParams.get('scanId');
   const leaseId = urlParams.get('leaseId');
@@ -34,6 +35,70 @@ export default function ScanPreview() {
 
   const handleSave = () => {
     navigate(createPageUrl("Dashboard"));
+  };
+
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      // Generate PDF report using AI
+      const pdfResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `Create a professional PDF-ready lease risk report with the following structure:
+
+LEASE SHIELD – RISK REPORT
+Fair. Transparent. Protected.
+
+1) SUMMARY
+${scan.summary}
+
+2) OVERALL RISK SCORE
+Score: ${scan.risk_score}/100
+${scan.risk_score >= 75 ? 'High Risk - Immediate attention recommended' : 
+  scan.risk_score >= 50 ? 'Medium Risk - Review carefully' : 
+  scan.risk_score >= 25 ? 'Low Risk - Minor concerns' : 'Very Low Risk - Generally favorable'}
+
+3) FLAGGED CLAUSES
+${JSON.stringify(scan.scan_full.flags, null, 2)}
+
+4) MISSING PROTECTIONS
+${JSON.stringify(scan.scan_full.missing_items, null, 2)}
+
+5) KEY TERMS
+${JSON.stringify(scan.scan_full.key_terms, null, 2)}
+
+6) NEXT STEPS
+- Review flagged clauses with landlord
+- Consider using letter templates for clarification
+- Keep evidence and documentation organized
+
+DISCLAIMER: This is a documentation service, not legal advice.
+
+Format this as a well-structured, professional document in both English and Thai.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            report_text: { type: "string" }
+          }
+        }
+      });
+
+      // In a real implementation, you would convert this to PDF
+      // For now, we'll create a text document
+      const blob = new Blob([pdfResult.report_text], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lease_shield_report_${scanId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF report. Please try again.');
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   if (isLoading) {
@@ -77,14 +142,34 @@ export default function ScanPreview() {
               <p className="text-slate-600">{lease.property_address}</p>
             )}
           </div>
-          {lease?.file_url && (
-            <a href={lease.file_url} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                View Original
-              </Button>
-            </a>
-          )}
+          <div className="flex gap-2">
+            {lease?.file_url && (
+              <a href={lease.file_url} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm">
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View Original
+                </Button>
+              </a>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+            >
+              {downloadingPdf ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download PDF
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         <LeaseAnalysisResults scan={scan} onSave={handleSave} />

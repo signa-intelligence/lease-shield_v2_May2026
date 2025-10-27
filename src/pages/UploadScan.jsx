@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -62,8 +61,10 @@ export default function UploadScan() {
     setUploading(true);
 
     try {
+      // Step 1: Upload file
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       
+      // Step 2: Create lease record
       const lease = await base44.entities.Lease.create({
         file_url,
         status: 'uploaded'
@@ -71,7 +72,7 @@ export default function UploadScan() {
 
       setAnalyzing(true);
       
-      // Step 1: Extract and classify clauses
+      // Step 3: Run AI pipeline - Extract and classify clauses
       const analysisResult = await base44.integrations.Core.InvokeLLM({
         prompt: `You are an assistant that analyzes Thai/English residential lease contracts.
 Extract risky/illegal/unfair clauses, missing protections, and compliance gaps.
@@ -120,7 +121,7 @@ Analyze this lease agreement thoroughly and identify any potential issues or unf
         }
       });
 
-      // Step 2: Calculate risk score and summary
+      // Step 4: Calculate risk score and summary
       const scoreResult = await base44.integrations.Core.InvokeLLM({
         prompt: `Given the flags JSON, compute:
 - risk_score: integer 0..100 (0 = very safe, 100 = very risky)
@@ -149,7 +150,7 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
         }
       });
 
-      // Update lease with extracted data
+      // Step 5: Update lease with extracted data
       await base44.entities.Lease.update(lease.id, {
         status: 'scanned',
         property_address: analysisResult.key_terms?.property_address,
@@ -160,7 +161,7 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
         language_detected: analysisResult.key_terms?.language_detected
       });
 
-      // Create scan preview
+      // Step 6: Create scan record with preview and full data
       const scan = await base44.entities.LeaseScan.create({
         lease_id: lease.id,
         risk_score: scoreResult.risk_score,
@@ -172,6 +173,8 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
       });
 
       queryClient.invalidateQueries({ queryKey: ['leases'] });
+      
+      // Step 7: Navigate to preview
       navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
       
     } catch (err) {
@@ -198,9 +201,13 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <Upload className="w-7 h-7 text-blue-600" />
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Upload & Scan</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+              {language === 'th' ? 'อัปโหลดและสแกน' : 'Upload & Scan'}
+            </h1>
           </div>
-          <p className="text-slate-600">AI-powered lease analysis in seconds</p>
+          <p className="text-slate-600">
+            {language === 'th' ? 'วิเคราะห์สัญญาเช่าด้วย AI ในไม่กี่วินาที' : 'AI-powered lease analysis in seconds'}
+          </p>
         </div>
 
         {error && (
@@ -216,10 +223,14 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
               <div className="text-center py-12">
                 <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-slate-900 mb-2">
-                  {uploading ? 'Uploading Lease...' : 'Analyzing Agreement...'}
+                  {uploading 
+                    ? (language === 'th' ? 'กำลังอัปโหลดสัญญา...' : 'Uploading Lease...') 
+                    : (language === 'th' ? 'กำลังวิเคราะห์สัญญา...' : 'Analyzing Agreement...')}
                 </h3>
                 <p className="text-slate-600">
-                  {analyzing ? 'Our AI is reviewing your lease for potential issues' : 'Please wait'}
+                  {analyzing 
+                    ? (language === 'th' ? 'AI กำลังตรวจสอบสัญญาของคุณเพื่อหาประเด็นที่อาจเป็นปัญหา' : 'Our AI is reviewing your lease for potential issues')
+                    : (language === 'th' ? 'กรุณารอสักครู่' : 'Please wait')}
                 </p>
               </div>
             ) : (
@@ -236,7 +247,9 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
           <div>
             <div className="flex items-center gap-2 mb-4">
               <History className="w-5 h-5 text-slate-600" />
-              <h2 className="text-lg font-bold text-slate-900">Recent Scans</h2>
+              <h2 className="text-lg font-bold text-slate-900">
+                {language === 'th' ? 'การสแกนล่าสุด' : 'Recent Scans'}
+              </h2>
             </div>
             <div className="space-y-3">
               {leases.map((lease) => (
@@ -246,7 +259,7 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
                       <FileText className="w-5 h-5 text-blue-600" />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-900 truncate">
-                          {lease.property_address || 'Lease Agreement'}
+                          {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
                         </p>
                         <p className="text-sm text-slate-500">
                           {format(new Date(lease.created_date), 'MMM d, yyyy')}
