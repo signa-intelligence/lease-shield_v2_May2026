@@ -227,23 +227,43 @@ export default function AdminConsole() {
               Create demo leases, deposit trackers, and cases for testing.
             </p>
             <div className="flex gap-3">
-              <Button
+              <button
                 onClick={handleSeedDemo}
                 disabled={seeding}
-                className="bg-ls-forest hover:bg-emerald-900"
+                style={{
+                  backgroundColor: seeding ? '#9CA3AF' : '#0C3B2E',
+                  color: '#FFFFFF',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  border: 'none',
+                  cursor: seeding ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                  opacity: seeding ? 0.6 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!seeding) e.currentTarget.style.backgroundColor = '#0a2f25';
+                }}
+                onMouseLeave={(e) => {
+                  if (!seeding) e.currentTarget.style.backgroundColor = '#0C3B2E';
+                }}
               >
                 {seeding ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Seeding Demo Data...
                   </>
                 ) : (
                   <>
-                    <Database className="w-4 h-4 mr-2" />
+                    <Database className="w-4 h-4" />
                     Seed Demo Data
                   </>
                 )}
-              </Button>
+              </button>
             </div>
 
             {error && (
