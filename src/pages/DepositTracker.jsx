@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Wallet, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Shield, Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInDays, addMonths, startOfMonth } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +27,11 @@ export default function DepositTracker() {
     deposit_paid_date: '',
     expected_return_date: '',
     property_address: '',
-    notes: ''
+    notes: '',
+    rent_amount: '',
+    rent_due_day: 1,
+    rent_alerts_enabled: false,
+    rent_alert_days_before: 3
   });
   
   const queryClient = useQueryClient();
@@ -36,17 +40,23 @@ export default function DepositTracker() {
 
   const t = {
     en: {
-      title: "Deposit Tracker",
-      subtitle: "Monitor your security deposits",
+      title: "Deposit Protection File",
+      subtitle: "Secure storage for your lease, receipts, and deposit proof",
       dialogTitle: "Track New Deposit",
       amountLabel: "Deposit Amount (฿)",
       addressLabel: "Property Address",
       paidDateLabel: "Date Paid",
       returnDateLabel: "Expected Return Date",
       notesLabel: "Notes",
+      rentAmountLabel: "Monthly Rent (฿)",
+      rentDueDayLabel: "Rent Due Day",
+      rentAlertsLabel: "Enable Rent Alerts",
+      alertDaysLabel: "Alert Days Before",
       trackDepositButton: "Track Deposit",
       depositShieldTitle: "Deposit Shield Active",
       depositShieldSubtitle: "Your deposits are protected with automatic reminders and dispute assistance",
+      rentAlertsTitle: "Rent Alerts",
+      rentAlertsSubtitle: "Automated reminders for rent payments and renewals",
       lineNotifyButton: "LINE Notify",
       noDepositsTitle: "No Deposits Tracked",
       noDepositsSubtitle: "Start tracking your security deposits to get return reminders",
@@ -62,19 +72,28 @@ export default function DepositTracker() {
       },
       markReturnedButton: "Mark Returned",
       openDisputeButton: "Open Dispute",
+      nextRentDue: "Next Rent Due",
+      rentReminder: "Rent reminder",
+      daysBefore: "days before"
     },
     th: {
-      title: "ติดตามเงินมัดจำ",
-      subtitle: "ตรวจสอบเงินประกันของคุณ",
+      title: "ไฟล์ป้องกันเงินมัดจำ",
+      subtitle: "จัดเก็บสัญญาเช่า ใบเสร็จ และหลักฐานเงินมัดจำอย่างปลอดภัย",
       dialogTitle: "ติดตามเงินมัดจำใหม่",
       amountLabel: "จำนวนเงินมัดจำ (฿)",
       addressLabel: "ที่อยู่ทรัพย์สิน",
       paidDateLabel: "วันที่จ่าย",
       returnDateLabel: "วันที่คาดว่าจะได้รับคืน",
       notesLabel: "หมายเหตุ",
+      rentAmountLabel: "ค่าเช่ารายเดือน (฿)",
+      rentDueDayLabel: "วันครบกำหนดค่าเช่า",
+      rentAlertsLabel: "เปิดการแจ้งเตือนค่าเช่า",
+      alertDaysLabel: "แจ้งเตือนก่อนกี่วัน",
       trackDepositButton: "ติดตามเงินมัดจำ",
       depositShieldTitle: "ระบบป้องกันเงินมัดจำทำงานอยู่",
       depositShieldSubtitle: "เงินมัดจำของคุณได้รับการคุ้มครองด้วยการแจ้งเตือนอัตโนมัติและความช่วยเหลือในการข้อพิพาท",
+      rentAlertsTitle: "การแจ้งเตือนค่าเช่า",
+      rentAlertsSubtitle: "แจ้งเตือนอัตโนมัติสำหรับการชำระค่าเช่าและการต่ออายุ",
       lineNotifyButton: "แจ้งเตือน LINE",
       noDepositsTitle: "ยังไม่มีเงินมัดจำที่ติดตาม",
       noDepositsSubtitle: "เริ่มติดตามเงินประกันของคุณเพื่อรับการแจ้งเตือนการคืนเงิน",
@@ -90,10 +109,11 @@ export default function DepositTracker() {
       },
       markReturnedButton: "ทำเครื่องหมายว่าคืนแล้ว",
       openDisputeButton: "เปิดข้อพิพาท",
+      nextRentDue: "ครบกำหนดค่าเช่าครั้งถัดไป",
+      rentReminder: "แจ้งเตือนค่าเช่า",
+      daysBefore: "วันก่อน"
     }
   };
-
-  const strings = t.en; // Default to English, or use a state/context for language selection
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -116,7 +136,11 @@ export default function DepositTracker() {
         deposit_paid_date: '',
         expected_return_date: '',
         property_address: '',
-        notes: ''
+        notes: '',
+        rent_amount: '',
+        rent_due_day: 1,
+        rent_alerts_enabled: false,
+        rent_alert_days_before: 3
       });
     },
   });
@@ -133,6 +157,8 @@ export default function DepositTracker() {
     createDepositMutation.mutate({
       ...formData,
       deposit_amount: parseFloat(formData.deposit_amount),
+      rent_amount: formData.rent_amount ? parseFloat(formData.rent_amount) : null,
+      rent_due_day: formData.rent_due_day ? parseInt(formData.rent_due_day) : null,
       status: 'tracking'
     });
   };
@@ -159,6 +185,20 @@ export default function DepositTracker() {
   const getDaysRemaining = (date) => {
     return differenceInDays(new Date(date), new Date());
   };
+
+  const getNextRentDueDate = (rentDueDay) => {
+    const today = new Date();
+    const currentMonth = startOfMonth(today);
+    const thisMonthDue = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), rentDueDay);
+    
+    if (thisMonthDue < today) {
+      return new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, rentDueDay);
+    }
+    return thisMonthDue;
+  };
+
+  const language = user?.language || 'en';
+  const strings = t[language];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-6 md:p-8">
@@ -197,7 +237,7 @@ export default function DepositTracker() {
                 Add Deposit
               </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{strings.dialogTitle}</DialogTitle>
               </DialogHeader>
@@ -242,6 +282,62 @@ export default function DepositTracker() {
                     onChange={(e) => setFormData({...formData, expected_return_date: e.target.value})}
                   />
                 </div>
+
+                {/* Rent Alerts Section */}
+                <div className="pt-4 border-t border-slate-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <Label className="text-sm font-bold">{strings.rentAlertsTitle}</Label>
+                      <p className="text-xs text-slate-500">{strings.rentAlertsSubtitle}</p>
+                    </div>
+                    <Switch
+                      checked={formData.rent_alerts_enabled}
+                      onCheckedChange={(checked) => setFormData({...formData, rent_alerts_enabled: checked})}
+                    />
+                  </div>
+
+                  {formData.rent_alerts_enabled && (
+                    <>
+                      <div className="mb-3">
+                        <Label htmlFor="rent_amount">{strings.rentAmountLabel}</Label>
+                        <Input
+                          id="rent_amount"
+                          type="number"
+                          value={formData.rent_amount}
+                          onChange={(e) => setFormData({...formData, rent_amount: e.target.value})}
+                          placeholder="15000"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="rent_due_day">{strings.rentDueDayLabel}</Label>
+                          <Input
+                            id="rent_due_day"
+                            type="number"
+                            min="1"
+                            max="31"
+                            value={formData.rent_due_day}
+                            onChange={(e) => setFormData({...formData, rent_due_day: e.target.value})}
+                            placeholder="1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="alert_days">{strings.alertDaysLabel}</Label>
+                          <Input
+                            id="alert_days"
+                            type="number"
+                            min="1"
+                            max="14"
+                            value={formData.rent_alert_days_before}
+                            onChange={(e) => setFormData({...formData, rent_alert_days_before: e.target.value})}
+                            placeholder="3"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <div>
                   <Label htmlFor="notes">{strings.notesLabel}</Label>
                   <Textarea
@@ -336,6 +432,8 @@ export default function DepositTracker() {
             deposits.map((deposit) => {
               const daysRemaining = getDaysRemaining(deposit.expected_return_date);
               const isUrgent = daysRemaining <= 30 && deposit.status === 'tracking';
+              const nextRentDue = deposit.rent_alerts_enabled && deposit.rent_due_day ? getNextRentDueDate(deposit.rent_due_day) : null;
+              const daysToRent = nextRentDue ? getDaysRemaining(nextRentDue) : null;
               
               return (
                 <Card key={deposit.id} className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${isUrgent ? 'ring-2 ring-ls-gold' : ''}`}>
@@ -367,6 +465,29 @@ export default function DepositTracker() {
                   </CardHeader>
                   
                   <CardContent className="p-6">
+                    {/* Rent Alert Display */}
+                    {deposit.rent_alerts_enabled && deposit.rent_amount && nextRentDue && (
+                      <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Bell className="w-5 h-5 text-blue-600" />
+                          <h4 className="font-bold text-blue-900">{strings.nextRentDue}</h4>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs text-blue-700 mb-1">Amount</p>
+                            <p className="text-lg font-bold text-blue-900">฿{deposit.rent_amount.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-blue-700 mb-1">Due Date</p>
+                            <p className="text-lg font-bold text-blue-900">{format(nextRentDue, 'MMM d, yyyy')}</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-blue-700 mt-3">
+                          {strings.rentReminder} {deposit.rent_alert_days_before} {strings.daysBefore} ({daysToRent} days)
+                        </p>
+                      </div>
+                    )}
+
                     <div className="grid md:grid-cols-3 gap-6">
                       <div>
                         <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
@@ -393,7 +514,7 @@ export default function DepositTracker() {
                             {strings.daysRemaining}
                           </div>
                           <p className={`font-semibold ${isUrgent ? 'text-amber-600' : 'text-slate-900'}`}>
-                            {daysRemaining} {strings.daysRemaining.toLowerCase()}
+                            {daysRemaining} days
                           </p>
                         </div>
                       )}
