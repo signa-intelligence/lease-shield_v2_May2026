@@ -1,0 +1,152 @@
+{
+  "name": "MaintenanceRequest",
+  "type": "object",
+  "properties": {
+    "issue_title": {
+      "type": "string",
+      "description": "Brief title of the maintenance issue"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the issue"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "plumbing",
+        "electrical",
+        "structural",
+        "appliance",
+        "hvac",
+        "pest",
+        "other"
+      ],
+      "default": "other",
+      "description": "Type of maintenance issue"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "reported",
+        "landlord_notified",
+        "in_progress",
+        "completed",
+        "rejected"
+      ],
+      "default": "reported",
+      "description": "Current status of the request"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium",
+      "description": "Priority level"
+    },
+    "property_address": {
+      "type": "string",
+      "description": "Property address"
+    },
+    "reported_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date issue was reported"
+    },
+    "resolved_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date issue was resolved"
+    },
+    "estimated_cost": {
+      "type": "number",
+      "description": "Estimated repair cost"
+    },
+    "actual_cost": {
+      "type": "number",
+      "description": "Actual repair cost"
+    },
+    "photo_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Photos of the issue"
+    },
+    "landlord_response": {
+      "type": "string",
+      "description": "Landlord's response or notes"
+    },
+    "communication_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "message": {
+            "type": "string"
+          },
+          "sender": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Log of all communications"
+    }
+  },
+  "required": [
+    "issue_title",
+    "reported_date"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": {
+          "$ne": "guest"
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

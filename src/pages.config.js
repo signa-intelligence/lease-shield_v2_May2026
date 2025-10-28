@@ -15,6 +15,7 @@ import ResolveCase from './pages/ResolveCase';
 import Account from './pages/Account';
 import AdminConsole from './pages/AdminConsole';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import MaintenanceTracker from './pages/MaintenanceTracker';
 import Layout from './Layout.jsx';
 
 
@@ -36,6 +37,7 @@ export const PAGES = {
     "Account": Account,
     "AdminConsole": AdminConsole,
     "PrivacyPolicy": PrivacyPolicy,
+    "MaintenanceTracker": MaintenanceTracker,
 }
 
 export const pagesConfig = {

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -39,6 +39,12 @@ export default function Layout({ children, currentPageName }) {
       label: language === 'th' ? "สแกน" : "Scan",
       route: createPageUrl("UploadScan"),
       icon: Upload,
+    },
+    {
+      key: "maintenance",
+      label: language === 'th' ? "ซ่อมบำรุง" : "Repairs",
+      route: createPageUrl("MaintenanceTracker"),
+      icon: Wrench,
     },
     {
       key: "deposit",
