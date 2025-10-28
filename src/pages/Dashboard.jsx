@@ -1,3 +1,4 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -102,7 +103,7 @@ export default function Dashboard() {
     return { score, breakdown };
   };
 
-  // Get color based on protection score
+  // Get color and status based on protection score
   const getProtectionScoreColor = (score) => {
     if (score >= 85) return '#10B981'; // Green - Excellent
     if (score >= 70) return '#EAB308'; // Yellow - Good
@@ -110,8 +111,33 @@ export default function Dashboard() {
     return '#EF4444'; // Red - Needs improvement
   };
 
+  const getProtectionScoreStatus = (score) => {
+    const statuses = {
+      en: {
+        excellent: 'Excellent Protection',
+        good: 'Good Protection',
+        fair: 'Needs Improvement',
+        poor: 'Attention Required'
+      },
+      th: {
+        excellent: 'การป้องกันที่ยอดเยี่ยม',
+        good: 'การป้องกันที่ดี',
+        fair: 'ต้องการปรับปรุง',
+        poor: 'ต้องการความสนใจ'
+      }
+    };
+
+    const lang = statuses[language] || statuses.en;
+
+    if (score >= 85) return lang.excellent;
+    if (score >= 70) return lang.good;
+    if (score >= 50) return lang.fair;
+    return lang.poor;
+  };
+
   const { score: protectionScore, breakdown } = calculateProtectionScore();
   const protectionScoreColor = getProtectionScoreColor(protectionScore);
+  const protectionScoreStatus = getProtectionScoreStatus(protectionScore);
 
   const activeDeposits = deposits.filter(d => d.status === 'tracking');
   const activeCases = cases.filter(c => !['closed'].includes(c.status));
@@ -208,6 +234,7 @@ export default function Dashboard() {
             value={`${protectionScore}%`}
             icon={Shield}
             scoreColor={protectionScoreColor}
+            scoreStatus={protectionScoreStatus}
             trend={protectionScore >= 70 ? "+5%" : undefined}
             trendUp={protectionScore >= 70}
           />

@@ -1,8 +1,9 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bgGradient, scoreColor }) {
+export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bgGradient, scoreColor, scoreStatus }) {
   return (
     <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
       {/* Background circle - changes color for Protection Score */}
@@ -14,11 +15,11 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bg
       />
       <div className="p-6 relative z-10">
         <div className="flex justify-between items-start mb-4">
-          {/* Icon box - stays fixed color */}
+          {/* Icon box - matches score color for Protection Score */}
           <div 
             className={`p-3 rounded-xl ${bgGradient || ''}`}
             style={
-              scoreColor ? { background: 'linear-gradient(to bottom right, #0C3B2E, #14532d)' } : {}
+              scoreColor ? { backgroundColor: scoreColor } : {}
             }
           >
             <Icon className="w-6 h-6 text-white" />
@@ -32,7 +33,19 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bg
         </div>
         <div>
           <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-ls-charcoal">{value}</p>
+          <p className="text-3xl font-bold text-ls-charcoal mb-2">{value}</p>
+          {scoreStatus && (
+            <Badge 
+              style={{
+                backgroundColor: `${scoreColor}15`,
+                color: scoreColor,
+                border: `1px solid ${scoreColor}30`
+              }}
+              className="font-semibold"
+            >
+              {scoreStatus}
+            </Badge>
+          )}
         </div>
       </div>
     </Card>
