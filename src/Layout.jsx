@@ -15,6 +15,11 @@ export default function Layout({ children, currentPageName }) {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Scroll to top on route change
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   // Register Service Worker
   React.useEffect(() => {
     if ('serviceWorker' in navigator) {
