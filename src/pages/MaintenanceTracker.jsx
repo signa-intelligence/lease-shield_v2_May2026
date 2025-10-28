@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -387,13 +388,17 @@ export default function MaintenanceTracker() {
           </Dialog>
         </div>
 
-        {/* Filter Tabs */}
+        {/* Filter Tabs - FIXED */}
         <div className="flex gap-3 mb-6">
           <Button
             size="sm"
             variant={filterStatus === 'all' ? 'default' : 'outline'}
             onClick={() => setFilterStatus('all')}
-            className={filterStatus === 'all' ? 'bg-ls-forest' : ''}
+            style={{
+              backgroundColor: filterStatus === 'all' ? '#0C3B2E' : 'transparent',
+              color: filterStatus === 'all' ? '#FFFFFF' : '#1A1D1F',
+              borderColor: filterStatus === 'all' ? '#0C3B2E' : '#D1D5DB'
+            }}
           >
             {strings.allRequests} ({requests.length})
           </Button>
@@ -401,7 +406,11 @@ export default function MaintenanceTracker() {
             size="sm"
             variant={filterStatus === 'active' ? 'default' : 'outline'}
             onClick={() => setFilterStatus('active')}
-            className={filterStatus === 'active' ? 'bg-ls-forest' : ''}
+            style={{
+              backgroundColor: filterStatus === 'active' ? '#0C3B2E' : 'transparent',
+              color: filterStatus === 'active' ? '#FFFFFF' : '#1A1D1F',
+              borderColor: filterStatus === 'active' ? '#0C3B2E' : '#D1D5DB'
+            }}
           >
             {strings.active} ({requests.filter(r => !['completed', 'rejected'].includes(r.status)).length})
           </Button>
@@ -409,7 +418,11 @@ export default function MaintenanceTracker() {
             size="sm"
             variant={filterStatus === 'completed' ? 'default' : 'outline'}
             onClick={() => setFilterStatus('completed')}
-            className={filterStatus === 'completed' ? 'bg-ls-forest' : ''}
+            style={{
+              backgroundColor: filterStatus === 'completed' ? '#0C3B2E' : 'transparent',
+              color: filterStatus === 'completed' ? '#FFFFFF' : '#1A1D1F',
+              borderColor: filterStatus === 'completed' ? '#0C3B2E' : '#D1D5DB'
+            }}
           >
             {strings.completed} ({requests.filter(r => r.status === 'completed').length})
           </Button>
