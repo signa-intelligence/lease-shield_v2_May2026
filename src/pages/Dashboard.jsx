@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { differenceInDays } from "date-fns";
 
 import StatsCard from "../components/dashboard/StatsCard";
 import DepositAlert from "../components/dashboard/DepositAlert";
@@ -35,8 +36,83 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  const { data: documents = [] } = useQuery({
+    queryKey: ['documents'],
+    queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  const { data: maintenanceRequests = [] } = useQuery({
+    queryKey: ['maintenance'],
+    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  // Calculate Protection Score
+  const calculateProtectionScore = () => {
+    let score = 0;
+    let breakdown = {
+      documentation: 0,
+      activeProtections: 0,
+      proactiveActions: 0
+    };
+
+    // 1. Documentation Completeness (40 points max)
+    const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
+    if (scannedLeases.length > 0) breakdown.documentation += 15;
+    if (deposits.length > 0) breakdown.documentation += 10;
+    if (documents.length > 0) breakdown.documentation += 10;
+    if (documents.length >= 5) breakdown.documentation += 5; // Bonus for thorough documentation
+
+    // 2. Active Protections (30 points max)
+    const activeDeposits = deposits.filter(d => d.status === 'tracking');
+    if (activeDeposits.length > 0) breakdown.activeProtections += 10;
+    
+    const rentAlertsEnabled = deposits.some(d => d.rent_alerts_enabled);
+    if (rentAlertsEnabled) breakdown.activeProtections += 7;
+    
+    if (maintenanceRequests.length > 0) breakdown.activeProtections += 6;
+    
+    if (user?.email_notifications || user?.line_notifications) breakdown.activeProtections += 7;
+
+    // 3. Proactive Actions (30 points max)
+    const now = new Date();
+    const recentLeases = leases.filter(l => {
+      const daysSinceCreated = differenceInDays(now, new Date(l.created_date));
+      return daysSinceCreated <= 90;
+    });
+    if (recentLeases.length > 0) breakdown.proactiveActions += 10;
+
+    const recentDeposits = deposits.filter(d => {
+      const daysSinceCreated = differenceInDays(now, new Date(d.created_date));
+      return daysSinceCreated <= 90;
+    });
+    if (recentDeposits.length > 0) breakdown.proactiveActions += 8;
+
+    const recentDocuments = documents.filter(doc => {
+      const daysSinceCreated = differenceInDays(now, new Date(doc.created_date));
+      return daysSinceCreated <= 30;
+    });
+    if (recentDocuments.length > 0) breakdown.proactiveActions += 7;
+
+    if (recentDocuments.length >= 3) breakdown.proactiveActions += 5; // Bonus for regular updates
+
+    score = breakdown.documentation + breakdown.activeProtections + breakdown.proactiveActions;
+    
+    return { score, breakdown };
+  };
+
+  const { score: protectionScore, breakdown } = calculateProtectionScore();
+
   const activeDeposits = deposits.filter(d => d.status === 'tracking');
   const activeCases = cases.filter(c => !['closed'].includes(c.status));
+
+  // Calculate trend for this month vs last month
+  const now = new Date();
+  const thisMonthLeases = leases.filter(l => {
+    const leaseDate = new Date(l.created_date);
+    return leaseDate.getMonth() === now.getMonth() && leaseDate.getFullYear() === now.getFullYear();
+  });
 
   const t = {
     en: {
@@ -103,8 +179,8 @@ export default function Dashboard() {
             value={leases.length}
             icon={FileText}
             bgGradient="bg-gradient-to-br from-ls-forest to-emerald-800"
-            trend={`+2 ${strings.thisMonth}`}
-            trendUp={true}
+            trend={thisMonthLeases.length > 0 ? `+${thisMonthLeases.length} ${strings.thisMonth}` : undefined}
+            trendUp={thisMonthLeases.length > 0}
           />
           <StatsCard
             title={strings.depositsTracked}
@@ -120,11 +196,11 @@ export default function Dashboard() {
           />
           <StatsCard
             title={strings.protectionScore}
-            value="85%"
+            value={`${protectionScore}%`}
             icon={Shield}
             bgGradient="bg-gradient-to-br from-emerald-600 to-emerald-700"
-            trend="+5%"
-            trendUp={true}
+            trend={protectionScore >= 70 ? "+5%" : undefined}
+            trendUp={protectionScore >= 70}
           />
         </div>
 
