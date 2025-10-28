@@ -2,13 +2,15 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
-export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bgGradient }) {
+export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bgGradient, scoreColor }) {
   return (
     <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
-      <div className={`absolute top-0 right-0 w-32 h-32 transform translate-x-8 -translate-y-8 ${bgGradient} rounded-full opacity-10`} />
+      <div className={`absolute top-0 right-0 w-32 h-32 transform translate-x-8 -translate-y-8 ${bgGradient || scoreColor} rounded-full opacity-10`} />
       <div className="p-6 relative z-10">
         <div className="flex justify-between items-start mb-4">
-          <div className={`p-3 rounded-xl ${bgGradient} bg-opacity-10`}>
+          <div className={`p-3 rounded-xl ${bgGradient || scoreColor} bg-opacity-10`} style={
+            scoreColor ? { backgroundColor: scoreColor } : {}
+          }>
             <Icon className="w-6 h-6 text-white" />
           </div>
           {trend && (

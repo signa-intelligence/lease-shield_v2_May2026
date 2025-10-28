@@ -102,7 +102,16 @@ export default function Dashboard() {
     return { score, breakdown };
   };
 
+  // Get color based on protection score
+  const getProtectionScoreColor = (score) => {
+    if (score >= 85) return '#10B981'; // Green - Excellent
+    if (score >= 70) return '#EAB308'; // Yellow - Good
+    if (score >= 50) return '#F59E0B'; // Orange - Fair
+    return '#EF4444'; // Red - Needs improvement
+  };
+
   const { score: protectionScore, breakdown } = calculateProtectionScore();
+  const protectionScoreColor = getProtectionScoreColor(protectionScore);
 
   const activeDeposits = deposits.filter(d => d.status === 'tracking');
   const activeCases = cases.filter(c => !['closed'].includes(c.status));
@@ -198,7 +207,7 @@ export default function Dashboard() {
             title={strings.protectionScore}
             value={`${protectionScore}%`}
             icon={Shield}
-            bgGradient="bg-gradient-to-br from-emerald-600 to-emerald-700"
+            scoreColor={protectionScoreColor}
             trend={protectionScore >= 70 ? "+5%" : undefined}
             trendUp={protectionScore >= 70}
           />
