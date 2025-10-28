@@ -207,37 +207,43 @@ export default function DocumentVault() {
           </Dialog>
         </div>
 
-        {/* Templates Button - Updated to lighter forest green */}
-        <Card 
-          className="mb-6 border-none shadow-lg cursor-pointer hover:shadow-xl transition-all" 
+        {/* Templates Button - Matching Account page style */}
+        <div
+          className="mb-6 cursor-pointer transition-all hover:shadow-lg"
           onClick={() => navigate(createPageUrl("Templates"))}
           style={{
-            background: 'linear-gradient(to right, #D1FAE5, #A7F3D0)',
-            border: '1px solid #6EE7B7'
+            padding: '16px',
+            backgroundColor: '#ECEFED',
+            borderRadius: '12px',
+            borderLeft: '4px solid #0C3B2E',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
           }}
         >
-          <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div 
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{
-                  backgroundColor: '#0C3B2E'
-                }}
-              >
+              <div style={{
+                width: '40px',
+                height: '40px',
+                backgroundColor: '#0C3B2E',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
                 <FileCheck className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-ls-forest">{language === 'th' ? 'เทมเพลตจดหมายที่ปลอดภัยทางกฎหมาย' : 'Legal-safe Templates'}</h3>
-                <p className="text-sm text-emerald-700">{language === 'th' ? 'สร้างจดหมายมืออาชีพ' : 'Generate professional letters'}</p>
+                <h3 className="font-bold text-ls-charcoal">{language === 'th' ? 'เทมเพลตจดหมายที่ปลอดภัยทางกฎหมาย' : 'Legal-safe Templates'}</h3>
+                <p className="text-sm text-slate-600">{language === 'th' ? 'สร้างจดหมายมืออาชีพ' : 'Generate professional letters'}</p>
               </div>
             </div>
             <button 
-              className="px-4 py-2 bg-white/60 border border-emerald-300 text-ls-forest hover:bg-white rounded-lg transition-colors font-semibold"
+              className="px-4 py-2 bg-white border border-ls-forest/20 text-ls-forest hover:bg-ls-forest hover:text-white rounded-lg transition-colors font-semibold"
             >
               {language === 'th' ? 'ดูเทมเพลต' : 'View Templates'}
             </button>
           </div>
-        </Card>
+        </div>
 
         {/* Filter Tabs */}
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
