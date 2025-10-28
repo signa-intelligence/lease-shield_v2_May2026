@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -218,7 +219,7 @@ export default function Layout({ children, currentPageName }) {
           })}
         </div>
 
-        {/* Disclaimer - Below Navigation Bar */}
+        {/* Disclaimer - Below Navigation Bar with Rounded Corners */}
         <div style={{
           position: 'absolute',
           bottom: 0,
@@ -227,7 +228,8 @@ export default function Layout({ children, currentPageName }) {
           padding: '8px 16px',
           textAlign: 'center',
           backgroundColor: '#FFFFFF',
-          borderTop: '1px solid #ECEFED'
+          borderTop: '1px solid #ECEFED',
+          borderRadius: '12px 12px 0 0'
         }}>
           <p style={{
             fontSize: '11px',
