@@ -15,6 +15,15 @@ export default function Layout({ children, currentPageName }) {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Register Service Worker
+  React.useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => console.log('SW registered:', reg))
+        .catch(err => console.log('SW registration failed:', err));
+    }
+  }, []);
+
   const language = user?.language || 'en';
   const isAdmin = user?.role === 'admin';
   
@@ -66,6 +75,16 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-ls-stone">
+      {/* PWA Meta Tags */}
+      <helmet>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0C3B2E" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="LeaseShield" />
+        <link rel="apple-touch-icon" href="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" />
+      </helmet>
+
       <style>{`
         :root {
           --ls-forest: #0C3B2E;
@@ -101,6 +120,15 @@ export default function Layout({ children, currentPageName }) {
             border-radius: 24px;
             margin-bottom: 16px;
             padding-bottom: 0;
+          }
+        }
+
+        /* PWA Install prompt styling */
+        @media (display-mode: standalone) {
+          body {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
           }
         }
       `}</style>
