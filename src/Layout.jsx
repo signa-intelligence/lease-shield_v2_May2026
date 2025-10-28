@@ -176,9 +176,11 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Bottom Navigation Tabs */}
       <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-ls-stone shadow-2xl z-50" style={{
-        paddingBottom: `calc(30px + env(safe-area-inset-bottom, 0px))`
+        paddingBottom: `calc(46px + env(safe-area-inset-bottom, 0px))`
       }}>
-        <div className={`flex items-center justify-around px-2 pt-2 pb-2 ${isAdmin ? 'overflow-x-auto' : ''}`}>
+        <div className={`flex items-center justify-around px-2 pt-2 ${isAdmin ? 'overflow-x-auto' : ''}`} style={{
+          paddingBottom: '8px'
+        }}>
           {navTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = isActiveTab(tab.route);
@@ -213,7 +215,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <Icon className="w-5 h-5 mb-1" style={{ animation: isActive ? 'pulse 2s infinite' : 'none' }} />
-                <span style={{ fontSize: '12px', fontWeight: '500', whiteSpace: 'nowrap' }}>{tab.label}</span>
+                <span style={{ fontSize: '12px', fontWeight: '500', whiteWhiteSpace: 'nowrap' }}>{tab.label}</span>
               </Link>
             );
           })}
@@ -222,15 +224,15 @@ export default function Layout({ children, currentPageName }) {
         {/* Disclaimer - Below Navigation Bar with All Corners Rounded */}
         <div style={{
           position: 'absolute',
-          bottom: 0,
+          bottom: `calc(8px + env(safe-area-inset-bottom, 0px))`,
           left: '8px',
           right: '8px',
           padding: '8px 16px',
           textAlign: 'center',
           backgroundColor: '#FFFFFF',
-          borderTop: '1px solid #ECEFED',
+          border: '1px solid #ECEFED',
           borderRadius: '12px',
-          marginBottom: '8px'
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.05)'
         }}>
           <p style={{
             fontSize: '11px',
