@@ -41,7 +41,8 @@ export default function Dashboard() {
   const t = {
     en: {
       welcome: "Welcome back",
-      subtitle: "Your rental protection dashboard",
+      tagline: "Fair. Transparent. Protected.",
+      subtitle: "Prevent rental problems before they happen.",
       activeLeases: "Active Leases",
       depositsTracked: "Deposits Tracked",
       activeCases: "Active Cases",
@@ -56,7 +57,8 @@ export default function Dashboard() {
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
-      subtitle: "แดชบอร์ดการปกป้องสิทธิ์การเช่าของคุณ",
+      tagline: "ยุติธรรม โปร่งใส ปลอดภัย",
+      subtitle: "ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น",
       activeLeases: "สัญญาเช่าที่ใช้งาน",
       depositsTracked: "เงินมัดจำที่ติดตาม",
       activeCases: "คดีที่ดำเนินการ",
@@ -78,12 +80,17 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto p-6 md:p-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-ls-forest" />
-            <h1 className="text-3xl md:text-4xl font-bold text-ls-charcoal">
-              {strings.welcome}, {user?.full_name?.split(' ')[0] || 'User'}
-            </h1>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="px-3 py-1 bg-ls-stone border border-ls-forest/20 rounded-full">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-ls-forest" />
+                <span className="text-sm font-semibold text-ls-forest">{strings.tagline}</span>
+              </div>
+            </div>
           </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-ls-charcoal mb-2">
+            {strings.welcome}, {user?.full_name?.split(' ')[0] || 'User'}
+          </h1>
           <p className="text-slate-600 text-lg">
             {strings.subtitle}
           </p>
