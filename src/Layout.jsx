@@ -219,17 +219,18 @@ export default function Layout({ children, currentPageName }) {
           })}
         </div>
 
-        {/* Disclaimer - Below Navigation Bar with Rounded Corners */}
+        {/* Disclaimer - Below Navigation Bar with All Corners Rounded */}
         <div style={{
           position: 'absolute',
           bottom: 0,
-          left: 0,
-          right: 0,
+          left: '8px',
+          right: '8px',
           padding: '8px 16px',
           textAlign: 'center',
           backgroundColor: '#FFFFFF',
           borderTop: '1px solid #ECEFED',
-          borderRadius: '12px 12px 0 0'
+          borderRadius: '12px',
+          marginBottom: '8px'
         }}>
           <p style={{
             fontSize: '11px',
