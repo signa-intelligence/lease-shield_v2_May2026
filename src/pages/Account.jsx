@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,10 +20,12 @@ const PLAN_DETAILS = [
     priceNum: 390,
     priceId: 'price_1SM6qtQwoI6NhlUxgDDy2LuJ',
     interval: '/month',
+    tagline: 'Prevention starts here',
+    description: 'Essential tools to prevent rental problems before they happen',
     benefits: [
-      'Full AI Lease Reports',
-      'Risk Score Analysis',
-      'Email Alerts',
+      'Full AI Lease Risk Reports',
+      'Risk Score Analysis (RED/AMBER/YELLOW/GREEN)',
+      'Email Alerts for Issues',
       'Basic Letter Templates',
       'Basic Document Storage'
     ],
@@ -36,9 +39,13 @@ const PLAN_DETAILS = [
     priceNum: 690,
     priceId: 'price_1SM6rhQwoI6NhlUxZIN3WekE',
     interval: '/month',
+    tagline: 'Complete prevention suite',
+    description: 'Everything you need to maintain clear, legal, and evidence-based relationships',
     benefits: [
       'Everything in Lite',
       'Deposit Shield Tracker',
+      'Rent Payment Alerts',
+      'Maintenance Request Tracker',
       'Automated Reminders',
       'Full Letter Templates',
       'Evidence Vault',
@@ -55,13 +62,16 @@ const PLAN_DETAILS = [
     priceNum: 1290,
     priceId: 'price_1SM6t9QwoI6NhlUxy5Pl7Rrq',
     interval: '/month',
+    tagline: 'Premium protection',
+    description: 'Maximum prevention with priority support and advanced features',
     benefits: [
       'Everything in Protect',
       'Priority Case Queue',
       'Priority AI Scanning',
       'Advanced Reminders',
       'Expanded Storage',
-      'Premium Support'
+      'Premium Support',
+      'Legal Document Archive'
     ],
     bgColor: '#1A1D1F',
     icon: Crown
@@ -751,8 +761,32 @@ export default function Account() {
           />
         </div>
 
+        {/* Prevention-First Subscription Positioning Banner */}
+        <div style={{
+          background: 'linear-gradient(to right, #0C3B2E, #047857)',
+          borderRadius: '16px',
+          padding: '32px',
+          marginBottom: '32px',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+        }}>
+          <div className="text-center">
+            <Shield className="w-12 h-12 text-white mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-3">
+              Prevention-First Protection
+            </h2>
+            <p className="text-white/90 text-lg mb-2">
+              Subscription-based protection for your lease, deposit, and documentation
+            </p>
+            <p className="text-white/80 text-sm max-w-2xl mx-auto">
+              Lease Shield helps you maintain clear, legal, and evidence-based leasing relationships. 
+              Prevent rental problems before they happen with automated alerts, risk analysis, and professional templates.
+            </p>
+          </div>
+        </div>
+
         <div id="plans-section" className="mb-6">
-          <h2 className="text-2xl font-bold text-ls-charcoal mb-4">Choose Your Plan</h2>
+          <h2 className="text-2xl font-bold text-ls-charcoal mb-2">Choose Your Protection Level</h2>
+          <p className="text-slate-600 mb-6">All plans focus on prevention and maintaining clear records</p>
           <div className="grid md:grid-cols-3 gap-6">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
@@ -797,6 +831,9 @@ export default function Account() {
                         {plan.label}
                       </h3>
                     </div>
+                    <p style={{ fontSize: '14px', color: '#FFFFFF', opacity: 0.9, marginBottom: '12px' }}>
+                      {plan.tagline}
+                    </p>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                       <span style={{ fontSize: '36px', fontWeight: 'bold', color: '#FFFFFF' }}>
                         {plan.price}
@@ -808,6 +845,9 @@ export default function Account() {
                   </div>
 
                   <div style={{ padding: '24px' }}>
+                    <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '16px', minHeight: '40px' }}>
+                      {plan.description}
+                    </p>
                     <ul style={{ 
                       listStyle: 'none', 
                       padding: 0, 
@@ -878,7 +918,7 @@ export default function Account() {
                           if (!subscribing) e.target.style.opacity = '1';
                         }}
                       >
-                        {subscribing ? 'Processing...' : `Subscribe to ${plan.label}`}
+                        {subscribing ? 'Processing...' : `Start ${plan.label}`}
                       </button>
                     )}
                   </div>
