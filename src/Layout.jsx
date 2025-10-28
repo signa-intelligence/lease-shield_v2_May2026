@@ -48,7 +48,7 @@ export default function Layout({ children, currentPageName }) {
     },
     {
       key: "docs",
-      label: language === 'th' ? "เอกสาร" : "Documents",
+      label: language === 'th' ? "หลักฐาน" : "Evidence",
       route: createPageUrl("DocumentVault"),
       icon: FileText,
     },

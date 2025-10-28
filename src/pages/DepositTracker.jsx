@@ -34,6 +34,67 @@ export default function DepositTracker() {
   const { hasAccess: hasDepositShield } = useFeatureAccess('deposit_shield');
   const { hasAccess: hasLineNotify } = useFeatureAccess('line_notify_enabled');
 
+  const t = {
+    en: {
+      title: "Deposit Tracker",
+      subtitle: "Monitor your security deposits",
+      dialogTitle: "Track New Deposit",
+      amountLabel: "Deposit Amount (฿)",
+      addressLabel: "Property Address",
+      paidDateLabel: "Date Paid",
+      returnDateLabel: "Expected Return Date",
+      notesLabel: "Notes",
+      trackDepositButton: "Track Deposit",
+      depositShieldTitle: "Deposit Shield Active",
+      depositShieldSubtitle: "Your deposits are protected with automatic reminders and dispute assistance",
+      lineNotifyButton: "LINE Notify",
+      noDepositsTitle: "No Deposits Tracked",
+      noDepositsSubtitle: "Start tracking your security deposits to get return reminders",
+      addFirstDepositButton: "Add Your First Deposit",
+      paidDate: "Paid Date",
+      expectedReturn: "Expected Return",
+      daysRemaining: "Days Remaining",
+      protectedBadge: "Protected",
+      reminderLineEmail: (daysRemaining) => {
+        if (daysRemaining <= 30) return '30-day reminder will be sent via LINE & Email';
+        if (daysRemaining <= 7) return '7-day reminder will be sent via LINE & Email';
+        return 'Automated reminder will be sent via LINE & Email';
+      },
+      markReturnedButton: "Mark Returned",
+      openDisputeButton: "Open Dispute",
+    },
+    th: {
+      title: "ติดตามเงินมัดจำ",
+      subtitle: "ตรวจสอบเงินประกันของคุณ",
+      dialogTitle: "ติดตามเงินมัดจำใหม่",
+      amountLabel: "จำนวนเงินมัดจำ (฿)",
+      addressLabel: "ที่อยู่ทรัพย์สิน",
+      paidDateLabel: "วันที่จ่าย",
+      returnDateLabel: "วันที่คาดว่าจะได้รับคืน",
+      notesLabel: "หมายเหตุ",
+      trackDepositButton: "ติดตามเงินมัดจำ",
+      depositShieldTitle: "ระบบป้องกันเงินมัดจำทำงานอยู่",
+      depositShieldSubtitle: "เงินมัดจำของคุณได้รับการคุ้มครองด้วยการแจ้งเตือนอัตโนมัติและความช่วยเหลือในการข้อพิพาท",
+      lineNotifyButton: "แจ้งเตือน LINE",
+      noDepositsTitle: "ยังไม่มีเงินมัดจำที่ติดตาม",
+      noDepositsSubtitle: "เริ่มติดตามเงินประกันของคุณเพื่อรับการแจ้งเตือนการคืนเงิน",
+      addFirstDepositButton: "เพิ่มเงินมัดจำแรกของคุณ",
+      paidDate: "วันที่จ่าย",
+      expectedReturn: "คาดว่าจะได้รับคืน",
+      daysRemaining: "วันคงเหลือ",
+      protectedBadge: "คุ้มครอง",
+      reminderLineEmail: (daysRemaining) => {
+        if (daysRemaining <= 30) return 'จะมีการแจ้งเตือน 30 วันผ่าน LINE และอีเมล';
+        if (daysRemaining <= 7) return 'จะมีการแจ้งเตือน 7 วันผ่าน LINE และอีเมล';
+        return 'จะมีการแจ้งเตือนอัตโนมัติผ่าน LINE และอีเมล';
+      },
+      markReturnedButton: "ทำเครื่องหมายว่าคืนแล้ว",
+      openDisputeButton: "เปิดข้อพิพาท",
+    }
+  };
+
+  const strings = t.en; // Default to English, or use a state/context for language selection
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -106,9 +167,9 @@ export default function DepositTracker() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Wallet className="w-8 h-8 text-ls-forest" />
-              <h1 className="text-3xl font-bold text-ls-charcoal">Deposit Tracker</h1>
+              <h1 className="text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
             </div>
-            <p className="text-slate-600">Monitor your security deposits</p>
+            <p className="text-slate-600">{strings.subtitle}</p>
           </div>
           
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
@@ -138,11 +199,11 @@ export default function DepositTracker() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Track New Deposit</DialogTitle>
+                <DialogTitle>{strings.dialogTitle}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="amount">Deposit Amount (฿)</Label>
+                  <Label htmlFor="amount">{strings.amountLabel}</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -153,7 +214,7 @@ export default function DepositTracker() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="address">Property Address</Label>
+                  <Label htmlFor="address">{strings.addressLabel}</Label>
                   <Input
                     id="address"
                     value={formData.property_address}
@@ -162,7 +223,7 @@ export default function DepositTracker() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="paid_date">Date Paid</Label>
+                  <Label htmlFor="paid_date">{strings.paidDateLabel}</Label>
                   <Input
                     id="paid_date"
                     type="date"
@@ -172,7 +233,7 @@ export default function DepositTracker() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="return_date">Expected Return Date</Label>
+                  <Label htmlFor="return_date">{strings.returnDateLabel}</Label>
                   <Input
                     id="return_date"
                     type="date"
@@ -182,7 +243,7 @@ export default function DepositTracker() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="notes">Notes</Label>
+                  <Label htmlFor="notes">{strings.notesLabel}</Label>
                   <Textarea
                     id="notes"
                     value={formData.notes}
@@ -207,7 +268,7 @@ export default function DepositTracker() {
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                 >
-                  Track Deposit
+                  {strings.trackDepositButton}
                 </button>
               </form>
             </DialogContent>
@@ -223,15 +284,15 @@ export default function DepositTracker() {
                   <Shield className="w-6 h-6" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-lg mb-1">Deposit Shield Active</h3>
+                  <h3 className="font-bold text-lg mb-1">{strings.depositShieldTitle}</h3>
                   <p className="text-ls-charcoal/80 text-sm">
-                    Your deposits are protected with automatic reminders and dispute assistance
+                    {strings.depositShieldSubtitle}
                   </p>
                 </div>
                 {hasLineNotify && (
                   <button className="px-4 py-2 bg-white/20 border border-white/30 text-ls-charcoal hover:bg-white/40 rounded-lg transition-colors flex items-center gap-2">
                     <Bell className="w-4 h-4" />
-                    LINE Notify
+                    {strings.lineNotifyButton}
                   </button>
                 )}
               </div>
@@ -244,8 +305,8 @@ export default function DepositTracker() {
             <Card className="border-none shadow-xl">
               <CardContent className="p-12 text-center">
                 <Wallet className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-ls-charcoal mb-2">No Deposits Tracked</h3>
-                <p className="text-slate-600 mb-6">Start tracking your security deposits to get return reminders</p>
+                <h3 className="text-xl font-bold text-ls-charcoal mb-2">{strings.noDepositsTitle}</h3>
+                <p className="text-slate-600 mb-6">{strings.noDepositsSubtitle}</p>
                 <button 
                   onClick={() => setShowAddDialog(true)} 
                   style={{
@@ -267,7 +328,7 @@ export default function DepositTracker() {
                   onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                 >
                   <Plus style={{ width: '20px', height: '20px' }} />
-                  Add Your First Deposit
+                  {strings.addFirstDepositButton}
                 </button>
               </CardContent>
             </Card>
@@ -298,7 +359,7 @@ export default function DepositTracker() {
                         {hasDepositShield && deposit.status === 'tracking' && (
                           <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
                             <Shield className="w-3 h-3 mr-1" />
-                            Protected
+                            {strings.protectedBadge}
                           </Badge>
                         )}
                       </div>
@@ -310,7 +371,7 @@ export default function DepositTracker() {
                       <div>
                         <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
                           <Calendar className="w-4 h-4" />
-                          Paid Date
+                          {strings.paidDate}
                         </div>
                         <p className="font-semibold text-slate-900">
                           {format(new Date(deposit.deposit_paid_date), 'MMM d, yyyy')}
@@ -319,7 +380,7 @@ export default function DepositTracker() {
                       <div>
                         <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
                           <Calendar className="w-4 h-4" />
-                          Expected Return
+                          {strings.expectedReturn}
                         </div>
                         <p className="font-semibold text-slate-900">
                           {format(new Date(deposit.expected_return_date), 'MMM d, yyyy')}
@@ -329,10 +390,10 @@ export default function DepositTracker() {
                         <div>
                           <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
                             <Clock className="w-4 h-4" />
-                            Days Remaining
+                            {strings.daysRemaining}
                           </div>
                           <p className={`font-semibold ${isUrgent ? 'text-amber-600' : 'text-slate-900'}`}>
-                            {daysRemaining} days
+                            {daysRemaining} {strings.daysRemaining.toLowerCase()}
                           </p>
                         </div>
                       )}
@@ -349,7 +410,7 @@ export default function DepositTracker() {
                         <p className="text-sm text-blue-800 flex items-center gap-2">
                           <Bell className="w-4 h-4" />
                           <span>
-                            {daysRemaining <= 30 ? '30-day' : daysRemaining <= 7 ? '7-day' : 'Automated'} reminder will be sent via LINE & Email
+                            {strings.reminderLineEmail(daysRemaining)}
                           </span>
                         </p>
                       </div>
@@ -385,7 +446,7 @@ export default function DepositTracker() {
                           }}
                         >
                           <CheckCircle2 style={{ width: '16px', height: '16px' }} />
-                          Mark Returned
+                          {strings.markReturnedButton}
                         </button>
                         <button
                           onClick={() => updateDepositMutation.mutate({ 
@@ -415,7 +476,7 @@ export default function DepositTracker() {
                           }}
                         >
                           <AlertTriangle style={{ width: '16px', height: '16px' }} />
-                          Open Dispute
+                          {strings.openDisputeButton}
                         </button>
                       </div>
                     )}

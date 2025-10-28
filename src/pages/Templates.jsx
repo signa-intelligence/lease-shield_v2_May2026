@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { createPageUrl } from "@/utils";
 import { FileCheck, ArrowLeft, Mail, AlertCircle, FileText, Shield, Scale, Clock, ClipboardCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FeatureGate, useFeatureAccess } from "../components/shared/FeatureGate";
+import { useQuery } from "@tanstack/react-query"; // Assuming react-query for useQuery
 
 const TEMPLATES = [
   {
@@ -78,6 +80,27 @@ export default function Templates() {
   const { hasAccess: hasTemplatesLite } = useFeatureAccess('templates_lite');
   const { hasAccess: hasTemplatesFull } = useFeatureAccess('templates_full');
 
+  const t = {
+    en: {
+      title: "Legal-safe Templates",
+      subtitle: "Standard bilingual letters and messages for all situations",
+      backToEvidence: "Back to Evidence Vault"
+    },
+    th: {
+      title: "เทมเพลตที่ปลอดภัยทางกฎหมาย",
+      subtitle: "จดหมายและข้อความสองภาษามาตรฐานสำหรับทุกสถานการณ์",
+      backToEvidence: "กลับไปยังคลังหลักฐาน"
+    }
+  };
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(), // Assuming base44 is available globally or imported elsewhere
+  });
+
+  const language = user?.language || 'en';
+  const strings = t[language];
+
   const canAccessTemplate = (tier) => {
     if (tier === 'lite') return hasTemplatesLite || hasTemplatesFull;
     if (tier === 'protect') return hasTemplatesFull;
@@ -98,9 +121,9 @@ export default function Templates() {
           <div>
             <div className="flex items-center gap-3 mb-1">
               <FileCheck className="w-7 h-7 text-blue-600" />
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Letter Templates</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{strings.title}</h1>
             </div>
-            <p className="text-slate-600">Professional bilingual letters for tenants</p>
+            <p className="text-slate-600">{strings.subtitle}</p>
           </div>
         </div>
 

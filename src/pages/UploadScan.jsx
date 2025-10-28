@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -196,6 +195,31 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
     return colors[status] || "bg-slate-100 text-slate-800";
   };
 
+  const t = {
+    en: {
+      title: "Lease Risk Scan",
+      subtitle: "AI-powered lease analysis in seconds",
+      uploading: "Uploading Lease...",
+      analyzing: "Analyzing Agreement...",
+      analyzingDesc: "Our AI is reviewing your lease for potential issues",
+      pleaseWait: "Please wait",
+      recentScans: "Recent Scans",
+      leaseAgreement: "Lease Agreement"
+    },
+    th: {
+      title: "สแกนความเสี่ยงสัญญาเช่า",
+      subtitle: "วิเคราะห์สัญญาเช่าด้วย AI ในไม่กี่วินาที",
+      uploading: "กำลังอัปโหลดสัญญา...",
+      analyzing: "กำลังวิเคราะห์สัญญา...",
+      analyzingDesc: "AI กำลังตรวจสอบสัญญาของคุณเพื่อหาประเด็นที่อาจเป็นปัญหา",
+      pleaseWait: "กรุณารอสักครู่",
+      recentScans: "การสแกนล่าสุด",
+      leaseAgreement: "สัญญาเช่า"
+    }
+  };
+
+  const strings = t[language];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
@@ -203,11 +227,11 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
           <div className="flex items-center gap-3 mb-2">
             <Upload className="w-7 h-7 text-ls-forest" />
             <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">
-              {language === 'th' ? 'อัปโหลดและสแกน' : 'Upload & Scan'}
+              {strings.title}
             </h1>
           </div>
           <p className="text-slate-600">
-            {language === 'th' ? 'วิเคราะห์สัญญาเช่าด้วย AI ในไม่กี่วินาที' : 'AI-powered lease analysis in seconds'}
+            {strings.subtitle}
           </p>
         </div>
 
@@ -224,14 +248,10 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
               <div className="text-center py-12">
                 <Loader2 className="w-16 h-16 animate-spin text-ls-forest mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-ls-charcoal mb-2">
-                  {uploading 
-                    ? (language === 'th' ? 'กำลังอัปโหลดสัญญา...' : 'Uploading Lease...') 
-                    : (language === 'th' ? 'กำลังวิเคราะห์สัญญา...' : 'Analyzing Agreement...')}
+                  {uploading ? strings.uploading : strings.analyzing}
                 </h3>
                 <p className="text-slate-600">
-                  {analyzing 
-                    ? (language === 'th' ? 'AI กำลังตรวจสอบสัญญาของคุณเพื่อหาประเด็นที่อาจเป็นปัญหา' : 'Our AI is reviewing your lease for potential issues')
-                    : (language === 'th' ? 'กรุณารอสักครู่' : 'Please wait')}
+                  {analyzing ? strings.analyzingDesc : strings.pleaseWait}
                 </p>
               </div>
             ) : (
@@ -249,7 +269,7 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
             <div className="flex items-center gap-2 mb-4">
               <History className="w-5 h-5 text-ls-forest" />
               <h2 className="text-lg font-bold text-ls-charcoal">
-                {language === 'th' ? 'การสแกนล่าสุด' : 'Recent Scans'}
+                {strings.recentScans}
               </h2>
             </div>
             <div className="space-y-3">
@@ -260,7 +280,7 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
                       <FileText className="w-5 h-5 text-ls-forest" />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-ls-charcoal truncate">
-                          {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
+                          {lease.property_address || strings.leaseAgreement}
                         </p>
                         <p className="text-sm text-slate-500">
                           {format(new Date(lease.created_date), 'MMM d, yyyy')}

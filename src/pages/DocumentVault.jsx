@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -52,6 +53,28 @@ export default function DocumentVault() {
     enabled: !!user,
   });
 
+  const t = {
+    en: {
+      title: "Evidence Vault",
+      subtitle: "Photo and video logs with timestamps for property condition",
+      uploadDocument: "Upload Evidence",
+      noDocuments: "No evidence files yet",
+      uploadFirst: "Upload First Evidence File",
+      allEvidence: "All Evidence"
+    },
+    th: {
+      title: "คลังหลักฐาน",
+      subtitle: "บันทึกภาพและวิดีโอพร้อมเวลาสำหรับสภาพทรัพย์สิน",
+      uploadDocument: "อัปโหลดหลักฐาน",
+      noDocuments: "ยังไม่มีไฟล์หลักฐาน",
+      uploadFirst: "อัปโหลดไฟล์หลักฐานแรก",
+      allEvidence: "หลักฐานทั้งหมด"
+    }
+  };
+
+  const language = user?.language || 'en';
+  const strings = t[language];
+
   const handleFileUpload = async (e) => {
     e.preventDefault();
     if (!formData.file) return;
@@ -91,21 +114,21 @@ export default function DocumentVault() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <FolderOpen className="w-7 h-7 text-blue-600" />
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Documents</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{strings.title}</h1>
             </div>
-            <p className="text-slate-600">Your rental document vault</p>
+            <p className="text-slate-600">{strings.subtitle}</p>
           </div>
           
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
-                Upload
+                {strings.uploadDocument}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Upload Document</DialogTitle>
+                <DialogTitle>{strings.uploadDocument}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleFileUpload} className="space-y-4">
                 <div>
@@ -157,12 +180,12 @@ export default function DocumentVault() {
                 <FileCheck className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold">Letter Templates</h3>
-                <p className="text-sm text-purple-100">Generate professional letters</p>
+                <h3 className="font-bold">{language === 'th' ? 'เทมเพลตจดหมายที่ปลอดภัยทางกฎหมาย' : 'Legal-safe Templates'}</h3>
+                <p className="text-sm text-purple-100">{language === 'th' ? 'สร้างจดหมายมืออาชีพ' : 'Generate professional letters'}</p>
               </div>
             </div>
             <Button variant="ghost" className="text-white hover:bg-white/20">
-              View Templates
+              {language === 'th' ? 'ดูเทมเพลต' : 'View Templates'}
             </Button>
           </div>
         </Card>
@@ -175,7 +198,7 @@ export default function DocumentVault() {
             onClick={() => setFilterType('all')}
             className={filterType === 'all' ? 'bg-blue-600' : ''}
           >
-            All ({documents.length})
+            {strings.allEvidence} ({documents.length})
           </Button>
           {DOC_TYPES.map((type) => {
             const count = documents.filter(doc => doc.type === type.value).length;
@@ -198,11 +221,11 @@ export default function DocumentVault() {
           <Card className="border-none shadow-xl">
             <div className="p-12 text-center">
               <FolderOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-slate-900 mb-2">No Documents Yet</h3>
-              <p className="text-slate-600 mb-6">Start organizing your rental documents</p>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{strings.noDocuments}</h3>
+              <p className="text-slate-600 mb-6">{language === 'th' ? 'เริ่มจัดระเบียบหลักฐานการเช่าของคุณ' : 'Start organizing your rental evidence'}</p>
               <Button onClick={() => setShowAddDialog(true)} className="bg-blue-600 hover:bg-blue-700">
                 <Upload className="w-5 h-5 mr-2" />
-                Upload First Document
+                {strings.uploadFirst}
               </Button>
             </div>
           </Card>
