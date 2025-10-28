@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,12 +20,12 @@ import {
 } from "@/components/ui/dialog";
 
 const DOC_TYPES = [
-  { value: 'lease', label: 'Lease Agreement', icon: FileText, color: 'bg-blue-100 text-blue-800' },
-  { value: 'receipt', label: 'Receipt', icon: FileText, color: 'bg-emerald-100 text-emerald-800' },
-  { value: 'photo', label: 'Photo', icon: Image, color: 'bg-purple-100 text-purple-800' },
-  { value: 'video', label: 'Video', icon: Video, color: 'bg-pink-100 text-pink-800' },
-  { value: 'letter', label: 'Letter', icon: Mail, color: 'bg-amber-100 text-amber-800' },
-  { value: 'other', label: 'Other', icon: File, color: 'bg-slate-100 text-slate-800' }
+  { value: 'lease', label: 'Lease Agreement', icon: FileText, color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  { value: 'receipt', label: 'Receipt', icon: FileText, color: 'bg-ls-gold/20 text-amber-800 border-amber-200' },
+  { value: 'photo', label: 'Photo', icon: Image, color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  { value: 'video', label: 'Video', icon: Video, color: 'bg-pink-100 text-pink-800 border-pink-200' },
+  { value: 'letter', label: 'Letter', icon: Mail, color: 'bg-ls-forest/10 text-ls-forest border-ls-forest/20' },
+  { value: 'other', label: 'Other', icon: File, color: 'bg-slate-100 text-slate-800 border-slate-200' }
 ];
 
 export default function DocumentVault() {
@@ -108,23 +107,41 @@ export default function DocumentVault() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <FolderOpen className="w-7 h-7 text-blue-600" />
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{strings.title}</h1>
+              <FolderOpen className="w-7 h-7 text-ls-forest" />
+              <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
             </div>
             <p className="text-slate-600">{strings.subtitle}</p>
           </div>
           
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
+              <button
+                style={{
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+              >
+                <Plus className="w-4 h-4" />
                 {strings.uploadDocument}
-              </Button>
+              </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
@@ -164,16 +181,34 @@ export default function DocumentVault() {
                     onChange={(e) => setFormData({...formData, file: e.target.files[0]})}
                   />
                 </div>
-                <Button type="submit" disabled={uploading} className="w-full bg-blue-600 hover:bg-blue-700">
+                <button 
+                  type="submit" 
+                  disabled={uploading}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    border: 'none',
+                    cursor: uploading ? 'not-allowed' : 'pointer',
+                    opacity: uploading ? 0.6 : 1,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => !uploading && (e.target.style.backgroundColor = '#0a2f25')}
+                  onMouseLeave={(e) => !uploading && (e.target.style.backgroundColor = '#0C3B2E')}
+                >
                   {uploading ? 'Uploading...' : 'Upload'}
-                </Button>
+                </button>
               </form>
             </DialogContent>
           </Dialog>
         </div>
 
         {/* Templates Button */}
-        <Card className="mb-6 border-none shadow-lg bg-gradient-to-r from-purple-500 to-purple-700 text-white cursor-pointer hover:shadow-xl transition-all" onClick={() => navigate(createPageUrl("Templates"))}>
+        <Card className="mb-6 border-none shadow-lg bg-gradient-to-r from-ls-gold to-amber-600 text-ls-charcoal cursor-pointer hover:shadow-xl transition-all" onClick={() => navigate(createPageUrl("Templates"))}>
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -181,12 +216,14 @@ export default function DocumentVault() {
               </div>
               <div>
                 <h3 className="font-bold">{language === 'th' ? 'เทมเพลตจดหมายที่ปลอดภัยทางกฎหมาย' : 'Legal-safe Templates'}</h3>
-                <p className="text-sm text-purple-100">{language === 'th' ? 'สร้างจดหมายมืออาชีพ' : 'Generate professional letters'}</p>
+                <p className="text-sm text-ls-charcoal/80">{language === 'th' ? 'สร้างจดหมายมืออาชีพ' : 'Generate professional letters'}</p>
               </div>
             </div>
-            <Button variant="ghost" className="text-white hover:bg-white/20">
+            <button 
+              className="px-4 py-2 bg-white/20 border border-white/30 text-ls-charcoal hover:bg-white/40 rounded-lg transition-colors font-semibold"
+            >
               {language === 'th' ? 'ดูเทมเพลต' : 'View Templates'}
-            </Button>
+            </button>
           </div>
         </Card>
 
@@ -196,7 +233,11 @@ export default function DocumentVault() {
             size="sm"
             variant={filterType === 'all' ? 'default' : 'outline'}
             onClick={() => setFilterType('all')}
-            className={filterType === 'all' ? 'bg-blue-600' : ''}
+            style={{
+              backgroundColor: filterType === 'all' ? '#0C3B2E' : 'transparent',
+              color: filterType === 'all' ? '#FFFFFF' : '#1A1D1F',
+              borderColor: filterType === 'all' ? '#0C3B2E' : '#D1D5DB'
+            }}
           >
             {strings.allEvidence} ({documents.length})
           </Button>
@@ -208,7 +249,11 @@ export default function DocumentVault() {
                 size="sm"
                 variant={filterType === type.value ? 'default' : 'outline'}
                 onClick={() => setFilterType(type.value)}
-                className={filterType === type.value ? 'bg-blue-600' : ''}
+                style={{
+                  backgroundColor: filterType === type.value ? '#0C3B2E' : 'transparent',
+                  color: filterType === type.value ? '#FFFFFF' : '#1A1D1F',
+                  borderColor: filterType === type.value ? '#0C3B2E' : '#D1D5DB'
+                }}
               >
                 {type.label} ({count})
               </Button>
@@ -221,12 +266,31 @@ export default function DocumentVault() {
           <Card className="border-none shadow-xl">
             <div className="p-12 text-center">
               <FolderOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-slate-900 mb-2">{strings.noDocuments}</h3>
+              <h3 className="text-xl font-bold text-ls-charcoal mb-2">{strings.noDocuments}</h3>
               <p className="text-slate-600 mb-6">{language === 'th' ? 'เริ่มจัดระเบียบหลักฐานการเช่าของคุณ' : 'Start organizing your rental evidence'}</p>
-              <Button onClick={() => setShowAddDialog(true)} className="bg-blue-600 hover:bg-blue-700">
-                <Upload className="w-5 h-5 mr-2" />
+              <button 
+                onClick={() => setShowAddDialog(true)}
+                style={{
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+              >
+                <Upload className="w-5 h-5" />
                 {strings.uploadFirst}
-              </Button>
+              </button>
             </div>
           </Card>
         ) : (
@@ -238,15 +302,25 @@ export default function DocumentVault() {
               return (
                 <Card key={doc.id} className="border-none shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
                   <div className="flex items-center p-4">
-                    <div className={`p-3 rounded-xl ${typeInfo.color} bg-opacity-20 mr-4`}>
-                      <TypeIcon className="w-5 h-5" />
+                    <div className={`p-3 rounded-xl mr-4`} style={{
+                      backgroundColor: typeInfo.value === 'lease' ? '#D1FAE5' :
+                                     typeInfo.value === 'receipt' ? '#FEF3C7' :
+                                     typeInfo.value === 'letter' ? '#ECEFED' :
+                                     '#F3F4F6'
+                    }}>
+                      <TypeIcon className="w-5 h-5" style={{
+                        color: typeInfo.value === 'lease' ? '#059669' :
+                               typeInfo.value === 'receipt' ? '#D97706' :
+                               typeInfo.value === 'letter' ? '#0C3B2E' :
+                               '#6B7280'
+                      }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-slate-900 mb-1 truncate">
+                      <h3 className="font-bold text-ls-charcoal mb-1 truncate">
                         {doc.label || 'Untitled Document'}
                       </h3>
                       <div className="flex items-center gap-2">
-                        <Badge className={`${typeInfo.color} text-xs`}>
+                        <Badge className={typeInfo.color}>
                           {typeInfo.label}
                         </Badge>
                         <span className="text-xs text-slate-500">
@@ -259,9 +333,25 @@ export default function DocumentVault() {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <Button variant="ghost" size="icon" className="text-blue-600">
+                      <button
+                        style={{
+                          backgroundColor: 'transparent',
+                          color: '#0C3B2E',
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#ECEFED'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                      >
                         <ExternalLink className="w-5 h-5" />
-                      </Button>
+                      </button>
                     </a>
                   </div>
                 </Card>

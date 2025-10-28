@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,8 @@ import { createPageUrl } from "@/utils";
 import { FileCheck, ArrowLeft, Mail, AlertCircle, FileText, Shield, Scale, Clock, ClipboardCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FeatureGate, useFeatureAccess } from "../components/shared/FeatureGate";
-import { useQuery } from "@tanstack/react-query"; // Assuming react-query for useQuery
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 const TEMPLATES = [
   {
@@ -95,7 +95,7 @@ export default function Templates() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(), // Assuming base44 is available globally or imported elsewhere
+    queryFn: () => base44.auth.me(),
   });
 
   const language = user?.language || 'en';
@@ -108,20 +108,33 @@ export default function Templates() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="outline"
-            size="icon"
+          <button
             onClick={() => navigate(createPageUrl("DocumentVault"))}
+            style={{
+              backgroundColor: '#FFFFFF',
+              color: '#1A1D1F',
+              width: '40px',
+              height: '40px',
+              borderRadius: '8px',
+              border: '2px solid #D1D5DB',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#ECEFED'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#FFFFFF'}
           >
             <ArrowLeft className="w-5 h-5" />
-          </Button>
+          </button>
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <FileCheck className="w-7 h-7 text-blue-600" />
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{strings.title}</h1>
+              <FileCheck className="w-7 h-7 text-ls-forest" />
+              <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
             </div>
             <p className="text-slate-600">{strings.subtitle}</p>
           </div>
@@ -139,19 +152,25 @@ export default function Templates() {
               >
                 <div className="p-5">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div 
+                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: 'linear-gradient(to bottom right, #0C3B2E, #14532d)',
+                        boxShadow: '0 4px 6px rgba(12, 59, 46, 0.2)'
+                      }}
+                    >
                       <Icon className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="font-bold text-lg text-slate-900 mb-1">{template.title}</h3>
+                          <h3 className="font-bold text-lg text-ls-charcoal mb-1">{template.title}</h3>
                           <div className="flex gap-2 mb-2">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs border-ls-forest text-ls-forest">
                               {template.category}
                             </Badge>
                             {template.languages.map(lang => (
-                              <Badge key={lang} variant="outline" className="text-xs">
+                              <Badge key={lang} variant="outline" className="text-xs border-ls-gold text-ls-gold">
                                 {lang.toUpperCase()}
                               </Badge>
                             ))}
@@ -160,15 +179,26 @@ export default function Templates() {
                       </div>
                       <p className="text-sm text-slate-600 mb-3">{template.description}</p>
                       {hasAccess ? (
-                        <Button 
-                          size="sm" 
-                          className="bg-blue-600 hover:bg-blue-700"
+                        <button
                           onClick={() => navigate(createPageUrl("TemplateForm") + `?templateId=${template.id}`)}
+                          style={{
+                            backgroundColor: '#0C3B2E',
+                            color: '#FFFFFF',
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            fontWeight: 'bold',
+                            fontSize: '14px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = '#C7A338'}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                         >
                           Generate Letter
-                        </Button>
+                        </button>
                       ) : (
-                        <Badge className="bg-purple-100 text-purple-700">
+                        <Badge className="bg-ls-gold/20 text-ls-gold border border-ls-gold/30">
                           {template.tier.toUpperCase()} Plan Required
                         </Badge>
                       )}
