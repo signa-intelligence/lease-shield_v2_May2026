@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -63,12 +62,6 @@ export default function Layout({ children, currentPageName }) {
       label: language === 'th' ? "หลักฐาน" : "Evidence",
       route: createPageUrl("DocumentVault"),
       icon: FileText,
-    },
-    {
-      key: "account",
-      label: language === 'th' ? "บัญชี" : "Account",
-      route: createPageUrl("Account"),
-      icon: User,
     },
   ];
 
@@ -163,7 +156,44 @@ export default function Layout({ children, currentPageName }) {
               </span>
             )}
           </div>
-          <LanguageToggle />
+          <div className="flex items-center gap-3">
+            <LanguageToggle />
+            <Link to={createPageUrl("Account")}>
+              <button
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : '#ECEFED',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  if (location.pathname !== createPageUrl("Account")) {
+                    e.target.style.backgroundColor = '#0C3B2E';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (location.pathname !== createPageUrl("Account")) {
+                    e.target.style.backgroundColor = '#ECEFED';
+                  }
+                }}
+              >
+                <User 
+                  className="w-5 h-5" 
+                  style={{ 
+                    color: location.pathname === createPageUrl("Account") ? '#FFFFFF' : '#0C3B2E',
+                    transition: 'color 0.2s'
+                  }}
+                />
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -215,7 +245,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <Icon className="w-5 h-5 mb-1" style={{ animation: isActive ? 'pulse 2s infinite' : 'none' }} />
-                <span style={{ fontSize: '12px', fontWeight: '500', whiteWhiteSpace: 'nowrap' }}>{tab.label}</span>
+                <span style={{ fontSize: '12px', fontWeight: '500', whiteSpace: 'nowrap' }}>{tab.label}</span>
               </Link>
             );
           })}
