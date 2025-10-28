@@ -166,52 +166,17 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      {/* Main Content - Adjusted padding to account for bottom nav */}
+      {/* Main Content - Adjusted padding to account for bottom nav + disclaimer */}
       <main className="flex-1 overflow-auto" style={{
-        paddingBottom: `calc(${isAdmin ? '100px' : '96px'} + env(safe-area-inset-bottom, 0px))`
+        paddingBottom: `calc(${isAdmin ? '130px' : '126px'} + env(safe-area-inset-bottom, 0px))`
       }}>
         {children}
       </main>
 
-      {/* Disclaimer Footer - Positioned above bottom nav */}
-      <div style={{
-        position: 'fixed',
-        bottom: `calc(${isAdmin ? '84px' : '80px'} + env(safe-area-inset-bottom, 0px))`,
-        left: 0,
-        right: 0,
-        padding: '12px 16px',
-        textAlign: 'center',
-        zIndex: 40,
-        backgroundColor: 'transparent',
-        pointerEvents: 'none'
+      {/* Bottom Navigation Tabs */}
+      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-ls-stone shadow-2xl z-50" style={{
+        paddingBottom: `calc(30px + env(safe-area-inset-bottom, 0px))`
       }}>
-        <p style={{
-          fontSize: '11px',
-          fontWeight: '500',
-          margin: 0,
-          color: '#0C3B2E',
-          opacity: 0.8,
-          pointerEvents: 'auto'
-        }}>
-          {language === 'th' 
-            ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
-            : "We are not a law firm and do not provide legal advice."}
-          {" • "}
-          <Link 
-            to={createPageUrl("PrivacyPolicy")}
-            style={{
-              color: '#0C3B2E',
-              textDecoration: 'underline',
-              fontWeight: '600'
-            }}
-          >
-            {language === 'th' ? 'นโยบายความเป็นส่วนตัว' : 'Privacy Policy'}
-          </Link>
-        </p>
-      </div>
-
-      {/* Bottom Navigation Tabs - Now with safe area padding */}
-      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-ls-stone shadow-2xl z-50">
         <div className={`flex items-center justify-around px-2 pt-2 pb-2 ${isAdmin ? 'overflow-x-auto' : ''}`}>
           {navTabs.map((tab) => {
             const Icon = tab.icon;
@@ -251,6 +216,41 @@ export default function Layout({ children, currentPageName }) {
               </Link>
             );
           })}
+        </div>
+
+        {/* Disclaimer - Below Navigation Bar */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '8px 16px',
+          textAlign: 'center',
+          backgroundColor: '#FFFFFF',
+          borderTop: '1px solid #ECEFED'
+        }}>
+          <p style={{
+            fontSize: '11px',
+            fontWeight: '500',
+            margin: 0,
+            color: '#0C3B2E',
+            opacity: 0.8
+          }}>
+            {language === 'th' 
+              ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
+              : "We are not a law firm and do not provide legal advice."}
+            {" • "}
+            <Link 
+              to={createPageUrl("PrivacyPolicy")}
+              style={{
+                color: '#0C3B2E',
+                textDecoration: 'underline',
+                fontWeight: '600'
+              }}
+            >
+              {language === 'th' ? 'นโยบายความเป็นส่วนตัว' : 'Privacy Policy'}
+            </Link>
+          </p>
         </div>
       </nav>
     </div>
