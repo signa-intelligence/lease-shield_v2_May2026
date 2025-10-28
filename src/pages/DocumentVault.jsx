@@ -207,20 +207,32 @@ export default function DocumentVault() {
           </Dialog>
         </div>
 
-        {/* Templates Button */}
-        <Card className="mb-6 border-none shadow-lg bg-gradient-to-r from-ls-gold to-amber-600 text-ls-charcoal cursor-pointer hover:shadow-xl transition-all" onClick={() => navigate(createPageUrl("Templates"))}>
+        {/* Templates Button - Updated to lighter forest green */}
+        <Card 
+          className="mb-6 border-none shadow-lg cursor-pointer hover:shadow-xl transition-all" 
+          onClick={() => navigate(createPageUrl("Templates"))}
+          style={{
+            background: 'linear-gradient(to right, #D1FAE5, #A7F3D0)',
+            border: '1px solid #6EE7B7'
+          }}
+        >
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <FileCheck className="w-5 h-5" />
+              <div 
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{
+                  backgroundColor: '#0C3B2E'
+                }}
+              >
+                <FileCheck className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold">{language === 'th' ? 'เทมเพลตจดหมายที่ปลอดภัยทางกฎหมาย' : 'Legal-safe Templates'}</h3>
-                <p className="text-sm text-ls-charcoal/80">{language === 'th' ? 'สร้างจดหมายมืออาชีพ' : 'Generate professional letters'}</p>
+                <h3 className="font-bold text-ls-forest">{language === 'th' ? 'เทมเพลตจดหมายที่ปลอดภัยทางกฎหมาย' : 'Legal-safe Templates'}</h3>
+                <p className="text-sm text-emerald-700">{language === 'th' ? 'สร้างจดหมายมืออาชีพ' : 'Generate professional letters'}</p>
               </div>
             </div>
             <button 
-              className="px-4 py-2 bg-white/20 border border-white/30 text-ls-charcoal hover:bg-white/40 rounded-lg transition-colors font-semibold"
+              className="px-4 py-2 bg-white/60 border border-emerald-300 text-ls-forest hover:bg-white rounded-lg transition-colors font-semibold"
             >
               {language === 'th' ? 'ดูเทมเพลต' : 'View Templates'}
             </button>
