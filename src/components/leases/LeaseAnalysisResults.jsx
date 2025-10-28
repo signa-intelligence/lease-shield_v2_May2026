@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle2, Info, AlertCircle, Download, FileText } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info, AlertCircle, Download, FileText, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { FeatureGate } from "../shared/FeatureGate";
@@ -18,6 +18,13 @@ export default function LeaseAnalysisResults({ scan, onSave }) {
     if (score >= 50) return "Medium Risk";
     if (score >= 25) return "Low Risk";
     return "Very Low Risk";
+  };
+
+  const getRiskScoreColor = (score) => {
+    if (score >= 75) return { bg: '#FEE2E2', border: '#EF4444', text: '#991B1B', badge: 'RED' };
+    if (score >= 50) return { bg: '#FEF3C7', border: '#F59E0B', text: '#92400E', badge: 'AMBER' };
+    if (score >= 25) return { bg: '#FEF9C3', border: '#EAB308', text: '#713F12', badge: 'YELLOW' };
+    return { bg: '#D1FAE5', border: '#10B981', text: '#065F46', badge: 'GREEN' };
   };
 
   const getSeverityIcon = (severity) => {
@@ -40,29 +47,110 @@ export default function LeaseAnalysisResults({ scan, onSave }) {
     return colors[severity] || "text-slate-600 bg-slate-50 border-slate-200";
   };
 
+  const riskScoreColors = getRiskScoreColor(scan.risk_score);
+
   return (
     <div className="space-y-6">
-      {/* Risk Score Card */}
+      {/* Contract Risk Score Card - NEW */}
       <Card className="border-none shadow-lg overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6">
-          <CardTitle className="text-2xl font-bold flex items-center justify-between">
-            <span>Lease Analysis Complete</span>
-            <Badge className={`${getRiskColor(scan.risk_score)} text-lg px-4 py-2`}>
-              {getRiskLabel(scan.risk_score)}
-            </Badge>
-          </CardTitle>
+        <CardHeader style={{ 
+          background: 'linear-gradient(to right, #0C3B2E, #047857)',
+          padding: '24px'
+        }}>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-bold text-white">Contract Risk Score</CardTitle>
+              <p className="text-sm text-white/80">Detailed analysis with risk assessment</p>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-6">
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-slate-600">Risk Score</span>
-              <span className="text-2xl font-bold text-slate-900">{scan.risk_score}/100</span>
+          <div 
+            style={{
+              backgroundColor: riskScoreColors.bg,
+              border: `3px solid ${riskScoreColors.border}`,
+              borderRadius: '16px',
+              padding: '24px',
+              marginBottom: '24px'
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-semibold mb-1" style={{ color: riskScoreColors.text }}>
+                  Overall Risk Rating
+                </p>
+                <div className="flex items-center gap-3">
+                  <span 
+                    className="text-5xl font-bold" 
+                    style={{ color: riskScoreColors.text }}
+                  >
+                    {scan.risk_score}
+                  </span>
+                  <span className="text-2xl font-medium" style={{ color: riskScoreColors.text }}>
+                    /100
+                  </span>
+                </div>
+              </div>
+              <div 
+                style={{
+                  backgroundColor: riskScoreColors.border,
+                  color: '#FFFFFF',
+                  padding: '12px 24px',
+                  borderRadius: '12px',
+                  fontWeight: 'bold',
+                  fontSize: '20px',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}
+              >
+                {riskScoreColors.badge}
+              </div>
             </div>
-            <Progress value={scan.risk_score} className="h-3" />
+            
+            <Progress 
+              value={scan.risk_score} 
+              className="h-4 mb-4" 
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: `2px solid ${riskScoreColors.border}`
+              }}
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div style={{
+                backgroundColor: '#FFFFFF',
+                padding: '12px',
+                borderRadius: '8px',
+                border: `2px solid ${riskScoreColors.border}`
+              }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: riskScoreColors.text }}>
+                  Risk Level
+                </p>
+                <p className="font-bold" style={{ color: riskScoreColors.text }}>
+                  {getRiskLabel(scan.risk_score)}
+                </p>
+              </div>
+              <div style={{
+                backgroundColor: '#FFFFFF',
+                padding: '12px',
+                borderRadius: '8px',
+                border: `2px solid ${riskScoreColors.border}`
+              }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: riskScoreColors.text }}>
+                  Issues Found
+                </p>
+                <p className="font-bold" style={{ color: riskScoreColors.text }}>
+                  {scan.flags?.length || 0} Flags
+                </p>
+              </div>
+            </div>
           </div>
           
           {scan.summary && (
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+            <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
+              <p className="text-sm font-semibold text-slate-700 mb-2">📋 Summary</p>
               <p className="text-sm text-slate-700 leading-relaxed">{scan.summary}</p>
             </div>
           )}
