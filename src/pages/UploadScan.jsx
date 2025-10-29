@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -158,18 +157,26 @@ NEUTRALITY & LANGUAGE:
 - This is documentation guidance, **not legal advice**.
 - If the contract text is primarily Thai, respond field labels/content primarily in Thai with brief English gloss; if English, the reverse.
 
+THAILAND RENTAL STANDARDS (CRITICAL - USE THESE AS BASELINE):
+- **Deposit**: 2 months rent is STANDARD and NORMAL in Thailand (not a problem)
+- **Refund Timeline**: 30 days to refund security deposit is STANDARD and NORMAL in Thailand (not a problem)
+- **Advance Rent**: 1 month advance rent is standard
+- Only flag deposits if they exceed 2 months or refund timelines exceed 30 days
+- Focus on genuinely problematic clauses, not normal Thai rental practices
+
 SCOPE & RULES:
 1) Work **only** with the text provided. If something is missing, set a clear string like "Not specified".
 2) For every flag, include a **short exact quote** (<= 60 words) in \`evidence\`.
 3) Thailand residential checklist (adapt if commercial):
    - Parties & capacity; property description; term & renewal; early break; notice windows; penalties.
-   - Rent/payment mechanics; late interest reasonableness.
-   - Deposit & advance: If landlord likely ≥5 units under 2018 Ministerial Regulation (Residential Property Leasing Business), flag compliance items:
-     • deposit cap ≈1 month, advance cap ≈1 month
+   - Rent/payment mechanics; late interest reasonableness (NOT normal deposit amounts).
+   - Deposit & advance: 
+     • Flag ONLY if deposit > 2 months rent (2 months is normal)
+     • Flag ONLY if refund timeline > 30 days (30 days is normal)
+     • Flag ONLY if advance rent > 1 month
      • pre/post inspection forms; itemized deductions; receipts
-     • utilities at actual cost (no markup); 30-day termination handling
+     • utilities at actual cost (no markup)
      • no unilateral changes or excessive penalties.
-     If landlord size unknown, assess both scenarios and note assumption.
    - Utilities/fees; repairs/maintenance (wear & tear vs damage); inspections/access; use restrictions; quiet enjoyment; guests/sublets.
    - Termination & liquidated damages proportionality.
    - Deposit return timeline & itemization; interest if stated.
@@ -186,6 +193,7 @@ RISK MODEL (for each flag):
 - \`severity\` ∈ {low, medium, high, critical}
 - Also compute \`impact_0_10\` and \`likelihood_0_10\` (integers 0..10) and sort flags by (impact*likelihood) desc.
 - Keep final JSON concise and consistent.
+- DO NOT flag normal Thai practices as problems (2 month deposit, 30 day refund)
 
 TIERING RULES:
 - Lite: return **max 5 flags**, **max 3** \`missing_items\`.
