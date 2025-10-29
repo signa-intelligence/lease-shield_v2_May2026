@@ -4,8 +4,12 @@ import { AlertTriangle, CheckCircle2, Info, AlertCircle, Download, FileText, Shi
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { FeatureGate } from "../shared/FeatureGate";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
-export default function LeaseAnalysisResults({ scan, onSave }) {
+export default function LeaseAnalysisResults({ scan, onSave, onDownload }) {
+  const navigate = useNavigate();
+
   const getRiskColor = (score) => {
     if (score >= 75) return "text-red-600 bg-red-50";
     if (score >= 50) return "text-amber-600 bg-amber-50";
@@ -51,7 +55,7 @@ export default function LeaseAnalysisResults({ scan, onSave }) {
 
   return (
     <div className="space-y-6">
-      {/* Contract Risk Score Card - NEW */}
+      {/* Contract Risk Score Card */}
       <Card className="border-none shadow-lg overflow-hidden">
         <CardHeader style={{ 
           background: 'linear-gradient(to right, #0C3B2E, #047857)',
@@ -202,10 +206,11 @@ export default function LeaseAnalysisResults({ scan, onSave }) {
               <div>
                 <h3 className="font-bold text-slate-900 mb-1">Detailed Analysis Report</h3>
                 <p className="text-sm text-slate-600">
-                  Comprehensive breakdown with legal recommendations
+                  Comprehensive breakdown with recommendations
                 </p>
               </div>
               <button
+                onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}`)}
                 style={{
                   backgroundColor: '#9333EA',
                   color: '#FFFFFF',
@@ -232,7 +237,7 @@ export default function LeaseAnalysisResults({ scan, onSave }) {
         </Card>
       </FeatureGate>
 
-      {/* Action Buttons - FIXED CTAs */}
+      {/* Action Buttons */}
       <div className="flex gap-3">
         <button
           onClick={onSave}
@@ -285,6 +290,7 @@ export default function LeaseAnalysisResults({ scan, onSave }) {
           }
         >
           <button
+            onClick={onDownload}
             style={{
               backgroundColor: '#FFFFFF',
               color: '#1A1D1F',
