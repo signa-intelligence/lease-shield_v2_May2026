@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, AlertCircle, Loader2, FileText, History } from "lucide-react";
+import { Upload, AlertCircle, Loader2, FileText, History, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -18,6 +18,7 @@ export default function UploadScan() {
   const [analyzing, setAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState(null);
+  const [progress, setProgress] = useState('');
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -47,32 +48,52 @@ export default function UploadScan() {
     e.preventDefault();
     setDragActive(false);
     setError(null);
+    setProgress('');
 
     const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
     if (!files || files.length === 0) return;
 
     const file = files[0];
     
-    if (!file.type.includes('pdf') && !file.type.includes('image')) {
-      setError(language === 'th' ? 'กรุณาอัปโหลดไฟล์ PDF หรือรูปภาพ' : 'Please upload a PDF or image file');
+    // Check file type
+    const isImage = file.type.includes('image');
+    const isPDF = file.type.includes('pdf');
+    
+    if (!isPDF && !isImage) {
+      setError(language === 'th' ? 'กรุณาอัปโหลดไฟล์ PDF หรือรูปภาพ (JPG, PNG)' : 'Please upload a PDF or image file (JPG, PNG)');
+      return;
+    }
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError(language === 'th' ? 'ไฟล์ใหญ่เกินไป (สูงสุด 10MB)' : 'File too large (max 10MB)');
       return;
     }
 
     setUploading(true);
+    setProgress('Uploading file...');
 
     try {
       // Step 1: Upload file
+      console.log('Step 1: Uploading file...');
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      console.log('File uploaded:', file_url);
       
       // Step 2: Create lease record
+      setProgress('Creating lease record...');
+      console.log('Step 2: Creating lease...');
       const lease = await base44.entities.Lease.create({
         file_url,
         status: 'uploaded'
       });
+      console.log('Lease created:', lease.id);
 
       setAnalyzing(true);
+      setUploading(false);
+      setProgress('Analyzing document with AI...');
       
       // Step 3: Run AI pipeline - Extract and classify clauses
+      console.log('Step 3: Running AI analysis...');
       const analysisResult = await base44.integrations.Core.InvokeLLM({
         prompt: `You are an assistant that analyzes Thai/English residential lease contracts.
 Extract risky/illegal/unfair clauses, missing protections, and compliance gaps.
@@ -120,8 +141,11 @@ Analyze this lease agreement thoroughly and identify any potential issues or unf
           }
         }
       });
+      console.log('AI analysis complete:', analysisResult);
 
       // Step 4: Calculate risk score and summary
+      setProgress('Calculating risk score...');
+      console.log('Step 4: Calculating risk score...');
       const scoreResult = await base44.integrations.Core.InvokeLLM({
         prompt: `Given the flags JSON, compute:
 - risk_score: integer 0..100 (0 = very safe, 100 = very risky)
@@ -149,8 +173,11 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
           }
         }
       });
+      console.log('Risk score calculated:', scoreResult);
 
       // Step 5: Update lease with extracted data
+      setProgress('Saving analysis...');
+      console.log('Step 5: Updating lease...');
       await base44.entities.Lease.update(lease.id, {
         status: 'scanned',
         property_address: analysisResult.key_terms?.property_address,
@@ -162,6 +189,7 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
       });
 
       // Step 6: Create scan record with preview and full data
+      console.log('Step 6: Creating scan record...');
       const scan = await base44.entities.LeaseScan.create({
         lease_id: lease.id,
         risk_score: scoreResult.risk_score,
@@ -171,18 +199,27 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
         scan_full: analysisResult,
         version: 'v1'
       });
+      console.log('Scan created:', scan.id);
 
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       
-      // Step 7: Navigate to preview
-      navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
+      // Step 7: Navigate to preview with state
+      console.log('Step 7: Navigating to preview...');
+      navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`, {
+        state: { scan, lease }
+      });
       
     } catch (err) {
-      setError(language === 'th' ? 'การวิเคราะห์สัญญาล้มเหลว กรุณาลองอีกครั้ง' : 'Failed to analyze lease. Please try again.');
-      console.error(err);
+      console.error('Scan error:', err);
+      setError(
+        language === 'th' 
+          ? `การวิเคราะห์สัญญาล้มเหลว: ${err.message || 'กรุณาลองอีกครั้ง'}` 
+          : `Failed to analyze lease: ${err.message || 'Please try again'}`
+      );
     } finally {
       setUploading(false);
       setAnalyzing(false);
+      setProgress('');
     }
   };
 
@@ -195,6 +232,15 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
     return colors[status] || "bg-slate-100 text-slate-800";
   };
 
+  const handleViewLease = (lease) => {
+    // Find the scan for this lease
+    const scan = leases.find(l => l.id === lease.id);
+    if (lease.status === 'scanned' || lease.status === 'paid') {
+      // Navigate to scan preview
+      navigate(createPageUrl("Leases"));
+    }
+  };
+
   const t = {
     en: {
       title: "Lease Risk Scan",
@@ -204,7 +250,8 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
       analyzingDesc: "Our AI is reviewing your lease for potential issues",
       pleaseWait: "Please wait",
       recentScans: "Recent Scans",
-      leaseAgreement: "Lease Agreement"
+      leaseAgreement: "Lease Agreement",
+      viewResults: "View Results"
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
@@ -214,7 +261,8 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
       analyzingDesc: "AI กำลังตรวจสอบสัญญาของคุณเพื่อหาประเด็นที่อาจเป็นปัญหา",
       pleaseWait: "กรุณารอสักครู่",
       recentScans: "การสแกนล่าสุด",
-      leaseAgreement: "สัญญาเช่า"
+      leaseAgreement: "สัญญาเช่า",
+      viewResults: "ดูผลลัพธ์"
     }
   };
 
@@ -238,7 +286,12 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              <div className="font-semibold">{error}</div>
+              <div className="text-xs mt-2">
+                Supported formats: PDF, JPG, PNG • Max size: 10MB
+              </div>
+            </AlertDescription>
           </Alert>
         )}
 
@@ -250,9 +303,14 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
                 <h3 className="text-xl font-bold text-ls-charcoal mb-2">
                   {uploading ? strings.uploading : strings.analyzing}
                 </h3>
-                <p className="text-slate-600">
+                <p className="text-slate-600 mb-4">
                   {analyzing ? strings.analyzingDesc : strings.pleaseWait}
                 </p>
+                {progress && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-800">{progress}</p>
+                  </div>
+                )}
               </div>
             ) : (
               <LeaseUploadZone
@@ -287,9 +345,35 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
                         </p>
                       </div>
                     </div>
-                    <Badge className={getStatusColor(lease.status)}>
-                      {lease.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(lease.status)}>
+                        {lease.status}
+                      </Badge>
+                      {(lease.status === 'scanned' || lease.status === 'paid') && (
+                        <button
+                          onClick={() => handleViewLease(lease)}
+                          style={{
+                            backgroundColor: '#0C3B2E',
+                            color: '#FFFFFF',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          {strings.viewResults}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </Card>
               ))}

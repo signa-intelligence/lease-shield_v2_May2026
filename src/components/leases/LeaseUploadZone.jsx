@@ -3,6 +3,7 @@ import { Upload, FileText, Camera } from "lucide-react";
 
 export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
   const fileInputRef = React.useRef(null);
+  const cameraInputRef = React.useRef(null);
 
   return (
     <div
@@ -20,6 +21,15 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
         ref={fileInputRef}
         type="file"
         accept=".pdf,image/*"
+        onChange={onFileSelect}
+        className="hidden"
+      />
+      
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
         onChange={onFileSelect}
         className="hidden"
       />
@@ -74,7 +84,7 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
           </button>
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => cameraInputRef.current?.click()}
             style={{
               backgroundColor: '#FFFFFF',
               color: '#0C3B2E',
