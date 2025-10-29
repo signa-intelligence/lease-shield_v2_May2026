@@ -280,7 +280,9 @@ We will respond to all requests within 30 days as required by PDPA.`
   const strings = content[language];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6" style={{
+      paddingBottom: '160px'
+    }}>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -347,20 +349,26 @@ We will respond to all requests within 30 days as required by PDPA.`
           })}
         </div>
 
-        {/* Footer Notice */}
-        <Card className="mt-8 border-none shadow-lg" style={{
-          backgroundColor: '#0C3B2E'
+        {/* Footer Notice - IMPROVED VISIBILITY */}
+        <Card className="mt-8 border-none shadow-xl" style={{
+          background: 'linear-gradient(to bottom right, #0C3B2E, #047857)'
         }}>
-          <CardContent className="p-6 text-center">
-            <Shield className="w-8 h-8 text-ls-gold mx-auto mb-3" />
-            <p className="text-white font-semibold mb-2">
+          <CardContent className="p-8 text-center">
+            <Shield className="w-10 h-10 text-ls-gold mx-auto mb-4" />
+            <p className="text-white font-bold text-lg mb-3">
               {language === 'th' ? 'ข้อมูลของคุณปลอดภัยกับเรา' : 'Your Data is Safe With Us'}
             </p>
-            <p className="text-ls-stone text-sm">
+            <p className="text-white text-base leading-relaxed mb-4">
               {language === 'th' 
-                ? 'หากคุณมีคำถามหรือข้อกังวลใดๆ โปรดติดต่อเราที่ privacy@leaseshield.asia'
-                : 'If you have any questions or concerns, please contact us at privacy@leaseshield.asia'}
+                ? 'หากคุณมีคำถามหรือข้อกังวลใดๆ โปรดติดต่อเราที่' 
+                : 'If you have any questions or concerns, please contact us at'}
             </p>
+            <a 
+              href="mailto:privacy@leaseshield.asia"
+              className="inline-block px-6 py-3 bg-white text-ls-forest font-bold rounded-lg hover:bg-ls-stone transition-colors"
+            >
+              privacy@leaseshield.asia
+            </a>
           </CardContent>
         </Card>
       </div>
