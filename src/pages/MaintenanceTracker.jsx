@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -346,6 +347,7 @@ export default function MaintenanceTracker() {
                         accept="image/*"
                         onChange={handlePhotoUpload}
                         className="hidden"
+                        disabled={uploading}
                       />
                     </label>
                     {selectedPhotos.length > 0 && (
@@ -362,34 +364,18 @@ export default function MaintenanceTracker() {
                     </div>
                   )}
                 </div>
-                <button 
+                <Button 
                   type="submit" 
                   disabled={uploading || createRequestMutation.isPending}
+                  className="w-full"
                   style={{
-                    width: '100%',
                     backgroundColor: (uploading || createRequestMutation.isPending) ? '#9CA3AF' : '#0C3B2E',
                     color: '#FFFFFF',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    border: 'none',
-                    cursor: (uploading || createRequestMutation.isPending) ? 'not-allowed' : 'pointer',
-                    opacity: (uploading || createRequestMutation.isPending) ? 0.6 : 1,
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!uploading && !createRequestMutation.isPending) {
-                      e.target.style.backgroundColor = '#0a2f25';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!uploading && !createRequestMutation.isPending) {
-                      e.target.style.backgroundColor = '#0C3B2E';
-                    }
+                    opacity: (uploading || createRequestMutation.isPending) ? 0.6 : 1
                   }}
                 >
                   {uploading ? 'Uploading...' : createRequestMutation.isPending ? 'Submitting...' : strings.submit}
-                </button>
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
