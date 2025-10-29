@@ -80,11 +80,11 @@ export default function RecentLeases({ leases, language = 'en' }) {
               
               return (
                 <div key={lease.id} className="p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors duration-200 cursor-pointer">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
+                  <div className="flex items-start justify-between mb-2 gap-2">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <StatusIcon className="w-4 h-4 text-blue-600" />
-                        <span className="font-semibold text-slate-900">
+                        <StatusIcon className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        <span className="font-semibold text-slate-900 truncate">
                           {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
                         </span>
                       </div>
@@ -94,14 +94,14 @@ export default function RecentLeases({ leases, language = 'en' }) {
                         </p>
                       )}
                     </div>
-                    <Badge className={getStatusColor(lease.status)}>
+                    <Badge className={`${getStatusColor(lease.status)} flex-shrink-0`}>
                       {lease.status}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>{strings.uploaded} {format(new Date(lease.created_date), 'MMM d, yyyy')}</span>
                     {lease.start_date && lease.end_date && (
-                      <span>
+                      <span className="truncate ml-2">
                         {format(new Date(lease.start_date), 'MMM yyyy')} - {format(new Date(lease.end_date), 'MMM yyyy')}
                       </span>
                     )}
