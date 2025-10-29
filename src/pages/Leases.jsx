@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -5,11 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileText, Upload, AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 import LeaseUploadZone from "../components/leases/LeaseUploadZone";
 import LeaseAnalysisResults from "../components/leases/LeaseAnalysisResults";
 
 export default function Leases() {
+  const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -26,6 +32,15 @@ export default function Leases() {
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
+  });
+
+  const { data: scans = [] } = useQuery({
+    queryKey: ['scans'],
+    queryFn: async () => {
+      const allScans = await base44.entities.LeaseScan.list();
+      return allScans.filter(s => leases.some(l => l.id === s.lease_id));
+    },
+    enabled: !!user && leases.length > 0,
   });
 
   const handleDrag = (e) => {
@@ -136,6 +151,28 @@ export default function Leases() {
     queryClient.invalidateQueries({ queryKey: ['leases'] });
   };
 
+  const handleViewDetails = (lease) => {
+    // Find the scan for this lease
+    const scan = scans.find(s => s.lease_id === lease.id);
+    
+    if (scan) {
+      // Navigate to scan preview
+      navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
+    } else {
+      // If no scan found, alert user
+      alert('Scan results not found for this lease.');
+    }
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      uploaded: "bg-amber-100 text-amber-800",
+      scanned: "bg-blue-100 text-blue-800",
+      paid: "bg-emerald-100 text-emerald-800"
+    };
+    return colors[status] || "bg-slate-100 text-slate-800";
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6 md:p-8">
       <div className="max-w-5xl mx-auto">
@@ -194,16 +231,44 @@ export default function Leases() {
                               ฿{lease.rent_amount.toLocaleString()}/month
                             </p>
                           )}
-                          <div className="flex gap-2 text-sm text-slate-500">
-                            <span>Status: {lease.status}</span>
+                          <div className="flex gap-2 text-sm text-slate-500 mb-2">
                             {lease.language_detected && (
                               <span>• Language: {lease.language_detected.toUpperCase()}</span>
                             )}
+                            {lease.file_urls && lease.file_urls.length > 1 && (
+                              <span>• {lease.file_urls.length} pages</span>
+                            )}
                           </div>
+                          <p className="text-xs text-slate-400">
+                            Uploaded: {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                          </p>
                         </div>
-                        <Button variant="outline" size="sm">
-                          View Details
-                        </Button>
+                        <div className="flex flex-col gap-2">
+                          <Badge className={getStatusColor(lease.status)}>
+                            {lease.status}
+                          </Badge>
+                          {(lease.status === 'scanned' || lease.status === 'paid') && (
+                            <button
+                              onClick={() => handleViewDetails(lease)}
+                              style={{
+                                backgroundColor: '#3B82F6',
+                                color: '#FFFFFF',
+                                padding: '8px 16px',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                whiteSpace: 'nowrap'
+                              }}
+                              onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
+                              onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
+                            >
+                              View Details
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </Card>
                   ))}
