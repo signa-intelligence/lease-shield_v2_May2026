@@ -1,20 +1,20 @@
-
-import React, { useRef } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import StatsCard from "../components/dashboard/StatsCard";
 import DepositAlert from "../components/dashboard/DepositAlert";
 import RecentLeases from "../components/dashboard/RecentLeases";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
-  const improvementSectionRef = useRef(null);
+  const [showImprovementDialog, setShowImprovementDialog] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -132,14 +132,14 @@ export default function Dashboard() {
         action: language === 'th' ? 'อัปโหลดหลักฐาน' : 'Upload evidence files',
         points: 10,
         route: 'DocumentVault',
-        icon: 'FileText' // Using FileText as a placeholder, FolderOpen was removed
+        icon: 'FileText'
       });
     } else if (documents.length > 0 && documents.length < 5) {
       recommendations.push({
         action: language === 'th' ? 'อัปโหลดหลักฐานเพิ่มเติม' : 'Upload more evidence',
         points: 5,
         route: 'DocumentVault',
-        icon: 'FileText' // Using FileText as a placeholder, FolderOpen was removed
+        icon: 'FileText'
       });
     }
     
@@ -191,18 +191,18 @@ export default function Dashboard() {
         action: language === 'th' ? 'อัปเดตหลักฐาน' : 'Update evidence files',
         points: 7,
         route: 'DocumentVault',
-        icon: 'FileText' // Using FileText as a placeholder, FolderOpen was removed
+        icon: 'FileText'
       });
     } else if (recentDocuments.length > 0 && recentDocuments.length < 3) {
       recommendations.push({
         action: language === 'th' ? 'เพิ่มหลักฐานเป็นประจำ' : 'Add regular evidence',
         points: 5,
         route: 'DocumentVault',
-        icon: 'FileText' // Using FileText as a placeholder, FolderOpen was removed
+        icon: 'FileText'
       });
     }
     
-    return { score, breakdown, recommendations: recommendations.slice(0, 3) }; // Top 3 recommendations
+    return { score, breakdown, recommendations: recommendations.slice(0, 5) }; // Top 5 recommendations
   };
 
   // Get color and status based on protection score
@@ -252,7 +252,7 @@ export default function Dashboard() {
   });
 
   const handleImproveScoreClick = () => {
-    improvementSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setShowImprovementDialog(true);
   };
 
   const t = {
@@ -273,7 +273,8 @@ export default function Dashboard() {
       viewPlans: "View Plans",
       thisMonth: "this month",
       improveScore: "How to Improve Your Score",
-      improveScoreDesc: "Complete these actions to strengthen your protection"
+      improveScoreDesc: "Complete these actions to strengthen your protection",
+      takeAction: "Take Action"
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -292,7 +293,8 @@ export default function Dashboard() {
       viewPlans: "ดูแผน",
       thisMonth: "เดือนนี้",
       improveScore: "วิธีเพิ่มคะแนนของคุณ",
-      improveScoreDesc: "ดำเนินการเหล่านี้เพื่อเสริมสร้างการป้องกัน"
+      improveScoreDesc: "ดำเนินการเหล่านี้เพื่อเสริมสร้างการป้องกัน",
+      takeAction: "ดำเนินการ"
     }
   };
 
@@ -301,7 +303,6 @@ export default function Dashboard() {
   const iconMap = {
     FileText: FileText,
     Shield: Shield,
-    FolderOpen: FileText, // Used for consistency as FolderOpen was mentioned as removed
     Bell: Bell,
     Wrench: Wrench
   };
@@ -362,60 +363,86 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* How to Improve Score - With ref for smooth scroll */}
-        {protectionScore < 100 && recommendations.length > 0 && (
-          <div ref={improvementSectionRef} className="mb-8 scroll-mt-6">
-            <Card className="border-none shadow-lg overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-ls-forest to-emerald-700 text-white pb-4">
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
+        {/* Improvement Dialog */}
+        <Dialog open={showImprovementDialog} onOpenChange={setShowImprovementDialog}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: protectionScoreColor }}
+                >
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div>
                   {strings.improveScore}
-                </CardTitle>
-                <p className="text-sm text-white/90 mt-1">{strings.improveScoreDesc}</p>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid md:grid-cols-3 gap-4">
-                  {recommendations.map((rec, index) => {
-                    const IconComponent = iconMap[rec.icon] || FileText;
-                    return (
-                      <Link key={index} to={createPageUrl(rec.route)}>
-                        <div
-                          className="p-4 rounded-xl border-2 border-slate-200 hover:border-ls-gold hover:shadow-md transition-all duration-300 cursor-pointer h-full"
-                          style={{
-                            background: 'linear-gradient(135deg, #FFFFFF 0%, #ECEFED 100%)'
-                          }}
-                        >
-                          <div className="flex items-start gap-3">
+                  <p className="text-sm font-normal text-slate-600 mt-1">{strings.improveScoreDesc}</p>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 mt-4">
+              {recommendations.length === 0 ? (
+                <div className="text-center py-8">
+                  <Shield className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+                  <p className="text-lg font-semibold text-ls-charcoal mb-2">
+                    {language === 'th' ? 'คะแนนเต็ม! 🎉' : 'Perfect Score! 🎉'}
+                  </p>
+                  <p className="text-slate-600">
+                    {language === 'th' ? 'คุณทำได้ดีมาก ทุกอย่างพร้อมแล้ว' : 'You\'re all set with maximum protection'}
+                  </p>
+                </div>
+              ) : (
+                recommendations.map((rec, index) => {
+                  const IconComponent = iconMap[rec.icon] || FileText;
+                  return (
+                    <Link 
+                      key={index} 
+                      to={createPageUrl(rec.route)}
+                      onClick={() => setShowImprovementDialog(false)}
+                    >
+                      <div
+                        className="p-4 rounded-xl border-2 border-slate-200 hover:border-ls-gold hover:shadow-md transition-all duration-300 cursor-pointer"
+                        style={{
+                          background: 'linear-gradient(135deg, #FFFFFF 0%, #ECEFED 100%)'
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1">
                             <div
-                              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                              className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
                               style={{
                                 backgroundColor: '#0C3B2E',
                                 boxShadow: '0 2px 4px rgba(12, 59, 46, 0.2)'
                               }}
                             >
-                              <IconComponent className="w-5 h-5 text-white" />
+                              <IconComponent className="w-6 h-6 text-white" />
                             </div>
                             <div className="flex-1">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-bold text-ls-charcoal">{rec.action}</span>
-                                <Badge className="bg-ls-gold/20 text-ls-gold border border-ls-gold/30 text-xs">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-bold text-ls-charcoal">{rec.action}</span>
+                                <Badge className="bg-ls-gold/20 text-ls-gold border border-ls-gold/30">
                                   +{rec.points}%
                                 </Badge>
                               </div>
-                              <ArrowRight className="w-4 h-4 text-ls-gold mt-2" />
+                              <p className="text-sm text-slate-600">
+                                {language === 'th' 
+                                  ? `เพิ่มคะแนนการป้องกันของคุณ ${rec.points} คะแนน` 
+                                  : `Increase your protection by ${rec.points} points`}
+                              </p>
                             </div>
                           </div>
+                          <ArrowRight className="w-5 h-5 text-ls-gold flex-shrink-0 ml-3" />
                         </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                      </div>
+                    </Link>
+                  );
+                })
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
-        {/* Quick Actions - FIXED with inline styles */}
+        {/* Quick Actions */}
         <div style={{
           background: 'linear-gradient(to right, #0C3B2E, #047857)',
           borderRadius: '16px',
@@ -482,7 +509,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Upgrade Banner - FIXED with inline styles */}
+        {/* Upgrade Banner */}
         {user?.plan_tier === 'free' && (
           <div style={{
             marginTop: '32px',
