@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Database, Users, AlertCircle, CheckCircle2, Loader2, Crown, Mail, Calendar } from "lucide-react";
+import { Shield, Database, Users, AlertCircle, CheckCircle2, Loader2, Crown, Mail, Calendar, FileText } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -38,17 +37,21 @@ export default function AdminConsole() {
   const { data: stats } = useQuery({
     queryKey: ['adminStats'],
     queryFn: async () => {
-      const [users, leases, deposits, cases] = await Promise.all([
+      const [users, leases, scans, deposits, cases, documents] = await Promise.all([
         base44.entities.User.list(),
         base44.entities.Lease.list(),
+        base44.entities.LeaseScan.list(),
         base44.entities.DepositTracker.list(),
-        base44.entities.Case.list()
+        base44.entities.Case.list(),
+        base44.entities.Document.list()
       ]);
       return {
         total_users: users.length,
         total_leases: leases.length,
+        total_scans: scans.length,
         total_deposits: deposits.length,
         total_cases: cases.length,
+        total_documents: documents.length,
         active_subscribers: users.filter(u => u.subscription_status === 'active').length
       };
     },
@@ -58,6 +61,30 @@ export default function AdminConsole() {
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
     queryFn: () => base44.entities.User.list(),
+    enabled: !!user && user.role === 'admin'
+  });
+
+  const { data: allLeases = [] } = useQuery({
+    queryKey: ['allLeases'],
+    queryFn: () => base44.entities.Lease.list('-created_date'),
+    enabled: !!user && user.role === 'admin'
+  });
+
+  const { data: allDeposits = [] } = useQuery({
+    queryKey: ['allDeposits'],
+    queryFn: () => base44.entities.DepositTracker.list('-created_date'),
+    enabled: !!user && user.role === 'admin'
+  });
+
+  const { data: allDocuments = [] } = useQuery({
+    queryKey: ['allDocuments'],
+    queryFn: () => base44.entities.Document.list('-created_date'),
+    enabled: !!user && user.role === 'admin'
+  });
+
+  const { data: allCases = [] } = useQuery({
+    queryKey: ['allCases'],
+    queryFn: () => base44.entities.Case.list('-created_date'),
     enabled: !!user && user.role === 'admin'
   });
 
@@ -100,6 +127,10 @@ export default function AdminConsole() {
         setSeedResult(response.data);
         queryClient.invalidateQueries({ queryKey: ['adminStats'] });
         queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+        queryClient.invalidateQueries({ queryKey: ['allLeases'] });
+        queryClient.invalidateQueries({ queryKey: ['allDeposits'] });
+        queryClient.invalidateQueries({ queryKey: ['allDocuments'] });
+        queryClient.invalidateQueries({ queryKey: ['allCases'] });
       } else {
         setError('No data returned from seed function');
       }
@@ -170,7 +201,7 @@ export default function AdminConsole() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card className="border-none shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -206,8 +237,22 @@ export default function AdminConsole() {
                   <Database className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Total Leases</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats?.total_leases || 0}</p>
+                  <p className="text-sm text-slate-600">Lease Scans</p>
+                  <p className="text-2xl font-bold text-slate-900">{stats?.total_scans || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Documents</p>
+                  <p className="text-2xl font-bold text-slate-900">{stats?.total_documents || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -417,32 +462,92 @@ export default function AdminConsole() {
           </CardContent>
         </Card>
 
-        {/* System Info */}
-        <Card className="border-none shadow-lg">
-          <CardHeader className="border-b">
-            <CardTitle>System Statistics</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <p className="text-sm text-slate-600">Deposits Tracked</p>
-                <p className="text-xl font-bold text-slate-900">{stats?.total_deposits || 0}</p>
+        {/* System Data Overview */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Recent Leases */}
+          <Card className="border-none shadow-lg">
+            <CardHeader className="border-b">
+              <CardTitle>Recent Leases ({allLeases.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {allLeases.slice(0, 5).map((lease) => (
+                  <div key={lease.id} className="p-3 bg-slate-50 rounded-lg">
+                    <p className="font-semibold text-sm">{lease.property_address || 'Lease Agreement'}</p>
+                    <p className="text-xs text-slate-600">By: {lease.created_by}</p>
+                    <p className="text-xs text-slate-500">{format(new Date(lease.created_date), 'MMM d, yyyy')}</p>
+                  </div>
+                ))}
+                {allLeases.length === 0 && (
+                  <p className="text-center text-slate-500 py-4">No leases found</p>
+                )}
               </div>
-              <div>
-                <p className="text-sm text-slate-600">Active Cases</p>
-                <p className="text-xl font-bold text-slate-900">{stats?.total_cases || 0}</p>
+            </CardContent>
+          </Card>
+
+          {/* Recent Documents */}
+          <Card className="border-none shadow-lg">
+            <CardHeader className="border-b">
+              <CardTitle>Recent Documents ({allDocuments.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {allDocuments.slice(0, 5).map((doc) => (
+                  <div key={doc.id} className="p-3 bg-slate-50 rounded-lg">
+                    <p className="font-semibold text-sm">{doc.label || 'Document'}</p>
+                    <p className="text-xs text-slate-600">Type: {doc.type}</p>
+                    <p className="text-xs text-slate-500">By: {doc.created_by}</p>
+                  </div>
+                ))}
+                {allDocuments.length === 0 && (
+                  <p className="text-center text-slate-500 py-4">No documents found</p>
+                )}
               </div>
-              <div>
-                <p className="text-sm text-slate-600">Leases Scanned</p>
-                <p className="text-xl font-bold text-slate-900">{stats?.total_leases || 0}</p>
+            </CardContent>
+          </Card>
+
+          {/* Deposits */}
+          <Card className="border-none shadow-lg">
+            <CardHeader className="border-b">
+              <CardTitle>Deposits Tracked ({allDeposits.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {allDeposits.slice(0, 5).map((deposit) => (
+                  <div key={deposit.id} className="p-3 bg-slate-50 rounded-lg">
+                    <p className="font-semibold text-sm">฿{deposit.deposit_amount.toLocaleString()}</p>
+                    <p className="text-xs text-slate-600">{deposit.property_address || 'Property'}</p>
+                    <p className="text-xs text-slate-500">Status: {deposit.status}</p>
+                  </div>
+                ))}
+                {allDeposits.length === 0 && (
+                  <p className="text-center text-slate-500 py-4">No deposits found</p>
+                )}
               </div>
-              <div>
-                <p className="text-sm text-slate-600">Total Users</p>
-                <p className="text-xl font-bold text-slate-900">{stats?.total_users || 0}</p>
+            </CardContent>
+          </Card>
+
+          {/* Cases */}
+          <Card className="border-none shadow-lg">
+            <CardHeader className="border-b">
+              <CardTitle>Active Cases ({allCases.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {allCases.slice(0, 5).map((caseItem) => (
+                  <div key={caseItem.id} className="p-3 bg-slate-50 rounded-lg">
+                    <p className="font-semibold text-sm">Case #{caseItem.id.slice(0, 8)}</p>
+                    <p className="text-xs text-slate-600">Amount: ฿{caseItem.dispute_amount?.toLocaleString() || 'N/A'}</p>
+                    <p className="text-xs text-slate-500">Status: {caseItem.status}</p>
+                  </div>
+                ))}
+                {allCases.length === 0 && (
+                  <p className="text-center text-slate-500 py-4">No cases found</p>
+                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
