@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, AlertCircle, Loader2, FileText, History, CheckCircle2 } from "lucide-react";
+import { Upload, AlertCircle, Loader2, FileText, History, CheckCircle2, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -19,6 +19,7 @@ export default function UploadScan() {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState(null);
   const [progress, setProgress] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const queryClient = useQueryClient();
 
   const { data: user, isLoading: userLoading } = useQuery({
@@ -44,11 +45,10 @@ export default function UploadScan() {
     }
   };
 
-  const handleFileSelect = async (e) => {
+  const handleFileSelect = (e) => {
     e.preventDefault();
     setDragActive(false);
     setError(null);
-    setProgress('');
 
     // Check if user is authenticated
     if (!user) {
@@ -56,56 +56,86 @@ export default function UploadScan() {
       return;
     }
 
-    const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
+    const files = e.dataTransfer ? Array.from(e.dataTransfer.files) : Array.from(e.target.files);
     if (!files || files.length === 0) return;
 
-    const file = files[0];
+    // Validate all files
+    const invalidFiles = [];
+    const validFiles = [];
     
-    // Check file type
-    const isImage = file.type.includes('image');
-    const isPDF = file.type.includes('pdf');
-    
-    if (!isPDF && !isImage) {
-      setError(language === 'th' ? 'กรุณาอัปโหลดไฟล์ PDF หรือรูปภาพ (JPG, PNG)' : 'Please upload a PDF or image file (JPG, PNG)');
-      return;
+    files.forEach((file) => {
+      const isImage = file.type.includes('image');
+      const isPDF = file.type.includes('pdf');
+      
+      if (!isPDF && !isImage) {
+        invalidFiles.push(file.name);
+      } else if (file.size > 10 * 1024 * 1024) {
+        invalidFiles.push(`${file.name} (too large)`);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (invalidFiles.length > 0) {
+      setError(
+        language === 'th' 
+          ? `ไฟล์ไม่ถูกต้อง: ${invalidFiles.join(', ')}` 
+          : `Invalid files: ${invalidFiles.join(', ')}`
+      );
     }
 
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError(language === 'th' ? 'ไฟล์ใหญ่เกินไป (สูงสุด 10MB)' : 'File too large (max 10MB)');
+    if (validFiles.length > 0) {
+      setSelectedFiles(validFiles);
+    }
+  };
+
+  const removeFile = (index) => {
+    setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+  };
+
+  const handleAnalyze = async () => {
+    if (selectedFiles.length === 0) {
+      setError(language === 'th' ? 'กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์' : 'Please select at least one file');
       return;
     }
 
     setUploading(true);
-    setProgress('Uploading file...');
+    setProgress(`Uploading ${selectedFiles.length} file(s)...`);
 
     try {
       // Determine user's plan mode for AI analysis
       const planTier = user?.plan_tier || 'free';
       const analysisMode = planTier === 'secure' ? 'Secure' : planTier === 'protect' ? 'Protect' : 'Lite';
 
-      // Step 1: Upload file
-      console.log('Step 1: Uploading file...');
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      console.log('File uploaded:', file_url);
+      // Step 1: Upload all files
+      console.log(`Step 1: Uploading ${selectedFiles.length} files...`);
+      const uploadPromises = selectedFiles.map(file => 
+        base44.integrations.Core.UploadFile({ file })
+      );
+      const uploadResults = await Promise.all(uploadPromises);
+      const fileUrls = uploadResults.map(result => result.file_url);
+      console.log('All files uploaded:', fileUrls);
       
-      // Step 2: Create lease record
+      // Step 2: Create lease record with all file URLs
       setProgress('Creating lease record...');
       console.log('Step 2: Creating lease...');
       const lease = await base44.entities.Lease.create({
-        file_url,
+        file_url: fileUrls[0], // Primary file
+        file_urls: fileUrls, // All files
         status: 'uploaded'
       });
       console.log('Lease created:', lease.id);
 
       setAnalyzing(true);
       setUploading(false);
-      setProgress('Analyzing document with AI...');
+      setProgress(`Analyzing ${selectedFiles.length} page(s) with AI...`);
       
-      // Step 3: Run AI pipeline - Extract and classify clauses with new comprehensive prompt
+      // Step 3: Run AI pipeline - Extract and classify clauses with ALL files
       console.log('Step 3: Running AI analysis with mode:', analysisMode);
       const analysisResult = await base44.integrations.Core.InvokeLLM({
         prompt: `You are "LeaseShield-Analyzer," a meticulous Thai/English bilingual reviewer for **Thailand leases** (default). Analyze the uploaded lease text and return structured JSON only (no extra prose).
+
+IMPORTANT: You are analyzing a multi-page lease document with ${selectedFiles.length} page(s). Review ALL pages comprehensively and combine your analysis.
 
 OPERATING MODE:
 - ${analysisMode} ∈ {Lite | Protect | Secure}
@@ -151,7 +181,7 @@ TIERING RULES:
 - Secure: full set (+ commercial checks if applicable).
 
 Now analyze this lease thoroughly and return JSON only.`,
-        file_urls: [file_url],
+        file_urls: fileUrls, // Send ALL file URLs to AI
         response_json_schema: {
           type: "object",
           properties: {
@@ -262,6 +292,7 @@ ${JSON.stringify(analysisResult.flags)}`,
       console.log('Scan created:', scan.id);
 
       queryClient.invalidateQueries({ queryKey: ['leases'] });
+      setSelectedFiles([]);
       
       // Step 7: Navigate to preview with state
       console.log('Step 7: Navigating to preview...');
@@ -293,44 +324,44 @@ ${JSON.stringify(analysisResult.flags)}`,
   };
 
   const handleViewLease = (lease) => {
-    // Find the scan for this lease
-    const scan = leases.find(l => l.id === lease.id);
-    if (lease.status === 'scanned' || lease.status === 'paid') {
-      // Navigate to scan preview
-      navigate(createPageUrl("Leases"));
-    }
+    navigate(createPageUrl("Leases"));
   };
 
   const t = {
     en: {
       title: "Lease Risk Scan",
       subtitle: "AI-powered lease analysis in seconds",
-      uploading: "Uploading Lease...",
+      uploading: "Uploading Files...",
       analyzing: "Analyzing Agreement...",
-      analyzingDesc: "Our AI is reviewing your lease for potential issues",
+      analyzingDesc: "Our AI is reviewing all pages of your lease for potential issues",
       pleaseWait: "Please wait",
       recentScans: "Recent Scans",
       leaseAgreement: "Lease Agreement",
       viewResults: "View Results",
-      loading: "Loading..."
+      loading: "Loading...",
+      selectedFiles: "Selected Files",
+      analyzeButton: "Analyze Lease",
+      selectMore: "Select More Files"
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
       subtitle: "วิเคราะห์สัญญาเช่าด้วย AI ในไม่กี่วินาที",
-      uploading: "กำลังอัปโหลดสัญญา...",
+      uploading: "กำลังอัปโหลดไฟล์...",
       analyzing: "กำลังวิเคราะห์สัญญา...",
-      analyzingDesc: "AI กำลังตรวจสอบสัญญาของคุณเพื่อหาประเด็นที่อาจเป็นปัญหา",
+      analyzingDesc: "AI กำลังตรวจสอบทุกหน้าของสัญญาเพื่อหาประเด็นที่อาจเป็นปัญหา",
       pleaseWait: "กรุณารอสักครู่",
       recentScans: "การสแกนล่าสุด",
       leaseAgreement: "สัญญาเช่า",
       viewResults: "ดูผลลัพธ์",
-      loading: "กำลังโหลด..."
+      loading: "กำลังโหลด...",
+      selectedFiles: "ไฟล์ที่เลือก",
+      analyzeButton: "วิเคราะห์สัญญา",
+      selectMore: "เลือกไฟล์เพิ่มเติม"
     }
   };
 
   const strings = t[language];
 
-  // Show loading state while user is being fetched
   if (userLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
@@ -365,7 +396,7 @@ ${JSON.stringify(analysisResult.flags)}`,
             <AlertDescription>
               <div className="font-semibold">{error}</div>
               <div className="text-xs mt-2">
-                Supported formats: PDF, JPG, PNG • Max size: 10MB
+                Supported formats: PDF, JPG, PNG • Max size: 10MB per file
               </div>
             </AlertDescription>
           </Alert>
@@ -389,11 +420,93 @@ ${JSON.stringify(analysisResult.flags)}`,
                 )}
               </div>
             ) : (
-              <LeaseUploadZone
-                onFileSelect={handleFileSelect}
-                dragActive={dragActive}
-                onDrag={handleDrag}
-              />
+              <>
+                <LeaseUploadZone
+                  onFileSelect={handleFileSelect}
+                  dragActive={dragActive}
+                  onDrag={handleDrag}
+                />
+
+                {/* Selected Files Preview */}
+                {selectedFiles.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="font-bold text-ls-charcoal mb-3 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-ls-forest" />
+                      {strings.selectedFiles} ({selectedFiles.length})
+                    </h3>
+                    <div className="grid gap-2 mb-4">
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-ls-stone rounded-lg border border-ls-forest/20">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <FileText className="w-4 h-4 text-ls-forest flex-shrink-0" />
+                            <span className="text-sm font-medium text-ls-charcoal truncate">
+                              {file.name}
+                            </span>
+                            <span className="text-xs text-slate-500 flex-shrink-0">
+                              {(file.size / 1024).toFixed(0)} KB
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => removeFile(index)}
+                            className="ml-2 p-1 hover:bg-red-100 rounded transition-colors"
+                          >
+                            <X className="w-4 h-4 text-red-600" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleAnalyze}
+                        style={{
+                          flex: 1,
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF',
+                          padding: '14px 24px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                      >
+                        <CheckCircle2 className="w-5 h-5" />
+                        {strings.analyzeButton}
+                      </button>
+                      <button
+                        onClick={() => document.querySelector('input[type="file"]').click()}
+                        style={{
+                          backgroundColor: '#FFFFFF',
+                          color: '#0C3B2E',
+                          padding: '14px 24px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: '2px solid #0C3B2E',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#ECEFED';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#FFFFFF';
+                        }}
+                      >
+                        {strings.selectMore}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </Card>
@@ -416,9 +529,16 @@ ${JSON.stringify(analysisResult.flags)}`,
                         <p className="font-semibold text-ls-charcoal truncate">
                           {lease.property_address || strings.leaseAgreement}
                         </p>
-                        <p className="text-sm text-slate-500">
-                          {format(new Date(lease.created_date), 'MMM d, yyyy')}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-slate-500">
+                            {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                          </p>
+                          {lease.file_urls && lease.file_urls.length > 1 && (
+                            <Badge variant="outline" className="text-xs">
+                              {lease.file_urls.length} pages
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
