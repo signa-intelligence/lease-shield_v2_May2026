@@ -6,37 +6,36 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle } from "lucide-react";
 import { FeatureGate } from "../components/shared/FeatureGate";
 
 export default function ReportFull() {
   const navigate = useNavigate();
+  const urlParams = new URLSearchParams(window.location.search);
+  const scanId = urlParams.get('scanId');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: leases = [] } = useQuery({
-    queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 1),
-    enabled: !!user,
-  });
-
-  const { data: scans = [] } = useQuery({
-    queryKey: ['scans'],
+  const { data: scan } = useQuery({
+    queryKey: ['scan', scanId],
     queryFn: async () => {
-      if (!leases[0]) return [];
-      const allScans = await base44.entities.LeaseScan.list();
-      return allScans.filter(s => s.lease_id === leases[0].id).sort((a, b) => 
-        new Date(b.created_date) - new Date(a.created_date)
-      );
+      const scans = await base44.entities.LeaseScan.list();
+      return scans.find(s => s.id === scanId);
     },
-    enabled: !!leases[0],
+    enabled: !!scanId,
   });
 
-  const scan = scans[0];
-  const lease = leases[0];
+  const { data: lease } = useQuery({
+    queryKey: ['lease', scan?.lease_id],
+    queryFn: async () => {
+      const leases = await base44.entities.Lease.list();
+      return leases.find(l => l.id === scan.lease_id);
+    },
+    enabled: !!scan?.lease_id,
+  });
 
   if (!scan || !lease) {
     return (
@@ -66,6 +65,10 @@ export default function ReportFull() {
     };
     return colors[severity] || "text-slate-600 bg-slate-50 border-slate-200";
   };
+
+  const fullFlags = scan.scan_full?.flags || [];
+  const missingItems = scan.scan_full?.missing_items || [];
+  const keyTerms = scan.scan_full?.key_terms || {};
 
   return (
     <FeatureGate feature="full_report">
@@ -104,34 +107,120 @@ export default function ReportFull() {
             </CardContent>
           </Card>
 
+          {/* Key Terms */}
+          {Object.keys(keyTerms).length > 0 && (
+            <Card className="mb-6 border-none shadow-lg">
+              <CardHeader className="border-b border-slate-100">
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  Key Lease Terms
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid md:grid-cols-2 gap-4">
+                  {keyTerms.property_address && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Property Address</p>
+                      <p className="font-medium text-slate-900">{keyTerms.property_address}</p>
+                    </div>
+                  )}
+                  {keyTerms.rent_amount && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Monthly Rent</p>
+                      <p className="font-medium text-slate-900">฿{keyTerms.rent_amount.toLocaleString()}</p>
+                    </div>
+                  )}
+                  {keyTerms.deposit_amount && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Security Deposit</p>
+                      <p className="font-medium text-slate-900">฿{keyTerms.deposit_amount.toLocaleString()}</p>
+                    </div>
+                  )}
+                  {keyTerms.start_date && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Lease Period</p>
+                      <p className="font-medium text-slate-900">
+                        {keyTerms.start_date} {keyTerms.end_date && `to ${keyTerms.end_date}`}
+                      </p>
+                    </div>
+                  )}
+                  {keyTerms.lease_type_detected && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Lease Type</p>
+                      <p className="font-medium text-slate-900 capitalize">{keyTerms.lease_type_detected.replace('_', ' ')}</p>
+                    </div>
+                  )}
+                  {keyTerms.language_detected && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Language</p>
+                      <p className="font-medium text-slate-900 uppercase">{keyTerms.language_detected}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Detailed Flags */}
-          {scan.flags && scan.flags.length > 0 && (
+          {fullFlags.length > 0 && (
             <Card className="mb-6 border-none shadow-lg">
               <CardHeader className="border-b border-slate-100">
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  Detailed Issues ({scan.flags.length})
+                  Detailed Issues & Recommendations ({fullFlags.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  {scan.flags.map((flag, index) => {
+                  {fullFlags.map((flag, index) => {
                     const SeverityIcon = getSeverityIcon(flag.severity);
                     return (
-                      <div key={index} className={`p-4 rounded-xl border ${getSeverityColor(flag.severity)}`}>
-                        <div className="flex items-start gap-3">
-                          <SeverityIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                      <div key={index} className={`p-5 rounded-xl border-2 ${getSeverityColor(flag.severity)}`}>
+                        <div className="flex items-start gap-3 mb-3">
+                          <SeverityIcon className="w-6 h-6 mt-0.5 flex-shrink-0" />
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="font-bold text-sm uppercase tracking-wide">
-                                {flag.category}
-                              </span>
-                              <Badge variant="outline" className="text-xs">
+                              <h4 className="font-bold text-lg">{flag.title}</h4>
+                              <Badge variant="outline" className="text-xs font-bold uppercase">
                                 {flag.severity}
                               </Badge>
                             </div>
-                            <p className="text-sm leading-relaxed">{flag.description}</p>
+                            <Badge variant="outline" className="mb-3 text-xs">
+                              {flag.category}
+                            </Badge>
                           </div>
+                        </div>
+                        
+                        <div className="space-y-3 ml-9">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-70">Evidence</p>
+                            <p className="text-sm italic border-l-2 border-current pl-3 py-1">"{flag.evidence}"</p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-70">Explanation</p>
+                            <p className="text-sm leading-relaxed">{flag.explanation}</p>
+                          </div>
+                          
+                          <div className="bg-white/50 rounded-lg p-3 border border-current/20">
+                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-70">Recommendation</p>
+                            <p className="text-sm font-medium leading-relaxed">{flag.recommendation}</p>
+                          </div>
+                          
+                          {(flag.impact_0_10 || flag.likelihood_0_10) && (
+                            <div className="flex gap-4 text-xs">
+                              {flag.impact_0_10 && (
+                                <div>
+                                  <span className="font-semibold">Impact:</span> {flag.impact_0_10}/10
+                                </div>
+                              )}
+                              {flag.likelihood_0_10 && (
+                                <div>
+                                  <span className="font-semibold">Likelihood:</span> {flag.likelihood_0_10}/10
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -141,17 +230,23 @@ export default function ReportFull() {
             </Card>
           )}
 
-          {/* Full Scan Data */}
-          {scan.scan_full && (
+          {/* Missing Protections */}
+          {missingItems.length > 0 && (
             <Card className="mb-6 border-none shadow-lg">
               <CardHeader className="border-b border-slate-100">
-                <CardTitle>Complete Analysis</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                  Missing Protections ({missingItems.length})
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="bg-slate-50 rounded-xl p-4 overflow-auto">
-                  <pre className="text-xs text-slate-700 whitespace-pre-wrap">
-                    {JSON.stringify(scan.scan_full, null, 2)}
-                  </pre>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {missingItems.map((item, index) => (
+                    <div key={index} className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-amber-900 leading-relaxed">{item}</p>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
