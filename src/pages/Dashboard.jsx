@@ -2,7 +2,7 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, FolderOpen, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays } from "date-fns";
@@ -10,6 +10,8 @@ import { differenceInDays } from "date-fns";
 import StatsCard from "../components/dashboard/StatsCard";
 import DepositAlert from "../components/dashboard/DepositAlert";
 import RecentLeases from "../components/dashboard/RecentLeases";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
   const { data: user } = useQuery({
@@ -79,19 +81,22 @@ export default function Dashboard() {
     // 3. Proactive Actions (30 points max)
     const now = new Date();
     const recentLeases = leases.filter(l => {
-      const daysSinceCreated = differenceInDays(now, new Date(l.created_date));
+      const leaseDate = new Date(l.created_date);
+      const daysSinceCreated = differenceInDays(now, leaseDate);
       return daysSinceCreated <= 90;
     });
     if (recentLeases.length > 0) breakdown.proactiveActions += 10;
 
     const recentDeposits = deposits.filter(d => {
-      const daysSinceCreated = differenceInDays(now, new Date(d.created_date));
+      const depositDate = new Date(d.created_date);
+      const daysSinceCreated = differenceInDays(now, depositDate);
       return daysSinceCreated <= 90;
     });
     if (recentDeposits.length > 0) breakdown.proactiveActions += 8;
 
     const recentDocuments = documents.filter(doc => {
-      const daysSinceCreated = differenceInDays(now, new Date(doc.created_date));
+      const docDate = new Date(doc.created_date);
+      const daysSinceCreated = differenceInDays(now, docDate);
       return daysSinceCreated <= 30;
     });
     if (recentDocuments.length > 0) breakdown.proactiveActions += 7;
@@ -100,7 +105,102 @@ export default function Dashboard() {
 
     score = breakdown.documentation + breakdown.activeProtections + breakdown.proactiveActions;
     
-    return { score, breakdown };
+    // Calculate recommendations based on what's missing
+    const recommendations = [];
+    
+    // Documentation recommendations
+    if (scannedLeases.length === 0) {
+      recommendations.push({
+        action: language === 'th' ? 'สแกนสัญญาเช่า' : 'Scan your lease',
+        points: 15,
+        route: 'UploadScan',
+        icon: 'FileText'
+      });
+    }
+    if (deposits.length === 0) {
+      recommendations.push({
+        action: language === 'th' ? 'เริ่มติดตามเงินมัดจำ' : 'Start tracking deposit',
+        points: 10,
+        route: 'DepositTracker',
+        icon: 'Shield'
+      });
+    }
+    if (documents.length === 0) {
+      recommendations.push({
+        action: language === 'th' ? 'อัปโหลดหลักฐาน' : 'Upload evidence files',
+        points: 10,
+        route: 'DocumentVault',
+        icon: 'FolderOpen'
+      });
+    } else if (documents.length > 0 && documents.length < 5) {
+      recommendations.push({
+        action: language === 'th' ? 'อัปโหลดหลักฐานเพิ่มเติม' : 'Upload more evidence',
+        points: 5,
+        route: 'DocumentVault',
+        icon: 'FolderOpen'
+      });
+    }
+    
+    // Active Protections recommendations
+    if (activeDeposits.length === 0 && deposits.length > 0) {
+      recommendations.push({
+        action: language === 'th' ? 'เปิดใช้งาน Deposit Shield' : 'Enable Deposit Shield',
+        points: 10,
+        route: 'DepositTracker',
+        icon: 'Shield'
+      });
+    }
+    if (!rentAlertsEnabled && deposits.length > 0) {
+      recommendations.push({
+        action: language === 'th' ? 'เปิดการแจ้งเตือนค่าเช่า' : 'Enable rent alerts',
+        points: 7,
+        route: 'DepositTracker',
+        icon: 'Bell'
+      });
+    }
+    if (maintenanceRequests.length === 0) {
+      recommendations.push({
+        action: language === 'th' ? 'บันทึกการซ่อมบำรุง' : 'Log maintenance requests',
+        points: 6,
+        route: 'MaintenanceTracker',
+        icon: 'Wrench'
+      });
+    }
+    if (!user?.email_notifications && !user?.line_notifications) {
+      recommendations.push({
+        action: language === 'th' ? 'เปิดการแจ้งเตือน' : 'Enable notifications',
+        points: 7,
+        route: 'Account',
+        icon: 'Bell'
+      });
+    }
+    
+    // Proactive Actions recommendations
+    if (recentLeases.length === 0 && leases.length > 0) {
+      recommendations.push({
+        action: language === 'th' ? 'สแกนสัญญาเช่าใหม่' : 'Scan a recent lease',
+        points: 10,
+        route: 'UploadScan',
+        icon: 'FileText'
+      });
+    }
+    if (recentDocuments.length === 0 && documents.length > 0) {
+      recommendations.push({
+        action: language === 'th' ? 'อัปเดตหลักฐาน' : 'Update evidence files',
+        points: 7,
+        route: 'DocumentVault',
+        icon: 'FolderOpen'
+      });
+    } else if (recentDocuments.length > 0 && recentDocuments.length < 3) {
+      recommendations.push({
+        action: language === 'th' ? 'เพิ่มหลักฐานเป็นประจำ' : 'Add regular evidence',
+        points: 5,
+        route: 'DocumentVault',
+        icon: 'FolderOpen'
+      });
+    }
+    
+    return { score, breakdown, recommendations: recommendations.slice(0, 3) }; // Top 3 recommendations
   };
 
   // Get color and status based on protection score
@@ -135,7 +235,7 @@ export default function Dashboard() {
     return lang.poor;
   };
 
-  const { score: protectionScore, breakdown } = calculateProtectionScore();
+  const { score: protectionScore, breakdown, recommendations } = calculateProtectionScore();
   const protectionScoreColor = getProtectionScoreColor(protectionScore);
   const protectionScoreStatus = getProtectionScoreStatus(protectionScore);
 
@@ -164,7 +264,9 @@ export default function Dashboard() {
       upgradePremium: "Upgrade to Premium",
       upgradeDesc: "Get unlimited lease scans, priority case handling, and expert legal support",
       viewPlans: "View Plans",
-      thisMonth: "this month"
+      thisMonth: "this month",
+      improveScore: "How to Improve Your Score",
+      improveScoreDesc: "Complete these actions to strengthen your protection"
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -180,11 +282,21 @@ export default function Dashboard() {
       upgradePremium: "อัปเกรดเป็นพรีเมียม",
       upgradeDesc: "รับการสแกนสัญญาไม่จำกัด การจัดการคดีแบบเร่งด่วน และการสนับสนุนจากผู้เชี่ยวชาญ",
       viewPlans: "ดูแผน",
-      thisMonth: "เดือนนี้"
+      thisMonth: "เดือนนี้",
+      improveScore: "วิธีเพิ่มคะแนนของคุณ",
+      improveScoreDesc: "ดำเนินการเหล่านี้เพื่อเสริมสร้างการป้องกัน"
     }
   };
 
   const strings = t[language];
+
+  const iconMap = {
+    FileText: FileText,
+    Shield: Shield,
+    FolderOpen: FolderOpen,
+    Bell: Bell,
+    Wrench: Wrench
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone">
@@ -239,6 +351,59 @@ export default function Dashboard() {
             trendUp={protectionScore >= 70}
           />
         </div>
+
+        {/* How to Improve Score - NEW SECTION */}
+        {protectionScore < 100 && recommendations.length > 0 && (
+          <div className="mb-8">
+            <Card className="border-none shadow-lg overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-ls-forest to-emerald-700 text-white pb-4">
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  {strings.improveScore}
+                </CardTitle>
+                <p className="text-sm text-white/90 mt-1">{strings.improveScoreDesc}</p>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid md:grid-cols-3 gap-4">
+                  {recommendations.map((rec, index) => {
+                    const IconComponent = iconMap[rec.icon] || FileText;
+                    return (
+                      <Link key={index} to={createPageUrl(rec.route)}>
+                        <div
+                          className="p-4 rounded-xl border-2 border-slate-200 hover:border-ls-gold hover:shadow-md transition-all duration-300 cursor-pointer h-full"
+                          style={{
+                            background: 'linear-gradient(135deg, #FFFFFF 0%, #ECEFED 100%)'
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div
+                              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{
+                                backgroundColor: '#0C3B2E',
+                                boxShadow: '0 2px 4px rgba(12, 59, 46, 0.2)'
+                              }}
+                            >
+                              <IconComponent className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm font-bold text-ls-charcoal">{rec.action}</span>
+                                <Badge className="bg-ls-gold/20 text-ls-gold border border-ls-gold/30 text-xs">
+                                  +{rec.points}%
+                                </Badge>
+                              </div>
+                              <ArrowRight className="w-4 h-4 text-ls-gold mt-2" />
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Quick Actions - FIXED with inline styles */}
         <div style={{
