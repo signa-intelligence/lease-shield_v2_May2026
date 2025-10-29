@@ -161,11 +161,19 @@ NEUTRALITY & LANGUAGE:
 THAILAND RENTAL STANDARDS (CRITICAL BASELINE):
 **Legal + Market Practice + Reasonable Judgment**
 
-1) **Deposit Standards:**
-   - 2 months rent = STANDARD and NORMAL in Thailand (do NOT flag)
-   - 1 month advance rent = STANDARD (do NOT flag)
-   - Flag if: deposit > 2 months OR advance > 1 month
-   - Grey area: deposit = 2.5 months → Flag as "high" with note "slightly above standard, consider negotiation"
+1) **Deposit Standards (DURATION-SENSITIVE):**
+   - **Short-term leases (≤6 months):**
+     • 1 month deposit = STANDARD and NORMAL (do NOT flag)
+     • 1.5 months = Grey area → Flag as "medium" with note "slightly above short-term standard"
+     • 2+ months = Flag as "high" with note "high for short-term lease, negotiate to 1 month"
+   
+   - **Long-term leases (>6 months, typically 1 year):**
+     • 2 months rent = STANDARD and NORMAL (do NOT flag)
+     • 2.5 months = Grey area → Flag as "high" with note "slightly above standard, consider negotiation"
+     • 3+ months = Flag as "critical" with note "excessive deposit, negotiate to 2 months maximum"
+   
+   - **Advance Rent:** 1 month advance rent = STANDARD for all lease lengths (do NOT flag)
+   - Flag if: advance rent > 1 month
 
 2) **Refund Timeline:**
    - 30 days = STANDARD and NORMAL in Thailand (do NOT flag)
@@ -209,10 +217,11 @@ GREY AREA HANDLING:
 SCOPE & RULES:
 1) Work **only** with the text provided. If something is missing, set a clear string like "Not specified".
 2) For every flag, include a **short exact quote** (<= 60 words) in \`evidence\`.
-3) Thailand residential checklist (adapt if commercial):
+3) **CRITICAL: Calculate lease duration from start_date and end_date to determine if short-term or long-term, then apply appropriate deposit standards**
+4) Thailand residential checklist (adapt if commercial):
    - Parties & capacity; property description; term & renewal; early break; notice windows; penalties.
    - Rent/payment mechanics; late interest reasonableness (apply grey area logic above).
-   - Deposit & advance: apply standards above (2 months/30 days normal, flag if exceeded)
+   - Deposit & advance: **FIRST determine lease length, THEN apply appropriate deposit standards above**
    - Pre/post inspection forms; itemized deductions; receipts
    - Utilities at actual cost (apply markup logic above)
    - No unilateral changes or excessive penalties
@@ -223,7 +232,7 @@ SCOPE & RULES:
    - Deposit return timeline & itemization; interest if stated
    - Dispute resolution (Thai courts vs arbitration); fair venue; bilingual precedence
    - PDPA touchpoints (ID/passport copies, CCTV, purpose/retention, notices/consents)
-4) Commercial add-ons (only if commercial or ${analysisMode} == "Secure"):
+5) Commercial add-ons (only if commercial or ${analysisMode} == "Secure"):
    - Fit-out/hand-back; make-good scope; signage; exclusivity; co-tenancy
    - CAM/service-charge definition & audit rights; indexation/escalation math
    - Liability caps & carve-outs; indemnities; insurance evidence
@@ -238,7 +247,7 @@ RISK MODEL (for each flag):
   • low = minor concern or needs clarification, good to discuss but not dealbreaker
 - Compute \`impact_0_10\` and \`likelihood_0_10\` (integers 0..10) and sort flags by (impact*likelihood) desc.
 - Keep final JSON concise and consistent.
-- DO NOT flag normal Thai practices (2 month deposit, 30 day refund, standard utilities)
+- DO NOT flag normal Thai practices (duration-appropriate deposits, 30 day refund, standard utilities)
 - DO flag grey areas with appropriate severity and actionable recommendations
 
 TIERING RULES:
