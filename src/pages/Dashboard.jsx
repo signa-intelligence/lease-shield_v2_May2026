@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight } from "lucide-react";
@@ -14,6 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
+  const improvementSectionRef = useRef(null);
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -249,6 +251,10 @@ export default function Dashboard() {
     return leaseDate.getMonth() === now.getMonth() && leaseDate.getFullYear() === now.getFullYear();
   });
 
+  const handleImproveScoreClick = () => {
+    improvementSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
   const t = {
     en: {
       welcome: "Welcome back",
@@ -258,6 +264,7 @@ export default function Dashboard() {
       depositsTracked: "Deposits Tracked",
       activeCases: "Active Cases",
       protectionScore: "Protection Score",
+      improveScoreCta: "Improve Score",
       protectRights: "Protect Your Rights",
       uploadCta: "Upload your lease for instant AI-powered analysis and risk assessment",
       uploadLease: "Upload Lease",
@@ -276,6 +283,7 @@ export default function Dashboard() {
       depositsTracked: "เงินมัดจำที่ติดตาม",
       activeCases: "คดีที่ดำเนินการ",
       protectionScore: "คะแนนการป้องกัน",
+      improveScoreCta: "เพิ่มคะแนน",
       protectRights: "ปกป้องสิทธิ์ของคุณ",
       uploadCta: "อัปโหลดสัญญาเช่าเพื่อรับการวิเคราะห์และประเมินความเสี่ยงด้วย AI",
       uploadLease: "อัปโหลดสัญญาเช่า",
@@ -293,7 +301,7 @@ export default function Dashboard() {
   const iconMap = {
     FileText: FileText,
     Shield: Shield,
-    // FolderOpen was removed from imports, using FileText instead if referenced
+    FolderOpen: FileText, // Used for consistency as FolderOpen was mentioned as removed
     Bell: Bell,
     Wrench: Wrench
   };
@@ -349,12 +357,14 @@ export default function Dashboard() {
             scoreStatus={protectionScoreStatus}
             trend={protectionScore >= 70 ? "+5%" : undefined}
             trendUp={protectionScore >= 70}
+            ctaText={protectionScore < 100 ? strings.improveScoreCta : undefined}
+            onCtaClick={protectionScore < 100 ? handleImproveScoreClick : undefined}
           />
         </div>
 
-        {/* How to Improve Score - NEW SECTION */}
+        {/* How to Improve Score - With ref for smooth scroll */}
         {protectionScore < 100 && recommendations.length > 0 && (
-          <div className="mb-8">
+          <div ref={improvementSectionRef} className="mb-8 scroll-mt-6">
             <Card className="border-none shadow-lg overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-ls-forest to-emerald-700 text-white pb-4">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
