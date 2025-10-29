@@ -74,6 +74,10 @@ export default function UploadScan() {
     setProgress('Uploading file...');
 
     try {
+      // Determine user's plan mode for AI analysis
+      const planTier = user?.plan_tier || 'free';
+      const analysisMode = planTier === 'secure' ? 'Secure' : planTier === 'protect' ? 'Protect' : 'Lite';
+
       // Step 1: Upload file
       console.log('Step 1: Uploading file...');
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
@@ -92,19 +96,55 @@ export default function UploadScan() {
       setUploading(false);
       setProgress('Analyzing document with AI...');
       
-      // Step 3: Run AI pipeline - Extract and classify clauses
-      console.log('Step 3: Running AI analysis...');
+      // Step 3: Run AI pipeline - Extract and classify clauses with new comprehensive prompt
+      console.log('Step 3: Running AI analysis with mode:', analysisMode);
       const analysisResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an assistant that analyzes Thai/English residential lease contracts.
-Extract risky/illegal/unfair clauses, missing protections, and compliance gaps.
+        prompt: `You are "LeaseShield-Analyzer," a meticulous Thai/English bilingual reviewer for **Thailand leases** (default). Analyze the uploaded lease text and return structured JSON only (no extra prose).
 
-IMPORTANT:
-- Keep neutral, not anti-landlord.
-- This is documentation guidance, not legal advice.
-- If text is Thai, respond primarily in Thai with short English gloss.
-- If text is English, respond primarily in English with short Thai gloss.
+OPERATING MODE:
+- ${analysisMode} ∈ {Lite | Protect | Secure}
+- If the document appears **commercial** (keywords: CAM, service charge, fit-out, make-good, bank guarantee, signage, reinstatement, exclusivity), say so in \`key_terms.lease_type_detected\` and still honor ${analysisMode}.
 
-Analyze this lease agreement thoroughly and identify any potential issues or unfair clauses.`,
+NEUTRALITY & LANGUAGE:
+- Remain neutral (not pro-tenant or pro-landlord).
+- This is documentation guidance, **not legal advice**.
+- If the contract text is primarily Thai, respond field labels/content primarily in Thai with brief English gloss; if English, the reverse.
+
+SCOPE & RULES:
+1) Work **only** with the text provided. If something is missing, set a clear string like "Not specified".
+2) For every flag, include a **short exact quote** (<= 60 words) in \`evidence\`.
+3) Thailand residential checklist (adapt if commercial):
+   - Parties & capacity; property description; term & renewal; early break; notice windows; penalties.
+   - Rent/payment mechanics; late interest reasonableness.
+   - Deposit & advance: If landlord likely ≥5 units under 2018 Ministerial Regulation (Residential Property Leasing Business), flag compliance items:
+     • deposit cap ≈1 month, advance cap ≈1 month
+     • pre/post inspection forms; itemized deductions; receipts
+     • utilities at actual cost (no markup); 30-day termination handling
+     • no unilateral changes or excessive penalties.
+     If landlord size unknown, assess both scenarios and note assumption.
+   - Utilities/fees; repairs/maintenance (wear & tear vs damage); inspections/access; use restrictions; quiet enjoyment; guests/sublets.
+   - Termination & liquidated damages proportionality.
+   - Deposit return timeline & itemization; interest if stated.
+   - Dispute resolution (Thai courts vs arbitration); fair venue; bilingual precedence.
+   - PDPA touchpoints (ID/passport copies, CCTV, purpose/retention, notices/consents).
+4) Commercial add-ons (only if commercial or ${analysisMode} == "Secure"):
+   - Fit-out/hand-back; make-good scope; signage; exclusivity; co-tenancy
+   - CAM/service-charge definition & audit rights; indexation/escalation math
+   - Liability caps & carve-outs; indemnities; insurance evidence
+   - Force majeure; rent-free/abatement triggers; lockout/step-in
+   - Assignment/sublease consent standards; guarantees (bank vs cash)
+
+RISK MODEL (for each flag):
+- \`severity\` ∈ {low, medium, high, critical}
+- Also compute \`impact_0_10\` and \`likelihood_0_10\` (integers 0..10) and sort flags by (impact*likelihood) desc.
+- Keep final JSON concise and consistent.
+
+TIERING RULES:
+- Lite: return **max 5 flags**, **max 3** \`missing_items\`.
+- Protect: return full set of flags and **up to 10** \`missing_items\`.
+- Secure: full set (+ commercial checks if applicable).
+
+Now analyze this lease thoroughly and return JSON only.`,
         file_urls: [file_url],
         response_json_schema: {
           type: "object",
@@ -116,11 +156,15 @@ Analyze this lease agreement thoroughly and identify any potential issues or unf
                 properties: {
                   id: { type: "string" },
                   title: { type: "string" },
+                  category: { type: "string" },
                   severity: { type: "string", enum: ["low", "medium", "high", "critical"] },
+                  impact_0_10: { type: "integer", minimum: 0, maximum: 10 },
+                  likelihood_0_10: { type: "integer", minimum: 0, maximum: 10 },
                   evidence: { type: "string" },
                   explanation: { type: "string" },
                   recommendation: { type: "string" }
-                }
+                },
+                required: ["id","title","category","severity","evidence","explanation","recommendation"]
               }
             },
             missing_items: {
@@ -130,15 +174,18 @@ Analyze this lease agreement thoroughly and identify any potential issues or unf
             key_terms: {
               type: "object",
               properties: {
+                lease_type_detected: { type: "string", enum: ["residential","commercial","assumed_residential","assumed_commercial"] },
                 property_address: { type: "string" },
                 deposit_amount: { type: "number" },
                 rent_amount: { type: "number" },
                 start_date: { type: "string" },
                 end_date: { type: "string" },
+                landlord_scale_assumption: { type: "string", enum: ["unknown","<5_units",">=5_units"] },
                 language_detected: { type: "string", enum: ["en", "th", "mixed"] }
               }
             }
-          }
+          },
+          required: ["flags","missing_items","key_terms"]
         }
       });
       console.log('AI analysis complete:', analysisResult);
@@ -150,7 +197,7 @@ Analyze this lease agreement thoroughly and identify any potential issues or unf
         prompt: `Given the flags JSON, compute:
 - risk_score: integer 0..100 (0 = very safe, 100 = very risky)
 - summary: <= 180 characters
-- top_flags: top 5 flag ids/titles
+- top_flags: top 5 flag ids/titles with severity, category, and description
 
 Return JSON with these fields.
 Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
@@ -197,7 +244,7 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
         summary: scoreResult.summary,
         scan_preview: scoreResult,
         scan_full: analysisResult,
-        version: 'v1'
+        version: 'v2'
       });
       console.log('Scan created:', scan.id);
 
