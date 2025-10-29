@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -80,7 +79,10 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-ls-stone">
+    <div className="min-h-screen flex flex-col" style={{
+      background: 'linear-gradient(135deg, #0C3B2E 0%, #1a5241 50%, #C7A338 100%)',
+      backgroundAttachment: 'fixed'
+    }}>
       {/* PWA Meta Tags */}
       <helmet>
         <link rel="manifest" href="/manifest.json" />
@@ -123,8 +125,8 @@ export default function Layout({ children, currentPageName }) {
             max-width: 600px;
             left: 50%;
             transform: translateX(-50%);
-            border-radius: 24px;
-            margin-bottom: 16px;
+            border-radius: 24px 24px 0 0;
+            margin-bottom: 0;
             padding-bottom: 0;
           }
         }
@@ -137,59 +139,114 @@ export default function Layout({ children, currentPageName }) {
             -webkit-touch-callout: none;
           }
         }
+
+        /* Glassmorphism effect */
+        .glass-card {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+        }
+
+        /* Shine animation for gold accents */
+        @keyframes shine {
+          0% { background-position: 200% center; }
+          100% { background-position: -200% center; }
+        }
+
+        .gold-shine {
+          background: linear-gradient(
+            90deg,
+            #C7A338 0%,
+            #FFD700 50%,
+            #C7A338 100%
+          );
+          background-size: 200% auto;
+          animation: shine 3s linear infinite;
+        }
       `}</style>
 
-      {/* Top Bar with Logo - FIXED TO TOP */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b border-ls-stone shadow-sm z-40">
+      {/* Top Bar - REDESIGNED with glass effect */}
+      <div className="fixed top-0 left-0 right-0 z-40 glass-card" style={{
+        borderBottom: '2px solid rgba(199, 163, 56, 0.2)',
+        boxShadow: '0 4px 16px rgba(12, 59, 46, 0.15)'
+      }}>
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
-              alt="Lease Shield"
-              className="h-8 w-8"
-            />
-            <span className="font-bold text-ls-forest text-lg">
-              {language === 'th' ? 'ลีสชีลด์' : 'LEASE SHIELD'}
-            </span>
-            {isAdmin && (
-              <span className="ml-2 px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded">
-                ADMIN
+            <div style={{
+              width: '44px',
+              height: '44px',
+              background: 'linear-gradient(135deg, #0C3B2E, #1a5241)',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(12, 59, 46, 0.4), inset 0 2px 4px rgba(255,255,255,0.1)',
+              border: '2px solid rgba(199, 163, 56, 0.3)'
+            }}>
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
+                alt="Lease Shield"
+                className="h-7 w-7"
+              />
+            </div>
+            <div>
+              <span className="font-bold text-ls-forest text-lg" style={{
+                textShadow: '0 2px 4px rgba(199, 163, 56, 0.2)'
+              }}>
+                {language === 'th' ? 'ลีสชีลด์' : 'LEASE SHIELD'}
               </span>
-            )}
+              {isAdmin && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-bold rounded" style={{
+                  background: 'linear-gradient(135deg, #C7A338, #FFD700)',
+                  color: '#0C3B2E',
+                  boxShadow: '0 2px 6px rgba(199, 163, 56, 0.4)'
+                }}>
+                  ADMIN
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <LanguageToggle />
             <Link to={createPageUrl("Account")}>
               <button
                 style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : '#ECEFED',
-                  border: 'none',
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  background: location.pathname === createPageUrl("Account") 
+                    ? 'linear-gradient(135deg, #0C3B2E, #1a5241)' 
+                    : 'rgba(12, 59, 46, 0.1)',
+                  border: location.pathname === createPageUrl("Account")
+                    ? '2px solid #C7A338'
+                    : '2px solid rgba(12, 59, 46, 0.2)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  transition: 'all 0.3s',
+                  boxShadow: location.pathname === createPageUrl("Account")
+                    ? '0 4px 12px rgba(199, 163, 56, 0.4)'
+                    : '0 2px 6px rgba(0,0,0,0.05)'
                 }}
                 onMouseEnter={(e) => {
                   if (location.pathname !== createPageUrl("Account")) {
-                    e.target.style.backgroundColor = '#0C3B2E';
+                    e.target.style.background = 'linear-gradient(135deg, #0C3B2E, #1a5241)';
+                    e.target.style.borderColor = '#C7A338';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (location.pathname !== createPageUrl("Account")) {
-                    e.target.style.backgroundColor = '#ECEFED';
+                    e.target.style.background = 'rgba(12, 59, 46, 0.1)';
+                    e.target.style.borderColor = 'rgba(12, 59, 46, 0.2)';
                   }
                 }}
               >
                 <User 
                   className="w-5 h-5" 
                   style={{ 
-                    color: location.pathname === createPageUrl("Account") ? '#FFFFFF' : '#0C3B2E',
-                    transition: 'color 0.2s'
+                    color: location.pathname === createPageUrl("Account") ? '#C7A338' : '#0C3B2E',
+                    transition: 'color 0.3s'
                   }}
                 />
               </button>
@@ -198,16 +255,30 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      {/* Main Content - Added top padding to account for fixed header */}
-      <main className="flex-1 overflow-auto" style={{
+      {/* Main Content with subtle pattern overlay */}
+      <main className="flex-1 overflow-auto relative" style={{
         paddingTop: '64px',
         paddingBottom: `calc(${isAdmin ? '130px' : '126px'} + env(safe-area-inset-bottom, 0px))`
       }}>
-        {children}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `radial-gradient(circle at 2px 2px, rgba(199, 163, 56, 0.05) 1px, transparent 0)`,
+          backgroundSize: '32px 32px',
+          pointerEvents: 'none'
+        }} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {children}
+        </div>
       </main>
 
-      {/* Bottom Navigation Tabs */}
-      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-ls-stone shadow-2xl z-50" style={{
+      {/* Bottom Navigation Tabs - REDESIGNED */}
+      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 z-50 glass-card" style={{
+        borderTop: '2px solid rgba(199, 163, 56, 0.3)',
+        boxShadow: '0 -4px 24px rgba(12, 59, 46, 0.2)',
         paddingBottom: `calc(46px + env(safe-area-inset-bottom, 0px))`
       }}>
         <div className={`flex items-center justify-around px-2 pt-2 ${isAdmin ? 'overflow-x-auto' : ''}`} style={{
@@ -226,52 +297,82 @@ export default function Layout({ children, currentPageName }) {
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '8px 12px',
-                  borderRadius: '12px',
-                  transition: 'all 0.2s',
+                  padding: '10px 12px',
+                  borderRadius: '14px',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   flex: 1,
                   minWidth: '60px',
-                  backgroundColor: isActive ? '#0C3B2E' : 'transparent',
-                  color: isActive ? '#FFFFFF' : '#1A1D1F',
-                  textDecoration: 'none'
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #0C3B2E 0%, #1a5241 100%)'
+                    : 'transparent',
+                  color: isActive ? '#C7A338' : '#0C3B2E',
+                  textDecoration: 'none',
+                  boxShadow: isActive ? '0 4px 12px rgba(12, 59, 46, 0.3)' : 'none',
+                  border: isActive ? '2px solid rgba(199, 163, 56, 0.4)' : '2px solid transparent',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.backgroundColor = '#ECEFED';
+                    e.currentTarget.style.background = 'rgba(12, 59, 46, 0.08)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }
                 }}
               >
-                <Icon className="w-5 h-5 mb-1" style={{ animation: isActive ? 'pulse 2s infinite' : 'none' }} />
-                <span style={{ fontSize: '12px', fontWeight: '500', whiteSpace: 'nowrap' }}>{tab.label}</span>
+                {isActive && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '3px',
+                    background: 'linear-gradient(90deg, #C7A338, #FFD700, #C7A338)',
+                    backgroundSize: '200% auto',
+                    animation: 'shine 2s linear infinite'
+                  }} />
+                )}
+                <Icon className="w-5 h-5 mb-1" style={{ 
+                  filter: isActive ? 'drop-shadow(0 2px 4px rgba(199, 163, 56, 0.4))' : 'none'
+                }} />
+                <span style={{ 
+                  fontSize: '12px', 
+                  fontWeight: isActive ? '700' : '600',
+                  whiteSpace: 'nowrap',
+                  textShadow: isActive ? '0 2px 4px rgba(0,0,0,0.2)' : 'none'
+                }}>
+                  {tab.label}
+                </span>
               </Link>
             );
           })}
         </div>
 
-        {/* Disclaimer - Below Navigation Bar with All Corners Rounded */}
+        {/* Disclaimer - REDESIGNED */}
         <div style={{
           position: 'absolute',
           bottom: `calc(8px + env(safe-area-inset-bottom, 0px))`,
           left: '8px',
           right: '8px',
-          padding: '8px 16px',
+          padding: '10px 16px',
           textAlign: 'center',
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #ECEFED',
+          background: 'linear-gradient(135deg, rgba(12, 59, 46, 0.05), rgba(199, 163, 56, 0.05))',
+          border: '1px solid rgba(199, 163, 56, 0.3)',
           borderRadius: '12px',
-          boxShadow: '0 -2px 8px rgba(0,0,0,0.05)'
+          backdropFilter: 'blur(10px)',
+          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3)'
         }}>
           <p style={{
-            fontSize: '11px',
-            fontWeight: '500',
+            fontSize: '10px',
+            fontWeight: '600',
             margin: 0,
             color: '#0C3B2E',
-            opacity: 0.8
+            letterSpacing: '0.3px'
           }}>
             {language === 'th' 
               ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
@@ -280,9 +381,10 @@ export default function Layout({ children, currentPageName }) {
             <Link 
               to={createPageUrl("PrivacyPolicy")}
               style={{
-                color: '#0C3B2E',
-                textDecoration: 'underline',
-                fontWeight: '600'
+                color: '#C7A338',
+                textDecoration: 'none',
+                fontWeight: '700',
+                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
               }}
             >
               {language === 'th' ? 'นโยบายความเป็นส่วนตัว' : 'Privacy Policy'}
