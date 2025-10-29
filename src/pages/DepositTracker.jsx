@@ -29,9 +29,9 @@ export default function DepositTracker() {
     property_address: '',
     notes: '',
     rent_amount: '',
-    rent_due_day: 1,
+    rent_due_day: '1',
     rent_alerts_enabled: false,
-    rent_alert_days_before: 3
+    rent_alert_days_before: '3'
   });
   
   const queryClient = useQueryClient();
@@ -49,7 +49,7 @@ export default function DepositTracker() {
       returnDateLabel: "Expected Return Date",
       notesLabel: "Notes",
       rentAmountLabel: "Monthly Rent (฿)",
-      rentDueDayLabel: "Rent Due Day",
+      rentDueDayLabel: "Rent Due Day of Month (1-31)",
       rentAlertsLabel: "Enable Rent Alerts",
       alertDaysLabel: "Alert Days Before",
       trackDepositButton: "Track Deposit",
@@ -86,7 +86,7 @@ export default function DepositTracker() {
       returnDateLabel: "วันที่คาดว่าจะได้รับคืน",
       notesLabel: "หมายเหตุ",
       rentAmountLabel: "ค่าเช่ารายเดือน (฿)",
-      rentDueDayLabel: "วันครบกำหนดค่าเช่า",
+      rentDueDayLabel: "วันครบกำหนดค่าเช่าในเดือน (1-31)",
       rentAlertsLabel: "เปิดการแจ้งเตือนค่าเช่า",
       alertDaysLabel: "แจ้งเตือนก่อนกี่วัน",
       trackDepositButton: "ติดตามเงินมัดจำ",
@@ -138,9 +138,9 @@ export default function DepositTracker() {
         property_address: '',
         notes: '',
         rent_amount: '',
-        rent_due_day: 1,
+        rent_due_day: '1',
         rent_alerts_enabled: false,
-        rent_alert_days_before: 3
+        rent_alert_days_before: '3'
       });
     },
   });
@@ -154,13 +154,17 @@ export default function DepositTracker() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    createDepositMutation.mutate({
+    
+    const depositData = {
       ...formData,
       deposit_amount: parseFloat(formData.deposit_amount),
       rent_amount: formData.rent_amount ? parseFloat(formData.rent_amount) : null,
       rent_due_day: formData.rent_due_day ? parseInt(formData.rent_due_day) : null,
+      rent_alert_days_before: formData.rent_alert_days_before ? parseInt(formData.rent_alert_days_before) : 3,
       status: 'tracking'
-    });
+    };
+
+    createDepositMutation.mutate(depositData);
   };
 
   const getStatusColor = (status) => {
@@ -237,7 +241,7 @@ export default function DepositTracker() {
                 Add Deposit
               </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{strings.dialogTitle}</DialogTitle>
               </DialogHeader>
@@ -320,6 +324,9 @@ export default function DepositTracker() {
                             onChange={(e) => setFormData({...formData, rent_due_day: e.target.value})}
                             placeholder="1"
                           />
+                          <p className="text-xs text-slate-500 mt-1">
+                            {language === 'th' ? 'เช่น: 1 = วันที่ 1 ของทุกเดือน' : 'e.g., 1 = 1st of every month'}
+                          </p>
                         </div>
                         <div>
                           <Label htmlFor="alert_days">{strings.alertDaysLabel}</Label>
@@ -350,21 +357,31 @@ export default function DepositTracker() {
                 </div>
                 <button 
                   type="submit" 
+                  disabled={createDepositMutation.isPending}
                   style={{
                     width: '100%',
-                    backgroundColor: '#0C3B2E',
+                    backgroundColor: createDepositMutation.isPending ? '#9CA3AF' : '#0C3B2E',
                     color: '#FFFFFF',
                     padding: '12px 16px',
                     borderRadius: '8px',
                     fontWeight: 'bold',
                     border: 'none',
-                    cursor: 'pointer',
+                    cursor: createDepositMutation.isPending ? 'not-allowed' : 'pointer',
+                    opacity: createDepositMutation.isPending ? 0.6 : 1,
                     transition: 'all 0.2s'
                   }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                  onMouseEnter={(e) => {
+                    if (!createDepositMutation.isPending) {
+                      e.target.style.backgroundColor = '#0a2f25';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!createDepositMutation.isPending) {
+                      e.target.style.backgroundColor = '#0C3B2E';
+                    }
+                  }}
                 >
-                  {strings.trackDepositButton}
+                  {createDepositMutation.isPending ? 'Tracking...' : strings.trackDepositButton}
                 </button>
               </form>
             </DialogContent>
