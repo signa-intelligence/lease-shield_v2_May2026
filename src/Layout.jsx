@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -80,7 +79,9 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-ls-stone">
+    <div className="min-h-screen flex flex-col" style={{
+      background: 'linear-gradient(135deg, #0C3B2E 0%, #065f46 50%, #047857 100%)'
+    }}>
       {/* PWA Meta Tags */}
       <helmet>
         <link rel="manifest" href="/manifest.json" />
@@ -98,6 +99,7 @@ export default function Layout({ children, currentPageName }) {
           --ls-charcoal: #1A1D1F;
           --ls-stone: #ECEFED;
           --ls-white: #FFFFFF;
+          --ls-cream: #F5F1E8;
           
           --primary: 166 60% 15%;
           --primary-foreground: 0 0% 100%;
@@ -139,8 +141,11 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Top Bar with Logo - FIXED TO TOP */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b border-ls-stone shadow-sm z-40">
+      {/* Top Bar - Premium Gold Header */}
+      <div className="fixed top-0 left-0 right-0 z-40" style={{
+        background: 'linear-gradient(to right, #C7A338, #d4af37)',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+      }}>
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
@@ -148,11 +153,16 @@ export default function Layout({ children, currentPageName }) {
               alt="Lease Shield"
               className="h-8 w-8"
             />
-            <span className="font-bold text-ls-forest text-lg">
+            <span style={{
+              fontWeight: 'bold',
+              color: '#0C3B2E',
+              fontSize: '18px',
+              letterSpacing: '0.5px'
+            }}>
               {language === 'th' ? 'ลีสชีลด์' : 'LEASE SHIELD'}
             </span>
             {isAdmin && (
-              <span className="ml-2 px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded">
+              <span className="ml-2 px-2 py-0.5 bg-ls-forest text-white text-xs font-semibold rounded">
                 ADMIN
               </span>
             )}
@@ -165,8 +175,8 @@ export default function Layout({ children, currentPageName }) {
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
-                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : '#ECEFED',
-                  border: 'none',
+                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : 'rgba(12, 59, 46, 0.2)',
+                  border: '2px solid rgba(12, 59, 46, 0.3)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -176,12 +186,12 @@ export default function Layout({ children, currentPageName }) {
                 }}
                 onMouseEnter={(e) => {
                   if (location.pathname !== createPageUrl("Account")) {
-                    e.target.style.backgroundColor = '#0C3B2E';
+                    e.target.style.backgroundColor = 'rgba(12, 59, 46, 0.4)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (location.pathname !== createPageUrl("Account")) {
-                    e.target.style.backgroundColor = '#ECEFED';
+                    e.target.style.backgroundColor = 'rgba(12, 59, 46, 0.2)';
                   }
                 }}
               >
@@ -198,7 +208,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      {/* Main Content - Added top padding to account for fixed header */}
+      {/* Main Content - Less padding, more content area */}
       <main className="flex-1 overflow-auto" style={{
         paddingTop: '64px',
         paddingBottom: `calc(${isAdmin ? '130px' : '126px'} + env(safe-area-inset-bottom, 0px))`
@@ -206,8 +216,11 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </main>
 
-      {/* Bottom Navigation Tabs */}
-      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-ls-stone shadow-2xl z-50" style={{
+      {/* Bottom Navigation - Dark Forest Green with Gold Accents */}
+      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 z-50" style={{
+        background: 'linear-gradient(to top, #0C3B2E 0%, #0a2f25 100%)',
+        borderTop: '2px solid rgba(199, 163, 56, 0.3)',
+        boxShadow: '0 -4px 6px rgba(0,0,0,0.1)',
         paddingBottom: `calc(46px + env(safe-area-inset-bottom, 0px))`
       }}>
         <div className={`flex items-center justify-around px-2 pt-2 ${isAdmin ? 'overflow-x-auto' : ''}`} style={{
@@ -231,13 +244,15 @@ export default function Layout({ children, currentPageName }) {
                   transition: 'all 0.2s',
                   flex: 1,
                   minWidth: '60px',
-                  backgroundColor: isActive ? '#0C3B2E' : 'transparent',
-                  color: isActive ? '#FFFFFF' : '#1A1D1F',
-                  textDecoration: 'none'
+                  backgroundColor: isActive ? 'rgba(199, 163, 56, 0.2)' : 'transparent',
+                  border: isActive ? '1px solid rgba(199, 163, 56, 0.4)' : '1px solid transparent',
+                  color: isActive ? '#C7A338' : '#ECEFED',
+                  textDecoration: 'none',
+                  position: 'relative'
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.backgroundColor = '#ECEFED';
+                    e.currentTarget.style.backgroundColor = 'rgba(199, 163, 56, 0.1)';
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -246,14 +261,26 @@ export default function Layout({ children, currentPageName }) {
                   }
                 }}
               >
-                <Icon className="w-5 h-5 mb-1" style={{ animation: isActive ? 'pulse 2s infinite' : 'none' }} />
-                <span style={{ fontSize: '12px', fontWeight: '500', whiteSpace: 'nowrap' }}>{tab.label}</span>
+                {isActive && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '30px',
+                    height: '3px',
+                    backgroundColor: '#C7A338',
+                    borderRadius: '0 0 3px 3px'
+                  }}/>
+                )}
+                <Icon className="w-5 h-5 mb-1" />
+                <span style={{ fontSize: '12px', fontWeight: isActive ? '600' : '500', whiteSpace: 'nowrap' }}>{tab.label}</span>
               </Link>
             );
           })}
         </div>
 
-        {/* Disclaimer - Below Navigation Bar with All Corners Rounded */}
+        {/* Disclaimer - Premium Dark Style */}
         <div style={{
           position: 'absolute',
           bottom: `calc(8px + env(safe-area-inset-bottom, 0px))`,
@@ -261,17 +288,18 @@ export default function Layout({ children, currentPageName }) {
           right: '8px',
           padding: '8px 16px',
           textAlign: 'center',
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #ECEFED',
+          background: 'linear-gradient(to right, rgba(12, 59, 46, 0.8), rgba(6, 95, 70, 0.8))',
+          border: '1px solid rgba(199, 163, 56, 0.3)',
           borderRadius: '12px',
-          boxShadow: '0 -2px 8px rgba(0,0,0,0.05)'
+          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          backdropFilter: 'blur(10px)'
         }}>
           <p style={{
             fontSize: '11px',
             fontWeight: '500',
             margin: 0,
-            color: '#0C3B2E',
-            opacity: 0.8
+            color: '#ECEFED',
+            opacity: 0.9
           }}>
             {language === 'th' 
               ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
@@ -280,7 +308,7 @@ export default function Layout({ children, currentPageName }) {
             <Link 
               to={createPageUrl("PrivacyPolicy")}
               style={{
-                color: '#0C3B2E',
+                color: '#C7A338',
                 textDecoration: 'underline',
                 fontWeight: '600'
               }}
