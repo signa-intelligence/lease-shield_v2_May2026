@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +34,17 @@ export default function UploadScan() {
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 5),
     enabled: !!user,
+  });
+
+  const { data: scans = [] } = useQuery({
+    queryKey: ['scans'],
+    queryFn: async () => {
+      const allScans = await base44.entities.LeaseScan.list();
+      return allScans.filter(s => leases.some(l => l.id === s.lease_id)).sort((a, b) => 
+        new Date(b.created_date) - new Date(a.created_date)
+      );
+    },
+    enabled: !!user && leases.length > 0,
   });
 
   const handleDrag = (e) => {
@@ -296,9 +308,7 @@ ${JSON.stringify(analysisResult.flags)}`,
       
       // Step 7: Navigate to preview with state
       console.log('Step 7: Navigating to preview...');
-      navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`, {
-        state: { scan, lease }
-      });
+      navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
       
     } catch (err) {
       console.error('Scan error:', err);
@@ -323,8 +333,17 @@ ${JSON.stringify(analysisResult.flags)}`,
     return colors[status] || "bg-slate-100 text-slate-800";
   };
 
-  const handleViewLease = (lease) => {
-    navigate(createPageUrl("Leases"));
+  const handleViewLease = async (lease) => {
+    // Find the scan for this lease
+    const scan = scans.find(s => s.lease_id === lease.id);
+    
+    if (scan) {
+      // Navigate to scan preview with scan and lease IDs
+      navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
+    } else {
+      // If no scan found, just show an alert
+      alert(language === 'th' ? 'ไม่พบผลการสแกนสำหรับสัญญาเช่านี้' : 'Scan results not found for this lease.');
+    }
   };
 
   const t = {
