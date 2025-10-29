@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -157,31 +158,71 @@ NEUTRALITY & LANGUAGE:
 - This is documentation guidance, **not legal advice**.
 - If the contract text is primarily Thai, respond field labels/content primarily in Thai with brief English gloss; if English, the reverse.
 
-THAILAND RENTAL STANDARDS (CRITICAL - USE THESE AS BASELINE):
-- **Deposit**: 2 months rent is STANDARD and NORMAL in Thailand (not a problem)
-- **Refund Timeline**: 30 days to refund security deposit is STANDARD and NORMAL in Thailand (not a problem)
-- **Advance Rent**: 1 month advance rent is standard
-- Only flag deposits if they exceed 2 months or refund timelines exceed 30 days
-- Focus on genuinely problematic clauses, not normal Thai rental practices
+THAILAND RENTAL STANDARDS (CRITICAL BASELINE):
+**Legal + Market Practice + Reasonable Judgment**
+
+1) **Deposit Standards:**
+   - 2 months rent = STANDARD and NORMAL in Thailand (do NOT flag)
+   - 1 month advance rent = STANDARD (do NOT flag)
+   - Flag if: deposit > 2 months OR advance > 1 month
+   - Grey area: deposit = 2.5 months → Flag as "high" with note "slightly above standard, consider negotiation"
+
+2) **Refund Timeline:**
+   - 30 days = STANDARD and NORMAL in Thailand (do NOT flag)
+   - Flag if: > 30 days without clear itemization process
+   - Grey area: 45 days → Flag as "medium" with note "longer than standard 30 days, request expedited timeline"
+
+3) **Late Payment Penalties:**
+   - Reasonable: 5-10% per month (annual ~60-120%)
+   - Excessive: > 15% per month or compounding daily → Flag as "critical"
+   - Grey area: 12-15% per month → Flag as "high" with note "on high side, consider negotiation to 10% or less"
+
+4) **Termination Penalties:**
+   - Reasonable: 1-2 months rent for early termination
+   - Excessive: forfeiting entire deposit without itemization → Flag as "critical"
+   - Grey area: 3 months penalty → Flag as "high" with note "steep penalty, negotiate to 2 months or proportional"
+
+5) **Repairs & Maintenance:**
+   - Fair: landlord handles structural, tenant handles minor wear & tear
+   - Unfair: tenant responsible for ALL repairs regardless of cause → Flag as "critical"
+   - Grey area: unclear division → Flag as "medium" with note "clarify repair responsibilities before signing"
+
+6) **Access & Entry:**
+   - Fair: 24-48 hours notice for non-emergency entry
+   - Unfair: landlord can enter "any time" without notice → Flag as "high"
+   - Grey area: "reasonable notice" without specifics → Flag as "low" with note "request specific timeframe (e.g., 24 hours)"
+
+7) **Utilities:**
+   - Fair: charged at actual cost or government rate
+   - Unfair: 50%+ markup on utilities without justification → Flag as "high"
+   - Grey area: 10-30% markup → Flag as "medium" with note "request cost breakdown or negotiate to actual rate"
+
+GREY AREA HANDLING:
+- When unsure if clause is problematic: Flag with "medium" or "low" severity
+- Use phrases like:
+  • "Potential issue - recommend review with landlord"
+  • "Consider negotiating this clause before signing"
+  • "Request clarification on this point"
+  • "Within legal bounds but unfavorable - worth discussing"
+  • "Grey area - document everything related to this"
 
 SCOPE & RULES:
 1) Work **only** with the text provided. If something is missing, set a clear string like "Not specified".
 2) For every flag, include a **short exact quote** (<= 60 words) in \`evidence\`.
 3) Thailand residential checklist (adapt if commercial):
    - Parties & capacity; property description; term & renewal; early break; notice windows; penalties.
-   - Rent/payment mechanics; late interest reasonableness (NOT normal deposit amounts).
-   - Deposit & advance: 
-     • Flag ONLY if deposit > 2 months rent (2 months is normal)
-     • Flag ONLY if refund timeline > 30 days (30 days is normal)
-     • Flag ONLY if advance rent > 1 month
-     • pre/post inspection forms; itemized deductions; receipts
-     • utilities at actual cost (no markup)
-     • no unilateral changes or excessive penalties.
-   - Utilities/fees; repairs/maintenance (wear & tear vs damage); inspections/access; use restrictions; quiet enjoyment; guests/sublets.
-   - Termination & liquidated damages proportionality.
-   - Deposit return timeline & itemization; interest if stated.
-   - Dispute resolution (Thai courts vs arbitration); fair venue; bilingual precedence.
-   - PDPA touchpoints (ID/passport copies, CCTV, purpose/retention, notices/consents).
+   - Rent/payment mechanics; late interest reasonableness (apply grey area logic above).
+   - Deposit & advance: apply standards above (2 months/30 days normal, flag if exceeded)
+   - Pre/post inspection forms; itemized deductions; receipts
+   - Utilities at actual cost (apply markup logic above)
+   - No unilateral changes or excessive penalties
+   - Repairs/maintenance (apply division logic above)
+   - Inspections/access (apply notice logic above)
+   - Use restrictions; quiet enjoyment; guests/sublets
+   - Termination & liquidated damages proportionality (apply penalty logic above)
+   - Deposit return timeline & itemization; interest if stated
+   - Dispute resolution (Thai courts vs arbitration); fair venue; bilingual precedence
+   - PDPA touchpoints (ID/passport copies, CCTV, purpose/retention, notices/consents)
 4) Commercial add-ons (only if commercial or ${analysisMode} == "Secure"):
    - Fit-out/hand-back; make-good scope; signage; exclusivity; co-tenancy
    - CAM/service-charge definition & audit rights; indexation/escalation math
@@ -191,12 +232,17 @@ SCOPE & RULES:
 
 RISK MODEL (for each flag):
 - \`severity\` ∈ {low, medium, high, critical}
-- Also compute \`impact_0_10\` and \`likelihood_0_10\` (integers 0..10) and sort flags by (impact*likelihood) desc.
+  • critical = clearly illegal or extremely unfair, immediate action needed
+  • high = significantly unfavorable, strong recommend not signing without changes
+  • medium = grey area or moderately unfavorable, worth negotiating
+  • low = minor concern or needs clarification, good to discuss but not dealbreaker
+- Compute \`impact_0_10\` and \`likelihood_0_10\` (integers 0..10) and sort flags by (impact*likelihood) desc.
 - Keep final JSON concise and consistent.
-- DO NOT flag normal Thai practices as problems (2 month deposit, 30 day refund)
+- DO NOT flag normal Thai practices (2 month deposit, 30 day refund, standard utilities)
+- DO flag grey areas with appropriate severity and actionable recommendations
 
 TIERING RULES:
-- Lite: return **max 5 flags**, **max 3** \`missing_items\`.
+- Lite: return **max 5 flags** (prioritize critical/high), **max 3** \`missing_items\`.
 - Protect: return full set of flags and **up to 10** \`missing_items\`.
 - Secure: full set (+ commercial checks if applicable).
 
