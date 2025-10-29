@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,6 +8,8 @@ import { Shield, Database, Users, AlertCircle, CheckCircle2, Loader2, Crown, Mai
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import {
   Table,
   TableBody,
@@ -24,6 +27,7 @@ import {
 } from "@/components/ui/select";
 
 export default function AdminConsole() {
+  const navigate = useNavigate();
   const [seeding, setSeeding] = useState(false);
   const [seedResult, setSeedResult] = useState(null);
   const [error, setError] = useState(null);
@@ -464,7 +468,7 @@ export default function AdminConsole() {
 
         {/* System Data Overview */}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Recent Leases */}
+          {/* Recent Leases - NOW CLICKABLE */}
           <Card className="border-none shadow-lg">
             <CardHeader className="border-b">
               <CardTitle>Recent Leases ({allLeases.length})</CardTitle>
@@ -472,11 +476,18 @@ export default function AdminConsole() {
             <CardContent className="p-6">
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {allLeases.slice(0, 5).map((lease) => (
-                  <div key={lease.id} className="p-3 bg-slate-50 rounded-lg">
+                  <button
+                    key={lease.id}
+                    onClick={() => {
+                      // Navigate to UploadScan page (where leases are managed)
+                      navigate(createPageUrl("UploadScan"));
+                    }}
+                    className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors text-left"
+                  >
                     <p className="font-semibold text-sm">{lease.property_address || 'Lease Agreement'}</p>
                     <p className="text-xs text-slate-600">By: {lease.created_by}</p>
                     <p className="text-xs text-slate-500">{format(new Date(lease.created_date), 'MMM d, yyyy')}</p>
-                  </div>
+                  </button>
                 ))}
                 {allLeases.length === 0 && (
                   <p className="text-center text-slate-500 py-4">No leases found</p>
@@ -485,7 +496,7 @@ export default function AdminConsole() {
             </CardContent>
           </Card>
 
-          {/* Recent Documents */}
+          {/* Recent Documents - NOW CLICKABLE */}
           <Card className="border-none shadow-lg">
             <CardHeader className="border-b">
               <CardTitle>Recent Documents ({allDocuments.length})</CardTitle>
@@ -493,11 +504,18 @@ export default function AdminConsole() {
             <CardContent className="p-6">
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {allDocuments.slice(0, 5).map((doc) => (
-                  <div key={doc.id} className="p-3 bg-slate-50 rounded-lg">
+                  <button
+                    key={doc.id}
+                    onClick={() => {
+                      // Navigate to DocumentVault
+                      navigate(createPageUrl("DocumentVault"));
+                    }}
+                    className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors text-left"
+                  >
                     <p className="font-semibold text-sm">{doc.label || 'Document'}</p>
                     <p className="text-xs text-slate-600">Type: {doc.type}</p>
                     <p className="text-xs text-slate-500">By: {doc.created_by}</p>
-                  </div>
+                  </button>
                 ))}
                 {allDocuments.length === 0 && (
                   <p className="text-center text-slate-500 py-4">No documents found</p>
@@ -506,7 +524,7 @@ export default function AdminConsole() {
             </CardContent>
           </Card>
 
-          {/* Deposits */}
+          {/* Deposits - NOW CLICKABLE */}
           <Card className="border-none shadow-lg">
             <CardHeader className="border-b">
               <CardTitle>Deposits Tracked ({allDeposits.length})</CardTitle>
@@ -514,11 +532,18 @@ export default function AdminConsole() {
             <CardContent className="p-6">
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {allDeposits.slice(0, 5).map((deposit) => (
-                  <div key={deposit.id} className="p-3 bg-slate-50 rounded-lg">
+                  <button
+                    key={deposit.id}
+                    onClick={() => {
+                      // Navigate to DepositTracker
+                      navigate(createPageUrl("DepositTracker"));
+                    }}
+                    className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors text-left"
+                  >
                     <p className="font-semibold text-sm">฿{deposit.deposit_amount.toLocaleString()}</p>
                     <p className="text-xs text-slate-600">{deposit.property_address || 'Property'}</p>
                     <p className="text-xs text-slate-500">Status: {deposit.status}</p>
-                  </div>
+                  </button>
                 ))}
                 {allDeposits.length === 0 && (
                   <p className="text-center text-slate-500 py-4">No deposits found</p>
@@ -527,7 +552,7 @@ export default function AdminConsole() {
             </CardContent>
           </Card>
 
-          {/* Cases */}
+          {/* Cases - NOW CLICKABLE */}
           <Card className="border-none shadow-lg">
             <CardHeader className="border-b">
               <CardTitle>Active Cases ({allCases.length})</CardTitle>
@@ -535,11 +560,18 @@ export default function AdminConsole() {
             <CardContent className="p-6">
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {allCases.slice(0, 5).map((caseItem) => (
-                  <div key={caseItem.id} className="p-3 bg-slate-50 rounded-lg">
+                  <button
+                    key={caseItem.id}
+                    onClick={() => {
+                      // Navigate to ResolveCase with case ID
+                      navigate(createPageUrl("ResolveCase") + `?caseId=${caseItem.id}`);
+                    }}
+                    className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors text-left"
+                  >
                     <p className="font-semibold text-sm">Case #{caseItem.id.slice(0, 8)}</p>
                     <p className="text-xs text-slate-600">Amount: ฿{caseItem.dispute_amount?.toLocaleString() || 'N/A'}</p>
                     <p className="text-xs text-slate-500">Status: {caseItem.status}</p>
-                  </div>
+                  </button>
                 ))}
                 {allCases.length === 0 && (
                   <p className="text-center text-slate-500 py-4">No cases found</p>
