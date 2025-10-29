@@ -1,3 +1,4 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -62,7 +63,7 @@ export default function Dashboard() {
     if (scannedLeases.length > 0) breakdown.documentation += 15;
     if (deposits.length > 0) breakdown.documentation += 10;
     if (documents.length > 0) breakdown.documentation += 10;
-    if (documents.length >= 5) breakdown.documentation += 5;
+    if (documents.length >= 5) breakdown.documentation += 5; // Bonus for thorough documentation
 
     // 2. Active Protections (30 points max)
     const activeDeposits = deposits.filter(d => d.status === 'tracking');
@@ -95,7 +96,7 @@ export default function Dashboard() {
     });
     if (recentDocuments.length > 0) breakdown.proactiveActions += 7;
 
-    if (recentDocuments.length >= 3) breakdown.proactiveActions += 5;
+    if (recentDocuments.length >= 3) breakdown.proactiveActions += 5; // Bonus for regular updates
 
     score = breakdown.documentation + breakdown.activeProtections + breakdown.proactiveActions;
     
@@ -104,10 +105,10 @@ export default function Dashboard() {
 
   // Get color and status based on protection score
   const getProtectionScoreColor = (score) => {
-    if (score >= 85) return '#10B981';
-    if (score >= 70) return '#EAB308';
-    if (score >= 50) return '#F59E0B';
-    return '#EF4444';
+    if (score >= 85) return '#10B981'; // Green - Excellent
+    if (score >= 70) return '#EAB308'; // Yellow - Good
+    if (score >= 50) return '#F59E0B'; // Orange - Fair
+    return '#EF4444'; // Red - Needs improvement
   };
 
   const getProtectionScoreStatus = (score) => {
@@ -141,6 +142,7 @@ export default function Dashboard() {
   const activeDeposits = deposits.filter(d => d.status === 'tracking');
   const activeCases = cases.filter(c => !['closed'].includes(c.status));
 
+  // Calculate trend for this month vs last month
   const now = new Date();
   const thisMonthLeases = leases.filter(l => {
     const leaseDate = new Date(l.created_date);
@@ -185,35 +187,28 @@ export default function Dashboard() {
   const strings = t[language];
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{
-      background: 'linear-gradient(to bottom, rgba(236, 239, 237, 0.3) 0%, rgba(236, 239, 237, 0.6) 100%)'
-    }}>
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone">
+      <div className="max-w-7xl mx-auto p-6 md:p-8">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <div className="px-4 py-2 rounded-full" style={{
-              background: 'linear-gradient(to right, #C7A338, #d4af37)',
-              border: '1px solid rgba(199, 163, 56, 0.3)'
-            }}>
+            <div className="px-3 py-1 bg-ls-stone border border-ls-forest/20 rounded-full">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-ls-forest" />
                 <span className="text-sm font-semibold text-ls-forest">{strings.tagline}</span>
               </div>
             </div>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{
-            color: '#0C3B2E'
-          }}>
+          <h1 className="text-3xl md:text-4xl font-bold text-ls-charcoal mb-2">
             {strings.welcome}, {user?.full_name?.split(' ')[0] || 'User'}
           </h1>
-          <p className="text-base" style={{ color: '#065f46' }}>
+          <p className="text-slate-600 text-lg">
             {strings.subtitle}
           </p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
             title={strings.activeLeases}
             value={leases.length}
@@ -245,14 +240,13 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Quick Actions - Premium Gold Card */}
+        {/* Quick Actions - FIXED with inline styles */}
         <div style={{
-          background: 'linear-gradient(135deg, #C7A338 0%, #d4af37 100%)',
+          background: 'linear-gradient(to right, #0C3B2E, #047857)',
           borderRadius: '16px',
-          padding: '24px',
-          marginBottom: '24px',
-          boxShadow: '0 8px 16px rgba(199, 163, 56, 0.3)',
-          border: '1px solid rgba(199, 163, 56, 0.4)'
+          padding: '32px',
+          marginBottom: '32px',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
         }}>
           <div style={{
             display: 'flex',
@@ -264,18 +258,17 @@ export default function Dashboard() {
           }}>
             <div style={{ flex: 1, minWidth: '250px' }}>
               <h2 style={{
-                fontSize: '22px',
+                fontSize: '24px',
                 fontWeight: 'bold',
-                color: '#0C3B2E',
+                color: '#FFFFFF',
                 marginBottom: '8px'
               }}>
                 {strings.protectRights}
               </h2>
               <p style={{
-                fontSize: '15px',
-                color: '#065f46',
-                lineHeight: '1.5',
-                opacity: 0.9
+                fontSize: '16px',
+                color: '#D1FAE5',
+                lineHeight: '1.5'
               }}>
                 {strings.uploadCta}
               </p>
@@ -283,28 +276,20 @@ export default function Dashboard() {
             <Link to={createPageUrl("UploadScan")}>
               <button
                 style={{
-                  backgroundColor: '#0C3B2E',
-                  color: '#FFFFFF',
+                  backgroundColor: '#C7A338',
+                  color: '#1A1D1F',
                   padding: '14px 32px',
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   fontWeight: 'bold',
                   fontSize: '16px',
                   border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(12, 59, 46, 0.4)',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                   transition: 'all 0.2s',
                   whiteSpace: 'nowrap'
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#0a2f25';
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(12, 59, 46, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#0C3B2E';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(12, 59, 46, 0.4)';
-                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#d4af37'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
               >
                 {strings.uploadLease}
               </button>
@@ -313,7 +298,7 @@ export default function Dashboard() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-4">
+        <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <RecentLeases leases={leases} language={language} />
           </div>
@@ -322,15 +307,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Upgrade Banner - Premium Dark Style */}
+        {/* Upgrade Banner - FIXED with inline styles */}
         {user?.plan_tier === 'free' && (
           <div style={{
-            marginTop: '24px',
-            background: 'linear-gradient(135deg, #0C3B2E 0%, #065f46 100%)',
+            marginTop: '32px',
+            background: 'linear-gradient(to right, #C7A338, #d97706)',
             borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 8px 16px rgba(12, 59, 46, 0.3)',
-            border: '1px solid rgba(199, 163, 56, 0.3)'
+            padding: '32px',
+            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
           }}>
             <div style={{
               display: 'flex',
@@ -342,19 +326,19 @@ export default function Dashboard() {
             }}>
               <div style={{ flex: 1, minWidth: '250px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <TrendingUp style={{ width: '24px', height: '24px', color: '#C7A338' }} />
+                  <TrendingUp style={{ width: '24px', height: '24px', color: '#1A1D1F' }} />
                   <h3 style={{
                     fontSize: '20px',
                     fontWeight: 'bold',
-                    color: '#FFFFFF'
+                    color: '#1A1D1F'
                   }}>
                     {strings.upgradePremium}
                   </h3>
                 </div>
                 <p style={{
                   fontSize: '14px',
-                  color: '#ECEFED',
-                  opacity: 0.9
+                  color: '#292524',
+                  opacity: 0.8
                 }}>
                   {strings.upgradeDesc}
                 </p>
@@ -362,28 +346,20 @@ export default function Dashboard() {
               <Link to={createPageUrl("Account")}>
                 <button
                   style={{
-                    backgroundColor: '#C7A338',
-                    color: '#0C3B2E',
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF',
                     padding: '14px 32px',
-                    borderRadius: '10px',
+                    borderRadius: '8px',
                     fontWeight: 'bold',
                     fontSize: '16px',
                     border: 'none',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(199, 163, 56, 0.4)',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                     transition: 'all 0.2s',
                     whiteSpace: 'nowrap'
                   }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#d4af37';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 16px rgba(199, 163, 56, 0.5)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#C7A338';
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(199, 163, 56, 0.4)';
-                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                 >
                   {strings.viewPlans}
                 </button>
