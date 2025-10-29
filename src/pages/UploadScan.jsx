@@ -161,99 +161,123 @@ NEUTRALITY & LANGUAGE:
 THAILAND RENTAL STANDARDS (CRITICAL BASELINE):
 **Legal + Market Practice + Reasonable Judgment**
 
-1) **Deposit Standards (DURATION-SENSITIVE):**
-   - **Short-term leases (≤6 months):**
-     • 1 month deposit = STANDARD and NORMAL (do NOT flag)
-     • 1.5 months = Grey area → Flag as "medium" with note "slightly above short-term standard"
-     • 2+ months = Flag as "high" with note "high for short-term lease, negotiate to 1 month"
-   
-   - **Long-term leases (>6 months, typically 1 year):**
-     • 2 months rent = STANDARD and NORMAL (do NOT flag)
-     • 2.5 months = Grey area → Flag as "high" with note "slightly above standard, consider negotiation"
-     • 3+ months = Flag as "critical" with note "excessive deposit, negotiate to 2 months maximum"
-   
-   - **Advance Rent:** 1 month advance rent = STANDARD for all lease lengths (do NOT flag)
-   - Flag if: advance rent > 1 month
+**DEPOSIT ANALYSIS WORKFLOW (FOLLOW THESE STEPS EXACTLY):**
 
-2) **Refund Timeline:**
-   - 30 days = STANDARD and NORMAL in Thailand (do NOT flag)
-   - Flag if: > 30 days without clear itemization process
-   - Grey area: 45 days → Flag as "medium" with note "longer than standard 30 days, request expedited timeline"
+Step 1: Extract key data
+- monthly_rent_amount = [extract from contract]
+- deposit_amount = [extract from contract]
+- lease_start_date = [extract from contract]
+- lease_end_date = [extract from contract]
 
-3) **Late Payment Penalties:**
-   - Reasonable: 5-10% per month (annual ~60-120%)
-   - Excessive: > 15% per month or compounding daily → Flag as "critical"
-   - Grey area: 12-15% per month → Flag as "high" with note "on high side, consider negotiation to 10% or less"
+Step 2: Calculate lease duration
+- duration_in_months = difference between end_date and start_date
+- lease_type = "short-term" if duration_in_months ≤ 6, else "long-term"
 
-4) **Termination Penalties:**
-   - Reasonable: 1-2 months rent for early termination
-   - Excessive: forfeiting entire deposit without itemization → Flag as "critical"
-   - Grey area: 3 months penalty → Flag as "high" with note "steep penalty, negotiate to 2 months or proportional"
+Step 3: Calculate deposit ratio
+- deposit_months = deposit_amount / monthly_rent_amount
+- Example: 80,000 Baht deposit ÷ 40,000 Baht rent = 2 months
 
-5) **Repairs & Maintenance:**
-   - Fair: landlord handles structural, tenant handles minor wear & tear
-   - Unfair: tenant responsible for ALL repairs regardless of cause → Flag as "critical"
-   - Grey area: unclear division → Flag as "medium" with note "clarify repair responsibilities before signing"
+Step 4: Apply Thai standards based on lease type
 
-6) **Access & Entry:**
-   - Fair: 24-48 hours notice for non-emergency entry
-   - Unfair: landlord can enter "any time" without notice → Flag as "high"
-   - Grey area: "reasonable notice" without specifics → Flag as "low" with note "request specific timeframe (e.g., 24 hours)"
+**SHORT-TERM LEASES (≤6 months):**
+- ✅ deposit_months ≤ 1.0 = NORMAL (do NOT flag)
+- ⚠️ deposit_months = 1.5 = Flag "medium" - "slightly above short-term standard"
+- 🚫 deposit_months ≥ 2.0 = Flag "high" - "high for short-term lease, standard is 1 month"
 
-7) **Utilities:**
-   - Fair: charged at actual cost or government rate
-   - Unfair: 50%+ markup on utilities without justification → Flag as "high"
-   - Grey area: 10-30% markup → Flag as "medium" with note "request cost breakdown or negotiate to actual rate"
+**LONG-TERM LEASES (>6 months, typically 1 year):**
+- ✅ deposit_months ≤ 2.0 = NORMAL (do NOT flag)
+  • Example: 80,000 deposit with 40,000 rent = 2 months = NORMAL
+  • Example: 60,000 deposit with 30,000 rent = 2 months = NORMAL
+- ⚠️ deposit_months = 2.5 = Flag "high" - "slightly above standard, consider negotiation"
+- 🚫 deposit_months ≥ 3.0 = Flag "critical" - "excessive deposit, negotiate to 2 months"
+
+**ADVANCE RENT:**
+- ✅ 1 month advance = STANDARD for all lease types (do NOT flag)
+- 🚫 >1 month advance = Flag as "medium" or "high"
+
+**OTHER STANDARDS:**
+
+1) **Refund Timeline:**
+   - 30 days = STANDARD and NORMAL (do NOT flag)
+   - 45 days = Flag "medium" - "longer than standard 30 days"
+   - >60 days = Flag "high" or "critical"
+
+2) **Late Payment Penalties:**
+   - 5-10% per month = Reasonable (do NOT flag)
+   - 12-15% per month = Flag "high" - "on high side, negotiate to 10% or less"
+   - >15% per month or daily compounding = Flag "critical"
+
+3) **Termination Penalties:**
+   - 1-2 months rent = Reasonable
+   - 3 months = Flag "high" - "steep penalty"
+   - Forfeit entire deposit = Flag "critical"
+
+4) **Repairs & Maintenance:**
+   - Landlord: structural, Tenant: minor wear = Fair
+   - Tenant responsible for ALL repairs = Flag "critical"
+   - Unclear division = Flag "medium" - "clarify before signing"
+
+5) **Access & Entry:**
+   - 24-48 hours notice = Fair
+   - "Any time" without notice = Flag "high"
+   - "Reasonable notice" without specifics = Flag "low" - "request 24hr minimum"
+
+6) **Utilities:**
+   - Actual cost or government rate = Fair
+   - 10-30% markup = Flag "medium" - "request breakdown"
+   - 50%+ markup = Flag "high"
 
 GREY AREA HANDLING:
-- When unsure if clause is problematic: Flag with "medium" or "low" severity
-- Use phrases like:
-  • "Potential issue - recommend review with landlord"
-  • "Consider negotiating this clause before signing"
-  • "Request clarification on this point"
-  • "Within legal bounds but unfavorable - worth discussing"
-  • "Grey area - document everything related to this"
+When unsure, flag with "low" or "medium" severity and use phrases like:
+- "Consider negotiating this clause before signing"
+- "Request clarification on this point"
+- "Within legal bounds but worth discussing"
+- "Grey area - document everything related to this"
 
 SCOPE & RULES:
-1) Work **only** with the text provided. If something is missing, set a clear string like "Not specified".
-2) For every flag, include a **short exact quote** (<= 60 words) in \`evidence\`.
-3) **CRITICAL: Calculate lease duration from start_date and end_date to determine if short-term or long-term, then apply appropriate deposit standards**
+1) Work **only** with the text provided. If something is missing, set "Not specified".
+2) For every flag, include **short exact quote** (<= 60 words) in \`evidence\`.
+3) **CRITICAL: Follow the deposit analysis workflow above EXACTLY. Do the math first, then apply standards.**
 4) Thailand residential checklist (adapt if commercial):
-   - Parties & capacity; property description; term & renewal; early break; notice windows; penalties.
-   - Rent/payment mechanics; late interest reasonableness (apply grey area logic above).
-   - Deposit & advance: **FIRST determine lease length, THEN apply appropriate deposit standards above**
-   - Pre/post inspection forms; itemized deductions; receipts
-   - Utilities at actual cost (apply markup logic above)
-   - No unilateral changes or excessive penalties
-   - Repairs/maintenance (apply division logic above)
-   - Inspections/access (apply notice logic above)
+   - Parties & capacity; property description; term & renewal; notice
+   - Rent/payment mechanics; penalties (apply standards above)
+   - **DEPOSIT: Calculate months first, then check against standards**
+   - Pre/post inspection; itemization; receipts; utilities
+   - Repairs/maintenance (apply division logic)
+   - Access/inspections (apply notice requirements)
    - Use restrictions; quiet enjoyment; guests/sublets
-   - Termination & liquidated damages proportionality (apply penalty logic above)
-   - Deposit return timeline & itemization; interest if stated
-   - Dispute resolution (Thai courts vs arbitration); fair venue; bilingual precedence
-   - PDPA touchpoints (ID/passport copies, CCTV, purpose/retention, notices/consents)
+   - Termination & damages (apply penalty standards)
+   - Deposit return timeline (30 days standard)
+   - Dispute resolution; venue; bilingual precedence
+   - PDPA compliance (ID/passport, CCTV, purpose/retention)
 5) Commercial add-ons (only if commercial or ${analysisMode} == "Secure"):
-   - Fit-out/hand-back; make-good scope; signage; exclusivity; co-tenancy
-   - CAM/service-charge definition & audit rights; indexation/escalation math
-   - Liability caps & carve-outs; indemnities; insurance evidence
-   - Force majeure; rent-free/abatement triggers; lockout/step-in
-   - Assignment/sublease consent standards; guarantees (bank vs cash)
+   - Fit-out/hand-back; make-good; signage; exclusivity
+   - CAM/service charges; audit rights; indexation
+   - Liability caps; indemnities; insurance
+   - Force majeure; rent-free triggers
+   - Assignment/sublease; guarantees
 
 RISK MODEL (for each flag):
 - \`severity\` ∈ {low, medium, high, critical}
-  • critical = clearly illegal or extremely unfair, immediate action needed
-  • high = significantly unfavorable, strong recommend not signing without changes
-  • medium = grey area or moderately unfavorable, worth negotiating
-  • low = minor concern or needs clarification, good to discuss but not dealbreaker
-- Compute \`impact_0_10\` and \`likelihood_0_10\` (integers 0..10) and sort flags by (impact*likelihood) desc.
-- Keep final JSON concise and consistent.
-- DO NOT flag normal Thai practices (duration-appropriate deposits, 30 day refund, standard utilities)
-- DO flag grey areas with appropriate severity and actionable recommendations
+  • critical = illegal or extremely unfair, don't sign
+  • high = significantly unfavorable, negotiate before signing
+  • medium = grey area or moderately unfavorable, worth discussing
+  • low = minor concern, clarify but not dealbreaker
+- Compute \`impact_0_10\` and \`likelihood_0_10\` (integers 0..10)
+- Sort flags by (impact*likelihood) desc
+- **DO NOT flag normal practices (2 months for long-term, 1 month for short-term, 30 day refund)**
+- **DO flag grey areas with severity + actionable recommendations**
 
 TIERING RULES:
-- Lite: return **max 5 flags** (prioritize critical/high), **max 3** \`missing_items\`.
-- Protect: return full set of flags and **up to 10** \`missing_items\`.
-- Secure: full set (+ commercial checks if applicable).
+- Lite: max 5 flags (critical/high priority), max 3 missing_items
+- Protect: full flags, up to 10 missing_items
+- Secure: full set + commercial checks if applicable
+
+**CRITICAL REMINDER:** 
+- Calculate deposit_months = deposit_amount / monthly_rent FIRST
+- Then check: Is lease short-term (≤6mo) or long-term (>6mo)?
+- Then apply appropriate standard: 1 month for short-term, 2 months for long-term
+- Only flag if deposit exceeds these standards
 
 Now analyze this lease thoroughly and return JSON only.`,
         file_urls: fileUrls, // Send ALL file URLs to AI
