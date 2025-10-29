@@ -21,6 +21,7 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
         ref={fileInputRef}
         type="file"
         accept=".pdf,image/*"
+        multiple
         onChange={onFileSelect}
         className="hidden"
       />
@@ -30,6 +31,7 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
         type="file"
         accept="image/*"
         capture="environment"
+        multiple
         onChange={onFileSelect}
         className="hidden"
       />
@@ -54,8 +56,11 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
         <h3 className="text-2xl font-bold text-ls-charcoal mb-3">
           Upload Your Lease Agreement
         </h3>
-        <p className="text-slate-600 mb-6 max-w-md mx-auto">
+        <p className="text-slate-600 mb-2 max-w-md mx-auto">
           Drag and drop your lease document here, or click to browse
+        </p>
+        <p className="text-sm text-ls-gold font-semibold mb-6">
+          ✨ Multiple pages supported - upload all pages of your lease
         </p>
         
         <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
@@ -108,12 +113,12 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
             }}
           >
             <Camera style={{ width: '20px', height: '20px' }} />
-            Take Photo
+            Take Photos
           </button>
         </div>
         
         <p className="text-xs text-slate-400 mt-6">
-          Supported formats: PDF, PNG, JPEG • Max size: 10MB
+          Supported formats: PDF, PNG, JPEG • Max size: 10MB per file • Multiple files allowed
         </p>
       </div>
     </div>
