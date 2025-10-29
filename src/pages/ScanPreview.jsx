@@ -230,7 +230,11 @@ Format this as a well-structured, professional document in both English and Thai
           </div>
         </div>
 
-        <LeaseAnalysisResults scan={scan} onSave={handleSave} />
+        <LeaseAnalysisResults 
+          scan={scan} 
+          onSave={handleSave}
+          onDownload={handleDownloadPdf}
+        />
       </div>
     </div>
   );
