@@ -4,7 +4,14 @@
   "properties": {
     "file_url": {
       "type": "string",
-      "description": "URL to the uploaded lease document"
+      "description": "URL to the uploaded lease document (primary/first file)"
+    },
+    "file_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs to all uploaded lease pages/files"
     },
     "status": {
       "type": "string",
