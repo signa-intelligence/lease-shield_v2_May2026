@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -355,34 +356,18 @@ export default function DepositTracker() {
                     rows={3}
                   />
                 </div>
-                <button 
+                <Button 
                   type="submit" 
                   disabled={createDepositMutation.isPending}
+                  className="w-full"
                   style={{
-                    width: '100%',
                     backgroundColor: createDepositMutation.isPending ? '#9CA3AF' : '#0C3B2E',
                     color: '#FFFFFF',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    border: 'none',
-                    cursor: createDepositMutation.isPending ? 'not-allowed' : 'pointer',
-                    opacity: createDepositMutation.isPending ? 0.6 : 1,
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!createDepositMutation.isPending) {
-                      e.target.style.backgroundColor = '#0a2f25';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!createDepositMutation.isPending) {
-                      e.target.style.backgroundColor = '#0C3B2E';
-                    }
+                    opacity: createDepositMutation.isPending ? 0.6 : 1
                   }}
                 >
                   {createDepositMutation.isPending ? 'Tracking...' : strings.trackDepositButton}
-                </button>
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
