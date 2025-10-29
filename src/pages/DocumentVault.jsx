@@ -52,6 +52,32 @@ export default function DocumentVault() {
     enabled: !!user,
   });
 
+  const createDocumentMutation = useMutation({
+    mutationFn: async (data) => {
+      // First upload the file
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: data.file });
+      
+      // Then create the document record
+      return await base44.entities.Document.create({
+        type: data.type,
+        label: data.label,
+        file_url
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setShowAddDialog(false);
+      setFormData({ type: 'other', label: '', file: null });
+    },
+  });
+
+  const handleFileUpload = async (e) => {
+    e.preventDefault();
+    if (!formData.file) return;
+
+    createDocumentMutation.mutate(formData);
+  };
+
   const t = {
     en: {
       title: "Evidence Vault",
@@ -59,7 +85,12 @@ export default function DocumentVault() {
       uploadDocument: "Upload Evidence",
       noDocuments: "No evidence files yet",
       uploadFirst: "Upload First Evidence File",
-      allEvidence: "All Evidence"
+      allEvidence: "All Evidence",
+      typeLabel: "Type",
+      labelLabel: "Label",
+      fileLabel: "File",
+      uploadButton: "Upload",
+      uploading: "Uploading..."
     },
     th: {
       title: "คลังหลักฐาน",
@@ -67,36 +98,17 @@ export default function DocumentVault() {
       uploadDocument: "อัปโหลดหลักฐาน",
       noDocuments: "ยังไม่มีไฟล์หลักฐาน",
       uploadFirst: "อัปโหลดไฟล์หลักฐานแรก",
-      allEvidence: "หลักฐานทั้งหมด"
+      allEvidence: "หลักฐานทั้งหมด",
+      typeLabel: "ประเภท",
+      labelLabel: "ป้ายชื่อ",
+      fileLabel: "ไฟล์",
+      uploadButton: "อัปโหลด",
+      uploading: "กำลังอัปโหลด..."
     }
   };
 
   const language = user?.language || 'en';
   const strings = t[language];
-
-  const handleFileUpload = async (e) => {
-    e.preventDefault();
-    if (!formData.file) return;
-
-    setUploading(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: formData.file });
-      
-      await base44.entities.Document.create({
-        type: formData.type,
-        label: formData.label,
-        file_url
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
-      setShowAddDialog(false);
-      setFormData({ type: 'other', label: '', file: null });
-    } catch (error) {
-      console.error('Upload failed:', error);
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const filteredDocs = filterType === 'all' 
     ? documents 
@@ -149,7 +161,7 @@ export default function DocumentVault() {
               </DialogHeader>
               <form onSubmit={handleFileUpload} className="space-y-4">
                 <div>
-                  <Label htmlFor="type">Type</Label>
+                  <Label htmlFor="type">{strings.typeLabel}</Label>
                   <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
                     <SelectTrigger>
                       <SelectValue />
@@ -164,7 +176,7 @@ export default function DocumentVault() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="label">Label</Label>
+                  <Label htmlFor="label">{strings.labelLabel}</Label>
                   <Input
                     id="label"
                     value={formData.label}
@@ -173,7 +185,7 @@ export default function DocumentVault() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="file">File</Label>
+                  <Label htmlFor="file">{strings.fileLabel}</Label>
                   <Input
                     id="file"
                     type="file"
@@ -183,24 +195,32 @@ export default function DocumentVault() {
                 </div>
                 <button 
                   type="submit" 
-                  disabled={uploading}
+                  disabled={createDocumentMutation.isPending}
                   style={{
                     width: '100%',
-                    backgroundColor: '#0C3B2E',
+                    backgroundColor: createDocumentMutation.isPending ? '#9CA3AF' : '#0C3B2E',
                     color: '#FFFFFF',
                     padding: '12px 16px',
                     borderRadius: '8px',
                     fontWeight: 'bold',
                     fontSize: '16px',
                     border: 'none',
-                    cursor: uploading ? 'not-allowed' : 'pointer',
-                    opacity: uploading ? 0.6 : 1,
+                    cursor: createDocumentMutation.isPending ? 'not-allowed' : 'pointer',
+                    opacity: createDocumentMutation.isPending ? 0.6 : 1,
                     transition: 'all 0.2s'
                   }}
-                  onMouseEnter={(e) => !uploading && (e.target.style.backgroundColor = '#0a2f25')}
-                  onMouseLeave={(e) => !uploading && (e.target.style.backgroundColor = '#0C3B2E')}
+                  onMouseEnter={(e) => {
+                    if (!createDocumentMutation.isPending) {
+                      e.target.style.backgroundColor = '#0a2f25';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!createDocumentMutation.isPending) {
+                      e.target.style.backgroundColor = '#0C3B2E';
+                    }
+                  }}
                 >
-                  {uploading ? 'Uploading...' : 'Upload'}
+                  {createDocumentMutation.isPending ? strings.uploading : strings.uploadButton}
                 </button>
               </form>
             </DialogContent>

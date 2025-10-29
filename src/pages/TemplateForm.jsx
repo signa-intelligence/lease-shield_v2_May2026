@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -113,12 +112,14 @@ export default function TemplateForm() {
   const [copied, setCopied] = useState(false);
   const [language, setLanguage] = useState('both');
   const [formData, setFormData] = useState({});
+  const [error, setError] = useState(null);
 
   const schema = TEMPLATE_SCHEMAS[templateId] || TEMPLATE_SCHEMAS.deposit_request;
 
   const handleGenerate = async (e) => {
     e.preventDefault();
     setGenerating(true);
+    setError(null);
 
     try {
       const prompt = TEMPLATE_PROMPTS[templateId];
@@ -168,9 +169,9 @@ Generate the letter now.`,
 
       setGeneratedDocId(doc.id);
       
-    } catch (error) {
-      console.error('Failed to generate letter:', error);
-      alert('Failed to generate letter. Please try again.');
+    } catch (err) {
+      console.error('Failed to generate letter:', err);
+      setError(err.message || 'Failed to generate letter. Please try again.');
     } finally {
       setGenerating(false);
     }
@@ -214,6 +215,12 @@ Generate the letter now.`,
             <p className="text-slate-600">Fill in the details below</p>
           </div>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
+        )}
 
         {!generatedLetter ? (
           <Card className="border-none shadow-xl">
@@ -306,7 +313,10 @@ Generate the letter now.`,
             <Button 
               variant="outline" 
               className="w-full"
-              onClick={() => setGeneratedLetter('')}
+              onClick={() => {
+                setGeneratedLetter('');
+                setError(null);
+              }}
             >
               Generate Another Letter
             </Button>
