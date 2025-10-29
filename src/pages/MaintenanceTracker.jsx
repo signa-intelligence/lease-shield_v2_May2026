@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -479,8 +478,8 @@ export default function MaintenanceTracker() {
                           {request.priority.toUpperCase()}
                         </Badge>
                         <Badge className={`${getStatusColor(request.status)} border`}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
-                          {request.status.replace('_', ' ').toUpperCase()}
+                          {StatusIcon}
+                          <span className="ml-1">{request.status.replace('_', ' ').toUpperCase()}</span>
                         </Badge>
                       </div>
                     </div>
