@@ -623,14 +623,14 @@ ${JSON.stringify(analysisResult.flags)}`,
             <div className="space-y-3">
               {leases.map((lease) => (
                 <Card key={lease.id} className="p-4 border-none shadow-md hover:shadow-lg transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <FileText className="w-5 h-5 text-ls-forest" />
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <FileText className="w-5 h-5 text-ls-forest flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-ls-charcoal truncate">
                           {lease.property_address || strings.leaseAgreement}
                         </p>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm text-slate-500">
                             {format(new Date(lease.created_date), 'MMM d, yyyy')}
                           </p>
@@ -642,7 +642,7 @@ ${JSON.stringify(analysisResult.flags)}`,
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <Badge className={getStatusColor(lease.status)}>
                         {lease.status}
                       </Badge>
@@ -661,7 +661,8 @@ ${JSON.stringify(analysisResult.flags)}`,
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '4px',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            whiteSpace: 'nowrap'
                           }}
                           onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
                           onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
