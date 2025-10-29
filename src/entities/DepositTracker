@@ -62,13 +62,7 @@
     "expected_return_date"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": {
-          "$ne": "guest"
-        }
-      }
-    },
+    "create": true,
     "read": {
       "$or": [
         {
