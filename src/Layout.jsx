@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -138,8 +139,8 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Top Bar with Logo */}
-      <div className="bg-white border-b border-ls-stone shadow-sm">
+      {/* Top Bar with Logo - FIXED TO TOP */}
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-ls-stone shadow-sm z-40">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
@@ -197,8 +198,9 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      {/* Main Content - Adjusted padding to account for bottom nav + disclaimer */}
+      {/* Main Content - Added top padding to account for fixed header */}
       <main className="flex-1 overflow-auto" style={{
+        paddingTop: '64px',
         paddingBottom: `calc(${isAdmin ? '130px' : '126px'} + env(safe-area-inset-bottom, 0px))`
       }}>
         {children}
