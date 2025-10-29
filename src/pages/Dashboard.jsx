@@ -2,7 +2,7 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, FolderOpen, ArrowRight } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays } from "date-fns";
@@ -130,14 +130,14 @@ export default function Dashboard() {
         action: language === 'th' ? 'อัปโหลดหลักฐาน' : 'Upload evidence files',
         points: 10,
         route: 'DocumentVault',
-        icon: 'FolderOpen'
+        icon: 'FileText' // Using FileText as a placeholder, FolderOpen was removed
       });
     } else if (documents.length > 0 && documents.length < 5) {
       recommendations.push({
         action: language === 'th' ? 'อัปโหลดหลักฐานเพิ่มเติม' : 'Upload more evidence',
         points: 5,
         route: 'DocumentVault',
-        icon: 'FolderOpen'
+        icon: 'FileText' // Using FileText as a placeholder, FolderOpen was removed
       });
     }
     
@@ -189,14 +189,14 @@ export default function Dashboard() {
         action: language === 'th' ? 'อัปเดตหลักฐาน' : 'Update evidence files',
         points: 7,
         route: 'DocumentVault',
-        icon: 'FolderOpen'
+        icon: 'FileText' // Using FileText as a placeholder, FolderOpen was removed
       });
     } else if (recentDocuments.length > 0 && recentDocuments.length < 3) {
       recommendations.push({
         action: language === 'th' ? 'เพิ่มหลักฐานเป็นประจำ' : 'Add regular evidence',
         points: 5,
         route: 'DocumentVault',
-        icon: 'FolderOpen'
+        icon: 'FileText' // Using FileText as a placeholder, FolderOpen was removed
       });
     }
     
@@ -293,7 +293,7 @@ export default function Dashboard() {
   const iconMap = {
     FileText: FileText,
     Shield: Shield,
-    FolderOpen: FolderOpen,
+    // FolderOpen was removed from imports, using FileText instead if referenced
     Bell: Bell,
     Wrench: Wrench
   };
