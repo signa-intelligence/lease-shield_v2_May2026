@@ -1,9 +1,9 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bgGradient, scoreColor, scoreStatus }) {
+export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bgGradient, scoreColor, scoreStatus, ctaText, onCtaClick }) {
   return (
     <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
       {/* Background circle - changes color for Protection Score */}
@@ -45,6 +45,30 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bg
             >
               {scoreStatus}
             </Badge>
+          )}
+          
+          {/* CTA Button for Protection Score */}
+          {ctaText && onCtaClick && (
+            <button
+              onClick={onCtaClick}
+              className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 hover:gap-3"
+              style={{
+                backgroundColor: `${scoreColor}20`,
+                color: scoreColor,
+                border: `2px solid ${scoreColor}40`
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = scoreColor;
+                e.target.style.color = '#FFFFFF';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = `${scoreColor}20`;
+                e.target.style.color = scoreColor;
+              }}
+            >
+              {ctaText}
+              <ChevronRight className="w-4 h-4" />
+            </button>
           )}
         </div>
       </div>
