@@ -1,167 +1,175 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Clock, CheckCircle2, Wallet, Bell } from "lucide-react";
+import { AlertTriangle, Shield, Clock, Calendar } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 
-export default function DepositAlert({ deposits, language = 'en' }) {
-  const navigate = useNavigate();
-
+export default function DepositAlert({ deposits, language }) {
   const t = {
     en: {
-      title: "Deposit Tracking",
-      noDeposits: "No deposits being tracked",
-      trackDeposit: "Track a Deposit",
-      dueWithin: "deposit due within 30 days", // Used for singular
-      deposits: "deposits", // Used for plural noun
-      remindersEnabled: "Automated reminders enabled for all tracked deposits",
-      return: "Return",
-      days: "days",
+      title: "Deposit Alerts",
+      noDeposits: "No Deposits",
+      noDepositsDesc: "Track your security deposits to get return reminders",
+      daysLeft: "days left",
       overdue: "Overdue",
-      dayReminder: "7-day reminder scheduled",
-      viewAll: "View All Deposits"
+      returnDate: "Return Date",
+      amount: "Amount"
     },
     th: {
-      title: "ติดตามเงินมัดจำ",
-      noDeposits: "ไม่มีเงินมัดจำที่กำลังติดตาม",
-      trackDeposit: "ติดตามเงินมัดจำ",
-      dueWithin: "เงินมัดจำครบกำหนดภายใน 30 วัน", // Used for singular
-      deposits: "รายการ", // Used for plural noun
-      remindersEnabled: "เปิดใช้งานการแจ้งเตือนอัตโนมัติสำหรับเงินมัดจำทั้งหมด",
-      return: "คืน",
-      days: "วัน",
+      title: "การแจ้งเตือนเงินมัดจำ",
+      noDeposits: "ไม่มีเงินมัดจำ",
+      noDepositsDesc: "ติดตามเงินมัดจำของคุณเพื่อรับการแจ้งเตือนการคืนเงิน",
+      daysLeft: "วันที่เหลือ",
       overdue: "เกินกำหนด",
-      dayReminder: "กำหนดการแจ้งเตือน 7 วัน",
-      viewAll: "ดูเงินมัดจำทั้งหมด"
+      returnDate: "วันที่คืน",
+      amount: "จำนวนเงิน"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
-  const getStatusIcon = (status) => {
-    const icons = {
-      tracking: Clock,
-      returned: CheckCircle2,
-      dispute: AlertTriangle
-    };
-    return icons[status] || Clock;
-  };
+  const activeDeposits = deposits.filter(d => d.status === 'tracking').sort((a, b) => {
+    const daysA = differenceInDays(new Date(a.expected_return_date), new Date());
+    const daysB = differenceInDays(new Date(b.expected_return_date), new Date());
+    return daysA - daysB;
+  });
 
-  const getStatusColor = (status) => {
-    const colors = {
-      tracking: "text-blue-600 bg-blue-50",
-      returned: "text-emerald-600 bg-emerald-50",
-      dispute: "text-red-600 bg-red-50"
-    };
-    return colors[status] || "text-slate-600 bg-slate-50";
-  };
-
-  const getDaysRemaining = (date) => {
-    return differenceInDays(new Date(date), new Date());
-  };
-
-  const urgentDeposits = deposits.filter(d => {
-    const days = getDaysRemaining(d.expected_return_date);
-    return d.status === 'tracking' && days <= 30;
+  const urgentDeposits = activeDeposits.filter(d => {
+    const daysRemaining = differenceInDays(new Date(d.expected_return_date), new Date());
+    return daysRemaining <= 30;
   });
 
   return (
-    <Card className="shadow-lg border-none">
-      <CardHeader className="border-b border-slate-100 pb-4">
-        <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
-          <Wallet className="w-5 h-5 text-blue-600" />
-          {strings.title}
+    <Card className="border-none shadow-xl" style={{
+      background: urgentDeposits.length > 0 
+        ? 'linear-gradient(135deg, rgba(255, 237, 213, 0.95), rgba(254, 243, 199, 0.95))'
+        : 'rgba(255, 255, 255, 0.95)',
+      backdropFilter: 'blur(20px)',
+      border: urgentDeposits.length > 0 
+        ? '2px solid rgba(245, 158, 11, 0.4)'
+        : '2px solid rgba(199, 163, 56, 0.2)',
+      boxShadow: urgentDeposits.length > 0
+        ? '0 8px 24px rgba(245, 158, 11, 0.25)'
+        : '0 8px 24px rgba(12, 59, 46, 0.15)'
+    }}>
+      <CardHeader className="border-b" style={{
+        background: urgentDeposits.length > 0
+          ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(251, 191, 36, 0.15))'
+          : 'linear-gradient(135deg, rgba(12, 59, 46, 0.05), rgba(199, 163, 56, 0.05))',
+        borderBottom: urgentDeposits.length > 0
+          ? '2px solid rgba(245, 158, 11, 0.3)'
+          : '2px solid rgba(199, 163, 56, 0.2)'
+      }}>
+        <CardTitle className="flex items-center gap-2">
+          <div style={{
+            width: '36px',
+            height: '36px',
+            background: urgentDeposits.length > 0
+              ? 'linear-gradient(135deg, #F59E0B, #FBBF24)'
+              : 'linear-gradient(135deg, #0C3B2E, #1a5241)',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: urgentDeposits.length > 0
+              ? '0 4px 12px rgba(245, 158, 11, 0.4)'
+              : '0 4px 12px rgba(12, 59, 46, 0.3)',
+            border: '2px solid rgba(199, 163, 56, 0.3)'
+          }}>
+            {urgentDeposits.length > 0 ? (
+              <AlertTriangle className="w-5 h-5 text-white" />
+            ) : (
+              <Shield className="w-5 h-5 text-ls-gold" />
+            )}
+          </div>
+          <span style={{
+            background: urgentDeposits.length > 0
+              ? 'linear-gradient(135deg, #F59E0B, #D97706)'
+              : 'linear-gradient(135deg, #0C3B2E, #C7A338)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            fontWeight: 'bold',
+            fontSize: '20px'
+          }}>
+            {strings.title}
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        {deposits.length === 0 ? (
+        {activeDeposits.length === 0 ? (
           <div className="text-center py-8">
-            <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500 mb-3">{strings.noDeposits}</p>
-            <Button size="sm" onClick={() => navigate(createPageUrl("DepositTracker"))}>
-              {strings.trackDeposit}
-            </Button>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              margin: '0 auto 16px',
+              background: 'linear-gradient(135deg, rgba(12, 59, 46, 0.1), rgba(199, 163, 56, 0.1))',
+              borderRadius: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px dashed rgba(199, 163, 56, 0.3)'
+            }}>
+              <Shield className="w-8 h-8" style={{ color: '#C7A338', opacity: 0.6 }} />
+            </div>
+            <h4 className="font-bold mb-1" style={{ color: '#0C3B2E' }}>
+              {strings.noDeposits}
+            </h4>
+            <p className="text-sm" style={{ color: '#1a5241', opacity: 0.8 }}>
+              {strings.noDepositsDesc}
+            </p>
           </div>
         ) : (
-          <>
-            {urgentDeposits.length > 0 && (
-              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <div className="flex items-center gap-2 text-amber-800">
-                  <Bell className="w-4 h-4" />
-                  <span className="text-sm font-semibold">
-                    {urgentDeposits.length} {urgentDeposits.length > 1 ? strings.deposits : strings.dueWithin}
-                  </span>
-                </div>
-                <p className="text-xs text-amber-700 mt-1">
-                  {strings.remindersEnabled}
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {deposits.slice(0, 3).map((deposit) => {
-                const StatusIcon = getStatusIcon(deposit.status);
-                const daysRemaining = getDaysRemaining(deposit.expected_return_date);
-                const isUrgent = daysRemaining <= 30 && deposit.status === 'tracking';
-                
-                return (
-                  <div 
-                    key={deposit.id} 
-                    className={`p-4 rounded-xl hover:bg-slate-100 transition-colors duration-200 cursor-pointer ${
-                      isUrgent ? 'bg-amber-50 border-2 border-amber-300' : 'bg-slate-50'
-                    }`}
-                    onClick={() => navigate(createPageUrl("DepositTracker"))}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <StatusIcon className={`w-5 h-5 ${getStatusColor(deposit.status).split(' ')[0]}`} />
-                        <span className="font-semibold text-slate-900">
-                          ฿{deposit.deposit_amount.toLocaleString()}
-                        </span>
-                      </div>
-                      <Badge className={getStatusColor(deposit.status)}>
-                        {deposit.status}
-                      </Badge>
-                    </div>
-                    {deposit.property_address && (
-                      <p className="text-sm text-slate-600 mb-2">{deposit.property_address}</p>
-                    )}
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                      <span>{strings.return}: {format(new Date(deposit.expected_return_date), 'MMM d, yyyy')}</span>
-                      {deposit.status === 'tracking' && (
-                        <span className={daysRemaining < 30 ? 'text-amber-600 font-medium' : ''}>
-                          {daysRemaining > 0 ? `${daysRemaining} ${strings.days}` : strings.overdue}
-                        </span>
+          <div className="space-y-3">
+            {urgentDeposits.slice(0, 3).map((deposit) => {
+              const daysRemaining = differenceInDays(new Date(deposit.expected_return_date), new Date());
+              const isOverdue = daysRemaining < 0;
+              
+              return (
+                <div 
+                  key={deposit.id}
+                  className="p-4 rounded-xl"
+                  style={{
+                    background: isOverdue
+                      ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1))'
+                      : 'linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(251, 191, 36, 0.08))',
+                    border: isOverdue
+                      ? '2px solid rgba(239, 68, 68, 0.3)'
+                      : '2px solid rgba(245, 158, 11, 0.3)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                  }}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="font-bold text-lg mb-1" style={{ color: '#0C3B2E' }}>
+                        ฿{deposit.deposit_amount.toLocaleString()}
+                      </p>
+                      {deposit.property_address && (
+                        <p className="text-xs" style={{ color: '#1a5241', opacity: 0.8 }}>
+                          {deposit.property_address}
+                        </p>
                       )}
                     </div>
-                    {isUrgent && daysRemaining === 7 && (
-                      <div className="mt-2 pt-2 border-t border-amber-200">
-                        <p className="text-xs text-amber-700 flex items-center gap-1">
-                          <Bell className="w-3 h-3" />
-                          {strings.dayReminder}
-                        </p>
-                      </div>
-                    )}
+                    <Badge style={{
+                      backgroundColor: isOverdue ? '#FEE2E2' : '#FEF3C7',
+                      color: isOverdue ? '#DC2626' : '#D97706',
+                      border: isOverdue ? '2px solid #FCA5A5' : '2px solid #FCD34D',
+                      fontWeight: '700',
+                      padding: '4px 10px'
+                    }}>
+                      <Clock className="w-3 h-3 mr-1" />
+                      {isOverdue ? strings.overdue : `${daysRemaining} ${strings.daysLeft}`}
+                    </Badge>
                   </div>
-                );
-              })}
-            </div>
-
-            {deposits.length > 3 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="w-full mt-3"
-                onClick={() => navigate(createPageUrl("DepositTracker"))}
-              >
-                {strings.viewAll}
-              </Button>
-            )}
-          </>
+                  <div className="flex items-center gap-2 text-xs" style={{ color: '#1a5241', opacity: 0.8 }}>
+                    <Calendar className="w-3 h-3" />
+                    <span className="font-semibold">{strings.returnDate}:</span>
+                    {format(new Date(deposit.expected_return_date), 'MMM d, yyyy')}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </CardContent>
     </Card>

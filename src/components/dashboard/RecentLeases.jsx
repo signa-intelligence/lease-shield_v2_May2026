@@ -1,109 +1,157 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { FileText, Calendar, DollarSign, MapPin, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 
-export default function RecentLeases({ leases, language = 'en' }) {
+export default function RecentLeases({ leases, language }) {
   const t = {
     en: {
       title: "Recent Leases",
-      viewAll: "View All",
-      noLeases: "No leases uploaded yet",
-      uploadFirst: "Upload Your First Lease",
+      noLeases: "No leases yet",
+      noLeasesDesc: "Upload your first lease agreement to get started",
+      scanned: "Scanned",
       uploaded: "Uploaded",
-      month: "month"
+      paid: "Paid"
     },
     th: {
       title: "สัญญาเช่าล่าสุด",
-      viewAll: "ดูทั้งหมด",
-      noLeases: "ยังไม่มีการอัปโหลดสัญญาเช่า",
-      uploadFirst: "อัปโหลดสัญญาเช่าแรกของคุณ",
+      noLeases: "ยังไม่มีสัญญาเช่า",
+      noLeasesDesc: "อัปโหลดสัญญาเช่าแรกของคุณเพื่อเริ่มต้น",
+      scanned: "สแกนแล้ว",
       uploaded: "อัปโหลดแล้ว",
-      month: "เดือน"
+      paid: "ชำระแล้ว"
     }
   };
 
-  const strings = t[language];
-
-  const getStatusIcon = (status) => {
-    const icons = {
-      uploaded: Clock,
-      scanned: CheckCircle2,
-      paid: CheckCircle2
-    };
-    return icons[status] || Clock;
-  };
+  const strings = t[language] || t.en;
 
   const getStatusColor = (status) => {
     const colors = {
-      uploaded: "bg-amber-100 text-amber-800",
-      scanned: "bg-blue-100 text-blue-800",
-      paid: "bg-emerald-100 text-emerald-800"
+      uploaded: { bg: '#FEF3C7', text: '#D97706', border: '#FCD34D' },
+      scanned: { bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD' },
+      paid: { bg: '#D1FAE5', text: '#059669', border: '#6EE7B7' }
     };
-    return colors[status] || "bg-slate-100 text-slate-800";
+    return colors[status] || colors.uploaded;
   };
 
   return (
-    <Card className="shadow-lg border-none">
-      <CardHeader className="border-b border-slate-100 pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
+    <Card className="border-none shadow-xl" style={{
+      background: 'rgba(255, 255, 255, 0.95)',
+      backdropFilter: 'blur(20px)',
+      border: '2px solid rgba(199, 163, 56, 0.2)',
+      boxShadow: '0 8px 24px rgba(12, 59, 46, 0.15)'
+    }}>
+      <CardHeader className="border-b" style={{
+        background: 'linear-gradient(135deg, rgba(12, 59, 46, 0.05), rgba(199, 163, 56, 0.05))',
+        borderBottom: '2px solid rgba(199, 163, 56, 0.2)'
+      }}>
+        <CardTitle className="flex items-center gap-2">
+          <div style={{
+            width: '36px',
+            height: '36px',
+            background: 'linear-gradient(135deg, #0C3B2E, #1a5241)',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(12, 59, 46, 0.3)',
+            border: '2px solid rgba(199, 163, 56, 0.3)'
+          }}>
+            <FileText className="w-5 h-5 text-ls-gold" />
+          </div>
+          <span style={{
+            background: 'linear-gradient(135deg, #0C3B2E, #C7A338)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            fontWeight: 'bold',
+            fontSize: '20px'
+          }}>
             {strings.title}
-          </CardTitle>
-          <Link to={createPageUrl("UploadScan")}>
-            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-              {strings.viewAll}
-            </Button>
-          </Link>
-        </div>
+          </span>
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         {leases.length === 0 ? (
-          <div className="text-center py-8">
-            <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500 mb-4">{strings.noLeases}</p>
-            <Link to={createPageUrl("UploadScan")}>
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                {strings.uploadFirst}
-              </Button>
-            </Link>
+          <div className="text-center py-12">
+            <div style={{
+              width: '80px',
+              height: '80px',
+              margin: '0 auto 20px',
+              background: 'linear-gradient(135deg, rgba(12, 59, 46, 0.1), rgba(199, 163, 56, 0.1))',
+              borderRadius: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px dashed rgba(199, 163, 56, 0.3)'
+            }}>
+              <FileText className="w-10 h-10" style={{ color: '#C7A338', opacity: 0.6 }} />
+            </div>
+            <h3 className="text-xl font-bold mb-2" style={{ color: '#0C3B2E' }}>
+              {strings.noLeases}
+            </h3>
+            <p style={{ color: '#1a5241', opacity: 0.8 }}>
+              {strings.noLeasesDesc}
+            </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {leases.slice(0, 4).map((lease) => {
-              const StatusIcon = getStatusIcon(lease.status);
-              
+          <div className="space-y-4">
+            {leases.slice(0, 5).map((lease) => {
+              const statusColors = getStatusColor(lease.status);
               return (
-                <div key={lease.id} className="p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors duration-200 cursor-pointer">
-                  <div className="flex items-start justify-between mb-2">
+                <div 
+                  key={lease.id} 
+                  className="p-4 rounded-xl transition-all duration-300 hover:shadow-lg cursor-pointer"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(236, 239, 237, 0.8))',
+                    border: '2px solid rgba(199, 163, 56, 0.15)',
+                    boxShadow: '0 4px 12px rgba(12, 59, 46, 0.08)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                    e.currentTarget.style.borderColor = 'rgba(199, 163, 56, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateX(0)';
+                    e.currentTarget.style.borderColor = 'rgba(199, 163, 56, 0.15)';
+                  }}
+                >
+                  <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <StatusIcon className="w-4 h-4 text-blue-600" />
-                        <span className="font-semibold text-slate-900">
-                          {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
-                        </span>
-                      </div>
+                      <h4 className="font-bold mb-1" style={{
+                        color: '#0C3B2E',
+                        fontSize: '16px'
+                      }}>
+                        {lease.property_address || 'Lease Agreement'}
+                      </h4>
                       {lease.rent_amount && (
-                        <p className="text-sm text-slate-600">
-                          ฿{lease.rent_amount.toLocaleString()}/{strings.month}
-                        </p>
+                        <div className="flex items-center gap-2 text-sm" style={{ color: '#1a5241' }}>
+                          <DollarSign className="w-4 h-4" style={{ color: '#C7A338' }} />
+                          <span className="font-semibold">฿{lease.rent_amount.toLocaleString()}/month</span>
+                        </div>
                       )}
                     </div>
-                    <Badge className={getStatusColor(lease.status)}>
-                      {lease.status}
+                    <Badge style={{
+                      backgroundColor: statusColors.bg,
+                      color: statusColors.text,
+                      border: `2px solid ${statusColors.border}`,
+                      fontWeight: '700',
+                      padding: '4px 12px'
+                    }}>
+                      {strings[lease.status] || lease.status}
                     </Badge>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>{strings.uploaded} {format(new Date(lease.created_date), 'MMM d, yyyy')}</span>
-                    {lease.start_date && lease.end_date && (
-                      <span>
-                        {format(new Date(lease.start_date), 'MMM yyyy')} - {format(new Date(lease.end_date), 'MMM yyyy')}
-                      </span>
+                  <div className="flex items-center gap-4 text-xs" style={{ color: '#1a5241', opacity: 0.8 }}>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                    </div>
+                    {lease.language_detected && (
+                      <div className="flex items-center gap-1">
+                        <span className="font-semibold">Lang:</span>
+                        {lease.language_detected.toUpperCase()}
+                      </div>
                     )}
                   </div>
                 </div>
