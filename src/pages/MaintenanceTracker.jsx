@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -246,7 +245,7 @@ export default function MaintenanceTracker() {
                 {strings.addRequest}
               </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{strings.dialogTitle}</DialogTitle>
               </DialogHeader>
@@ -365,30 +364,38 @@ export default function MaintenanceTracker() {
                 </div>
                 <button 
                   type="submit" 
-                  disabled={uploading}
+                  disabled={uploading || createRequestMutation.isPending}
                   style={{
                     width: '100%',
-                    backgroundColor: '#0C3B2E',
+                    backgroundColor: (uploading || createRequestMutation.isPending) ? '#9CA3AF' : '#0C3B2E',
                     color: '#FFFFFF',
                     padding: '12px 16px',
                     borderRadius: '8px',
                     fontWeight: 'bold',
                     border: 'none',
-                    cursor: uploading ? 'not-allowed' : 'pointer',
-                    opacity: uploading ? 0.6 : 1,
+                    cursor: (uploading || createRequestMutation.isPending) ? 'not-allowed' : 'pointer',
+                    opacity: (uploading || createRequestMutation.isPending) ? 0.6 : 1,
                     transition: 'all 0.2s'
                   }}
-                  onMouseEnter={(e) => !uploading && (e.target.style.backgroundColor = '#0a2f25')}
-                  onMouseLeave={(e) => !uploading && (e.target.style.backgroundColor = '#0C3B2E')}
+                  onMouseEnter={(e) => {
+                    if (!uploading && !createRequestMutation.isPending) {
+                      e.target.style.backgroundColor = '#0a2f25';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!uploading && !createRequestMutation.isPending) {
+                      e.target.style.backgroundColor = '#0C3B2E';
+                    }
+                  }}
                 >
-                  {uploading ? 'Uploading...' : strings.submit}
+                  {uploading ? 'Uploading...' : createRequestMutation.isPending ? 'Submitting...' : strings.submit}
                 </button>
               </form>
             </DialogContent>
           </Dialog>
         </div>
 
-        {/* Filter Tabs - FIXED */}
+        {/* Filter Tabs */}
         <div className="flex gap-3 mb-6">
           <Button
             size="sm"
