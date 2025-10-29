@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,7 +21,7 @@ export default function UploadScan() {
   const [progress, setProgress] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
@@ -50,6 +49,12 @@ export default function UploadScan() {
     setDragActive(false);
     setError(null);
     setProgress('');
+
+    // Check if user is authenticated
+    if (!user) {
+      setError(language === 'th' ? 'กรุณาเข้าสู่ระบบเพื่อสแกนสัญญาเช่า' : 'Please login to scan your lease');
+      return;
+    }
 
     const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
     if (!files || files.length === 0) return;
@@ -306,7 +311,8 @@ ${JSON.stringify(analysisResult.flags)}`,
       pleaseWait: "Please wait",
       recentScans: "Recent Scans",
       leaseAgreement: "Lease Agreement",
-      viewResults: "View Results"
+      viewResults: "View Results",
+      loading: "Loading..."
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
@@ -317,11 +323,26 @@ ${JSON.stringify(analysisResult.flags)}`,
       pleaseWait: "กรุณารอสักครู่",
       recentScans: "การสแกนล่าสุด",
       leaseAgreement: "สัญญาเช่า",
-      viewResults: "ดูผลลัพธ์"
+      viewResults: "ดูผลลัพธ์",
+      loading: "กำลังโหลด..."
     }
   };
 
   const strings = t[language];
+
+  // Show loading state while user is being fetched
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-ls-forest mr-3" />
+            <p className="text-slate-600">{strings.loading}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
