@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -190,17 +191,22 @@ Now analyze this lease thoroughly and return JSON only.`,
       });
       console.log('AI analysis complete:', analysisResult);
 
-      // Step 4: Calculate risk score and summary
+      // Step 4: Calculate risk score and summary with portfolio approach
       setProgress('Calculating risk score...');
       console.log('Step 4: Calculating risk score...');
       const scoreResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Given the flags JSON, compute:
-- risk_score: integer 0..100 (0 = very safe, 100 = very risky)
-- summary: <= 180 characters
-- top_flags: top 5 flag ids/titles with severity, category, and description
+        prompt: `Given the JSON array "flags" (each with severity, category, impact_0_10, likelihood_0_10),
+1) Compute a portfolio risk score (0..100):
+   - For each flag, base = impact_0_10 * likelihood_0_10 (0..100).
+   - Map severity: low=+0, medium=+5, high=+10, critical=+15 (cap each flag at 100).
+   - Global risk_score = round( min(100, average(top 5 flags by base) ) ).
+   - If impact/likelihood are missing, approximate from severity: low=2/2, medium=5/5, high=7/7, critical=9/9.
+2) Create a <=180 char summary (plain language).
+3) Return top 5 flags as objects {severity, category, description} where description = title (short): explanation (≤120 chars).
 
-Return JSON with these fields.
-Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
+Return JSON only.
+Flags JSON:
+${JSON.stringify(analysisResult.flags)}`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -214,10 +220,12 @@ Flags JSON: ${JSON.stringify(analysisResult.flags)}`,
                   severity: { type: "string" },
                   category: { type: "string" },
                   description: { type: "string" }
-                }
+                },
+                required: ["severity","category","description"]
               }
             }
-          }
+          },
+          required: ["risk_score","summary","top_flags"]
         }
       });
       console.log('Risk score calculated:', scoreResult);
