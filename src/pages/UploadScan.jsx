@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -60,9 +59,8 @@ export default function UploadScan() {
   const handleFileSelect = (e) => {
     e.preventDefault();
     setDragActive(false);
-    setError(null); // Clear previous errors
+    setError(null);
 
-    // Check if user is authenticated
     if (!user) {
       setError(language === 'th' ? 'กรุณาเข้าสู่ระบบเพื่อสแกนสัญญาเช่า' : 'Please login to scan your lease');
       return;
@@ -71,7 +69,6 @@ export default function UploadScan() {
     const files = e.dataTransfer ? Array.from(e.dataTransfer.files) : Array.from(e.target.files);
     if (!files || files.length === 0) return;
 
-    // Validate all files
     const invalidFiles = [];
     const validFiles = [];
     
@@ -108,7 +105,6 @@ export default function UploadScan() {
   const checkScanLimit = () => {
     const planTier = user?.plan_tier || 'free';
     
-    // Free tier: 1 scan lifetime
     if (planTier === 'free') {
       const totalScans = user?.total_scans_used || 0;
       if (totalScans >= 1) {
@@ -121,7 +117,6 @@ export default function UploadScan() {
       }
     }
     
-    // Lite tier: 5 scans per month
     if (planTier === 'lite') {
       const scansThisMonth = user?.scans_this_month || 0;
       if (scansThisMonth >= 5) {
@@ -134,7 +129,6 @@ export default function UploadScan() {
       }
     }
     
-    // Protect and Secure: unlimited
     return { canScan: true };
   };
 
@@ -144,7 +138,6 @@ export default function UploadScan() {
       return;
     }
 
-    // Check scan limits
     const limitCheck = checkScanLimit();
     if (!limitCheck.canScan) {
       setError(limitCheck.message);
@@ -158,7 +151,6 @@ export default function UploadScan() {
       const planTier = user?.plan_tier || 'free';
       const analysisMode = planTier === 'secure' ? 'Secure' : planTier === 'protect' ? 'Protect' : 'Lite';
 
-      // Step 1: Upload all files
       console.log(`Step 1: Uploading ${selectedFiles.length} files...`);
       const uploadPromises = selectedFiles.map(file => 
         base44.integrations.Core.UploadFile({ file })
@@ -167,12 +159,11 @@ export default function UploadScan() {
       const fileUrls = uploadResults.map(result => result.file_url);
       console.log('All files uploaded:', fileUrls);
       
-      // Step 2: Create lease record with all file URLs
       setProgress('Creating lease record...');
       console.log('Step 2: Creating lease...');
       const lease = await base44.entities.Lease.create({
-        file_url: fileUrls[0], // Primary file
-        file_urls: fileUrls, // All files
+        file_url: fileUrls[0],
+        file_urls: fileUrls,
         status: 'uploaded'
       });
       console.log('Lease created:', lease.id);
@@ -181,7 +172,6 @@ export default function UploadScan() {
       setUploading(false);
       setProgress(`Analyzing ${selectedFiles.length} page(s) with AI...`);
       
-      // Step 3: Run AI pipeline - Extract and classify clauses with ALL files
       console.log('Step 3: Running AI analysis with mode:', analysisMode);
       const analysisResult = await base44.integrations.Core.InvokeLLM({
         prompt: `You are "LeaseShield-Analyzer," a meticulous Thai/English bilingual reviewer for **Thailand leases** (default). Analyze the uploaded lease text and return structured JSON only (no extra prose).
@@ -314,7 +304,7 @@ TIERING RULES:
 - Secure: full set + commercial checks if applicable
 
 Now analyze this lease thoroughly and return JSON only.`,
-        file_urls: fileUrls, // Send ALL file URLs to AI
+        file_urls: fileUrls,
         response_json_schema: {
           type: "object",
           properties: {
@@ -359,7 +349,6 @@ Now analyze this lease thoroughly and return JSON only.`,
       });
       console.log('AI analysis complete:', analysisResult);
 
-      // Step 4: Calculate risk score and summary with portfolio approach
       setProgress('Calculating risk score...');
       console.log('Step 4: Calculating risk score...');
       const scoreResult = await base44.integrations.Core.InvokeLLM({
@@ -398,7 +387,6 @@ ${JSON.stringify(analysisResult.flags)}`,
       });
       console.log('Risk score calculated:', scoreResult);
 
-      // Step 5: Update lease with extracted data
       setProgress('Saving analysis...');
       console.log('Step 5: Updating lease...');
       await base44.entities.Lease.update(lease.id, {
@@ -411,7 +399,6 @@ ${JSON.stringify(analysisResult.flags)}`,
         language_detected: analysisResult.key_terms?.language_detected
       });
 
-      // Step 6: Create scan record with preview and full data
       console.log('Step 6: Creating scan record...');
       const scan = await base44.entities.LeaseScan.create({
         lease_id: lease.id,
@@ -424,18 +411,16 @@ ${JSON.stringify(analysisResult.flags)}`,
       });
       console.log('Scan created:', scan.id);
 
-      // Step 7: Update user scan counters
       const updateData = {
         total_scans_used: (user?.total_scans_used || 0) + 1
       };
       
       if (planTier === 'lite') {
         updateData.scans_this_month = (user?.scans_this_month || 0) + 1;
-        // Set reset date if not set or if it's past the current date
         if (!user?.scan_reset_date || new Date(user.scan_reset_date) <= new Date()) {
           const nextMonth = new Date();
           nextMonth.setMonth(nextMonth.getMonth() + 1);
-          nextMonth.setDate(1); // Set to the first day of the next month
+          nextMonth.setDate(1);
           updateData.scan_reset_date = nextMonth.toISOString().split('T')[0];
         }
       }
@@ -443,10 +428,9 @@ ${JSON.stringify(analysisResult.flags)}`,
       await base44.auth.updateMe(updateData);
 
       queryClient.invalidateQueries({ queryKey: ['leases'] });
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] }); // Invalidate currentUser to reflect updated scan counts
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       setSelectedFiles([]);
       
-      // Step 8: Navigate to preview with state
       console.log('Step 8: Navigating to preview...');
       navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
       
@@ -474,14 +458,11 @@ ${JSON.stringify(analysisResult.flags)}`,
   };
 
   const handleViewLease = async (lease) => {
-    // Find the scan for this lease
     const scan = scans.find(s => s.lease_id === lease.id);
     
     if (scan) {
-      // Navigate to scan preview with scan and lease IDs
       navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
     } else {
-      // If no scan found, just show an alert
       alert(language === 'th' ? 'ไม่พบผลการสแกนสำหรับสัญญาเช่านี้' : 'Scan results not found for this lease.');
     }
   };
@@ -544,7 +525,7 @@ ${JSON.stringify(analysisResult.flags)}`,
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <Upload className="w-7 h-7 text-ls-forest" />
@@ -589,9 +570,9 @@ ${JSON.stringify(analysisResult.flags)}`,
         )}
 
         <Card className="border-none shadow-xl mb-6 overflow-hidden">
-          <div className="p-6 md:p-8">
+          <div className="p-6">
             {uploading || analyzing ? (
-              <div className="text-center py-12">
+              <div className="text-center py-8">
                 <Loader2 className="w-16 h-16 animate-spin text-ls-forest mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-ls-charcoal mb-2">
                   {uploading ? strings.uploading : strings.analyzing}
@@ -613,7 +594,6 @@ ${JSON.stringify(analysisResult.flags)}`,
                   onDrag={handleDrag}
                 />
 
-                {/* Selected Files Preview */}
                 {selectedFiles.length > 0 && (
                   <div className="mt-6">
                     <h3 className="font-bold text-ls-charcoal mb-3 flex items-center gap-2">
@@ -705,7 +685,7 @@ ${JSON.stringify(analysisResult.flags)}`,
                 {strings.recentScans}
               </h2>
             </div>
-            <div className="space-y-3">
+            <div className="grid md:grid-cols-2 gap-3">
               {leases.map((lease) => (
                 <Card key={lease.id} className="p-4 border-none shadow-md hover:shadow-lg transition-all duration-300">
                   <div className="flex items-center justify-between gap-3">
