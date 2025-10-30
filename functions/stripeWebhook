@@ -1,0 +1,207 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import Stripe from 'npm:stripe@14.10.0';
+
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), {
+  apiVersion: '2023-10-16',
+});
+
+Deno.serve(async (req) => {
+  try {
+    const signature = req.headers.get('stripe-signature');
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+    
+    if (!signature || !webhookSecret) {
+      return Response.json({ error: 'Missing signature or webhook secret' }, { status: 400 });
+    }
+
+    const body = await req.text();
+    
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } catch (err) {
+      return Response.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
+    }
+
+    const base44 = createClientFromRequest(req);
+
+    // Map price IDs to plan tiers
+    const planMap = {
+      // Monthly
+      'price_1SM6qtQwoI6NhlUxgDDy2LuJ': { tier: 'lite', interval: 'monthly' },
+      'price_1SM6rhQwoI6NhlUxZIN3WekE': { tier: 'protect', interval: 'monthly' },
+      'price_1SM6t9QwoI6NhlUxy5Pl7Rrq': { tier: 'secure', interval: 'monthly' },
+      // Annual (TODO: Update with actual Stripe price IDs)
+      'price_lite_annual': { tier: 'lite', interval: 'annual' },
+      'price_protect_annual': { tier: 'protect', interval: 'annual' },
+      'price_secure_annual': { tier: 'secure', interval: 'annual' }
+    };
+
+    // Handle different event types
+    switch (event.type) {
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object;
+        const customerId = invoice.customer;
+        const subscriptionId = invoice.subscription;
+        
+        if (subscriptionId) {
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const priceId = subscription.items.data[0]?.price?.id;
+          
+          const planInfo = planMap[priceId];
+          
+          if (planInfo) {
+            // Find user by Stripe customer ID
+            const users = await base44.asServiceRole.entities.User.list();
+            const user = users.find(u => u.stripe_customer_id === customerId);
+            
+            if (user) {
+              const renewsAt = new Date(subscription.current_period_end * 1000).toISOString();
+              
+              // Reset scan counter for Lite tier on new billing period
+              const updateData = {
+                subscription_status: 'active',
+                plan_tier: planInfo.tier,
+                billing_interval: planInfo.interval,
+                plan_renews_at: renewsAt
+              };
+              
+              if (planInfo.tier === 'lite') {
+                updateData.scans_this_month = 0;
+                const resetDate = new Date(subscription.current_period_end * 1000);
+                updateData.scan_reset_date = resetDate.toISOString().split('T')[0];
+              }
+              
+              await base44.asServiceRole.entities.User.update(user.id, updateData);
+
+              // Send notification email
+              const language = user.language || 'en';
+              const billingText = planInfo.interval === 'annual' ? 
+                (language === 'th' ? 'รายปี' : 'Annual') : 
+                (language === 'th' ? 'รายเดือน' : 'Monthly');
+              
+              const subject = language === 'th' ? 'แพ็กเกจ Lease Shield ของคุณเปิดใช้งานแล้ว' : 'Your Lease Shield Plan is Active';
+              const body = language === 'th' ? 
+                `สวัสดี ${user.full_name},\n\nแพ็กเกจ ${planInfo.tier.toUpperCase()} (${billingText}) ของคุณเปิดใช้งานแล้ว\nเข้าดูรายงาน AI และ Deposit Shield ได้ตลอดเวลา\n\n— ทีม Lease Shield` :
+                `Hi ${user.full_name},\n\nYour Lease Shield ${planInfo.tier.toUpperCase()} plan (${billingText}) is now active.\nYou can view your AI report and Deposit Shield dashboard anytime.\n\n— The Lease Shield Team`;
+
+              await base44.asServiceRole.integrations.Core.SendEmail({
+                to: user.email,
+                subject,
+                body
+              });
+            }
+          }
+        }
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+        const customerId = subscription.customer;
+        const priceId = subscription.items.data[0]?.price?.id;
+        
+        const planInfo = planMap[priceId];
+        
+        if (planInfo) {
+          const users = await base44.asServiceRole.entities.User.list();
+          const user = users.find(u => u.stripe_customer_id === customerId);
+          
+          if (user) {
+            const renewsAt = new Date(subscription.current_period_end * 1000).toISOString();
+            const status = subscription.status === 'active' ? 'active' : subscription.status === 'canceled' ? 'cancelled' : 'none';
+            
+            const updateData = {
+              subscription_status: status,
+              plan_tier: status === 'active' ? planInfo.tier : 'free',
+              billing_interval: status === 'active' ? planInfo.interval : null,
+              plan_renews_at: renewsAt
+            };
+            
+            // Reset scan counter if switching to/from Lite
+            if (status === 'active' && planInfo.tier === 'lite') {
+              updateData.scans_this_month = 0;
+              const resetDate = new Date(subscription.current_period_end * 1000);
+              updateData.scan_reset_date = resetDate.toISOString().split('T')[0];
+            }
+            
+            await base44.asServiceRole.entities.User.update(user.id, updateData);
+          }
+        }
+        break;
+      }
+
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        const customerId = session.customer;
+        const metadata = session.metadata || {};
+        
+        // Handle case payment (Resolve service)
+        if (metadata.case_id) {
+          const caseId = metadata.case_id;
+          
+          await base44.asServiceRole.entities.Payment.create({
+            type: 'case',
+            amount: session.amount_total / 100,
+            currency: 'THB',
+            provider: 'stripe',
+            status: 'paid',
+            external_id: session.id
+          });
+
+          await base44.asServiceRole.entities.Case.update(caseId, {
+            status: 'active'
+          });
+
+          // Get user for language preference
+          const users = await base44.asServiceRole.entities.User.list();
+          const user = users.find(u => u.stripe_customer_id === customerId);
+
+          if (user) {
+            const language = user.language || 'en';
+            const subject = language === 'th' ? 'เคสของคุณเริ่มดำเนินการแล้ว' : 'Your Resolve Case Has Started';
+            const body = language === 'th' ?
+              `เคส Resolve ของคุณเริ่มดำเนินการแล้ว\nทีมงานจะติดต่อคุณภายใน 24-48 ชั่วโมง\n\n— Lease Shield` :
+              `Your Resolve case has started.\nOur team will contact you within 24-48 hours.\n\n— Lease Shield`;
+
+            await base44.asServiceRole.integrations.Core.SendEmail({
+              to: user.email,
+              subject,
+              body
+            });
+          }
+
+          // Notify ops team
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            to: 'ops@leaseshield.asia',
+            subject: 'New Resolve Case Payment Confirmed',
+            body: `Case ${caseId} payment confirmed. Amount: ฿${session.amount_total / 100}\n\nPlease review and assign.`
+          });
+        }
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object;
+        const customerId = invoice.customer;
+        
+        const users = await base44.asServiceRole.entities.User.list();
+        const user = users.find(u => u.stripe_customer_id === customerId);
+        
+        if (user) {
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            to: user.email,
+            subject: 'Payment Failed - Action Required',
+            body: 'Your recent payment failed. Please update your payment method to continue your subscription.'
+          });
+        }
+        break;
+      }
+    }
+
+    return Response.json({ received: true });
+  } catch (error) {
+    console.error('Webhook error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
