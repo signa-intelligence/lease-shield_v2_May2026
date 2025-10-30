@@ -2,10 +2,10 @@ import React from "react";
 
 export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
   const getStatusLabel = (score) => {
-    if (score >= 85) return { text: 'Excellent', color: '#10B981' };
-    if (score >= 70) return { text: 'Good', color: '#EAB308' };
-    if (score >= 50) return { text: 'Fair', color: '#F59E0B' };
-    return { text: 'Poor', color: '#EF4444' };
+    if (score >= 85) return { text: 'Excellent', color: '#0C3B2E' };
+    if (score >= 70) return { text: 'Good', color: '#0C3B2E' };
+    if (score >= 50) return { text: 'Fair', color: '#0C3B2E' };
+    return { text: 'Poor', color: '#0C3B2E' };
   };
 
   const status = getStatusLabel(score);
@@ -96,10 +96,10 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
         })}
       </svg>
 
-      {/* Center display with white background circle */}
+      {/* Center display with white background circle - positioned lower */}
       <div style={{
         position: 'absolute',
-        top: '45%',
+        top: '65%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         textAlign: 'center',
@@ -118,7 +118,7 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
         <div style={{
           fontSize: `${size * 0.16}px`,
           fontWeight: 'bold',
-          color: '#1A1D1F',
+          color: '#0C3B2E',
           lineHeight: '1'
         }}>
           {score}%
@@ -126,7 +126,7 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
         <div style={{
           fontSize: `${size * 0.045}px`,
           fontWeight: '600',
-          color: status.color,
+          color: '#0C3B2E',
           textTransform: 'uppercase',
           letterSpacing: '0.5px',
           marginTop: '2px'
