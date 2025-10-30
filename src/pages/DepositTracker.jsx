@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -204,11 +203,12 @@ export default function DepositTracker() {
 
   const language = user?.language || 'en';
   const strings = t[language];
+  const now = new Date();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-6 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Wallet className="w-8 h-8 text-ls-forest" />
@@ -398,9 +398,10 @@ export default function DepositTracker() {
           </Card>
         </FeatureGate>
 
-        <div className="grid gap-6">
+        {/* Deposits Grid - 2 columns on desktop, 1 on mobile */}
+        <div className="grid md:grid-cols-2 gap-4">
           {deposits.length === 0 ? (
-            <Card className="border-none shadow-xl">
+            <Card className="border-none shadow-xl md:col-span-2">
               <CardContent className="p-12 text-center">
                 <Wallet className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-ls-charcoal mb-2">{strings.noDepositsTitle}</h3>
@@ -444,7 +445,7 @@ export default function DepositTracker() {
                       <div className="flex items-center gap-3">
                         {getStatusIcon(deposit.status)}
                         <div>
-                          <CardTitle className="text-2xl font-bold text-slate-900">
+                          <CardTitle className="text-xl font-bold text-slate-900">
                             ฿{deposit.deposit_amount.toLocaleString()}
                           </CardTitle>
                           {deposit.property_address && (
@@ -452,7 +453,7 @@ export default function DepositTracker() {
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap justify-end">
                         <Badge className={`${getStatusColor(deposit.status)} border`}>
                           {deposit.status.toUpperCase()}
                         </Badge>
@@ -466,72 +467,74 @@ export default function DepositTracker() {
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="p-6">
+                  <CardContent className="p-4">
                     {/* Rent Alert Display */}
                     {deposit.rent_alerts_enabled && deposit.rent_amount && nextRentDue && (
-                      <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Bell className="w-5 h-5 text-blue-600" />
-                          <h4 className="font-bold text-blue-900">{strings.nextRentDue}</h4>
+                      <div className="mb-4 p-3 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Bell className="w-4 h-4 text-blue-600" />
+                          <h4 className="font-bold text-sm text-blue-900">{strings.nextRentDue}</h4>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                           <div>
                             <p className="text-xs text-blue-700 mb-1">Amount</p>
-                            <p className="text-lg font-bold text-blue-900">฿{deposit.rent_amount.toLocaleString()}</p>
+                            <p className="text-base font-bold text-blue-900">฿{deposit.rent_amount.toLocaleString()}</p>
                           </div>
                           <div>
                             <p className="text-xs text-blue-700 mb-1">Due Date</p>
-                            <p className="text-lg font-bold text-blue-900">{format(nextRentDue, 'MMM d, yyyy')}</p>
+                            <p className="text-base font-bold text-blue-900">{format(nextRentDue, 'MMM d')}</p>
                           </div>
                         </div>
-                        <p className="text-xs text-blue-700 mt-3">
+                        <p className="text-xs text-blue-700 mt-2">
                           {strings.rentReminder} {deposit.rent_alert_days_before} {strings.daysBefore} ({daysToRent} days)
                         </p>
                       </div>
                     )}
 
-                    <div className="grid md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
-                        <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
-                          <Calendar className="w-4 h-4" />
+                        <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                          <Calendar className="w-3 h-3" />
                           {strings.paidDate}
                         </div>
-                        <p className="font-semibold text-slate-900">
+                        <p className="font-semibold text-sm text-slate-900">
                           {format(new Date(deposit.deposit_paid_date), 'MMM d, yyyy')}
                         </p>
                       </div>
                       <div>
-                        <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
-                          <Calendar className="w-4 h-4" />
+                        <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                          <Calendar className="w-3 h-3" />
                           {strings.expectedReturn}
                         </div>
-                        <p className="font-semibold text-slate-900">
+                        <p className="font-semibold text-sm text-slate-900">
                           {format(new Date(deposit.expected_return_date), 'MMM d, yyyy')}
                         </p>
                       </div>
                       {deposit.status === 'tracking' && (
-                        <div>
-                          <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
-                            <Clock className="w-4 h-4" />
-                            {strings.daysRemaining}
+                        <>
+                          <div className="col-span-2">
+                            <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                              <Clock className="w-3 h-3" />
+                              {strings.daysRemaining}
+                            </div>
+                            <p className={`font-semibold text-sm ${isUrgent ? 'text-amber-600' : 'text-slate-900'}`}>
+                              {daysRemaining} days
+                            </p>
                           </div>
-                          <p className={`font-semibold ${isUrgent ? 'text-amber-600' : 'text-slate-900'}`}>
-                            {daysRemaining} days
-                          </p>
-                        </div>
+                        </>
                       )}
                     </div>
                     
                     {deposit.notes && (
-                      <div className="mt-4 p-4 bg-slate-50 rounded-xl">
-                        <p className="text-sm text-slate-700">{deposit.notes}</p>
+                      <div className="mb-4 p-3 bg-slate-50 rounded-xl">
+                        <p className="text-xs text-slate-700">{deposit.notes}</p>
                       </div>
                     )}
 
                     {hasLineNotify && deposit.status === 'tracking' && (
-                      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <p className="text-sm text-blue-800 flex items-center gap-2">
-                          <Bell className="w-4 h-4" />
+                      <div className="mb-4 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-xs text-blue-800 flex items-center gap-2">
+                          <Bell className="w-3 h-3" />
                           <span>
                             {strings.reminderLineEmail(daysRemaining)}
                           </span>
@@ -540,7 +543,7 @@ export default function DepositTracker() {
                     )}
 
                     {deposit.status === 'tracking' && (
-                      <div className="flex gap-3 mt-6">
+                      <div className="flex gap-2">
                         <button
                           onClick={() => updateDepositMutation.mutate({ 
                             id: deposit.id, 
@@ -550,15 +553,16 @@ export default function DepositTracker() {
                             flex: 1,
                             backgroundColor: '#FFFFFF',
                             color: '#10B981',
-                            padding: '10px 16px',
+                            padding: '8px 12px',
                             borderRadius: '8px',
                             fontWeight: 'bold',
+                            fontSize: '13px',
                             border: '2px solid #10B981',
                             cursor: 'pointer',
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '8px',
+                            gap: '6px',
                             transition: 'all 0.2s'
                           }}
                           onMouseEnter={(e) => {
@@ -568,7 +572,7 @@ export default function DepositTracker() {
                             e.target.style.backgroundColor = '#FFFFFF';
                           }}
                         >
-                          <CheckCircle2 style={{ width: '16px', height: '16px' }} />
+                          <CheckCircle2 style={{ width: '14px', height: '14px' }} />
                           {strings.markReturnedButton}
                         </button>
                         <button
@@ -580,15 +584,16 @@ export default function DepositTracker() {
                             flex: 1,
                             backgroundColor: '#FFFFFF',
                             color: '#EF4444',
-                            padding: '10px 16px',
+                            padding: '8px 12px',
                             borderRadius: '8px',
                             fontWeight: 'bold',
+                            fontSize: '13px',
                             border: '2px solid #EF4444',
                             cursor: 'pointer',
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '8px',
+                            gap: '6px',
                             transition: 'all 0.2s'
                           }}
                           onMouseEnter={(e) => {
@@ -598,7 +603,7 @@ export default function DepositTracker() {
                             e.target.style.backgroundColor = '#FFFFFF';
                           }}
                         >
-                          <AlertTriangle style={{ width: '16px', height: '16px' }} />
+                          <AlertTriangle style={{ width: '14px', height: '14px' }} />
                           {strings.openDisputeButton}
                         </button>
                       </div>
