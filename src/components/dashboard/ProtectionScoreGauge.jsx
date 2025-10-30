@@ -14,14 +14,19 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
   const radius = size * 0.35;
   const strokeWidth = size * 0.12;
   
-  // Calculate needle angle based on score (0-100 maps to -180 to 0 degrees, which is left to right on semi-circle)
-  const needleAngle = -180 + (score / 100) * 180;
+  // Extended arc angles - goes from -200° to -20° (220° total arc instead of 180°)
+  const startAngleDeg = -200;
+  const endAngleDeg = 20;
+  const totalArcDegrees = endAngleDeg - startAngleDeg;
+  
+  // Calculate needle angle based on score
+  const needleAngle = startAngleDeg + (score / 100) * totalArcDegrees;
   const needleLength = radius - strokeWidth / 2;
   const needleRad = (needleAngle * Math.PI) / 180;
   const needleEndX = centerX + needleLength * Math.cos(needleRad);
   const needleEndY = centerY + needleLength * Math.sin(needleRad);
   
-  // Define color segments - equal 25% each
+  // Define color segments - equal 25% each across the extended arc
   const segments = [
     { start: 0, end: 25, color: '#EF4444', label: 'LOW' },      // Red: 0-25
     { start: 25, end: 50, color: '#F59E0B', label: '' },        // Orange: 25-50
@@ -52,21 +57,32 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
           </linearGradient>
         </defs>
 
-        {/* Background arc (gray) - full segments */}
-        <path
-          d={`M ${centerX - radius} ${centerY} A ${radius} ${radius} 0 0 1 ${centerX + radius} ${centerY}`}
-          fill="none"
-          stroke="#E5E7EB"
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-        />
+        {/* Background arc (gray) - full extended arc */}
+        {(() => {
+          const startRad = (startAngleDeg * Math.PI) / 180;
+          const endRad = (endAngleDeg * Math.PI) / 180;
+          const x1 = centerX + radius * Math.cos(startRad);
+          const y1 = centerY + radius * Math.sin(startRad);
+          const x2 = centerX + radius * Math.cos(endRad);
+          const y2 = centerY + radius * Math.sin(endRad);
+          
+          return (
+            <path
+              d={`M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`}
+              fill="none"
+              stroke="#E5E7EB"
+              strokeWidth={strokeWidth}
+              strokeLinecap="round"
+            />
+          );
+        })()}
 
         {/* Colored segments - always show all 4 colors at 25% each */}
         {segments.map((segment, idx) => {
-          const startAngle = -180 + (segment.start / 100) * 180;
-          const endAngle = -180 + (segment.end / 100) * 180;
-          const startRad = (startAngle * Math.PI) / 180;
-          const endRad = (endAngle * Math.PI) / 180;
+          const segmentStartAngle = startAngleDeg + (segment.start / 100) * totalArcDegrees;
+          const segmentEndAngle = startAngleDeg + (segment.end / 100) * totalArcDegrees;
+          const startRad = (segmentStartAngle * Math.PI) / 180;
+          const endRad = (segmentEndAngle * Math.PI) / 180;
           
           const x1 = centerX + radius * Math.cos(startRad);
           const y1 = centerY + radius * Math.sin(startRad);
