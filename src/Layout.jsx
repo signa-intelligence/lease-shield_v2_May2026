@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -32,35 +31,62 @@ export default function Layout({ children, currentPageName }) {
 
   const language = user?.language || 'en';
   const isAdmin = user?.role === 'admin';
+
+  const t = {
+    en: {
+      appName: "LEASE SHIELD",
+      home: "Home",
+      scan: "Scan",
+      repairs: "Repairs",
+      deposit: "Deposit",
+      evidence: "Evidence",
+      admin: "Admin",
+      disclaimer: "We are not a law firm and do not provide legal advice.",
+      privacyPolicy: "Privacy Policy"
+    },
+    th: {
+      appName: "ลีสชีลด์",
+      home: "หน้าหลัก",
+      scan: "สแกน",
+      repairs: "ซ่อมบำรุง",
+      deposit: "เงินมัดจำ",
+      evidence: "หลักฐาน",
+      admin: "แอดมิน",
+      disclaimer: "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย",
+      privacyPolicy: "นโยบายความเป็นส่วนตัว"
+    }
+  };
+
+  const strings = t[language];
   
   const navTabs = [
     {
       key: "home",
-      label: language === 'th' ? "หน้าหลัก" : "Home",
+      label: strings.home,
       route: createPageUrl("Dashboard"),
       icon: Home,
     },
     {
       key: "scan",
-      label: language === 'th' ? "สแกน" : "Scan",
+      label: strings.scan,
       route: createPageUrl("UploadScan"),
       icon: Upload,
     },
     {
       key: "maintenance",
-      label: language === 'th' ? "ซ่อมบำรุง" : "Repairs",
+      label: strings.repairs,
       route: createPageUrl("MaintenanceTracker"),
       icon: Wrench,
     },
     {
       key: "deposit",
-      label: language === 'th' ? "เงินมัดจำ" : "Deposit",
+      label: strings.deposit,
       route: createPageUrl("DepositTracker"),
       icon: Shield,
     },
     {
       key: "docs",
-      label: language === 'th' ? "หลักฐาน" : "Evidence",
+      label: strings.evidence,
       route: createPageUrl("DocumentVault"),
       icon: FileText,
     },
@@ -69,7 +95,7 @@ export default function Layout({ children, currentPageName }) {
   if (isAdmin) {
     navTabs.push({
       key: "admin",
-      label: "Admin",
+      label: strings.admin,
       route: createPageUrl("AdminConsole"),
       icon: Settings,
     });
@@ -159,7 +185,7 @@ export default function Layout({ children, currentPageName }) {
               className="h-8 w-8"
             />
             <span className="font-bold text-ls-forest text-lg">
-              {language === 'th' ? 'ลีสชีลด์' : 'LEASE SHIELD'}
+              {strings.appName}
             </span>
             {isAdmin && (
               <span className="ml-2 px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded">
@@ -273,9 +299,7 @@ export default function Layout({ children, currentPageName }) {
             color: '#0C3B2E',
             opacity: 0.8
           }}>
-            {language === 'th' 
-              ? "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย" 
-              : "We are not a law firm and do not provide legal advice."}
+            {strings.disclaimer}
             {" • "}
             <Link 
               to={createPageUrl("PrivacyPolicy")}
@@ -285,7 +309,7 @@ export default function Layout({ children, currentPageName }) {
                 fontWeight: '600'
               }}
             >
-              {language === 'th' ? 'นโยบายความเป็นส่วนตัว' : 'Privacy Policy'}
+              {strings.privacyPolicy}
             </Link>
           </p>
         </div>
