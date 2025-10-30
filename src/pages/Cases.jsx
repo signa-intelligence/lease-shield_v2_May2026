@@ -38,9 +38,9 @@ export default function Cases() {
   const getStatusConfig = (status) => STATUS_CONFIG[status] || STATUS_CONFIG.intake;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Scale className="w-8 h-8 text-blue-600" />
@@ -97,7 +97,7 @@ export default function Cases() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6">
+          <div className="grid md:grid-cols-2 gap-4">
             {cases.map((caseItem) => {
               const statusConfig = getStatusConfig(caseItem.status);
               const StatusIcon = statusConfig.icon;
@@ -107,25 +107,25 @@ export default function Cases() {
                   <CardHeader className="border-b border-slate-100 pb-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="p-3 bg-blue-50 rounded-xl">
-                          <Scale className="w-6 h-6 text-blue-600" />
+                        <div className="p-2 bg-blue-50 rounded-xl">
+                          <Scale className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <CardTitle className="text-xl font-bold text-slate-900">
+                          <CardTitle className="text-lg font-bold text-slate-900">
                             Case #{caseItem.id.slice(0, 8)}
                           </CardTitle>
-                          <p className="text-sm text-slate-500 mt-1">
+                          <p className="text-xs text-slate-500 mt-1">
                             Opened {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Badge className={`${statusConfig.color} border flex items-center gap-1`}>
-                          <StatusIcon className="w-4 h-4" />
+                      <div className="flex gap-2 flex-wrap justify-end">
+                        <Badge className={`${statusConfig.color} border flex items-center gap-1 text-xs`}>
+                          <StatusIcon className="w-3 h-3" />
                           {statusConfig.label}
                         </Badge>
                         {caseItem.fast_track && hasPriorityQueue && (
-                          <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                          <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
                             <Zap className="w-3 h-3 mr-1" />
                             Fast Track
                           </Badge>
@@ -134,12 +134,12 @@ export default function Cases() {
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="p-6">
-                    <div className="grid md:grid-cols-3 gap-6 mb-6">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
                       {caseItem.dispute_amount && (
                         <div>
-                          <p className="text-sm text-slate-500 mb-1">Dispute Amount</p>
-                          <p className="text-2xl font-bold text-slate-900">
+                          <p className="text-xs text-slate-500 mb-1">Dispute Amount</p>
+                          <p className="text-lg font-bold text-slate-900">
                             ฿{caseItem.dispute_amount.toLocaleString()}
                           </p>
                         </div>
@@ -147,61 +147,61 @@ export default function Cases() {
                       
                       {caseItem.ops_assigned && (
                         <div>
-                          <p className="text-sm text-slate-500 mb-1">Assigned To</p>
+                          <p className="text-xs text-slate-500 mb-1">Assigned To</p>
                           <div className="flex items-center gap-2">
-                            <UserCheck className="w-5 h-5 text-blue-600" />
-                            <p className="font-semibold text-slate-900">Ops Team</p>
+                            <UserCheck className="w-4 h-4 text-blue-600" />
+                            <p className="text-sm font-semibold text-slate-900">Ops Team</p>
                           </div>
                         </div>
                       )}
-                      
-                      <div>
-                        <p className="text-sm text-slate-500 mb-1">Features</p>
-                        <div className="flex gap-2 flex-wrap">
-                          {caseItem.fast_track && (
-                            <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                              Fast Track
-                            </Badge>
-                          )}
-                          {caseItem.letter_pack && (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                              Letter Pack
-                            </Badge>
-                          )}
-                          {caseItem.is_member_at_creation && (
-                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
-                              Member Rate
-                            </Badge>
-                          )}
-                        </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="text-xs text-slate-500 mb-2">Features</p>
+                      <div className="flex gap-2 flex-wrap">
+                        {caseItem.fast_track && (
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
+                            Fast Track
+                          </Badge>
+                        )}
+                        {caseItem.letter_pack && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs">
+                            Letter Pack
+                          </Badge>
+                        )}
+                        {caseItem.is_member_at_creation && (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 text-xs">
+                            Member Rate
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
                     {caseItem.summary && (
-                      <div className="p-4 bg-slate-50 rounded-xl mb-4">
-                        <p className="text-sm text-slate-700">{caseItem.summary}</p>
+                      <div className="p-3 bg-slate-50 rounded-xl mb-4">
+                        <p className="text-xs text-slate-700 line-clamp-2">{caseItem.summary}</p>
                       </div>
                     )}
 
                     {caseItem.success_fee_rate > 0 && (
-                      <div className="p-4 bg-blue-50 rounded-xl mb-4 border border-blue-200">
-                        <p className="text-sm text-blue-800">
+                      <div className="p-3 bg-blue-50 rounded-xl mb-4 border border-blue-200">
+                        <p className="text-xs text-blue-800">
                           Success fee: <span className="font-bold">{caseItem.success_fee_rate}%</span>
                           {caseItem.is_member_at_creation && hasMemberPrice && (
                             <span className="ml-2 text-emerald-600 font-medium">
-                              (Member discount applied ✓)
+                              (Member discount ✓)
                             </span>
                           )}
                         </p>
                       </div>
                     )}
 
-                    <div className="flex gap-3">
-                      <Button variant="outline" className="flex-1">
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="flex-1 text-sm" size="sm">
                         View Details
                       </Button>
                       {caseItem.status === 'user_action' && (
-                        <Button className="flex-1 bg-blue-600 hover:bg-blue-700">
+                        <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm" size="sm">
                           Take Action
                         </Button>
                       )}
