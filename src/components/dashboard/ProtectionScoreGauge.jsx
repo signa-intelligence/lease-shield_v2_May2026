@@ -2,9 +2,9 @@ import React from "react";
 
 export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
   const getStatusLabel = (score) => {
-    if (score >= 85) return { text: 'Excellent', color: '#0C3B2E' };
-    if (score >= 70) return { text: 'Good', color: '#0C3B2E' };
-    if (score >= 50) return { text: 'Fair', color: '#0C3B2E' };
+    if (score >= 75) return { text: 'Excellent', color: '#0C3B2E' };
+    if (score >= 50) return { text: 'Good', color: '#0C3B2E' };
+    if (score >= 25) return { text: 'Fair', color: '#0C3B2E' };
     return { text: 'Poor', color: '#0C3B2E' };
   };
 
@@ -14,12 +14,19 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
   const radius = size * 0.35;
   const strokeWidth = size * 0.12;
   
-  // Define color segments
+  // Calculate needle angle based on score (0-100 maps to -180 to 0 degrees, which is left to right on semi-circle)
+  const needleAngle = -180 + (score / 100) * 180;
+  const needleLength = radius - strokeWidth / 2;
+  const needleRad = (needleAngle * Math.PI) / 180;
+  const needleEndX = centerX + needleLength * Math.cos(needleRad);
+  const needleEndY = centerY + needleLength * Math.sin(needleRad);
+  
+  // Define color segments - equal 25% each
   const segments = [
-    { start: 0, end: 50, color: '#EF4444', label: 'LOW' },     // Red: 0-50
-    { start: 50, end: 70, color: '#F59E0B', label: '' },        // Orange: 50-70
-    { start: 70, end: 85, color: '#EAB308', label: '' },        // Yellow: 70-85
-    { start: 85, end: 100, color: '#10B981', label: 'HIGH' }    // Green: 85-100
+    { start: 0, end: 25, color: '#EF4444', label: 'LOW' },      // Red: 0-25
+    { start: 25, end: 50, color: '#F59E0B', label: '' },        // Orange: 25-50
+    { start: 50, end: 75, color: '#EAB308', label: '' },        // Yellow: 50-75
+    { start: 75, end: 100, color: '#10B981', label: 'HIGH' }    // Green: 75-100
   ];
 
   return (
@@ -45,7 +52,7 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
           </linearGradient>
         </defs>
 
-        {/* Background arc (gray) */}
+        {/* Background arc (gray) - full segments */}
         <path
           d={`M ${centerX - radius} ${centerY} A ${radius} ${radius} 0 0 1 ${centerX + radius} ${centerY}`}
           fill="none"
@@ -54,7 +61,7 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
           strokeLinecap="round"
         />
 
-        {/* Colored segments */}
+        {/* Colored segments - always show all 4 colors at 25% each */}
         {segments.map((segment, idx) => {
           const startAngle = -180 + (segment.start / 100) * 180;
           const endAngle = -180 + (segment.end / 100) * 180;
@@ -66,34 +73,48 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
           const x2 = centerX + radius * Math.cos(endRad);
           const y2 = centerY + radius * Math.sin(endRad);
           
-          const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
-          
-          // Only show segment if score has reached it
-          const isActive = score >= segment.start;
-          const segmentScore = Math.min(score, segment.end);
-          const progress = isActive ? (segmentScore - segment.start) / (segment.end - segment.start) : 0;
-          
-          if (progress === 0) return null;
-          
-          const partialEndAngle = startAngle + (endAngle - startAngle) * progress;
-          const partialEndRad = (partialEndAngle * Math.PI) / 180;
-          const x2Partial = centerX + radius * Math.cos(partialEndRad);
-          const y2Partial = centerY + radius * Math.sin(partialEndRad);
+          const largeArcFlag = 0;
           
           return (
             <path
               key={idx}
-              d={`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2Partial} ${y2Partial}`}
+              d={`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`}
               fill="none"
               stroke={segment.color}
               strokeWidth={strokeWidth}
-              strokeLinecap="round"
+              strokeLinecap="butt"
               style={{
-                transition: 'all 1s ease-out'
+                transition: 'all 0.3s ease',
               }}
             />
           );
         })}
+
+        {/* Needle/Marker pointing to score position */}
+        <line
+          x1={centerX}
+          y1={centerY}
+          x2={needleEndX}
+          y2={needleEndY}
+          stroke="#0C3B2E"
+          strokeWidth="4"
+          strokeLinecap="round"
+          style={{
+            transition: 'all 1s ease-out',
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+          }}
+        />
+        
+        {/* Needle dot at center */}
+        <circle
+          cx={centerX}
+          cy={centerY}
+          r="6"
+          fill="#0C3B2E"
+          style={{
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+          }}
+        />
       </svg>
 
       {/* Center display with white background circle - positioned lower */}
@@ -116,7 +137,7 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
         zIndex: 10
       }}>
         <div style={{
-          fontSize: `${size * 0.16}px`,
+          fontSize: '32px',
           fontWeight: 'bold',
           color: '#0C3B2E',
           lineHeight: '1'
