@@ -12,65 +12,65 @@ import { base44 } from "@/api/base44Client";
 const TEMPLATES = [
   {
     id: 'deposit_request',
-    title: 'Deposit Return Request',
-    description: 'Polite formal letter requesting return of security deposit (EN/TH)',
+    title: { en: 'Deposit Return Request', th: 'จดหมายขอคืนเงินมัดจำ' },
+    description: { en: 'Polite formal letter requesting return of security deposit (EN/TH)', th: 'จดหมายทางการสุภาพขอคืนเงินประกัน (ไทย/EN)' },
     icon: Shield,
     tier: 'lite',
-    category: 'Deposit',
+    category: { en: 'Deposit', th: 'เงินมัดจำ' },
     languages: ['en', 'th']
   },
   {
     id: 'deposit_late',
-    title: 'Late Deposit Return Reminder',
-    description: 'Follow-up reminder for overdue deposit return with timeline request',
+    title: { en: 'Late Deposit Return Reminder', th: 'จดหมายเตือนคืนเงินมัดจำล่าช้า' },
+    description: { en: 'Follow-up reminder for overdue deposit return with timeline request', th: 'จดหมายติดตามเงินมัดจำที่เกินกำหนดพร้อมขอกำหนดเวลา' },
     icon: Clock,
     tier: 'lite',
-    category: 'Deposit',
+    category: { en: 'Deposit', th: 'เงินมัดจำ' },
     languages: ['en', 'th']
   },
   {
     id: 'repair_dispute',
-    title: 'Repair Cost Dispute',
-    description: 'Dispute unfair repair charges with evidence references',
+    title: { en: 'Repair Cost Dispute', th: 'โต้แย้งค่าซ่อมแซม' },
+    description: { en: 'Dispute unfair repair charges with evidence references', th: 'โต้แย้งค่าซ่อมแซมที่ไม่ยุติธรรมพร้อมอ้างอิงหลักฐาน' },
     icon: AlertCircle,
     tier: 'protect',
-    category: 'Dispute',
+    category: { en: 'Dispute', th: 'ข้อพิพาท' },
     languages: ['en', 'th']
   },
   {
     id: 'pdpa_request',
-    title: 'PDPA Data Request',
-    description: 'Request personal data and lease documents under PDPA',
+    title: { en: 'PDPA Data Request', th: 'ขอข้อมูลตาม พ.ร.บ. PDPA' },
+    description: { en: 'Request personal data and lease documents under PDPA', th: 'ขอข้อมูลส่วนบุคคลและเอกสารเช่าตาม พ.ร.บ. PDPA' },
     icon: FileText,
     tier: 'protect',
-    category: 'Legal',
+    category: { en: 'Legal', th: 'กฎหมาย' },
     languages: ['en', 'th']
   },
   {
     id: 'pre_move_out',
-    title: 'Pre-Move-Out Notice',
-    description: 'Formal notice of move-out date and inspection request',
+    title: { en: 'Pre-Move-Out Notice', th: 'แจ้งก่อนย้ายออก' },
+    description: { en: 'Formal notice of move-out date and inspection request', th: 'แจ้งวันย้ายออกและขอตรวจสอบอย่างเป็นทางการ' },
     icon: Mail,
     tier: 'lite',
-    category: 'Move-Out',
+    category: { en: 'Move-Out', th: 'ย้ายออก' },
     languages: ['en', 'th']
   },
   {
     id: 'handover_check',
-    title: 'Handover Inspection Checklist',
-    description: 'Comprehensive checklist for property handover with photo slots',
+    title: { en: 'Handover Inspection Checklist', th: 'รายการตรวจสอบการส่งมอบ' },
+    description: { en: 'Comprehensive checklist for property handover with photo slots', th: 'รายการตรวจสอบครบถ้วนสำหรับการส่งมอบพร้อมช่องรูปภาพ' },
     icon: ClipboardCheck,
     tier: 'protect',
-    category: 'Move-Out',
+    category: { en: 'Move-Out', th: 'ย้ายออก' },
     languages: ['en', 'th']
   },
   {
     id: 'contract_clarification',
-    title: 'Contract Clarification Request',
-    description: 'Request clarification on specific lease clauses',
+    title: { en: 'Contract Clarification Request', th: 'ขอชี้แจงสัญญา' },
+    description: { en: 'Request clarification on specific lease clauses', th: 'ขอให้ชี้แจงข้อกำหนดเฉพาะในสัญญาเช่า' },
     icon: Scale,
     tier: 'lite',
-    category: 'Lease',
+    category: { en: 'Lease', th: 'สัญญาเช่า' },
     languages: ['en', 'th']
   },
 ];
@@ -80,25 +80,30 @@ export default function Templates() {
   const { hasAccess: hasTemplatesLite } = useFeatureAccess('templates_lite');
   const { hasAccess: hasTemplatesFull } = useFeatureAccess('templates_full');
 
-  const t = {
-    en: {
-      title: "Legal-safe Templates",
-      subtitle: "Standard bilingual letters and messages for all situations",
-      backToEvidence: "Back to Evidence Vault"
-    },
-    th: {
-      title: "เทมเพลตที่ปลอดภัยทางกฎหมาย",
-      subtitle: "จดหมายและข้อความสองภาษามาตรฐานสำหรับทุกสถานการณ์",
-      backToEvidence: "กลับไปยังคลังหลักฐาน"
-    }
-  };
-
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
   const language = user?.language || 'en';
+
+  const t = {
+    en: {
+      title: "Legal-safe Templates",
+      subtitle: "Standard bilingual letters and messages for all situations",
+      backToEvidence: "Back to Evidence Vault",
+      generateLetter: "Generate Letter",
+      planRequired: "PLAN REQUIRED"
+    },
+    th: {
+      title: "เทมเพลตที่ปลอดภัยทางกฎหมาย",
+      subtitle: "จดหมายและข้อความสองภาษามาตรฐานสำหรับทุกสถานการณ์",
+      backToEvidence: "กลับไปยังคลังหลักฐาน",
+      generateLetter: "สร้างจดหมาย",
+      planRequired: "ต้องการแผน"
+    }
+  };
+
   const strings = t[language];
 
   const canAccessTemplate = (tier) => {
@@ -164,10 +169,12 @@ export default function Templates() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="font-bold text-lg text-ls-charcoal mb-1">{template.title}</h3>
+                          <h3 className="font-bold text-lg text-ls-charcoal mb-1">
+                            {template.title[language] || template.title.en}
+                          </h3>
                           <div className="flex gap-2 mb-2">
                             <Badge variant="outline" className="text-xs border-ls-forest text-ls-forest">
-                              {template.category}
+                              {template.category[language] || template.category.en}
                             </Badge>
                             {template.languages.map(lang => (
                               <Badge key={lang} variant="outline" className="text-xs border-ls-gold text-ls-gold">
@@ -177,7 +184,9 @@ export default function Templates() {
                           </div>
                         </div>
                       </div>
-                      <p className="text-sm text-slate-600 mb-3">{template.description}</p>
+                      <p className="text-sm text-slate-600 mb-3">
+                        {template.description[language] || template.description.en}
+                      </p>
                       {hasAccess ? (
                         <button
                           onClick={() => navigate(createPageUrl("TemplateForm") + `?templateId=${template.id}`)}
@@ -195,11 +204,11 @@ export default function Templates() {
                           onMouseEnter={(e) => e.target.style.backgroundColor = '#C7A338'}
                           onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                         >
-                          Generate Letter
+                          {strings.generateLetter}
                         </button>
                       ) : (
                         <Badge className="bg-ls-gold/20 text-ls-gold border border-ls-gold/30">
-                          {template.tier.toUpperCase()} Plan Required
+                          {template.tier.toUpperCase()} {strings.planRequired}
                         </Badge>
                       )}
                     </div>
