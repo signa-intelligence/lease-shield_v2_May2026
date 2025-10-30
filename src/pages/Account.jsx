@@ -997,7 +997,7 @@ export default function Account() {
           <h2 className="text-2xl font-bold text-ls-charcoal mb-2 text-center">Choose Your Protection Level</h2>
           <p className="text-slate-600 mb-6 text-center">All plans focus on prevention and maintaining clear records</p>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
               const isCurrentPlan = currentPlanTier === plan.key;
