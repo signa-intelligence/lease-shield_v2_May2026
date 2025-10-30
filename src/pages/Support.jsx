@@ -44,8 +44,6 @@ export default function Support() {
   };
 
   const getResponseTime = () => {
-    if (user?.plan_tier === 'secure') return language === 'th' ? '6 ชั่วโมง' : '6 hours';
-    if (user?.plan_tier === 'protect') return language === 'th' ? '12 ชั่วโมง' : '12 hours';
     return language === 'th' ? '24-48 ชั่วโมง' : '24-48 hours';
   };
 
@@ -94,8 +92,6 @@ View ticket in admin console to respond.
 หมวดหมู่: ${ticketData.category}
 เรื่อง: ${ticketData.subject}
 
-เวลาตอบกลับโดยประมาณ: ${getResponseTime()}
-
 เราจะตอบกลับคุณทางอีเมลโดยเร็วที่สุด
 
 ขอบคุณที่เลือกใช้ Lease Shield
@@ -107,8 +103,6 @@ We've received your support request.
 Ticket #${ticket.id.slice(0, 8)}
 Category: ${ticketData.category}
 Subject: ${ticketData.subject}
-
-Expected Response Time: ${getResponseTime()}
 
 We'll get back to you via email as soon as possible.
 
@@ -174,7 +168,7 @@ Thank you for choosing Lease Shield.
       submit: "Submit Request",
       submitting: "Submitting...",
       successTitle: "Request Submitted!",
-      successMessage: "We've received your support request. You'll receive a confirmation email shortly, and we'll respond within",
+      successMessage: "We've received your support request. You'll receive a confirmation email shortly and we'll respond as soon as possible.",
       anotherRequest: "Submit Another Request",
       legalDisclaimer: "Note: For legal advice, please consult a licensed attorney. We provide guidance on lease documentation only."
     },
@@ -195,7 +189,7 @@ Thank you for choosing Lease Shield.
       submit: "ส่งคำขอ",
       submitting: "กำลังส่ง...",
       successTitle: "ส่งคำขอแล้ว!",
-      successMessage: "เราได้รับคำขอของคุณแล้ว คุณจะได้รับอีเมลยืนยันเร็วๆ นี้ และเราจะตอบกลับภายใน",
+      successMessage: "เราได้รับคำขอของคุณแล้ว คุณจะได้รับอีเมลยืนยันเร็วๆ นี้ และเราจะตอบกลับโดยเร็วที่สุด",
       anotherRequest: "ส่งคำขออีกครั้ง",
       legalDisclaimer: "หมายเหตุ: สำหรับคำแนะนำทางกฎหมาย กรุณาปรึกษาทนายความที่มีใบอนุญาต เราให้คำแนะนำเกี่ยวกับเอกสารสัญญาเช่าเท่านั้น"
     }
@@ -216,7 +210,7 @@ Thank you for choosing Lease Shield.
                 {strings.successTitle}
               </h2>
               <p className="text-slate-600 mb-2">
-                {strings.successMessage} <span className="font-semibold text-ls-forest">{getResponseTime()}</span>
+                {strings.successMessage}
               </p>
               <p className="text-sm text-slate-500 mb-8">
                 support@leaseshield.asia
@@ -258,18 +252,6 @@ Thank you for choosing Lease Shield.
             </div>
           </div>
         </div>
-
-        {/* Priority Badge */}
-        {(user?.plan_tier === 'protect' || user?.plan_tier === 'secure') && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl">
-            <p className="text-sm font-semibold text-purple-800 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {language === 'th' 
-                ? `การสนับสนุนแบบเร่งด่วน: เราจะตอบกลับภายใน ${getResponseTime()}` 
-                : `Priority Support: We'll respond within ${getResponseTime()}`}
-            </p>
-          </div>
-        )}
 
         <Card className="border-none shadow-xl">
           <CardHeader className="border-b" style={{ backgroundColor: '#ECEFED' }}>

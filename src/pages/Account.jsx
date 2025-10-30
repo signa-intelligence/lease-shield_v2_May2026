@@ -700,14 +700,6 @@ export default function Account() {
                       ? 'รายงานปัญหา ถามคำถาม หรือขอความช่วยเหลือ' 
                       : 'Report issues, ask questions, or get help'}
                   </p>
-                  {(user?.plan_tier === 'protect' || user?.plan_tier === 'secure') && (
-                    <div className="mt-3 flex items-center gap-1 text-xs text-ls-gold font-semibold">
-                      <Crown className="w-3 h-3" />
-                      {user?.language === 'th' 
-                        ? `ตอบกลับภายใน ${user.plan_tier === 'secure' ? '6 ชม.' : '12 ชม.'}` 
-                        : `${user.plan_tier === 'secure' ? '6h' : '12h'} response`}
-                    </div>
-                  )}
                 </div>
               </Link>
 
