@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, MessageCircle } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
@@ -639,6 +639,183 @@ export default function Account() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Support & Contact Section - NEW */}
+        <Card className="mb-6 border-none shadow-xl">
+          <CardHeader className="border-b" style={{ backgroundColor: '#ECEFED' }}>
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <Bell className="w-5 h-5 text-ls-forest" />
+              Support & Contact
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="text-sm text-slate-600 mb-4">
+              {user?.language === 'th' 
+                ? 'ต้องการความช่วยเหลือ? เราพร้อมช่วยคุณผ่านช่องทางที่สะดวก' 
+                : 'Need help? We\'re here to assist you through your preferred channel'}
+            </p>
+            <div className="grid md:grid-cols-3 gap-4">
+              {/* Email Support */}
+              <a
+                href="mailto:support@leaseshield.asia"
+                style={{
+                  padding: '16px',
+                  backgroundColor: '#ECEFED',
+                  borderRadius: '12px',
+                  borderLeft: '4px solid #0C3B2E',
+                  textDecoration: 'none',
+                  display: 'block',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#0C3B2E';
+                  e.currentTarget.querySelectorAll('*').forEach(el => {
+                    if (el.tagName !== 'svg') el.style.color = '#FFFFFF';
+                  });
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ECEFED';
+                  e.currentTarget.querySelectorAll('*').forEach(el => {
+                    if (el.tagName !== 'svg') el.style.color = '';
+                  });
+                }}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: '#0C3B2E',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Mail className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-ls-charcoal">
+                      {user?.language === 'th' ? 'อีเมลสนับสนุน' : 'Email Support'}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600">support@leaseshield.asia</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {user?.language === 'th' ? 'ตอบกลับภายใน 24-48 ชั่วโมง' : 'Response within 24-48 hours'}
+                </p>
+              </a>
+
+              {/* LINE Support */}
+              <a
+                href="https://line.me/R/ti/p/@071vchfv"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: '16px',
+                  backgroundColor: '#ECEFED',
+                  borderRadius: '12px',
+                  borderLeft: '4px solid #06C755',
+                  textDecoration: 'none',
+                  display: 'block',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#06C755';
+                  e.currentTarget.querySelectorAll('*').forEach(el => {
+                    if (el.tagName !== 'svg') el.style.color = '#FFFFFF';
+                  });
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ECEFED';
+                  e.currentTarget.querySelectorAll('*').forEach(el => {
+                    if (el.tagName !== 'svg') el.style.color = '';
+                  });
+                }}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: '#06C755',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <MessageCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-ls-charcoal">LINE Chat</p>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600">@leaseshield</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {user?.language === 'th' ? 'แชทได้ทันที • เหมาะสำหรับคนไทย' : 'Instant chat • Perfect for Thai users'}
+                </p>
+              </a>
+
+              {/* WhatsApp Support */}
+              <a
+                href="https://wa.me/66123456789"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: '16px',
+                  backgroundColor: '#ECEFED',
+                  borderRadius: '12px',
+                  borderLeft: '4px solid #25D366',
+                  textDecoration: 'none',
+                  display: 'block',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#25D366';
+                  e.currentTarget.querySelectorAll('*').forEach(el => {
+                    if (el.tagName !== 'svg') el.style.color = '#FFFFFF';
+                  });
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ECEFED';
+                  e.currentTarget.querySelectorAll('*').forEach(el => {
+                    if (el.tagName !== 'svg') el.style.color = '';
+                  });
+                }}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: '#25D366',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <MessageCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-ls-charcoal">WhatsApp</p>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600">+66 123 456 789</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {user?.language === 'th' ? 'แชทได้ทันที • เหมาะสำหรับชาวต่างชาติ' : 'Instant chat • Perfect for expats'}
+                </p>
+              </a>
+            </div>
+
+            {/* Priority Support Badge for Premium Users */}
+            {(user?.plan_tier === 'protect' || user?.plan_tier === 'secure') && (
+              <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-lg">
+                <p className="text-sm font-semibold text-purple-800 flex items-center gap-2">
+                  <Crown className="w-4 h-4" />
+                  {user?.language === 'th' 
+                    ? `การสนับสนุนแบบพิเศษ: ${user.plan_tier === 'secure' ? 'ตอบกลับภายใน 6 ชั่วโมง' : 'ตอบกลับภายใน 12 ชั่วโมง'}` 
+                    : `Priority Support: ${user.plan_tier === 'secure' ? '6-hour' : '12-hour'} response time`}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Data Privacy & Rights Section */}
         <Card className="mb-6 border-none shadow-xl">
