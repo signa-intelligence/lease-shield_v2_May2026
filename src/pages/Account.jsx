@@ -11,23 +11,29 @@ import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckC
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
+import { Switch } from "@/components/ui/switch";
 
 const PLAN_DETAILS = [
   {
     key: 'lite',
     label: 'Lite',
-    price: '฿390',
-    priceNum: 390,
-    priceId: 'price_1SM6qtQwoI6NhlUxgDDy2LuJ',
-    interval: '/month',
-    tagline: 'Prevention starts here',
-    description: 'Essential tools to prevent rental problems before they happen',
+    priceMonthly: 390,
+    priceAnnual: 3900,
+    priceIdMonthly: 'price_1SM6qtQwoI6NhlUxgDDy2LuJ',
+    priceIdAnnual: 'price_lite_annual', // TODO: Create in Stripe
+    savingsAnnual: 780,
+    intervalMonthly: '/month',
+    intervalAnnual: '/year',
+    tagline: 'Essential Protection',
+    description: 'Core prevention tools for individuals',
     benefits: [
-      'Full AI Lease Risk Reports',
-      'Risk Score Analysis (RED/AMBER/YELLOW/GREEN)',
-      'Email Alerts for Issues',
-      'Basic Letter Templates',
-      'Basic Document Storage'
+      '5 Lease Scans per month',
+      'Full AI Risk Reports',
+      'Email Notifications',
+      '3 Basic Letter Templates',
+      '1GB Document Storage',
+      'Deposit Tracker',
+      'Maintenance Tracker'
     ],
     bgColor: '#0C3B2E',
     icon: Zap
@@ -35,21 +41,24 @@ const PLAN_DETAILS = [
   {
     key: 'protect',
     label: 'Protect',
-    price: '฿690',
-    priceNum: 690,
-    priceId: 'price_1SM6rhQwoI6NhlUxZIN3WekE',
-    interval: '/month',
-    tagline: 'Complete prevention suite',
-    description: 'Everything you need to maintain clear, legal, and evidence-based relationships',
+    priceMonthly: 690,
+    priceAnnual: 6900,
+    priceIdMonthly: 'price_1SM6rhQwoI6NhlUxZIN3WekE',
+    priceIdAnnual: 'price_protect_annual', // TODO: Create in Stripe
+    savingsAnnual: 1380,
+    intervalMonthly: '/month',
+    intervalAnnual: '/year',
+    tagline: 'Complete Prevention Suite',
+    description: 'Everything you need for full protection',
     benefits: [
       'Everything in Lite',
-      'Deposit Shield Tracker',
+      'Unlimited Lease Scans',
+      'Deposit Shield Automation',
       'Rent Payment Alerts',
-      'Maintenance Request Tracker',
-      'Automated Reminders',
-      'Full Letter Templates',
-      'Evidence Vault',
-      'LINE Notifications'
+      'All 7+ Letter Templates',
+      '5GB Document Storage',
+      'LINE Notifications',
+      'Automated Reminders'
     ],
     bgColor: '#C7A338',
     icon: Shield,
@@ -58,18 +67,21 @@ const PLAN_DETAILS = [
   {
     key: 'secure',
     label: 'Secure',
-    price: '฿1,290',
-    priceNum: 1290,
-    priceId: 'price_1SM6t9QwoI6NhlUxy5Pl7Rrq',
-    interval: '/month',
-    tagline: 'Premium protection',
-    description: 'Maximum prevention with priority support and advanced features',
+    priceMonthly: 1290,
+    priceAnnual: 12900,
+    priceIdMonthly: 'price_1SM6t9QwoI6NhlUxy5Pl7Rrq',
+    priceIdAnnual: 'price_secure_annual', // TODO: Create in Stripe
+    savingsAnnual: 2580,
+    intervalMonthly: '/month',
+    intervalAnnual: '/year',
+    tagline: 'Premium Protection',
+    description: 'Maximum prevention with priority support',
     benefits: [
       'Everything in Protect',
       'Priority Case Queue',
       'Priority AI Scanning',
+      '20GB Document Storage',
       'Advanced Reminders',
-      'Expanded Storage',
       'Premium Support',
       'Legal Document Archive'
     ],
@@ -83,6 +95,7 @@ export default function Account() {
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [billingInterval, setBillingInterval] = useState('monthly');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -124,14 +137,16 @@ export default function Account() {
     updateProfileMutation.mutate(data);
   };
 
-  const handleSubscribe = async (planKey) => {
+  const handleSubscribe = async (planKey, interval) => {
     const plan = PLAN_DETAILS.find(p => p.key === planKey);
     if (!plan) return;
+
+    const priceId = interval === 'annual' ? plan.priceIdAnnual : plan.priceIdMonthly;
 
     setSubscribing(true);
     try {
       const response = await base44.functions.invoke('createCheckout', {
-        priceId: plan.priceId,
+        priceId: priceId,
         mode: 'subscription'
       });
       
@@ -534,8 +549,13 @@ export default function Account() {
                   <PlanBadge tier={currentPlanTier} />
                 </div>
                 <p className="text-3xl font-bold text-ls-charcoal">
-                  {isFree ? 'Free' : PLAN_DETAILS.find(p => p.key === currentPlanTier)?.price || '—'}
+                  {isFree ? 'Free' : PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly ? `฿${PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly}` : '—'}
                 </p>
+                {!isFree && user?.billing_interval && (
+                  <p className="text-sm text-slate-500 mt-1">
+                    Billed {user.billing_interval === 'annual' ? 'annually' : 'monthly'}
+                  </p>
+                )}
                 {user?.subscription_status === 'active' && user?.plan_renews_at && (
                   <p className="text-xs text-slate-500 mt-2">
                     Renews {new Date(user.plan_renews_at).toLocaleDateString()}
@@ -550,9 +570,10 @@ export default function Account() {
                       Free Plan Includes:
                     </p>
                     <ul style={{ fontSize: '12px', color: '#1A1D1F', lineHeight: '1.5' }}>
-                      <li>• 1 Lease Scan</li>
-                      <li>• Basic Risk Report</li>
-                      <li>• Limited Features</li>
+                      <li>• 1 Lease Scan (lifetime)</li>
+                      <li>• Basic Risk Report Preview</li>
+                      <li>• 3 Files (100MB storage)</li>
+                      <li>• Read-only Deposit Tracker</li>
                     </ul>
                   </div>
                   <button 
@@ -784,13 +805,68 @@ export default function Account() {
           </div>
         </div>
 
+        {/* Billing Toggle */}
         <div id="plans-section" className="mb-6">
-          <h2 className="text-2xl font-bold text-ls-charcoal mb-2">Choose Your Protection Level</h2>
-          <p className="text-slate-600 mb-6">All plans focus on prevention and maintaining clear records</p>
+          <div className="flex items-center justify-center mb-6">
+            <div className="bg-white rounded-xl p-2 shadow-md inline-flex items-center gap-3">
+              <button
+                onClick={() => setBillingInterval('monthly')}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  backgroundColor: billingInterval === 'monthly' ? '#0C3B2E' : 'transparent',
+                  color: billingInterval === 'monthly' ? '#FFFFFF' : '#1A1D1F'
+                }}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingInterval('annual')}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  backgroundColor: billingInterval === 'annual' ? '#0C3B2E' : 'transparent',
+                  color: billingInterval === 'annual' ? '#FFFFFF' : '#1A1D1F',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                Annual
+                <span style={{
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  backgroundColor: '#C7A338',
+                  color: '#FFFFFF'
+                }}>
+                  Save 17%
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-bold text-ls-charcoal mb-2 text-center">Choose Your Protection Level</h2>
+          <p className="text-slate-600 mb-6 text-center">All plans focus on prevention and maintaining clear records</p>
+          
           <div className="grid md:grid-cols-3 gap-6">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
               const isCurrentPlan = currentPlanTier === plan.key;
+              const displayPrice = billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
+              const displayInterval = billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly;
+              const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
               
               return (
                 <div 
@@ -819,6 +895,22 @@ export default function Account() {
                       POPULAR
                     </div>
                   )}
+
+                  {billingInterval === 'annual' && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      backgroundColor: '#10B981',
+                      color: '#FFFFFF',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      padding: '4px 10px',
+                      borderBottomRightRadius: '8px'
+                    }}>
+                      🏷️ 2 MONTHS FREE
+                    </div>
+                  )}
                   
                   <div style={{
                     backgroundColor: plan.bgColor,
@@ -834,14 +926,19 @@ export default function Account() {
                     <p style={{ fontSize: '14px', color: '#FFFFFF', opacity: 0.9, marginBottom: '12px' }}>
                       {plan.tagline}
                     </p>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
                       <span style={{ fontSize: '36px', fontWeight: 'bold', color: '#FFFFFF' }}>
-                        {plan.price}
+                        ฿{displayPrice.toLocaleString()}
                       </span>
                       <span style={{ fontSize: '14px', color: '#FFFFFF', opacity: 0.9 }}>
-                        {plan.interval}
+                        {displayInterval}
                       </span>
                     </div>
+                    {billingInterval === 'annual' && (
+                      <p style={{ fontSize: '12px', color: '#FFFFFF', opacity: 0.8 }}>
+                        ฿{effectiveMonthly}/month • Save ฿{plan.savingsAnnual.toLocaleString()}
+                      </p>
+                    )}
                   </div>
 
                   <div style={{ padding: '24px' }}>
@@ -895,7 +992,7 @@ export default function Account() {
                       </button>
                     ) : (
                       <button
-                        onClick={() => handleSubscribe(plan.key)}
+                        onClick={() => handleSubscribe(plan.key, billingInterval)}
                         disabled={subscribing}
                         style={{
                           width: '100%',
