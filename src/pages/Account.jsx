@@ -7,12 +7,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2 } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
 
 const PLAN_DETAILS = [
+  {
+    key: 'free',
+    label: 'Free',
+    priceMonthly: 0,
+    priceAnnual: 0,
+    priceIdMonthly: null,
+    priceIdAnnual: null,
+    savingsAnnual: 0,
+    intervalMonthly: '',
+    intervalAnnual: '',
+    tagline: 'Try Before You Commit',
+    description: 'Experience our AI-powered lease analysis',
+    benefits: [
+      '1 Lease Scan (lifetime)',
+      'Basic Risk Score Preview',
+      '3 Files (100MB storage)',
+      'Read-only Deposit Tracker',
+      'Basic Maintenance Tracker'
+    ],
+    bgColor: '#64748b',
+    icon: Gift
+  },
   {
     key: 'lite',
     label: 'Lite',
@@ -187,7 +209,7 @@ export default function Account() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -548,7 +570,7 @@ export default function Account() {
                   <PlanBadge tier={currentPlanTier} />
                 </div>
                 <p className="text-3xl font-bold text-ls-charcoal">
-                  {isFree ? 'Free' : PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly ? `฿${PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly}` : '—'}
+                  {isFree ? 'Free' : (PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly ? `฿${PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly}` : '—')}
                 </p>
                 {!isFree && user?.billing_interval && (
                   <p className="text-sm text-slate-500 mt-1">
@@ -859,12 +881,13 @@ export default function Account() {
           <h2 className="text-2xl font-bold text-ls-charcoal mb-2 text-center">Choose Your Protection Level</h2>
           <p className="text-slate-600 mb-6 text-center">All plans focus on prevention and maintaining clear records</p>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
               const isCurrentPlan = currentPlanTier === plan.key;
-              const displayPrice = billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
-              const displayInterval = billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly;
+              const isFreeplan = plan.key === 'free';
+              const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
+              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly);
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
               
               return (
@@ -896,7 +919,7 @@ export default function Account() {
                     </div>
                   )}
 
-                  {billingInterval === 'annual' && (
+                  {billingInterval === 'annual' && !isFreeplan && (
                     <div style={{
                       position: 'absolute',
                       top: 0,
@@ -928,16 +951,29 @@ export default function Account() {
                       {plan.tagline}
                     </p>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
-                        ฿{displayPrice.toLocaleString()}
-                      </span>
-                      <span style={{ fontSize: '16px', color: '#FFFFFF', opacity: 0.9 }}>
-                        {displayInterval}
-                      </span>
+                      {isFreeplan ? (
+                        <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
+                          Free
+                        </span>
+                      ) : (
+                        <>
+                          <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
+                            ฿{displayPrice.toLocaleString()}
+                          </span>
+                          <span style={{ fontSize: '16px', color: '#FFFFFF', opacity: 0.9 }}>
+                            {displayInterval}
+                          </span>
+                        </>
+                      )}
                     </div>
-                    {billingInterval === 'annual' && (
+                    {billingInterval === 'annual' && !isFreeplan && (
                       <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px' }}>
                         ฿{effectiveMonthly}/month • Save ฿{plan.savingsAnnual.toLocaleString()}
+                      </p>
+                    )}
+                    {isFreeplan && (
+                      <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px' }}>
+                        No credit card required
                       </p>
                     )}
                   </div>
@@ -991,6 +1027,23 @@ export default function Account() {
                         }}
                       >
                         Current Plan
+                      </button>
+                    ) : isFreeplan ? (
+                      <button
+                        disabled
+                        style={{
+                          width: '100%',
+                          padding: '14px 20px',
+                          borderRadius: '10px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: '2px solid #64748b',
+                          backgroundColor: '#FFFFFF',
+                          color: '#64748b',
+                          cursor: 'not-allowed'
+                        }}
+                      >
+                        Sign Up to Get Free
                       </button>
                     ) : (
                       <button
