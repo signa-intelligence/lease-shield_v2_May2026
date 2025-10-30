@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -27,14 +28,15 @@ Deno.serve(async (req) => {
 
     // Map price IDs to plan tiers
     const planMap = {
-      // Monthly
+      // Monthly prices
       'price_1SM6qtQwoI6NhlUxgDDy2LuJ': { tier: 'lite', interval: 'monthly' },
       'price_1SM6rhQwoI6NhlUxZIN3WekE': { tier: 'protect', interval: 'monthly' },
       'price_1SM6t9QwoI6NhlUxy5Pl7Rrq': { tier: 'secure', interval: 'monthly' },
-      // Annual (TODO: Update with actual Stripe price IDs)
-      'price_lite_annual': { tier: 'lite', interval: 'annual' },
-      'price_protect_annual': { tier: 'protect', interval: 'annual' },
-      'price_secure_annual': { tier: 'secure', interval: 'annual' }
+      
+      // Annual prices - REPLACE THESE WITH YOUR REAL STRIPE PRICE IDs
+      'price_PASTE_YOUR_LITE_ANNUAL_ID_HERE': { tier: 'lite', interval: 'annual' },
+      'price_PASTE_YOUR_PROTECT_ANNUAL_ID_HERE': { tier: 'protect', interval: 'annual' },
+      'price_PASTE_YOUR_SECURE_ANNUAL_ID_HERE': { tier: 'secure', interval: 'annual' }
     };
 
     // Handle different event types
