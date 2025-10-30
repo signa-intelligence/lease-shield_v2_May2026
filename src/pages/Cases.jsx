@@ -35,6 +35,63 @@ export default function Cases() {
     enabled: !!user,
   });
 
+  const language = user?.language || 'en';
+
+  const t = {
+    en: {
+      title: "My Cases",
+      subtitle: "Track your dispute cases",
+      openNewCase: "Open New Case",
+      premiumTitle: "Premium Case Benefits",
+      memberPricing: "Member pricing on success fees",
+      priorityHandling: "Priority case handling",
+      noCases: "No Cases Yet",
+      noCasesSub: "Need help with a dispute? Our team is here to support you.",
+      memberBenefit: "As a member, you get reduced success fees on all cases",
+      openFirstCase: "Open Your First Case",
+      caseNumber: "Case #",
+      opened: "Opened",
+      disputeAmount: "Dispute Amount",
+      assignedTo: "Assigned To",
+      opsTeam: "Ops Team",
+      features: "Features",
+      fastTrack: "Fast Track",
+      letterPack: "Letter Pack",
+      memberRate: "Member Rate",
+      successFee: "Success fee:",
+      memberDiscount: "(Member discount ✓)",
+      viewDetails: "View Details",
+      takeAction: "Take Action"
+    },
+    th: {
+      title: "คดีของฉัน",
+      subtitle: "ติดตามคดีข้อพิพาทของคุณ",
+      openNewCase: "เปิดคดีใหม่",
+      premiumTitle: "สิทธิประโยชน์คดีพรีเมียม",
+      memberPricing: "ราคาสมาชิกสำหรับค่าธรรมเนียมความสำเร็จ",
+      priorityHandling: "การจัดการคดีแบบเร่งด่วน",
+      noCases: "ยังไม่มีคดี",
+      noCasesSub: "ต้องการความช่วยเหลือเรื่องข้อพิพาท? ทีมของเราพร้อมสนับสนุนคุณ",
+      memberBenefit: "ในฐานะสมาชิก คุณจะได้รับค่าธรรมเนียมความสำเร็จที่ลดลงสำหรับทุกคดี",
+      openFirstCase: "เปิดคดีแรกของคุณ",
+      caseNumber: "คดีหมายเลข #",
+      opened: "เปิด",
+      disputeAmount: "จำนวนเงินที่พิพาท",
+      assignedTo: "มอบหมายให้",
+      opsTeam: "ทีมปฏิบัติการ",
+      features: "คุณสมบัติ",
+      fastTrack: "Fast Track",
+      letterPack: "ชุดจดหมาย",
+      memberRate: "ราคาสมาชิก",
+      successFee: "ค่าธรรมเนียมความสำเร็จ:",
+      memberDiscount: "(ส่วนลดสมาชิก ✓)",
+      viewDetails: "ดูรายละเอียด",
+      takeAction: "ดำเนินการ"
+    }
+  };
+
+  const strings = t[language];
+
   const getStatusConfig = (status) => STATUS_CONFIG[status] || STATUS_CONFIG.intake;
 
   return (
@@ -44,14 +101,14 @@ export default function Cases() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Scale className="w-8 h-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-slate-900">My Cases</h1>
+              <h1 className="text-3xl font-bold text-slate-900">{strings.title}</h1>
             </div>
-            <p className="text-slate-600">Track your dispute cases</p>
+            <p className="text-slate-600">{strings.subtitle}</p>
           </div>
           
           <Button size="lg" className="bg-blue-600 hover:bg-blue-700 shadow-lg" onClick={() => navigate(createPageUrl("ResolveCase"))}>
             <Plus className="w-5 h-5 mr-2" />
-            Open New Case
+            {strings.openNewCase}
           </Button>
         </div>
 
@@ -64,10 +121,10 @@ export default function Cases() {
                   <Crown className="w-6 h-6" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-lg mb-1">Premium Case Benefits</h3>
+                  <h3 className="font-bold text-lg mb-1">{strings.premiumTitle}</h3>
                   <div className="flex gap-3 text-sm text-purple-50">
-                    {hasMemberPrice && <span>• Member pricing on success fees</span>}
-                    {hasPriorityQueue && <span>• Priority case handling</span>}
+                    {hasMemberPrice && <span>• {strings.memberPricing}</span>}
+                    {hasPriorityQueue && <span>• {strings.priorityHandling}</span>}
                   </div>
                 </div>
               </div>
@@ -79,20 +136,20 @@ export default function Cases() {
           <Card className="border-none shadow-xl">
             <CardContent className="p-12 text-center">
               <Scale className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-slate-900 mb-2">No Cases Yet</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{strings.noCases}</h3>
               <p className="text-slate-600 mb-6">
-                Need help with a dispute? Our team is here to support you.
+                {strings.noCasesSub}
               </p>
               {hasMemberPrice && (
                 <div className="bg-emerald-50 rounded-xl p-4 mb-6 border border-emerald-200">
                   <p className="text-sm text-emerald-800 font-medium">
-                    ✓ As a member, you get reduced success fees on all cases
+                    ✓ {strings.memberBenefit}
                   </p>
                 </div>
               )}
               <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => navigate(createPageUrl("ResolveCase"))}>
                 <Plus className="w-5 h-5 mr-2" />
-                Open Your First Case
+                {strings.openFirstCase}
               </Button>
             </CardContent>
           </Card>
@@ -112,10 +169,10 @@ export default function Cases() {
                         </div>
                         <div>
                           <CardTitle className="text-lg font-bold text-slate-900">
-                            Case #{caseItem.id.slice(0, 8)}
+                            {strings.caseNumber}{caseItem.id.slice(0, 8)}
                           </CardTitle>
                           <p className="text-xs text-slate-500 mt-1">
-                            Opened {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
+                            {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
                           </p>
                         </div>
                       </div>
@@ -127,7 +184,7 @@ export default function Cases() {
                         {caseItem.fast_track && hasPriorityQueue && (
                           <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
                             <Zap className="w-3 h-3 mr-1" />
-                            Fast Track
+                            {strings.fastTrack}
                           </Badge>
                         )}
                       </div>
@@ -138,7 +195,7 @@ export default function Cases() {
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       {caseItem.dispute_amount && (
                         <div>
-                          <p className="text-xs text-slate-500 mb-1">Dispute Amount</p>
+                          <p className="text-xs text-slate-500 mb-1">{strings.disputeAmount}</p>
                           <p className="text-lg font-bold text-slate-900">
                             ฿{caseItem.dispute_amount.toLocaleString()}
                           </p>
@@ -147,31 +204,31 @@ export default function Cases() {
                       
                       {caseItem.ops_assigned && (
                         <div>
-                          <p className="text-xs text-slate-500 mb-1">Assigned To</p>
+                          <p className="text-xs text-slate-500 mb-1">{strings.assignedTo}</p>
                           <div className="flex items-center gap-2">
                             <UserCheck className="w-4 h-4 text-blue-600" />
-                            <p className="text-sm font-semibold text-slate-900">Ops Team</p>
+                            <p className="text-sm font-semibold text-slate-900">{strings.opsTeam}</p>
                           </div>
                         </div>
                       )}
                     </div>
 
                     <div className="mb-4">
-                      <p className="text-xs text-slate-500 mb-2">Features</p>
+                      <p className="text-xs text-slate-500 mb-2">{strings.features}</p>
                       <div className="flex gap-2 flex-wrap">
                         {caseItem.fast_track && (
                           <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
-                            Fast Track
+                            {strings.fastTrack}
                           </Badge>
                         )}
                         {caseItem.letter_pack && (
                           <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs">
-                            Letter Pack
+                            {strings.letterPack}
                           </Badge>
                         )}
                         {caseItem.is_member_at_creation && (
                           <Badge variant="outline" className="bg-emerald-50 text-emerald-700 text-xs">
-                            Member Rate
+                            {strings.memberRate}
                           </Badge>
                         )}
                       </div>
@@ -186,10 +243,10 @@ export default function Cases() {
                     {caseItem.success_fee_rate > 0 && (
                       <div className="p-3 bg-blue-50 rounded-xl mb-4 border border-blue-200">
                         <p className="text-xs text-blue-800">
-                          Success fee: <span className="font-bold">{caseItem.success_fee_rate}%</span>
+                          {strings.successFee} <span className="font-bold">{caseItem.success_fee_rate}%</span>
                           {caseItem.is_member_at_creation && hasMemberPrice && (
                             <span className="ml-2 text-emerald-600 font-medium">
-                              (Member discount ✓)
+                              {strings.memberDiscount}
                             </span>
                           )}
                         </p>
@@ -198,11 +255,11 @@ export default function Cases() {
 
                     <div className="flex gap-2">
                       <Button variant="outline" className="flex-1 text-sm" size="sm">
-                        View Details
+                        {strings.viewDetails}
                       </Button>
                       {caseItem.status === 'user_action' && (
                         <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm" size="sm">
-                          Take Action
+                          {strings.takeAction}
                         </Button>
                       )}
                     </div>
