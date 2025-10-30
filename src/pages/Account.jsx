@@ -1027,22 +1027,23 @@ export default function Account() {
                       left: '50%',
                       transform: 'translateX(-50%)',
                       backgroundColor: '#C7A338',
-                      color: '#FFFFFF',
+                      color: '#0C3B2E',
                       fontSize: '13px',
                       fontWeight: 'bold',
                       padding: '10px 24px',
                       borderRadius: '20px',
-                      boxShadow: '0 6px 12px rgba(199, 163, 56, 0.4), 0 0 0 4px rgba(199, 163, 56, 0.1)',
+                      border: '2px solid #0C3B2E',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
+                      justifyContent: 'center',
+                      gap: '8px',
                       zIndex: 10,
                       letterSpacing: '0.5px',
-                      animation: 'pulse 2s ease-in-out infinite'
+                      boxShadow: '0 4px 12px rgba(199, 163, 56, 0.4)'
                     }}>
-                      <Star style={{ width: '16px', height: '16px', fill: '#FFFFFF' }} />
+                      <Star style={{ width: '16px', height: '16px', fill: '#0C3B2E', color: '#0C3B2E' }} />
                       <span>MOST POPULAR</span>
-                      <Star style={{ width: '16px', height: '16px', fill: '#FFFFFF' }} />
+                      <Star style={{ width: '16px', height: '16px', fill: '#0C3B2E', color: '#0C3B2E' }} />
                     </div>
                   )}
 
