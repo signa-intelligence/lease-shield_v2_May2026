@@ -1,20 +1,32 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, CheckCircle2, FileText, ArrowLeft, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, ExternalLink, Download, Loader2 } from "lucide-react";
 
-import LeaseAnalysisResults from "../components/leases/LeaseAnalysisResults";
+const SEVERITY_CONFIG = {
+  low: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Low' },
+  medium: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Medium' },
+  high: { color: 'bg-orange-100 text-orange-800 border-orange-200', label: 'High' },
+  critical: { color: 'bg-red-100 text-red-800 border-red-200', label: 'Critical' }
+};
 
 export default function ScanPreview() {
   const navigate = useNavigate();
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const urlParams = new URLSearchParams(window.location.search);
   const scanId = urlParams.get('scanId');
   const leaseId = urlParams.get('leaseId');
 
-  const { data: scan, isLoading } = useQuery({
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: scan } = useQuery({
     queryKey: ['scan', scanId],
     queryFn: async () => {
       const scans = await base44.entities.LeaseScan.list();
@@ -32,209 +44,138 @@ export default function ScanPreview() {
     enabled: !!leaseId,
   });
 
-  const handleSave = () => {
-    navigate(createPageUrl("Dashboard"));
-  };
+  const language = user?.language || 'en';
 
-  const handleDownloadPdf = async () => {
-    setDownloadingPdf(true);
-    try {
-      const pdfResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Create a professional PDF-ready lease risk report with the following structure:
-
-LEASE SHIELD – RISK REPORT
-Fair. Transparent. Protected.
-
-1) SUMMARY
-${scan.summary}
-
-2) OVERALL RISK SCORE
-Score: ${scan.risk_score}/100
-${scan.risk_score >= 75 ? 'High Risk - Immediate attention recommended' : 
-  scan.risk_score >= 50 ? 'Medium Risk - Review carefully' : 
-  scan.risk_score >= 25 ? 'Low Risk - Minor concerns' : 'Very Low Risk - Generally favorable'}
-
-3) FLAGGED CLAUSES
-${JSON.stringify(scan.scan_full.flags, null, 2)}
-
-4) MISSING PROTECTIONS
-${JSON.stringify(scan.scan_full.missing_items, null, 2)}
-
-5) KEY TERMS
-${JSON.stringify(scan.scan_full.key_terms, null, 2)}
-
-6) NEXT STEPS
-- Review flagged clauses with landlord
-- Consider using letter templates for clarification
-- Keep evidence and documentation organized
-
-DISCLAIMER: This is a documentation service, not legal advice.
-
-Format this as a well-structured, professional document in both English and Thai.`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            report_text: { type: "string" }
-          }
-        }
-      });
-
-      const blob = new Blob([pdfResult.report_text], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `lease_shield_report_${scanId}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
-
-    } catch (error) {
-      console.error('Failed to generate PDF:', error);
-      alert('Failed to generate PDF report. Please try again.');
-    } finally {
-      setDownloadingPdf(false);
+  const t = {
+    en: {
+      backToScans: "Back to Scans",
+      riskScore: "Risk Score",
+      summary: "Summary",
+      topIssues: "Top Issues Found",
+      viewFullReport: "View Full Report",
+      viewLease: "View Lease",
+      lowRisk: "Low Risk",
+      moderateRisk: "Moderate Risk",
+      highRisk: "High Risk",
+      criticalRisk: "Critical Risk"
+    },
+    th: {
+      backToScans: "กลับไปที่การสแกน",
+      riskScore: "คะแนนความเสี่ยง",
+      summary: "สรุป",
+      topIssues: "ปัญหาสำคัญที่พบ",
+      viewFullReport: "ดูรายงานฉบับเต็ม",
+      viewLease: "ดูสัญญาเช่า",
+      lowRisk: "ความเสี่ยงต่ำ",
+      moderateRisk: "ความเสี่ยงปานกลาง",
+      highRisk: "ความเสี่ยงสูง",
+      criticalRisk: "ความเสี่ยงวิกฤต"
     }
   };
 
-  if (isLoading) {
+  const strings = t[language];
+
+  const getRiskColor = (score) => {
+    if (score <= 30) return '#10B981';
+    if (score <= 60) return '#F59E0B';
+    if (score <= 80) return '#EF4444';
+    return '#DC2626';
+  };
+
+  const getRiskLabel = (score) => {
+    if (score <= 30) return strings.lowRisk;
+    if (score <= 60) return strings.moderateRisk;
+    if (score <= 80) return strings.highRisk;
+    return strings.criticalRisk;
+  };
+
+  if (!scan || !lease) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading scan results...</p>
+      <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-6">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-center text-slate-600">Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (!scan) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="text-center">
-          <p className="text-slate-600 mb-4">Scan not found</p>
-          <button 
-            onClick={() => navigate(createPageUrl("UploadScan"))}
-            style={{
-              backgroundColor: '#3B82F6',
-              color: '#FFFFFF',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
-          >
-            Back to Upload
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const riskColor = getRiskColor(scan.risk_score);
+  const riskLabel = getRiskLabel(scan.risk_score);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            onClick={() => navigate(createPageUrl("UploadScan"))}
-            style={{
-              backgroundColor: '#FFFFFF',
-              color: '#1A1D1F',
-              width: '40px',
-              height: '40px',
-              borderRadius: '8px',
-              border: '1px solid #D1D5DB',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#F3F4F6'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#FFFFFF'}
-          >
-            <ArrowLeft style={{ width: '20px', height: '20px' }} />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-slate-900">Scan Results</h1>
-            {lease?.property_address && (
-              <p className="text-slate-600">{lease.property_address}</p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {lease?.file_url && (
-              <a href={lease.file_url} target="_blank" rel="noopener noreferrer">
-                <button
-                  style={{
-                    backgroundColor: '#FFFFFF',
-                    color: '#1A1D1F',
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    border: '1px solid #D1D5DB',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#F3F4F6'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#FFFFFF'}
-                >
-                  <ExternalLink style={{ width: '16px', height: '16px' }} />
-                  View Original
-                </button>
-              </a>
-            )}
-            <button 
-              onClick={handleDownloadPdf}
-              disabled={downloadingPdf}
-              style={{
-                backgroundColor: downloadingPdf ? '#E5E7EB' : '#FFFFFF',
-                color: downloadingPdf ? '#9CA3AF' : '#1A1D1F',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontWeight: '600',
-                fontSize: '14px',
-                border: '1px solid #D1D5DB',
-                cursor: downloadingPdf ? 'not-allowed' : 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                if (!downloadingPdf) e.target.style.backgroundColor = '#F3F4F6';
-              }}
-              onMouseLeave={(e) => {
-                if (!downloadingPdf) e.target.style.backgroundColor = '#FFFFFF';
-              }}
-            >
-              {downloadingPdf ? (
-                <>
-                  <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Download style={{ width: '16px', height: '16px' }} />
-                  Download PDF
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+        <Button
+          variant="outline"
+          onClick={() => navigate(createPageUrl("UploadScan"))}
+          className="mb-6"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          {strings.backToScans}
+        </Button>
 
-        <LeaseAnalysisResults 
-          scan={scan} 
-          onSave={handleSave}
-          onDownload={handleDownloadPdf}
-        />
+        <Card className="border-none shadow-xl mb-6">
+          <CardHeader className="border-b" style={{ backgroundColor: riskColor }}>
+            <div className="text-white">
+              <CardTitle className="text-2xl font-bold mb-2">{strings.riskScore}</CardTitle>
+              <div className="flex items-center gap-4">
+                <div className="text-6xl font-bold">{scan.risk_score}%</div>
+                <div className="text-xl">{riskLabel}</div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <h3 className="font-bold text-lg text-ls-charcoal mb-2">{strings.summary}</h3>
+            <p className="text-slate-700">{scan.summary}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-xl mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-6 h-6 text-orange-600" />
+              {strings.topIssues}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {scan.flags && scan.flags.map((flag, idx) => {
+              const severityConfig = SEVERITY_CONFIG[flag.severity] || SEVERITY_CONFIG.medium;
+              return (
+                <div key={idx} className="p-4 bg-slate-50 rounded-xl border-2 border-slate-200">
+                  <div className="flex items-start justify-between mb-2">
+                    <Badge className={`${severityConfig.color} border`}>
+                      {severityConfig.label}
+                    </Badge>
+                    {flag.category && (
+                      <Badge variant="outline">{flag.category}</Badge>
+                    )}
+                  </div>
+                  <p className="text-base font-semibold text-ls-charcoal mb-2">{flag.description}</p>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-4">
+          <Button
+            className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
+            onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scanId}&leaseId=${leaseId}`)}
+          >
+            <FileText className="w-5 h-5 mr-2" />
+            {strings.viewFullReport}
+          </Button>
+          {lease.file_url && (
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => window.open(lease.file_url, '_blank')}
+            >
+              <ExternalLink className="w-5 h-5 mr-2" />
+              {strings.viewLease}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
