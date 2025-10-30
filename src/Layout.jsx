@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -134,6 +135,16 @@ export default function Layout({ children, currentPageName }) {
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
+          }
+        }
+
+        /* Pulse animation for Most Popular badge */
+        @keyframes pulse {
+          0%, 100% {
+            box-shadow: 0 6px 12px rgba(199, 163, 56, 0.4), 0 0 0 4px rgba(199, 163, 56, 0.1);
+          }
+          50% {
+            box-shadow: 0 6px 12px rgba(199, 163, 56, 0.6), 0 0 0 6px rgba(199, 163, 56, 0.2);
           }
         }
       `}</style>

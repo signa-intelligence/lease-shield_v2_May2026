@@ -1012,31 +1012,37 @@ export default function Account() {
                   style={{
                     position: 'relative',
                     borderRadius: '16px',
-                    overflow: 'hidden',
-                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                    overflow: 'visible',
+                    boxShadow: plan.popular ? '0 20px 25px -5px rgba(199, 163, 56, 0.3), 0 10px 10px -5px rgba(199, 163, 56, 0.15)' : '0 10px 15px -3px rgba(0,0,0,0.1)',
                     border: plan.popular ? '3px solid #C7A338' : '2px solid #E5E7EB',
-                    backgroundColor: '#FFFFFF'
+                    backgroundColor: '#FFFFFF',
+                    transform: plan.popular ? 'scale(1.02)' : 'scale(1)',
+                    transition: 'all 0.3s ease'
                   }}
                 >
                   {plan.popular && (
                     <div style={{
                       position: 'absolute',
-                      top: '-6px',
-                      right: '20px',
+                      top: '-16px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
                       backgroundColor: '#C7A338',
                       color: '#FFFFFF',
-                      fontSize: '11px',
+                      fontSize: '13px',
                       fontWeight: 'bold',
-                      padding: '8px 16px',
-                      borderRadius: '0 0 12px 12px',
-                      boxShadow: '0 4px 8px rgba(199, 163, 56, 0.3)',
+                      padding: '10px 24px',
+                      borderRadius: '20px',
+                      boxShadow: '0 6px 12px rgba(199, 163, 56, 0.4), 0 0 0 4px rgba(199, 163, 56, 0.1)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      zIndex: 10
+                      gap: '6px',
+                      zIndex: 10,
+                      letterSpacing: '0.5px',
+                      animation: 'pulse 2s ease-in-out infinite'
                     }}>
-                      <Star style={{ width: '14px', height: '14px', fill: '#FFFFFF' }} />
+                      <Star style={{ width: '16px', height: '16px', fill: '#FFFFFF' }} />
                       <span>MOST POPULAR</span>
+                      <Star style={{ width: '16px', height: '16px', fill: '#FFFFFF' }} />
                     </div>
                   )}
 
@@ -1059,7 +1065,7 @@ export default function Account() {
                   
                   <div style={{
                     backgroundColor: plan.bgColor,
-                    padding: plan.popular ? '40px 24px 24px 24px' : '32px 24px 24px 24px',
+                    padding: plan.popular ? '48px 24px 24px 24px' : '32px 24px 24px 24px',
                     color: '#FFFFFF'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -1111,25 +1117,32 @@ export default function Account() {
                       flexDirection: 'column',
                       gap: '10px'
                     }}>
-                      {plan.benefits.map((benefit, idx) => (
-                        <li key={idx} style={{ 
-                          display: 'flex', 
-                          alignItems: 'flex-start', 
-                          gap: '10px',
-                          fontSize: '14px',
-                          color: '#1A1D1F',
-                          lineHeight: '1.4'
-                        }}>
-                          <CheckCircle2 style={{ 
-                            width: '18px', 
-                            height: '18px', 
-                            color: '#0C3B2E',
-                            flexShrink: 0,
-                            marginTop: '1px'
-                          }} />
-                          <span>{benefit}</span>
-                        </li>
-                      ))}
+                      {plan.benefits.map((benefit, idx) => {
+                        // Check if this is the "Everything in..." benefit
+                        const isEverythingBenefit = benefit.startsWith('Everything in');
+                        
+                        return (
+                          <li key={idx} style={{ 
+                            display: 'flex', 
+                            alignItems: 'flex-start', 
+                            gap: '10px',
+                            fontSize: '14px',
+                            color: '#1A1D1F',
+                            lineHeight: '1.4'
+                          }}>
+                            <CheckCircle2 style={{ 
+                              width: '18px', 
+                              height: '18px', 
+                              color: '#0C3B2E',
+                              flexShrink: 0,
+                              marginTop: '1px'
+                            }} />
+                            <span style={{ fontWeight: isEverythingBenefit ? 'bold' : 'normal' }}>
+                              {benefit}
+                            </span>
+                          </li>
+                        );
+                      })}
                     </ul>
                     
                     {isCurrentPlan ? (
