@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function ProtectionScoreGauge({ score = 0, size = 220 }) {
+export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
   const getStatusLabel = (score) => {
     if (score >= 85) return { text: 'Excellent', color: '#10B981' };
     if (score >= 70) return { text: 'Good', color: '#EAB308' };
@@ -14,9 +14,6 @@ export default function ProtectionScoreGauge({ score = 0, size = 220 }) {
   const radius = size * 0.35;
   const strokeWidth = size * 0.12;
   
-  // Calculate the needle angle based on score (0-100 maps to 180 degrees)
-  const needleAngle = -90 + (score / 100) * 180;
-
   // Define color segments
   const segments = [
     { start: 0, end: 50, color: '#EF4444', label: 'LOW' },     // Red: 0-50
@@ -106,8 +103,8 @@ export default function ProtectionScoreGauge({ score = 0, size = 220 }) {
         left: '50%',
         transform: 'translate(-50%, -50%)',
         textAlign: 'center',
-        width: `${size * 0.45}px`,
-        height: `${size * 0.45}px`,
+        width: `${size * 0.38}px`,
+        height: `${size * 0.38}px`,
         backgroundColor: '#FFFFFF',
         borderRadius: '50%',
         display: 'flex',
@@ -119,7 +116,7 @@ export default function ProtectionScoreGauge({ score = 0, size = 220 }) {
         zIndex: 10
       }}>
         <div style={{
-          fontSize: `${size * 0.24}px`,
+          fontSize: `${size * 0.16}px`,
           fontWeight: 'bold',
           color: '#1A1D1F',
           lineHeight: '1'
@@ -127,12 +124,12 @@ export default function ProtectionScoreGauge({ score = 0, size = 220 }) {
           {score}%
         </div>
         <div style={{
-          fontSize: `${size * 0.065}px`,
+          fontSize: `${size * 0.045}px`,
           fontWeight: '600',
           color: status.color,
           textTransform: 'uppercase',
           letterSpacing: '0.5px',
-          marginTop: '4px'
+          marginTop: '2px'
         }}>
           {status.text}
         </div>
@@ -143,7 +140,7 @@ export default function ProtectionScoreGauge({ score = 0, size = 220 }) {
         position: 'absolute',
         bottom: '10px',
         left: `${size * 0.12}px`,
-        fontSize: `${size * 0.06}px`,
+        fontSize: `${size * 0.055}px`,
         fontWeight: 'bold',
         color: '#EF4444',
         textTransform: 'uppercase'
@@ -156,7 +153,7 @@ export default function ProtectionScoreGauge({ score = 0, size = 220 }) {
         position: 'absolute',
         bottom: '10px',
         right: `${size * 0.12}px`,
-        fontSize: `${size * 0.06}px`,
+        fontSize: `${size * 0.055}px`,
         fontWeight: 'bold',
         color: '#10B981',
         textTransform: 'uppercase'
