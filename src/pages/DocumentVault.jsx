@@ -1,44 +1,30 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FolderOpen, Upload, FileText, Image, Video, Mail, File, Plus, ExternalLink, FileCheck } from "lucide-react";
+import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
-const DOC_TYPES = [
-  { value: 'lease', label: 'Lease Agreement', icon: FileText, color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  { value: 'receipt', label: 'Receipt', icon: FileText, color: 'bg-ls-gold/20 text-amber-800 border-amber-200' },
-  { value: 'photo', label: 'Photo', icon: Image, color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  { value: 'video', label: 'Video', icon: Video, color: 'bg-pink-100 text-pink-800 border-pink-200' },
-  { value: 'letter', label: 'Letter', icon: Mail, color: 'bg-ls-forest/10 text-ls-forest border-ls-forest/20' },
-  { value: 'other', label: 'Other', icon: File, color: 'bg-slate-100 text-slate-800 border-slate-200' }
-];
+const DOC_TYPE_CONFIG = {
+  lease: { label: 'Lease', icon: FileText, color: 'bg-blue-100 text-blue-800' },
+  receipt: { label: 'Receipt', icon: FileText, color: 'bg-emerald-100 text-emerald-800' },
+  photo: { label: 'Photo', icon: Camera, color: 'bg-purple-100 text-purple-800' },
+  video: { label: 'Video', icon: FileVideo, color: 'bg-amber-100 text-amber-800' },
+  letter: { label: 'Letter', icon: Mail, color: 'bg-indigo-100 text-indigo-800' },
+  other: { label: 'Other', icon: HelpCircle, color: 'bg-slate-100 text-slate-800' }
+};
 
 export default function DocumentVault() {
   const navigate = useNavigate();
-  const [showAddDialog, setShowAddDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState({
-    type: 'other',
-    label: '',
-    file: null
-  });
-  const [filterType, setFilterType] = useState('all');
-  
+  const [uploadType, setUploadType] = useState('photo');
+  const [uploadLabel, setUploadLabel] = useState('');
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -53,350 +39,314 @@ export default function DocumentVault() {
   });
 
   const createDocumentMutation = useMutation({
-    mutationFn: async (data) => {
-      // First upload the file
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: data.file });
-      
-      // Then create the document record
-      return await base44.entities.Document.create({
-        type: data.type,
-        label: data.label,
-        file_url
-      });
-    },
+    mutationFn: (data) => base44.entities.Document.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
-      setShowAddDialog(false);
-      setFormData({ type: 'other', label: '', file: null });
+      setUploadLabel('');
+    },
+  });
+
+  const deleteDocumentMutation = useMutation({
+    mutationFn: (id) => base44.entities.Document.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
     },
   });
 
   const handleFileUpload = async (e) => {
-    e.preventDefault();
-    if (!formData.file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    createDocumentMutation.mutate(formData);
-  };
-
-  const t = {
-    en: {
-      title: "Evidence Vault",
-      subtitle: "Photo and video logs with timestamps for property condition",
-      uploadDocument: "Upload Evidence",
-      noDocuments: "No evidence files yet",
-      uploadFirst: "Upload First Evidence File",
-      allEvidence: "All Evidence",
-      typeLabel: "Type",
-      labelLabel: "Label",
-      fileLabel: "File",
-      uploadButton: "Upload",
-      uploading: "Uploading..."
-    },
-    th: {
-      title: "คลังหลักฐาน",
-      subtitle: "บันทึกภาพและวิดีโอพร้อมเวลาสำหรับสภาพทรัพย์สิน",
-      uploadDocument: "อัปโหลดหลักฐาน",
-      noDocuments: "ยังไม่มีไฟล์หลักฐาน",
-      uploadFirst: "อัปโหลดไฟล์หลักฐานแรก",
-      allEvidence: "หลักฐานทั้งหมด",
-      typeLabel: "ประเภท",
-      labelLabel: "ป้ายชื่อ",
-      fileLabel: "ไฟล์",
-      uploadButton: "อัปโหลด",
-      uploading: "กำลังอัปโหลด..."
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        await createDocumentMutation.mutateAsync({
+          type: uploadType,
+          file_url,
+          label: uploadLabel || file.name
+        });
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
     }
   };
 
   const language = user?.language || 'en';
-  const strings = t[language];
 
-  const filteredDocs = filterType === 'all' 
-    ? documents 
-    : documents.filter(doc => doc.type === filterType);
-
-  const getDocTypeInfo = (type) => {
-    return DOC_TYPES.find(t => t.value === type) || DOC_TYPES[DOC_TYPES.length - 1];
+  const t = {
+    en: {
+      title: "Evidence Vault",
+      subtitle: "Secure storage for all your rental documentation",
+      uploadFiles: "Upload Files",
+      documentType: "Document Type",
+      customLabel: "Custom Label (optional)",
+      selectFiles: "Select Files",
+      uploading: "Uploading...",
+      recentUploads: "Recent Uploads",
+      viewTemplates: "View Templates",
+      templatesDesc: "Professional letter templates",
+      noDocuments: "No Documents Yet",
+      noDocsSub: "Start building your evidence vault for better protection",
+      uploadFirst: "Upload First Document",
+      deleteConfirm: "Are you sure?",
+      viewFile: "View File"
+    },
+    th: {
+      title: "คลังหลักฐาน",
+      subtitle: "จัดเก็บเอกสารการเช่าอย่างปลอดภัย",
+      uploadFiles: "อัปโหลดไฟล์",
+      documentType: "ประเภทเอกสาร",
+      customLabel: "ป้ายกำกับที่กำหนดเอง (ไม่บังคับ)",
+      selectFiles: "เลือกไฟล์",
+      uploading: "กำลังอัปโหลด...",
+      recentUploads: "อัปโหลดล่าสุด",
+      viewTemplates: "ดูเทมเพลต",
+      templatesDesc: "เทมเพลตจดหมายมืออาชีพ",
+      noDocuments: "ยังไม่มีเอกสาร",
+      noDocsSub: "เริ่มสร้างคลังหลักฐานเพื่อการป้องกันที่ดีขึ้น",
+      uploadFirst: "อัปโหลดเอกสารแรก",
+      deleteConfirm: "คุณแน่ใจหรือไม่?",
+      viewFile: "ดูไฟล์"
+    }
   };
+
+  const strings = t[language];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <FolderOpen className="w-7 h-7 text-ls-forest" />
-              <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
-            </div>
-            <p className="text-slate-600">{strings.subtitle}</p>
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="w-8 h-8 text-ls-forest" />
+            <h1 className="text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
           </div>
-          
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <button
-                style={{
-                  backgroundColor: '#0C3B2E',
-                  color: '#FFFFFF',
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '14px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-              >
-                <Plus className="w-4 h-4" />
-                {strings.uploadDocument}
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>{strings.uploadDocument}</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleFileUpload} className="space-y-4">
+          <p className="text-slate-600">{strings.subtitle}</p>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6 mb-6">
+          {/* Upload Form - Left Side */}
+          <Card className="border-none shadow-lg lg:col-span-1">
+            <CardContent className="p-6">
+              <h3 className="font-bold text-lg text-ls-charcoal mb-4 flex items-center gap-2">
+                <Upload className="w-5 h-5 text-ls-forest" />
+                {strings.uploadFiles}
+              </h3>
+              <div className="space-y-4">
                 <div>
-                  <Label htmlFor="type">{strings.typeLabel}</Label>
-                  <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
+                  <Label>{strings.documentType}</Label>
+                  <Select value={uploadType} onValueChange={setUploadType}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {DOC_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="lease">Lease</SelectItem>
+                      <SelectItem value="receipt">Receipt</SelectItem>
+                      <SelectItem value="photo">Photo</SelectItem>
+                      <SelectItem value="video">Video</SelectItem>
+                      <SelectItem value="letter">Letter</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="label">{strings.labelLabel}</Label>
-                  <Input
-                    id="label"
-                    value={formData.label}
-                    onChange={(e) => setFormData({...formData, label: e.target.value})}
-                    placeholder="e.g. Rent receipt - Jan 2024"
+                  <Label>{strings.customLabel}</Label>
+                  <input
+                    type="text"
+                    value={uploadLabel}
+                    onChange={(e) => setUploadLabel(e.target.value)}
+                    placeholder="e.g., Move-in photos"
+                    className="w-full p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ls-forest"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="file">{strings.fileLabel}</Label>
-                  <Input
-                    id="file"
-                    type="file"
-                    required
-                    onChange={(e) => setFormData({...formData, file: e.target.files[0]})}
-                  />
+                  <label
+                    htmlFor="file-upload"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '24px',
+                      border: '2px dashed #D1D5DB',
+                      borderRadius: '12px',
+                      cursor: uploading ? 'not-allowed' : 'pointer',
+                      backgroundColor: '#F9FAFB',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!uploading) e.target.style.borderColor = '#0C3B2E';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!uploading) e.target.style.borderColor = '#D1D5DB';
+                    }}
+                  >
+                    <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                    <span className="text-sm font-medium text-slate-700">
+                      {uploading ? strings.uploading : strings.selectFiles}
+                    </span>
+                    <span className="text-xs text-slate-500 mt-1">
+                      PDF, Images, Videos
+                    </span>
+                    <input
+                      id="file-upload"
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
-                <button 
-                  type="submit" 
-                  disabled={createDocumentMutation.isPending}
-                  style={{
-                    width: '100%',
-                    backgroundColor: createDocumentMutation.isPending ? '#9CA3AF' : '#0C3B2E',
-                    color: '#FFFFFF',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    border: 'none',
-                    cursor: createDocumentMutation.isPending ? 'not-allowed' : 'pointer',
-                    opacity: createDocumentMutation.isPending ? 0.6 : 1,
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!createDocumentMutation.isPending) {
-                      e.target.style.backgroundColor = '#0a2f25';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!createDocumentMutation.isPending) {
-                      e.target.style.backgroundColor = '#0C3B2E';
-                    }
-                  }}
+              </div>
+
+              {/* Templates Link */}
+              <div className="mt-6 p-4 bg-ls-stone rounded-xl border border-ls-forest/20">
+                <button
+                  onClick={() => navigate(createPageUrl("Templates"))}
+                  className="w-full flex items-center justify-between"
                 >
-                  {createDocumentMutation.isPending ? strings.uploading : strings.uploadButton}
-                </button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* Templates Button - Matching Account page style */}
-        <div
-          className="mb-6 cursor-pointer transition-all hover:shadow-lg"
-          onClick={() => navigate(createPageUrl("Templates"))}
-          style={{
-            padding: '16px',
-            backgroundColor: '#ECEFED',
-            borderRadius: '12px',
-            borderLeft: '4px solid #0C3B2E',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div style={{
-                width: '40px',
-                height: '40px',
-                backgroundColor: '#0C3B2E',
-                borderRadius: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <FileCheck className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="font-bold text-ls-charcoal">{language === 'th' ? 'เทมเพลตจดหมายที่ปลอดภัยทางกฎหมาย' : 'Legal-safe Templates'}</h3>
-                <p className="text-sm text-slate-600">{language === 'th' ? 'สร้างจดหมายมืออาชีพ' : 'Generate professional letters'}</p>
-              </div>
-            </div>
-            <button 
-              className="px-4 py-2 bg-white border border-ls-forest/20 text-ls-forest hover:bg-ls-forest hover:text-white rounded-lg transition-colors font-semibold"
-            >
-              {language === 'th' ? 'ดูเทมเพลต' : 'View Templates'}
-            </button>
-          </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-          <Button
-            size="sm"
-            variant={filterType === 'all' ? 'default' : 'outline'}
-            onClick={() => setFilterType('all')}
-            style={{
-              backgroundColor: filterType === 'all' ? '#0C3B2E' : 'transparent',
-              color: filterType === 'all' ? '#FFFFFF' : '#1A1D1F',
-              borderColor: filterType === 'all' ? '#0C3B2E' : '#D1D5DB'
-            }}
-          >
-            {strings.allEvidence} ({documents.length})
-          </Button>
-          {DOC_TYPES.map((type) => {
-            const count = documents.filter(doc => doc.type === type.value).length;
-            return (
-              <Button
-                key={type.value}
-                size="sm"
-                variant={filterType === type.value ? 'default' : 'outline'}
-                onClick={() => setFilterType(type.value)}
-                style={{
-                  backgroundColor: filterType === type.value ? '#0C3B2E' : 'transparent',
-                  color: filterType === type.value ? '#FFFFFF' : '#1A1D1F',
-                  borderColor: filterType === type.value ? '#0C3B2E' : '#D1D5DB'
-                }}
-              >
-                {type.label} ({count})
-              </Button>
-            );
-          })}
-        </div>
-
-        {/* Documents Grid */}
-        {filteredDocs.length === 0 ? (
-          <Card className="border-none shadow-xl">
-            <div className="p-12 text-center">
-              <FolderOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-ls-charcoal mb-2">{strings.noDocuments}</h3>
-              <p className="text-slate-600 mb-6">{language === 'th' ? 'เริ่มจัดระเบียบหลักฐานการเช่าของคุณ' : 'Start organizing your rental evidence'}</p>
-              <button 
-                onClick={() => setShowAddDialog(true)}
-                style={{
-                  backgroundColor: '#0C3B2E',
-                  color: '#FFFFFF',
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-              >
-                <Upload className="w-5 h-5" />
-                {strings.uploadFirst}
-              </button>
-            </div>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {filteredDocs.map((doc) => {
-              const typeInfo = getDocTypeInfo(doc.type);
-              const TypeIcon = typeInfo.icon;
-              
-              return (
-                <Card key={doc.id} className="border-none shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
-                  <div className="flex items-center p-4">
-                    <div className={`p-3 rounded-xl mr-4`} style={{
-                      backgroundColor: typeInfo.value === 'lease' ? '#D1FAE5' :
-                                     typeInfo.value === 'receipt' ? '#FEF3C7' :
-                                     typeInfo.value === 'letter' ? '#ECEFED' :
-                                     '#F3F4F6'
-                    }}>
-                      <TypeIcon className="w-5 h-5" style={{
-                        color: typeInfo.value === 'lease' ? '#059669' :
-                               typeInfo.value === 'receipt' ? '#D97706' :
-                               typeInfo.value === 'letter' ? '#0C3B2E' :
-                               '#6B7280'
-                      }} />
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-ls-forest" />
+                    <div className="text-left">
+                      <p className="font-bold text-sm text-ls-charcoal">{strings.viewTemplates}</p>
+                      <p className="text-xs text-slate-600">{strings.templatesDesc}</p>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-ls-charcoal mb-1 truncate">
-                        {doc.label || 'Untitled Document'}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <Badge className={typeInfo.color}>
-                          {typeInfo.label}
-                        </Badge>
-                        <span className="text-xs text-slate-500">
-                          {format(new Date(doc.created_date), 'MMM d, yyyy')}
-                        </span>
-                      </div>
-                    </div>
-                    <a
-                      href={doc.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <button
-                        style={{
-                          backgroundColor: 'transparent',
-                          color: '#0C3B2E',
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '8px',
-                          border: 'none',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#ECEFED'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                      >
-                        <ExternalLink className="w-5 h-5" />
-                      </button>
-                    </a>
                   </div>
-                </Card>
-              );
-            })}
+                  <ExternalLink className="w-4 h-4 text-ls-forest" />
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent Uploads - Right Side */}
+          <div className="lg:col-span-2">
+            <h3 className="font-bold text-lg text-ls-charcoal mb-4">{strings.recentUploads}</h3>
+            {documents.length === 0 ? (
+              <Card className="border-none shadow-lg">
+                <CardContent className="p-12 text-center">
+                  <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <h4 className="text-lg font-bold text-ls-charcoal mb-2">{strings.noDocuments}</h4>
+                  <p className="text-slate-600 mb-6">{strings.noDocsSub}</p>
+                  <Button
+                    onClick={() => document.getElementById('file-upload').click()}
+                    style={{
+                      backgroundColor: '#0C3B2E',
+                      color: '#FFFFFF'
+                    }}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {strings.uploadFirst}
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                {documents.map((doc) => {
+                  const typeConfig = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
+                  const TypeIcon = typeConfig.icon;
+                  
+                  return (
+                    <Card key={doc.id} className="border-none shadow-md hover:shadow-lg transition-all duration-300">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <div className="p-2 bg-ls-stone rounded-lg flex-shrink-0">
+                              <TypeIcon className="w-5 h-5 text-ls-forest" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-sm text-ls-charcoal truncate">
+                                {doc.label}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {format(new Date(doc.created_date), 'MMM d, yyyy')}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge className={`${typeConfig.color} text-xs flex-shrink-0`}>
+                            {typeConfig.label}
+                          </Badge>
+                        </div>
+
+                        {/* Preview for images */}
+                        {doc.type === 'photo' && doc.file_url && (
+                          <div className="mb-3">
+                            <img
+                              src={doc.file_url}
+                              alt={doc.label}
+                              className="w-full h-32 object-cover rounded-lg border border-slate-200"
+                            />
+                          </div>
+                        )}
+
+                        <div className="flex gap-2">
+                          <a
+                            href={doc.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1"
+                          >
+                            <button
+                              style={{
+                                width: '100%',
+                                backgroundColor: '#0C3B2E',
+                                color: '#FFFFFF',
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                fontWeight: 'bold',
+                                fontSize: '13px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                              onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                            >
+                              <ExternalLink style={{ width: '14px', height: '14px' }} />
+                              {strings.viewFile}
+                            </button>
+                          </a>
+                          <button
+                            onClick={() => {
+                              if (confirm(strings.deleteConfirm)) {
+                                deleteDocumentMutation.mutate(doc.id);
+                              }
+                            }}
+                            style={{
+                              backgroundColor: '#FFFFFF',
+                              color: '#EF4444',
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              fontWeight: 'bold',
+                              fontSize: '13px',
+                              border: '2px solid #EF4444',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#FEE2E2';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#FFFFFF';
+                            }}
+                          >
+                            <Trash2 style={{ width: '14px', height: '14px' }} />
+                          </button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
