@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, MessageCircle } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -62,12 +62,6 @@ export default function Layout({ children, currentPageName }) {
       label: language === 'th' ? "หลักฐาน" : "Evidence",
       route: createPageUrl("DocumentVault"),
       icon: FileText,
-    },
-    {
-      key: "support",
-      label: language === 'th' ? "ช่วยเหลือ" : "Support",
-      route: createPageUrl("Support"),
-      icon: MessageCircle,
     },
   ];
 

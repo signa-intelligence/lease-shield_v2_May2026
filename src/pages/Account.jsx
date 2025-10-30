@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
+import { Link } from "react-router-dom";
 
 const PLAN_DETAILS = [
   {
@@ -640,35 +641,91 @@ export default function Account() {
           </Card>
         </div>
 
-        {/* Support & Contact Section - NEW */}
+        {/* Help & Support Section */}
         <Card className="mb-6 border-none shadow-xl">
           <CardHeader className="border-b" style={{ backgroundColor: '#ECEFED' }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
-              <Bell className="w-5 h-5 text-ls-forest" />
-              Support & Contact
+              <HelpCircle className="w-5 h-5 text-ls-forest" />
+              {user?.language === 'th' ? 'ช่วยเหลือและการสนับสนุน' : 'Help & Support'}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-sm text-slate-600 mb-4">
               {user?.language === 'th' 
-                ? 'ต้องการความช่วยเหลือ? เราพร้อมช่วยคุณผ่านช่องทางที่สะดวก' 
-                : 'Need help? We\'re here to assist you through your preferred channel'}
+                ? 'ต้องการความช่วยเหลือ? ส่งคำขอและเราจะตอบกลับทางอีเมล' 
+                : 'Need assistance? Submit a request and we\'ll respond via email'}
             </p>
-            <div className="grid md:grid-cols-3 gap-4">
+            
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Submit Support Ticket */}
+              <Link to={createPageUrl("Support")}>
+                <div
+                  style={{
+                    padding: '20px',
+                    backgroundColor: '#0C3B2E',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    height: '100%'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#0a2f25';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#0C3B2E';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <MessageCircle className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-white">
+                        {user?.language === 'th' ? 'ส่งคำขอช่วยเหลือ' : 'Submit Support Request'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-white/80">
+                    {user?.language === 'th' 
+                      ? 'รายงานปัญหา ถามคำถาม หรือขอความช่วยเหลือ' 
+                      : 'Report issues, ask questions, or get help'}
+                  </p>
+                  {(user?.plan_tier === 'protect' || user?.plan_tier === 'secure') && (
+                    <div className="mt-3 flex items-center gap-1 text-xs text-ls-gold font-semibold">
+                      <Crown className="w-3 h-3" />
+                      {user?.language === 'th' 
+                        ? `ตอบกลับภายใน ${user.plan_tier === 'secure' ? '6 ชม.' : '12 ชม.'}` 
+                        : `${user.plan_tier === 'secure' ? '6h' : '12h'} response`}
+                    </div>
+                  )}
+                </div>
+              </Link>
+
               {/* Email Support */}
               <a
                 href="mailto:support@leaseshield.asia"
                 style={{
-                  padding: '16px',
+                  padding: '20px',
                   backgroundColor: '#ECEFED',
                   borderRadius: '12px',
-                  borderLeft: '4px solid #0C3B2E',
+                  borderLeft: '4px solid #C7A338',
                   textDecoration: 'none',
                   display: 'block',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  height: '100%'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#0C3B2E';
+                  e.currentTarget.style.backgroundColor = '#C7A338';
                   e.currentTarget.querySelectorAll('*').forEach(el => {
                     if (el.tagName !== 'svg') el.style.color = '#FFFFFF';
                   });
@@ -680,11 +737,11 @@ export default function Account() {
                   });
                 }}
               >
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-3">
                   <div style={{
                     width: '40px',
                     height: '40px',
-                    backgroundColor: '#0C3B2E',
+                    backgroundColor: '#C7A338',
                     borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
@@ -694,126 +751,16 @@ export default function Account() {
                   </div>
                   <div>
                     <p className="font-bold text-ls-charcoal">
-                      {user?.language === 'th' ? 'อีเมลสนับสนุน' : 'Email Support'}
+                      {user?.language === 'th' ? 'อีเมลโดยตรง' : 'Direct Email'}
                     </p>
                   </div>
                 </div>
-                <p className="text-sm text-slate-600">support@leaseshield.asia</p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-sm text-slate-600 mb-2">support@leaseshield.asia</p>
+                <p className="text-xs text-slate-500">
                   {user?.language === 'th' ? 'ตอบกลับภายใน 24-48 ชั่วโมง' : 'Response within 24-48 hours'}
                 </p>
               </a>
-
-              {/* LINE Support */}
-              <a
-                href="https://line.me/R/ti/p/@071vchfv"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  padding: '16px',
-                  backgroundColor: '#ECEFED',
-                  borderRadius: '12px',
-                  borderLeft: '4px solid #06C755',
-                  textDecoration: 'none',
-                  display: 'block',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#06C755';
-                  e.currentTarget.querySelectorAll('*').forEach(el => {
-                    if (el.tagName !== 'svg') el.style.color = '#FFFFFF';
-                  });
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ECEFED';
-                  e.currentTarget.querySelectorAll('*').forEach(el => {
-                    if (el.tagName !== 'svg') el.style.color = '';
-                  });
-                }}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#06C755',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <MessageCircle className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-ls-charcoal">LINE Chat</p>
-                  </div>
-                </div>
-                <p className="text-sm text-slate-600">@leaseshield</p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {user?.language === 'th' ? 'แชทได้ทันที • เหมาะสำหรับคนไทย' : 'Instant chat • Perfect for Thai users'}
-                </p>
-              </a>
-
-              {/* WhatsApp Support */}
-              <a
-                href="https://wa.me/66123456789"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  padding: '16px',
-                  backgroundColor: '#ECEFED',
-                  borderRadius: '12px',
-                  borderLeft: '4px solid #25D366',
-                  textDecoration: 'none',
-                  display: 'block',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#25D366';
-                  e.currentTarget.querySelectorAll('*').forEach(el => {
-                    if (el.tagName !== 'svg') el.style.color = '#FFFFFF';
-                  });
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ECEFED';
-                  e.currentTarget.querySelectorAll('*').forEach(el => {
-                    if (el.tagName !== 'svg') el.style.color = '';
-                  });
-                }}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#25D366',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <MessageCircle className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-ls-charcoal">WhatsApp</p>
-                  </div>
-                </div>
-                <p className="text-sm text-slate-600">+66 123 456 789</p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {user?.language === 'th' ? 'แชทได้ทันที • เหมาะสำหรับชาวต่างชาติ' : 'Instant chat • Perfect for expats'}
-                </p>
-              </a>
             </div>
-
-            {/* Priority Support Badge for Premium Users */}
-            {(user?.plan_tier === 'protect' || user?.plan_tier === 'secure') && (
-              <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-lg">
-                <p className="text-sm font-semibold text-purple-800 flex items-center gap-2">
-                  <Crown className="w-4 h-4" />
-                  {user?.language === 'th' 
-                    ? `การสนับสนุนแบบพิเศษ: ${user.plan_tier === 'secure' ? 'ตอบกลับภายใน 6 ชั่วโมง' : 'ตอบกลับภายใน 12 ชั่วโมง'}` 
-                    : `Priority Support: ${user.plan_tier === 'secure' ? '6-hour' : '12-hour'} response time`}
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
 
