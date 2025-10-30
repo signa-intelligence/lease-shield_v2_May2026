@@ -42,7 +42,7 @@ const PLAN_DETAILS = [
     priceMonthly: 390,
     priceAnnual: 3900,
     priceIdMonthly: 'price_1SM6qtQwoI6NhlUxgDDy2LuJ',
-    priceIdAnnual: 'price_lite_annual',
+    priceIdAnnual: 'price_1SM6qnQwoI6NhlUxxJ8Qh86V', // Updated priceIdAnnual
     savingsAnnual: 780,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
@@ -66,7 +66,7 @@ const PLAN_DETAILS = [
     priceMonthly: 690,
     priceAnnual: 6900,
     priceIdMonthly: 'price_1SM6rhQwoI6NhlUxZIN3WekE',
-    priceIdAnnual: 'price_protect_annual',
+    priceIdAnnual: 'price_1SM6rkQwoI6NhlUx097qVpYt', // Updated priceIdAnnual
     savingsAnnual: 1380,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
@@ -92,7 +92,7 @@ const PLAN_DETAILS = [
     priceMonthly: 1290,
     priceAnnual: 12900,
     priceIdMonthly: 'price_1SM6t9QwoI6NhlUxy5Pl7Rrq',
-    priceIdAnnual: 'price_secure_annual',
+    priceIdAnnual: 'price_1SM6t9QwoI6NhlUxS5Dpm321', // Updated priceIdAnnual
     savingsAnnual: 2580,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
