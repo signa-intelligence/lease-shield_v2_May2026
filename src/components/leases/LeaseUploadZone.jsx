@@ -1,9 +1,36 @@
 import React from "react";
 import { Upload, FileText, Camera } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
-  const fileInputRef = React.useRef(null);
-  const cameraInputRef = React.useRef(null);
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const language = user?.language || 'en';
+
+  const t = {
+    en: {
+      title: "Upload Your Lease Agreement",
+      dragDrop: "Drag and drop your lease document here, or click to browse",
+      multiPage: "Multiple pages supported - upload all pages of your lease",
+      browseFiles: "Browse Files",
+      takePhotos: "Take Photos",
+      formats: "Supported formats: PDF, PNG, JPEG • Max size: 10MB per file • Multiple files allowed"
+    },
+    th: {
+      title: "อัปโหลดสัญญาเช่าของคุณ",
+      dragDrop: "ลากและวางเอกสารสัญญาเช่าที่นี่ หรือคลิกเพื่อเรียกดู",
+      multiPage: "รองรับหลายหน้า - อัปโหลดทุกหน้าของสัญญาเช่า",
+      browseFiles: "เรียกดูไฟล์",
+      takePhotos: "ถ่ายรูป",
+      formats: "รองรับรูปแบบ: PDF, PNG, JPEG • ขนาดสูงสุด: 10MB ต่อไฟล์ • อนุญาตหลายไฟล์"
+    }
+  };
+
+  const strings = t[language];
 
   return (
     <div
@@ -11,91 +38,80 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
       onDragLeave={onDrag}
       onDragOver={onDrag}
       onDrop={onFileSelect}
-      className={`relative border-2 border-dashed rounded-2xl p-12 transition-all duration-300 ${
-        dragActive 
-          ? "border-ls-forest bg-emerald-50" 
-          : "border-slate-300 hover:border-ls-forest bg-white"
-      }`}
+      style={{
+        border: dragActive ? '3px dashed #0C3B2E' : '3px dashed #D1D5DB',
+        borderRadius: '16px',
+        padding: '48px 24px',
+        textAlign: 'center',
+        backgroundColor: dragActive ? '#ECEFED' : '#F9FAFB',
+        transition: 'all 0.3s',
+        cursor: 'pointer'
+      }}
     >
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".pdf,image/*"
-        multiple
-        onChange={onFileSelect}
-        className="hidden"
-      />
-      
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        multiple
-        onChange={onFileSelect}
-        className="hidden"
-      />
-      
-      <div className="text-center">
+      <div className="flex flex-col items-center">
         <div 
+          className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
           style={{
-            width: '80px',
-            height: '80px',
-            margin: '0 auto 24px',
             background: 'linear-gradient(to bottom right, #0C3B2E, #14532d)',
-            borderRadius: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+            boxShadow: '0 8px 16px rgba(12, 59, 46, 0.2)'
           }}
         >
-          <Upload style={{ width: '40px', height: '40px', color: '#FFFFFF' }} />
+          <Upload className="w-10 h-10 text-white" />
         </div>
         
-        <h3 className="text-2xl font-bold text-ls-charcoal mb-3">
-          Upload Your Lease Agreement
+        <h3 className="text-xl font-bold text-ls-charcoal mb-2">
+          {strings.title}
         </h3>
-        <p className="text-slate-600 mb-2 max-w-md mx-auto">
-          Drag and drop your lease document here, or click to browse
-        </p>
-        <p className="text-sm text-ls-gold font-semibold mb-6">
-          ✨ Multiple pages supported - upload all pages of your lease
+        
+        <p className="text-slate-600 mb-1">
+          {strings.dragDrop}
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
+        <p className="text-sm text-ls-gold font-semibold mb-6">
+          ⚡ {strings.multiPage}
+        </p>
+
+        <div className="flex gap-3">
+          <label
+            htmlFor="file-input"
             style={{
               backgroundColor: '#0C3B2E',
               color: '#FFFFFF',
               padding: '12px 24px',
               borderRadius: '8px',
-              fontWeight: '600',
-              border: 'none',
+              fontWeight: 'bold',
+              fontSize: '16px',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
             }}
             onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
             onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
           >
-            <FileText style={{ width: '20px', height: '20px' }} />
-            Browse Files
-          </button>
-          <button
-            type="button"
-            onClick={() => cameraInputRef.current?.click()}
+            <FileText className="w-5 h-5" />
+            {strings.browseFiles}
+          </label>
+          <input
+            id="file-input"
+            type="file"
+            multiple
+            accept="image/*,.pdf"
+            onChange={onFileSelect}
+            className="hidden"
+          />
+
+          <label
+            htmlFor="camera-input"
             style={{
               backgroundColor: '#FFFFFF',
               color: '#0C3B2E',
               padding: '12px 24px',
               borderRadius: '8px',
-              fontWeight: '600',
+              fontWeight: 'bold',
+              fontSize: '16px',
               border: '2px solid #0C3B2E',
               cursor: 'pointer',
               display: 'inline-flex',
@@ -103,22 +119,25 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
               gap: '8px',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#0C3B2E';
-              e.target.style.color = '#FFFFFF';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#FFFFFF';
-              e.target.style.color = '#0C3B2E';
-            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#ECEFED'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#FFFFFF'}
           >
-            <Camera style={{ width: '20px', height: '20px' }} />
-            Take Photos
-          </button>
+            <Camera className="w-5 h-5" />
+            {strings.takePhotos}
+          </label>
+          <input
+            id="camera-input"
+            type="file"
+            multiple
+            accept="image/*"
+            capture="environment"
+            onChange={onFileSelect}
+            className="hidden"
+          />
         </div>
-        
-        <p className="text-xs text-slate-400 mt-6">
-          Supported formats: PDF, PNG, JPEG • Max size: 10MB per file • Multiple files allowed
+
+        <p className="text-xs text-slate-500 mt-6">
+          {strings.formats}
         </p>
       </div>
     </div>
