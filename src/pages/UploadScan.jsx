@@ -60,7 +60,7 @@ export default function UploadScan() {
   const handleFileSelect = (e) => {
     e.preventDefault();
     setDragActive(false);
-    setError(null);
+    setError(null); // Clear previous errors
 
     // Check if user is authenticated
     if (!user) {
@@ -105,9 +105,49 @@ export default function UploadScan() {
     setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
   };
 
+  const checkScanLimit = () => {
+    const planTier = user?.plan_tier || 'free';
+    
+    // Free tier: 1 scan lifetime
+    if (planTier === 'free') {
+      const totalScans = user?.total_scans_used || 0;
+      if (totalScans >= 1) {
+        return {
+          canScan: false,
+          message: language === 'th' 
+            ? 'คุณใช้งานสแกนฟรีแล้ว กรุณาอัปเกรดเพื่อสแกนเพิ่มเติม' 
+            : 'You have used your free scan. Please upgrade to scan more leases.'
+        };
+      }
+    }
+    
+    // Lite tier: 5 scans per month
+    if (planTier === 'lite') {
+      const scansThisMonth = user?.scans_this_month || 0;
+      if (scansThisMonth >= 5) {
+        return {
+          canScan: false,
+          message: language === 'th' 
+            ? 'คุณใช้งานสแกน 5 ครั้งในเดือนนี้แล้ว อัปเกรดเป็น Protect สำหรับการสแกนไม่จำกัด' 
+            : 'You have used all 5 scans this month. Upgrade to Protect for unlimited scans.'
+        };
+      }
+    }
+    
+    // Protect and Secure: unlimited
+    return { canScan: true };
+  };
+
   const handleAnalyze = async () => {
     if (selectedFiles.length === 0) {
       setError(language === 'th' ? 'กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์' : 'Please select at least one file');
+      return;
+    }
+
+    // Check scan limits
+    const limitCheck = checkScanLimit();
+    if (!limitCheck.canScan) {
+      setError(limitCheck.message);
       return;
     }
 
@@ -115,7 +155,6 @@ export default function UploadScan() {
     setProgress(`Uploading ${selectedFiles.length} file(s)...`);
 
     try {
-      // Determine user's plan mode for AI analysis
       const planTier = user?.plan_tier || 'free';
       const analysisMode = planTier === 'secure' ? 'Secure' : planTier === 'protect' ? 'Protect' : 'Lite';
 
@@ -385,11 +424,30 @@ ${JSON.stringify(analysisResult.flags)}`,
       });
       console.log('Scan created:', scan.id);
 
+      // Step 7: Update user scan counters
+      const updateData = {
+        total_scans_used: (user?.total_scans_used || 0) + 1
+      };
+      
+      if (planTier === 'lite') {
+        updateData.scans_this_month = (user?.scans_this_month || 0) + 1;
+        // Set reset date if not set or if it's past the current date
+        if (!user?.scan_reset_date || new Date(user.scan_reset_date) <= new Date()) {
+          const nextMonth = new Date();
+          nextMonth.setMonth(nextMonth.getMonth() + 1);
+          nextMonth.setDate(1); // Set to the first day of the next month
+          updateData.scan_reset_date = nextMonth.toISOString().split('T')[0];
+        }
+      }
+      
+      await base44.auth.updateMe(updateData);
+
       queryClient.invalidateQueries({ queryKey: ['leases'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] }); // Invalidate currentUser to reflect updated scan counts
       setSelectedFiles([]);
       
-      // Step 7: Navigate to preview with state
-      console.log('Step 7: Navigating to preview...');
+      // Step 8: Navigate to preview with state
+      console.log('Step 8: Navigating to preview...');
       navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
       
     } catch (err) {
@@ -463,6 +521,14 @@ ${JSON.stringify(analysisResult.flags)}`,
 
   const strings = t[language];
 
+  const limitInfo = checkScanLimit();
+  const planTier = user?.plan_tier || 'free';
+  const scansRemaining = planTier === 'free' 
+    ? Math.max(0, 1 - (user?.total_scans_used || 0))
+    : planTier === 'lite'
+    ? Math.max(0, 5 - (user?.scans_this_month || 0))
+    : '∞';
+
   if (userLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
@@ -486,9 +552,19 @@ ${JSON.stringify(analysisResult.flags)}`,
               {strings.title}
             </h1>
           </div>
-          <p className="text-slate-600">
-            {strings.subtitle}
-          </p>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-slate-600">
+              {strings.subtitle}
+            </p>
+            {(planTier === 'free' || planTier === 'lite') && (
+              <div className="px-3 py-1 bg-blue-100 border border-blue-300 rounded-lg">
+                <p className="text-sm font-semibold text-blue-800">
+                  {language === 'th' ? 'สแกนคงเหลือ' : 'Scans remaining'}: {scansRemaining}
+                  {planTier === 'lite' && ` ${language === 'th' ? 'ในเดือนนี้' : 'this month'}`}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -499,6 +575,15 @@ ${JSON.stringify(analysisResult.flags)}`,
               <div className="text-xs mt-2">
                 Supported formats: PDF, JPG, PNG • Max size: 10MB per file
               </div>
+              {!limitInfo.canScan && (
+                <Button 
+                  size="sm" 
+                  className="mt-3 bg-ls-gold hover:bg-ls-gold/90"
+                  onClick={() => navigate(createPageUrl("Account"))}
+                >
+                  {language === 'th' ? 'อัปเกรดเลย' : 'Upgrade Now'}
+                </Button>
+              )}
             </AlertDescription>
           </Alert>
         )}
