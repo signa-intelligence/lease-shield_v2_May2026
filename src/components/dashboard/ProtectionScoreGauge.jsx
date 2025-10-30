@@ -52,16 +52,16 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
           </linearGradient>
         </defs>
 
-        {/* Background arc (gray) - full segments */}
+        {/* Background arc (gray) - straight ends */}
         <path
           d={`M ${centerX - radius} ${centerY} A ${radius} ${radius} 0 0 1 ${centerX + radius} ${centerY}`}
           fill="none"
           stroke="#E5E7EB"
           strokeWidth={strokeWidth}
-          strokeLinecap="round"
+          strokeLinecap="butt"
         />
 
-        {/* Colored segments - always show all 4 colors at 25% each */}
+        {/* Colored segments - straight ends */}
         {segments.map((segment, idx) => {
           const startAngle = -180 + (segment.start / 100) * 180;
           const endAngle = -180 + (segment.end / 100) * 180;
