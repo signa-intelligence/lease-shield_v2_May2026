@@ -3,16 +3,37 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, Crown, Zap } from "lucide-react";
+import { Lock, Crown, Zap, Shield } from "lucide-react";
 
 const FEATURE_GATES = {
+  // Free tier
+  scan_preview: ['free', 'lite', 'protect', 'secure'],
+  basic_document_vault: ['free', 'lite', 'protect', 'secure'],
+  storage_100mb: ['free'],
+  max_3_files: ['free'],
+  
+  // Lite tier
   full_report: ['lite', 'protect', 'secure'],
+  templates_lite: ['lite', 'protect', 'secure'],
+  email_notifications: ['lite', 'protect', 'secure'],
+  scan_limit_5: ['lite'],
+  storage_1gb: ['lite'],
+  
+  // Protect tier
   deposit_shield: ['protect', 'secure'],
+  rent_alerts_auto: ['protect', 'secure'],
   templates_full: ['protect', 'secure'],
-  templates_lite: ['lite'],
+  line_notify_enabled: ['protect', 'secure'],
+  unlimited_scans: ['protect', 'secure'],
+  storage_5gb: ['protect'],
+  
+  // Secure tier
   priority_queue: ['secure'],
-  resolve_member_price: ['lite', 'protect', 'secure'],
-  line_notify_enabled: ['lite', 'protect', 'secure']
+  storage_20gb: ['secure'],
+  priority_support: ['secure'],
+  
+  // Legacy support
+  resolve_member_price: ['lite', 'protect', 'secure']
 };
 
 export function useFeatureAccess(featureName) {
@@ -61,7 +82,7 @@ export function PlanBadge({ tier }) {
   const configs = {
     free: { label: 'Free', color: 'bg-gray-100 text-gray-700', icon: null },
     lite: { label: 'Lite', color: 'bg-blue-100 text-blue-700', icon: Zap },
-    protect: { label: 'Protect', color: 'bg-emerald-100 text-emerald-700', icon: Crown },
+    protect: { label: 'Protect', color: 'bg-emerald-100 text-emerald-700', icon: Shield },
     secure: { label: 'Secure', color: 'bg-purple-100 text-purple-700', icon: Crown }
   };
 
