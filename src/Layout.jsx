@@ -2,7 +2,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Mail, MessageCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -208,7 +208,7 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Bottom Navigation Tabs */}
       <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-ls-stone shadow-2xl z-50" style={{
-        paddingBottom: `calc(46px + env(safe-area-inset-bottom, 0px))`
+        paddingBottom: `calc(92px + env(safe-area-inset-bottom, 0px))`
       }}>
         <div className={`flex items-center justify-around px-2 pt-2 ${isAdmin ? 'overflow-x-auto' : ''}`} style={{
           paddingBottom: '8px'
@@ -253,7 +253,115 @@ export default function Layout({ children, currentPageName }) {
           })}
         </div>
 
-        {/* Disclaimer - Below Navigation Bar with All Corners Rounded */}
+        {/* Support Links Section - NEW */}
+        <div style={{
+          position: 'absolute',
+          bottom: `calc(46px + env(safe-area-inset-bottom, 0px))`,
+          left: '8px',
+          right: '8px',
+          padding: '12px 16px',
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #ECEFED',
+          borderRadius: '12px 12px 0 0',
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px',
+            flexWrap: 'wrap'
+          }}>
+            {/* Email Support */}
+            <a
+              href="mailto:support@leaseshield.asia"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                backgroundColor: '#ECEFED',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                color: '#0C3B2E',
+                fontSize: '12px',
+                fontWeight: '600',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#0C3B2E';
+                e.target.style.color = '#FFFFFF';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#ECEFED';
+                e.target.style.color = '#0C3B2E';
+              }}
+            >
+              <Mail className="w-4 h-4" />
+              {language === 'th' ? 'อีเมล' : 'Email'}
+            </a>
+
+            {/* LINE Support */}
+            <a
+              href="https://line.me/R/ti/p/@071vchfv"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                backgroundColor: '#06C755',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                color: '#FFFFFF',
+                fontSize: '12px',
+                fontWeight: '600',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#05b34c';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#06C755';
+              }}
+            >
+              <MessageCircle className="w-4 h-4" />
+              LINE
+            </a>
+
+            {/* WhatsApp Support */}
+            <a
+              href="https://wa.me/66123456789"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                backgroundColor: '#25D366',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                color: '#FFFFFF',
+                fontSize: '12px',
+                fontWeight: '600',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#20ba5a';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#25D366';
+              }}
+            >
+              <MessageCircle className="w-4 h-4" />
+              WhatsApp
+            </a>
+          </div>
+        </div>
+
+        {/* Disclaimer - Below Support Links */}
         <div style={{
           position: 'absolute',
           bottom: `calc(8px + env(safe-area-inset-bottom, 0px))`,
@@ -263,7 +371,7 @@ export default function Layout({ children, currentPageName }) {
           textAlign: 'center',
           backgroundColor: '#FFFFFF',
           border: '1px solid #ECEFED',
-          borderRadius: '12px',
+          borderRadius: '0 0 12px 12px',
           boxShadow: '0 -2px 8px rgba(0,0,0,0.05)'
         }}>
           <p style={{
