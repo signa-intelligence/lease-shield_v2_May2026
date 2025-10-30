@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -874,7 +875,7 @@ export default function Account() {
                     borderRadius: '16px',
                     overflow: 'hidden',
                     boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
-                    border: plan.popular ? '2px solid #C7A338' : 'none',
+                    border: plan.popular ? '3px solid #C7A338' : '2px solid #E5E7EB',
                     backgroundColor: '#FFFFFF'
                   }}
                 >
@@ -887,8 +888,9 @@ export default function Account() {
                       color: '#FFFFFF',
                       fontSize: '12px',
                       fontWeight: 'bold',
-                      padding: '4px 12px',
-                      borderBottomLeftRadius: '8px'
+                      padding: '6px 16px',
+                      borderBottomLeftRadius: '8px',
+                      zIndex: 10
                     }}>
                       POPULAR
                     </div>
@@ -903,8 +905,9 @@ export default function Account() {
                       color: '#FFFFFF',
                       fontSize: '11px',
                       fontWeight: 'bold',
-                      padding: '4px 10px',
-                      borderBottomRightRadius: '8px'
+                      padding: '6px 12px',
+                      borderBottomRightRadius: '8px',
+                      zIndex: 10
                     }}>
                       🏷️ 2 MONTHS FREE
                     </div>
@@ -912,35 +915,35 @@ export default function Account() {
                   
                   <div style={{
                     backgroundColor: plan.bgColor,
-                    padding: '24px',
+                    padding: '32px 24px 24px 24px',
                     color: '#FFFFFF'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <Icon style={{ width: '24px', height: '24px', color: '#FFFFFF' }} />
-                      <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF', margin: 0 }}>
+                      <Icon style={{ width: '28px', height: '28px', color: '#FFFFFF' }} />
+                      <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#FFFFFF', margin: 0 }}>
                         {plan.label}
                       </h3>
                     </div>
-                    <p style={{ fontSize: '14px', color: '#FFFFFF', opacity: 0.9, marginBottom: '12px' }}>
+                    <p style={{ fontSize: '14px', color: '#FFFFFF', opacity: 0.95, marginBottom: '16px', minHeight: '20px' }}>
                       {plan.tagline}
                     </p>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '36px', fontWeight: 'bold', color: '#FFFFFF' }}>
+                      <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
                         ฿{displayPrice.toLocaleString()}
                       </span>
-                      <span style={{ fontSize: '14px', color: '#FFFFFF', opacity: 0.9 }}>
+                      <span style={{ fontSize: '16px', color: '#FFFFFF', opacity: 0.9 }}>
                         {displayInterval}
                       </span>
                     </div>
                     {billingInterval === 'annual' && (
-                      <p style={{ fontSize: '12px', color: '#FFFFFF', opacity: 0.8 }}>
+                      <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px' }}>
                         ฿{effectiveMonthly}/month • Save ฿{plan.savingsAnnual.toLocaleString()}
                       </p>
                     )}
                   </div>
 
                   <div style={{ padding: '24px' }}>
-                    <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '16px', minHeight: '40px' }}>
+                    <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '20px', minHeight: '40px', lineHeight: '1.5' }}>
                       {plan.description}
                     </p>
                     <ul style={{ 
@@ -949,22 +952,23 @@ export default function Account() {
                       margin: '0 0 24px 0',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '12px'
+                      gap: '10px'
                     }}>
                       {plan.benefits.map((benefit, idx) => (
                         <li key={idx} style={{ 
                           display: 'flex', 
                           alignItems: 'flex-start', 
-                          gap: '8px',
+                          gap: '10px',
                           fontSize: '14px',
-                          color: '#1A1D1F'
+                          color: '#1A1D1F',
+                          lineHeight: '1.4'
                         }}>
                           <CheckCircle2 style={{ 
-                            width: '16px', 
-                            height: '16px', 
+                            width: '18px', 
+                            height: '18px', 
                             color: '#0C3B2E',
                             flexShrink: 0,
-                            marginTop: '2px'
+                            marginTop: '1px'
                           }} />
                           <span>{benefit}</span>
                         </li>
@@ -976,13 +980,13 @@ export default function Account() {
                         disabled
                         style={{
                           width: '100%',
-                          padding: '12px 16px',
-                          borderRadius: '8px',
+                          padding: '14px 20px',
+                          borderRadius: '10px',
                           fontWeight: 'bold',
                           fontSize: '16px',
-                          border: '2px solid #ECEFED',
-                          backgroundColor: '#ECEFED',
-                          color: '#64748b',
+                          border: '2px solid #E5E7EB',
+                          backgroundColor: '#F3F4F6',
+                          color: '#9CA3AF',
                           cursor: 'not-allowed'
                         }}
                       >
@@ -994,8 +998,8 @@ export default function Account() {
                         disabled={subscribing}
                         style={{
                           width: '100%',
-                          padding: '12px 16px',
-                          borderRadius: '8px',
+                          padding: '14px 20px',
+                          borderRadius: '10px',
                           fontWeight: 'bold',
                           fontSize: '16px',
                           border: 'none',
@@ -1003,7 +1007,7 @@ export default function Account() {
                           color: '#FFFFFF',
                           cursor: subscribing ? 'not-allowed' : 'pointer',
                           opacity: subscribing ? 0.7 : 1,
-                          transition: 'opacity 0.2s',
+                          transition: 'all 0.2s',
                           boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                         }}
                         onMouseEnter={(e) => {
