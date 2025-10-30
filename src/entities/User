@@ -1,0 +1,88 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "country": {
+      "type": "string",
+      "description": "Country"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "en",
+        "th"
+      ],
+      "default": "en"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "active",
+        "cancelled"
+      ],
+      "default": "none"
+    },
+    "plan_tier": {
+      "type": "string",
+      "enum": [
+        "free",
+        "lite",
+        "protect",
+        "secure"
+      ],
+      "default": "free"
+    },
+    "billing_interval": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "annual"
+      ],
+      "description": "Billing period for subscription"
+    },
+    "plan_renews_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Plan renewal date"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID"
+    },
+    "line_messaging_token": {
+      "type": "string",
+      "description": "LINE Messaging API user ID"
+    },
+    "email_notifications": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable email notifications"
+    },
+    "line_notifications": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable LINE notifications"
+    },
+    "scans_this_month": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of scans used this month (for Lite tier)"
+    },
+    "total_scans_used": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total scans used (for Free tier)"
+    },
+    "scan_reset_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when monthly scan count resets"
+    }
+  },
+  "required": []
+}
