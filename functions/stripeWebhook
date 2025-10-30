@@ -33,10 +33,10 @@ Deno.serve(async (req) => {
       'price_1SM6rhQwoI6NhlUxZIN3WekE': { tier: 'protect', interval: 'monthly' },
       'price_1SM6t9QwoI6NhlUxy5Pl7Rrq': { tier: 'secure', interval: 'monthly' },
       
-      // Annual prices - REPLACE THESE WITH YOUR REAL STRIPE PRICE IDs
-      'price_PASTE_YOUR_LITE_ANNUAL_ID_HERE': { tier: 'lite', interval: 'annual' },
-      'price_PASTE_YOUR_PROTECT_ANNUAL_ID_HERE': { tier: 'protect', interval: 'annual' },
-      'price_PASTE_YOUR_SECURE_ANNUAL_ID_HERE': { tier: 'secure', interval: 'annual' }
+      // Annual prices
+      'price_1SNqjfQwoI6NhlUxk9LwivBm': { tier: 'lite', interval: 'annual' },
+      'price_1SNqkMQwoI6NhlUxHb2VADjs': { tier: 'protect', interval: 'annual' },
+      'price_1SNqkxQwoI6NhlUx09mj0Lur': { tier: 'secure', interval: 'annual' }
     };
 
     // Handle different event types
