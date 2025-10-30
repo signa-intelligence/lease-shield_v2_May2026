@@ -37,7 +37,7 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bg
           
           {showGauge ? (
             <div className="my-4">
-              <ProtectionScoreGauge score={scoreValue || 0} size={160} />
+              <ProtectionScoreGauge score={scoreValue || 0} size={200} />
             </div>
           ) : (
             <>

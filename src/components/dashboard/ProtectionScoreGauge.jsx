@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function ProtectionScoreGauge({ score = 0, size = 200 }) {
+export default function ProtectionScoreGauge({ score = 0, size = 220 }) {
   const getStatusLabel = (score) => {
     if (score >= 85) return { text: 'Excellent', color: '#10B981' };
     if (score >= 70) return { text: 'Good', color: '#EAB308' };
@@ -19,10 +19,10 @@ export default function ProtectionScoreGauge({ score = 0, size = 200 }) {
 
   // Define color segments
   const segments = [
-    { start: 0, end: 50, color: '#EF4444', label: 'POOR' },     // Red: 0-50
+    { start: 0, end: 50, color: '#EF4444', label: 'LOW' },     // Red: 0-50
     { start: 50, end: 70, color: '#F59E0B', label: '' },        // Orange: 50-70
     { start: 70, end: 85, color: '#EAB308', label: '' },        // Yellow: 70-85
-    { start: 85, end: 100, color: '#10B981', label: 'GOOD' }    // Green: 85-100
+    { start: 85, end: 100, color: '#10B981', label: 'HIGH' }    // Green: 85-100
   ];
 
   return (
@@ -138,7 +138,7 @@ export default function ProtectionScoreGauge({ score = 0, size = 200 }) {
         </div>
       </div>
 
-      {/* POOR label (left) */}
+      {/* LOW label (left) */}
       <div style={{
         position: 'absolute',
         bottom: '10px',
@@ -148,10 +148,10 @@ export default function ProtectionScoreGauge({ score = 0, size = 200 }) {
         color: '#EF4444',
         textTransform: 'uppercase'
       }}>
-        POOR
+        LOW
       </div>
 
-      {/* GOOD label (right) */}
+      {/* HIGH label (right) */}
       <div style={{
         position: 'absolute',
         bottom: '10px',
@@ -161,7 +161,7 @@ export default function ProtectionScoreGauge({ score = 0, size = 200 }) {
         color: '#10B981',
         textTransform: 'uppercase'
       }}>
-        GOOD
+        HIGH
       </div>
     </div>
   );
