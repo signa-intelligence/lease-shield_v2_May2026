@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, MessageCircle } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
@@ -1082,17 +1082,22 @@ export default function Account() {
                   {plan.popular && (
                     <div style={{
                       position: 'absolute',
-                      top: 0,
-                      right: 0,
+                      top: '-6px',
+                      right: '20px',
                       backgroundColor: '#C7A338',
                       color: '#FFFFFF',
-                      fontSize: '12px',
+                      fontSize: '11px',
                       fontWeight: 'bold',
-                      padding: '6px 16px',
-                      borderBottomLeftRadius: '8px',
+                      padding: '8px 16px',
+                      borderRadius: '0 0 12px 12px',
+                      boxShadow: '0 4px 8px rgba(199, 163, 56, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
                       zIndex: 10
                     }}>
-                      POPULAR
+                      <Star style={{ width: '14px', height: '14px', fill: '#FFFFFF' }} />
+                      <span>MOST POPULAR</span>
                     </div>
                   )}
 
@@ -1115,7 +1120,7 @@ export default function Account() {
                   
                   <div style={{
                     backgroundColor: plan.bgColor,
-                    padding: '32px 24px 24px 24px',
+                    padding: plan.popular ? '40px 24px 24px 24px' : '32px 24px 24px 24px',
                     color: '#FFFFFF'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
