@@ -312,7 +312,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone">
       <div className="max-w-7xl mx-auto p-6 md:p-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6"> {/* Changed mb-8 to mb-6 */}
           <div className="flex items-center gap-3 mb-3">
             <div className="px-3 py-1 bg-ls-stone border border-ls-forest/20 rounded-full">
               <div className="flex items-center gap-2">
@@ -329,8 +329,9 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - Optimized Layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Regular stat cards with enhanced info */}
           <StatsCard
             title={strings.activeLeases}
             value={leases.length}
@@ -351,6 +352,8 @@ export default function Dashboard() {
             icon={Scale}
             bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
           />
+          
+          {/* Protection Score with gauge - optimized spacing */}
           <StatsCard
             title={strings.protectionScore}
             value={`${protectionScore}%`}

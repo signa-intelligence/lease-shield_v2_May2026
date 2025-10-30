@@ -7,15 +7,17 @@ import ProtectionScoreGauge from "./ProtectionScoreGauge";
 export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bgGradient, scoreColor, scoreStatus, ctaText, onCtaClick, showGauge = false, scoreValue }) {
   return (
     <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
-      {/* Background circle */}
-      <div 
-        className="absolute top-0 right-0 w-32 h-32 transform translate-x-8 -translate-y-8 rounded-full opacity-10"
-        style={{
-          backgroundColor: scoreColor || undefined
-        }}
-      />
-      <div className="p-6 relative z-10">
-        <div className="flex justify-between items-start mb-4">
+      {/* Remove or minimize background circle for gauge card */}
+      {!showGauge && (
+        <div 
+          className="absolute top-0 right-0 w-32 h-32 transform translate-x-8 -translate-y-8 rounded-full opacity-10"
+          style={{
+            backgroundColor: scoreColor || undefined
+          }}
+        />
+      )}
+      <div className={`${showGauge ? 'p-4' : 'p-6'} relative z-10`}>
+        <div className="flex justify-between items-start mb-3">
           {/* Icon box */}
           <div 
             className={`p-3 rounded-xl ${bgGradient || ''}`}
@@ -33,10 +35,10 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bg
           )}
         </div>
         <div>
-          <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
+          <p className="text-sm font-medium text-slate-500 mb-2">{title}</p>
           
           {showGauge ? (
-            <div className="my-4">
+            <div className="mt-2 mb-2">
               <ProtectionScoreGauge score={scoreValue || 0} size={240} />
             </div>
           ) : (
