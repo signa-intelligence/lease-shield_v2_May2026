@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,7 +10,6 @@ import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckC
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
-import { Switch } from "@/components/ui/switch";
 
 const PLAN_DETAILS = [
   {
@@ -20,7 +18,7 @@ const PLAN_DETAILS = [
     priceMonthly: 390,
     priceAnnual: 3900,
     priceIdMonthly: 'price_1SM6qtQwoI6NhlUxgDDy2LuJ',
-    priceIdAnnual: 'price_lite_annual', // TODO: Create in Stripe
+    priceIdAnnual: 'price_lite_annual',
     savingsAnnual: 780,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
@@ -44,7 +42,7 @@ const PLAN_DETAILS = [
     priceMonthly: 690,
     priceAnnual: 6900,
     priceIdMonthly: 'price_1SM6rhQwoI6NhlUxZIN3WekE',
-    priceIdAnnual: 'price_protect_annual', // TODO: Create in Stripe
+    priceIdAnnual: 'price_protect_annual',
     savingsAnnual: 1380,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
@@ -70,7 +68,7 @@ const PLAN_DETAILS = [
     priceMonthly: 1290,
     priceAnnual: 12900,
     priceIdMonthly: 'price_1SM6t9QwoI6NhlUxy5Pl7Rrq',
-    priceIdAnnual: 'price_secure_annual', // TODO: Create in Stripe
+    priceIdAnnual: 'price_secure_annual',
     savingsAnnual: 2580,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
