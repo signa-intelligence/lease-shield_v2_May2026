@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -252,6 +251,16 @@ export default function Dashboard() {
     return leaseDate.getMonth() === now.getMonth() && leaseDate.getFullYear() === now.getFullYear();
   });
 
+  // Calculate additional stats for mini info
+  const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
+  const totalDepositValue = activeDeposits.reduce((sum, d) => sum + d.deposit_amount, 0);
+  const avgDeposit = activeDeposits.length > 0 ? Math.round(totalDepositValue / activeDeposits.length) : 0;
+  const urgentDeposits = activeDeposits.filter(d => {
+    const daysRemaining = differenceInDays(new Date(d.expected_return_date), now);
+    return daysRemaining <= 30 && daysRemaining > 0;
+  }).length;
+  const resolvedCases = cases.filter(c => c.status === 'closed').length;
+
   const handleImproveScoreClick = () => {
     setShowImprovementDialog(true);
   };
@@ -275,7 +284,14 @@ export default function Dashboard() {
       thisMonth: "this month",
       improveScore: "How to Improve Your Score",
       improveScoreDesc: "Complete these actions to strengthen your protection",
-      takeAction: "Take Action"
+      takeAction: "Take Action",
+      scanned: "Scanned",
+      avgDeposit: "Avg Deposit",
+      urgentReturns: "Due Soon",
+      resolved: "Resolved",
+      viewAll: "View All",
+      addDeposit: "Add Deposit",
+      openCase: "Open Case"
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -295,7 +311,14 @@ export default function Dashboard() {
       thisMonth: "เดือนนี้",
       improveScore: "วิธีเพิ่มคะแนนของคุณ",
       improveScoreDesc: "ดำเนินการเหล่านี้เพื่อเสริมสร้างการป้องกัน",
-      takeAction: "ดำเนินการ"
+      takeAction: "ดำเนินการ",
+      scanned: "สแกนแล้ว",
+      avgDeposit: "มัดจำเฉลี่ย",
+      urgentReturns: "ครบกำหนดเร็วๆ นี้",
+      resolved: "แก้ไขแล้ว",
+      viewAll: "ดูทั้งหมด",
+      addDeposit: "เพิ่มมัดจำ",
+      openCase: "เปิดคดี"
     }
   };
 
@@ -312,7 +335,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone">
       <div className="max-w-7xl mx-auto p-6 md:p-8">
         {/* Header */}
-        <div className="mb-6"> {/* Changed mb-8 to mb-6 */}
+        <div className="mb-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="px-3 py-1 bg-ls-stone border border-ls-forest/20 rounded-full">
               <div className="flex items-center gap-2">
@@ -331,7 +354,7 @@ export default function Dashboard() {
 
         {/* Stats Grid - Optimized Layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Regular stat cards with enhanced info */}
+          {/* Active Leases with mini stats */}
           <StatsCard
             title={strings.activeLeases}
             value={leases.length}
@@ -339,21 +362,47 @@ export default function Dashboard() {
             bgGradient="bg-gradient-to-br from-ls-forest to-emerald-800"
             trend={thisMonthLeases.length > 0 ? `+${thisMonthLeases.length} ${strings.thisMonth}` : undefined}
             trendUp={thisMonthLeases.length > 0}
+            miniStats={[
+              { label: strings.scanned, value: scannedLeases.length }
+            ]}
+            actionButton={{
+              label: strings.viewAll,
+              link: createPageUrl("Leases")
+            }}
           />
+          
+          {/* Deposits Tracked with mini stats */}
           <StatsCard
             title={strings.depositsTracked}
-            value={`฿${activeDeposits.reduce((sum, d) => sum + d.deposit_amount, 0).toLocaleString()}`}
+            value={`฿${totalDepositValue.toLocaleString()}`}
             icon={Wallet}
             bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
+            miniStats={[
+              { label: strings.avgDeposit, value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
+              { label: strings.urgentReturns, value: urgentDeposits }
+            ]}
+            actionButton={{
+              label: strings.addDeposit,
+              link: createPageUrl("DepositTracker")
+            }}
           />
+          
+          {/* Active Cases with mini stats */}
           <StatsCard
             title={strings.activeCases}
             value={activeCases.length}
             icon={Scale}
             bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
+            miniStats={[
+              { label: strings.resolved, value: resolvedCases }
+            ]}
+            actionButton={{
+              label: strings.openCase,
+              link: createPageUrl("Cases")
+            }}
           />
           
-          {/* Protection Score with gauge - optimized spacing */}
+          {/* Protection Score with gauge - NO CHANGES TO THIS CARD */}
           <StatsCard
             title={strings.protectionScore}
             value={`${protectionScore}%`}
