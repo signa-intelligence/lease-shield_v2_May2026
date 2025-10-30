@@ -16,6 +16,7 @@ import Account from './pages/Account';
 import AdminConsole from './pages/AdminConsole';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import MaintenanceTracker from './pages/MaintenanceTracker';
+import Support from './pages/Support';
 import Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "AdminConsole": AdminConsole,
     "PrivacyPolicy": PrivacyPolicy,
     "MaintenanceTracker": MaintenanceTracker,
+    "Support": Support,
 }
 
 export const pagesConfig = {
