@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -356,8 +357,8 @@ export default function Dashboard() {
             icon={Shield}
             scoreColor={protectionScoreColor}
             scoreStatus={protectionScoreStatus}
-            trend={protectionScore >= 70 ? "+5%" : undefined}
-            trendUp={protectionScore >= 70}
+            showGauge={true}
+            scoreValue={protectionScore}
             ctaText={protectionScore < 100 ? strings.improveScoreCta : undefined}
             onCtaClick={protectionScore < 100 ? handleImproveScoreClick : undefined}
           />
@@ -561,7 +562,7 @@ export default function Dashboard() {
                     whiteSpace: 'nowrap'
                   }}
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                  onMouseLeave={(e) => e.target.backgroundColor = '#0C3B2E'}
                 >
                   {strings.viewPlans}
                 </button>

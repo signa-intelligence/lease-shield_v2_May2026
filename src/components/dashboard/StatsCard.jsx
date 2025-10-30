@@ -2,11 +2,12 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import ProtectionScoreGauge from "./ProtectionScoreGauge";
 
-export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bgGradient, scoreColor, scoreStatus, ctaText, onCtaClick }) {
+export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bgGradient, scoreColor, scoreStatus, ctaText, onCtaClick, showGauge = false, scoreValue }) {
   return (
     <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
-      {/* Background circle - changes color for Protection Score */}
+      {/* Background circle */}
       <div 
         className="absolute top-0 right-0 w-32 h-32 transform translate-x-8 -translate-y-8 rounded-full opacity-10"
         style={{
@@ -15,7 +16,7 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bg
       />
       <div className="p-6 relative z-10">
         <div className="flex justify-between items-start mb-4">
-          {/* Icon box - matches score color for Protection Score */}
+          {/* Icon box */}
           <div 
             className={`p-3 rounded-xl ${bgGradient || ''}`}
             style={
@@ -33,21 +34,30 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendUp, bg
         </div>
         <div>
           <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-ls-charcoal mb-2">{value}</p>
-          {scoreStatus && (
-            <Badge 
-              style={{
-                backgroundColor: `${scoreColor}15`,
-                color: scoreColor,
-                border: `1px solid ${scoreColor}30`
-              }}
-              className="font-semibold"
-            >
-              {scoreStatus}
-            </Badge>
+          
+          {showGauge ? (
+            <div className="my-4">
+              <ProtectionScoreGauge score={scoreValue || 0} size={160} />
+            </div>
+          ) : (
+            <>
+              <p className="text-3xl font-bold text-ls-charcoal mb-2">{value}</p>
+              {scoreStatus && (
+                <Badge 
+                  style={{
+                    backgroundColor: `${scoreColor}15`,
+                    color: scoreColor,
+                    border: `1px solid ${scoreColor}30`
+                  }}
+                  className="font-semibold"
+                >
+                  {scoreStatus}
+                </Badge>
+              )}
+            </>
           )}
           
-          {/* CTA Button for Protection Score */}
+          {/* CTA Button */}
           {ctaText && onCtaClick && (
             <button
               onClick={onCtaClick}
