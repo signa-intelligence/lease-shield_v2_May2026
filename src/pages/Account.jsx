@@ -216,6 +216,28 @@ export default function Account() {
   const isFree = currentPlanTier === 'free';
   const language = user?.language || 'en';
   const currentTheme = user?.theme || 'light';
+  const isDarkMode = currentTheme === 'dark';
+
+  // Dark mode colors
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    inputBg: '#353A3D',
+    fieldBg: '#353A3D',
+    hoverBg: '#3A3D40'
+  } : {
+    bg: '#ECEFED',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+    inputBg: '#FFFFFF',
+    fieldBg: '#ECEFED',
+    hoverBg: '#F8FAFC'
+  };
 
   const t = {
     en: {
@@ -359,7 +381,7 @@ export default function Account() {
   const strings = t[language];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -377,8 +399,8 @@ export default function Account() {
               <User className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">{strings.pageTitle}</h1>
-              <p className="text-slate-600">{strings.pageSubtitle}</p>
+              <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.pageTitle}</h1>
+              <p style={{ color: colors.textSecondary }}>{strings.pageSubtitle}</p>
             </div>
           </div>
         </div>
@@ -386,13 +408,14 @@ export default function Account() {
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
           {/* Personal Information Card */}
           <Card className="lg:col-span-2 border-none shadow-xl" style={{
-            backgroundColor: '#FFFFFF'
+            backgroundColor: colors.cardBg
           }}>
             <CardHeader className="border-b pb-4" style={{
-              backgroundColor: '#ECEFED'
+              backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
+              borderBottomColor: colors.borderColor
             }}>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <Settings className="w-5 h-5 text-ls-forest" />
                   {strings.personalInfo}
                 </CardTitle>
@@ -403,7 +426,7 @@ export default function Account() {
                       padding: '8px 16px',
                       borderRadius: '8px',
                       border: '2px solid #0C3B2E',
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: colors.cardBg,
                       color: '#0C3B2E',
                       fontWeight: 'bold',
                       fontSize: '14px',
@@ -416,7 +439,7 @@ export default function Account() {
                       e.target.style.color = '#FFFFFF';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#FFFFFF';
+                      e.target.style.backgroundColor = colors.cardBg;
                       e.target.style.borderColor = '#0C3B2E';
                       e.target.style.color = '#0C3B2E';
                     }}
@@ -432,7 +455,7 @@ export default function Account() {
                   {/* Name Display */}
                   <div style={{
                     padding: '16px',
-                    backgroundColor: '#ECEFED',
+                    backgroundColor: colors.fieldBg,
                     borderRadius: '12px',
                     borderLeft: '4px solid #0C3B2E'
                   }}>
@@ -449,8 +472,8 @@ export default function Account() {
                         <User className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-slate-500 mb-1">{strings.fullName}</p>
-                        <p className="font-bold text-ls-charcoal text-lg">{user?.full_name}</p>
+                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.fullName}</p>
+                        <p className="font-bold text-lg" style={{ color: colors.textPrimary }}>{user?.full_name}</p>
                       </div>
                     </div>
                   </div>
@@ -458,7 +481,7 @@ export default function Account() {
                   {/* Email Display */}
                   <div style={{
                     padding: '16px',
-                    backgroundColor: '#ECEFED',
+                    backgroundColor: colors.fieldBg,
                     borderRadius: '12px',
                     borderLeft: '4px solid #C7A338'
                   }}>
@@ -475,8 +498,8 @@ export default function Account() {
                         <Mail className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-slate-500 mb-1">{strings.email}</p>
-                        <p className="font-bold text-ls-charcoal">{user?.email}</p>
+                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.email}</p>
+                        <p className="font-bold" style={{ color: colors.textPrimary }}>{user?.email}</p>
                       </div>
                     </div>
                   </div>
@@ -484,7 +507,7 @@ export default function Account() {
                   {/* Phone Display */}
                   <div style={{
                     padding: '16px',
-                    backgroundColor: '#ECEFED',
+                    backgroundColor: colors.fieldBg,
                     borderRadius: '12px',
                     borderLeft: '4px solid #0C3B2E'
                   }}>
@@ -501,8 +524,8 @@ export default function Account() {
                         <Phone className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-slate-500 mb-1">{strings.phone}</p>
-                        <p className="font-bold text-ls-charcoal">{user?.phone || strings.notProvided}</p>
+                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.phone}</p>
+                        <p className="font-bold" style={{ color: colors.textPrimary }}>{user?.phone || strings.notProvided}</p>
                       </div>
                     </div>
                   </div>
@@ -510,7 +533,7 @@ export default function Account() {
                   {/* Language Display */}
                   <div style={{
                     padding: '16px',
-                    backgroundColor: '#ECEFED',
+                    backgroundColor: colors.fieldBg,
                     borderRadius: '12px',
                     borderLeft: '4px solid #1A1D1F'
                   }}>
@@ -527,8 +550,8 @@ export default function Account() {
                         <Globe className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-slate-500 mb-1">{strings.language}</p>
-                        <p className="font-bold text-ls-charcoal">
+                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.language}</p>
+                        <p className="font-bold" style={{ color: colors.textPrimary }}>
                           {user?.language === 'th' ? 'ไทย (Thai)' : 'English'}
                         </p>
                       </div>
@@ -538,7 +561,7 @@ export default function Account() {
                   {/* Theme Display with Toggle */}
                   <div style={{
                     padding: '16px',
-                    backgroundColor: '#ECEFED',
+                    backgroundColor: colors.fieldBg,
                     borderRadius: '12px',
                     borderLeft: '4px solid #C7A338'
                   }}>
@@ -572,13 +595,13 @@ export default function Account() {
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs font-semibold text-slate-500 mb-1">{strings.theme}</p>
-                          <p className="font-bold text-ls-charcoal">
+                          <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.theme}</p>
+                          <p className="font-bold" style={{ color: colors.textPrimary }}>
                             {currentTheme === 'dark' ? strings.darkMode : strings.lightMode}
                           </p>
                         </div>
                       </div>
-                      <div className="flex bg-white rounded-lg p-1 shadow-sm">
+                      <div className="flex rounded-lg p-1 shadow-sm" style={{ backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF' }}>
                         <button
                           onClick={() => handleThemeToggle('light')}
                           style={{
@@ -586,7 +609,7 @@ export default function Account() {
                             borderRadius: '6px',
                             border: 'none',
                             backgroundColor: currentTheme === 'light' ? '#0C3B2E' : 'transparent',
-                            color: currentTheme === 'light' ? '#FFFFFF' : '#64748b',
+                            color: currentTheme === 'light' ? '#FFFFFF' : colors.textSecondary,
                             fontWeight: currentTheme === 'light' ? 'bold' : 'normal',
                             fontSize: '13px',
                             cursor: 'pointer',
@@ -616,7 +639,7 @@ export default function Account() {
                             borderRadius: '6px',
                             border: 'none',
                             backgroundColor: currentTheme === 'dark' ? '#0C3B2E' : 'transparent',
-                            color: currentTheme === 'dark' ? '#FFFFFF' : '#64748b',
+                            color: currentTheme === 'dark' ? '#FFFFFF' : colors.textSecondary,
                             fontWeight: currentTheme === 'dark' ? 'bold' : 'normal',
                             fontSize: '13px',
                             cursor: 'pointer',
@@ -639,7 +662,7 @@ export default function Account() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Name Input */}
                   <div>
-                    <Label htmlFor="full_name" className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
+                    <Label htmlFor="full_name" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <User className="w-4 h-4 text-ls-forest" />
                       {strings.fullName}
                     </Label>
@@ -649,7 +672,9 @@ export default function Account() {
                       onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                       placeholder={language === 'th' ? 'ชื่อ-นามสกุลของคุณ' : 'Your full name'}
                       style={{
-                        border: '2px solid #ECEFED',
+                        border: `2px solid ${colors.borderColor}`,
+                        backgroundColor: colors.inputBg,
+                        color: colors.textPrimary,
                         borderRadius: '8px',
                         padding: '10px 12px',
                         fontSize: '14px'
@@ -659,25 +684,25 @@ export default function Account() {
 
                   {/* Email Display (Read-only) */}
                   <div>
-                    <Label className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
+                    <Label className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <Mail className="w-4 h-4 text-ls-gold" />
                       {strings.email}
                     </Label>
                     <div style={{
                       padding: '10px 12px',
-                      backgroundColor: '#ECEFED',
+                      backgroundColor: colors.fieldBg,
                       borderRadius: '8px',
-                      border: '2px solid #ECEFED',
+                      border: `2px solid ${colors.borderColor}`,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px'
                     }}>
                       <Lock className="w-4 h-4 text-slate-400" />
-                      <span style={{ color: '#1A1D1F', fontSize: '14px' }}>{user?.email}</span>
+                      <span style={{ color: colors.textPrimary, fontSize: '14px' }}>{user?.email}</span>
                       <span style={{
                         marginLeft: 'auto',
                         fontSize: '11px',
-                        color: '#64748b',
+                        color: colors.textSecondary,
                         fontStyle: 'italic'
                       }}>
                         {strings.cannotChange}
@@ -687,7 +712,7 @@ export default function Account() {
 
                   {/* Phone Input */}
                   <div>
-                    <Label htmlFor="phone" className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
+                    <Label htmlFor="phone" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <Phone className="w-4 h-4 text-ls-forest" />
                       {strings.phone}
                     </Label>
@@ -697,7 +722,9 @@ export default function Account() {
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       placeholder={strings.phonePlaceholder}
                       style={{
-                        border: '2px solid #ECEFED',
+                        border: `2px solid ${colors.borderColor}`,
+                        backgroundColor: colors.inputBg,
+                        color: colors.textPrimary,
                         borderRadius: '8px',
                         padding: '10px 12px',
                         fontSize: '14px'
@@ -707,7 +734,7 @@ export default function Account() {
 
                   {/* Country Input */}
                   <div>
-                    <Label htmlFor="country" className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
+                    <Label htmlFor="country" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <Globe className="w-4 h-4 text-ls-forest" />
                       {strings.country}
                     </Label>
@@ -717,7 +744,9 @@ export default function Account() {
                       onChange={(e) => setFormData({...formData, country: e.target.value})}
                       placeholder={strings.countryPlaceholder}
                       style={{
-                        border: '2px solid #ECEFED',
+                        border: `2px solid ${colors.borderColor}`,
+                        backgroundColor: colors.inputBg,
+                        color: colors.textPrimary,
                         borderRadius: '8px',
                         padding: '10px 12px',
                         fontSize: '14px'
@@ -727,12 +756,12 @@ export default function Account() {
 
                   {/* Language Select */}
                   <div>
-                    <Label htmlFor="language" className="text-sm font-semibold text-ls-charcoal mb-2">{strings.language}</Label>
+                    <Label htmlFor="language" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.language}</Label>
                     <Select value={formData.language} onValueChange={(value) => setFormData({...formData, language: value})}>
-                      <SelectTrigger>
+                      <SelectTrigger style={{ backgroundColor: colors.inputBg, color: colors.textPrimary, borderColor: colors.borderColor }}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
                         <SelectItem value="en">English</SelectItem>
                         <SelectItem value="th">ไทย (Thai)</SelectItem>
                       </SelectContent>
@@ -741,12 +770,12 @@ export default function Account() {
 
                   {/* Theme Select */}
                   <div>
-                    <Label htmlFor="theme" className="text-sm font-semibold text-ls-charcoal mb-2">{strings.theme}</Label>
+                    <Label htmlFor="theme" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.theme}</Label>
                     <Select value={formData.theme} onValueChange={(value) => setFormData({...formData, theme: value})}>
-                      <SelectTrigger>
+                      <SelectTrigger style={{ backgroundColor: colors.inputBg, color: colors.textPrimary, borderColor: colors.borderColor }}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
                         <SelectItem value="light">
                           <div className="flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -818,17 +847,17 @@ export default function Account() {
                         borderRadius: '8px',
                         fontWeight: 'bold',
                         fontSize: '16px',
-                        border: '2px solid #ECEFED',
-                        backgroundColor: '#FFFFFF',
-                        color: '#1A1D1F',
+                        border: `2px solid ${colors.borderColor}`,
+                        backgroundColor: colors.cardBg,
+                        color: colors.textPrimary,
                         cursor: 'pointer',
                         transition: 'all 0.2s'
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#ECEFED';
+                        e.target.style.backgroundColor = colors.hoverBg;
                       }}
                       onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#FFFFFF';
+                        e.target.style.backgroundColor = colors.cardBg;
                       }}
                     >
                       {strings.cancel}
@@ -841,12 +870,13 @@ export default function Account() {
 
           {/* Current Plan Card */}
           <Card className="border-none shadow-xl overflow-hidden" style={{
-            backgroundColor: '#FFFFFF'
+            backgroundColor: colors.cardBg
           }}>
             <CardHeader className="border-b pb-4" style={{
-              backgroundColor: '#ECEFED'
+              backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
+              borderBottomColor: colors.borderColor
             }}>
-              <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
                 <Shield className="w-5 h-5 text-ls-forest" />
                 {strings.currentPlan}
               </CardTitle>
@@ -856,16 +886,16 @@ export default function Account() {
                 <div className="mb-3">
                   <PlanBadge tier={currentPlanTier} />
                 </div>
-                <p className="text-3xl font-bold text-ls-charcoal">
+                <p className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
                   {isFree ? strings.freePlanName : (PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly ? `฿${PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly}` : '—')}
                 </p>
                 {!isFree && user?.billing_interval && (
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
                     {user.billing_interval === 'annual' ? strings.billedAnnually : strings.billedMonthly}
                   </p>
                 )}
                 {user?.subscription_status === 'active' && user?.plan_renews_at && (
-                  <p className="text-xs text-slate-500 mt-2">
+                  <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
                     {strings.renews} {new Date(user.plan_renews_at).toLocaleDateString()}
                   </p>
                 )}
@@ -873,11 +903,11 @@ export default function Account() {
               
               {isFree ? (
                 <div className="space-y-3">
-                  <div style={{ padding: '12px', backgroundColor: '#ECEFED', borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
-                    <p style={{ fontSize: '14px', color: '#1A1D1F', fontWeight: '600', marginBottom: '8px' }}>
+                  <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
+                    <p style={{ fontSize: '14px', color: colors.textPrimary, fontWeight: '600', marginBottom: '8px' }}>
                       {strings.freeIncludes}
                     </p>
-                    <ul style={{ fontSize: '12px', color: '#1A1D1F', lineHeight: '1.5' }}>
+                    <ul style={{ fontSize: '12px', color: colors.textPrimary, lineHeight: '1.5' }}>
                       <li>• {strings.freeBenefit1}</li>
                       <li>• {strings.freeBenefit2}</li>
                       <li>• {strings.freeBenefit3}</li>
@@ -907,15 +937,15 @@ export default function Account() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <div style={{ padding: '12px', backgroundColor: '#ECEFED', borderRadius: '8px', borderLeft: '4px solid #0C3B2E' }}>
-                    <p className="text-sm text-ls-charcoal flex items-center gap-2">
+                  <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #0C3B2E' }}>
+                    <p className="text-sm flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <CheckCircle2 className="w-4 h-4 text-ls-forest" />
                       {strings.allActive}
                     </p>
                   </div>
                   {(currentPlanTier === 'protect' || currentPlanTier === 'secure') && (
-                    <div style={{ padding: '12px', backgroundColor: '#ECEFED', borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
-                      <p className="text-xs text-ls-charcoal flex items-center gap-1">
+                    <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
+                      <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
                         <Bell className="w-3 h-3 text-ls-gold" />
                         {strings.lineEnabled}
                       </p>
@@ -928,15 +958,15 @@ export default function Account() {
         </div>
 
         {/* Help & Support Section */}
-        <Card className="mb-6 border-none shadow-xl">
-          <CardHeader className="border-b" style={{ backgroundColor: '#ECEFED' }}>
-            <CardTitle className="text-lg font-bold flex items-center gap-2">
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
+            <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <HelpCircle className="w-5 h-5 text-ls-forest" />
               {strings.helpSupport}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <p className="text-sm text-slate-600 mb-4">
+            <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
               {strings.helpDesc}
             </p>
             
@@ -990,7 +1020,7 @@ export default function Account() {
                 href="mailto:support@leaseshield.asia"
                 style={{
                   padding: '20px',
-                  backgroundColor: '#ECEFED',
+                  backgroundColor: colors.fieldBg,
                   borderRadius: '12px',
                   borderLeft: '4px solid #C7A338',
                   textDecoration: 'none',
@@ -1000,14 +1030,20 @@ export default function Account() {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#C7A338';
-                  e.currentTarget.querySelectorAll('*').forEach(el => {
-                    if (el.tagName !== 'svg') el.style.color = '#FFFFFF';
+                  e.currentTarget.querySelectorAll('p').forEach(el => {
+                    el.style.color = '#FFFFFF';
                   });
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ECEFED';
-                  e.currentTarget.querySelectorAll('*').forEach(el => {
-                    if (el.tagName !== 'svg') el.style.color = '';
+                  e.currentTarget.style.backgroundColor = colors.fieldBg;
+                  e.currentTarget.querySelectorAll('p:nth-child(1)').forEach(el => {
+                    el.style.color = colors.textPrimary;
+                  });
+                  e.currentTarget.querySelectorAll('p:nth-child(2)').forEach(el => {
+                    el.style.color = colors.textSecondary;
+                  });
+                  e.currentTarget.querySelectorAll('p:nth-child(3)').forEach(el => {
+                    el.style.color = colors.textSecondary;
                   });
                 }}
               >
@@ -1024,13 +1060,13 @@ export default function Account() {
                     <Mail className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="font-bold text-ls-charcoal">
+                    <p className="font-bold" style={{ color: colors.textPrimary }}>
                       {strings.directEmail}
                     </p>
                   </div>
                 </div>
-                <p className="text-sm text-slate-600 mb-2">support@leaseshield.asia</p>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm mb-2" style={{ color: colors.textSecondary }}>support@leaseshield.asia</p>
+                <p className="text-xs" style={{ color: colors.textSecondary }}>
                   {strings.responseTime}
                 </p>
               </a>
@@ -1039,9 +1075,9 @@ export default function Account() {
         </Card>
 
         {/* Data Privacy & Rights Section */}
-        <Card className="mb-6 border-none shadow-xl">
-          <CardHeader className="border-b" style={{ backgroundColor: '#ECEFED' }}>
-            <CardTitle className="text-lg font-bold flex items-center gap-2">
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
+            <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <Shield className="w-5 h-5 text-ls-forest" />
               {strings.dataPrivacy}
             </CardTitle>
@@ -1051,7 +1087,7 @@ export default function Account() {
               {/* Privacy Policy Link */}
               <div style={{
                 padding: '16px',
-                backgroundColor: '#ECEFED',
+                backgroundColor: colors.fieldBg,
                 borderRadius: '12px',
                 borderLeft: '4px solid #0C3B2E'
               }}>
@@ -1069,8 +1105,8 @@ export default function Account() {
                       <FileText className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-semibold text-ls-charcoal">{strings.privacyPolicy}</p>
-                      <p className="text-sm text-slate-600">{strings.privacyDesc}</p>
+                      <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.privacyPolicy}</p>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.privacyDesc}</p>
                     </div>
                   </div>
                   <button
@@ -1079,7 +1115,7 @@ export default function Account() {
                       padding: '8px 16px',
                       borderRadius: '8px',
                       border: '2px solid #0C3B2E',
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: colors.cardBg,
                       color: '#0C3B2E',
                       fontWeight: 'bold',
                       fontSize: '14px',
@@ -1091,7 +1127,7 @@ export default function Account() {
                       e.target.style.color = '#FFFFFF';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#FFFFFF';
+                      e.target.style.backgroundColor = colors.cardBg;
                       e.target.style.color = '#0C3B2E';
                     }}
                   >
@@ -1103,9 +1139,9 @@ export default function Account() {
               {/* Export Data (PDPA Right to Portability) */}
               <div style={{
                 padding: '16px',
-                backgroundColor: '#ECEFED',
+                backgroundColor: colors.fieldBg,
                 borderRadius: '12px',
-                borderLeft: '44px solid #C7A338'
+                borderLeft: '4px solid #C7A338'
               }}>
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div className="flex items-center gap-3">
@@ -1121,8 +1157,8 @@ export default function Account() {
                       <Download className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-semibold text-ls-charcoal">{strings.exportData}</p>
-                      <p className="text-sm text-slate-600">{strings.exportDesc}</p>
+                      <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.exportData}</p>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.exportDesc}</p>
                     </div>
                   </div>
                   <button
@@ -1132,8 +1168,8 @@ export default function Account() {
                       padding: '8px 16px',
                       borderRadius: '8px',
                       border: '2px solid #C7A338',
-                      backgroundColor: exporting ? '#ECEFED' : '#FFFFFF',
-                      color: exporting ? '#94a3b8' : '#C7A338',
+                      backgroundColor: exporting ? colors.fieldBg : colors.cardBg,
+                      color: exporting ? colors.textSecondary : '#C7A338',
                       fontWeight: 'bold',
                       fontSize: '14px',
                       cursor: exporting ? 'not-allowed' : 'pointer',
@@ -1150,7 +1186,7 @@ export default function Account() {
                     }}
                     onMouseLeave={(e) => {
                       if (!exporting) {
-                        e.target.style.backgroundColor = '#FFFFFF';
+                        e.target.style.backgroundColor = colors.cardBg;
                         e.target.style.color = '#C7A338';
                       }
                     }}
@@ -1173,7 +1209,7 @@ export default function Account() {
               {/* Delete Account Notice */}
               <div style={{
                 padding: '16px',
-                backgroundColor: '#FEE2E2',
+                backgroundColor: '#FEE2E2', // This is a warning, keeps red background
                 borderRadius: '12px',
                 borderLeft: '4px solid #DC2626'
               }}>
@@ -1198,6 +1234,7 @@ export default function Account() {
           <NotificationSettings 
             user={user} 
             onUpdate={handleNotificationUpdate}
+            colors={colors} // Pass colors to NotificationSettings if it needs to adapt
           />
         </div>
 
@@ -1226,7 +1263,7 @@ export default function Account() {
         {/* Billing Toggle */}
         <div id="plans-section" className="mb-6">
           <div className="flex items-center justify-center mb-6">
-            <div className="bg-white rounded-xl p-2 shadow-md inline-flex items-center gap-3">
+            <div className="rounded-xl p-2 shadow-md inline-flex items-center gap-3" style={{ backgroundColor: colors.cardBg }}>
               <button
                 onClick={() => setBillingInterval('monthly')}
                 style={{
@@ -1238,7 +1275,7 @@ export default function Account() {
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   backgroundColor: billingInterval === 'monthly' ? '#0C3B2E' : 'transparent',
-                  color: billingInterval === 'monthly' ? '#FFFFFF' : '#1A1D1F'
+                  color: billingInterval === 'monthly' ? '#FFFFFF' : colors.textPrimary
                 }}
               >
                 {strings.monthly}
@@ -1254,7 +1291,7 @@ export default function Account() {
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   backgroundColor: billingInterval === 'annual' ? '#0C3B2E' : 'transparent',
-                  color: billingInterval === 'annual' ? '#FFFFFF' : '#1A1D1F',
+                  color: billingInterval === 'annual' ? '#FFFFFF' : colors.textPrimary,
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px'
@@ -1275,8 +1312,8 @@ export default function Account() {
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-ls-charcoal mb-2 text-center">{strings.choosePlan}</h2>
-          <p className="text-slate-600 mb-6 text-center">{strings.planDesc}</p>
+          <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
+          <p className="mb-6 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
           
           <div className="grid md:grid-cols-2 gap-6">
             {PLAN_DETAILS.map((plan) => {
@@ -1295,8 +1332,8 @@ export default function Account() {
                     borderRadius: '16px',
                     overflow: 'visible',
                     boxShadow: plan.popular ? '0 20px 25px -5px rgba(199, 163, 56, 0.3), 0 10px 10px -5px rgba(199, 163, 56, 0.15)' : '0 10px 15px -3px rgba(0,0,0,0.1)',
-                    border: plan.popular ? '3px solid #C7A338' : '2px solid #E5E7EB',
-                    backgroundColor: '#FFFFFF',
+                    border: plan.popular ? '3px solid #C7A338' : `2px solid ${colors.borderColor}`,
+                    backgroundColor: colors.cardBg,
                     transform: plan.popular ? 'scale(1.02)' : 'scale(1)',
                     transition: 'all 0.3s ease'
                   }}
@@ -1388,7 +1425,7 @@ export default function Account() {
                   </div>
 
                   <div style={{ padding: '24px' }}>
-                    <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '20px', minHeight: '40px', lineHeight: '1.5' }}>
+                    <p style={{ fontSize: '14px', color: colors.textSecondary, marginBottom: '20px', minHeight: '40px', lineHeight: '1.5' }}>
                       {plan.description}
                     </p>
                     <ul style={{ 
@@ -1409,7 +1446,7 @@ export default function Account() {
                             alignItems: 'flex-start', 
                             gap: '10px',
                             fontSize: '14px',
-                            color: '#1A1D1F',
+                            color: colors.textPrimary,
                             lineHeight: '1.4'
                           }}>
                             <CheckCircle2 style={{ 
@@ -1436,9 +1473,9 @@ export default function Account() {
                           borderRadius: '10px',
                           fontWeight: 'bold',
                           fontSize: '16px',
-                          border: '2px solid #E5E7EB',
-                          backgroundColor: '#F3F4F6',
-                          color: '#9CA3AF',
+                          border: `2px solid ${colors.borderColor}`,
+                          backgroundColor: colors.fieldBg,
+                          color: colors.textSecondary,
                           cursor: 'not-allowed'
                         }}
                       >
@@ -1453,9 +1490,9 @@ export default function Account() {
                           borderRadius: '10px',
                           fontWeight: 'bold',
                           fontSize: '16px',
-                          border: '2px solid #64748b',
-                          backgroundColor: '#FFFFFF',
-                          color: '#64748b',
+                          border: `2px solid ${colors.textSecondary}`,
+                          backgroundColor: colors.cardBg,
+                          color: colors.textSecondary,
                           cursor: 'not-allowed'
                         }}
                       >
@@ -1500,6 +1537,15 @@ export default function Account() {
           variant="outline"
           className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
           onClick={() => base44.auth.logout()}
+          style={{ backgroundColor: colors.cardBg, borderColor: isDarkMode ? '#EF4444' : '#FECACA', color: '#EF4444' }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = isDarkMode ? '#440000' : '#FEF2F2';
+            e.target.style.color = '#DC2626';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = colors.cardBg;
+            e.target.style.color = '#EF4444';
+          }}
         >
           <LogOut className="w-4 h-4 mr-2" />
           {strings.logout}
