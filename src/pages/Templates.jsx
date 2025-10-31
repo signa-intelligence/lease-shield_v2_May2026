@@ -97,11 +97,11 @@ export default function Templates() {
     textSecondary: '#A8ABAD',
     borderColor: '#3A3D40'
   } : {
-    bg: '#0C3B2E', // This was previously a gradient `from-ls-stone via-white to-ls-stone`, now it's a solid background based on the outline.
+    bg: '#0C3B2E',
     cardBg: '#FFFFFF',
-    textPrimary: '#ECEFED',
-    textSecondary: '#D1FAE5',
-    borderColor: 'rgba(236, 239, 237, 0.2)'
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#e2e8f0'
   };
 
 
