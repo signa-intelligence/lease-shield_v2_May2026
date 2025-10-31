@@ -1,0 +1,143 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+// Test LINE notifications - Admin only
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
+    const { notificationType } = await req.json();
+
+    if (!user.line_messaging_token) {
+      return Response.json({ error: 'LINE not connected' }, { status: 400 });
+    }
+
+    const language = user.language || 'en';
+    let messageText = '';
+
+    // Sample data for notifications
+    const sampleDeposit = {
+      amount: 45000,
+      property: 'Unit 123, Sample Condo, Sukhumvit',
+      expectedDate: '5 Aug 2025'
+    };
+
+    const sampleRent = {
+      amount: 15000,
+      dueDate: '1 Nov 2025',
+      daysUntil: 3
+    };
+
+    switch (notificationType) {
+      case '30day':
+        messageText = language === 'th' ?
+          `🔔 แจ้งเตือน Lease Shield\n\nถึงกำหนดคืนเงินมัดจำในอีก 30 วัน\n\n` +
+          `💰 จำนวน: ฿${sampleDeposit.amount.toLocaleString()}\n` +
+          `🏠 ทรัพย์สิน: ${sampleDeposit.property}\n` +
+          `📅 กำหนดคืน: ${sampleDeposit.expectedDate}\n\n` +
+          `💡 แนะนำ: แนบใบเสร็จและรูปภาพใน Evidence Vault ของคุณ` :
+          
+          `🔔 Lease Shield Reminder\n\nYour deposit is due back in 30 days\n\n` +
+          `💰 Amount: ฿${sampleDeposit.amount.toLocaleString()}\n` +
+          `🏠 Property: ${sampleDeposit.property}\n` +
+          `📅 Expected: ${sampleDeposit.expectedDate}\n\n` +
+          `💡 Tip: Keep receipts and photos in your Evidence Vault`;
+        break;
+
+      case '7day':
+        messageText = language === 'th' ?
+          `⚠️ แจ้งเตือนสุดท้าย Lease Shield\n\nอีก 7 วันครบกำหนดคืนเงินมัดจำ\n\n` +
+          `💰 จำนวน: ฿${sampleDeposit.amount.toLocaleString()}\n` +
+          `🏠 ทรัพย์สิน: ${sampleDeposit.property}\n` +
+          `📅 กำหนดคืน: ${sampleDeposit.expectedDate}\n\n` +
+          `📝 หากยังไม่ได้รับเงิน สามารถสร้างจดหมายร้องขอได้ทันที` :
+          
+          `⚠️ Lease Shield Final Reminder\n\n7 days until deposit return deadline\n\n` +
+          `💰 Amount: ฿${sampleDeposit.amount.toLocaleString()}\n` +
+          `🏠 Property: ${sampleDeposit.property}\n` +
+          `📅 Expected: ${sampleDeposit.expectedDate}\n\n` +
+          `📝 Generate a Deposit Return Request letter if needed`;
+        break;
+
+      case 'overdue':
+        messageText = language === 'th' ?
+          `🚨 แจ้งเตือนด่วน Lease Shield\n\nยังไม่ได้รับเงินมัดจำคืน\n\n` +
+          `💰 จำนวน: ฿${sampleDeposit.amount.toLocaleString()}\n` +
+          `🏠 ทรัพย์สิน: ${sampleDeposit.property}\n` +
+          `⏰ เกินกำหนด: 1 วัน\n\n` +
+          `📋 แนะนำให้ดำเนินการ:\n` +
+          `1. สร้างจดหมายเตือนคืนเงินมัดจำ\n` +
+          `2. ส่งทางไปรษณีย์ลงทะเบียน\n` +
+          `3. พิจารณาเปิดคดี Resolve` :
+          
+          `🚨 Lease Shield Urgent Alert\n\nDeposit not returned\n\n` +
+          `💰 Amount: ฿${sampleDeposit.amount.toLocaleString()}\n` +
+          `🏠 Property: ${sampleDeposit.property}\n` +
+          `⏰ Overdue: 1 day\n\n` +
+          `📋 Recommended Actions:\n` +
+          `1. Generate Late Return Reminder letter\n` +
+          `2. Send via registered mail\n` +
+          `3. Consider opening a Resolve case`;
+        break;
+
+      case 'rent':
+        messageText = language === 'th' ?
+          `💰 เตือนชำระค่าเช่า Lease Shield\n\nค่าเช่าครบกำหนดในอีก ${sampleRent.daysUntil} วัน\n\n` +
+          `💵 จำนวน: ฿${sampleRent.amount.toLocaleString()}\n` +
+          `📅 ครบกำหนด: ${sampleRent.dueDate}\n` +
+          `🏠 ทรัพย์สิน: ${sampleDeposit.property}\n\n` +
+          `💡 เตรียมชำระเงินให้พร้อมเพื่อหลีกเลี่ยงค่าปรับ` :
+          
+          `💰 Lease Shield Rent Reminder\n\nRent due in ${sampleRent.daysUntil} days\n\n` +
+          `💵 Amount: ฿${sampleRent.amount.toLocaleString()}\n` +
+          `📅 Due Date: ${sampleRent.dueDate}\n` +
+          `🏠 Property: ${sampleDeposit.property}\n\n` +
+          `💡 Prepare payment to avoid late fees`;
+        break;
+
+      case 'welcome':
+        messageText = language === 'th' ?
+          `🎉 ยินดีต้อนรับสู่ Lease Shield!\n\n` +
+          `✅ บัญชี LINE ของคุณเชื่อมต่อสำเร็จแล้ว\n\n` +
+          `คุณจะได้รับการแจ้งเตือนสำหรับ:\n` +
+          `📅 เงินมัดจำครบกำหนด\n` +
+          `💰 การชำระค่าเช่า\n` +
+          `🔧 สถานะการซ่อมบำรุง\n` +
+          `📋 การอัปเดตคดี\n\n` +
+          `เริ่มต้นใช้งานได้ที่ leaseshield.asia` :
+          
+          `🎉 Welcome to Lease Shield!\n\n` +
+          `✅ Your LINE account is now connected\n\n` +
+          `You'll receive notifications for:\n` +
+          `📅 Deposit return deadlines\n` +
+          `💰 Rent payment reminders\n` +
+          `🔧 Maintenance updates\n` +
+          `📋 Case status changes\n\n` +
+          `Get started at leaseshield.asia`;
+        break;
+
+      default:
+        return Response.json({ error: 'Invalid notification type' }, { status: 400 });
+    }
+
+    // Send via LINE
+    await base44.functions.invoke('sendLineMessage', {
+      userId: user.line_messaging_token,
+      message: messageText
+    });
+
+    return Response.json({ 
+      success: true, 
+      type: notificationType,
+      message: 'Test notification sent to LINE'
+    });
+
+  } catch (error) {
+    console.error('Test notification error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
