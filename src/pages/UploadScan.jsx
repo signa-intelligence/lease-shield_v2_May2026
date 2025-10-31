@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { format } = from "date-fns";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -288,15 +289,15 @@ export default function UploadScan() {
   };
 
   return (
-    <div className="min-h-screen p-6 md:p-8" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <Upload className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           </div>
-          <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+          <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
 
         {error && (
@@ -311,8 +312,8 @@ export default function UploadScan() {
         )}
 
         {/* Upload Card */}
-        <Card className="border-none shadow-xl mb-8" style={{ backgroundColor: colors.cardBg }}>
-          <div className="p-8">
+        <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
+          <div className="p-6 md:p-8">
             {uploading || analyzing ? (
               <div className="text-center py-12">
                 <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
@@ -330,7 +331,7 @@ export default function UploadScan() {
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
                   onDrop={handleFileSelect}
-                  className="border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300"
+                  className="border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all duration-300"
                   style={{
                     backgroundColor: dragActive ? (isDarkMode ? '#3A3D40' : '#EFF6FF') : colors.uploadBg,
                     borderColor: dragActive ? '#3B82F6' : colors.borderColor
@@ -340,11 +341,11 @@ export default function UploadScan() {
                     <Upload className="w-10 h-10 text-white" />
                   </div>
                   
-                  <p className="text-lg mb-6" style={{ color: colors.textSecondary }}>
+                  <p className="text-base md:text-lg mb-6" style={{ color: colors.textSecondary }}>
                     {strings.dragDrop}
                   </p>
 
-                  <div className="flex gap-4 justify-center flex-wrap">
+                  <div className="flex gap-3 justify-center flex-wrap">
                     <label>
                       <input
                         type="file"
@@ -357,10 +358,10 @@ export default function UploadScan() {
                         style={{
                           backgroundColor: '#0C3B2E',
                           color: '#FFFFFF',
-                          padding: '12px 24px',
+                          padding: '10px 20px',
                           borderRadius: '8px',
                           fontWeight: 'bold',
-                          fontSize: '16px',
+                          fontSize: '14px',
                           cursor: 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -371,7 +372,7 @@ export default function UploadScan() {
                         onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                       >
-                        <FileText className="w-5 h-5" />
+                        <FileText className="w-4 h-4" />
                         {strings.browseFiles}
                       </div>
                     </label>
@@ -389,10 +390,10 @@ export default function UploadScan() {
                         style={{
                           backgroundColor: isDarkMode ? '#3A3D40' : '#FFFFFF',
                           color: '#0C3B2E',
-                          padding: '12px 24px',
+                          padding: '10px 20px',
                           borderRadius: '8px',
                           fontWeight: 'bold',
-                          fontSize: '16px',
+                          fontSize: '14px',
                           border: '2px solid #0C3B2E',
                           cursor: 'pointer',
                           display: 'inline-flex',
@@ -409,13 +410,13 @@ export default function UploadScan() {
                           e.target.style.color = '#0C3B2E';
                         }}
                       >
-                        <Camera className="w-5 h-5" />
+                        <Camera className="w-4 h-4" />
                         {strings.scanDocument}
                       </div>
                     </label>
                   </div>
 
-                  <p className="mt-6 text-sm" style={{ color: colors.textSecondary }}>
+                  <p className="mt-6 text-xs md:text-sm" style={{ color: colors.textSecondary }}>
                     {strings.supportedFormats}
                   </p>
                 </div>
@@ -424,12 +425,13 @@ export default function UploadScan() {
                 {selectedFiles.length > 0 && (
                   <div className="mt-6">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="font-semibold" style={{ color: colors.textPrimary }}>
+                      <p className="font-semibold text-sm md:text-base" style={{ color: colors.textPrimary }}>
                         {selectedFiles.length} {strings.filesSelected}
                       </p>
                       <Button
                         onClick={handleUploadAll}
                         className="bg-blue-600 hover:bg-blue-700"
+                        size="sm"
                       >
                         <Upload className="w-4 h-4 mr-2" />
                         {strings.uploadAll}
@@ -480,98 +482,116 @@ export default function UploadScan() {
         {/* Recent Scans */}
         {leases.length > 0 && (
           <div>
-            <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>{strings.recentScans}</h2>
+            <h2 className="text-lg md:text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>{strings.recentScans}</h2>
             <div className="grid gap-4">
               {leases.map((lease) => (
                 <Card key={lease.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300" style={{
                   backgroundColor: colors.cardBg
                 }}>
-                  <div className="p-4 md:p-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold mb-1" style={{ 
+                  <div className="p-4">
+                    {/* Title Section */}
+                    <div className="mb-3">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-bold text-sm leading-tight flex-1" style={{ 
                           color: colors.textPrimary,
                           wordBreak: 'break-word',
                           overflowWrap: 'break-word',
-                          hyphens: 'auto'
+                          hyphens: 'auto',
+                          maxWidth: '70%'
                         }}>
                           {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
                         </h3>
-                        {lease.rent_amount && (
-                          <p style={{ color: colors.textSecondary, marginBottom: '8px' }}>
-                            ฿{lease.rent_amount.toLocaleString()}/{language === 'th' ? 'เดือน' : 'month'}
-                          </p>
-                        )}
-                        <div className="flex gap-2 text-sm mb-2 flex-wrap" style={{ color: colors.textSecondary }}>
-                          {lease.language_detected && (
-                            <span>• {language === 'th' ? 'ภาษา' : 'Language'}: {lease.language_detected.toUpperCase()}</span>
-                          )}
-                          {lease.file_urls && lease.file_urls.length > 1 && (
-                            <span>• {lease.file_urls.length} {strings.pages}</span>
-                          )}
-                        </div>
-                        <p className="text-xs" style={{ color: colors.textSecondary }}>
-                          {strings.uploaded}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-2 flex-shrink-0">
-                        <Badge className={getStatusColor(lease.status)}>
+                        <Badge className={`${getStatusColor(lease.status)} flex-shrink-0 text-xs`}>
                           {lease.status.toUpperCase()}
                         </Badge>
-                        {(lease.status === 'scanned' || lease.status === 'paid') && (
-                          <button
-                            onClick={() => handleViewDetails(lease)}
-                            style={{
-                              backgroundColor: '#3B82F6',
-                              color: '#FFFFFF',
-                              padding: '8px 16px',
-                              borderRadius: '6px',
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              border: 'none',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s',
-                              whiteSpace: 'nowrap'
-                            }}
-                            onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
-                            onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
-                          >
-                            {strings.viewDetails}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteLease(
-                            lease.id, 
-                            lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease')
-                          )}
-                          disabled={deleteLeaseMutation.isLoading}
-                          style={{
-                            backgroundColor: isDarkMode ? '#3A2626' : '#FFFFFF',
-                            color: '#EF4444',
-                            padding: '8px 16px',
-                            borderRadius: '6px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            border: '2px solid #EF4444',
-                            cursor: deleteLeaseMutation.isLoading ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.2s',
-                            opacity: deleteLeaseMutation.isLoading ? 0.5 : 1,
-                            whiteSpace: 'nowrap'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!deleteLeaseMutation.isLoading) {
-                              e.target.style.backgroundColor = '#FEE2E2';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!deleteLeaseMutation.isLoading) {
-                              e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FFFFFF';
-                            }
-                          }}
-                        >
-                          {deleteLeaseMutation.isLoading ? strings.deleting : strings.delete}
-                        </button>
                       </div>
+                      
+                      {lease.rent_amount && (
+                        <p className="text-sm mb-2" style={{ color: colors.textSecondary }}>
+                          ฿{lease.rent_amount.toLocaleString()}/{language === 'th' ? 'เดือน' : 'month'}
+                        </p>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-2 text-xs mb-2" style={{ color: colors.textSecondary }}>
+                        {lease.language_detected && (
+                          <span>• {language === 'th' ? 'ภาษา' : 'Language'}: {lease.language_detected.toUpperCase()}</span>
+                        )}
+                        {lease.file_urls && lease.file_urls.length > 1 && (
+                          <span>• {lease.file_urls.length} {strings.pages}</span>
+                        )}
+                      </div>
+                      
+                      <p className="text-xs" style={{ color: colors.textSecondary }}>
+                        {strings.uploaded}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+
+                    {/* Action Buttons - Horizontal on Mobile */}
+                    <div className="flex gap-2 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
+                      {(lease.status === 'scanned' || lease.status === 'paid') && (
+                        <button
+                          onClick={() => handleViewDetails(lease)}
+                          className="flex-1"
+                          style={{
+                            backgroundColor: '#3B82F6',
+                            color: '#FFFFFF',
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px'
+                          }}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
+                        >
+                          <FileText className="w-4 h-4" />
+                          <span>{strings.viewDetails}</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteLease(
+                          lease.id, 
+                          lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease')
+                        )}
+                        disabled={deleteLeaseMutation.isLoading}
+                        className={lease.status === 'scanned' || lease.status === 'paid' ? 'flex-shrink-0' : 'flex-1'}
+                        style={{
+                          backgroundColor: isDarkMode ? '#3A2626' : '#FFFFFF',
+                          color: '#EF4444',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          border: '2px solid #EF4444',
+                          cursor: deleteLeaseMutation.isLoading ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s',
+                          opacity: deleteLeaseMutation.isLoading ? 0.5 : 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px',
+                          minWidth: '80px'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!deleteLeaseMutation.isLoading) {
+                            e.target.style.backgroundColor = '#FEE2E2';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!deleteLeaseMutation.isLoading) {
+                            e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FFFFFF';
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>{deleteLeaseMutation.isLoading ? strings.deleting : strings.delete}</span>
+                      </button>
                     </div>
                   </div>
                 </Card>
