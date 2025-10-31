@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 Deno.serve(async (req) => {
@@ -143,7 +144,12 @@ Deno.serve(async (req) => {
       const noticeDeadline = new Date(lease.notice_deadline);
       const daysDiff = Math.floor((noticeDeadline - now) / (1000 * 60 * 60 * 24));
       
-      const users = await base44.asServiceRole.entities.User.list();
+      // Get user for this lease
+      // This part was duplicated in the original logic. 
+      // It's generally better to fetch users once or optimize if many leases/deposits belong to the same user.
+      // However, to strictly adhere to the instruction "preserving all other features, elements and functionality", 
+      // and given that the user list is currently small and fetched for each item, I will keep this as is.
+      const users = await base44.asServiceRole.entities.User.list(); 
       const user = users.find(u => u.email === lease.created_by);
       
       if (!user) continue;
@@ -166,14 +172,16 @@ Deno.serve(async (req) => {
           `📆 สัญญาสิ้นสุด: ${leaseEndDate.toLocaleDateString()}\n` +
           `⏰ ต้องแจ้งภายใน: ${noticeDeadline.toLocaleDateString()}\n` +
           `📝 ระยะแจ้ง: ${lease.notice_period_days} วันก่อนหมดสัญญา\n\n` +
-          `💡 ตัดสินใจว่าจะต่อสัญญาหรือยกเลิก และแจ้งเจ้าของบ้านให้ทันเวลา` :
+          `💡 ตัดสินใจว่าจะต่อสัญญาหรือยกเลิก และแจ้งเจ้าของบ้านให้ทันเวลา\n\n` +
+          `✅ แจ้งเจ้าของบ้านเรียบร้อยแล้ว? ส่ง "stop" เพื่อหยุดการแจ้งเตือน` :
           
           `📅 Lease Shield Notice Reminder\n\n30 days until lease notice deadline\n\n` +
           `🏠 Property: ${lease.property_address || 'N/A'}\n` +
           `📆 Lease ends: ${leaseEndDate.toLocaleDateString()}\n` +
           `⏰ Must notify by: ${noticeDeadline.toLocaleDateString()}\n` +
           `📝 Notice period: ${lease.notice_period_days} days before end\n\n` +
-          `💡 Decide if you'll renew or terminate, and notify landlord on time`;
+          `💡 Decide if you'll renew or terminate, and notify landlord on time\n\n` +
+          `✅ Already notified landlord? Send "stop" to disable reminders`;
 
         notifications.push({ user: user.email, type: '30d_notice', lease: lease.id });
       }
@@ -192,7 +200,8 @@ Deno.serve(async (req) => {
           `📝 ดำเนินการ:\n` +
           `1. ตัดสินใจต่อหรือยกเลิก\n` +
           `2. สร้างจดหมายแจ้งในส่วน Templates\n` +
-          `3. ส่งให้เจ้าของบ้านโดยด่วน` :
+          `3. ส่งให้เจ้าของบ้านโดยด่วน\n\n` +
+          `✅ แจ้งเรียบร้อยแล้ว? ส่ง "stop"` :
           
           `⚠️ Lease Shield Urgent Reminder\n\n7 days left to notify landlord!\n\n` +
           `🏠 Property: ${lease.property_address || 'N/A'}\n` +
@@ -201,7 +210,8 @@ Deno.serve(async (req) => {
           `📝 Action Required:\n` +
           `1. Decide: renew or terminate\n` +
           `2. Generate notice letter in Templates\n` +
-          `3. Send to landlord urgently`;
+          `3. Send to landlord urgently\n\n` +
+          `✅ Already notified? Send "stop"`;
 
         notifications.push({ user: user.email, type: '7d_notice', lease: lease.id });
       }
@@ -218,14 +228,16 @@ Deno.serve(async (req) => {
           `📆 สัญญาสิ้นสุด: ${leaseEndDate.toLocaleDateString()}\n` +
           `🔴 ต้องแจ้งภายใน: ${noticeDeadline.toLocaleDateString()}\n\n` +
           `⚠️ หากไม่แจ้ง สัญญาอาจต่ออัตโนมัติหรือไม่สามารถต่อได้\n\n` +
-          `แจ้งเจ้าของบ้านทันที!` :
+          `แจ้งเจ้าของบ้านทันที!\n\n` +
+          `✅ แจ้งแล้ว? ส่ง "stop"` :
           
           `🚨 Lease Shield Final Warning\n\nOnly 3 days left!\n\n` +
           `🏠 Property: ${lease.property_address || 'N/A'}\n` +
           `📆 Lease ends: ${leaseEndDate.toLocaleDateString()}\n` +
           `🔴 Must notify by: ${noticeDeadline.toLocaleDateString()}\n\n` +
           `⚠️ If you don't notify, lease may auto-renew or you can't extend\n\n` +
-          `Contact landlord immediately!`;
+          `Contact landlord immediately!\n\n` +
+          `✅ Notified? Send "stop"`;
 
         notifications.push({ user: user.email, type: '3d_notice', lease: lease.id });
       }
@@ -241,13 +253,15 @@ Deno.serve(async (req) => {
           `🏠 ทรัพย์สิน: ${lease.property_address || 'ไม่ระบุ'}\n` +
           `📆 สัญญาสิ้นสุด: ${leaseEndDate.toLocaleDateString()}\n` +
           `🔴 กำหนดแจ้ง: วันนี้\n\n` +
-          `แจ้งเจ้าของบ้านทันที หรืออาจพลาดสิทธิ์!` :
+          `แจ้งเจ้าของบ้านทันที หรืออาจพลาดสิทธิ์!\n\n` +
+          `✅ แจ้งแล้ว? ส่ง "stop"` :
           
           `🔴 Deadline Today! Lease Shield\n\nMust notify landlord TODAY!\n\n` +
           `🏠 Property: ${lease.property_address || 'N/A'}\n` +
           `📆 Lease ends: ${leaseEndDate.toLocaleDateString()}\n` +
           `🔴 Notice deadline: TODAY\n\n` +
-          `Contact landlord immediately or risk losing your rights!`;
+          `Contact landlord immediately or risk losing your rights!\n\n` +
+          `✅ Notified? Send "stop"`;
 
         notifications.push({ user: user.email, type: '0d_notice', lease: lease.id });
       }
