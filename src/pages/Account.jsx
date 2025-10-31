@@ -381,7 +381,7 @@ export default function Account() {
   const strings = t[language];
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -1533,23 +1533,33 @@ export default function Account() {
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-          onClick={() => base44.auth.logout()}
-          style={{ backgroundColor: colors.cardBg, borderColor: isDarkMode ? '#EF4444' : '#FECACA', color: '#EF4444' }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = isDarkMode ? '#440000' : '#FEF2F2';
-            e.target.style.color = '#DC2626';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = colors.cardBg;
-            e.target.style.color = '#EF4444';
-          }}
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          {strings.logout}
-        </Button>
+        {/* Logout Button - with extra margin */}
+        <div className="mt-8 mb-4">
+          <Button
+            variant="outline"
+            className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+            onClick={() => base44.auth.logout()}
+            style={{ 
+              backgroundColor: colors.cardBg, 
+              borderColor: isDarkMode ? '#EF4444' : '#FECACA', 
+              color: '#EF4444',
+              padding: '14px 20px',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = isDarkMode ? '#440000' : '#FEF2F2';
+              e.target.style.color = '#DC2626';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = colors.cardBg;
+              e.target.style.color = '#EF4444';
+            }}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            {strings.logout}
+          </Button>
+        </div>
       </div>
     </div>
   );
