@@ -4,13 +4,17 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown } from "lucide-react";
+import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell } from "lucide-react"; // Added Bell icon
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 export default function AdminConsole() {
   const [seeding, setSeeding] = useState(false);
   const queryClient = useQueryClient();
+
+  // New state for LINE notification testing
+  const [testingNotification, setTestingNotification] = useState(false);
+  const [testResult, setTestResult] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -127,6 +131,26 @@ export default function AdminConsole() {
     }
   };
 
+  // New function to test LINE notifications
+  const handleTestNotification = async (type) => {
+    setTestingNotification(true);
+    setTestResult(null);
+
+    try {
+      await base44.functions.invoke('testLineNotifications', {
+        notificationType: type
+      });
+      setTestResult({ type: 'success', message: `${type} notification sent! Check your LINE` });
+      setTimeout(() => setTestResult(null), 5000);
+    } catch (error) {
+      console.error('Test notification failed:', error);
+      setTestResult({ type: 'error', message: 'Failed to send notification' });
+      setTimeout(() => setTestResult(null), 5000);
+    } finally {
+      setTestingNotification(false);
+    }
+  };
+
   const activeSubscribers = allUsers.filter(u => u.subscription_status === 'active').length;
 
   return (
@@ -139,6 +163,214 @@ export default function AdminConsole() {
           </div>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
+
+        {/* Add new LINE Testing section before existing cards */}
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <Bell className="w-5 h-5 text-emerald-600" />
+              {language === 'th' ? 'ทดสอบการแจ้งเตือน LINE' : 'Test LINE Notifications'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {testResult && (
+              <div className={`p-4 rounded-lg mb-4 ${
+                testResult.type === 'success'
+                  ? 'bg-emerald-100 border border-emerald-200 text-emerald-800'
+                  : 'bg-red-100 border border-red-200 text-red-800'
+              }`}>
+                {testResult.type === 'success' ? '✅' : '❌'} {testResult.message}
+              </div>
+            )}
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <button
+                onClick={() => handleTestNotification('30day')}
+                disabled={testingNotification}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: testingNotification ? 'not-allowed' : 'pointer',
+                  opacity: testingNotification ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = '#10B981';
+                    e.target.style.backgroundColor = isDarkMode ? '#1E4435' : '#ECFDF5';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🔔</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {language === 'th' ? 'เตือน 30 วัน' : '30-Day Reminder'}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {language === 'th' ? 'เงินมัดจำครบกำหนดใน 30 วัน' : 'Deposit due in 30 days'}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleTestNotification('7day')}
+                disabled={testingNotification}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: testingNotification ? 'not-allowed' : 'pointer',
+                  opacity: testingNotification ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = '#F59E0B';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2D1C' : '#FFF7ED';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>⚠️</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {language === 'th' ? 'เตือน 7 วัน' : '7-Day Warning'}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {language === 'th' ? 'เงินมัดจำครบกำหนดใน 7 วัน' : 'Final warning before deadline'}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleTestNotification('overdue')}
+                disabled={testingNotification}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: testingNotification ? 'not-allowed' : 'pointer',
+                  opacity: testingNotification ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = '#EF4444';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🚨</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {language === 'th' ? 'แจ้งเตือนเกินกำหนด' : 'Overdue Alert'}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {language === 'th' ? 'ยังไม่ได้รับเงินมัดจำคืน' : 'Deposit not returned'}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleTestNotification('rent')}
+                disabled={testingNotification}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: testingNotification ? 'not-allowed' : 'pointer',
+                  opacity: testingNotification ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = '#3B82F6';
+                    e.target.style.backgroundColor = isDarkMode ? '#1E3A5F' : '#EFF6FF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>💰</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {language === 'th' ? 'เตือนค่าเช่า' : 'Rent Reminder'}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {language === 'th' ? 'ค่าเช่าครบกำหนดในอีก 3 วัน' : 'Rent due in 3 days'}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleTestNotification('welcome')}
+                disabled={testingNotification}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: testingNotification ? 'not-allowed' : 'pointer',
+                  opacity: testingNotification ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = '#8B5CF6';
+                    e.target.style.backgroundColor = isDarkMode ? '#2D1B4E' : '#F5F3FF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🎉</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {language === 'th' ? 'ข้อความต้อนรับ' : 'Welcome Message'}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {language === 'th' ? 'ข้อความต้อนรับหลังเชื่อมต่อ' : 'Welcome after connecting'}
+                </p>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -247,9 +479,9 @@ export default function AdminConsole() {
                 </thead>
                 <tbody>
                   {allUsers.map((u, index) => (
-                    <tr 
-                      key={u.id} 
-                      style={{ 
+                    <tr
+                      key={u.id}
+                      style={{
                         borderBottom: `1px solid ${colors.borderColor}`,
                         backgroundColor: index % 2 === 0 ? colors.tableBg : colors.tableRow
                       }}
@@ -293,9 +525,9 @@ export default function AdminConsole() {
                         {format(new Date(u.created_date), 'MMM d, yyyy')}
                       </td>
                       <td className="py-3 px-4">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           className="text-xs"
                           style={{
                             backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
