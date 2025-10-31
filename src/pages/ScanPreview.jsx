@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -8,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, FileText, ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useFeatureAccess } from "../components/shared/FeatureGate";
 
 const SEVERITY_CONFIG = {
   low: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Low' },
@@ -39,6 +39,9 @@ export default function ScanPreview() {
     enabled: !!user && leases.length > 0,
   });
 
+  // Check if user has access to full report
+  const { hasAccess: hasFullReportAccess } = useFeatureAccess('full_report');
+
   // Find the specific scan and lease
   const scan = allScans.find(s => {
     if (scanId) return s.id === scanId;
@@ -61,6 +64,7 @@ export default function ScanPreview() {
       riskScore: "Risk Score",
       summary: "Summary",
       topIssues: "Top Issues Found",
+      allIssues: "All Issues Found",
       viewFullReport: "View Full Report",
       viewLease: "View Lease",
       lowRisk: "Low Risk",
@@ -76,6 +80,7 @@ export default function ScanPreview() {
       riskScore: "คะแนนความเสี่ยง",
       summary: "สรุป",
       topIssues: "ปัญหาสำคัญที่พบ",
+      allIssues: "ปัญหาทั้งหมดที่พบ",
       viewFullReport: "ดูรายงานฉบับเต็ม",
       viewLease: "ดูสัญญาเช่า",
       lowRisk: "ความเสี่ยงต่ำ",
@@ -160,12 +165,15 @@ export default function ScanPreview() {
   const riskColor = getRiskColor(scan.risk_score);
   const riskLabel = getRiskLabel(scan.risk_score);
 
-  // Show only first 4 issues for preview
-  const previewFlags = scan.flags && scan.flags.length > 0 ? scan.flags.slice(0, 4) : [];
-  const hasMoreIssues = scan.flags && scan.flags.length > 4;
+  // Show preview (4 issues) or all issues based on plan
+  const displayFlags = hasFullReportAccess 
+    ? (scan.flags || [])
+    : (scan.flags || []).slice(0, 4);
+  
+  const hasMoreIssues = !hasFullReportAccess && scan.flags && scan.flags.length > 4;
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: 'calc(76px + env(safe-area-inset-bottom, 0px))' }}>
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '180px' }}>
       <div className="max-w-4xl mx-auto">
         <Button
           variant="outline"
@@ -196,11 +204,11 @@ export default function ScanPreview() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="w-6 h-6 text-orange-600" />
-              {strings.topIssues}
+              {hasFullReportAccess ? strings.allIssues : strings.topIssues} ({displayFlags.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {previewFlags.map((flag, idx) => {
+            {displayFlags.map((flag, idx) => {
               const severityConfig = SEVERITY_CONFIG[flag.severity] || SEVERITY_CONFIG.medium;
               return (
                 <div key={idx} className="p-4 rounded-xl border-2" style={{
@@ -261,14 +269,14 @@ export default function ScanPreview() {
                     boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#0a2f25';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 10px rgba(12, 59, 46, 0.4)';
+                    e.target.style.backgroundColor = '#0a2f25';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 10px rgba(12, 59, 46, 0.4)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#0C3B2E';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
+                    e.target.style.backgroundColor = '#0C3B2E';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
                   }}
                 >
                   <span style={{ fontWeight: 'bold', fontSize: '16px' }}>
@@ -309,14 +317,14 @@ export default function ScanPreview() {
                   boxShadow: '0 4px 6px -1px rgba(12, 59, 46, 0.3), 0 2px 4px -1px rgba(12, 59, 46, 0.2)'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#0a2f25';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 10px -1px rgba(12, 59, 46, 0.4), 0 4px 6px -1px rgba(12, 59, 46, 0.3)';
+                  e.target.style.backgroundColor = '#0a2f25';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 10px -1px rgba(12, 59, 46, 0.4), 0 4px 6px -1px rgba(12, 59, 46, 0.3)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#0C3B2E';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(12, 59, 46, 0.3), 0 2px 4px -1px rgba(12, 59, 46, 0.2)';
+                  e.target.style.backgroundColor = '#0C3B2E';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 6px -1px rgba(12, 59, 46, 0.3), 0 2px 4px -1px rgba(12, 59, 46, 0.2)';
                 }}
               >
                 <FileText className="w-5 h-5" />
@@ -343,16 +351,16 @@ export default function ScanPreview() {
                     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#0C3B2E';
-                    e.currentTarget.style.color = '#FFFFFF';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(12, 59, 46, 0.2)';
+                    e.target.style.backgroundColor = '#0C3B2E';
+                    e.target.style.color = '#FFFFFF';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 4px 8px rgba(12, 59, 46, 0.2)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#2A2D30' : '#FFFFFF';
-                    e.currentTarget.style.color = '#0C3B2E';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+                    e.target.style.backgroundColor = isDarkMode ? '#2A2D30' : '#FFFFFF';
+                    e.target.style.color = '#0C3B2E';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
                   }}
                 >
                   <ExternalLink className="w-5 h-5" />
