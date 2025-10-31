@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { format } = "date-fns";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -324,8 +324,14 @@ export default function UploadScan() {
                     borderColor: dragActive ? '#3B82F6' : colors.borderColor
                   }}
                 >
-                  <div className="w-20 h-20 bg-ls-forest rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                    <Upload className="w-10 h-10 text-white" />
+                  <div 
+                    className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                    style={{
+                      backgroundColor: '#0C3B2E',
+                      boxShadow: '0 4px 6px -1px rgba(12, 59, 46, 0.3), 0 2px 4px -1px rgba(12, 59, 46, 0.2)'
+                    }}
+                  >
+                    <Upload className="w-10 h-10 text-white" style={{ color: '#FFFFFF' }} />
                   </div>
                   
                   <p className="text-base md:text-lg mb-6" style={{ color: colors.textSecondary }}>
@@ -356,10 +362,16 @@ export default function UploadScan() {
                           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                           transition: 'all 0.2s'
                         }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#0a2f25';
+                          e.target.style.transform = 'translateY(-2px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#0C3B2E';
+                          e.target.style.transform = 'translateY(0)';
+                        }}
                       >
-                        <FileText className="w-4 h-4" />
+                        <FileText className="w-4 h-4" style={{ color: '#FFFFFF' }} />
                         {strings.browseFiles}
                       </div>
                     </label>
@@ -389,7 +401,6 @@ export default function UploadScan() {
                           transition: 'all 0.2s'
                         }}
                         onMouseEnter={(e) => {
-                          if (e.target.dataset.leave === 'false') return; // Prevent flickering
                           e.target.style.backgroundColor = '#0C3B2E';
                           e.target.style.color = '#FFFFFF';
                         }}
