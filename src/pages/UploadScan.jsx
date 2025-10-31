@@ -210,7 +210,7 @@ export default function UploadScan() {
       await queryClient.invalidateQueries({ queryKey: ['leases'] });
       await queryClient.invalidateQueries({ queryKey: ['scans'] });
 
-      window.location.href = createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`;
+      navigate(createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`);
     } catch (err) {
       console.error('Failed to save lease details:', err);
       alert(language === 'th' ? 'ไม่สามารถบันทึกข้อมูลได้' : 'Failed to save details');
@@ -224,7 +224,7 @@ export default function UploadScan() {
   const handleSkipConfirmation = async () => {
     await queryClient.invalidateQueries({ queryKey: ['leases'] });
     await queryClient.invalidateQueries({ queryKey: ['scans'] });
-    window.location.href = createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`;
+    navigate(createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`);
     setShowConfirmation(false);
     setPendingLeaseId(null);
     setLeaseDetails(null);
@@ -233,7 +233,7 @@ export default function UploadScan() {
   const handleViewDetails = (lease) => {
     const scan = scans.find(s => s.lease_id === lease.id);
     if (scan) {
-      window.location.href = createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`;
+      navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
     }
   };
 
@@ -280,7 +280,8 @@ export default function UploadScan() {
       viewDetails: "View Details",
       selectAtLeast: "Select at least one file to upload",
       delete: "Delete",
-      deleting: "Deleting..."
+      deleting: "Deleting...",
+      manage: "Manage"
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
@@ -305,7 +306,8 @@ export default function UploadScan() {
       viewDetails: "ดูรายละเอียด",
       selectAtLeast: "เลือกไฟล์อย่างน้อยหนึ่งไฟล์เพื่ออัปโหลด",
       delete: "ลบ",
-      deleting: "กำลังลบ..."
+      deleting: "กำลังลบ...",
+      manage: "จัดการ"
     }
   };
 
@@ -682,30 +684,62 @@ export default function UploadScan() {
 
                     <div className="flex gap-2 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
                       {(lease.status === 'scanned' || lease.status === 'paid') && (
-                        <button
-                          onClick={() => handleViewDetails(lease)}
-                          className="flex-1"
-                          style={{
-                            backgroundColor: '#3B82F6',
-                            color: '#FFFFFF',
-                            padding: '10px 12px',
-                            borderRadius: '8px',
-                            fontSize: '13px',
-                            fontWeight: '600',
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px'
-                          }}
-                          onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
-                          onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
-                        >
-                          <FileText className="w-4 h-4" />
-                          <span>{strings.viewDetails}</span>
-                        </button>
+                        <>
+                          <button
+                            onClick={() => navigate(createPageUrl("LeaseDetails") + `?leaseId=${lease.id}`)}
+                            className="flex-1"
+                            style={{
+                              backgroundColor: '#0C3B2E',
+                              color: '#FFFFFF',
+                              padding: '10px 12px',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              border: 'none',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '4px'
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span>{strings.manage}</span>
+                          </button>
+                          <button
+                            onClick={() => handleViewDetails(lease)}
+                            className="flex-shrink-0"
+                            style={{
+                              backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
+                              color: '#3B82F6',
+                              padding: '10px 12px',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              border: '2px solid #3B82F6',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '4px',
+                              minWidth: '80px'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#3B82F6';
+                              e.target.style.color = '#FFFFFF';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#FFFFFF';
+                              e.target.style.color = '#3B82F6';
+                            }}
+                          >
+                            <span>{strings.viewDetails}</span>
+                          </button>
+                        </>
                       )}
                       <button
                         onClick={() => handleDeleteLease(
@@ -713,7 +747,7 @@ export default function UploadScan() {
                           lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease')
                         )}
                         disabled={deleteLeaseMutation.isLoading}
-                        className={lease.status === 'scanned' || lease.status === 'paid' ? 'flex-shrink-0' : 'flex-1'}
+                        className={!(lease.status === 'scanned' || lease.status === 'paid') ? 'flex-1' : 'flex-shrink-0'}
                         style={{
                           backgroundColor: isDarkMode ? '#3A2626' : '#FFFFFF',
                           color: '#EF4444',
