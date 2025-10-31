@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,15 +7,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Added useNavigate
 import { createPageUrl } from "@/utils";
 
 export default function UploadScan() {
+  const navigate = useNavigate(); // Initialize useNavigate
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false); // New state
+  const [leaseDetails, setLeaseDetails] = useState(null); // New state
+  const [pendingLeaseId, setPendingLeaseId] = useState(null); // New state
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -117,7 +122,8 @@ export default function UploadScan() {
         1. A risk score from 0-100 (0 = very safe, 100 = very risky)
         2. List of flags with severity (critical, high, medium, low), category, and description
         3. A summary of the overall lease quality
-        4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)`,
+        4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)
+        5. IMPORTANT: Extract notice_period_days - the number of days before lease end that tenant must notify landlord about renewal/termination (common: 30, 45, 60, 90 days). Look for clauses like "notify landlord X days prior to end" or "แจ้งล่วงหน้า X วัน". If not found, return null.`,
         file_urls: fileUrls,
         response_json_schema: {
           type: "object",
@@ -140,7 +146,8 @@ export default function UploadScan() {
             end_date: { type: "string" },
             rent_amount: { type: "number" },
             deposit_amount: { type: "number" },
-            language_detected: { type: "string", enum: ["en", "th", "mixed"] }
+            language_detected: { type: "string", enum: ["en", "th", "mixed"] },
+            notice_period_days: { type: ["integer", "null"] } // Added
           }
         }
       });
@@ -164,10 +171,15 @@ export default function UploadScan() {
         version: '1.0'
       });
 
-      await queryClient.invalidateQueries({ queryKey: ['leases'] });
-      await queryClient.invalidateQueries({ queryKey: ['scans'] });
-
-      window.location.href = createPageUrl("ScanPreview") + `?leaseId=${lease.id}`;
+      // Show confirmation modal for lease details
+      setLeaseDetails({
+        end_date: scanResult.end_date,
+        notice_period_days: scanResult.notice_period_days || 30
+      });
+      setPendingLeaseId(lease.id);
+      setShowConfirmation(true);
+      setUploading(false);
+      setAnalyzing(false);
       
     } catch (err) {
       setError(language === 'th' ? 'การวิเคราะห์ล้มเหลว กรุณาลองอีกครั้ง' : 'Failed to analyze lease. Please try again.');
@@ -175,6 +187,47 @@ export default function UploadScan() {
       setUploading(false);
       setAnalyzing(false);
     }
+  };
+
+  const handleConfirmLeaseDetails = async () => {
+    try {
+      if (!leaseDetails.end_date) {
+        alert(language === 'th' ? 'กรุณาระบุวันสิ้นสุดสัญญา' : 'Please enter lease end date');
+        return;
+      }
+
+      // Calculate notice deadline
+      const endDate = new Date(leaseDetails.end_date);
+      const noticeDeadline = new Date(endDate);
+      noticeDeadline.setDate(noticeDeadline.getDate() - leaseDetails.notice_period_days);
+
+      await base44.entities.Lease.update(pendingLeaseId, {
+        notice_period_days: leaseDetails.notice_period_days,
+        notice_deadline: noticeDeadline.toISOString().split('T')[0],
+        notice_alerts_enabled: true
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ['leases'] });
+      await queryClient.invalidateQueries({ queryKey: ['scans'] });
+
+      window.location.href = createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`;
+    } catch (err) {
+      console.error('Failed to save lease details:', err);
+      alert(language === 'th' ? 'ไม่สามารถบันทึกข้อมูลได้' : 'Failed to save details');
+    } finally {
+      setShowConfirmation(false);
+      setPendingLeaseId(null);
+      setLeaseDetails(null);
+    }
+  };
+
+  const handleSkipConfirmation = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['leases'] });
+    await queryClient.invalidateQueries({ queryKey: ['scans'] });
+    window.location.href = createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`;
+    setShowConfirmation(false);
+    setPendingLeaseId(null);
+    setLeaseDetails(null);
   };
 
   const handleViewDetails = (lease) => {
@@ -294,6 +347,112 @@ export default function UploadScan() {
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-red-600" />
               <p className="text-red-600 font-semibold">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Lease Details Confirmation Modal */}
+        {showConfirmation && leaseDetails && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="rounded-2xl shadow-2xl max-w-lg w-full p-6" style={{ backgroundColor: colors.cardBg }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? '📋 ยืนยันรายละเอียดสัญญา' : '📋 Confirm Lease Details'}
+              </h2>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? 'วันสิ้นสุดสัญญา' : 'Lease End Date'}
+                  </label>
+                  <input
+                    type="date"
+                    value={leaseDetails.end_date || ''}
+                    onChange={(e) => setLeaseDetails({...leaseDetails, end_date: e.target.value})}
+                    className="w-full p-3 border-2 rounded-lg"
+                    style={{
+                      backgroundColor: colors.bg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? 'ระยะเวลาแจ้งล่วงหน้า (วัน)' : 'Notice Period (Days)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={leaseDetails.notice_period_days}
+                    onChange={(e) => setLeaseDetails({...leaseDetails, notice_period_days: parseInt(e.target.value) || 30})}
+                    min="1"
+                    max="365"
+                    className="w-full p-3 border-2 rounded-lg"
+                    style={{
+                      backgroundColor: colors.bg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                    {language === 'th' 
+                      ? 'จำนวนวันที่ต้องแจ้งเจ้าของบ้านก่อนสัญญาหมดอายุ'
+                      : 'Days before lease end you must notify landlord'}
+                  </p>
+                </div>
+
+                {leaseDetails.end_date && leaseDetails.notice_period_days && (
+                  <div className="p-4 rounded-lg border-2" style={{
+                    backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5',
+                    borderColor: isDarkMode ? '#10B981' : '#A7F3D0'
+                  }}>
+                    <p className="text-sm font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? '📅 กำหนดแจ้ง:' : '📅 Notice Deadline:'}
+                    </p>
+                    <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+                      {new Date(new Date(leaseDetails.end_date).getTime() - leaseDetails.notice_period_days * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                      {language === 'th'
+                        ? 'เราจะส่งการแจ้งเตือนก่อนถึงกำหนดนี้'
+                        : "We'll send reminders before this date"}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSkipConfirmation}
+                  style={{
+                    flex: 1,
+                    backgroundColor: colors.bg,
+                    color: colors.textPrimary,
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: `2px solid ${colors.borderColor}`,
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {language === 'th' ? 'ข้าม' : 'Skip'}
+                </button>
+                <button
+                  onClick={handleConfirmLeaseDetails}
+                  style={{
+                    flex: 2,
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {language === 'th' ? '✅ ยืนยันและบันทึก' : '✅ Confirm & Save'}
+                </button>
+              </div>
             </div>
           </div>
         )}
