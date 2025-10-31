@@ -21,11 +21,11 @@ export default function PrivacyPolicy() {
     textSecondary: '#A8ABAD',
     borderColor: '#3A3D40'
   } : {
-    bg: '#f8f8f8', // Using a light gray for light mode background
+    bg: '#0C3B2E', // Changed from '#f8f8f8'
     cardBg: '#FFFFFF',
-    textPrimary: '#0C3B2E', // Darker text for light mode
-    textSecondary: '#6B7280', // Slightly lighter secondary text
-    borderColor: '#E5E7EB' // Light border for light mode
+    textPrimary: '#1A1D1F', // Changed from '#0C3B2E'
+    textSecondary: '#64748b', // Changed from '#6B7280'
+    borderColor: '#e2e8f0' // Changed from '#E5E7EB'
   };
 
   const content = {
