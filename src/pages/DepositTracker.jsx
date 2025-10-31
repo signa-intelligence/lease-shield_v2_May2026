@@ -224,20 +224,20 @@ export default function DepositTracker() {
     goldText: '#FBBF24', 
     grayText: '#A8ABAD', 
   } : {
-    bg: '#F8FAFC',
+    bg: '#0C3B2E',
     cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
+    textPrimary: '#ECEFED',
+    textSecondary: '#D1FAE5',
+    borderColor: 'rgba(236, 239, 237, 0.2)',
     inputBg: '#FFFFFF',
-    infoBg: '#F0F9FF', // Changed
-    accentBg: '#EFF6FF', 
+    infoBg: '#F0F9FF', // Kept from original light mode
+    accentBg: '#EFF6FF', // Kept from original light mode
     blueText: '#1E40AF', 
-    blueBg: '#DBEAFE', // Changed
+    blueBg: '#DBEAFE', // Kept from original light mode
     blueBorder: '#93C5FD', 
-    greenText: '#10B981', 
-    goldText: '#B45309', 
-    grayText: '#CBD5E1', 
+    greenText: '#10B981', // Kept from original light mode
+    goldText: '#B45309', // Kept from original light mode
+    grayText: '#CBD5E1', // Kept from original light mode
   };
 
   return (
@@ -628,7 +628,7 @@ export default function DepositTracker() {
 
                     {hasLineNotify && deposit.status === 'tracking' && (
                       <div className="mb-4 p-2 rounded-lg" style={{ backgroundColor: colors.infoBg, border: `1px solid ${colors.blueBorder}` }}>
-                        <p className="text-xs flex items-center gap-2" style={{ color: colors.textSecondary }}>
+                        <p className="text-xs flex items-center gap-2" style={{ color: colors.blueText }}>
                           <Bell className="w-3 h-3" style={{ color: colors.blueText }} />
                           <span>
                             {strings.reminderLineEmail(daysRemaining)}
