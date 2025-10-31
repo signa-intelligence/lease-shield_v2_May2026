@@ -128,7 +128,8 @@ export default function Account() {
     full_name: user?.full_name || '',
     phone: user?.phone || '',
     country: user?.country || '',
-    language: user?.language || 'en'
+    language: user?.language || 'en',
+    theme: user?.theme || 'light'
   });
 
   React.useEffect(() => {
@@ -137,7 +138,8 @@ export default function Account() {
         full_name: user.full_name || '',
         phone: user.phone || '',
         country: user.country || '',
-        language: user.language || 'en'
+        language: user.language || 'en',
+        theme: user.theme || 'light'
       });
     }
   }, [user]);
@@ -157,6 +159,11 @@ export default function Account() {
 
   const handleNotificationUpdate = (data) => {
     updateProfileMutation.mutate(data);
+  };
+
+  const handleThemeToggle = (newTheme) => {
+    setFormData({...formData, theme: newTheme});
+    updateProfileMutation.mutate({ theme: newTheme });
   };
 
   const handleSubscribe = async (planKey, interval) => {
@@ -208,6 +215,7 @@ export default function Account() {
   const currentPlanTier = user?.plan_tier || 'free';
   const isFree = currentPlanTier === 'free';
   const language = user?.language || 'en';
+  const currentTheme = user?.theme || 'light';
 
   const t = {
     en: {
@@ -223,6 +231,9 @@ export default function Account() {
       country: "Country",
       countryPlaceholder: "Thailand",
       language: "Language",
+      theme: "Theme",
+      lightMode: "Light Mode",
+      darkMode: "Dark Mode",
       saveChanges: "Save Changes",
       cancel: "Cancel",
       currentPlan: "Current Plan",
@@ -277,7 +288,7 @@ export default function Account() {
     },
     th: {
       pageTitle: "บัญชีของฉัน",
-      pageSubtitle: "จัดการโปรไฟล์และการสมัครสมาชิกของคุณ",
+      pageSubtitle: "จัดการโปรไฟล์และการสมัครสมาชิก",
       personalInfo: "ข้อมูลส่วนตัว",
       editProfile: "แก้ไขโปรไฟล์",
       fullName: "ชื่อ-นามสกุล",
@@ -288,6 +299,9 @@ export default function Account() {
       country: "ประเทศ",
       countryPlaceholder: "ประเทศไทย",
       language: "ภาษา",
+      theme: "ธีม",
+      lightMode: "โหมดสว่าง",
+      darkMode: "โหมดมืด",
       saveChanges: "บันทึกการเปลี่ยนแปลง",
       cancel: "ยกเลิก",
       currentPlan: "แผนปัจจุบัน",
@@ -520,6 +534,106 @@ export default function Account() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Theme Display with Toggle */}
+                  <div style={{
+                    padding: '16px',
+                    backgroundColor: '#ECEFED',
+                    borderRadius: '12px',
+                    borderLeft: '4px solid #C7A338'
+                  }}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          backgroundColor: '#C7A338',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          {currentTheme === 'dark' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="5"></circle>
+                              <line x1="12" y1="1" x2="12" y2="3"></line>
+                              <line x1="12" y1="21" x2="12" y2="23"></line>
+                              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                              <line x1="1" y1="12" x2="3" y2="12"></line>
+                              <line x1="21" y1="12" x2="23" y2="12"></line>
+                              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-slate-500 mb-1">{strings.theme}</p>
+                          <p className="font-bold text-ls-charcoal">
+                            {currentTheme === 'dark' ? strings.darkMode : strings.lightMode}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex bg-white rounded-lg p-1 shadow-sm">
+                        <button
+                          onClick={() => handleThemeToggle('light')}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            border: 'none',
+                            backgroundColor: currentTheme === 'light' ? '#0C3B2E' : 'transparent',
+                            color: currentTheme === 'light' ? '#FFFFFF' : '#64748b',
+                            fontWeight: currentTheme === 'light' ? 'bold' : 'normal',
+                            fontSize: '13px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                          </svg>
+                          {language === 'th' ? 'สว่าง' : 'Light'}
+                        </button>
+                        <button
+                          onClick={() => handleThemeToggle('dark')}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            border: 'none',
+                            backgroundColor: currentTheme === 'dark' ? '#0C3B2E' : 'transparent',
+                            color: currentTheme === 'dark' ? '#FFFFFF' : '#64748b',
+                            fontWeight: currentTheme === 'dark' ? 'bold' : 'normal',
+                            fontSize: '13px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                          </svg>
+                          {language === 'th' ? 'มืด' : 'Dark'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -621,6 +735,42 @@ export default function Account() {
                       <SelectContent>
                         <SelectItem value="en">English</SelectItem>
                         <SelectItem value="th">ไทย (Thai)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Theme Select */}
+                  <div>
+                    <Label htmlFor="theme" className="text-sm font-semibold text-ls-charcoal mb-2">{strings.theme}</Label>
+                    <Select value={formData.theme} onValueChange={(value) => setFormData({...formData, theme: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="light">
+                          <div className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="5"></circle>
+                              <line x1="12" y1="1" x2="12" y2="3"></line>
+                              <line x1="12" y1="21" x2="12" y2="23"></line>
+                              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                              <line x1="1" y1="12" x2="3" y2="12"></line>
+                              <line x1="21" y1="12" x2="23" y2="12"></line>
+                              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                            {strings.lightMode}
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="dark">
+                          <div className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                            </svg>
+                            {strings.darkMode}
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -955,7 +1105,7 @@ export default function Account() {
                 padding: '16px',
                 backgroundColor: '#ECEFED',
                 borderRadius: '12px',
-                borderLeft: '4px solid #C7A338'
+                borderLeft: '44px solid #C7A338'
               }}>
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div className="flex items-center gap-3">
