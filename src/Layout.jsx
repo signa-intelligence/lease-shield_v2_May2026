@@ -181,6 +181,11 @@ export default function Layout({ children, currentPageName }) {
           padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         
+        /* Top bar safe area support for notches */
+        .top-bar {
+          padding-top: env(safe-area-inset-top, 0px);
+        }
+        
         @media (min-width: 768px) {
           .bottom-tabs {
             max-width: 600px;
@@ -212,8 +217,8 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Top Bar with Logo - FIXED TO TOP */}
-      <div className="fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
+      {/* Top Bar with Logo - FIXED TO TOP with safe area */}
+      <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
         backgroundColor: colors.topBarBg,
         borderBottomColor: colors.borderColor
       }}>
@@ -274,9 +279,9 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      {/* Main Content - Added top padding to account for fixed header */}
+      {/* Main Content - Added top padding to account for fixed header + safe area */}
       <main className="flex-1 overflow-auto" style={{
-        paddingTop: '64px',
+        paddingTop: 'calc(64px + env(safe-area-inset-top, 0px))',
         paddingBottom: `calc(76px + env(safe-area-inset-bottom, 0px))`
       }}>
         {children}
