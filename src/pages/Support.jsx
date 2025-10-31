@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -107,6 +108,23 @@ export default function Support() {
   };
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    inputBg: '#353A3D'
+  } : {
+    bg: '#0C3B2E', // This is ls-forest
+    cardBg: '#FFFFFF',
+    textPrimary: '#ECEFED', // This seems to be for text on dark bg, but applied to light bg here?
+    textSecondary: '#D1FAE5', // Same here
+    borderColor: 'rgba(236, 239, 237, 0.2)', // Same here
+    inputBg: '#FFFFFF'
+  };
 
   const t = {
     en: {
@@ -146,7 +164,7 @@ export default function Support() {
   const strings = t[language];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
