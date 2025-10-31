@@ -207,6 +207,142 @@ export default function Account() {
 
   const currentPlanTier = user?.plan_tier || 'free';
   const isFree = currentPlanTier === 'free';
+  const language = user?.language || 'en';
+
+  const t = {
+    en: {
+      pageTitle: "My Account",
+      pageSubtitle: "Manage your profile and subscription",
+      personalInfo: "Personal Information",
+      editProfile: "Edit Profile",
+      fullName: "Full Name",
+      email: "Email",
+      cannotChange: "Cannot be changed",
+      phone: "Phone Number",
+      phonePlaceholder: "+66 XX XXX XXXX",
+      country: "Country",
+      countryPlaceholder: "Thailand",
+      language: "Language",
+      saveChanges: "Save Changes",
+      cancel: "Cancel",
+      currentPlan: "Current Plan",
+      billedMonthly: "Billed monthly",
+      billedAnnually: "Billed annually",
+      renews: "Renews",
+      freePlanName: "Free",
+      freeIncludes: "Free Plan Includes:",
+      freeBenefit1: "1 Lease Scan (lifetime)",
+      freeBenefit2: "Basic Risk Score Preview",
+      freeBenefit3: "3 Files (100MB storage)",
+      freeBenefit4: "Read-only Deposit Tracker",
+      upgradeNow: "Upgrade Now",
+      allActive: "All features active",
+      lineEnabled: "LINE reminders enabled",
+      helpSupport: "Help & Support",
+      helpDesc: "Need assistance? Submit a request and we'll respond via email",
+      submitRequest: "Submit Support Request",
+      submitDesc: "Report issues, ask questions, or get help",
+      directEmail: "Direct Email",
+      responseTime: "Response within 24-48 hours",
+      dataPrivacy: "Data Privacy & Your Rights",
+      privacyPolicy: "Privacy Policy",
+      privacyDesc: "Learn how we protect your data",
+      viewPolicy: "View Policy",
+      exportData: "Export My Data",
+      exportDesc: "Download all your personal data (PDPA compliant)",
+      export: "Export",
+      exporting: "Exporting...",
+      deleteAccount: "Need to Delete Your Account?",
+      deleteDesc: "To exercise your right to erasure under PDPA, please contact us at",
+      deleteNote: "We will securely delete all your data within 30 days.",
+      preventionBannerTitle: "Prevention-First Protection",
+      preventionBannerSubtitle: "Subscription-based protection for your lease, deposit, and documentation",
+      preventionBannerText: "Lease Shield helps you maintain clear, legal, and evidence-based leasing relationships. Prevent rental problems before they happen with automated alerts, risk analysis, and professional templates.",
+      monthly: "Monthly",
+      annual: "Annual",
+      save17: "Save 17%",
+      choosePlan: "Choose Your Protection Level",
+      planDesc: "All plans focus on prevention and maintaining clear records",
+      mostPopular: "MOST POPULAR",
+      monthsFree: "2 MONTHS FREE",
+      noCreditCard: "No credit card required",
+      perMonth: "/month",
+      save: "Save",
+      currentPlanBadge: "Current Plan",
+      signupFree: "Sign Up to Get Free",
+      startPlan: "Start",
+      processing: "Processing...",
+      logout: "Logout",
+      notProvided: "Not provided"
+    },
+    th: {
+      pageTitle: "บัญชีของฉัน",
+      pageSubtitle: "จัดการโปรไฟล์และการสมัครสมาชิกของคุณ",
+      personalInfo: "ข้อมูลส่วนตัว",
+      editProfile: "แก้ไขโปรไฟล์",
+      fullName: "ชื่อ-นามสกุล",
+      email: "อีเมล",
+      cannotChange: "ไม่สามารถเปลี่ยนแปลงได้",
+      phone: "เบอร์โทรศัพท์",
+      phonePlaceholder: "+66 XX XXX XXXX",
+      country: "ประเทศ",
+      countryPlaceholder: "ประเทศไทย",
+      language: "ภาษา",
+      saveChanges: "บันทึกการเปลี่ยนแปลง",
+      cancel: "ยกเลิก",
+      currentPlan: "แผนปัจจุบัน",
+      billedMonthly: "เรียกเก็บรายเดือน",
+      billedAnnually: "เรียกเก็บรายปี",
+      renews: "ต่ออายุ",
+      freePlanName: "ฟรี",
+      freeIncludes: "แผนฟรีประกอบด้วย:",
+      freeBenefit1: "สแกนสัญญาเช่า 1 ครั้ง (ตลอดชีพ)",
+      freeBenefit2: "แสดงตัวอย่างคะแนนความเสี่ยงพื้นฐาน",
+      freeBenefit3: "3 ไฟล์ (พื้นที่เก็บข้อมูล 100MB)",
+      freeBenefit4: "เครื่องมือติดตามเงินมัดจำแบบอ่านอย่างเดียว",
+      upgradeNow: "อัปเกรดเลย",
+      allActive: "ฟีเจอร์ทั้งหมดใช้งานได้",
+      lineEnabled: "การแจ้งเตือน LINE เปิดใช้งาน",
+      helpSupport: "ช่วยเหลือและการสนับสนุน",
+      helpDesc: "ต้องการความช่วยเหลือ? ส่งคำขอและเราจะตอบกลับทางอีเมล",
+      submitRequest: "ส่งคำขอช่วยเหลือ",
+      submitDesc: "รายงานปัญหา ถามคำถาม หรือขอความช่วยเหลือ",
+      directEmail: "อีเมลโดยตรง",
+      responseTime: "ตอบกลับภายใน 24-48 ชั่วโมง",
+      dataPrivacy: "ความเป็นส่วนตัวของข้อมูลและสิทธิ์ของคุณ",
+      privacyPolicy: "นโยบายความเป็นส่วนตัว",
+      privacyDesc: "เรียนรู้วิธีที่เราปกป้องข้อมูลของคุณ",
+      viewPolicy: "ดูนโยบาย",
+      exportData: "ส่งออกข้อมูลของฉัน",
+      exportDesc: "ดาวน์โหลดข้อมูลส่วนบุคคลทั้งหมด (ตาม พ.ร.บ. PDPA)",
+      export: "ส่งออก",
+      exporting: "กำลังส่งออก...",
+      deleteAccount: "ต้องการลบบัญชี?",
+      deleteDesc: "หากต้องการใช้สิทธิ์ลบข้อมูลตาม พ.ร.บ. PDPA กรุณาติดต่อเราที่",
+      deleteNote: "เราจะลบข้อมูลทั้งหมดของคุณอย่างปลอดภัยภายใน 30 วัน",
+      preventionBannerTitle: "การป้องกันเป็นอันดับแรก",
+      preventionBannerSubtitle: "การป้องกันแบบสมัครสมาชิกสำหรับสัญญาเช่า เงินมัดจำ และเอกสารของคุณ",
+      preventionBannerText: "Lease Shield ช่วยให้คุณรักษาความสัมพันธ์ในการเช่าที่ชัดเจน ถูกกฎหมาย และมีหลักฐาน ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้นด้วยการแจ้งเตือนอัตโนมัติ การวิเคราะห์ความเสี่ยง และเทมเพลตมืออาชีพ",
+      monthly: "รายเดือน",
+      annual: "รายปี",
+      save17: "ประหยัด 17%",
+      choosePlan: "เลือกระดับการป้องกันของคุณ",
+      planDesc: "แผนทั้งหมดมุ่งเน้นการป้องกันและรักษาบันทึกที่ชัดเจน",
+      mostPopular: "ได้รับความนิยมมากที่สุด",
+      monthsFree: "ฟรี 2 เดือน",
+      noCreditCard: "ไม่ต้องใช้บัตรเครดิต",
+      perMonth: "/เดือน",
+      save: "ประหยัด",
+      currentPlanBadge: "แผนปัจจุบัน",
+      signupFree: "สมัครเพื่อรับฟรี",
+      startPlan: "เริ่มต้น",
+      processing: "กำลังดำเนินการ...",
+      logout: "ออกจากระบบ",
+      notProvided: "ไม่ได้ระบุ"
+    }
+  };
+
+  const strings = t[language];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
@@ -227,8 +363,8 @@ export default function Account() {
               <User className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">My Account</h1>
-              <p className="text-slate-600">Manage your profile and subscription</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">{strings.pageTitle}</h1>
+              <p className="text-slate-600">{strings.pageSubtitle}</p>
             </div>
           </div>
         </div>
@@ -244,7 +380,7 @@ export default function Account() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                   <Settings className="w-5 h-5 text-ls-forest" />
-                  Personal Information
+                  {strings.personalInfo}
                 </CardTitle>
                 {!isEditing && (
                   <button
@@ -271,7 +407,7 @@ export default function Account() {
                       e.target.style.color = '#0C3B2E';
                     }}
                   >
-                    Edit Profile
+                    {strings.editProfile}
                   </button>
                 )}
               </div>
@@ -299,7 +435,7 @@ export default function Account() {
                         <User className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-slate-500 mb-1">Full Name</p>
+                        <p className="text-xs font-semibold text-slate-500 mb-1">{strings.fullName}</p>
                         <p className="font-bold text-ls-charcoal text-lg">{user?.full_name}</p>
                       </div>
                     </div>
@@ -325,7 +461,7 @@ export default function Account() {
                         <Mail className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-slate-500 mb-1">Email</p>
+                        <p className="text-xs font-semibold text-slate-500 mb-1">{strings.email}</p>
                         <p className="font-bold text-ls-charcoal">{user?.email}</p>
                       </div>
                     </div>
@@ -351,8 +487,8 @@ export default function Account() {
                         <Phone className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-slate-500 mb-1">Phone</p>
-                        <p className="font-bold text-ls-charcoal">{user?.phone || 'Not provided'}</p>
+                        <p className="text-xs font-semibold text-slate-500 mb-1">{strings.phone}</p>
+                        <p className="font-bold text-ls-charcoal">{user?.phone || strings.notProvided}</p>
                       </div>
                     </div>
                   </div>
@@ -377,7 +513,7 @@ export default function Account() {
                         <Globe className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-slate-500 mb-1">Language</p>
+                        <p className="text-xs font-semibold text-slate-500 mb-1">{strings.language}</p>
                         <p className="font-bold text-ls-charcoal">
                           {user?.language === 'th' ? 'ไทย (Thai)' : 'English'}
                         </p>
@@ -391,13 +527,13 @@ export default function Account() {
                   <div>
                     <Label htmlFor="full_name" className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
                       <User className="w-4 h-4 text-ls-forest" />
-                      Full Name
+                      {strings.fullName}
                     </Label>
                     <Input
                       id="full_name"
                       value={formData.full_name}
                       onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                      placeholder="Your full name"
+                      placeholder={language === 'th' ? 'ชื่อ-นามสกุลของคุณ' : 'Your full name'}
                       style={{
                         border: '2px solid #ECEFED',
                         borderRadius: '8px',
@@ -411,7 +547,7 @@ export default function Account() {
                   <div>
                     <Label className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
                       <Mail className="w-4 h-4 text-ls-gold" />
-                      Email
+                      {strings.email}
                     </Label>
                     <div style={{
                       padding: '10px 12px',
@@ -430,7 +566,7 @@ export default function Account() {
                         color: '#64748b',
                         fontStyle: 'italic'
                       }}>
-                        Cannot be changed
+                        {strings.cannotChange}
                       </span>
                     </div>
                   </div>
@@ -439,13 +575,13 @@ export default function Account() {
                   <div>
                     <Label htmlFor="phone" className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
                       <Phone className="w-4 h-4 text-ls-forest" />
-                      Phone Number
+                      {strings.phone}
                     </Label>
                     <Input
                       id="phone"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      placeholder="+66 XX XXX XXXX"
+                      placeholder={strings.phonePlaceholder}
                       style={{
                         border: '2px solid #ECEFED',
                         borderRadius: '8px',
@@ -459,13 +595,13 @@ export default function Account() {
                   <div>
                     <Label htmlFor="country" className="text-sm font-semibold text-ls-charcoal mb-2 flex items-center gap-2">
                       <Globe className="w-4 h-4 text-ls-forest" />
-                      Country
+                      {strings.country}
                     </Label>
                     <Input
                       id="country"
                       value={formData.country}
                       onChange={(e) => setFormData({...formData, country: e.target.value})}
-                      placeholder="Thailand"
+                      placeholder={strings.countryPlaceholder}
                       style={{
                         border: '2px solid #ECEFED',
                         borderRadius: '8px',
@@ -477,7 +613,7 @@ export default function Account() {
 
                   {/* Language Select */}
                   <div>
-                    <Label htmlFor="language" className="text-sm font-semibold text-ls-charcoal mb-2">Language</Label>
+                    <Label htmlFor="language" className="text-sm font-semibold text-ls-charcoal mb-2">{strings.language}</Label>
                     <Select value={formData.language} onValueChange={(value) => setFormData({...formData, language: value})}>
                       <SelectTrigger>
                         <SelectValue />
@@ -522,7 +658,7 @@ export default function Account() {
                       }}
                     >
                       <Save className="w-4 h-4" />
-                      Save Changes
+                      {strings.saveChanges}
                     </button>
                     <button
                       type="button"
@@ -545,7 +681,7 @@ export default function Account() {
                         e.target.style.backgroundColor = '#FFFFFF';
                       }}
                     >
-                      Cancel
+                      {strings.cancel}
                     </button>
                   </div>
                 </form>
@@ -562,7 +698,7 @@ export default function Account() {
             }}>
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <Shield className="w-5 h-5 text-ls-forest" />
-                Current Plan
+                {strings.currentPlan}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -571,16 +707,16 @@ export default function Account() {
                   <PlanBadge tier={currentPlanTier} />
                 </div>
                 <p className="text-3xl font-bold text-ls-charcoal">
-                  {isFree ? 'Free' : (PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly ? `฿${PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly}` : '—')}
+                  {isFree ? strings.freePlanName : (PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly ? `฿${PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly}` : '—')}
                 </p>
                 {!isFree && user?.billing_interval && (
                   <p className="text-sm text-slate-500 mt-1">
-                    Billed {user.billing_interval === 'annual' ? 'annually' : 'monthly'}
+                    {user.billing_interval === 'annual' ? strings.billedAnnually : strings.billedMonthly}
                   </p>
                 )}
                 {user?.subscription_status === 'active' && user?.plan_renews_at && (
                   <p className="text-xs text-slate-500 mt-2">
-                    Renews {new Date(user.plan_renews_at).toLocaleDateString()}
+                    {strings.renews} {new Date(user.plan_renews_at).toLocaleDateString()}
                   </p>
                 )}
               </div>
@@ -589,13 +725,13 @@ export default function Account() {
                 <div className="space-y-3">
                   <div style={{ padding: '12px', backgroundColor: '#ECEFED', borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
                     <p style={{ fontSize: '14px', color: '#1A1D1F', fontWeight: '600', marginBottom: '8px' }}>
-                      Free Plan Includes:
+                      {strings.freeIncludes}
                     </p>
                     <ul style={{ fontSize: '12px', color: '#1A1D1F', lineHeight: '1.5' }}>
-                      <li>• 1 Lease Scan (lifetime)</li>
-                      <li>• Basic Risk Report Preview</li>
-                      <li>• 3 Files (100MB storage)</li>
-                      <li>• Read-only Deposit Tracker</li>
+                      <li>• {strings.freeBenefit1}</li>
+                      <li>• {strings.freeBenefit2}</li>
+                      <li>• {strings.freeBenefit3}</li>
+                      <li>• {strings.freeBenefit4}</li>
                     </ul>
                   </div>
                   <button 
@@ -616,7 +752,7 @@ export default function Account() {
                     onMouseEnter={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                     onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
                   >
-                    Upgrade Now
+                    {strings.upgradeNow}
                   </button>
                 </div>
               ) : (
@@ -624,14 +760,14 @@ export default function Account() {
                   <div style={{ padding: '12px', backgroundColor: '#ECEFED', borderRadius: '8px', borderLeft: '4px solid #0C3B2E' }}>
                     <p className="text-sm text-ls-charcoal flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-ls-forest" />
-                      All features active
+                      {strings.allActive}
                     </p>
                   </div>
                   {(currentPlanTier === 'protect' || currentPlanTier === 'secure') && (
                     <div style={{ padding: '12px', backgroundColor: '#ECEFED', borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
                       <p className="text-xs text-ls-charcoal flex items-center gap-1">
                         <Bell className="w-3 h-3 text-ls-gold" />
-                        LINE reminders enabled
+                        {strings.lineEnabled}
                       </p>
                     </div>
                   )}
@@ -646,14 +782,12 @@ export default function Account() {
           <CardHeader className="border-b" style={{ backgroundColor: '#ECEFED' }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <HelpCircle className="w-5 h-5 text-ls-forest" />
-              {user?.language === 'th' ? 'ช่วยเหลือและการสนับสนุน' : 'Help & Support'}
+              {strings.helpSupport}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-sm text-slate-600 mb-4">
-              {user?.language === 'th' 
-                ? 'ต้องการความช่วยเหลือ? ส่งคำขอและเราจะตอบกลับทางอีเมล' 
-                : 'Need assistance? Submit a request and we\'ll respond via email'}
+              {strings.helpDesc}
             </p>
             
             <div className="grid md:grid-cols-2 gap-4">
@@ -691,14 +825,12 @@ export default function Account() {
                     </div>
                     <div>
                       <p className="font-bold text-white">
-                        {user?.language === 'th' ? 'ส่งคำขอช่วยเหลือ' : 'Submit Support Request'}
+                        {strings.submitRequest}
                       </p>
                     </div>
                   </div>
                   <p className="text-sm text-white/80">
-                    {user?.language === 'th' 
-                      ? 'รายงานปัญหา ถามคำถาม หรือขอความช่วยเหลือ' 
-                      : 'Report issues, ask questions, or get help'}
+                    {strings.submitDesc}
                   </p>
                 </div>
               </Link>
@@ -743,13 +875,13 @@ export default function Account() {
                   </div>
                   <div>
                     <p className="font-bold text-ls-charcoal">
-                      {user?.language === 'th' ? 'อีเมลโดยตรง' : 'Direct Email'}
+                      {strings.directEmail}
                     </p>
                   </div>
                 </div>
                 <p className="text-sm text-slate-600 mb-2">support@leaseshield.asia</p>
                 <p className="text-xs text-slate-500">
-                  {user?.language === 'th' ? 'ตอบกลับภายใน 24-48 ชั่วโมง' : 'Response within 24-48 hours'}
+                  {strings.responseTime}
                 </p>
               </a>
             </div>
@@ -761,7 +893,7 @@ export default function Account() {
           <CardHeader className="border-b" style={{ backgroundColor: '#ECEFED' }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <Shield className="w-5 h-5 text-ls-forest" />
-              Data Privacy & Your Rights
+              {strings.dataPrivacy}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -787,8 +919,8 @@ export default function Account() {
                       <FileText className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-semibold text-ls-charcoal">Privacy Policy</p>
-                      <p className="text-sm text-slate-600">Learn how we protect your data</p>
+                      <p className="font-semibold text-ls-charcoal">{strings.privacyPolicy}</p>
+                      <p className="text-sm text-slate-600">{strings.privacyDesc}</p>
                     </div>
                   </div>
                   <button
@@ -813,7 +945,7 @@ export default function Account() {
                       e.target.style.color = '#0C3B2E';
                     }}
                   >
-                    View Policy
+                    {strings.viewPolicy}
                   </button>
                 </div>
               </div>
@@ -839,8 +971,8 @@ export default function Account() {
                       <Download className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-semibold text-ls-charcoal">Export My Data</p>
-                      <p className="text-sm text-slate-600">Download all your personal data (PDPA compliant)</p>
+                      <p className="font-semibold text-ls-charcoal">{strings.exportData}</p>
+                      <p className="text-sm text-slate-600">{strings.exportDesc}</p>
                     </div>
                   </div>
                   <button
@@ -876,12 +1008,12 @@ export default function Account() {
                     {exporting ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Exporting...
+                        {strings.exporting}
                       </>
                     ) : (
                       <>
                         <Download className="w-4 h-4" />
-                        Export
+                        {strings.export}
                       </>
                     )}
                   </button>
@@ -898,12 +1030,12 @@ export default function Account() {
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-red-900 mb-1">Need to Delete Your Account?</p>
+                    <p className="font-semibold text-red-900 mb-1">{strings.deleteAccount}</p>
                     <p className="text-sm text-red-800 mb-2">
-                      To exercise your right to erasure under PDPA, please contact us at <strong>privacy@leaseshield.asia</strong>
+                      {strings.deleteDesc} <strong>privacy@leaseshield.asia</strong>
                     </p>
                     <p className="text-xs text-red-700">
-                      We will securely delete all your data within 30 days.
+                      {strings.deleteNote}
                     </p>
                   </div>
                 </div>
@@ -930,14 +1062,13 @@ export default function Account() {
           <div className="text-center">
             <Shield className="w-12 h-12 text-white mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-white mb-3">
-              Prevention-First Protection
+              {strings.preventionBannerTitle}
             </h2>
             <p className="text-white/90 text-lg mb-2">
-              Subscription-based protection for your lease, deposit, and documentation
+              {strings.preventionBannerSubtitle}
             </p>
             <p className="text-white/80 text-sm max-w-2xl mx-auto">
-              Lease Shield helps you maintain clear, legal, and evidence-based leasing relationships. 
-              Prevent rental problems before they happen with automated alerts, risk analysis, and professional templates.
+              {strings.preventionBannerText}
             </p>
           </div>
         </div>
@@ -960,7 +1091,7 @@ export default function Account() {
                   color: billingInterval === 'monthly' ? '#FFFFFF' : '#1A1D1F'
                 }}
               >
-                Monthly
+                {strings.monthly}
               </button>
               <button
                 onClick={() => setBillingInterval('annual')}
@@ -979,7 +1110,7 @@ export default function Account() {
                   gap: '6px'
                 }}
               >
-                Annual
+                {strings.annual}
                 <span style={{
                   padding: '2px 8px',
                   borderRadius: '6px',
@@ -988,14 +1119,14 @@ export default function Account() {
                   backgroundColor: '#C7A338',
                   color: '#FFFFFF'
                 }}>
-                  Save 17%
+                  {strings.save17}
                 </span>
               </button>
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-ls-charcoal mb-2 text-center">Choose Your Protection Level</h2>
-          <p className="text-slate-600 mb-6 text-center">All plans focus on prevention and maintaining clear records</p>
+          <h2 className="text-2xl font-bold text-ls-charcoal mb-2 text-center">{strings.choosePlan}</h2>
+          <p className="text-slate-600 mb-6 text-center">{strings.planDesc}</p>
           
           <div className="grid md:grid-cols-2 gap-6">
             {PLAN_DETAILS.map((plan) => {
@@ -1042,7 +1173,7 @@ export default function Account() {
                       boxShadow: '0 4px 12px rgba(199, 163, 56, 0.4)'
                     }}>
                       <Star style={{ width: '16px', height: '16px', fill: '#0C3B2E', color: '#0C3B2E' }} />
-                      <span>MOST POPULAR</span>
+                      <span>{strings.mostPopular}</span>
                       <Star style={{ width: '16px', height: '16px', fill: '#0C3B2E', color: '#0C3B2E' }} />
                     </div>
                   )}
@@ -1060,7 +1191,7 @@ export default function Account() {
                       borderBottomRightRadius: '8px',
                       zIndex: 10
                     }}>
-                      🏷️ 2 MONTHS FREE
+                      🏷️ {strings.monthsFree}
                     </div>
                   )}
                   
@@ -1081,7 +1212,7 @@ export default function Account() {
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
                       {isFreeplan ? (
                         <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
-                          Free
+                          {strings.freePlanName}
                         </span>
                       ) : (
                         <>
@@ -1096,12 +1227,12 @@ export default function Account() {
                     </div>
                     {billingInterval === 'annual' && !isFreeplan && (
                       <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px' }}>
-                        ฿{effectiveMonthly}/month • Save ฿{plan.savingsAnnual.toLocaleString()}
+                        ฿{effectiveMonthly}{strings.perMonth} • {strings.save} ฿{plan.savingsAnnual.toLocaleString()}
                       </p>
                     )}
                     {isFreeplan && (
                       <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px' }}>
-                        No credit card required
+                        {strings.noCreditCard}
                       </p>
                     )}
                   </div>
@@ -1161,7 +1292,7 @@ export default function Account() {
                           cursor: 'not-allowed'
                         }}
                       >
-                        Current Plan
+                        {strings.currentPlanBadge}
                       </button>
                     ) : isFreeplan ? (
                       <button
@@ -1178,7 +1309,7 @@ export default function Account() {
                           cursor: 'not-allowed'
                         }}
                       >
-                        Sign Up to Get Free
+                        {strings.signupFree}
                       </button>
                     ) : (
                       <button
@@ -1205,7 +1336,7 @@ export default function Account() {
                           if (!subscribing) e.target.style.opacity = '1';
                         }}
                       >
-                        {subscribing ? 'Processing...' : `Start ${plan.label}`}
+                        {subscribing ? strings.processing : `${strings.startPlan} ${plan.label}`}
                       </button>
                     )}
                   </div>
@@ -1221,7 +1352,7 @@ export default function Account() {
           onClick={() => base44.auth.logout()}
         >
           <LogOut className="w-4 h-4 mr-2" />
-          Logout
+          {strings.logout}
         </Button>
       </div>
     </div>
