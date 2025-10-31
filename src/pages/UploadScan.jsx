@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -54,6 +55,29 @@ export default function UploadScan() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
+  // Calculate storage limits
+  const getBaseStorageFromPlan = (tier) => {
+    const storageLimits = {
+      free: 100,
+      lite: 1024,
+      protect: 5120,
+      secure: 20480
+    };
+    return storageLimits[tier] || 100;
+  };
+
+  const { data: storageAddons = [] } = useQuery({
+    queryKey: ['storageAddons'],
+    queryFn: () => base44.entities.StorageAddon.filter({ user_email: user?.email, status: 'active' }),
+    enabled: !!user,
+  });
+
+  const baseStorageMB = getBaseStorageFromPlan(user?.plan_tier || 'free');
+  const addonStorageMB = storageAddons.reduce((total, addon) => total + (addon.addon_size_gb * 1024), 0);
+  const totalStorageMB = baseStorageMB + addonStorageMB;
+  const usedStorageMB = user?.storage_used_mb || 0;
+  const availableStorageMB = totalStorageMB - usedStorageMB;
+
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -81,6 +105,21 @@ export default function UploadScan() {
       return;
     }
 
+    // Check storage before adding files
+    const totalNewSizeMB = validFiles.reduce((sum, file) => sum + (file.size / 1024 / 1024), 0);
+    const currentSelectedSizeMB = selectedFiles.reduce((sum, file) => sum + (file.size / 1024 / 1024), 0);
+    const totalRequiredMB = totalNewSizeMB + currentSelectedSizeMB;
+
+    if (totalRequiredMB > availableStorageMB) {
+      const shortfall = (totalRequiredMB - availableStorageMB).toFixed(2);
+      setError(
+        language === 'th' 
+          ? `พื้นที่จัดเก็บไม่เพียงพอ ต้องการเพิ่ม ${shortfall} MB - กรุณาอัปเกรดในหน้าบัญชี` 
+          : `Insufficient storage. Need ${shortfall} MB more - please upgrade in Account page`
+      );
+      return;
+    }
+
     setSelectedFiles(prev => [...prev, ...validFiles]);
   };
 
@@ -90,6 +129,17 @@ export default function UploadScan() {
 
   const handleUploadAll = async () => {
     if (selectedFiles.length === 0) return;
+
+    // Final storage check before upload
+    const totalSizeMB = selectedFiles.reduce((sum, file) => sum + (file.size / 1024 / 1024), 0);
+    if (totalSizeMB > availableStorageMB) {
+      setError(
+        language === 'th' 
+          ? 'พื้นที่จัดเก็บไม่เพียงพอ กรุณาอัปเกรดในหน้าบัญชี' 
+          : 'Insufficient storage. Please upgrade in Account page.'
+      );
+      return;
+    }
 
     setUploading(true);
     setError(null);
@@ -101,6 +151,10 @@ export default function UploadScan() {
       
       const uploadResults = await Promise.all(uploadPromises);
       const fileUrls = uploadResults.map(result => result.file_url);
+
+      // Update storage usage
+      const newStorageUsed = usedStorageMB + totalSizeMB;
+      await base44.auth.updateMe({ storage_used_mb: newStorageUsed });
 
       const lease = await base44.entities.Lease.create({
         file_url: fileUrls[0],
@@ -166,6 +220,7 @@ export default function UploadScan() {
 
       await queryClient.invalidateQueries({ queryKey: ['leases'] });
       await queryClient.invalidateQueries({ queryKey: ['scans'] });
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
 
       window.location.href = createPageUrl("ScanPreview") + `?leaseId=${lease.id}`;
       
@@ -227,7 +282,10 @@ export default function UploadScan() {
       viewDetails: "View Details",
       selectAtLeast: "Select at least one file to upload",
       delete: "Delete",
-      deleting: "Deleting..."
+      deleting: "Deleting...",
+      storageAvailable: "Storage available",
+      almostFull: "Almost Full",
+      goToAccount: "Go to Account →",
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
@@ -252,7 +310,10 @@ export default function UploadScan() {
       viewDetails: "ดูรายละเอียด",
       selectAtLeast: "เลือกไฟล์อย่างน้อยหนึ่งไฟล์เพื่ออัปโหลด",
       delete: "ลบ",
-      deleting: "กำลังลบ..."
+      deleting: "กำลังลบ...",
+      storageAvailable: "พื้นที่ว่าง",
+      almostFull: "เกือบเต็ม",
+      goToAccount: "ไปที่หน้าบัญชี →",
     }
   };
 
@@ -285,6 +346,18 @@ export default function UploadScan() {
             <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           </div>
           <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+          
+          {/* Storage indicator */}
+          <div className="mt-2 flex items-center gap-2">
+            <div className="text-xs" style={{ color: colors.textSecondary }}>
+              {strings.storageAvailable}: {(availableStorageMB / 1024).toFixed(2)} GB / {(totalStorageMB / 1024).toFixed(1)} GB
+            </div>
+            {availableStorageMB < 100 && (
+              <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-800 font-semibold">
+                {strings.almostFull}
+              </span>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -295,6 +368,14 @@ export default function UploadScan() {
               <AlertCircle className="w-5 h-5 text-red-600" />
               <p className="text-red-600 font-semibold">{error}</p>
             </div>
+            {(error.includes('storage') || error.includes('พื้นที่จัดเก็บ')) && (
+              <button
+                onClick={() => window.location.href = createPageUrl("Account")}
+                className="mt-2 text-sm underline text-red-700 font-semibold"
+              >
+                {strings.goToAccount}
+              </button>
+            )}
           </div>
         )}
 
