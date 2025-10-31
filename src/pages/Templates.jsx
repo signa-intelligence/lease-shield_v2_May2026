@@ -1,8 +1,10 @@
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl }
+ from "@/utils";
 import { FileCheck, ArrowLeft, Mail, AlertCircle, FileText, Shield, Scale, Clock, ClipboardCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FeatureGate, useFeatureAccess } from "../components/shared/FeatureGate";
@@ -86,6 +88,22 @@ export default function Templates() {
   });
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40'
+  } : {
+    bg: '#0C3B2E', // This was previously a gradient `from-ls-stone via-white to-ls-stone`, now it's a solid background based on the outline.
+    cardBg: '#FFFFFF',
+    textPrimary: '#ECEFED',
+    textSecondary: '#D1FAE5',
+    borderColor: 'rgba(236, 239, 237, 0.2)'
+  };
+
 
   const t = {
     en: {
@@ -113,7 +131,7 @@ export default function Templates() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <button
