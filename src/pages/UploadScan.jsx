@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2 } from "lucide-react";
-import { format } = require("date-fns");
+import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -235,10 +234,10 @@ export default function UploadScan() {
       pages: "pages",
       uploaded: "Uploaded",
       viewResults: "View Results",
+      viewDetails: "View Details",
       selectAtLeast: "Select at least one file to upload",
       delete: "Delete",
-      deleting: "Deleting...",
-      viewDetails: "View Details" // Added for consistency with button text
+      deleting: "Deleting..."
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
@@ -260,10 +259,10 @@ export default function UploadScan() {
       pages: "หน้า",
       uploaded: "อัปโหลดแล้ว",
       viewResults: "ดูผลลัพธ์",
+      viewDetails: "ดูรายละเอียด",
       selectAtLeast: "เลือกไฟล์อย่างน้อยหนึ่งไฟล์เพื่ออัปโหลด",
       delete: "ลบ",
-      deleting: "กำลังลบ...",
-      viewDetails: "ดูรายละเอียด" // Added for consistency with button text
+      deleting: "กำลังลบ..."
     }
   };
 
@@ -402,11 +401,11 @@ export default function UploadScan() {
                           transition: 'all 0.2s'
                         }}
                         onMouseEnter={(e) => {
-                          if (!isDarkMode) e.target.style.backgroundColor = '#0C3B2E';
+                          e.target.style.backgroundColor = '#0C3B2E';
                           e.target.style.color = '#FFFFFF';
                         }}
                         onMouseLeave={(e) => {
-                          if (!isDarkMode) e.target.style.backgroundColor = '#FFFFFF';
+                          e.target.style.backgroundColor = isDarkMode ? '#3A3D40' : '#FFFFFF';
                           e.target.style.color = '#0C3B2E';
                         }}
                       >
