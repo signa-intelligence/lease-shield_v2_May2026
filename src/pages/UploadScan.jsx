@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { format } = require("date-fns");
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -237,7 +237,8 @@ export default function UploadScan() {
       viewResults: "View Results",
       selectAtLeast: "Select at least one file to upload",
       delete: "Delete",
-      deleting: "Deleting..."
+      deleting: "Deleting...",
+      viewDetails: "View Details" // Added for consistency with button text
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
@@ -261,7 +262,8 @@ export default function UploadScan() {
       viewResults: "ดูผลลัพธ์",
       selectAtLeast: "เลือกไฟล์อย่างน้อยหนึ่งไฟล์เพื่ออัปโหลด",
       delete: "ลบ",
-      deleting: "กำลังลบ..."
+      deleting: "กำลังลบ...",
+      viewDetails: "ดูรายละเอียด" // Added for consistency with button text
     }
   };
 
@@ -486,10 +488,9 @@ export default function UploadScan() {
                   backgroundColor: colors.cardBg
                 }}>
                   <div className="p-4 md:p-6">
-                    <div className="flex flex-col gap-3">
-                      {/* Top section - Title and Badge */}
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-bold text-base md:text-lg leading-tight flex-1" style={{ 
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold mb-1" style={{ 
                           color: colors.textPrimary,
                           wordBreak: 'break-word',
                           overflowWrap: 'break-word',
@@ -497,19 +498,12 @@ export default function UploadScan() {
                         }}>
                           {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
                         </h3>
-                        <Badge className={`${getStatusColor(lease.status)} flex-shrink-0`}>
-                          {lease.status.toUpperCase()}
-                        </Badge>
-                      </div>
-
-                      {/* Details */}
-                      <div>
                         {lease.rent_amount && (
                           <p style={{ color: colors.textSecondary, marginBottom: '8px' }}>
                             ฿{lease.rent_amount.toLocaleString()}/{language === 'th' ? 'เดือน' : 'month'}
                           </p>
                         )}
-                        <div className="flex flex-wrap gap-2 text-sm mb-2" style={{ color: colors.textSecondary }}>
+                        <div className="flex gap-2 text-sm mb-2 flex-wrap" style={{ color: colors.textSecondary }}>
                           {lease.language_detected && (
                             <span>• {language === 'th' ? 'ภาษา' : 'Language'}: {lease.language_detected.toUpperCase()}</span>
                           )}
@@ -521,33 +515,29 @@ export default function UploadScan() {
                           {strings.uploaded}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
                         </p>
                       </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <Badge className={getStatusColor(lease.status)}>
+                          {lease.status.toUpperCase()}
+                        </Badge>
                         {(lease.status === 'scanned' || lease.status === 'paid') && (
                           <button
                             onClick={() => handleViewDetails(lease)}
                             style={{
-                              flex: 1,
                               backgroundColor: '#3B82F6',
                               color: '#FFFFFF',
-                              padding: '10px 16px',
-                              borderRadius: '8px',
+                              padding: '8px 16px',
+                              borderRadius: '6px',
                               fontSize: '14px',
                               fontWeight: '600',
                               border: 'none',
                               cursor: 'pointer',
                               transition: 'all 0.2s',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px'
+                              whiteSpace: 'nowrap'
                             }}
                             onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
                             onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
                           >
-                            <FileText className="w-4 h-4" />
-                            <span>{strings.viewResults}</span>
+                            {strings.viewDetails}
                           </button>
                         )}
                         <button
@@ -559,19 +549,15 @@ export default function UploadScan() {
                           style={{
                             backgroundColor: isDarkMode ? '#3A2626' : '#FFFFFF',
                             color: '#EF4444',
-                            padding: '10px 16px',
-                            borderRadius: '8px',
+                            padding: '8px 16px',
+                            borderRadius: '6px',
                             fontSize: '14px',
                             fontWeight: '600',
                             border: '2px solid #EF4444',
                             cursor: deleteLeaseMutation.isLoading ? 'not-allowed' : 'pointer',
                             transition: 'all 0.2s',
                             opacity: deleteLeaseMutation.isLoading ? 0.5 : 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            minWidth: '100px'
+                            whiteSpace: 'nowrap'
                           }}
                           onMouseEnter={(e) => {
                             if (!deleteLeaseMutation.isLoading) {
@@ -584,17 +570,7 @@ export default function UploadScan() {
                             }
                           }}
                         >
-                          {deleteLeaseMutation.isLoading ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>{strings.deleting}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Trash2 className="w-4 h-4" />
-                              <span>{strings.delete}</span>
-                            </>
-                          )}
+                          {deleteLeaseMutation.isLoading ? strings.deleting : strings.delete}
                         </button>
                       </div>
                     </div>

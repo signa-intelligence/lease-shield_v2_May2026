@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -159,8 +160,12 @@ export default function ScanPreview() {
   const riskColor = getRiskColor(scan.risk_score);
   const riskLabel = getRiskLabel(scan.risk_score);
 
+  // Show only first 4 issues for preview
+  const previewFlags = scan.flags && scan.flags.length > 0 ? scan.flags.slice(0, 4) : [];
+  const hasMoreIssues = scan.flags && scan.flags.length > 4;
+
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '120px' }}>
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '180px' }}>
       <div className="max-w-4xl mx-auto">
         <Button
           variant="outline"
@@ -195,7 +200,7 @@ export default function ScanPreview() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {scan.flags && scan.flags.map((flag, idx) => {
+            {previewFlags.map((flag, idx) => {
               const severityConfig = SEVERITY_CONFIG[flag.severity] || SEVERITY_CONFIG.medium;
               return (
                 <div key={idx} className="p-4 rounded-xl border-2" style={{
@@ -217,27 +222,61 @@ export default function ScanPreview() {
                 </div>
               );
             })}
+
+            {/* Upgrade Prompt if more issues exist */}
+            {hasMoreIssues && (
+              <div className="p-6 rounded-xl border-2 border-dashed" style={{
+                backgroundColor: isDarkMode ? '#2A2D30' : '#FEF9C3',
+                borderColor: isDarkMode ? '#C7A338' : '#EAB308'
+              }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-ls-gold rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold" style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? `เหลืออีก ${scan.flags.length - 4} ปัญหา` : `${scan.flags.length - 4} More Issues Found`}
+                    </h4>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      {language === 'th' ? 'อัปเกรดเพื่อดูรายงานฉบับเต็มพร้อมคำแนะนำโดยละเอียด' : 'Upgrade to view full report with detailed recommendations'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  className="w-full bg-ls-gold hover:bg-ls-gold/90"
+                  onClick={() => navigate(createPageUrl("Account"))}
+                >
+                  {language === 'th' ? 'อัปเกรดเพื่อปลดล็อค' : 'Upgrade to Unlock'}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <div className="flex flex-col sm:flex-row gap-3 pb-8">
-          <Button
-            className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
-            onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
-          >
-            <FileText className="w-5 h-5 mr-2" />
-            {strings.viewFullReport}
-          </Button>
-          {lease.file_url && (
+        {/* Action Buttons - Always visible */}
+        <div className="fixed bottom-20 left-0 right-0 p-4 z-30" style={{
+          backgroundColor: colors.bg,
+          borderTop: `1px solid ${isDarkMode ? '#3A3D40' : '#E5E7EB'}`
+        }}>
+          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-3">
             <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => window.open(lease.file_url, '_blank')}
+              className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
+              onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
             >
-              <ExternalLink className="w-5 h-5 mr-2" />
-              {strings.viewLease}
+              <FileText className="w-5 h-5 mr-2" />
+              {strings.viewFullReport}
             </Button>
-          )}
+            {lease.file_url && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => window.open(lease.file_url, '_blank')}
+              >
+                <ExternalLink className="w-5 h-5 mr-2" />
+                {strings.viewLease}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
