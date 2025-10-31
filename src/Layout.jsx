@@ -277,7 +277,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Main Content - Added top padding to account for fixed header */}
       <main className="flex-1 overflow-auto" style={{
         paddingTop: '64px',
-        paddingBottom: `calc(${isAdmin ? '80px' : '76px'} + env(safe-area-inset-bottom, 0px))`
+        paddingBottom: `calc(76px + env(safe-area-inset-bottom, 0px))`
       }}>
         {children}
       </main>
@@ -326,33 +326,6 @@ export default function Layout({ children, currentPageName }) {
               </Link>
             );
           })}
-        </div>
-
-        {/* Disclaimer */}
-        <div style={{
-          padding: '8px 16px',
-          textAlign: 'center',
-          backgroundColor: colors.bottomTabBg,
-          borderTop: `1px solid ${colors.borderColor}`
-        }}>
-          <p style={{
-            fontSize: '11px',
-            fontWeight: '500',
-            margin: 0,
-            color: isDarkMode ? colors.textSecondary : '#0C3B2E',
-            opacity: 0.8
-          }}>
-            <Link 
-              to={createPageUrl("PrivacyPolicy")}
-              style={{
-                color: isDarkMode ? colors.textPrimary : '#0C3B2E',
-                textDecoration: 'underline',
-                fontWeight: '600'
-              }}
-            >
-              {strings.privacyPolicy}
-            </Link>
-          </p>
         </div>
       </nav>
     </div>
