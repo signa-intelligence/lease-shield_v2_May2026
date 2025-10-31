@@ -33,6 +33,13 @@ Deno.serve(async (req) => {
       daysUntil: 3
     };
 
+    const sampleLease = {
+      property: 'Unit 123, Sample Condo, Sukhumvit',
+      endDate: '31 Dec 2025',
+      noticeDeadline: '1 Nov 2025',
+      noticePeriodDays: 60
+    };
+
     switch (notificationType) {
       case '30day':
         messageText = language === 'th' ?
@@ -98,6 +105,76 @@ Deno.serve(async (req) => {
           `📅 Due Date: ${sampleRent.dueDate}\n` +
           `🏠 Property: ${sampleDeposit.property}\n\n` +
           `💡 Prepare payment to avoid late fees`;
+        break;
+
+      case 'notice_30d':
+        messageText = language === 'th' ?
+          `📅 เตือนสัญญาเช่า Lease Shield\n\nอีก 30 วันถึงกำหนดแจ้งต่อหรือยกเลิกสัญญา\n\n` +
+          `🏠 ทรัพย์สิน: ${sampleLease.property}\n` +
+          `📆 สัญญาสิ้นสุด: ${sampleLease.endDate}\n` +
+          `⏰ ต้องแจ้งภายใน: ${sampleLease.noticeDeadline}\n` +
+          `📝 ระยะแจ้ง: ${sampleLease.noticePeriodDays} วันก่อนหมดสัญญา\n\n` +
+          `💡 ตัดสินใจว่าจะต่อสัญญาหรือยกเลิก และแจ้งเจ้าของบ้านให้ทันเวลา` :
+          
+          `📅 Lease Shield Notice Reminder\n\n30 days until lease notice deadline\n\n` +
+          `🏠 Property: ${sampleLease.property}\n` +
+          `📆 Lease ends: ${sampleLease.endDate}\n` +
+          `⏰ Must notify by: ${sampleLease.noticeDeadline}\n` +
+          `📝 Notice period: ${sampleLease.noticePeriodDays} days before end\n\n` +
+          `💡 Decide if you'll renew or terminate, and notify landlord on time`;
+        break;
+
+      case 'notice_7d':
+        messageText = language === 'th' ?
+          `⚠️ แจ้งเตือนด่วน Lease Shield\n\nเหลือ 7 วันต้องแจ้งเจ้าของบ้าน!\n\n` +
+          `🏠 ทรัพย์สิน: ${sampleLease.property}\n` +
+          `📆 สัญญาสิ้นสุด: ${sampleLease.endDate}\n` +
+          `🚨 ต้องแจ้งภายใน: ${sampleLease.noticeDeadline}\n\n` +
+          `📝 ดำเนินการ:\n` +
+          `1. ตัดสินใจต่อหรือยกเลิก\n` +
+          `2. สร้างจดหมายแจ้งในส่วน Templates\n` +
+          `3. ส่งให้เจ้าของบ้านโดยด่วน` :
+          
+          `⚠️ Lease Shield Urgent Reminder\n\n7 days left to notify landlord!\n\n` +
+          `🏠 Property: ${sampleLease.property}\n` +
+          `📆 Lease ends: ${sampleLease.endDate}\n` +
+          `🚨 Must notify by: ${sampleLease.noticeDeadline}\n\n` +
+          `📝 Action Required:\n` +
+          `1. Decide: renew or terminate\n` +
+          `2. Generate notice letter in Templates\n` +
+          `3. Send to landlord urgently`;
+        break;
+
+      case 'notice_3d':
+        messageText = language === 'th' ?
+          `🚨 คำเตือนสุดท้าย Lease Shield\n\nเหลือเพียง 3 วัน!\n\n` +
+          `🏠 ทรัพย์สิน: ${sampleLease.property}\n` +
+          `📆 สัญญาสิ้นสุด: ${sampleLease.endDate}\n` +
+          `🔴 ต้องแจ้งภายใน: ${sampleLease.noticeDeadline}\n\n` +
+          `⚠️ หากไม่แจ้ง สัญญาอาจต่ออัตโนมัติหรือไม่สามารถต่อได้\n\n` +
+          `แจ้งเจ้าของบ้านทันที!` :
+          
+          `🚨 Lease Shield Final Warning\n\nOnly 3 days left!\n\n` +
+          `🏠 Property: ${sampleLease.property}\n` +
+          `📆 Lease ends: ${sampleLease.endDate}\n` +
+          `🔴 Must notify by: ${sampleLease.noticeDeadline}\n\n` +
+          `⚠️ If you don't notify, lease may auto-renew or you can't extend\n\n` +
+          `Contact landlord immediately!`;
+        break;
+
+      case 'notice_today':
+        messageText = language === 'th' ?
+          `🔴 วันนี้คือกำหนด! Lease Shield\n\nต้องแจ้งเจ้าของบ้าน วันนี้!\n\n` +
+          `🏠 ทรัพย์สิน: ${sampleLease.property}\n` +
+          `📆 สัญญาสิ้นสุด: ${sampleLease.endDate}\n` +
+          `🔴 กำหนดแจ้ง: วันนี้\n\n` +
+          `แจ้งเจ้าของบ้านทันที หรืออาจพลาดสิทธิ์!` :
+          
+          `🔴 Deadline Today! Lease Shield\n\nMust notify landlord TODAY!\n\n` +
+          `🏠 Property: ${sampleLease.property}\n` +
+          `📆 Lease ends: ${sampleLease.endDate}\n` +
+          `🔴 Notice deadline: TODAY\n\n` +
+          `Contact landlord immediately or risk losing your rights!`;
         break;
 
       case 'welcome':
