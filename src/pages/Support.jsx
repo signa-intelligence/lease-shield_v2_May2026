@@ -118,11 +118,11 @@ export default function Support() {
     borderColor: '#3A3D40',
     inputBg: '#353A3D'
   } : {
-    bg: '#0C3B2E', // This is ls-forest
+    bg: '#0C3B2E',
     cardBg: '#FFFFFF',
-    textPrimary: '#ECEFED', // This seems to be for text on dark bg, but applied to light bg here?
-    textSecondary: '#D1FAE5', // Same here
-    borderColor: 'rgba(236, 239, 237, 0.2)', // Same here
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#e2e8f0',
     inputBg: '#FFFFFF'
   };
 
