@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -43,7 +44,8 @@ export default function AdminConsole() {
     textPrimary: '#ECEFED',
     textSecondary: '#A8ABAD',
     borderColor: '#3A3D40',
-    statBg: '#353A3D',
+    tableBg: '#2A2D30',
+    tableRow: '#353A3D',
     leaseBg: '#353A3D'
   } : {
     bg: '#ECEFED',
@@ -51,7 +53,8 @@ export default function AdminConsole() {
     textPrimary: '#1A1D1F',
     textSecondary: '#64748b',
     borderColor: '#E5E7EB',
-    statBg: '#F8FAFC',
+    tableBg: '#FFFFFF',
+    tableRow: '#F8FAFC',
     leaseBg: '#F8FAFC'
   };
 
@@ -229,10 +232,10 @@ export default function AdminConsole() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" style={{ backgroundColor: colors.tableBg }}>
               <table className="w-full">
                 <thead>
-                  <tr style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+                  <tr style={{ borderBottom: `2px solid ${colors.borderColor}` }}>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
@@ -243,11 +246,14 @@ export default function AdminConsole() {
                   </tr>
                 </thead>
                 <tbody>
-                  {allUsers.map((u) => (
-                    <tr key={u.id} style={{ 
-                      borderBottom: `1px solid ${colors.borderColor}`,
-                      backgroundColor: 'transparent'
-                    }}>
+                  {allUsers.map((u, index) => (
+                    <tr 
+                      key={u.id} 
+                      style={{ 
+                        borderBottom: `1px solid ${colors.borderColor}`,
+                        backgroundColor: index % 2 === 0 ? colors.tableBg : colors.tableRow
+                      }}
+                    >
                       <td className="py-3 px-4 text-sm font-medium" style={{ color: colors.textPrimary }}>{u.full_name}</td>
                       <td className="py-3 px-4 text-sm" style={{ color: colors.textSecondary }}>
                         <div className="flex items-center gap-2">
@@ -287,7 +293,16 @@ export default function AdminConsole() {
                         {format(new Date(u.created_date), 'MMM d, yyyy')}
                       </td>
                       <td className="py-3 px-4">
-                        <Button variant="outline" size="sm" className="text-xs">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-xs"
+                          style={{
+                            backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
+                            color: colors.textPrimary,
+                            borderColor: colors.borderColor
+                          }}
+                        >
                           {strings.actions}
                         </Button>
                       </td>
