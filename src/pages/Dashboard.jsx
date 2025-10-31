@@ -341,11 +341,11 @@ export default function Dashboard() {
     textSecondary: '#A8ABAD',
     borderColor: '#3A3D40'
   } : {
-    bg: '#ECEFED',
+    bg: '#0C3B2E',
     cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB'
+    textPrimary: '#ECEFED',
+    textSecondary: '#D1FAE5',
+    borderColor: 'rgba(236, 239, 237, 0.2)'
   };
 
   return (
