@@ -1,3 +1,4 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -36,6 +37,22 @@ export default function Cases() {
   });
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40'
+  } : {
+    bg: '#0C3B2E', // This is a dark green. The original light background was bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100
+    cardBg: '#FFFFFF',
+    textPrimary: '#334155', // Changed to complement light background, original was white for dark mode context
+    textSecondary: '#64748B', // Changed to complement light background, original was light green for dark mode context
+    borderColor: '#E2E8F0' // Changed to complement light background, original was transparent white for dark mode context
+  };
+
 
   const t = {
     en: {
@@ -95,15 +112,15 @@ export default function Cases() {
   const getStatusConfig = (status) => STATUS_CONFIG[status] || STATUS_CONFIG.intake;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Scale className="w-8 h-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-slate-900">{strings.title}</h1>
+              <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
             </div>
-            <p className="text-slate-600">{strings.subtitle}</p>
+            <p className="text-slate-600" style={{ color: isDarkMode ? colors.textSecondary : '#64748B' }}>{strings.subtitle}</p>
           </div>
           
           <Button size="lg" className="bg-blue-600 hover:bg-blue-700 shadow-lg" onClick={() => navigate(createPageUrl("ResolveCase"))}>
@@ -133,11 +150,11 @@ export default function Cases() {
         )}
 
         {cases.length === 0 ? (
-          <Card className="border-none shadow-xl">
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
             <CardContent className="p-12 text-center">
               <Scale className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-slate-900 mb-2">{strings.noCases}</h3>
-              <p className="text-slate-600 mb-6">
+              <h3 className="text-xl font-bold" style={{ color: colors.textPrimary }}>{strings.noCases}</h3>
+              <p className="mb-6" style={{ color: isDarkMode ? colors.textSecondary : '#64748B' }}>
                 {strings.noCasesSub}
               </p>
               {hasMemberPrice && (
@@ -160,18 +177,18 @@ export default function Cases() {
               const StatusIcon = statusConfig.icon;
               
               return (
-                <Card key={caseItem.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300">
-                  <CardHeader className="border-b border-slate-100 pb-4">
+                <Card key={caseItem.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                  <CardHeader className="border-b pb-4" style={{ borderColor: colors.borderColor }}>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-50 rounded-xl">
                           <Scale className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <CardTitle className="text-lg font-bold text-slate-900">
+                          <CardTitle className="text-lg font-bold" style={{ color: colors.textPrimary }}>
                             {strings.caseNumber}{caseItem.id.slice(0, 8)}
                           </CardTitle>
-                          <p className="text-xs text-slate-500 mt-1">
+                          <p className="text-xs mt-1" style={{ color: isDarkMode ? colors.textSecondary : '#64748B' }}>
                             {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
                           </p>
                         </div>
@@ -195,8 +212,8 @@ export default function Cases() {
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       {caseItem.dispute_amount && (
                         <div>
-                          <p className="text-xs text-slate-500 mb-1">{strings.disputeAmount}</p>
-                          <p className="text-lg font-bold text-slate-900">
+                          <p className="text-xs mb-1" style={{ color: isDarkMode ? colors.textSecondary : '#64748B' }}>{strings.disputeAmount}</p>
+                          <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
                             ฿{caseItem.dispute_amount.toLocaleString()}
                           </p>
                         </div>
@@ -204,17 +221,17 @@ export default function Cases() {
                       
                       {caseItem.ops_assigned && (
                         <div>
-                          <p className="text-xs text-slate-500 mb-1">{strings.assignedTo}</p>
+                          <p className="text-xs mb-1" style={{ color: isDarkMode ? colors.textSecondary : '#64748B' }}>{strings.assignedTo}</p>
                           <div className="flex items-center gap-2">
                             <UserCheck className="w-4 h-4 text-blue-600" />
-                            <p className="text-sm font-semibold text-slate-900">{strings.opsTeam}</p>
+                            <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.opsTeam}</p>
                           </div>
                         </div>
                       )}
                     </div>
 
                     <div className="mb-4">
-                      <p className="text-xs text-slate-500 mb-2">{strings.features}</p>
+                      <p className="text-xs mb-2" style={{ color: isDarkMode ? colors.textSecondary : '#64748B' }}>{strings.features}</p>
                       <div className="flex gap-2 flex-wrap">
                         {caseItem.fast_track && (
                           <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
@@ -235,8 +252,8 @@ export default function Cases() {
                     </div>
 
                     {caseItem.summary && (
-                      <div className="p-3 bg-slate-50 rounded-xl mb-4">
-                        <p className="text-xs text-slate-700 line-clamp-2">{caseItem.summary}</p>
+                      <div className="p-3 bg-slate-50 rounded-xl mb-4" style={{ backgroundColor: isDarkMode ? colors.borderColor : '#F1F5F9' }}>
+                        <p className="text-xs line-clamp-2" style={{ color: isDarkMode ? colors.textSecondary : '#475569' }}>{caseItem.summary}</p>
                       </div>
                     )}
 
