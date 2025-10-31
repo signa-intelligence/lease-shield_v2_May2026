@@ -29,8 +29,18 @@ export default function Layout({ children, currentPageName }) {
     }
   }, []);
 
+  // Apply theme to body
+  React.useEffect(() => {
+    if (user?.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [user?.theme]);
+
   const language = user?.language || 'en';
   const isAdmin = user?.role === 'admin';
+  const isDarkMode = user?.theme === 'dark';
 
   const t = {
     en: {
@@ -105,12 +115,37 @@ export default function Layout({ children, currentPageName }) {
     return location.pathname === route;
   };
 
+  // Theme colors
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    bgGradientStart: '#0f1214',
+    bgGradientEnd: '#1A1D1F',
+    cardBg: '#2A2D30',
+    borderColor: '#3A3D40',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    topBarBg: '#1A1D1F',
+    bottomTabBg: '#1A1D1F',
+    hoverBg: '#3A3D40'
+  } : {
+    bg: '#ECEFED',
+    bgGradientStart: '#ECEFED',
+    bgGradientEnd: '#ECEFED',
+    cardBg: '#FFFFFF',
+    borderColor: '#ECEFED',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    topBarBg: '#FFFFFF',
+    bottomTabBg: '#FFFFFF',
+    hoverBg: '#ECEFED'
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-ls-stone">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bg }}>
       {/* PWA Meta Tags */}
       <helmet>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0C3B2E" />
+        <meta name="theme-color" content={isDarkMode ? '#1A1D1F' : '#0C3B2E'} />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="LeaseShield" />
@@ -133,6 +168,7 @@ export default function Layout({ children, currentPageName }) {
         
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          background-color: ${colors.bg};
         }
         
         h1, h2, h3, h4, h5, h6 {
@@ -176,7 +212,10 @@ export default function Layout({ children, currentPageName }) {
       `}</style>
 
       {/* Top Bar with Logo - FIXED TO TOP */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b border-ls-stone shadow-sm z-40">
+      <div className="fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
+        backgroundColor: colors.topBarBg,
+        borderBottomColor: colors.borderColor
+      }}>
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
@@ -201,7 +240,7 @@ export default function Layout({ children, currentPageName }) {
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
-                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : '#ECEFED',
+                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : colors.hoverBg,
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
@@ -217,7 +256,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
                 onMouseLeave={(e) => {
                   if (location.pathname !== createPageUrl("Account")) {
-                    e.target.style.backgroundColor = '#ECEFED';
+                    e.target.style.backgroundColor = colors.hoverBg;
                   }
                 }}
               >
@@ -243,7 +282,10 @@ export default function Layout({ children, currentPageName }) {
       </main>
 
       {/* Bottom Navigation Tabs */}
-      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 bg-white border-t border-ls-stone shadow-2xl z-50">
+      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 border-t shadow-2xl z-50" style={{
+        backgroundColor: colors.bottomTabBg,
+        borderTopColor: colors.borderColor
+      }}>
         <div className={`flex items-center justify-around px-2 py-2 ${isAdmin ? 'overflow-x-auto' : ''}`}>
           {navTabs.map((tab) => {
             const Icon = tab.icon;
@@ -264,12 +306,12 @@ export default function Layout({ children, currentPageName }) {
                   flex: 1,
                   minWidth: '60px',
                   backgroundColor: isActive ? '#0C3B2E' : 'transparent',
-                  color: isActive ? '#FFFFFF' : '#1A1D1F',
+                  color: isActive ? '#FFFFFF' : colors.textPrimary,
                   textDecoration: 'none'
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.backgroundColor = '#ECEFED';
+                    e.currentTarget.style.backgroundColor = colors.hoverBg;
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -289,14 +331,14 @@ export default function Layout({ children, currentPageName }) {
         <div style={{
           padding: '8px 16px',
           textAlign: 'center',
-          backgroundColor: '#FFFFFF',
-          borderTop: '1px solid #ECEFED'
+          backgroundColor: colors.bottomTabBg,
+          borderTop: `1px solid ${colors.borderColor}`
         }}>
           <p style={{
             fontSize: '11px',
             fontWeight: '500',
             margin: 0,
-            color: '#0C3B2E',
+            color: isDarkMode ? colors.textSecondary : '#0C3B2E',
             opacity: 0.8
           }}>
             {strings.disclaimer}
@@ -304,7 +346,7 @@ export default function Layout({ children, currentPageName }) {
             <Link 
               to={createPageUrl("PrivacyPolicy")}
               style={{
-                color: '#0C3B2E',
+                color: isDarkMode ? colors.textPrimary : '#0C3B2E',
                 textDecoration: 'underline',
                 fontWeight: '600'
               }}
