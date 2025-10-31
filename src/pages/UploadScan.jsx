@@ -211,10 +211,10 @@ export default function UploadScan() {
     bg: '#0C3B2E',
     cardBg: '#FFFFFF',
     uploadBg: '#FFFFFF',
-    textPrimary: '#ECEFED',
-    textSecondary: '#D1FAE5',
-    borderColor: 'rgba(236, 239, 237, 0.2)',
-    hoverBg: '#0a2f25'
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#e2e8f0',
+    hoverBg: '#f1f5f9'
   };
 
   return (
