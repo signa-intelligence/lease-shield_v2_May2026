@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -207,13 +208,13 @@ export default function UploadScan() {
     borderColor: '#3A3D40',
     hoverBg: '#3A3D40'
   } : {
-    bg: '#F8FAFC',
+    bg: '#0C3B2E',
     cardBg: '#FFFFFF',
     uploadBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    hoverBg: '#F1F5F9'
+    textPrimary: '#ECEFED',
+    textSecondary: '#D1FAE5',
+    borderColor: 'rgba(236, 239, 237, 0.2)',
+    hoverBg: '#0a2f25'
   };
 
   return (
