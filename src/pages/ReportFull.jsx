@@ -1,3 +1,4 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +20,23 @@ export default function ReportFull() {
     queryFn: () => base44.auth.me(),
   });
 
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40'
+  } : {
+    bg: '#f8fafc', // Adjusted to match the light mode background in the original CSS for consistency
+    cardBg: '#FFFFFF',
+    textPrimary: '#0F172A', // Adjusted to match default text for light mode
+    textSecondary: '#64748B', // Adjusted to match default text for light mode
+    borderColor: '#e2e8f0' // Adjusted to match default border for light mode
+  };
+
   const { data: scan } = useQuery({
     queryKey: ['scan', scanId],
     queryFn: async () => {
@@ -39,10 +57,10 @@ export default function ReportFull() {
 
   if (!scan || !lease) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
         <div className="text-center">
-          <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600 mb-4">No scan report found</p>
+          <FileText className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
+          <p className="mb-4" style={{ color: colors.textSecondary }}>No scan report found</p>
           <Button onClick={() => navigate(createPageUrl("UploadScan"))}>
             Upload a Lease
           </Button>
@@ -72,7 +90,7 @@ export default function ReportFull() {
 
   return (
     <FeatureGate feature="full_report">
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
+      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-6">
             <Button
