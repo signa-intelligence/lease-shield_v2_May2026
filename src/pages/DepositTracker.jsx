@@ -217,12 +217,12 @@ export default function DepositTracker() {
     inputBg: '#353A3D',
     infoBg: '#353A3D',
     accentBg: '#EFF6FF', // Default light mode accent (blue-50)
-    blueText: '#93C5FD', // Light blue text for rent alerts
-    blueBg: '#1E40AF', // Dark blue background for rent alerts
-    blueBorder: '#3B82F6', // Blue border for rent alerts
-    greenText: '#6EE7B7', // Green for protected badge in dark mode
-    goldText: '#FBBF24', // Gold for urgent in dark mode
-    grayText: '#A8ABAD', // For Wallet icon in no deposits
+    blueText: '#93C5FD', 
+    blueBg: '#1E3A8A', // Changed
+    blueBorder: '#3B82F6', 
+    greenText: '#6EE7B7', 
+    goldText: '#FBBF24', 
+    grayText: '#A8ABAD', 
   } : {
     bg: '#F8FAFC',
     cardBg: '#FFFFFF',
@@ -230,14 +230,14 @@ export default function DepositTracker() {
     textSecondary: '#64748b',
     borderColor: '#E5E7EB',
     inputBg: '#FFFFFF',
-    infoBg: '#F8FAFC',
-    accentBg: '#EFF6FF', // Default light mode accent (blue-50)
-    blueText: '#1E40AF', // Dark blue text for rent alerts
-    blueBg: '#BFDBFE', // Light blue background for rent alerts
-    blueBorder: '#93C5FD', // Blue border for rent alerts
-    greenText: '#10B981', // Green for protected badge in light mode
-    goldText: '#B45309', // Gold for urgent in light mode
-    grayText: '#CBD5E1', // For Wallet icon in no deposits (slate-300)
+    infoBg: '#F0F9FF', // Changed
+    accentBg: '#EFF6FF', 
+    blueText: '#1E40AF', 
+    blueBg: '#DBEAFE', // Changed
+    blueBorder: '#93C5FD', 
+    greenText: '#10B981', 
+    goldText: '#B45309', 
+    grayText: '#CBD5E1', 
   };
 
   return (
@@ -461,7 +461,7 @@ export default function DepositTracker() {
         {/* Deposit Shield Feature Banner */}
         <FeatureGate feature="deposit_shield">
           <Card className="mb-6 border-none shadow-lg text-ls-charcoal" style={{
-            background: 'linear-gradient(to right, #C7A338, #d97706)' // Keep original gradient
+            background: 'linear-gradient(to right, #C7A338, #d97706)' 
           }}>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -490,7 +490,7 @@ export default function DepositTracker() {
           {deposits.length === 0 ? (
             <Card className="border-none shadow-xl md:col-span-2" style={{ backgroundColor: colors.cardBg }}>
               <CardContent className="p-12 text-center">
-                <Wallet className="w-16 h-16 mx-auto mb-4" style={{ color: colors.grayText, opacity: 0.5 }} />
+                <Wallet className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
                 <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.noDepositsTitle}</h3>
                 <p className="mb-6" style={{ color: colors.textSecondary }}>{strings.noDepositsSubtitle}</p>
                 <button 
@@ -528,7 +528,7 @@ export default function DepositTracker() {
               return (
                 <Card key={deposit.id} className={`border-none shadow-lg hover:shadow-xl transition-all duration-300`} style={{
                   backgroundColor: colors.cardBg,
-                  border: isUrgent ? `2px solid ${colors.goldText}` : `1px solid ${colors.borderColor}`
+                  border: isUrgent ? `2px solid #C7A338` : 'none'
                 }}>
                   <CardHeader className="pb-4" style={{
                     borderBottom: `1px solid ${colors.borderColor}`
@@ -562,7 +562,10 @@ export default function DepositTracker() {
                   <CardContent className="p-4">
                     {/* Rent Alert Display */}
                     {deposit.rent_alerts_enabled && deposit.rent_amount && nextRentDue && (
-                      <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: colors.infoBg, border: `2px solid ${colors.blueBorder}` }}>
+                      <div className="mb-4 p-3 rounded-xl border-2" style={{ 
+                        backgroundColor: colors.infoBg,
+                        borderColor: colors.blueBorder
+                      }}>
                         <div className="flex items-center gap-2 mb-2">
                           <Bell className="w-4 h-4" style={{ color: colors.blueText }} />
                           <h4 className="font-bold text-sm" style={{ color: colors.textPrimary }}>{strings.nextRentDue}</h4>
