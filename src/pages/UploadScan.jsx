@@ -1,37 +1,28 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Upload, AlertCircle, Loader2, FileText, History, CheckCircle2, X } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-import LeaseUploadZone from "../components/leases/LeaseUploadZone";
+import { Button } from "@/components/ui/button";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera } from "lucide-react";
+import { format } from "date-fns";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function UploadScan() {
-  const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState(null);
-  const [progress, setProgress] = useState('');
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const queryClient = useQueryClient();
 
-  const { data: user, isLoading: userLoading } = useQuery({
+  const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  const language = user?.language || 'en';
-
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 5),
+    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
 
@@ -39,12 +30,13 @@ export default function UploadScan() {
     queryKey: ['scans'],
     queryFn: async () => {
       const allScans = await base44.entities.LeaseScan.list();
-      return allScans.filter(s => leases.some(l => l.id === s.lease_id)).sort((a, b) => 
-        new Date(b.created_date) - new Date(a.created_date)
-      );
+      return allScans.filter(s => leases.some(l => l.id === s.lease_id));
     },
     enabled: !!user && leases.length > 0,
   });
+
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -56,691 +48,378 @@ export default function UploadScan() {
     }
   };
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     e.preventDefault();
     setDragActive(false);
     setError(null);
 
-    if (!user) {
-      setError(language === 'th' ? 'กรุณาเข้าสู่ระบบเพื่อสแกนสัญญาเช่า' : 'Please login to scan your lease');
-      return;
-    }
-
-    const files = e.dataTransfer ? Array.from(e.dataTransfer.files) : Array.from(e.target.files);
+    const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
     if (!files || files.length === 0) return;
 
-    const invalidFiles = [];
-    const validFiles = [];
+    const file = files[0];
     
-    files.forEach((file) => {
-      const isImage = file.type.includes('image');
-      const isPDF = file.type.includes('pdf');
-      
-      if (!isPDF && !isImage) {
-        invalidFiles.push(file.name);
-      } else if (file.size > 10 * 1024 * 1024) {
-        invalidFiles.push(`${file.name} (too large)`);
-      } else {
-        validFiles.push(file);
-      }
-    });
-
-    if (invalidFiles.length > 0) {
-      setError(
-        language === 'th' 
-          ? `ไฟล์ไม่ถูกต้อง: ${invalidFiles.join(', ')}` 
-          : `Invalid files: ${invalidFiles.join(', ')}`
-      );
-    }
-
-    if (validFiles.length > 0) {
-      setSelectedFiles(validFiles);
-    }
-  };
-
-  const removeFile = (index) => {
-    setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
-  };
-
-  const checkScanLimit = () => {
-    const planTier = user?.plan_tier || 'free';
-    
-    if (planTier === 'free') {
-      const totalScans = user?.total_scans_used || 0;
-      if (totalScans >= 1) {
-        return {
-          canScan: false,
-          message: language === 'th' 
-            ? 'คุณใช้งานสแกนฟรีแล้ว กรุณาอัปเกรดเพื่อสแกนเพิ่มเติม' 
-            : 'You have used your free scan. Please upgrade to scan more leases.'
-        };
-      }
-    }
-    
-    if (planTier === 'lite') {
-      const scansThisMonth = user?.scans_this_month || 0;
-      if (scansThisMonth >= 5) {
-        return {
-          canScan: false,
-          message: language === 'th' 
-            ? 'คุณใช้งานสแกน 5 ครั้งในเดือนนี้แล้ว อัปเกรดเป็น Protect สำหรับการสแกนไม่จำกัด' 
-            : 'You have used all 5 scans this month. Upgrade to Protect for unlimited scans.'
-        };
-      }
-    }
-    
-    return { canScan: true };
-  };
-
-  const handleAnalyze = async () => {
-    if (selectedFiles.length === 0) {
-      setError(language === 'th' ? 'กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์' : 'Please select at least one file');
-      return;
-    }
-
-    const limitCheck = checkScanLimit();
-    if (!limitCheck.canScan) {
-      setError(limitCheck.message);
+    if (!file.type.includes('pdf') && !file.type.includes('image')) {
+      setError(language === 'th' ? 'กรุณาอัปโหลดไฟล์ PDF หรือรูปภาพ' : 'Please upload a PDF or image file');
       return;
     }
 
     setUploading(true);
-    setProgress(`Uploading ${selectedFiles.length} file(s)...`);
 
     try {
-      const planTier = user?.plan_tier || 'free';
-      const analysisMode = planTier === 'secure' ? 'Secure' : planTier === 'protect' ? 'Protect' : 'Lite';
-
-      console.log(`Step 1: Uploading ${selectedFiles.length} files...`);
-      const uploadPromises = selectedFiles.map(file => 
-        base44.integrations.Core.UploadFile({ file })
-      );
-      const uploadResults = await Promise.all(uploadPromises);
-      const fileUrls = uploadResults.map(result => result.file_url);
-      console.log('All files uploaded:', fileUrls);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
       
-      setProgress('Creating lease record...');
-      console.log('Step 2: Creating lease...');
       const lease = await base44.entities.Lease.create({
-        file_url: fileUrls[0],
-        file_urls: fileUrls,
+        file_url,
         status: 'uploaded'
       });
-      console.log('Lease created:', lease.id);
 
       setAnalyzing(true);
-      setUploading(false);
-      setProgress(`Analyzing ${selectedFiles.length} page(s) with AI...`);
       
-      console.log('Step 3: Running AI analysis with mode:', analysisMode);
-      const analysisResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are "LeaseShield-Analyzer," a meticulous Thai/English bilingual reviewer for **Thailand leases** (default). Analyze the uploaded lease text and return structured JSON only (no extra prose).
-
-IMPORTANT: You are analyzing a multi-page lease document with ${selectedFiles.length} page(s). Review ALL pages comprehensively and combine your analysis.
-
-OPERATING MODE:
-- ${analysisMode} ∈ {Lite | Protect | Secure}
-- If the document appears **commercial** (keywords: CAM, service charge, fit-out, make-good, bank guarantee, signage, reinstatement, exclusivity), say so in \`key_terms.lease_type_detected\` and still honor ${analysisMode}.
-
-NEUTRALITY & LANGUAGE:
-- Remain neutral (not pro-tenant or pro-landlord).
-- This is documentation guidance, **not legal advice**.
-- If the contract text is primarily Thai, respond field labels/content primarily in Thai with brief English gloss; if English, the reverse.
-
-**CRITICAL THAILAND DEPOSIT STANDARDS - READ CAREFULLY:**
-
-**YOU MUST FOLLOW THIS EXACT WORKFLOW FOR DEPOSITS:**
-
-Step 1: Extract from lease contract
-- monthly_rent = [amount in Baht]
-- deposit_amount = [amount in Baht]
-- start_date = [date]
-- end_date = [date]
-
-Step 2: Calculate deposit ratio
-- deposit_months = deposit_amount ÷ monthly_rent
-- Example: 80,000 Baht deposit ÷ 40,000 Baht rent = 2.0 months
-
-Step 3: Calculate lease duration
-- total_months = months between start_date and end_date
-- If total_months ≤ 6 → "SHORT-TERM"
-- If total_months > 6 → "LONG-TERM"
-
-Step 4: Apply standards (THIS IS CRITICAL)
-
-**IF SHORT-TERM (≤6 months):**
-- deposit_months = 1.0 → ✅ PERFECT, do NOT flag
-- deposit_months ≤ 1.0 → ✅ NORMAL, do NOT flag
-- deposit_months = 1.5 → ⚠️ Flag "medium"
-- deposit_months ≥ 2.0 → 🚫 Flag "high"
-
-**IF LONG-TERM (>6 months):**
-- deposit_months = 2.0 → ✅ PERFECT, do NOT flag
-- deposit_months ≤ 2.0 → ✅ NORMAL, do NOT flag
-- deposit_months = 2.5 → ⚠️ Flag "high"
-- deposit_months ≥ 3.0 → 🚫 Flag "critical"
-
-**EXAMPLES TO MEMORIZE:**
-- 40,000 rent + 80,000 deposit = 2 months → NORMAL for long-term ✅
-- 30,000 rent + 60,000 deposit = 2 months → NORMAL for long-term ✅
-- 50,000 rent + 50,000 deposit = 1 month → NORMAL for short-term ✅
-- 40,000 rent + 120,000 deposit = 3 months → EXCESSIVE, flag it 🚫
-
-**OTHER THAILAND STANDARDS:**
-
-**ADVANCE RENT:**
-- 1 month = STANDARD, do NOT flag ✅
-- >1 month = Flag as "medium" or "high" 🚫
-
-**REFUND TIMELINE:**
-- 30 days = STANDARD, do NOT flag ✅
-- 45 days = Flag "medium"
-- >60 days = Flag "high" or "critical"
-
-**LATE PAYMENT PENALTIES:**
-- 5-10% per month = Reasonable, do NOT flag ✅
-- 12-15% per month = Flag "high"
-- >15% per month or daily compounding = Flag "critical"
-
-**TERMINATION PENALTIES:**
-- 1-2 months rent = Reasonable ✅
-- 3 months = Flag "high"
-- Forfeit entire deposit = Flag "critical"
-
-**REPAIRS & MAINTENANCE:**
-- Landlord: structural, Tenant: minor wear = Fair ✅
-- Tenant responsible for ALL repairs = Flag "critical"
-- Unclear division = Flag "medium"
-
-**ACCESS & ENTRY:**
-- 24-48 hours notice = Fair ✅
-- "Any time" without notice = Flag "high"
-- "Reasonable notice" without specifics = Flag "low"
-
-**UTILITIES:**
-- Actual cost or government rate = Fair ✅
-- 10-30% markup = Flag "medium"
-- 50%+ markup = Flag "high"
-
-**ABSOLUTE RULES - DO NOT VIOLATE:**
-1. If deposit = 2 months rent AND lease is long-term (>6 months), DO NOT FLAG IT
-2. If deposit = 1 month rent AND lease is short-term (≤6 months), DO NOT FLAG IT
-3. If refund timeline = 30 days, DO NOT FLAG IT
-4. If advance rent = 1 month, DO NOT FLAG IT
-5. ONLY flag deposits that EXCEED these standards
-
-SCOPE & RULES:
-1) Work **only** with the text provided. If something is missing, set "Not specified".
-2) For every flag, include **short exact quote** (<= 60 words) in \`evidence\`.
-3) **CRITICAL: Do the deposit math first (deposit ÷ rent), check lease duration, then apply the exact standards above**
-4) Thailand residential checklist (adapt if commercial):
-   - Parties & capacity; property description; term & renewal; notice
-   - Rent/payment mechanics; penalties
-   - **DEPOSIT: MUST calculate ratio first, then apply standards**
-   - Pre/post inspection; itemization; receipts; utilities
-   - Repairs/maintenance; access/inspections
-   - Use restrictions; quiet enjoyment; guests/sublets
-   - Termination & damages
-   - Deposit return timeline
-   - Dispute resolution; venue; bilingual precedence
-   - PDPA compliance
-5) Commercial add-ons (only if commercial or ${analysisMode} == "Secure"):
-   - Fit-out/hand-back; make-good; signage; exclusivity
-   - CAM/service charges; audit rights; indexation
-   - Liability caps; indemnities; insurance
-   - Force majeure; rent-free triggers
-   - Assignment/sublease; guarantees
-
-RISK MODEL:
-- \`severity\` ∈ {low, medium, high, critical}
-- Compute \`impact_0_10\` and \`likelihood_0_10\` (integers 0..10)
-- Sort flags by (impact*likelihood) desc
-- **REMEMBER: 2 months deposit for long-term = NORMAL, do NOT flag**
-- **REMEMBER: 1 month deposit for short-term = NORMAL, do NOT flag**
-
-TIERING RULES:
-- Lite: max 5 flags (critical/high priority), max 3 missing_items
-- Protect: full flags, up to 10 missing_items
-- Secure: full set + commercial checks if applicable
-
-Now analyze this lease thoroughly and return JSON only.`,
-        file_urls: fileUrls,
+      const scanResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant. 
+        
+        Provide:
+        1. A risk score from 0-100 (0 = very safe, 100 = very risky)
+        2. List of flags with severity (critical, high, medium, low), category, and description
+        3. A summary of the overall lease quality
+        4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)`,
+        file_urls: [file_url],
         response_json_schema: {
           type: "object",
           properties: {
+            risk_score: { type: "integer" },
             flags: {
               type: "array",
               items: {
                 type: "object",
                 properties: {
-                  id: { type: "string" },
-                  title: { type: "string" },
-                  category: { type: "string" },
                   severity: { type: "string", enum: ["low", "medium", "high", "critical"] },
-                  impact_0_10: { type: "integer", minimum: 0, maximum: 10 },
-                  likelihood_0_10: { type: "integer", minimum: 0, maximum: 10 },
-                  evidence: { type: "string" },
-                  explanation: { type: "string" },
-                  recommendation: { type: "string" }
-                },
-                required: ["id","title","category","severity","evidence","explanation","recommendation"]
-              }
-            },
-            missing_items: {
-              type: "array",
-              items: { type: "string" }
-            },
-            key_terms: {
-              type: "object",
-              properties: {
-                lease_type_detected: { type: "string", enum: ["residential","commercial","assumed_residential","assumed_commercial"] },
-                property_address: { type: "string" },
-                deposit_amount: { type: "number" },
-                rent_amount: { type: "number" },
-                start_date: { type: "string" },
-                end_date: { type: "string" },
-                landlord_scale_assumption: { type: "string", enum: ["unknown","<5_units",">=5_units"] },
-                language_detected: { type: "string", enum: ["en", "th", "mixed"] }
-              }
-            }
-          },
-          required: ["flags","missing_items","key_terms"]
-        }
-      });
-      console.log('AI analysis complete:', analysisResult);
-
-      setProgress('Calculating risk score...');
-      console.log('Step 4: Calculating risk score...');
-      const scoreResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Given the JSON array "flags" (each with severity, category, impact_0_10, likelihood_0_10),
-1) Compute a portfolio risk score (0..100):
-   - For each flag, base = impact_0_10 * likelihood_0_10 (0..100).
-   - Map severity: low=+0, medium=+5, high=+10, critical=+15 (cap each flag at 100).
-   - Global risk_score = round( min(100, average(top 5 flags by base) ) ).
-   - If impact/likelihood are missing, approximate from severity: low=2/2, medium=5/5, high=7/7, critical=9/9.
-2) Create a <=180 char summary (plain language).
-3) Return top 5 flags as objects {severity, category, description} where description = title (short): explanation (≤120 chars).
-
-Return JSON only.
-Flags JSON:
-${JSON.stringify(analysisResult.flags)}`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            risk_score: { type: "integer", minimum: 0, maximum: 100 },
-            summary: { type: "string" },
-            top_flags: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  severity: { type: "string" },
                   category: { type: "string" },
                   description: { type: "string" }
-                },
-                required: ["severity","category","description"]
+                }
               }
-            }
-          },
-          required: ["risk_score","summary","top_flags"]
+            },
+            summary: { type: "string" },
+            property_address: { type: "string" },
+            start_date: { type: "string" },
+            end_date: { type: "string" },
+            rent_amount: { type: "number" },
+            deposit_amount: { type: "number" },
+            language_detected: { type: "string", enum: ["en", "th", "mixed"] }
+          }
         }
       });
-      console.log('Risk score calculated:', scoreResult);
 
-      setProgress('Saving analysis...');
-      console.log('Step 5: Updating lease...');
       await base44.entities.Lease.update(lease.id, {
         status: 'scanned',
-        property_address: analysisResult.key_terms?.property_address,
-        start_date: analysisResult.key_terms?.start_date,
-        end_date: analysisResult.key_terms?.end_date,
-        rent_amount: analysisResult.key_terms?.rent_amount,
-        deposit_amount: analysisResult.key_terms?.deposit_amount,
-        language_detected: analysisResult.key_terms?.language_detected
+        property_address: scanResult.property_address,
+        start_date: scanResult.start_date,
+        end_date: scanResult.end_date,
+        rent_amount: scanResult.rent_amount,
+        deposit_amount: scanResult.deposit_amount,
+        language_detected: scanResult.language_detected
       });
 
-      console.log('Step 6: Creating scan record...');
-      const scan = await base44.entities.LeaseScan.create({
+      await base44.entities.LeaseScan.create({
         lease_id: lease.id,
-        risk_score: scoreResult.risk_score,
-        flags: scoreResult.top_flags || [],
-        summary: scoreResult.summary,
-        scan_preview: scoreResult,
-        scan_full: analysisResult,
-        version: 'v2'
+        risk_score: scanResult.risk_score,
+        flags: scanResult.flags || [],
+        summary: scanResult.summary,
+        scan_full: scanResult,
+        version: '1.0'
       });
-      console.log('Scan created:', scan.id);
 
-      const updateData = {
-        total_scans_used: (user?.total_scans_used || 0) + 1
-      };
-      
-      if (planTier === 'lite') {
-        updateData.scans_this_month = (user?.scans_this_month || 0) + 1;
-        if (!user?.scan_reset_date || new Date(user.scan_reset_date) <= new Date()) {
-          const nextMonth = new Date();
-          nextMonth.setMonth(nextMonth.getMonth() + 1);
-          nextMonth.setDate(1);
-          updateData.scan_reset_date = nextMonth.toISOString().split('T')[0];
-        }
-      }
-      
-      await base44.auth.updateMe(updateData);
-
-      queryClient.invalidateQueries({ queryKey: ['leases'] });
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      setSelectedFiles([]);
-      
-      console.log('Step 8: Navigating to preview...');
-      navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
+      window.location.href = createPageUrl("ScanPreview") + `?leaseId=${lease.id}`;
       
     } catch (err) {
-      console.error('Scan error:', err);
-      setError(
-        language === 'th' 
-          ? `การวิเคราะห์สัญญาล้มเหลว: ${err.message || 'กรุณาลองอีกครั้ง'}` 
-          : `Failed to analyze lease: ${err.message || 'Please try again'}`
-      );
+      setError(language === 'th' ? 'การวิเคราะห์ล้มเหลว กรุณาลองอีกครั้ง' : 'Failed to analyze lease. Please try again.');
+      console.error(err);
     } finally {
       setUploading(false);
       setAnalyzing(false);
-      setProgress('');
+    }
+  };
+
+  const handleViewDetails = (lease) => {
+    const scan = scans.find(s => s.lease_id === lease.id);
+    if (scan) {
+      window.location.href = createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`;
     }
   };
 
   const getStatusColor = (status) => {
     const colors = {
-      uploaded: "bg-amber-100 text-amber-800",
-      scanned: "bg-blue-100 text-blue-800",
-      paid: "bg-emerald-100 text-emerald-800"
+      uploaded: "bg-amber-100 text-amber-800 border-amber-200",
+      scanned: "bg-blue-100 text-blue-800 border-blue-200",
+      paid: "bg-emerald-100 text-emerald-800 border-emerald-200"
     };
     return colors[status] || "bg-slate-100 text-slate-800";
-  };
-
-  const handleViewLease = async (lease) => {
-    const scan = scans.find(s => s.lease_id === lease.id);
-    
-    if (scan) {
-      navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
-    } else {
-      alert(language === 'th' ? 'ไม่พบผลการสแกนสำหรับสัญญาเช่านี้' : 'Scan results not found for this lease.');
-    }
   };
 
   const t = {
     en: {
       title: "Lease Risk Scan",
       subtitle: "AI-powered lease analysis in seconds",
-      uploading: "Uploading Files...",
+      dragDrop: "Drag and drop your lease document here, or click to browse",
+      browseFiles: "Browse Files",
+      takePhoto: "Take Photos",
+      supportedFormats: "Supported formats: PDF, PNG, JPEG • Max size: 10MB per file • Multiple files allowed",
+      uploading: "Uploading Lease...",
       analyzing: "Analyzing Agreement...",
-      analyzingDesc: "Our AI is reviewing all pages of your lease for potential issues",
-      pleaseWait: "Please wait",
+      analyzingDesc: "Our AI is reviewing your lease for potential issues",
       recentScans: "Recent Scans",
-      leaseAgreement: "Lease Agreement",
-      viewResults: "View Results",
-      loading: "Loading...",
-      selectedFiles: "Selected Files",
-      analyzeButton: "Analyze Lease",
-      selectMore: "Select More Files"
+      noScansTitle: "No Scans Yet",
+      noScansDesc: "Upload your first lease to get started",
+      uploadFirst: "Upload Your First Lease",
+      pages: "pages",
+      uploaded: "Uploaded",
+      viewResults: "View Results"
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
-      subtitle: "วิเคราะห์สัญญาเช่าด้วย AI ในไม่กี่วินาที",
-      uploading: "กำลังอัปโหลดไฟล์...",
+      subtitle: "วิเคราะห์สัญญาเช่าด้วย AI ภายในไม่กี่วินาที",
+      dragDrop: "ลากและวางเอกสารสัญญาเช่าที่นี่ หรือคลิกเพื่อเรียกดู",
+      browseFiles: "เรียกดูไฟล์",
+      takePhoto: "ถ่ายรูป",
+      supportedFormats: "รองรับ: PDF, PNG, JPEG • ขนาดไม่เกิน 10MB ต่อไฟล์ • อนุญาตหลายไฟล์",
+      uploading: "กำลังอัปโหลดสัญญาเช่า...",
       analyzing: "กำลังวิเคราะห์สัญญา...",
-      analyzingDesc: "AI กำลังตรวจสอบทุกหน้าของสัญญาเพื่อหาประเด็นที่อาจเป็นปัญหา",
-      pleaseWait: "กรุณารอสักครู่",
+      analyzingDesc: "AI กำลังตรวจสอบสัญญาเช่าของคุณเพื่อหาปัญหาที่อาจเกิดขึ้น",
       recentScans: "การสแกนล่าสุด",
-      leaseAgreement: "สัญญาเช่า",
-      viewResults: "ดูผลลัพธ์",
-      loading: "กำลังโหลด...",
-      selectedFiles: "ไฟล์ที่เลือก",
-      analyzeButton: "วิเคราะห์สัญญา",
-      selectMore: "เลือกไฟล์เพิ่มเติม"
+      noScansTitle: "ยังไม่มีการสแกน",
+      noScansDesc: "อัปโหลดสัญญาเช่าแรกของคุณเพื่อเริ่มต้น",
+      uploadFirst: "อัปโหลดสัญญาเช่าแรก",
+      pages: "หน้า",
+      uploaded: "อัปโหลดแล้ว",
+      viewResults: "ดูผลลัพธ์"
     }
   };
 
   const strings = t[language];
 
-  const limitInfo = checkScanLimit();
-  const planTier = user?.plan_tier || 'free';
-  const scansRemaining = planTier === 'free' 
-    ? Math.max(0, 1 - (user?.total_scans_used || 0))
-    : planTier === 'lite'
-    ? Math.max(0, 5 - (user?.scans_this_month || 0))
-    : '∞';
-
-  if (userLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-ls-forest mr-3" />
-            <p className="text-slate-600">{strings.loading}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Dark mode colors
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    uploadBg: '#353A3D',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    hoverBg: '#3A3D40'
+  } : {
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    uploadBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+    hoverBg: '#F1F5F9'
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
+    <div className="min-h-screen p-6 md:p-8" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
-        <div className="mb-6">
+        {/* Header */}
+        <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <Upload className="w-7 h-7 text-ls-forest" />
-            <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">
-              {strings.title}
-            </h1>
+            <Upload className="w-8 h-8 text-blue-600" />
+            <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           </div>
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <p className="text-slate-600">
-              {strings.subtitle}
-            </p>
-            {(planTier === 'free' || planTier === 'lite') && (
-              <div className="px-3 py-1 bg-blue-100 border border-blue-300 rounded-lg">
-                <p className="text-sm font-semibold text-blue-800">
-                  {language === 'th' ? 'สแกนคงเหลือ' : 'Scans remaining'}: {scansRemaining}
-                  {planTier === 'lite' && ` ${language === 'th' ? 'ในเดือนนี้' : 'this month'}`}
-                </p>
-              </div>
-            )}
-          </div>
+          <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
 
         {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <div className="font-semibold">{error}</div>
-              <div className="text-xs mt-2">
-                Supported formats: PDF, JPG, PNG • Max size: 10MB per file
-              </div>
-              {!limitInfo.canScan && (
-                <Button 
-                  size="sm" 
-                  className="mt-3 bg-ls-gold hover:bg-ls-gold/90"
-                  onClick={() => navigate(createPageUrl("Account"))}
-                >
-                  {language === 'th' ? 'อัปเกรดเลย' : 'Upgrade Now'}
-                </Button>
-              )}
-            </AlertDescription>
-          </Alert>
+          <div className="mb-6 p-4 rounded-lg border-2 border-red-200" style={{
+            backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2'
+          }}>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <p className="text-red-600 font-semibold">{error}</p>
+            </div>
+          </div>
         )}
 
-        <Card className="border-none shadow-xl mb-6 overflow-hidden">
-          <div className="p-6">
+        {/* Upload Card */}
+        <Card className="border-none shadow-xl mb-8" style={{ backgroundColor: colors.cardBg }}>
+          <div className="p-8">
             {uploading || analyzing ? (
-              <div className="text-center py-8">
-                <Loader2 className="w-16 h-16 animate-spin text-ls-forest mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-ls-charcoal mb-2">
+              <div className="text-center py-12">
+                <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
+                <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
                   {uploading ? strings.uploading : strings.analyzing}
                 </h3>
-                <p className="text-slate-600 mb-4">
-                  {analyzing ? strings.analyzingDesc : strings.pleaseWait}
+                <p style={{ color: colors.textSecondary }}>
+                  {analyzing ? strings.analyzingDesc : (language === 'th' ? 'กรุณารอสักครู่' : 'Please wait')}
                 </p>
-                {progress && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">{progress}</p>
-                  </div>
-                )}
               </div>
             ) : (
-              <>
-                <LeaseUploadZone
-                  onFileSelect={handleFileSelect}
-                  dragActive={dragActive}
-                  onDrag={handleDrag}
-                />
+              <div
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleFileSelect}
+                className="border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300"
+                style={{
+                  backgroundColor: dragActive ? (isDarkMode ? '#3A3D40' : '#EFF6FF') : colors.uploadBg,
+                  borderColor: dragActive ? '#3B82F6' : colors.borderColor
+                }}
+              >
+                <div className="w-16 h-16 bg-ls-forest rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <Upload className="w-8 h-8 text-white" />
+                </div>
+                
+                <p className="text-lg mb-6" style={{ color: colors.textSecondary }}>
+                  {strings.dragDrop}
+                </p>
 
-                {selectedFiles.length > 0 && (
-                  <div className="mt-6">
-                    <h3 className="font-bold text-ls-charcoal mb-3 flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-ls-forest" />
-                      {strings.selectedFiles} ({selectedFiles.length})
-                    </h3>
-                    <div className="grid gap-2 mb-4">
-                      {selectedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-ls-stone rounded-lg border border-ls-forest/20">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <FileText className="w-4 h-4 text-ls-forest flex-shrink-0" />
-                            <span className="text-sm font-medium text-ls-charcoal truncate">
-                              {file.name}
-                            </span>
-                            <span className="text-xs text-slate-500 flex-shrink-0">
-                              {(file.size / 1024).toFixed(0)} KB
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => removeFile(index)}
-                            className="ml-2 p-1 hover:bg-red-100 rounded transition-colors"
-                          >
-                            <X className="w-4 h-4 text-red-600" />
-                          </button>
-                        </div>
-                      ))}
+                <div className="flex gap-4 justify-center flex-wrap">
+                  <label>
+                    <input
+                      type="file"
+                      onChange={handleFileSelect}
+                      accept=".pdf,image/*"
+                      className="hidden"
+                    />
+                    <div
+                      style={{
+                        backgroundColor: '#0C3B2E',
+                        color: '#FFFFFF',
+                        padding: '12px 24px',
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                    >
+                      <FileText className="w-5 h-5" />
+                      {strings.browseFiles}
                     </div>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={handleAnalyze}
-                        style={{
-                          flex: 1,
-                          backgroundColor: '#0C3B2E',
-                          color: '#FFFFFF',
-                          padding: '14px 24px',
-                          borderRadius: '8px',
-                          fontWeight: 'bold',
-                          fontSize: '16px',
-                          border: 'none',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '8px',
-                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-                      >
-                        <CheckCircle2 className="w-5 h-5" />
-                        {strings.analyzeButton}
-                      </button>
-                      <button
-                        onClick={() => document.querySelector('input[type="file"]').click()}
-                        style={{
-                          backgroundColor: '#FFFFFF',
-                          color: '#0C3B2E',
-                          padding: '14px 24px',
-                          borderRadius: '8px',
-                          fontWeight: 'bold',
-                          fontSize: '16px',
-                          border: '2px solid #0C3B2E',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#ECEFED';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = '#FFFFFF';
-                        }}
-                      >
-                        {strings.selectMore}
-                      </button>
+                  </label>
+                  
+                  <label>
+                    <input
+                      type="file"
+                      onChange={handleFileSelect}
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                    />
+                    <div
+                      style={{
+                        backgroundColor: isDarkMode ? '#3A3D40' : '#FFFFFF',
+                        color: '#0C3B2E',
+                        padding: '12px 24px',
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        border: '2px solid #0C3B2E',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.color = '#FFFFFF';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = isDarkMode ? '#3A3D40' : '#FFFFFF';
+                        e.target.style.color = '#0C3B2E';
+                      }}
+                    >
+                      <Camera className="w-5 h-5" />
+                      {strings.takePhoto}
                     </div>
-                  </div>
-                )}
-              </>
+                  </label>
+                </div>
+
+                <p className="mt-6 text-sm" style={{ color: colors.textSecondary }}>
+                  {strings.supportedFormats}
+                </p>
+              </div>
             )}
           </div>
         </Card>
 
+        {/* Recent Scans */}
         {leases.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <History className="w-5 h-5 text-ls-forest" />
-              <h2 className="text-lg font-bold text-ls-charcoal">
-                {strings.recentScans}
-              </h2>
-            </div>
-            <div className="grid md:grid-cols-2 gap-3">
+            <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>{strings.recentScans}</h2>
+            <div className="grid gap-4">
               {leases.map((lease) => (
-                <Card key={lease.id} className="p-4 border-none shadow-md hover:shadow-lg transition-all duration-300">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <FileText className="w-5 h-5 text-ls-forest flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-ls-charcoal truncate">
-                          {lease.property_address || strings.leaseAgreement}
-                        </p>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm text-slate-500">
-                            {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                <Card key={lease.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300" style={{
+                  backgroundColor: colors.cardBg
+                }}>
+                  <div className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-bold mb-1" style={{ color: colors.textPrimary }}>
+                          {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
+                        </h3>
+                        {lease.rent_amount && (
+                          <p style={{ color: colors.textSecondary, marginBottom: '8px' }}>
+                            ฿{lease.rent_amount.toLocaleString()}/{language === 'th' ? 'เดือน' : 'month'}
                           </p>
+                        )}
+                        <div className="flex gap-2 text-sm mb-2" style={{ color: colors.textSecondary }}>
+                          {lease.language_detected && (
+                            <span>• {language === 'th' ? 'ภาษา' : 'Language'}: {lease.language_detected.toUpperCase()}</span>
+                          )}
                           {lease.file_urls && lease.file_urls.length > 1 && (
-                            <Badge variant="outline" className="text-xs">
-                              {lease.file_urls.length} pages
-                            </Badge>
+                            <span>• {lease.file_urls.length} {strings.pages}</span>
                           )}
                         </div>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {strings.uploaded}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                        </p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Badge className={getStatusColor(lease.status)}>
-                        {lease.status}
-                      </Badge>
-                      {(lease.status === 'scanned' || lease.status === 'paid') && (
-                        <button
-                          onClick={() => handleViewLease(lease)}
-                          style={{
-                            backgroundColor: '#0C3B2E',
-                            color: '#FFFFFF',
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            border: 'none',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            transition: 'all 0.2s',
-                            whiteSpace: 'nowrap'
-                          }}
-                          onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                          onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-                        >
-                          <CheckCircle2 className="w-3 h-3" />
-                          {strings.viewResults}
-                        </button>
-                      )}
+                      <div className="flex flex-col gap-2">
+                        <Badge className={getStatusColor(lease.status)}>
+                          {lease.status.toUpperCase()}
+                        </Badge>
+                        {(lease.status === 'scanned' || lease.status === 'paid') && (
+                          <button
+                            onClick={() => handleViewDetails(lease)}
+                            style={{
+                              backgroundColor: '#3B82F6',
+                              color: '#FFFFFF',
+                              padding: '8px 16px',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              border: 'none',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              whiteSpace: 'nowrap'
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
+                          >
+                            {strings.viewResults}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Card>
               ))}
             </div>
+          </div>
+        )}
+
+        {leases.length === 0 && !uploading && !analyzing && (
+          <div className="text-center py-12">
+            <FileText className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
+            <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.noScansTitle}</h3>
+            <p style={{ color: colors.textSecondary }}>{strings.noScansDesc}</p>
           </div>
         )}
       </div>
