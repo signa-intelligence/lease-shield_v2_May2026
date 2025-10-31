@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ export default function Dashboard() {
   });
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
 
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
@@ -331,23 +333,41 @@ export default function Dashboard() {
     Wrench: Wrench
   };
 
+  // Dark mode colors
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40'
+  } : {
+    bg: '#ECEFED',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB'
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone">
+    <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto p-6 md:p-8">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-3">
-            <div className="px-3 py-1 bg-ls-stone border border-ls-forest/20 rounded-full">
+            <div className="px-3 py-1 border rounded-full" style={{
+              backgroundColor: isDarkMode ? '#2A2D30' : '#ECEFED',
+              borderColor: isDarkMode ? '#3A3D40' : 'rgba(12, 59, 46, 0.2)'
+            }}>
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-ls-forest" />
                 <span className="text-sm font-semibold text-ls-forest">{strings.tagline}</span>
               </div>
             </div>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-ls-charcoal mb-2">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: colors.textPrimary }}>
             {strings.welcome}, {user?.full_name?.split(' ')[0] || 'User'}
           </h1>
-          <p className="text-slate-600 text-lg">
+          <p style={{ color: colors.textSecondary, fontSize: '18px' }}>
             {strings.subtitle}
           </p>
         </div>
@@ -418,9 +438,12 @@ export default function Dashboard() {
 
         {/* Improvement Dialog */}
         <Dialog open={showImprovementDialog} onOpenChange={setShowImprovementDialog}>
-          <DialogContent className="sm:max-w-2xl">
+          <DialogContent className="sm:max-w-2xl" style={{
+            backgroundColor: colors.cardBg,
+            borderColor: colors.borderColor
+          }}>
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+              <DialogTitle className="text-2xl font-bold flex items-center gap-3" style={{ color: colors.textPrimary }}>
                 <div 
                   className="w-12 h-12 rounded-xl flex items-center justify-center"
                   style={{ backgroundColor: protectionScoreColor }}
@@ -429,7 +452,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   {strings.improveScore}
-                  <p className="text-sm font-normal text-slate-600 mt-1">{strings.improveScoreDesc}</p>
+                  <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>{strings.improveScoreDesc}</p>
                 </div>
               </DialogTitle>
             </DialogHeader>
@@ -437,10 +460,10 @@ export default function Dashboard() {
               {recommendations.length === 0 ? (
                 <div className="text-center py-8">
                   <Shield className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-                  <p className="text-lg font-semibold text-ls-charcoal mb-2">
+                  <p className="text-lg font-semibold mb-2" style={{ color: colors.textPrimary }}>
                     {language === 'th' ? 'คะแนนเต็ม! 🎉' : 'Perfect Score! 🎉'}
                   </p>
-                  <p className="text-slate-600">
+                  <p style={{ color: colors.textSecondary }}>
                     {language === 'th' ? 'คุณทำได้ดีมาก ทุกอย่างพร้อมแล้ว' : 'You\'re all set with maximum protection'}
                   </p>
                 </div>
@@ -454,9 +477,16 @@ export default function Dashboard() {
                       onClick={() => setShowImprovementDialog(false)}
                     >
                       <div
-                        className="p-4 rounded-xl border-2 border-slate-200 hover:border-ls-gold hover:shadow-md transition-all duration-300 cursor-pointer"
+                        className="p-4 rounded-xl border-2 hover:shadow-md transition-all duration-300 cursor-pointer"
                         style={{
-                          background: 'linear-gradient(135deg, #FFFFFF 0%, #ECEFED 100%)'
+                          backgroundColor: colors.cardBg,
+                          borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#C7A338';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = isDarkMode ? '#3A3D40' : '#E5E7EB';
                         }}
                       >
                         <div className="flex items-center justify-between">
@@ -472,12 +502,12 @@ export default function Dashboard() {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-bold text-ls-charcoal">{rec.action}</span>
+                                <span className="font-bold" style={{ color: colors.textPrimary }}>{rec.action}</span>
                                 <Badge className="bg-ls-gold/20 text-ls-gold border border-ls-gold/30">
                                   +{rec.points}%
                                 </Badge>
                               </div>
-                              <p className="text-sm text-slate-600">
+                              <p className="text-sm" style={{ color: colors.textSecondary }}>
                                 {language === 'th' 
                                   ? `เพิ่มคะแนนการป้องกันของคุณ ${rec.points} คะแนน` 
                                   : `Increase your protection by ${rec.points} points`}
@@ -497,7 +527,9 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div style={{
-          background: 'linear-gradient(to right, #0C3B2E, #047857)',
+          background: isDarkMode 
+            ? 'linear-gradient(to right, #0C3B2E, #047857)'
+            : 'linear-gradient(to right, #0C3B2E, #047857)',
           borderRadius: '16px',
           padding: '32px',
           marginBottom: '32px',
@@ -566,7 +598,9 @@ export default function Dashboard() {
         {user?.plan_tier === 'free' && (
           <div style={{
             marginTop: '32px',
-            background: 'linear-gradient(to right, #C7A338, #d97706)',
+            background: isDarkMode
+              ? 'linear-gradient(to right, #C7A338, #d97706)'
+              : 'linear-gradient(to right, #C7A338, #d97706)',
             borderRadius: '16px',
             padding: '32px',
             boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
@@ -614,7 +648,7 @@ export default function Dashboard() {
                     whiteSpace: 'nowrap'
                   }}
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                  onMouseLeave={(e) => e.target.backgroundColor = '#0C3B2E'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                 >
                   {strings.viewPlans}
                 </button>
