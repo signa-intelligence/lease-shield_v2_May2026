@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Lock, FileText, Globe, Mail, AlertCircle } from "lucide-react";
@@ -11,6 +12,21 @@ export default function PrivacyPolicy() {
   });
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40'
+  } : {
+    bg: '#f8f8f8', // Using a light gray for light mode background
+    cardBg: '#FFFFFF',
+    textPrimary: '#0C3B2E', // Darker text for light mode
+    textSecondary: '#6B7280', // Slightly lighter secondary text
+    borderColor: '#E5E7EB' // Light border for light mode
+  };
 
   const content = {
     en: {
@@ -280,7 +296,8 @@ We will respond to all requests within 30 days as required by PDPA.`
   const strings = content[language];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6" style={{
+    <div className="min-h-screen p-4 md:p-6" style={{
+      backgroundColor: colors.bg,
       paddingBottom: '160px'
     }}>
       <div className="max-w-4xl mx-auto">
@@ -300,22 +317,22 @@ We will respond to all requests within 30 days as required by PDPA.`
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
-              <p className="text-slate-600">{strings.lastUpdated}</p>
+              <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+              <p className="text-slate-600" style={{ color: colors.textSecondary }}>{strings.lastUpdated}</p>
             </div>
           </div>
         </div>
 
         {/* Important Notice */}
         <Card className="mb-6 border-none shadow-lg" style={{
-          backgroundColor: '#ECEFED',
+          backgroundColor: isDarkMode ? '#2A2D30' : '#ECEFED',
           borderLeft: '4px solid #C7A338'
         }}>
           <CardContent className="p-6">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-ls-gold flex-shrink-0 mt-1" />
               <div>
-                <p className="text-sm text-ls-charcoal leading-relaxed">
+                <p className="text-sm leading-relaxed" style={{ color: colors.textSecondary }}>
                   {language === 'th' 
                     ? 'เราจริงจังกับความเป็นส่วนตัวของคุณ นโยบายนี้อธิบายวิธีที่เรารวบรวม ใช้ และปกป้องข้อมูลส่วนบุคคลของคุณตาม พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562'
                     : 'We take your privacy seriously. This policy explains how we collect, use, and protect your personal data in compliance with the Personal Data Protection Act (PDPA) B.E. 2562.'}
@@ -330,17 +347,18 @@ We will respond to all requests within 30 days as required by PDPA.`
           {strings.sections.map((section, index) => {
             const Icon = section.icon;
             return (
-              <Card key={index} className="border-none shadow-lg">
+              <Card key={index} className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
                 <CardHeader className="border-b" style={{
-                  backgroundColor: '#ECEFED'
+                  backgroundColor: isDarkMode ? '#2A2D30' : '#ECEFED',
+                  borderColor: colors.borderColor
                 }}>
-                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
                     <Icon className="w-5 h-5 text-ls-forest" />
                     {section.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <div className="text-sm text-ls-charcoal leading-relaxed whitespace-pre-line">
+                  <div className="text-sm leading-relaxed whitespace-pre-line" style={{ color: colors.textSecondary }}>
                     {section.content}
                   </div>
                 </CardContent>
