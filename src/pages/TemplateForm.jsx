@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -106,13 +107,35 @@ export default function TemplateForm() {
   const urlParams = new URLSearchParams(window.location.search);
   const templateId = urlParams.get('templateId') || 'deposit_request';
   
+  // Assuming base44.user provides user information if available
+  const user = base44.user;
+
   const [generating, setGenerating] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState('');
   const [generatedDocId, setGeneratedDocId] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [language, setLanguage] = useState('both');
+  // Initialize language state with user preference or default to 'both'
+  const [language, setLanguage] = useState(user?.language || 'both');
   const [formData, setFormData] = useState({});
   const [error, setError] = useState(null);
+
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    inputBg: '#353A3D'
+  } : {
+    bg: '#0C3B2E', // This is a dark green, but the outline said #0C3B2E for light mode bg
+    cardBg: '#FFFFFF',
+    textPrimary: '#ECEFED', // This is white, but the outline said #ECEFED for light mode textPrimary
+    textSecondary: '#D1FAE5',
+    borderColor: 'rgba(236, 239, 237, 0.2)',
+    inputBg: '#FFFFFF'
+  };
 
   const schema = TEMPLATE_SCHEMAS[templateId] || TEMPLATE_SCHEMAS.deposit_request;
 
@@ -200,7 +223,7 @@ Generate the letter now.`,
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <Button
