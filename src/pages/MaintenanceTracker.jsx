@@ -89,11 +89,11 @@ export default function MaintenanceTracker() {
   } : {
     bg: '#0C3B2E',
     cardBg: '#FFFFFF',
-    textPrimary: '#ECEFED',
-    textSecondary: '#D1FAE5',
-    borderColor: 'rgba(236, 239, 237, 0.2)',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#e2e8f0',
     inputBg: '#FFFFFF',
-    infoBg: '#E0F2FE'
+    infoBg: '#EFF6FF'
   };
 
   const t = {
