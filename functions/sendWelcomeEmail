@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 Deno.serve(async (req) => {
@@ -369,8 +370,9 @@ Deno.serve(async (req) => {
 
     const content = emailContent[language] || emailContent.en;
 
-    // Send welcome email
+    // Send welcome email with custom from_name
     await base44.integrations.Core.SendEmail({
+      from_name: "Lease Shield",
       to: user.email,
       subject: content.subject,
       body: content.html
