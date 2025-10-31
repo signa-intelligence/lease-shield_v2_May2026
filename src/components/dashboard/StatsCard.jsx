@@ -4,6 +4,8 @@ import { ArrowUpRight, ArrowDownRight, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import ProtectionScoreGauge from "./ProtectionScoreGauge";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 export default function StatsCard({ 
   title, 
@@ -21,8 +23,27 @@ export default function StatsCard({
   miniStats,
   actionButton
 }) {
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    miniStatBg: '#353A3D'
+  } : {
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    miniStatBg: '#F8FAFC'
+  };
+
   return (
-    <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
+    <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: colors.cardBg }}>
       {/* Background circle */}
       {!showGauge && (
         <div 
@@ -51,7 +72,7 @@ export default function StatsCard({
           )}
         </div>
         <div>
-          <p className="text-sm font-medium text-slate-500 mb-2">{title}</p>
+          <p className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>{title}</p>
           
           {showGauge ? (
             <div className="mt-2 mb-2">
@@ -59,7 +80,7 @@ export default function StatsCard({
             </div>
           ) : (
             <>
-              <p className="text-3xl font-bold text-ls-charcoal mb-2">{value}</p>
+              <p className="text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{value}</p>
               {scoreStatus && (
                 <Badge 
                   style={{
@@ -77,9 +98,9 @@ export default function StatsCard({
               {miniStats && miniStats.length > 0 && (
                 <div className="mt-4 space-y-2">
                   {miniStats.map((stat, idx) => (
-                    <div key={idx} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg">
-                      <span className="text-xs font-medium text-slate-600">{stat.label}</span>
-                      <span className="text-sm font-bold text-ls-charcoal">{stat.value}</span>
+                    <div key={idx} className="flex items-center justify-between py-2 px-3 rounded-lg" style={{ backgroundColor: colors.miniStatBg }}>
+                      <span className="text-xs font-medium" style={{ color: colors.textSecondary }}>{stat.label}</span>
+                      <span className="text-sm font-bold" style={{ color: colors.textPrimary }}>{stat.value}</span>
                     </div>
                   ))}
                 </div>
@@ -117,7 +138,7 @@ export default function StatsCard({
               <button
                 className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200"
                 style={{
-                  backgroundColor: '#ECEFED',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
                   color: '#0C3B2E',
                   border: '2px solid transparent'
                 }}
@@ -127,7 +148,7 @@ export default function StatsCard({
                   e.target.style.borderColor = '#0C3B2E';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#ECEFED';
+                  e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
                   e.target.style.color = '#0C3B2E';
                   e.target.style.borderColor = 'transparent';
                 }}
