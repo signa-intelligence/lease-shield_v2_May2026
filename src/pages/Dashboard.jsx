@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Added useNavigate
 import { createPageUrl } from "@/utils";
 import { differenceInDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import RecentLeases from "../components/dashboard/RecentLeases";
 
 export default function Dashboard() {
   const [showImprovementDialog, setShowImprovementDialog] = useState(false);
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -299,7 +300,11 @@ export default function Dashboard() {
       resolved: "Resolved",
       viewAll: "View All",
       addDeposit: "Add Deposit",
-      openCase: "Open Case"
+      openCase: "Open Case",
+      manageLeases: "Manage Leases",
+      alertsEnabled: "Alerts Enabled",
+      uploadFirstLease: "Upload First Lease",
+      scannedLeases: "Scanned"
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -326,7 +331,11 @@ export default function Dashboard() {
       resolved: "แก้ไขแล้ว",
       viewAll: "ดูทั้งหมด",
       addDeposit: "เพิ่มมัดจำ",
-      openCase: "เปิดคดี"
+      openCase: "เปิดคดี",
+      manageLeases: "จัดการสัญญา",
+      alertsEnabled: "การแจ้งเตือนเปิดอยู่",
+      uploadFirstLease: "อัปโหลดสัญญาแรก",
+      scannedLeases: "สัญญาที่สแกนแล้ว"
     }
   };
 
@@ -383,18 +392,25 @@ export default function Dashboard() {
           {/* Active Leases with mini stats */}
           <StatsCard
             title={strings.activeLeases}
-            value={leases.length}
+            value={leases.length.toString()}
             icon={FileText}
-            bgGradient="bg-gradient-to-br from-ls-forest to-emerald-800"
-            trend={thisMonthLeases.length > 0 ? `+${thisMonthLeases.length} ${strings.thisMonth}` : undefined}
-            trendUp={thisMonthLeases.length > 0}
-            miniStats={[
-              { label: strings.scanned, value: scannedLeases.length }
-            ]}
-            actionButton={{
-              label: strings.viewAll,
-              link: createPageUrl("Leases")
-            }}
+            scoreColor="#3B82F6"
+            miniStats={leases.length > 0 ? [
+              {
+                label: language === 'th' ? 'สัญญาที่สแกนแล้ว' : 'Scanned',
+                value: leases.filter(l => l.status === 'scanned' || l.status === 'paid').length
+              },
+              {
+                label: language === 'th' ? 'การแจ้งเตือนเปิดอยู่' : 'Alerts Enabled',
+                value: leases.filter(l => l.notice_alerts_enabled).length
+              }
+            ] : undefined}
+            actionButton={leases.length > 0 ? {
+              label: language === 'th' ? 'จัดการสัญญา' : 'Manage Leases',
+              link: createPageUrl("UploadScan") // Following outline, though "Leases" page might be more fitting
+            } : undefined}
+            ctaText={leases.length === 0 ? (language === 'th' ? 'อัปโหลดสัญญาแรก' : 'Upload First Lease') : undefined}
+            onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
           />
           
           {/* Deposits Tracked with mini stats */}
