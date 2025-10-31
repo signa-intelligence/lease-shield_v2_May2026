@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 // Test LINE notifications - Admin only
@@ -108,7 +109,11 @@ Deno.serve(async (req) => {
           `💰 การชำระค่าเช่า\n` +
           `🔧 สถานะการซ่อมบำรุง\n` +
           `📋 การอัปเดตคดี\n\n` +
-          `เริ่มต้นใช้งานได้ที่ leaseshield.asia` :
+          `📱 บันทึกแอปลงหน้าจอหลัก:\n` +
+          `1. เปิด app.leaseshield.asia\n` +
+          `2. iPhone: แตะ Share → Add to Home Screen\n` +
+          `3. Android: แตะ Menu (⋮) → Install app\n\n` +
+          `🚀 เริ่มใช้งานเลย: app.leaseshield.asia` :
           
           `🎉 Welcome to Lease Shield!\n\n` +
           `✅ Your LINE account is now connected\n\n` +
@@ -117,7 +122,11 @@ Deno.serve(async (req) => {
           `💰 Rent payment reminders\n` +
           `🔧 Maintenance updates\n` +
           `📋 Case status changes\n\n` +
-          `Get started at leaseshield.asia`;
+          `📱 Save app to home screen:\n` +
+          `1. Open app.leaseshield.asia\n` +
+          `2. iPhone: Tap Share → Add to Home Screen\n` +
+          `3. Android: Tap Menu (⋮) → Install app\n\n` +
+          `🚀 Get started: app.leaseshield.asia`;
         break;
 
       default:
