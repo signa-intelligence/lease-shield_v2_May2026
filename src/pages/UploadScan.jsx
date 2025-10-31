@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -206,7 +207,7 @@ export default function UploadScan() {
   const t = {
     en: {
       title: "Lease Risk Scan",
-      subtitle: "AI-powered lease analysis in seconds",
+      subtitle: "Lease analysis in seconds",
       dragDrop: "Drag and drop your lease pages here, or click to browse",
       browseFiles: "Browse Files",
       scanDocument: "Scan Document",
@@ -231,7 +232,7 @@ export default function UploadScan() {
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
-      subtitle: "วิเคราะห์สัญญาเช่าด้วย AI ภายในไม่กี่วินาที",
+      subtitle: "วิเคราะห์สัญญาเช่าภายในไม่กี่วินาที",
       dragDrop: "ลากและวางหน้าสัญญาเช่าที่นี่ หรือคลิกเพื่อเรียกดู",
       browseFiles: "เรียกดูไฟล์",
       scanDocument: "สแกนเอกสาร",
@@ -388,6 +389,7 @@ export default function UploadScan() {
                           transition: 'all 0.2s'
                         }}
                         onMouseEnter={(e) => {
+                          if (e.target.dataset.leave === 'false') return; // Prevent flickering
                           e.target.style.backgroundColor = '#0C3B2E';
                           e.target.style.color = '#FFFFFF';
                         }}

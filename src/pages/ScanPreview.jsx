@@ -165,7 +165,7 @@ export default function ScanPreview() {
   const hasMoreIssues = scan.flags && scan.flags.length > 4;
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '180px' }}>
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: 'calc(76px + env(safe-area-inset-bottom, 0px))' }}>
       <div className="max-w-4xl mx-auto">
         <Button
           variant="outline"
@@ -223,7 +223,6 @@ export default function ScanPreview() {
               );
             })}
 
-            {/* Upgrade Prompt if more issues exist */}
             {hasMoreIssues && (
               <div className="p-6 rounded-xl border-2 border-dashed" style={{
                 backgroundColor: isDarkMode ? '#2A2D30' : '#FEF9C3',
@@ -253,29 +252,86 @@ export default function ScanPreview() {
           </CardContent>
         </Card>
 
-        {/* Action Buttons - Always visible */}
-        <div className="fixed bottom-20 left-0 right-0 p-4 z-30" style={{
-          backgroundColor: colors.bg,
-          borderTop: `1px solid ${isDarkMode ? '#3A3D40' : '#E5E7EB'}`
+        {/* Fixed Action Bar - Enhanced Visibility */}
+        <div className="fixed bottom-0 left-0 right-0 z-30" style={{
+          backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
+          borderTop: `2px solid ${isDarkMode ? '#3A3D40' : '#E5E7EB'}`,
+          boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)',
+          paddingBottom: 'calc(76px + env(safe-area-inset-bottom, 0px))'
         }}>
-          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-3">
-            <Button
-              className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
-              onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
-            >
-              <FileText className="w-5 h-5 mr-2" />
-              {strings.viewFullReport}
-            </Button>
-            {lease.file_url && (
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => window.open(lease.file_url, '_blank')}
+          <div className="max-w-4xl mx-auto px-4 py-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF',
+                  padding: '14px 24px',
+                  borderRadius: '10px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(12, 59, 46, 0.3), 0 2px 4px -1px rgba(12, 59, 46, 0.2)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#0a2f25';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 10px -1px rgba(12, 59, 46, 0.4), 0 4px 6px -1px rgba(12, 59, 46, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#0C3B2E';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(12, 59, 46, 0.3), 0 2px 4px -1px rgba(12, 59, 46, 0.2)';
+                }}
               >
-                <ExternalLink className="w-5 h-5 mr-2" />
-                {strings.viewLease}
-              </Button>
-            )}
+                <FileText className="w-5 h-5" />
+                <span>{strings.viewFullReport}</span>
+              </button>
+              {lease.file_url && (
+                <button
+                  onClick={() => window.open(lease.file_url, '_blank')}
+                  style={{
+                    flex: 1,
+                    backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                    color: '#0C3B2E',
+                    padding: '14px 24px',
+                    borderRadius: '10px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    border: '3px solid #0C3B2E',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#0C3B2E';
+                    e.currentTarget.style.color = '#FFFFFF';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(12, 59, 46, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = isDarkMode ? '#2A2D30' : '#FFFFFF';
+                    e.currentTarget.style.color = '#0C3B2E';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+                  }}
+                >
+                  <ExternalLink className="w-5 h-5" />
+                  <span>{strings.viewLease}</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
