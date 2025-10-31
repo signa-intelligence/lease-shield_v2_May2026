@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import crypto from 'node:crypto';
 
@@ -114,6 +115,90 @@ Deno.serve(async (req) => {
           }
         }
         
+        // Handle "stop" or "stop lease" command
+        else if (text.toLowerCase() === 'stop' || text.toLowerCase() === 'stop lease') {
+          const users = await base44.asServiceRole.entities.User.list();
+          const user = users.find(u => u.line_messaging_token === userLineId);
+          
+          if (user) {
+            // Find all active lease notice alerts for this user
+            const leases = await base44.asServiceRole.entities.Lease.list();
+            const userLeases = leases.filter(l => 
+              l.created_by === user.email && 
+              l.notice_alerts_enabled === true &&
+              l.notice_deadline
+            );
+
+            if (userLeases.length === 0) {
+              await fetch('https://api.line.me/v2/bot/message/push', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${channelAccessToken}`
+                },
+                body: JSON.stringify({
+                  to: userLineId,
+                  messages: [{
+                    type: 'text',
+                    text: user.language === 'th'
+                      ? 'ไม่พบการแจ้งเตือนสัญญาเช่าที่เปิดอยู่\n\nคุณไม่มีการแจ้งเตือนสัญญาที่กำลังทำงานอยู่'
+                      : 'No Active Lease Alerts Found\n\nYou don\'t have any active lease notice reminders'
+                  }]
+                })
+              });
+            } else {
+              // Disable all lease notice alerts
+              for (const lease of userLeases) {
+                await base44.asServiceRole.entities.Lease.update(lease.id, {
+                  notice_alerts_enabled: false
+                });
+              }
+
+              // Build confirmation message
+              let leasesList = '';
+              userLeases.forEach(lease => {
+                leasesList += `\n🏠 ${lease.property_address || 'Lease Agreement'}\n`;
+                leasesList += `📅 ${user.language === 'th' ? 'กำหนดแจ้ง' : 'Notice deadline'}: ${new Date(lease.notice_deadline).toLocaleDateString()}\n`;
+              });
+
+              const confirmMessage = user.language === 'th'
+                ? `✅ หยุดการแจ้งเตือนแล้ว\n\nการแจ้งเตือนสัญญาเช่าต่อไปนี้ถูกปิดแล้ว:${leasesList}\n\nคุณจะไม่ได้รับการแจ้งเตือนสำหรับสัญญาเหล่านี้อีก\n\nหากต้องการเปิดใหม่ เข้าที่ app.leaseshield.asia`
+                : `✅ Lease Notice Alerts Stopped\n\nThe following lease notice reminders have been disabled:${leasesList}\n\nYou will no longer receive reminders for these leases.\n\nTo re-enable, visit app.leaseshield.asia`;
+
+              await fetch('https://api.line.me/v2/bot/message/push', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${channelAccessToken}`
+                },
+                body: JSON.stringify({
+                  to: userLineId,
+                  messages: [{
+                    type: 'text',
+                    text: confirmMessage
+                  }]
+                })
+              });
+            }
+          } else {
+            // User not connected
+            await fetch('https://api.line.me/v2/bot/message/push', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${channelAccessToken}`
+              },
+              body: JSON.stringify({
+                to: userLineId,
+                messages: [{
+                  type: 'text',
+                  text: 'Account not connected. Please connect your account first.\n\nSend: connect your@email.com'
+                }]
+              })
+            });
+          }
+        }
+        
         // Handle "help" command
         else if (text.toLowerCase() === 'help') {
           await fetch('https://api.line.me/v2/bot/message/push', {
@@ -126,7 +211,7 @@ Deno.serve(async (req) => {
               to: userLineId,
               messages: [{
                 type: 'text',
-                text: 'Lease Shield Commands:\n\n• connect {your_email} - Link your account\n• status - Check connection status\n• help - Show this message'
+                text: 'Lease Shield Commands:\n\n• connect {your_email} - Link your account\n• stop - Stop lease notice alerts\n• status - Check connection status\n• help - Show this message'
               }]
             })
           });
