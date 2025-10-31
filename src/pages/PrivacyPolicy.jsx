@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Lock, FileText, Globe, Mail, AlertCircle } from "lucide-react";
@@ -136,9 +137,8 @@ Continued use of our services after changes constitutes acceptance of the update
           title: "10. Contact Us",
           content: `For privacy-related questions or to exercise your rights:
 
-• Email: privacy@leaseshield.asia
-• Data Protection Officer: dpo@leaseshield.asia
-• Address: Lease Shield, Bangkok, Thailand
+Email: privacy@leaseshield.asia
+Data Protection Officer: dpo@leaseshield.asia
 
 We will respond to all requests within 30 days as required by PDPA.`
         }
@@ -267,9 +267,8 @@ We will respond to all requests within 30 days as required by PDPA.`
           title: "10. ติดต่อเรา",
           content: `สำหรับคำถามเกี่ยวกับความเป็นส่วนตัวหรือการใช้สิทธิ์ของคุณ:
 
-• อีเมล: privacy@leaseshield.asia
-• เจ้าหน้าที่คุ้มครองข้อมูล: dpo@leaseshield.asia
-• ที่อยู่: Lease Shield, กรุงเทพฯ ประเทศไทย
+อีเมล: privacy@leaseshield.asia
+เจ้าหน้าที่คุ้มครองข้อมูล: dpo@leaseshield.asia
 
 เราจะตอบคำขอทั้งหมดภายใน 30 วันตามที่ พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคลกำหนด`
         }
