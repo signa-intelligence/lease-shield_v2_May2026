@@ -114,8 +114,8 @@ export default function TemplateForm() {
   const [generatedLetter, setGeneratedLetter] = useState('');
   const [generatedDocId, setGeneratedDocId] = useState(null);
   const [copied, setCopied] = useState(false);
-  // Initialize language state with user preference or default to 'both'
-  const [language, setLanguage] = useState(user?.language || 'both');
+  // Initialize language state with user preference or default to 'en'
+  const [language, setLanguage] = useState(user?.language || 'en');
   const [formData, setFormData] = useState({});
   const [error, setError] = useState(null);
 
@@ -129,11 +129,11 @@ export default function TemplateForm() {
     borderColor: '#3A3D40',
     inputBg: '#353A3D'
   } : {
-    bg: '#0C3B2E', // This is a dark green, but the outline said #0C3B2E for light mode bg
+    bg: '#0C3B2E',
     cardBg: '#FFFFFF',
-    textPrimary: '#ECEFED', // This is white, but the outline said #ECEFED for light mode textPrimary
-    textSecondary: '#D1FAE5',
-    borderColor: 'rgba(236, 239, 237, 0.2)',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#e2e8f0',
     inputBg: '#FFFFFF'
   };
 
