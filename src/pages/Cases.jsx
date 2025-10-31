@@ -48,9 +48,9 @@ export default function Cases() {
   } : {
     bg: '#0C3B2E', // This is a dark green. The original light background was bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100
     cardBg: '#FFFFFF',
-    textPrimary: '#334155', // Changed to complement light background, original was white for dark mode context
-    textSecondary: '#64748B', // Changed to complement light background, original was light green for dark mode context
-    borderColor: '#E2E8F0' // Changed to complement light background, original was transparent white for dark mode context
+    textPrimary: '#1A1D1F', // Changed to complement light background, original was white for dark mode context
+    textSecondary: '#64748b', // Changed to complement light background, original was light green for dark mode context
+    borderColor: '#e2e8f0' // Changed to complement light background, original was transparent white for dark mode context
   };
 
 
@@ -144,9 +144,9 @@ export default function Cases() {
                     {hasPriorityQueue && <span>• {strings.priorityHandling}</span>}
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {cases.length === 0 ? (
