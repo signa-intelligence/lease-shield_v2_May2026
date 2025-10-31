@@ -86,7 +86,27 @@ export default function AdminConsole() {
       active: "Active",
       secure: "Secure",
       recentLeases: "Recent Leases",
-      noLeases: "No leases yet"
+      noLeases: "No leases yet",
+      // New LINE Notification strings
+      testLineNotifications: "Test LINE Notifications",
+      day30Reminder: "30-Day Reminder",
+      depositDue30Days: "Deposit due in 30 days",
+      day7Warning: "7-Day Warning",
+      finalWarningDeadline: "Final warning before deadline",
+      overdueAlert: "Overdue Alert",
+      depositNotReturned: "Deposit not returned",
+      rentReminder: "Rent Reminder",
+      rentDue3Days: "Rent due in 3 days",
+      welcomeMessage: "Welcome Message",
+      welcomeAfterConnecting: "Welcome after connecting",
+      leaseNotice30d: "Lease Notice 30d",
+      days30ToNotifyLandlord: "30 days to notify landlord",
+      leaseNotice7d: "Lease Notice 7d",
+      days7LeftToNotify: "7 days left to notify",
+      leaseNotice3d: "Lease Notice 3d",
+      days3FinalWarning: "3 days! Final warning",
+      todayNotifyNow: "TODAY! Notify Now",
+      noticeDeadlineToday: "Notice deadline today",
     },
     th: {
       title: "คอนโซลแอดมิน",
@@ -111,7 +131,27 @@ export default function AdminConsole() {
       active: "ใช้งาน",
       secure: "Secure",
       recentLeases: "สัญญาเช่าล่าสุด",
-      noLeases: "ยังไม่มีสัญญาเช่า"
+      noLeases: "ยังไม่มีสัญญาเช่า",
+      // New LINE Notification strings
+      testLineNotifications: "ทดสอบการแจ้งเตือน LINE",
+      day30Reminder: "เตือน 30 วัน",
+      depositDue30Days: "เงินมัดจำครบกำหนดใน 30 วัน",
+      day7Warning: "เตือน 7 วัน",
+      finalWarningDeadline: "คำเตือนสุดท้ายก่อนครบกำหนด",
+      overdueAlert: "แจ้งเตือนเกินกำหนด",
+      depositNotReturned: "ยังไม่ได้รับเงินมัดจำคืน",
+      rentReminder: "เตือนค่าเช่า",
+      rentDue3Days: "ค่าเช่าครบกำหนดในอีก 3 วัน",
+      welcomeMessage: "ข้อความต้อนรับ",
+      welcomeAfterConnecting: "ข้อความต้อนรับหลังเชื่อมต่อ",
+      leaseNotice30d: "เตือนสัญญา 30 วัน",
+      days30ToNotifyLandlord: "อีก 30 วันถึงกำหนดแจ้งต่อ/ยกเลิก",
+      leaseNotice7d: "เตือนสัญญา 7 วัน",
+      days7LeftToNotify: "เหลือ 7 วันต้องแจ้ง",
+      leaseNotice3d: "เตือนสัญญา 3 วัน",
+      days3FinalWarning: "เหลือ 3 วัน! คำเตือนสุดท้าย",
+      todayNotifyNow: "วันนี้! แจ้งด่วน",
+      noticeDeadlineToday: "กำหนดแจ้งวันนี้",
     }
   };
 
@@ -169,7 +209,7 @@ export default function AdminConsole() {
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <Bell className="w-5 h-5 text-emerald-600" />
-              {language === 'th' ? 'ทดสอบการแจ้งเตือน LINE' : 'Test LINE Notifications'}
+              {strings.testLineNotifications}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -213,11 +253,11 @@ export default function AdminConsole() {
                 <div className="flex items-center gap-2 mb-2">
                   <span style={{ fontSize: '24px' }}>🔔</span>
                   <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {language === 'th' ? 'เตือน 30 วัน' : '30-Day Reminder'}
+                    {strings.day30Reminder}
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {language === 'th' ? 'เงินมัดจำครบกำหนดใน 30 วัน' : 'Deposit due in 30 days'}
+                  {strings.depositDue30Days}
                 </p>
               </button>
 
@@ -250,11 +290,11 @@ export default function AdminConsole() {
                 <div className="flex items-center gap-2 mb-2">
                   <span style={{ fontSize: '24px' }}>⚠️</span>
                   <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {language === 'th' ? 'เตือน 7 วัน' : '7-Day Warning'}
+                    {strings.day7Warning}
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {language === 'th' ? 'เงินมัดจำครบกำหนดใน 7 วัน' : 'Final warning before deadline'}
+                  {strings.finalWarningDeadline}
                 </p>
               </button>
 
@@ -287,11 +327,11 @@ export default function AdminConsole() {
                 <div className="flex items-center gap-2 mb-2">
                   <span style={{ fontSize: '24px' }}>🚨</span>
                   <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {language === 'th' ? 'แจ้งเตือนเกินกำหนด' : 'Overdue Alert'}
+                    {strings.overdueAlert}
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {language === 'th' ? 'ยังไม่ได้รับเงินมัดจำคืน' : 'Deposit not returned'}
+                  {strings.depositNotReturned}
                 </p>
               </button>
 
@@ -324,11 +364,11 @@ export default function AdminConsole() {
                 <div className="flex items-center gap-2 mb-2">
                   <span style={{ fontSize: '24px' }}>💰</span>
                   <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {language === 'th' ? 'เตือนค่าเช่า' : 'Rent Reminder'}
+                    {strings.rentReminder}
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {language === 'th' ? 'ค่าเช่าครบกำหนดในอีก 3 วัน' : 'Rent due in 3 days'}
+                  {strings.rentDue3Days}
                 </p>
               </button>
 
@@ -361,11 +401,159 @@ export default function AdminConsole() {
                 <div className="flex items-center gap-2 mb-2">
                   <span style={{ fontSize: '24px' }}>🎉</span>
                   <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {language === 'th' ? 'ข้อความต้อนรับ' : 'Welcome Message'}
+                    {strings.welcomeMessage}
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {language === 'th' ? 'ข้อความต้อนรับหลังเชื่อมต่อ' : 'Welcome after connecting'}
+                  {strings.welcomeAfterConnecting}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleTestNotification('notice_30d')}
+                disabled={testingNotification}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: testingNotification ? 'not-allowed' : 'pointer',
+                  opacity: testingNotification ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = '#06B6D4';
+                    e.target.style.backgroundColor = isDarkMode ? '#164E63' : '#ECFEFF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>📅</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.leaseNotice30d}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.days30ToNotifyLandlord}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleTestNotification('notice_7d')}
+                disabled={testingNotification}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: testingNotification ? 'not-allowed' : 'pointer',
+                  opacity: testingNotification ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = '#F59E0B';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2D1C' : '#FFF7ED';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>⚠️</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.leaseNotice7d}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.days7LeftToNotify}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleTestNotification('notice_3d')}
+                disabled={testingNotification}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: testingNotification ? 'not-allowed' : 'pointer',
+                  opacity: testingNotification ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = '#EF4444';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🚨</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.leaseNotice3d}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.days3FinalWarning}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleTestNotification('notice_today')}
+                disabled={testingNotification}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: testingNotification ? 'not-allowed' : 'pointer',
+                  opacity: testingNotification ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = '#DC2626';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A1A1A' : '#FEE2E2';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🔴</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.todayNotifyNow}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.noticeDeadlineToday}
                 </p>
               </button>
             </div>
