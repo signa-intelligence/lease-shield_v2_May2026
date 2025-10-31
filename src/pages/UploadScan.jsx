@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2 } from "lucide-react";
-import { format } = from "date-fns";
+import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -40,12 +39,10 @@ export default function UploadScan() {
 
   const deleteLeaseMutation = useMutation({
     mutationFn: async (leaseId) => {
-      // Delete associated scan first
       const associatedScan = scans.find(s => s.lease_id === leaseId);
       if (associatedScan) {
         await base44.entities.LeaseScan.delete(associatedScan.id);
       }
-      // Then delete the lease
       await base44.entities.Lease.delete(leaseId);
     },
     onSuccess: () => {
@@ -84,7 +81,6 @@ export default function UploadScan() {
       return;
     }
 
-    // Add to selected files (not uploaded yet)
     setSelectedFiles(prev => [...prev, ...validFiles]);
   };
 
@@ -99,7 +95,6 @@ export default function UploadScan() {
     setError(null);
 
     try {
-      // Upload all files
       const uploadPromises = selectedFiles.map(file => 
         base44.integrations.Core.UploadFile({ file })
       );
@@ -107,7 +102,6 @@ export default function UploadScan() {
       const uploadResults = await Promise.all(uploadPromises);
       const fileUrls = uploadResults.map(result => result.file_url);
 
-      // Create lease with all files
       const lease = await base44.entities.Lease.create({
         file_url: fileUrls[0],
         file_urls: fileUrls,
@@ -116,7 +110,6 @@ export default function UploadScan() {
 
       setAnalyzing(true);
       
-      // Analyze the lease
       const scanResult = await base44.integrations.Core.InvokeLLM({
         prompt: `Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant. 
         
@@ -152,7 +145,6 @@ export default function UploadScan() {
         }
       });
 
-      // Update lease
       await base44.entities.Lease.update(lease.id, {
         status: 'scanned',
         property_address: scanResult.property_address,
@@ -163,7 +155,6 @@ export default function UploadScan() {
         language_detected: scanResult.language_detected
       });
 
-      // Create scan
       await base44.entities.LeaseScan.create({
         lease_id: lease.id,
         risk_score: scanResult.risk_score,
@@ -173,11 +164,9 @@ export default function UploadScan() {
         version: '1.0'
       });
 
-      // Refresh queries
       await queryClient.invalidateQueries({ queryKey: ['leases'] });
       await queryClient.invalidateQueries({ queryKey: ['scans'] });
 
-      // Navigate to preview
       window.location.href = createPageUrl("ScanPreview") + `?leaseId=${lease.id}`;
       
     } catch (err) {
@@ -269,7 +258,6 @@ export default function UploadScan() {
 
   const strings = t[language];
 
-  // Dark mode colors
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
     cardBg: '#2A2D30',
@@ -291,7 +279,6 @@ export default function UploadScan() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <Upload className="w-8 h-8 text-blue-600" />
@@ -311,7 +298,6 @@ export default function UploadScan() {
           </div>
         )}
 
-        {/* Upload Card */}
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <div className="p-6 md:p-8">
             {uploading || analyzing ? (
@@ -421,7 +407,6 @@ export default function UploadScan() {
                   </p>
                 </div>
 
-                {/* Selected Files List */}
                 {selectedFiles.length > 0 && (
                   <div className="mt-6">
                     <div className="flex items-center justify-between mb-4">
@@ -479,7 +464,6 @@ export default function UploadScan() {
           </div>
         </Card>
 
-        {/* Recent Scans */}
         {leases.length > 0 && (
           <div>
             <h2 className="text-lg md:text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>{strings.recentScans}</h2>
@@ -489,7 +473,6 @@ export default function UploadScan() {
                   backgroundColor: colors.cardBg
                 }}>
                   <div className="p-4">
-                    {/* Title Section */}
                     <div className="mb-3">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <h3 className="font-bold text-sm leading-tight flex-1" style={{ 
@@ -526,7 +509,6 @@ export default function UploadScan() {
                       </p>
                     </div>
 
-                    {/* Action Buttons - Horizontal on Mobile */}
                     <div className="flex gap-2 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
                       {(lease.status === 'scanned' || lease.status === 'paid') && (
                         <button
