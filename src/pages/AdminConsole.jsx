@@ -35,6 +35,25 @@ export default function AdminConsole() {
   });
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    statBg: '#353A3D',
+    leaseBg: '#353A3D'
+  } : {
+    bg: '#ECEFED',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+    statBg: '#F8FAFC',
+    leaseBg: '#F8FAFC'
+  };
 
   const t = {
     en: {
@@ -108,69 +127,69 @@ export default function AdminConsole() {
   const activeSubscribers = allUsers.filter(u => u.subscription_status === 'active').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <Shield className="w-8 h-8 text-ls-forest" />
-            <h1 className="text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
+            <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           </div>
-          <p className="text-slate-600">{strings.subtitle}</p>
+          <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="border-none shadow-lg">
+          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                   <Users className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">{strings.totalUsers}</p>
-                  <p className="text-2xl font-bold text-ls-charcoal">{allUsers.length}</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.totalUsers}</p>
+                  <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{allUsers.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-lg">
+          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
                   <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">{strings.activeSubscribers}</p>
-                  <p className="text-2xl font-bold text-ls-charcoal">{activeSubscribers}</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.activeSubscribers}</p>
+                  <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{activeSubscribers}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-lg">
+          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                   <FileText className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">{strings.leaseScans}</p>
-                  <p className="text-2xl font-bold text-ls-charcoal">{allLeases.length}</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.leaseScans}</p>
+                  <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{allLeases.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-lg">
+          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
                   <FileText className="w-6 h-6 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">{strings.documents}</p>
-                  <p className="text-2xl font-bold text-ls-charcoal">{allDocuments.length}</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.documents}</p>
+                  <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{allDocuments.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -178,15 +197,15 @@ export default function AdminConsole() {
         </div>
 
         {/* Demo Data Seeder */}
-        <Card className="border-none shadow-lg mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-none shadow-lg mb-8" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <Database className="w-5 h-5 text-ls-forest" />
               {strings.demoDataSeeder}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-slate-600 mb-4">{strings.demoDataDesc}</p>
+          <CardContent className="p-6">
+            <p className="mb-4" style={{ color: colors.textSecondary }}>{strings.demoDataDesc}</p>
             <Button
               onClick={handleSeedDemoData}
               disabled={seeding}
@@ -202,34 +221,37 @@ export default function AdminConsole() {
         </Card>
 
         {/* User Management */}
-        <Card className="border-none shadow-lg mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-none shadow-lg mb-8" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <Users className="w-5 h-5 text-ls-forest" />
               {strings.userManagement}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">{strings.user}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">{strings.email}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">{strings.plan}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">{strings.status}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">{strings.role}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">{strings.joined}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">{strings.actions}</th>
+                  <tr style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.status}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.role}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.joined}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {allUsers.map((u) => (
-                    <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-4 text-sm font-medium text-slate-900">{u.full_name}</td>
-                      <td className="py-3 px-4 text-sm text-slate-600">
+                    <tr key={u.id} style={{ 
+                      borderBottom: `1px solid ${colors.borderColor}`,
+                      backgroundColor: 'transparent'
+                    }}>
+                      <td className="py-3 px-4 text-sm font-medium" style={{ color: colors.textPrimary }}>{u.full_name}</td>
+                      <td className="py-3 px-4 text-sm" style={{ color: colors.textSecondary }}>
                         <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-slate-400" />
+                          <Mail className="w-4 h-4" />
                           {u.email}
                         </div>
                       </td>
@@ -261,7 +283,7 @@ export default function AdminConsole() {
                           </Badge>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-600">
+                      <td className="py-3 px-4 text-sm" style={{ color: colors.textSecondary }}>
                         {format(new Date(u.created_date), 'MMM d, yyyy')}
                       </td>
                       <td className="py-3 px-4">
@@ -278,29 +300,32 @@ export default function AdminConsole() {
         </Card>
 
         {/* Recent Leases */}
-        <Card className="border-none shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <FileText className="w-5 h-5 text-ls-forest" />
               {strings.recentLeases} ({allLeases.length})
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             {allLeases.length === 0 ? (
-              <p className="text-center text-slate-500 py-8">{strings.noLeases}</p>
+              <p className="text-center py-8" style={{ color: colors.textSecondary }}>{strings.noLeases}</p>
             ) : (
               <div className="space-y-3">
                 {allLeases.slice(0, 10).map((lease) => (
-                  <div key={lease.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <div key={lease.id} className="p-4 rounded-lg border" style={{
+                    backgroundColor: colors.leaseBg,
+                    borderColor: colors.borderColor
+                  }}>
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="font-semibold text-slate-900">
+                        <p className="font-semibold" style={{ color: colors.textPrimary }}>
                           {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
                         </p>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm" style={{ color: colors.textSecondary }}>
                           {language === 'th' ? 'โดย' : 'by'} {lease.created_by}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
                           {format(new Date(lease.created_date), 'MMM d, yyyy HH:mm')}
                         </p>
                       </div>
