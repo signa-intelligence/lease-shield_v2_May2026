@@ -1,9 +1,10 @@
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { FileCheck, ArrowLeft, Mail, AlertCircle, FileText, Shield, Scale, Clock, ClipboardCheck } from "lucide-react";
+import { FileCheck, ArrowLeft, Mail, AlertCircle, FileText, Shield, Scale, Clock, ClipboardCheck, ScrollText, FileX, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FeatureGate, useFeatureAccess } from "../components/shared/FeatureGate";
 import { useQuery } from "@tanstack/react-query";
@@ -73,6 +74,33 @@ const TEMPLATES = [
     category: { en: 'Lease', th: 'สัญญาเช่า' },
     languages: ['en', 'th']
   },
+  {
+    id: 'lease_extension',
+    title: { en: 'Lease Extension Request', th: 'จดหมายขอต่อสัญญาเช่า' },
+    description: { en: 'Formal request to extend your lease agreement', th: 'จดหมายขอต่อสัญญาเช่าอย่างเป็นทางการ' },
+    icon: ScrollText,
+    tier: 'lite',
+    category: { en: 'Lease', th: 'สัญญาเช่า' },
+    languages: ['en', 'th']
+  },
+  {
+    id: 'lease_termination',
+    title: { en: 'Lease Termination Notice', th: 'จดหมายแจ้งยกเลิกสัญญาเช่า' },
+    description: { en: 'Official notice to terminate your lease agreement', th: 'จดหมายแจ้งยกเลิกสัญญาเช่าอย่างเป็นทางการ' },
+    icon: FileX,
+    tier: 'lite',
+    category: { en: 'Lease', th: 'สัญญาเช่า' },
+    languages: ['en', 'th']
+  },
+  {
+    id: 'noise_complaint',
+    title: { en: 'Noise Complaint Letter', th: 'จดหมายร้องเรียนเสียงรบกวน' },
+    description: { en: 'Formal complaint about noise disturbances', th: 'จดหมายร้องเรียนเสียงรบกวนอย่างเป็นทางการ' },
+    icon: Volume2,
+    tier: 'lite',
+    category: { en: 'Complaint', th: 'ข้อร้องเรียน' },
+    languages: ['en', 'th']
+  }
 ];
 
 export default function Templates() {
