@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -46,21 +45,6 @@ export default function ScanPreview() {
   });
 
   const language = user?.language || 'en';
-  const isDarkMode = user?.theme === 'dark';
-
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40'
-  } : {
-    bg: '#0C3B2E',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#e2e8f0'
-  };
 
   const t = {
     en: {
@@ -107,9 +91,9 @@ export default function ScanPreview() {
 
   if (!scan || !lease) {
     return (
-      <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-6">
         <div className="max-w-4xl mx-auto">
-          <p className="text-center" style={{ color: colors.textSecondary }}>Loading...</p>
+          <p className="text-center text-slate-600">Loading...</p>
         </div>
       </div>
     );
@@ -119,7 +103,7 @@ export default function ScanPreview() {
   const riskLabel = getRiskLabel(scan.risk_score);
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         <Button
           variant="outline"

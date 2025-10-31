@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -87,12 +86,12 @@ export default function DocumentVault() {
     borderColor: '#3A3D40',
     inputBg: '#353A3D'
   } : {
-    bg: '#0C3B2E',
+    bg: '#ECEFED',
     cardBg: '#FFFFFF',
-    uploadBg: '#FFFFFF',
-    textPrimary: '#1A1D1F', // Changed from '#ECEFED'
-    textSecondary: '#64748b', // Changed from '#D1FAE5'
-    borderColor: '#e2e8f0', // Changed from 'rgba(236, 239, 237, 0.2)'
+    uploadBg: '#F8FAFC',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
     inputBg: '#FFFFFF'
   };
 

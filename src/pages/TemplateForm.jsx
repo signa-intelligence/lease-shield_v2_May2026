@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,35 +106,13 @@ export default function TemplateForm() {
   const urlParams = new URLSearchParams(window.location.search);
   const templateId = urlParams.get('templateId') || 'deposit_request';
   
-  // Assuming base44.user provides user information if available
-  const user = base44.user;
-
   const [generating, setGenerating] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState('');
   const [generatedDocId, setGeneratedDocId] = useState(null);
   const [copied, setCopied] = useState(false);
-  // Initialize language state with user preference or default to 'en'
-  const [language, setLanguage] = useState(user?.language || 'en');
+  const [language, setLanguage] = useState('both');
   const [formData, setFormData] = useState({});
   const [error, setError] = useState(null);
-
-  const isDarkMode = user?.theme === 'dark';
-
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D'
-  } : {
-    bg: '#0C3B2E',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#e2e8f0',
-    inputBg: '#FFFFFF'
-  };
 
   const schema = TEMPLATE_SCHEMAS[templateId] || TEMPLATE_SCHEMAS.deposit_request;
 
@@ -223,7 +200,7 @@ Generate the letter now.`,
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <Button

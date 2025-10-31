@@ -229,14 +229,14 @@ export default function Account() {
     fieldBg: '#353A3D',
     hoverBg: '#3A3D40'
   } : {
-    bg: '#0C3B2E',
+    bg: '#ECEFED',
     cardBg: '#FFFFFF',
     textPrimary: '#1A1D1F',
     textSecondary: '#64748b',
-    borderColor: '#e2e8f0',
+    borderColor: '#E5E7EB',
     inputBg: '#FFFFFF',
-    fieldBg: '#F8FAFC',
-    hoverBg: '#f1f5f9'
+    fieldBg: '#ECEFED',
+    hoverBg: '#F8FAFC'
   };
 
   const t = {
@@ -609,7 +609,7 @@ export default function Account() {
                             borderRadius: '6px',
                             border: 'none',
                             backgroundColor: currentTheme === 'light' ? '#0C3B2E' : 'transparent',
-                            color: currentTheme === 'light' ? '#FFFFFF' : colors.textPrimary,
+                            color: currentTheme === 'light' ? '#FFFFFF' : colors.textSecondary,
                             fontWeight: currentTheme === 'light' ? 'bold' : 'normal',
                             fontSize: '13px',
                             cursor: 'pointer',
@@ -639,7 +639,7 @@ export default function Account() {
                             borderRadius: '6px',
                             border: 'none',
                             backgroundColor: currentTheme === 'dark' ? '#0C3B2E' : 'transparent',
-                            color: currentTheme === 'dark' ? '#FFFFFF' : colors.textPrimary,
+                            color: currentTheme === 'dark' ? '#FFFFFF' : colors.textSecondary,
                             fontWeight: currentTheme === 'dark' ? 'bold' : 'normal',
                             fontSize: '13px',
                             cursor: 'pointer',

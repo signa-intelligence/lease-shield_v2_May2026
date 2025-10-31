@@ -48,11 +48,11 @@ export default function AdminConsole() {
     tableRow: '#353A3D',
     leaseBg: '#353A3D'
   } : {
-    bg: '#0C3B2E',
+    bg: '#ECEFED',
     cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F', // Changed from '#ECEFED'
-    textSecondary: '#64748b', // Changed from '#D1FAE5'
-    borderColor: '#e2e8f0', // Changed from 'rgba(236, 239, 237, 0.2)'
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
     tableBg: '#FFFFFF',
     tableRow: '#F8FAFC',
     leaseBg: '#F8FAFC'

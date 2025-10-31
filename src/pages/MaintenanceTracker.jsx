@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -84,16 +83,14 @@ export default function MaintenanceTracker() {
     textPrimary: '#ECEFED',
     textSecondary: '#A8ABAD',
     borderColor: '#3A3D40',
-    inputBg: '#353A3D',
-    infoBg: '#353A3D'
+    inputBg: '#353A3D'
   } : {
-    bg: '#0C3B2E',
+    bg: '#F8FAFC',
     cardBg: '#FFFFFF',
     textPrimary: '#1A1D1F',
     textSecondary: '#64748b',
-    borderColor: '#e2e8f0',
-    inputBg: '#FFFFFF',
-    infoBg: '#EFF6FF'
+    borderColor: '#E5E7EB',
+    inputBg: '#FFFFFF'
   };
 
   const t = {

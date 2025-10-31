@@ -1,4 +1,3 @@
-
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -20,23 +19,6 @@ export default function ReportFull() {
     queryFn: () => base44.auth.me(),
   });
 
-  const language = user?.language || 'en';
-  const isDarkMode = user?.theme === 'dark';
-
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40'
-  } : {
-    bg: '#0C3B2E', // This value has been changed
-    cardBg: '#FFFFFF',
-    textPrimary: '#0F172A',
-    textSecondary: '#64748B',
-    borderColor: '#e2e8f0'
-  };
-
   const { data: scan } = useQuery({
     queryKey: ['scan', scanId],
     queryFn: async () => {
@@ -57,10 +39,10 @@ export default function ReportFull() {
 
   if (!scan || !lease) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center">
-          <FileText className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
-          <p className="mb-4" style={{ color: colors.textSecondary }}>No scan report found</p>
+          <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-600 mb-4">No scan report found</p>
           <Button onClick={() => navigate(createPageUrl("UploadScan"))}>
             Upload a Lease
           </Button>
@@ -90,7 +72,7 @@ export default function ReportFull() {
 
   return (
     <FeatureGate feature="full_report">
-      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-6">
             <Button
