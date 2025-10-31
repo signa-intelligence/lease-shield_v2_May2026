@@ -30,11 +30,11 @@ export default function ReportFull() {
     textSecondary: '#A8ABAD',
     borderColor: '#3A3D40'
   } : {
-    bg: '#f8fafc', // Adjusted to match the light mode background in the original CSS for consistency
+    bg: '#0C3B2E', // This value has been changed
     cardBg: '#FFFFFF',
-    textPrimary: '#0F172A', // Adjusted to match default text for light mode
-    textSecondary: '#64748B', // Adjusted to match default text for light mode
-    borderColor: '#e2e8f0' // Adjusted to match default border for light mode
+    textPrimary: '#0F172A',
+    textSecondary: '#64748B',
+    borderColor: '#e2e8f0'
   };
 
   const { data: scan } = useQuery({
