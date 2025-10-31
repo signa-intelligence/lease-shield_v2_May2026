@@ -1,19 +1,21 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function UploadScan() {
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -48,7 +50,7 @@ export default function UploadScan() {
     }
   };
 
-  const handleFileSelect = async (e) => {
+  const handleFileSelect = (e) => {
     e.preventDefault();
     setDragActive(false);
     setError(null);
@@ -56,25 +58,48 @@ export default function UploadScan() {
     const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-    
-    if (!file.type.includes('pdf') && !file.type.includes('image')) {
-      setError(language === 'th' ? 'กรุณาอัปโหลดไฟล์ PDF หรือรูปภาพ' : 'Please upload a PDF or image file');
+    const validFiles = Array.from(files).filter(file => 
+      file.type.includes('pdf') || file.type.includes('image')
+    );
+
+    if (validFiles.length === 0) {
+      setError(language === 'th' ? 'กรุณาอัปโหลดไฟล์ PDF หรือรูปภาพ' : 'Please upload PDF or image files');
       return;
     }
 
+    // Add to selected files (not uploaded yet)
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const handleRemoveFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUploadAll = async () => {
+    if (selectedFiles.length === 0) return;
+
     setUploading(true);
+    setError(null);
 
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      // Upload all files
+      const uploadPromises = selectedFiles.map(file => 
+        base44.integrations.Core.UploadFile({ file })
+      );
       
+      const uploadResults = await Promise.all(uploadPromises);
+      const fileUrls = uploadResults.map(result => result.file_url);
+
+      // Create lease with all files
       const lease = await base44.entities.Lease.create({
-        file_url,
+        file_url: fileUrls[0],
+        file_urls: fileUrls,
         status: 'uploaded'
       });
 
       setAnalyzing(true);
       
+      // Analyze the lease
       const scanResult = await base44.integrations.Core.InvokeLLM({
         prompt: `Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant. 
         
@@ -83,7 +108,7 @@ export default function UploadScan() {
         2. List of flags with severity (critical, high, medium, low), category, and description
         3. A summary of the overall lease quality
         4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)`,
-        file_urls: [file_url],
+        file_urls: fileUrls,
         response_json_schema: {
           type: "object",
           properties: {
@@ -110,6 +135,7 @@ export default function UploadScan() {
         }
       });
 
+      // Update lease
       await base44.entities.Lease.update(lease.id, {
         status: 'scanned',
         property_address: scanResult.property_address,
@@ -120,6 +146,7 @@ export default function UploadScan() {
         language_detected: scanResult.language_detected
       });
 
+      // Create scan
       await base44.entities.LeaseScan.create({
         lease_id: lease.id,
         risk_score: scanResult.risk_score,
@@ -129,12 +156,16 @@ export default function UploadScan() {
         version: '1.0'
       });
 
+      // Refresh queries
+      await queryClient.invalidateQueries({ queryKey: ['leases'] });
+      await queryClient.invalidateQueries({ queryKey: ['scans'] });
+
+      // Navigate to preview
       window.location.href = createPageUrl("ScanPreview") + `?leaseId=${lease.id}`;
       
     } catch (err) {
       setError(language === 'th' ? 'การวิเคราะห์ล้มเหลว กรุณาลองอีกครั้ง' : 'Failed to analyze lease. Please try again.');
       console.error(err);
-    } finally {
       setUploading(false);
       setAnalyzing(false);
     }
@@ -160,38 +191,46 @@ export default function UploadScan() {
     en: {
       title: "Lease Risk Scan",
       subtitle: "AI-powered lease analysis in seconds",
-      dragDrop: "Drag and drop your lease document here, or click to browse",
+      dragDrop: "Drag and drop your lease pages here, or click to browse",
       browseFiles: "Browse Files",
-      takePhoto: "Take Photos",
-      supportedFormats: "Supported formats: PDF, PNG, JPEG • Max size: 10MB per file • Multiple files allowed",
+      scanDocument: "Scan Document",
+      supportedFormats: "Supported formats: PDF, PNG, JPEG • Max size: 10MB per file",
+      filesSelected: "files selected",
+      removeFile: "Remove",
+      uploadAll: "Upload & Analyze",
       uploading: "Uploading Lease...",
-      analyzing: "Analyzing Agreement...",
-      analyzingDesc: "Our AI is reviewing your lease for potential issues",
+      analyzingTitle: "Analyzing Agreement...",
+      analyzingDesc: "Your lease will be reviewed for potential issues...stand by",
       recentScans: "Recent Scans",
       noScansTitle: "No Scans Yet",
       noScansDesc: "Upload your first lease to get started",
       uploadFirst: "Upload Your First Lease",
       pages: "pages",
       uploaded: "Uploaded",
-      viewResults: "View Results"
+      viewResults: "View Results",
+      selectAtLeast: "Select at least one file to upload"
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
       subtitle: "วิเคราะห์สัญญาเช่าด้วย AI ภายในไม่กี่วินาที",
-      dragDrop: "ลากและวางเอกสารสัญญาเช่าที่นี่ หรือคลิกเพื่อเรียกดู",
+      dragDrop: "ลากและวางหน้าสัญญาเช่าที่นี่ หรือคลิกเพื่อเรียกดู",
       browseFiles: "เรียกดูไฟล์",
-      takePhoto: "ถ่ายรูป",
-      supportedFormats: "รองรับ: PDF, PNG, JPEG • ขนาดไม่เกิน 10MB ต่อไฟล์ • อนุญาตหลายไฟล์",
+      scanDocument: "สแกนเอกสาร",
+      supportedFormats: "รองรับ: PDF, PNG, JPEG • ขนาดไม่เกิน 10MB ต่อไฟล์",
+      filesSelected: "ไฟล์ที่เลือก",
+      removeFile: "ลบ",
+      uploadAll: "อัปโหลดและวิเคราะห์",
       uploading: "กำลังอัปโหลดสัญญาเช่า...",
-      analyzing: "กำลังวิเคราะห์สัญญา...",
-      analyzingDesc: "AI กำลังตรวจสอบสัญญาเช่าของคุณเพื่อหาปัญหาที่อาจเกิดขึ้น",
+      analyzingTitle: "กำลังวิเคราะห์สัญญา...",
+      analyzingDesc: "สัญญาเช่าของคุณจะได้รับการตรวจสอบเพื่อหาปัญหาที่อาจเกิดขึ้น...กรุณารอสักครู่",
       recentScans: "การสแกนล่าสุด",
       noScansTitle: "ยังไม่มีการสแกน",
       noScansDesc: "อัปโหลดสัญญาเช่าแรกของคุณเพื่อเริ่มต้น",
       uploadFirst: "อัปโหลดสัญญาเช่าแรก",
       pages: "หน้า",
       uploaded: "อัปโหลดแล้ว",
-      viewResults: "ดูผลลัพธ์"
+      viewResults: "ดูผลลัพธ์",
+      selectAtLeast: "เลือกไฟล์อย่างน้อยหนึ่งไฟล์เพื่ออัปโหลด"
     }
   };
 
@@ -246,105 +285,162 @@ export default function UploadScan() {
               <div className="text-center py-12">
                 <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
                 <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                  {uploading ? strings.uploading : strings.analyzing}
+                  {uploading ? strings.uploading : strings.analyzingTitle}
                 </h3>
                 <p style={{ color: colors.textSecondary }}>
                   {analyzing ? strings.analyzingDesc : (language === 'th' ? 'กรุณารอสักครู่' : 'Please wait')}
                 </p>
               </div>
             ) : (
-              <div
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleFileSelect}
-                className="border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300"
-                style={{
-                  backgroundColor: dragActive ? (isDarkMode ? '#3A3D40' : '#EFF6FF') : colors.uploadBg,
-                  borderColor: dragActive ? '#3B82F6' : colors.borderColor
-                }}
-              >
-                <div className="w-16 h-16 bg-ls-forest rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Upload className="w-8 h-8 text-white" />
-                </div>
-                
-                <p className="text-lg mb-6" style={{ color: colors.textSecondary }}>
-                  {strings.dragDrop}
-                </p>
-
-                <div className="flex gap-4 justify-center flex-wrap">
-                  <label>
-                    <input
-                      type="file"
-                      onChange={handleFileSelect}
-                      accept=".pdf,image/*"
-                      className="hidden"
-                    />
-                    <div
-                      style={{
-                        backgroundColor: '#0C3B2E',
-                        color: '#FFFFFF',
-                        padding: '12px 24px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '16px',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-                    >
-                      <FileText className="w-5 h-5" />
-                      {strings.browseFiles}
-                    </div>
-                  </label>
+              <>
+                <div
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleFileSelect}
+                  className="border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300"
+                  style={{
+                    backgroundColor: dragActive ? (isDarkMode ? '#3A3D40' : '#EFF6FF') : colors.uploadBg,
+                    borderColor: dragActive ? '#3B82F6' : colors.borderColor
+                  }}
+                >
+                  <div className="w-16 h-16 bg-ls-forest rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <Upload className="w-8 h-8 text-white" />
+                  </div>
                   
-                  <label>
-                    <input
-                      type="file"
-                      onChange={handleFileSelect}
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                    />
-                    <div
-                      style={{
-                        backgroundColor: isDarkMode ? '#3A3D40' : '#FFFFFF',
-                        color: '#0C3B2E',
-                        padding: '12px 24px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '16px',
-                        border: '2px solid #0C3B2E',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#0C3B2E';
-                        e.target.style.color = '#FFFFFF';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = isDarkMode ? '#3A3D40' : '#FFFFFF';
-                        e.target.style.color = '#0C3B2E';
-                      }}
-                    >
-                      <Camera className="w-5 h-5" />
-                      {strings.takePhoto}
-                    </div>
-                  </label>
+                  <p className="text-lg mb-6" style={{ color: colors.textSecondary }}>
+                    {strings.dragDrop}
+                  </p>
+
+                  <div className="flex gap-4 justify-center flex-wrap">
+                    <label>
+                      <input
+                        type="file"
+                        onChange={handleFileSelect}
+                        accept=".pdf,image/*"
+                        multiple
+                        className="hidden"
+                      />
+                      <div
+                        style={{
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF',
+                          padding: '12px 24px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                      >
+                        <FileText className="w-5 h-5" />
+                        {strings.browseFiles}
+                      </div>
+                    </label>
+                    
+                    <label>
+                      <input
+                        type="file"
+                        onChange={handleFileSelect}
+                        accept="image/*"
+                        capture="environment"
+                        multiple
+                        className="hidden"
+                      />
+                      <div
+                        style={{
+                          backgroundColor: isDarkMode ? '#3A3D40' : '#FFFFFF',
+                          color: '#0C3B2E',
+                          padding: '12px 24px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: '2px solid #0C3B2E',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#0C3B2E';
+                          e.target.style.color = '#FFFFFF';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = isDarkMode ? '#3A3D40' : '#FFFFFF';
+                          e.target.style.color = '#0C3B2E';
+                        }}
+                      >
+                        <Camera className="w-5 h-5" />
+                        {strings.scanDocument}
+                      </div>
+                    </label>
+                  </div>
+
+                  <p className="mt-6 text-sm" style={{ color: colors.textSecondary }}>
+                    {strings.supportedFormats}
+                  </p>
                 </div>
 
-                <p className="mt-6 text-sm" style={{ color: colors.textSecondary }}>
-                  {strings.supportedFormats}
-                </p>
-              </div>
+                {/* Selected Files List */}
+                {selectedFiles.length > 0 && (
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="font-semibold" style={{ color: colors.textPrimary }}>
+                        {selectedFiles.length} {strings.filesSelected}
+                      </p>
+                      <Button
+                        onClick={handleUploadAll}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {strings.uploadAll}
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {selectedFiles.map((file, index) => (
+                        <div
+                          key={index}
+                          className="relative p-3 rounded-lg border-2"
+                          style={{
+                            backgroundColor: colors.uploadBg,
+                            borderColor: colors.borderColor
+                          }}
+                        >
+                          <button
+                            onClick={() => handleRemoveFile(index)}
+                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                            style={{ zIndex: 10 }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          
+                          <div className="flex flex-col items-center">
+                            {file.type.includes('image') ? (
+                              <ImageIcon className="w-8 h-8 text-blue-500 mb-2" />
+                            ) : (
+                              <FileText className="w-8 h-8 text-red-500 mb-2" />
+                            )}
+                            <p className="text-xs text-center truncate w-full" style={{ color: colors.textPrimary }}>
+                              {file.name}
+                            </p>
+                            <p className="text-xs" style={{ color: colors.textSecondary }}>
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </Card>
@@ -360,8 +456,8 @@ export default function UploadScan() {
                 }}>
                   <div className="p-6">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-bold mb-1" style={{ color: colors.textPrimary }}>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold mb-1 truncate" style={{ color: colors.textPrimary }}>
                           {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
                         </h3>
                         {lease.rent_amount && (
@@ -369,7 +465,7 @@ export default function UploadScan() {
                             ฿{lease.rent_amount.toLocaleString()}/{language === 'th' ? 'เดือน' : 'month'}
                           </p>
                         )}
-                        <div className="flex gap-2 text-sm mb-2" style={{ color: colors.textSecondary }}>
+                        <div className="flex gap-2 text-sm mb-2 flex-wrap" style={{ color: colors.textSecondary }}>
                           {lease.language_detected && (
                             <span>• {language === 'th' ? 'ภาษา' : 'Language'}: {lease.language_detected.toUpperCase()}</span>
                           )}
@@ -377,11 +473,11 @@ export default function UploadScan() {
                             <span>• {lease.file_urls.length} {strings.pages}</span>
                           )}
                         </div>
-                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                        <p className="text-xs truncate" style={{ color: colors.textSecondary }}>
                           {strings.uploaded}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
                         </p>
                       </div>
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-2 ml-4">
                         <Badge className={getStatusColor(lease.status)}>
                           {lease.status.toUpperCase()}
                         </Badge>
@@ -415,7 +511,7 @@ export default function UploadScan() {
           </div>
         )}
 
-        {leases.length === 0 && !uploading && !analyzing && (
+        {leases.length === 0 && !uploading && !analyzing && selectedFiles.length === 0 && (
           <div className="text-center py-12">
             <FileText className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
             <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.noScansTitle}</h3>
