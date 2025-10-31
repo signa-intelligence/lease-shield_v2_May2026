@@ -64,6 +64,10 @@ export default function Dashboard() {
       proactiveActions: 0
     };
 
+    // Check if user has deposit shield access
+    const hasDepositShield = user?.plan_tier === 'protect' || user?.plan_tier === 'secure';
+    const hasLineNotify = user?.plan_tier === 'protect' || user?.plan_tier === 'secure';
+
     // 1. Documentation Completeness (40 points max)
     const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
     if (scannedLeases.length > 0) breakdown.documentation += 15;
@@ -146,15 +150,17 @@ export default function Dashboard() {
     }
     
     // Active Protections recommendations
-    if (activeDeposits.length === 0 && deposits.length > 0) {
+    // Only suggest upgrading to Deposit Shield if they don't have it AND have deposits
+    if (!hasDepositShield && deposits.length > 0) {
       recommendations.push({
-        action: language === 'th' ? 'เปิดใช้งาน Deposit Shield' : 'Enable Deposit Shield',
+        action: language === 'th' ? 'อัปเกรดเพื่อเปิดใช้งาน Deposit Shield' : 'Upgrade for Deposit Shield',
         points: 10,
-        route: 'DepositTracker',
+        route: 'Account',
         icon: 'Shield'
       });
     }
-    if (!rentAlertsEnabled && deposits.length > 0) {
+    
+    if (!rentAlertsEnabled && deposits.length > 0 && hasDepositShield) {
       recommendations.push({
         action: language === 'th' ? 'เปิดการแจ้งเตือนค่าเช่า' : 'Enable rent alerts',
         points: 7,
