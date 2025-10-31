@@ -229,14 +229,14 @@ export default function Account() {
     fieldBg: '#353A3D',
     hoverBg: '#3A3D40'
   } : {
-    bg: '#ECEFED',
+    bg: '#0C3B2E',
     cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
+    textPrimary: '#ECEFED',
+    textSecondary: '#D1FAE5',
+    borderColor: 'rgba(236, 239, 237, 0.2)',
     inputBg: '#FFFFFF',
-    fieldBg: '#ECEFED',
-    hoverBg: '#F8FAFC'
+    fieldBg: 'rgba(255, 255, 255, 0.95)',
+    hoverBg: '#0a2f25'
   };
 
   const t = {
