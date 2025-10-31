@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -202,19 +203,53 @@ export default function DepositTracker() {
   };
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
   const strings = t[language];
   const now = new Date();
 
+  // Dark mode colors
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    inputBg: '#353A3D',
+    infoBg: '#353A3D',
+    accentBg: '#EFF6FF', // Default light mode accent (blue-50)
+    blueText: '#93C5FD', // Light blue text for rent alerts
+    blueBg: '#1E40AF', // Dark blue background for rent alerts
+    blueBorder: '#3B82F6', // Blue border for rent alerts
+    greenText: '#6EE7B7', // Green for protected badge in dark mode
+    goldText: '#FBBF24', // Gold for urgent in dark mode
+    grayText: '#A8ABAD', // For Wallet icon in no deposits
+  } : {
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+    inputBg: '#FFFFFF',
+    infoBg: '#F8FAFC',
+    accentBg: '#EFF6FF', // Default light mode accent (blue-50)
+    blueText: '#1E40AF', // Dark blue text for rent alerts
+    blueBg: '#BFDBFE', // Light blue background for rent alerts
+    blueBorder: '#93C5FD', // Blue border for rent alerts
+    greenText: '#10B981', // Green for protected badge in light mode
+    goldText: '#B45309', // Gold for urgent in light mode
+    grayText: '#CBD5E1', // For Wallet icon in no deposits (slate-300)
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Wallet className="w-8 h-8 text-ls-forest" />
-              <h1 className="text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
+              <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
             </div>
-            <p className="text-slate-600">{strings.subtitle}</p>
+            <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
           </div>
           
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
@@ -239,16 +274,19 @@ export default function DepositTracker() {
                 onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
               >
                 <Plus style={{ width: '20px', height: '20px' }} />
-                Add Deposit
+                {language === 'th' ? 'เพิ่มมัดจำ' : 'Add Deposit'}
               </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto" style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor
+            }}>
               <DialogHeader>
-                <DialogTitle>{strings.dialogTitle}</DialogTitle>
+                <DialogTitle style={{ color: colors.textPrimary }}>{strings.dialogTitle}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="amount">{strings.amountLabel}</Label>
+                  <Label htmlFor="amount" style={{ color: colors.textPrimary }}>{strings.amountLabel}</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -256,44 +294,71 @@ export default function DepositTracker() {
                     value={formData.deposit_amount}
                     onChange={(e) => setFormData({...formData, deposit_amount: e.target.value})}
                     placeholder="10000"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      color: colors.textPrimary,
+                      borderColor: colors.borderColor
+                    }}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="address">{strings.addressLabel}</Label>
+                  <Label htmlFor="address" style={{ color: colors.textPrimary }}>{strings.addressLabel}</Label>
                   <Input
                     id="address"
                     value={formData.property_address}
                     onChange={(e) => setFormData({...formData, property_address: e.target.value})}
                     placeholder="123 Main St, Bangkok"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      color: colors.textPrimary,
+                      borderColor: colors.borderColor
+                    }}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="paid_date">{strings.paidDateLabel}</Label>
+                  <Label htmlFor="paid_date" style={{ color: colors.textPrimary }}>{strings.paidDateLabel}</Label>
                   <Input
                     id="paid_date"
                     type="date"
                     required
                     value={formData.deposit_paid_date}
                     onChange={(e) => setFormData({...formData, deposit_paid_date: e.target.value})}
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      color: colors.textPrimary,
+                      borderColor: colors.borderColor,
+                      // Override default date input styling that might ignore color
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                      appearance: 'none',
+                    }}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="return_date">{strings.returnDateLabel}</Label>
+                  <Label htmlFor="return_date" style={{ color: colors.textPrimary }}>{strings.returnDateLabel}</Label>
                   <Input
                     id="return_date"
                     type="date"
                     required
                     value={formData.expected_return_date}
                     onChange={(e) => setFormData({...formData, expected_return_date: e.target.value})}
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      color: colors.textPrimary,
+                      borderColor: colors.borderColor,
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                      appearance: 'none',
+                    }}
                   />
                 </div>
 
                 {/* Rent Alerts Section */}
-                <div className="pt-4 border-t border-slate-200">
+                <div className="pt-4" style={{borderTop: `1px solid ${colors.borderColor}`}}>
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <Label className="text-sm font-bold">{strings.rentAlertsTitle}</Label>
-                      <p className="text-xs text-slate-500">{strings.rentAlertsSubtitle}</p>
+                      <Label className="text-sm font-bold" style={{ color: colors.textPrimary }}>{strings.rentAlertsTitle}</Label>
+                      <p className="text-xs" style={{ color: colors.textSecondary }}>{strings.rentAlertsSubtitle}</p>
                     </div>
                     <Switch
                       checked={formData.rent_alerts_enabled}
@@ -304,18 +369,23 @@ export default function DepositTracker() {
                   {formData.rent_alerts_enabled && (
                     <>
                       <div className="mb-3">
-                        <Label htmlFor="rent_amount">{strings.rentAmountLabel}</Label>
+                        <Label htmlFor="rent_amount" style={{ color: colors.textPrimary }}>{strings.rentAmountLabel}</Label>
                         <Input
                           id="rent_amount"
                           type="number"
                           value={formData.rent_amount}
                           onChange={(e) => setFormData({...formData, rent_amount: e.target.value})}
                           placeholder="15000"
+                          style={{
+                            backgroundColor: colors.inputBg,
+                            color: colors.textPrimary,
+                            borderColor: colors.borderColor
+                          }}
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <Label htmlFor="rent_due_day">{strings.rentDueDayLabel}</Label>
+                          <Label htmlFor="rent_due_day" style={{ color: colors.textPrimary }}>{strings.rentDueDayLabel}</Label>
                           <Input
                             id="rent_due_day"
                             type="number"
@@ -324,13 +394,18 @@ export default function DepositTracker() {
                             value={formData.rent_due_day}
                             onChange={(e) => setFormData({...formData, rent_due_day: e.target.value})}
                             placeholder="1"
+                            style={{
+                              backgroundColor: colors.inputBg,
+                              color: colors.textPrimary,
+                              borderColor: colors.borderColor
+                            }}
                           />
-                          <p className="text-xs text-slate-500 mt-1">
+                          <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
                             {language === 'th' ? 'เช่น: 1 = วันที่ 1 ของทุกเดือน' : 'e.g., 1 = 1st of every month'}
                           </p>
                         </div>
                         <div>
-                          <Label htmlFor="alert_days">{strings.alertDaysLabel}</Label>
+                          <Label htmlFor="alert_days" style={{ color: colors.textPrimary }}>{strings.alertDaysLabel}</Label>
                           <Input
                             id="alert_days"
                             type="number"
@@ -339,6 +414,11 @@ export default function DepositTracker() {
                             value={formData.rent_alert_days_before}
                             onChange={(e) => setFormData({...formData, rent_alert_days_before: e.target.value})}
                             placeholder="3"
+                            style={{
+                              backgroundColor: colors.inputBg,
+                              color: colors.textPrimary,
+                              borderColor: colors.borderColor
+                            }}
                           />
                         </div>
                       </div>
@@ -347,13 +427,18 @@ export default function DepositTracker() {
                 </div>
 
                 <div>
-                  <Label htmlFor="notes">{strings.notesLabel}</Label>
+                  <Label htmlFor="notes" style={{ color: colors.textPrimary }}>{strings.notesLabel}</Label>
                   <Textarea
                     id="notes"
                     value={formData.notes}
                     onChange={(e) => setFormData({...formData, notes: e.target.value})}
                     placeholder="Any additional details..."
                     rows={3}
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      color: colors.textPrimary,
+                      borderColor: colors.borderColor
+                    }}
                   />
                 </div>
                 <Button 
@@ -366,7 +451,7 @@ export default function DepositTracker() {
                     opacity: createDepositMutation.isPending ? 0.6 : 1
                   }}
                 >
-                  {createDepositMutation.isPending ? 'Tracking...' : strings.trackDepositButton}
+                  {createDepositMutation.isPending ? (language === 'th' ? 'กำลังติดตาม...' : 'Tracking...') : strings.trackDepositButton}
                 </Button>
               </form>
             </DialogContent>
@@ -375,7 +460,9 @@ export default function DepositTracker() {
 
         {/* Deposit Shield Feature Banner */}
         <FeatureGate feature="deposit_shield">
-          <Card className="mb-6 border-none shadow-lg bg-gradient-to-r from-ls-gold to-amber-600 text-ls-charcoal">
+          <Card className="mb-6 border-none shadow-lg text-ls-charcoal" style={{
+            background: 'linear-gradient(to right, #C7A338, #d97706)' // Keep original gradient
+          }}>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -401,11 +488,11 @@ export default function DepositTracker() {
         {/* Deposits Grid - 2 columns on desktop, 1 on mobile */}
         <div className="grid md:grid-cols-2 gap-4">
           {deposits.length === 0 ? (
-            <Card className="border-none shadow-xl md:col-span-2">
+            <Card className="border-none shadow-xl md:col-span-2" style={{ backgroundColor: colors.cardBg }}>
               <CardContent className="p-12 text-center">
-                <Wallet className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-ls-charcoal mb-2">{strings.noDepositsTitle}</h3>
-                <p className="text-slate-600 mb-6">{strings.noDepositsSubtitle}</p>
+                <Wallet className="w-16 h-16 mx-auto mb-4" style={{ color: colors.grayText, opacity: 0.5 }} />
+                <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.noDepositsTitle}</h3>
+                <p className="mb-6" style={{ color: colors.textSecondary }}>{strings.noDepositsSubtitle}</p>
                 <button 
                   onClick={() => setShowAddDialog(true)} 
                   style={{
@@ -439,17 +526,22 @@ export default function DepositTracker() {
               const daysToRent = nextRentDue ? getDaysRemaining(nextRentDue) : null;
               
               return (
-                <Card key={deposit.id} className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${isUrgent ? 'ring-2 ring-ls-gold' : ''}`}>
-                  <CardHeader className="border-b border-slate-100 pb-4">
+                <Card key={deposit.id} className={`border-none shadow-lg hover:shadow-xl transition-all duration-300`} style={{
+                  backgroundColor: colors.cardBg,
+                  border: isUrgent ? `2px solid ${colors.goldText}` : `1px solid ${colors.borderColor}`
+                }}>
+                  <CardHeader className="pb-4" style={{
+                    borderBottom: `1px solid ${colors.borderColor}`
+                  }}>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         {getStatusIcon(deposit.status)}
                         <div>
-                          <CardTitle className="text-xl font-bold text-slate-900">
+                          <CardTitle className="text-xl font-bold" style={{ color: colors.textPrimary }}>
                             ฿{deposit.deposit_amount.toLocaleString()}
                           </CardTitle>
                           {deposit.property_address && (
-                            <p className="text-sm text-slate-600 mt-1">{deposit.property_address}</p>
+                            <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{deposit.property_address}</p>
                           )}
                         </div>
                       </div>
@@ -470,22 +562,22 @@ export default function DepositTracker() {
                   <CardContent className="p-4">
                     {/* Rent Alert Display */}
                     {deposit.rent_alerts_enabled && deposit.rent_amount && nextRentDue && (
-                      <div className="mb-4 p-3 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                      <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: colors.infoBg, border: `2px solid ${colors.blueBorder}` }}>
                         <div className="flex items-center gap-2 mb-2">
-                          <Bell className="w-4 h-4 text-blue-600" />
-                          <h4 className="font-bold text-sm text-blue-900">{strings.nextRentDue}</h4>
+                          <Bell className="w-4 h-4" style={{ color: colors.blueText }} />
+                          <h4 className="font-bold text-sm" style={{ color: colors.textPrimary }}>{strings.nextRentDue}</h4>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <p className="text-xs text-blue-700 mb-1">Amount</p>
-                            <p className="text-base font-bold text-blue-900">฿{deposit.rent_amount.toLocaleString()}</p>
+                            <p className="text-xs mb-1" style={{ color: colors.textSecondary }}>Amount</p>
+                            <p className="text-base font-bold" style={{ color: colors.textPrimary }}>฿{deposit.rent_amount.toLocaleString()}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-blue-700 mb-1">Due Date</p>
-                            <p className="text-base font-bold text-blue-900">{format(nextRentDue, 'MMM d')}</p>
+                            <p className="text-xs mb-1" style={{ color: colors.textSecondary }}>Due Date</p>
+                            <p className="text-base font-bold" style={{ color: colors.textPrimary }}>{format(nextRentDue, 'MMM d')}</p>
                           </div>
                         </div>
-                        <p className="text-xs text-blue-700 mt-2">
+                        <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
                           {strings.rentReminder} {deposit.rent_alert_days_before} {strings.daysBefore} ({daysToRent} days)
                         </p>
                       </div>
@@ -493,31 +585,31 @@ export default function DepositTracker() {
 
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                        <div className="flex items-center gap-2 text-xs mb-1" style={{ color: colors.textSecondary }}>
                           <Calendar className="w-3 h-3" />
                           {strings.paidDate}
                         </div>
-                        <p className="font-semibold text-sm text-slate-900">
+                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
                           {format(new Date(deposit.deposit_paid_date), 'MMM d, yyyy')}
                         </p>
                       </div>
                       <div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                        <div className="flex items-center gap-2 text-xs mb-1" style={{ color: colors.textSecondary }}>
                           <Calendar className="w-3 h-3" />
                           {strings.expectedReturn}
                         </div>
-                        <p className="font-semibold text-sm text-slate-900">
+                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
                           {format(new Date(deposit.expected_return_date), 'MMM d, yyyy')}
                         </p>
                       </div>
                       {deposit.status === 'tracking' && (
                         <>
                           <div className="col-span-2">
-                            <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                            <div className="flex items-center gap-2 text-xs mb-1" style={{ color: colors.textSecondary }}>
                               <Clock className="w-3 h-3" />
                               {strings.daysRemaining}
                             </div>
-                            <p className={`font-semibold text-sm ${isUrgent ? 'text-amber-600' : 'text-slate-900'}`}>
+                            <p className={`font-semibold text-sm`} style={{ color: isUrgent ? colors.goldText : colors.textPrimary }}>
                               {daysRemaining} days
                             </p>
                           </div>
@@ -526,15 +618,15 @@ export default function DepositTracker() {
                     </div>
                     
                     {deposit.notes && (
-                      <div className="mb-4 p-3 bg-slate-50 rounded-xl">
-                        <p className="text-xs text-slate-700">{deposit.notes}</p>
+                      <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: colors.infoBg }}>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>{deposit.notes}</p>
                       </div>
                     )}
 
                     {hasLineNotify && deposit.status === 'tracking' && (
-                      <div className="mb-4 p-2 bg-blue-50 rounded-lg border border-blue-200">
-                        <p className="text-xs text-blue-800 flex items-center gap-2">
-                          <Bell className="w-3 h-3" />
+                      <div className="mb-4 p-2 rounded-lg" style={{ backgroundColor: colors.infoBg, border: `1px solid ${colors.blueBorder}` }}>
+                        <p className="text-xs flex items-center gap-2" style={{ color: colors.textSecondary }}>
+                          <Bell className="w-3 h-3" style={{ color: colors.blueText }} />
                           <span>
                             {strings.reminderLineEmail(daysRemaining)}
                           </span>
