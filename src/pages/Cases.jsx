@@ -8,7 +8,6 @@ import {
   AlertCircle, 
   CheckCircle2, 
   Clock, 
-  FileText, 
   Home,
   Scale,
   ArrowRight
@@ -18,29 +17,34 @@ import { Link } from "react-router-dom";
 
 const STATUS_CONFIG = {
   intake: {
-    label: { en: 'Intake', th: 'รับเรื่อง', ja: '受付中' },
+    label: { en: 'Intake', th: 'รับเรื่อง' },
     icon: Clock,
     color: 'bg-blue-100 text-blue-800 border-blue-200'
   },
-  investigating: {
-    label: { en: 'Investigating', th: 'กำลังตรวจสอบ', ja: '調査中' },
-    icon: AlertCircle,
+  pending: {
+    label: { en: 'Pending', th: 'รอดำเนินการ' },
+    icon: Clock,
     color: 'bg-yellow-100 text-yellow-800 border-yellow-200'
   },
-  negotiating: {
-    label: { en: 'Negotiating', th: 'กำลังเจรจา', ja: '交渉中' },
+  active: {
+    label: { en: 'Active', th: 'กำลังดำเนินการ' },
     icon: Scale,
     color: 'bg-purple-100 text-purple-800 border-purple-200'
   },
-  resolved: {
-    label: { en: 'Resolved', th: 'แก้ไขแล้ว', ja: '解決済み' },
-    icon: CheckCircle2,
-    color: 'bg-green-100 text-green-800 border-green-200'
+  waiting: {
+    label: { en: 'Waiting', th: 'รอ' },
+    icon: Clock,
+    color: 'bg-orange-100 text-orange-800 border-orange-200'
+  },
+  user_action: {
+    label: { en: 'Action Required', th: 'ต้องดำเนินการ' },
+    icon: AlertCircle,
+    color: 'bg-red-100 text-red-800 border-red-200'
   },
   closed: {
-    label: { en: 'Closed', th: 'ปิดเคส', ja: '終了' },
+    label: { en: 'Closed', th: 'ปิดเคส' },
     icon: CheckCircle2,
-    color: 'bg-gray-100 text-gray-800 border-gray-200'
+    color: 'bg-green-100 text-green-800 border-green-200'
   }
 };
 
@@ -68,18 +72,6 @@ const t = {
     viewDetails: 'ดูรายละเอียด',
     created: 'สร้างเมื่อ',
     updated: 'อัปเดตเมื่อ'
-  },
-  ja: {
-    title: 'ケース',
-    description: '敷金返還ケースの追跡と管理',
-    noCases: 'まだケースがありません',
-    startCase: '預金トラッカーからケースを開始してください',
-    caseID: 'ケースID',
-    property: '物件',
-    amount: '金額',
-    viewDetails: '詳細を見る',
-    created: '作成日',
-    updated: '更新日'
   }
 };
 
@@ -196,11 +188,11 @@ export default function Cases() {
                       <div className="flex gap-6 text-sm" style={{ color: colors.textSecondary }}>
                         <div>
                           <div className="font-medium" style={{ color: colors.textPrimary }}>{strings.created}</div>
-                          <div>{new Date(caseItem.created_date).toLocaleDateString(language === 'ja' ? 'ja-JP' : language === 'th' ? 'th-TH' : 'en-US')}</div>
+                          <div>{new Date(caseItem.created_date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US')}</div>
                         </div>
                         <div>
                           <div className="font-medium" style={{ color: colors.textPrimary }}>{strings.updated}</div>
-                          <div>{new Date(caseItem.updated_date).toLocaleDateString(language === 'ja' ? 'ja-JP' : language === 'th' ? 'th-TH' : 'en-US')}</div>
+                          <div>{new Date(caseItem.updated_date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US')}</div>
                         </div>
                       </div>
                       <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
