@@ -241,12 +241,40 @@ export default function ScanPreview() {
                     </p>
                   </div>
                 </div>
-                <Button
-                  className="w-full bg-ls-gold hover:bg-ls-gold/90"
+                <button
                   onClick={() => navigate(createPageUrl("Account"))}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF',
+                    padding: '14px 24px',
+                    borderRadius: '10px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#0a2f25';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 10px rgba(12, 59, 46, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#0C3B2E';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
+                  }}
                 >
-                  {language === 'th' ? 'อัปเกรดเพื่อปลดล็อค' : 'Upgrade to Unlock'}
-                </Button>
+                  <span style={{ fontWeight: 'bold', fontSize: '16px' }}>
+                    {language === 'th' ? 'อัปเกรดเพื่อปลดล็อค' : 'Upgrade to Unlock'}
+                  </span>
+                </button>
               </div>
             )}
           </CardContent>
