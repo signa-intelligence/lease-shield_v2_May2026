@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -38,13 +39,6 @@ Deno.serve(async (req) => {
       'price_1SNqkxQwoI6NhlUx09mj0Lur': { tier: 'secure', interval: 'annual' }
     };
 
-    // Map storage addon price IDs
-    const storageAddonMap = {
-      'price_1StorageAddon5GB': { sizeGb: 5, priceMonthly: 99 },
-      'price_1StorageAddon10GB': { sizeGb: 10, priceMonthly: 179 },
-      'price_1StorageAddon25GB': { sizeGb: 25, priceMonthly: 399 }
-    };
-
     // Handle different event types
     switch (event.type) {
       case 'invoice.payment_succeeded': {
@@ -55,63 +49,18 @@ Deno.serve(async (req) => {
         if (subscriptionId) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
           const priceId = subscription.items.data[0]?.price?.id;
-          const metadata = subscription.metadata || {};
           
-          // Find user by Stripe customer ID
-          const users = await base44.asServiceRole.entities.User.list();
-          const user = users.find(u => u.stripe_customer_id === customerId);
+          const planInfo = planMap[priceId];
           
-          if (!user) {
-            console.log('User not found for customer:', customerId);
-            break;
-          }
-
-          // Check if this is a storage addon
-          if (metadata.type === 'storage_addon' && storageAddonMap[priceId]) {
-            const addonInfo = storageAddonMap[priceId];
-            const renewsAt = new Date(subscription.current_period_end * 1000).toISOString();
+          if (planInfo) {
+            // Find user by Stripe customer ID
+            const users = await base44.asServiceRole.entities.User.list();
+            const user = users.find(u => u.stripe_customer_id === customerId);
             
-            // Create or update storage addon
-            const existingAddons = await base44.asServiceRole.entities.StorageAddon.filter({
-              user_email: user.email,
-              stripe_subscription_id: subscriptionId
-            });
-
-            if (existingAddons.length === 0) {
-              await base44.asServiceRole.entities.StorageAddon.create({
-                user_email: user.email,
-                addon_size_gb: addonInfo.sizeGb,
-                price_monthly: addonInfo.priceMonthly,
-                stripe_subscription_id: subscriptionId,
-                status: 'active',
-                renews_at: renewsAt
-              });
-            } else {
-              await base44.asServiceRole.entities.StorageAddon.update(existingAddons[0].id, {
-                status: 'active',
-                renews_at: renewsAt
-              });
-            }
-
-            // Send notification email
-            const language = user.language || 'en';
-            const subject = language === 'th' ? 'พื้นที่จัดเก็บเพิ่มเติมของคุณพร้อมใช้งาน' : 'Your Additional Storage is Active';
-            const body = language === 'th' ? 
-              `สวัสดี ${user.full_name},\n\nพื้นที่จัดเก็บเพิ่มเติม +${addonInfo.sizeGb}GB ของคุณเปิดใช้งานแล้ว\n\n— ทีม Lease Shield` :
-              `Hi ${user.full_name},\n\nYour +${addonInfo.sizeGb}GB storage add-on is now active.\n\n— The Lease Shield Team`;
-
-            await base44.asServiceRole.integrations.Core.SendEmail({
-              to: user.email,
-              subject,
-              body
-            });
-          } else {
-            // Handle regular plan subscription
-            const planInfo = planMap[priceId];
-            
-            if (planInfo) {
+            if (user) {
               const renewsAt = new Date(subscription.current_period_end * 1000).toISOString();
               
+              // Reset scan counter for Lite tier on new billing period
               const updateData = {
                 subscription_status: 'active',
                 plan_tier: planInfo.tier,
@@ -127,6 +76,7 @@ Deno.serve(async (req) => {
               
               await base44.asServiceRole.entities.User.update(user.id, updateData);
 
+              // Send notification email
               const language = user.language || 'en';
               const billingText = planInfo.interval === 'annual' ? 
                 (language === 'th' ? 'รายปี' : 'Annual') : 
@@ -134,8 +84,8 @@ Deno.serve(async (req) => {
               
               const subject = language === 'th' ? 'แพ็กเกจ Lease Shield ของคุณเปิดใช้งานแล้ว' : 'Your Lease Shield Plan is Active';
               const body = language === 'th' ? 
-                `สวัสดี ${user.full_name},\n\nแพ็กเกจ ${planInfo.tier.toUpperCase()} (${billingText}) ของคุณเปิดใช้งานแล้ว\n\n— ทีม Lease Shield` :
-                `Hi ${user.full_name},\n\nYour Lease Shield ${planInfo.tier.toUpperCase()} plan (${billingText}) is now active.\n\n— The Lease Shield Team`;
+                `สวัสดี ${user.full_name},\n\nแพ็กเกจ ${planInfo.tier.toUpperCase()} (${billingText}) ของคุณเปิดใช้งานแล้ว\nเข้าดูรายงาน AI และ Deposit Shield ได้ตลอดเวลา\n\n— ทีม Lease Shield` :
+                `Hi ${user.full_name},\n\nYour Lease Shield ${planInfo.tier.toUpperCase()} plan (${billingText}) is now active.\nYou can view your AI report and Deposit Shield dashboard anytime.\n\n— The Lease Shield Team`;
 
               await base44.asServiceRole.integrations.Core.SendEmail({
                 to: user.email,
@@ -152,35 +102,14 @@ Deno.serve(async (req) => {
         const subscription = event.data.object;
         const customerId = subscription.customer;
         const priceId = subscription.items.data[0]?.price?.id;
-        const metadata = subscription.metadata || {};
         
-        const users = await base44.asServiceRole.entities.User.list();
-        const user = users.find(u => u.stripe_customer_id === customerId);
+        const planInfo = planMap[priceId];
         
-        if (!user) break;
-
-        // Handle storage addon updates
-        if (metadata.type === 'storage_addon' && storageAddonMap[priceId]) {
-          const existingAddons = await base44.asServiceRole.entities.StorageAddon.filter({
-            user_email: user.email,
-            stripe_subscription_id: subscription.id
-          });
-
-          if (existingAddons.length > 0) {
-            const status = subscription.status === 'active' ? 'active' : 
-                         subscription.status === 'canceled' ? 'cancelled' : 'expired';
-            const renewsAt = new Date(subscription.current_period_end * 1000).toISOString();
-
-            await base44.asServiceRole.entities.StorageAddon.update(existingAddons[0].id, {
-              status,
-              renews_at: renewsAt
-            });
-          }
-        } else {
-          // Handle regular plan updates
-          const planInfo = planMap[priceId];
+        if (planInfo) {
+          const users = await base44.asServiceRole.entities.User.list();
+          const user = users.find(u => u.stripe_customer_id === customerId);
           
-          if (planInfo) {
+          if (user) {
             const renewsAt = new Date(subscription.current_period_end * 1000).toISOString();
             const status = subscription.status === 'active' ? 'active' : subscription.status === 'canceled' ? 'cancelled' : 'none';
             
@@ -191,6 +120,7 @@ Deno.serve(async (req) => {
               plan_renews_at: renewsAt
             };
             
+            // Reset scan counter if switching to/from Lite
             if (status === 'active' && planInfo.tier === 'lite') {
               updateData.scans_this_month = 0;
               const resetDate = new Date(subscription.current_period_end * 1000);
@@ -198,32 +128,6 @@ Deno.serve(async (req) => {
             }
             
             await base44.asServiceRole.entities.User.update(user.id, updateData);
-          }
-        }
-        break;
-      }
-
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object;
-        const customerId = subscription.customer;
-        const metadata = subscription.metadata || {};
-        
-        const users = await base44.asServiceRole.entities.User.list();
-        const user = users.find(u => u.stripe_customer_id === customerId);
-        
-        if (!user) break;
-
-        // Handle storage addon cancellation
-        if (metadata.type === 'storage_addon') {
-          const existingAddons = await base44.asServiceRole.entities.StorageAddon.filter({
-            user_email: user.email,
-            stripe_subscription_id: subscription.id
-          });
-
-          if (existingAddons.length > 0) {
-            await base44.asServiceRole.entities.StorageAddon.update(existingAddons[0].id, {
-              status: 'cancelled'
-            });
           }
         }
         break;
@@ -251,6 +155,7 @@ Deno.serve(async (req) => {
             status: 'active'
           });
 
+          // Get user for language preference
           const users = await base44.asServiceRole.entities.User.list();
           const user = users.find(u => u.stripe_customer_id === customerId);
 
@@ -268,6 +173,7 @@ Deno.serve(async (req) => {
             });
           }
 
+          // Notify ops team
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: 'ops@leaseshield.asia',
             subject: 'New Resolve Case Payment Confirmed',
@@ -285,16 +191,10 @@ Deno.serve(async (req) => {
         const user = users.find(u => u.stripe_customer_id === customerId);
         
         if (user) {
-          const language = user.language || 'en';
-          const subject = language === 'th' ? 'การชำระเงินล้มเหลว - ต้องดำเนินการ' : 'Payment Failed - Action Required';
-          const body = language === 'th' ?
-            'การชำระเงินล่าสุดของคุณล้มเหลว กรุณาอัปเดตวิธีการชำระเงินเพื่อดำเนินการสมัครสมาชิกต่อ' :
-            'Your recent payment failed. Please update your payment method to continue your subscription.';
-
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: user.email,
-            subject,
-            body
+            subject: 'Payment Failed - Action Required',
+            body: 'Your recent payment failed. Please update your payment method to continue your subscription.'
           });
         }
         break;

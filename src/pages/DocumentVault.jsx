@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -39,31 +38,6 @@ export default function DocumentVault() {
     enabled: !!user,
   });
 
-  // Calculate storage limits
-  const getBaseStorageFromPlan = (tier) => {
-    const storageLimits = {
-      free: 100, // MB
-      lite: 1024, // 1 GB
-      protect: 5120, // 5 GB
-      secure: 20480 // 20 GB
-    };
-    return storageLimits[tier] || 100;
-  };
-
-  const { data: storageAddons = [] } = useQuery({
-    queryKey: ['storageAddons'],
-    queryFn: () => base44.entities.StorageAddon.filter({ user_email: user?.email, status: 'active' }),
-    enabled: !!user,
-  });
-
-  const baseStorageMB = getBaseStorageFromPlan(user?.plan_tier || 'free');
-  // storageAddons.addon_size_gb is in GB, convert to MB
-  const addonStorageMB = storageAddons.reduce((total, addon) => total + (addon.addon_size_gb * 1024), 0);
-  const totalStorageMB = baseStorageMB + addonStorageMB;
-  const usedStorageMB = user?.storage_used_mb || 0;
-  const availableStorageMB = totalStorageMB - usedStorageMB;
-  const storagePercentage = (usedStorageMB / totalStorageMB) * 100;
-
   const createDocumentMutation = useMutation({
     mutationFn: (data) => base44.entities.Document.create(data),
     onSuccess: () => {
@@ -79,51 +53,29 @@ export default function DocumentVault() {
     },
   });
 
-  const language = user?.language || 'en';
-  const isDarkMode = user?.theme === 'dark';
-
   const handleFileUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Check storage before upload
-    const totalSizeMB = Array.from(files).reduce((sum, file) => sum + (file.size / 1024 / 1024), 0);
-    
-    if (totalSizeMB > availableStorageMB) {
-      const shortfall = (totalSizeMB - availableStorageMB).toFixed(2);
-      alert(
-        language === 'th'
-          ? `พื้นที่จัดเก็บไม่เพียงพอ ต้องการเพิ่ม ${shortfall} MB\n\nกรุณาอัปเกรดในหน้าบัญชี`
-          : `Insufficient storage. Need ${shortfall} MB more.\n\nPlease upgrade in Account page.`
-      );
-      return;
-    }
-
     setUploading(true);
     try {
       for (const file of files) {
-        const fileSizeMB = file.size / 1024 / 1024;
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        
         await createDocumentMutation.mutateAsync({
           type: uploadType,
           file_url,
           label: uploadLabel || file.name
         });
-
-        // Update storage usage
-        const newStorageUsed = (user?.storage_used_mb || 0) + fileSizeMB;
-        await base44.auth.updateMe({ storage_used_mb: newStorageUsed });
       }
-      // Invalidate current user query to reflect updated storage_used_mb
-      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     } catch (error) {
       console.error('Upload failed:', error);
-      alert(language === 'th' ? 'การอัปโหลดล้มเหลว' : 'Upload failed');
     } finally {
       setUploading(false);
     }
   };
+
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -159,10 +111,7 @@ export default function DocumentVault() {
       noDocsSub: "Start building your evidence vault for better protection",
       uploadFirst: "Upload First Document",
       deleteConfirm: "Are you sure?",
-      viewFile: "View File",
-      used: "used",
-      addStorage: "Add Storage →",
-      uploadFailed: "Upload failed"
+      viewFile: "View File"
     },
     th: {
       title: "คลังหลักฐาน",
@@ -179,10 +128,7 @@ export default function DocumentVault() {
       noDocsSub: "เริ่มสร้างคลังหลักฐานเพื่อการป้องกันที่ดีขึ้น",
       uploadFirst: "อัปโหลดเอกสารแรก",
       deleteConfirm: "คุณแน่ใจหรือไม่?",
-      viewFile: "ดูไฟล์",
-      used: "ใช้ไปแล้ว",
-      addStorage: "เพิ่มพื้นที่ →",
-      uploadFailed: "การอัปโหลดล้มเหลว"
+      viewFile: "ดูไฟล์"
     }
   };
 
@@ -197,41 +143,6 @@ export default function DocumentVault() {
             <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           </div>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
-          
-          {/* Storage indicator */}
-          <div className="mt-3 p-3 rounded-lg" style={{ 
-            backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC',
-            border: `2px solid ${storagePercentage >= 90 ? '#EF4444' : storagePercentage >= 75 ? '#F59E0B' : colors.borderColor}`
-          }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                {(usedStorageMB / 1024).toFixed(2)} GB / {(totalStorageMB / 1024).toFixed(1)} GB
-              </span>
-              <span className="text-xs font-semibold" style={{ 
-                color: storagePercentage >= 90 ? '#EF4444' : storagePercentage >= 75 ? '#F59E0B' : '#10B981'
-              }}>
-                {storagePercentage.toFixed(0)}% {strings.used}
-              </span>
-            </div>
-            <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: isDarkMode ? '#1A1D1F' : '#E5E7EB' }}>
-              <div 
-                className="h-full transition-all duration-300"
-                style={{ 
-                  width: `${Math.min(storagePercentage, 100)}%`,
-                  backgroundColor: storagePercentage >= 90 ? '#EF4444' : storagePercentage >= 75 ? '#F59E0B' : '#10B981'
-                }}
-              />
-            </div>
-            {storagePercentage >= 90 && (
-              <button
-                onClick={() => navigate(createPageUrl("Account"))}
-                className="mt-2 text-xs font-semibold underline"
-                style={{ color: '#EF4444' }}
-              >
-                {strings.addStorage}
-              </button>
-            )}
-          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-6">

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, HardDrive } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
@@ -124,18 +124,6 @@ export default function Account() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: documents = [] } = useQuery({
-    queryKey: ['documents'],
-    queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
-
-  const { data: storageAddons = [] } = useQuery({
-    queryKey: ['storageAddons'],
-    queryFn: () => base44.entities.StorageAddon.filter({ user_email: user?.email, status: 'active' }),
-    enabled: !!user,
-  });
-
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
     phone: user?.phone || '',
@@ -202,30 +190,6 @@ export default function Account() {
     }
   };
 
-  const handleStorageAddonPurchase = async (addonSizeGb, priceMonthly, priceId) => {
-    setSubscribing(true);
-    try {
-      const response = await base44.functions.invoke('createCheckout', {
-        priceId: priceId,
-        mode: 'subscription',
-        metadata: {
-          type: 'storage_addon',
-          addon_size_gb: addonSizeGb,
-          price_monthly: priceMonthly
-        }
-      });
-      
-      if (response.data?.url) {
-        window.location.href = response.data.url;
-      }
-    } catch (error) {
-      console.error('Storage addon purchase error:', error);
-      alert('Failed to purchase storage. Please try again.');
-    } finally {
-      setSubscribing(false);
-    }
-  };
-
   const handleExportData = async () => {
     setExporting(true);
     try {
@@ -253,24 +217,6 @@ export default function Account() {
   const language = user?.language || 'en';
   const currentTheme = user?.theme || 'light';
   const isDarkMode = currentTheme === 'dark';
-
-  // Calculate storage
-  const getBaseStorageFromPlan = (tier) => {
-    const storageLimits = {
-      free: 100, // 100MB
-      lite: 1024, // 1GB
-      protect: 5120, // 5GB
-      secure: 20480 // 20GB
-    };
-    return storageLimits[tier] || 100;
-  };
-
-  const baseStorageMB = getBaseStorageFromPlan(currentPlanTier);
-  const addonStorageMB = storageAddons.reduce((total, addon) => total + (addon.addon_size_gb * 1024), 0);
-  const totalStorageMB = baseStorageMB + addonStorageMB;
-  const usedStorageMB = user?.storage_used_mb || 0;
-  const storagePercentage = (usedStorageMB / totalStorageMB) * 100;
-  const storageColor = storagePercentage >= 90 ? '#EF4444' : storagePercentage >= 75 ? '#F59E0B' : '#10B981';
 
   // Dark mode colors
   const colors = isDarkMode ? {
@@ -360,20 +306,7 @@ export default function Account() {
       startPlan: "Start",
       processing: "Processing...",
       logout: "Logout",
-      notProvided: "Not provided",
-      storage: "Storage",
-      storageUsed: "used",
-      addStorage: "Add Storage",
-      manageStorage: "Manage Storage",
-      baseStorage: "Base Storage",
-      addons: "Add-ons",
-      total: "Total",
-      purchaseStorage: "Purchase Additional Storage",
-      storageAddons: "Storage Add-ons",
-      purchase: "Purchase",
-      active: "Active",
-      noAddons: "No storage add-ons purchased",
-      storageAddonDesc: "Expand your storage capacity for more documents and evidence"
+      notProvided: "Not provided"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -441,48 +374,11 @@ export default function Account() {
       startPlan: "เริ่มต้น",
       processing: "กำลังดำเนินการ...",
       logout: "ออกจากระบบ",
-      notProvided: "ไม่ได้ระบุ",
-      storage: "พื้นที่จัดเก็บ",
-      storageUsed: "ใช้ไปแล้ว",
-      addStorage: "เพิ่มพื้นที่",
-      manageStorage: "จัดการพื้นที่",
-      baseStorage: "พื้นที่พื้นฐาน",
-      addons: "เพิ่มเติม",
-      total: "รวม",
-      purchaseStorage: "ซื้อพื้นที่จัดเก็บเพิ่มเติม",
-      storageAddons: "พื้นที่เพิ่มเติม",
-      purchase: "ซื้อ",
-      active: "ใช้งาน",
-      noAddons: "ยังไม่ได้ซื้อพื้นที่เพิ่มเติม",
-      storageAddonDesc: "เพิ่มความจุสำหรับเอกสารและหลักฐานเพิ่มเติม"
+      notProvided: "ไม่ได้ระบุ"
     }
   };
 
   const strings = t[language];
-
-  const STORAGE_ADDONS = [
-    {
-      sizeGb: 5,
-      priceMonthly: 99,
-      priceIdMonthly: 'price_1StorageAddon5GB',
-      priceIdAnnual: null,
-      popular: false
-    },
-    {
-      sizeGb: 10,
-      priceMonthly: 179,
-      priceIdMonthly: 'price_1StorageAddon10GB',
-      priceIdAnnual: null,
-      popular: true
-    },
-    {
-      sizeGb: 25,
-      priceMonthly: 399,
-      priceIdMonthly: 'price_1StorageAddon25GB',
-      priceIdAnnual: null,
-      popular: false
-    }
-  ];
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
@@ -1060,215 +956,6 @@ export default function Account() {
             </CardContent>
           </Card>
         </div>
-
-        {/* NEW: Storage Usage Card */}
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
-            <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <HardDrive className="w-5 h-5 text-ls-forest" />
-              {strings.storage}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {/* Storage Bar */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                  {(usedStorageMB / 1024).toFixed(2)} GB / {(totalStorageMB / 1024).toFixed(1)} GB
-                </span>
-                <span className="text-sm font-semibold" style={{ color: storageColor }}>
-                  {storagePercentage.toFixed(0)}% {strings.storageUsed}
-                </span>
-              </div>
-              <div className="w-full h-3 rounded-full overflow-hidden" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#E5E7EB' }}>
-                <div 
-                  className="h-full transition-all duration-300 rounded-full"
-                  style={{ 
-                    width: `${Math.min(storagePercentage, 100)}%`,
-                    backgroundColor: storageColor
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Storage Breakdown */}
-            <div className="grid md:grid-cols-3 gap-4 mb-4">
-              <div style={{
-                padding: '12px',
-                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                borderRadius: '8px',
-                borderLeft: '4px solid #0C3B2E'
-              }}>
-                <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.baseStorage}</p>
-                <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                  {(baseStorageMB / 1024).toFixed(1)} GB
-                </p>
-              </div>
-              <div style={{
-                padding: '12px',
-                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                borderRadius: '8px',
-                borderLeft: '4px solid #C7A338'
-              }}>
-                <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.addons}</p>
-                <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                  +{(addonStorageMB / 1024).toFixed(1)} GB
-                </p>
-              </div>
-              <div style={{
-                padding: '12px',
-                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                borderRadius: '8px',
-                borderLeft: '4px solid #3B82F6'
-              }}>
-                <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.total}</p>
-                <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                  {(totalStorageMB / 1024).toFixed(1)} GB
-                </p>
-              </div>
-            </div>
-
-            {/* Active Add-ons */}
-            {storageAddons.length > 0 && (
-              <div className="mb-4">
-                <p className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                  {strings.active} {strings.storageAddons}:
-                </p>
-                <div className="space-y-2">
-                  {storageAddons.map((addon) => (
-                    <div key={addon.id} className="flex items-center justify-between p-3 rounded-lg" style={{
-                      backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC'
-                    }}>
-                      <div className="flex items-center gap-2">
-                        <HardDrive className="w-4 h-4 text-ls-gold" />
-                        <span className="font-semibold" style={{ color: colors.textPrimary }}>
-                          +{addon.addon_size_gb} GB
-                        </span>
-                      </div>
-                      <span className="text-sm" style={{ color: colors.textSecondary }}>
-                        ฿{addon.price_monthly}{strings.perMonth}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Warning Messages */}
-            {storagePercentage >= 90 && (
-              <div className="p-4 rounded-lg mb-4" style={{
-                backgroundColor: '#FEE2E2',
-                border: '2px solid #EF4444'
-              }}>
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                  <p className="text-sm font-semibold text-red-900">
-                    {language === 'th' ? 'พื้นที่จัดเก็บใกล้เต็ม - เพิ่มพื้นที่เพื่อหลีกเลี่ยงการหยุดทำงาน' : 'Storage almost full - add more space to avoid disruption'}
-                  </p>
-                </div>
-              </div>
-            )}
-            {storagePercentage >= 75 && storagePercentage < 90 && (
-              <div className="p-4 rounded-lg mb-4" style={{
-                backgroundColor: '#FEF3C7',
-                border: '2px solid #F59E0B'
-              }}>
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-amber-600" />
-                  <p className="text-sm font-semibold text-amber-900">
-                    {language === 'th' ? 'พื้นที่จัดเก็บกำลังจะเต็ม - พิจารณาเพิ่มพื้นที่' : 'Storage filling up - consider adding more space'}
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* NEW: Storage Add-ons Purchase Section */}
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
-            <div>
-              <CardTitle className="text-lg font-bold flex items-center gap-2 mb-1" style={{ color: colors.textPrimary }}>
-                <HardDrive className="w-5 h-5 text-ls-forest" />
-                {strings.purchaseStorage}
-              </CardTitle>
-              <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.storageAddonDesc}</p>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid md:grid-cols-3 gap-4">
-              {STORAGE_ADDONS.map((addon) => (
-                <div
-                  key={addon.sizeGb}
-                  style={{
-                    position: 'relative',
-                    borderRadius: '12px',
-                    padding: '20px',
-                    border: addon.popular ? '3px solid #C7A338' : `2px solid ${colors.borderColor}`,
-                    backgroundColor: colors.cardBg,
-                    boxShadow: addon.popular ? '0 10px 15px -3px rgba(199, 163, 56, 0.2)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                >
-                  {addon.popular && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '-12px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      backgroundColor: '#C7A338',
-                      color: '#0C3B2E',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      border: '2px solid #0C3B2E'
-                    }}>
-                      {strings.mostPopular}
-                    </div>
-                  )}
-                  
-                  <div className="text-center">
-                    <HardDrive className="w-10 h-10 mx-auto mb-3" style={{ color: addon.popular ? '#C7A338' : '#0C3B2E' }} />
-                    <h3 className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
-                      +{addon.sizeGb} GB
-                    </h3>
-                    <p className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
-                      ฿{addon.priceMonthly}<span className="text-sm font-normal" style={{ color: colors.textSecondary }}>{strings.perMonth}</span>
-                    </p>
-                    <p className="text-xs mb-4" style={{ color: colors.textSecondary }}>
-                      ~฿{Math.round(addon.priceMonthly / addon.sizeGb)}/GB
-                    </p>
-                    <button
-                      onClick={() => handleStorageAddonPurchase(addon.sizeGb, addon.priceMonthly, addon.priceIdMonthly)}
-                      disabled={subscribing}
-                      style={{
-                        width: '100%',
-                        padding: '10px 16px',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        border: 'none',
-                        cursor: subscribing ? 'not-allowed' : 'pointer',
-                        backgroundColor: addon.popular ? '#C7A338' : '#0C3B2E',
-                        color: '#FFFFFF',
-                        opacity: subscribing ? 0.7 : 1,
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!subscribing) e.target.style.opacity = '0.9';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!subscribing) e.target.style.opacity = '1';
-                      }}
-                    >
-                      {subscribing ? strings.processing : strings.purchase}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Help & Support Section */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
