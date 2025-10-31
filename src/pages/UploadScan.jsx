@@ -1,10 +1,11 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -35,6 +36,22 @@ export default function UploadScan() {
       return allScans.filter(s => leases.some(l => l.id === s.lease_id));
     },
     enabled: !!user && leases.length > 0,
+  });
+
+  const deleteLeaseMutation = useMutation({
+    mutationFn: async (leaseId) => {
+      // Delete associated scan first
+      const associatedScan = scans.find(s => s.lease_id === leaseId);
+      if (associatedScan) {
+        await base44.entities.LeaseScan.delete(associatedScan.id);
+      }
+      // Then delete the lease
+      await base44.entities.Lease.delete(leaseId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leases'] });
+      queryClient.invalidateQueries({ queryKey: ['scans'] });
+    },
   });
 
   const language = user?.language || 'en';
@@ -178,6 +195,16 @@ export default function UploadScan() {
     }
   };
 
+  const handleDeleteLease = async (leaseId, leaseName) => {
+    const confirmMessage = language === 'th' 
+      ? `ลบ ${leaseName}?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`
+      : `Delete ${leaseName}?\n\nThis action cannot be undone.`;
+    
+    if (confirm(confirmMessage)) {
+      await deleteLeaseMutation.mutateAsync(leaseId);
+    }
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       uploaded: "bg-amber-100 text-amber-800 border-amber-200",
@@ -208,7 +235,9 @@ export default function UploadScan() {
       pages: "pages",
       uploaded: "Uploaded",
       viewResults: "View Results",
-      selectAtLeast: "Select at least one file to upload"
+      selectAtLeast: "Select at least one file to upload",
+      delete: "Delete",
+      deleting: "Deleting..."
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
@@ -230,7 +259,9 @@ export default function UploadScan() {
       pages: "หน้า",
       uploaded: "อัปโหลดแล้ว",
       viewResults: "ดูผลลัพธ์",
-      selectAtLeast: "เลือกไฟล์อย่างน้อยหนึ่งไฟล์เพื่ออัปโหลด"
+      selectAtLeast: "เลือกไฟล์อย่างน้อยหนึ่งไฟล์เพื่ออัปโหลด",
+      delete: "ลบ",
+      deleting: "กำลังลบ..."
     }
   };
 
@@ -369,11 +400,11 @@ export default function UploadScan() {
                           transition: 'all 0.2s'
                         }}
                         onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#0C3B2E';
+                          if (!isDarkMode) e.target.style.backgroundColor = '#0C3B2E';
                           e.target.style.color = '#FFFFFF';
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = isDarkMode ? '#3A3D40' : '#FFFFFF';
+                          if (!isDarkMode) e.target.style.backgroundColor = '#FFFFFF';
                           e.target.style.color = '#0C3B2E';
                         }}
                       >
@@ -455,7 +486,7 @@ export default function UploadScan() {
                   backgroundColor: colors.cardBg
                 }}>
                   <div className="p-6">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold mb-1 truncate" style={{ color: colors.textPrimary }}>
                           {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
@@ -477,31 +508,77 @@ export default function UploadScan() {
                           {strings.uploaded}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
                         </p>
                       </div>
-                      <div className="flex flex-col gap-2 ml-4">
+                      <div className="flex flex-col gap-2 ml-4 flex-shrink-0">
                         <Badge className={getStatusColor(lease.status)}>
                           {lease.status.toUpperCase()}
                         </Badge>
-                        {(lease.status === 'scanned' || lease.status === 'paid') && (
+                        <div className="flex gap-2">
+                          {(lease.status === 'scanned' || lease.status === 'paid') && (
+                            <button
+                              onClick={() => handleViewDetails(lease)}
+                              style={{
+                                backgroundColor: '#3B82F6',
+                                color: '#FFFFFF',
+                                padding: '8px 16px',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                whiteSpace: 'nowrap'
+                              }}
+                              onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
+                              onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
+                            >
+                              {strings.viewResults}
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleViewDetails(lease)}
+                            onClick={() => handleDeleteLease(
+                              lease.id, 
+                              lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease')
+                            )}
+                            disabled={deleteLeaseMutation.isLoading}
                             style={{
-                              backgroundColor: '#3B82F6',
-                              color: '#FFFFFF',
-                              padding: '8px 16px',
+                              backgroundColor: isDarkMode ? '#3A2626' : '#FFFFFF',
+                              color: '#EF4444',
+                              padding: '8px 12px',
                               borderRadius: '6px',
                               fontSize: '14px',
                               fontWeight: '600',
-                              border: 'none',
-                              cursor: 'pointer',
+                              border: '2px solid #EF4444',
+                              cursor: deleteLeaseMutation.isLoading ? 'not-allowed' : 'pointer',
                               transition: 'all 0.2s',
-                              whiteSpace: 'nowrap'
+                              opacity: deleteLeaseMutation.isLoading ? 0.5 : 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
                             }}
-                            onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
-                            onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
+                            onMouseEnter={(e) => {
+                              if (!deleteLeaseMutation.isLoading) {
+                                e.target.style.backgroundColor = '#FEE2E2';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!deleteLeaseMutation.isLoading) {
+                                e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FFFFFF';
+                              }
+                            }}
                           >
-                            {strings.viewResults}
+                            {deleteLeaseMutation.isLoading ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span className="hidden sm:inline">{strings.deleting}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Trash2 className="w-4 h-4" />
+                                <span className="hidden sm:inline">{strings.delete}</span>
+                              </>
+                            )}
                           </button>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
