@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Plus, Clock, CheckCircle2, AlertTriangle, Home, Zap, Droplet, Hammer, Thermometer, Bug, Package } from "lucide-react";
+import { Wrench, Plus, Clock, CheckCircle2, AlertTriangle, Home, Zap, Droplet, Hammer, Thermometer, Bug, Package, Loader2 } from "lucide-react"; // Added Loader2
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import {
@@ -29,6 +29,8 @@ export default function MaintenanceTracker() {
     property_address: '',
     reported_date: new Date().toISOString().split('T')[0]
   });
+  const [formErrors, setFormErrors] = useState({}); // New state
+  const [submitting, setSubmitting] = useState(false); // New state
   const [filter, setFilter] = useState('all');
 
   const queryClient = useQueryClient();
@@ -46,18 +48,7 @@ export default function MaintenanceTracker() {
 
   const createRequestMutation = useMutation({
     mutationFn: (data) => base44.entities.MaintenanceRequest.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-      setShowAddDialog(false);
-      setFormData({
-        issue_title: '',
-        description: '',
-        category: 'other',
-        priority: 'medium',
-        property_address: '',
-        reported_date: new Date().toISOString().split('T')[0]
-      });
-    },
+    // onSuccess removed here, logic moved to handleSubmit after mutateAsync
   });
 
   const updateRequestMutation = useMutation({
@@ -66,15 +57,6 @@ export default function MaintenanceTracker() {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
     },
   });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const requestData = {
-      ...formData,
-      status: 'reported'
-    };
-    createRequestMutation.mutate(requestData);
-  };
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
@@ -95,6 +77,73 @@ export default function MaintenanceTracker() {
     inputBg: '#FFFFFF'
   };
 
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.issue_title || formData.issue_title.trim().length === 0) {
+      errors.issue_title = language === 'th' ? 'กรุณาระบุหัวข้อปัญหา' : 'Please enter issue title';
+    } else if (formData.issue_title.length > 200) {
+      errors.issue_title = language === 'th' ? 'หัวข้อยาวเกินไป (สูงสุด 200 ตัวอักษร)' : 'Title too long (max 200 characters)';
+    }
+    
+    if (!formData.description || formData.description.trim().length === 0) {
+      errors.description = language === 'th' ? 'กรุณาอธิบายปัญหา' : 'Please describe the issue';
+    } else if (formData.description.length > 2000) {
+      errors.description = language === 'th' ? 'คำอธิบายยาวเกินไป (สูงสุด 2000 ตัวอักษร)' : 'Description too long (max 2000 characters)';
+    }
+    
+    if (!formData.reported_date) {
+      errors.reported_date = language === 'th' ? 'กรุณาระบุวันที่พบปัญหา' : 'Please enter reported date';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    setSubmitting(true);
+    
+    try {
+      await createRequestMutation.mutateAsync({
+        issue_title: formData.issue_title.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        priority: formData.priority,
+        property_address: formData.property_address.trim() || undefined,
+        reported_date: formData.reported_date,
+        status: 'reported'
+      });
+      
+      // On success actions
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      setShowAddDialog(false);
+      setFormData({
+        issue_title: '',
+        description: '',
+        category: 'other',
+        priority: 'medium',
+        property_address: '',
+        reported_date: new Date().toISOString().split('T')[0]
+      });
+      setFormErrors({}); // Clear form errors
+    } catch (error) {
+      console.error('Failed to create request:', error);
+      setFormErrors({ 
+        submit: language === 'th' 
+          ? 'ไม่สามารถสร้างรายการได้ กรุณาลองอีกครั้ง' 
+          : 'Failed to create request. Please try again.' 
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const t = {
     en: {
       title: "Maintenance Tracker",
@@ -102,6 +151,7 @@ export default function MaintenanceTracker() {
       reportIssue: "Report Issue",
       reportFirst: "Report First Request",
       dialogTitle: "New Maintenance Request",
+      reportNewIssue: "New Maintenance Request", // New property
       issueTitle: "Issue Title",
       description: "Description",
       category: "Category",
@@ -126,6 +176,21 @@ export default function MaintenanceTracker() {
         in_progress: "In Progress",
         completed: "Completed",
         rejected: "Rejected"
+      },
+      categories: { // New
+        plumbing: "Plumbing",
+        electrical: "Electrical",
+        structural: "Structural",
+        appliance: "Appliance",
+        hvac: "HVAC",
+        pest: "Pest",
+        other: "Other"
+      },
+      priorities: { // New
+        low: "Low",
+        medium: "Medium",
+        high: "High",
+        urgent: "Urgent"
       }
     },
     th: {
@@ -134,6 +199,7 @@ export default function MaintenanceTracker() {
       reportIssue: "แจ้งปัญหา",
       reportFirst: "แจ้งปัญหาแรก",
       dialogTitle: "คำขอซ่อมบำรุงใหม่",
+      reportNewIssue: "คำขอซ่อมบำรุงใหม่", // New property
       issueTitle: "หัวข้อปัญหา",
       description: "รายละเอียด",
       category: "หมวดหมู่",
@@ -158,6 +224,21 @@ export default function MaintenanceTracker() {
         in_progress: "กำลังดำเนินการ",
         completed: "เสร็จสิ้น",
         rejected: "ถูกปฏิเสธ"
+      },
+      categories: { // New
+        plumbing: "ประปา",
+        electrical: "ไฟฟ้า",
+        structural: "โครงสร้าง",
+        appliance: "เครื่องใช้ไฟฟ้า",
+        hvac: "เครื่องปรับอากาศ/ระบายอากาศ",
+        pest: "สัตว์รบกวน",
+        other: "อื่น ๆ"
+      },
+      priorities: { // New
+        low: "ต่ำ",
+        medium: "ปานกลาง",
+        high: "สูง",
+        urgent: "เร่งด่วน"
       }
     }
   };
@@ -222,7 +303,12 @@ export default function MaintenanceTracker() {
             <p className="text-sm sm:text-base" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
           </div>
           
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <Dialog open={showAddDialog} onOpenChange={(open) => {
+            setShowAddDialog(open);
+            if (!open) {
+              setFormErrors({}); // Clear errors when dialog closes
+            }
+          }}>
             <DialogTrigger asChild>
               <button 
                 className="w-full sm:w-auto"
@@ -255,90 +341,208 @@ export default function MaintenanceTracker() {
               margin: '16px'
             }}>
               <DialogHeader>
-                <DialogTitle style={{ color: colors.textPrimary }}>{strings.dialogTitle}</DialogTitle>
+                <DialogTitle style={{ color: colors.textPrimary }}>{strings.reportNewIssue}</DialogTitle>
               </DialogHeader>
+              
+              {formErrors.submit && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+                  <span className="mr-2">❌</span>{formErrors.submit}
+                </div>
+              )}
+              
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="title" style={{ color: colors.textPrimary }}>{strings.issueTitle}</Label>
-                  <Input
-                    id="title"
+                  <label htmlFor="issue_title" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.issueTitle} *
+                  </label>
+                  <input
+                    id="issue_title"
+                    type="text"
                     required
                     value={formData.issue_title}
-                    onChange={(e) => setFormData({...formData, issue_title: e.target.value})}
-                    placeholder="e.g., leaking roof"
+                    onChange={(e) => {
+                      setFormData({...formData, issue_title: e.target.value});
+                      setFormErrors(prev => ({...prev, issue_title: null}));
+                    }}
+                    maxLength={200}
+                    className={`w-full p-3 border-2 rounded-lg ${formErrors.issue_title ? 'border-red-500' : ''}`}
                     style={{
                       backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
-                      borderColor: colors.borderColor
+                      borderColor: formErrors.issue_title ? '#EF4444' : colors.borderColor,
+                      color: colors.textPrimary
                     }}
+                    placeholder={language === 'th' ? 'เช่น: ก๊อกน้ำรั่ว' : 'e.g., Leaking faucet'}
                   />
+                  {formErrors.issue_title && (
+                    <p className="text-xs text-red-600 mt-1">{formErrors.issue_title}</p>
+                  )}
+                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                    {formData.issue_title.length}/200
+                  </p>
                 </div>
+
                 <div>
-                  <Label htmlFor="description" style={{ color: colors.textPrimary }}>{strings.description}</Label>
-                  <Textarea
+                  <label htmlFor="description" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.description} *
+                  </label>
+                  <textarea
                     id="description"
+                    required
                     value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    placeholder="Describe the issue..."
-                    rows={3}
+                    onChange={(e) => {
+                      setFormData({...formData, description: e.target.value});
+                      setFormErrors(prev => ({...prev, description: null}));
+                    }}
+                    maxLength={2000}
+                    rows={4}
+                    className={`w-full p-3 border-2 rounded-lg ${formErrors.description ? 'border-red-500' : ''}`}
                     style={{
                       backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
-                      borderColor: colors.borderColor
+                      borderColor: formErrors.description ? '#EF4444' : colors.borderColor,
+                      color: colors.textPrimary
                     }}
+                    placeholder={language === 'th' ? 'อธิบายปัญหาโดยละเอียด...' : 'Describe the issue in detail...'}
+                  />
+                  {formErrors.description && (
+                    <p className="text-xs text-red-600 mt-1">{formErrors.description}</p>
+                  )}
+                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                    {formData.description.length}/2000
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="category" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                      {strings.category}
+                    </label>
+                    <select
+                      id="category"
+                      value={formData.category}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                      className="w-full p-3 border-2 rounded-lg appearance-none"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary,
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e")`,
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 0.75rem center',
+                        backgroundSize: '1em 1em',
+                      }}
+                    >
+                      <option value="plumbing">{strings.categories.plumbing}</option>
+                      <option value="electrical">{strings.categories.electrical}</option>
+                      <option value="structural">{strings.categories.structural}</option>
+                      <option value="appliance">{strings.categories.appliance}</option>
+                      <option value="hvac">{strings.categories.hvac}</option>
+                      <option value="pest">{strings.categories.pest}</option>
+                      <option value="other">{strings.categories.other}</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="priority" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                      {strings.priority}
+                    </label>
+                    <select
+                      id="priority"
+                      value={formData.priority}
+                      onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                      className="w-full p-3 border-2 rounded-lg appearance-none"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary,
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e")`,
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 0.75rem center',
+                        backgroundSize: '1em 1em',
+                      }}
+                    >
+                      <option value="low">{strings.priorities.low}</option>
+                      <option value="medium">{strings.priorities.medium}</option>
+                      <option value="high">{strings.priorities.high}</option>
+                      <option value="urgent">{strings.priorities.urgent}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="property_address" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.propertyAddress}
+                  </label>
+                  <input
+                    id="property_address"
+                    type="text"
+                    value={formData.property_address}
+                    onChange={(e) => setFormData({...formData, property_address: e.target.value})}
+                    className="w-full p-3 border-2 rounded-lg"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                    placeholder={language === 'th' ? 'ที่อยู่ทรัพย์สิน' : 'Property address'}
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="category" style={{ color: colors.textPrimary }}>{strings.category}</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
-                    <SelectTrigger style={{
+                  <label htmlFor="reported_date" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.reportedDate} *
+                  </label>
+                  <input
+                    id="reported_date"
+                    type="date"
+                    required
+                    value={formData.reported_date}
+                    onChange={(e) => {
+                      setFormData({...formData, reported_date: e.target.value});
+                      setFormErrors(prev => ({...prev, reported_date: null}));
+                    }}
+                    className={`w-full p-3 border-2 rounded-lg ${formErrors.reported_date ? 'border-red-500' : ''}`}
+                    style={{
                       backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
-                      borderColor: colors.borderColor
-                    }}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="plumbing">Plumbing</SelectItem>
-                      <SelectItem value="electrical">Electrical</SelectItem>
-                      <SelectItem value="structural">Structural</SelectItem>
-                      <SelectItem value="appliance">Appliance</SelectItem>
-                      <SelectItem value="hvac">HVAC</SelectItem>
-                      <SelectItem value="pest">Pest</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                      borderColor: formErrors.reported_date ? '#EF4444' : colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                  {formErrors.reported_date && (
+                    <p className="text-xs text-red-600 mt-1">{formErrors.reported_date}</p>
+                  )}
                 </div>
-                <div>
-                  <Label htmlFor="priority" style={{ color: colors.textPrimary }}>{strings.priority}</Label>
-                  <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
-                    <SelectTrigger style={{
-                      backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
-                      borderColor: colors.borderColor
-                    }}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button 
-                  type="submit" 
-                  disabled={createRequestMutation.isPending}
-                  className="w-full"
+
+                <button
+                  type="submit"
+                  disabled={submitting}
                   style={{
-                    backgroundColor: createRequestMutation.isPending ? '#9CA3AF' : '#0C3B2E',
+                    width: '100%',
+                    backgroundColor: submitting ? '#9CA3AF' : '#0C3B2E',
                     color: '#FFFFFF',
-                    opacity: createRequestMutation.isPending ? 0.6 : 1
+                    padding: '12px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    border: 'none',
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    opacity: submitting ? 0.6 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
                   }}
                 >
-                  {strings.submitButton}
-                </Button>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      {strings.submitButton}
+                    </>
+                  )}
+                </button>
               </form>
             </DialogContent>
           </Dialog>
