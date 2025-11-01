@@ -243,29 +243,31 @@ export default function DepositTracker() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4 mb-6">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Wallet className="w-8 h-8 text-ls-forest" />
-              <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+            <div className="flex items-center gap-2 sm:gap-3 mb-2">
+              <Wallet className="w-6 h-6 sm:w-8 sm:h-8 text-ls-forest" />
+              <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
             </div>
-            <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+            <p className="text-sm sm:text-base" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
           </div>
           
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
               <button 
+                className="w-full sm:w-auto"
                 style={{
                   backgroundColor: '#0C3B2E',
                   color: '#FFFFFF',
-                  padding: '12px 24px',
+                  padding: '12px 20px',
                   borderRadius: '8px',
                   fontWeight: 'bold',
-                  fontSize: '16px',
+                  fontSize: '15px',
                   border: 'none',
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '8px',
                   boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                   transition: 'all 0.2s'
@@ -273,13 +275,14 @@ export default function DepositTracker() {
                 onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
               >
-                <Plus style={{ width: '20px', height: '20px' }} />
-                {language === 'th' ? 'เพิ่มมัดจำ' : 'Add Deposit'}
+                <Plus style={{ width: '18px', height: '18px' }} />
+                <span className="text-sm sm:text-base">{language === 'th' ? 'เพิ่มมัดจำ' : 'Add Deposit'}</span>
               </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto" style={{
               backgroundColor: colors.cardBg,
-              borderColor: colors.borderColor
+              borderColor: colors.borderColor,
+              margin: '16px'
             }}>
               <DialogHeader>
                 <DialogTitle style={{ color: colors.textPrimary }}>{strings.dialogTitle}</DialogTitle>
@@ -463,19 +466,19 @@ export default function DepositTracker() {
           <Card className="mb-6 border-none shadow-lg text-ls-charcoal" style={{
             background: 'linear-gradient(to right, #C7A338, #d97706)' 
           }}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                  <Shield className="w-6 h-6" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-lg mb-1">{strings.depositShieldTitle}</h3>
-                  <p className="text-ls-charcoal/80 text-sm">
+                  <h3 className="font-bold text-base sm:text-lg mb-1">{strings.depositShieldTitle}</h3>
+                  <p className="text-ls-charcoal/80 text-xs sm:text-sm">
                     {strings.depositShieldSubtitle}
                   </p>
                 </div>
                 {hasLineNotify && (
-                  <button className="px-4 py-2 bg-white/20 border border-white/30 text-ls-charcoal hover:bg-white/40 rounded-lg transition-colors flex items-center gap-2">
+                  <button className="w-full sm:w-auto px-4 py-2 bg-white/20 border border-white/30 text-ls-charcoal hover:bg-white/40 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm">
                     <Bell className="w-4 h-4" />
                     {strings.lineNotifyButton}
                   </button>
@@ -485,27 +488,29 @@ export default function DepositTracker() {
           </Card>
         </FeatureGate>
 
-        {/* Deposits Grid - 2 columns on desktop, 1 on mobile */}
-        <div className="grid md:grid-cols-2 gap-4">
+        {/* Deposits Grid - Always single column on mobile */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {deposits.length === 0 ? (
             <Card className="border-none shadow-xl md:col-span-2" style={{ backgroundColor: colors.cardBg }}>
-              <CardContent className="p-12 text-center">
-                <Wallet className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
-                <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.noDepositsTitle}</h3>
-                <p className="mb-6" style={{ color: colors.textSecondary }}>{strings.noDepositsSubtitle}</p>
+              <CardContent className="p-8 sm:p-12 text-center">
+                <Wallet className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
+                <h3 className="text-lg sm:text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.noDepositsTitle}</h3>
+                <p className="mb-6 text-sm sm:text-base" style={{ color: colors.textSecondary }}>{strings.noDepositsSubtitle}</p>
                 <button 
                   onClick={() => setShowAddDialog(true)} 
+                  className="w-full sm:w-auto"
                   style={{
                     backgroundColor: '#0C3B2E',
                     color: '#FFFFFF',
                     padding: '12px 24px',
                     borderRadius: '8px',
                     fontWeight: 'bold',
-                    fontSize: '16px',
+                    fontSize: '15px',
                     border: 'none',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     gap: '8px',
                     boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                     transition: 'all 0.2s'
@@ -513,7 +518,7 @@ export default function DepositTracker() {
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                 >
-                  <Plus style={{ width: '20px', height: '20px' }} />
+                  <Plus style={{ width: '18px', height: '18px' }} />
                   {strings.addFirstDepositButton}
                 </button>
               </CardContent>
@@ -530,27 +535,29 @@ export default function DepositTracker() {
                   backgroundColor: colors.cardBg,
                   border: isUrgent ? `2px solid #C7A338` : 'none'
                 }}>
-                  <CardHeader className="pb-4" style={{
+                  <CardHeader className="pb-3 sm:pb-4" style={{
                     borderBottom: `1px solid ${colors.borderColor}`
                   }}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        {getStatusIcon(deposit.status)}
-                        <div>
-                          <CardTitle className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                        <div className="flex-shrink-0 mt-1">
+                          {getStatusIcon(deposit.status)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="text-lg sm:text-xl font-bold break-words" style={{ color: colors.textPrimary }}>
                             ฿{deposit.deposit_amount.toLocaleString()}
                           </CardTitle>
                           {deposit.property_address && (
-                            <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{deposit.property_address}</p>
+                            <p className="text-xs sm:text-sm mt-1 break-words" style={{ color: colors.textSecondary }}>{deposit.property_address}</p>
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2 flex-wrap justify-end">
-                        <Badge className={`${getStatusColor(deposit.status)} border`}>
+                      <div className="flex flex-col gap-2 items-end flex-shrink-0">
+                        <Badge className={`${getStatusColor(deposit.status)} border text-xs`}>
                           {deposit.status.toUpperCase()}
                         </Badge>
                         {hasDepositShield && deposit.status === 'tracking' && (
-                          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs whitespace-nowrap">
                             <Shield className="w-3 h-3 mr-1" />
                             {strings.protectedBadge}
                           </Badge>
@@ -559,7 +566,7 @@ export default function DepositTracker() {
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="p-4">
+                  <CardContent className="p-3 sm:p-4">
                     {/* Rent Alert Display */}
                     {deposit.rent_alerts_enabled && deposit.rent_amount && nextRentDue && (
                       <div className="mb-4 p-3 rounded-xl border-2" style={{ 
@@ -638,17 +645,17 @@ export default function DepositTracker() {
                     )}
 
                     {deposit.status === 'tracking' && (
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <button
                           onClick={() => updateDepositMutation.mutate({ 
                             id: deposit.id, 
                             data: { status: 'returned' } 
                           })}
+                          className="flex-1"
                           style={{
-                            flex: 1,
                             backgroundColor: '#FFFFFF',
                             color: '#10B981',
-                            padding: '8px 12px',
+                            padding: '10px 12px',
                             borderRadius: '8px',
                             fontWeight: 'bold',
                             fontSize: '13px',
@@ -668,18 +675,18 @@ export default function DepositTracker() {
                           }}
                         >
                           <CheckCircle2 style={{ width: '14px', height: '14px' }} />
-                          {strings.markReturnedButton}
+                          <span className="text-xs sm:text-sm">{strings.markReturnedButton}</span>
                         </button>
                         <button
                           onClick={() => updateDepositMutation.mutate({ 
                             id: deposit.id, 
                             data: { status: 'dispute' } 
                           })}
+                          className="flex-1"
                           style={{
-                            flex: 1,
                             backgroundColor: '#FFFFFF',
                             color: '#EF4444',
-                            padding: '8px 12px',
+                            padding: '10px 12px',
                             borderRadius: '8px',
                             fontWeight: 'bold',
                             fontSize: '13px',
@@ -699,7 +706,7 @@ export default function DepositTracker() {
                           }}
                         >
                           <AlertTriangle style={{ width: '14px', height: '14px' }} />
-                          {strings.openDisputeButton}
+                          <span className="text-xs sm:text-sm">{strings.openDisputeButton}</span>
                         </button>
                       </div>
                     )}
