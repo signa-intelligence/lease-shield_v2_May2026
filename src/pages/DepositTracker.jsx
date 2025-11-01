@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Wallet, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Shield, Bell } from "lucide-react";
+import { Wallet, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Shield, Bell, Loader2 } from "lucide-react"; // Added Loader2
 import { Badge } from "@/components/ui/badge";
 import { format, differenceInDays, addMonths, startOfMonth } from "date-fns";
 import {
@@ -22,7 +22,6 @@ import { FeatureGate, useFeatureAccess } from "../components/shared/FeatureGate"
 
 export default function DepositTracker() {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     deposit_amount: '',
     deposit_paid_date: '',
@@ -30,25 +29,28 @@ export default function DepositTracker() {
     property_address: '',
     notes: '',
     rent_amount: '',
-    rent_due_day: '1',
+    rent_due_day: '', // Changed from '1'
     rent_alerts_enabled: false,
-    rent_alert_days_before: '3'
+    rent_alert_days_before: 3 // Changed from '3'
   });
+  const [formErrors, setFormErrors] = useState({}); // Added
+  const [submitting, setSubmitting] = useState(false); // Added
   
   const queryClient = useQueryClient();
   const { hasAccess: hasDepositShield } = useFeatureAccess('deposit_shield');
   const { hasAccess: hasLineNotify } = useFeatureAccess('line_notify_enabled');
+  const { hasAccess: hasRentAlertsAuto } = useFeatureAccess('rent_alerts_auto'); // Added for FeatureGate
 
   const t = {
     en: {
       title: "Deposit Protection File",
       subtitle: "Secure storage for your lease, receipts, and deposit proof",
-      dialogTitle: "Track New Deposit",
-      amountLabel: "Deposit Amount (฿)",
-      addressLabel: "Property Address",
-      paidDateLabel: "Date Paid",
-      returnDateLabel: "Expected Return Date",
-      notesLabel: "Notes",
+      dialogTitle: "Track New Deposit", // Updated
+      depositAmount: "Deposit Amount (฿)", // New
+      depositPaidDate: "Date Paid", // New
+      expectedReturnDate: "Expected Return Date", // New
+      propertyAddress: "Property Address", // New
+      notes: "Notes", // New
       rentAmountLabel: "Monthly Rent (฿)",
       rentDueDayLabel: "Rent Due Day of Month (1-31)",
       rentAlertsLabel: "Enable Rent Alerts",
@@ -75,17 +77,31 @@ export default function DepositTracker() {
       openDisputeButton: "Open Dispute",
       nextRentDue: "Next Rent Due",
       rentReminder: "Rent reminder",
-      daysBefore: "days before"
+      daysBefore: "days before",
+      // New validation strings
+      addDepositTitle: "Track New Deposit",
+      monthlyRent: "Monthly Rent (฿)",
+      rentDueDay: "Rent Due Day",
+      additionalNotes: "Additional notes...",
+      saving: "Saving...",
+      'Please enter deposit amount': 'Please enter deposit amount',
+      'Please enter deposit paid date': 'Please enter deposit paid date',
+      'Please enter expected return date': 'Please enter expected return date',
+      'Return date must be after paid date': 'Return date must be after paid date',
+      'Return date is too far in the future': 'Return date is too far in the future (max 5 years)',
+      'Please enter monthly rent': 'Please enter monthly rent',
+      'Please enter due day (1-31)': 'Please enter due day (1-31)',
+      'Failed to create deposit. Please try again.': 'Failed to create deposit. Please try again.',
     },
     th: {
       title: "ไฟล์ป้องกันเงินมัดจำ",
       subtitle: "จัดเก็บสัญญาเช่า ใบเสร็จ และหลักฐานเงินมัดจำอย่างปลอดภัย",
-      dialogTitle: "ติดตามเงินมัดจำใหม่",
-      amountLabel: "จำนวนเงินมัดจำ (฿)",
-      addressLabel: "ที่อยู่ทรัพย์สิน",
-      paidDateLabel: "วันที่จ่าย",
-      returnDateLabel: "วันที่คาดว่าจะได้รับคืน",
-      notesLabel: "หมายเหตุ",
+      dialogTitle: "ติดตามเงินมัดจำใหม่", // Updated
+      depositAmount: "จำนวนเงินมัดจำ (฿)", // New
+      depositPaidDate: "วันที่จ่าย", // New
+      expectedReturnDate: "วันที่คาดว่าจะได้รับคืน", // New
+      propertyAddress: "ที่อยู่ทรัพย์สิน", // New
+      notes: "หมายเหตุ", // New
       rentAmountLabel: "ค่าเช่ารายเดือน (฿)",
       rentDueDayLabel: "วันครบกำหนดค่าเช่าในเดือน (1-31)",
       rentAlertsLabel: "เปิดการแจ้งเตือนค่าเช่า",
@@ -112,7 +128,21 @@ export default function DepositTracker() {
       openDisputeButton: "เปิดข้อพิพาท",
       nextRentDue: "ครบกำหนดค่าเช่าครั้งถัดไป",
       rentReminder: "แจ้งเตือนค่าเช่า",
-      daysBefore: "วันก่อน"
+      daysBefore: "วันก่อน",
+      // New validation strings
+      addDepositTitle: "ติดตามเงินมัดจำใหม่",
+      monthlyRent: "ค่าเช่ารายเดือน (฿)",
+      rentDueDay: "วันครบกำหนดค่าเช่า",
+      additionalNotes: "หมายเหตุเพิ่มเติม...",
+      saving: "กำลังบันทึก...",
+      'กรุณาระบุจำนวนเงินมัดจำ': 'กรุณาระบุจำนวนเงินมัดจำ',
+      'กรุณาระบุวันที่จ่ายเงินมัดจำ': 'กรุณาระบุวันที่จ่ายเงินมัดจำ',
+      'กรุณาระบุวันที่คาดว่าจะได้รับเงินคืน': 'กรุณาระบุวันที่คาดว่าจะได้รับเงินคืน',
+      'วันที่คาดว่าจะได้รับเงินคืนต้องอยู่หลังวันที่จ่ายเงินมัดจำ': 'วันที่คาดว่าจะได้รับเงินคืนต้องอยู่หลังวันที่จ่ายเงินมัดจำ',
+      'วันที่คาดว่าจะได้รับเงินคืนไกลเกินไป': 'วันที่คาดว่าจะได้รับเงินคืนไกลเกินไป (สูงสุด 5 ปี)',
+      'กรุณาระบุค่าเช่ารายเดือน': 'กรุณาระบุค่าเช่ารายเดือน',
+      'กรุณาระบุวันครบกำหนดชำระ (1-31)': 'กรุณาระบุวันครบกำหนดชำระ (1-31)',
+      'ไม่สามารถสร้างรายการได้ กรุณาลองอีกครั้ง': 'ไม่สามารถสร้างรายการได้ กรุณาลองอีกครั้ง',
     }
   };
 
@@ -139,11 +169,20 @@ export default function DepositTracker() {
         property_address: '',
         notes: '',
         rent_amount: '',
-        rent_due_day: '1',
+        rent_due_day: '',
         rent_alerts_enabled: false,
-        rent_alert_days_before: '3'
+        rent_alert_days_before: 3
       });
+      setFormErrors({});
+      setSubmitting(false);
     },
+    onError: (error) => {
+      console.error('Failed to create deposit:', error);
+      setFormErrors({ 
+        submit: strings['Failed to create deposit. Please try again.']
+      });
+      setSubmitting(false);
+    }
   });
 
   const updateDepositMutation = useMutation({
@@ -153,19 +192,85 @@ export default function DepositTracker() {
     },
   });
 
-  const handleSubmit = (e) => {
+  const language = user?.language || 'en';
+  const strings = t[language];
+
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.deposit_amount || parseFloat(formData.deposit_amount) <= 0) {
+      errors.deposit_amount = strings['Please enter deposit amount'];
+    }
+    
+    if (!formData.deposit_paid_date) {
+      errors.deposit_paid_date = strings['Please enter deposit paid date'];
+    }
+    
+    if (!formData.expected_return_date) {
+      errors.expected_return_date = strings['Please enter expected return date'];
+    }
+    
+    // Validate dates
+    if (formData.deposit_paid_date && formData.expected_return_date) {
+      const paidDate = new Date(formData.deposit_paid_date);
+      const returnDate = new Date(formData.expected_return_date);
+      
+      if (returnDate <= paidDate) {
+        errors.expected_return_date = strings['Return date must be after paid date'];
+      }
+      
+      // Check if return date is too far in the future (more than 5 years)
+      const fiveYearsFromNow = new Date();
+      fiveYearsFromNow.setFullYear(fiveYearsFromNow.getFullYear() + 5);
+      if (returnDate > fiveYearsFromNow) {
+        errors.expected_return_date = strings['Return date is too far in the future'];
+      }
+    }
+    
+    if (formData.rent_alerts_enabled) {
+      if (!formData.rent_amount || parseFloat(formData.rent_amount) <= 0) {
+        errors.rent_amount = strings['Please enter monthly rent'];
+      }
+      
+      const rentDueDay = parseInt(formData.rent_due_day);
+      if (!formData.rent_due_day || isNaN(rentDueDay) || rentDueDay < 1 || rentDueDay > 31) {
+        errors.rent_due_day = strings['Please enter due day (1-31)'];
+      }
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const depositData = {
-      ...formData,
-      deposit_amount: parseFloat(formData.deposit_amount),
-      rent_amount: formData.rent_amount ? parseFloat(formData.rent_amount) : null,
-      rent_due_day: formData.rent_due_day ? parseInt(formData.rent_due_day) : null,
-      rent_alert_days_before: formData.rent_alert_days_before ? parseInt(formData.rent_alert_days_before) : 3,
-      status: 'tracking'
-    };
-
-    createDepositMutation.mutate(depositData);
+    if (!validateForm()) {
+      return;
+    }
+    
+    setSubmitting(true);
+    
+    try {
+      await createDepositMutation.mutateAsync({
+        deposit_amount: parseFloat(formData.deposit_amount),
+        deposit_paid_date: formData.deposit_paid_date,
+        expected_return_date: formData.expected_return_date,
+        property_address: formData.property_address || undefined,
+        notes: formData.notes || undefined,
+        rent_amount: formData.rent_alerts_enabled && formData.rent_amount ? parseFloat(formData.rent_amount) : undefined,
+        rent_due_day: formData.rent_alerts_enabled && formData.rent_due_day ? parseInt(formData.rent_due_day) : undefined,
+        rent_alerts_enabled: formData.rent_alerts_enabled,
+        rent_alert_days_before: formData.rent_alerts_enabled ? parseInt(formData.rent_alert_days_before) : 3,
+        status: 'tracking'
+      });
+      
+      // State reset handled by onSuccess of mutation
+    } catch (error) {
+      // Error handled by onError of mutation
+    } finally {
+      // Submitting state reset handled by onError/onSuccess of mutation
+    }
   };
 
   const getStatusColor = (status) => {
@@ -202,9 +307,7 @@ export default function DepositTracker() {
     return thisMonthDue;
   };
 
-  const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
-  const strings = t[language];
   const now = new Date();
 
   // Dark mode colors
@@ -252,7 +355,12 @@ export default function DepositTracker() {
             <p className="text-sm sm:text-base" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
           </div>
           
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <Dialog open={showAddDialog} onOpenChange={(open) => {
+            setShowAddDialog(open);
+            if (!open) {
+              setFormErrors({});
+            }
+          }}>
             <DialogTrigger asChild>
               <button 
                 className="w-full sm:w-auto"
@@ -285,177 +393,260 @@ export default function DepositTracker() {
               margin: '16px'
             }}>
               <DialogHeader>
-                <DialogTitle style={{ color: colors.textPrimary }}>{strings.dialogTitle}</DialogTitle>
+                <DialogTitle style={{ color: colors.textPrimary }}>{strings.addDepositTitle}</DialogTitle>
               </DialogHeader>
+              
+              {formErrors.submit && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+                  ❌ {formErrors.submit}
+                </div>
+              )}
+              
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="amount" style={{ color: colors.textPrimary }}>{strings.amountLabel}</Label>
-                  <Input
-                    id="amount"
+                  <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.depositAmount} *
+                  </label>
+                  <input
                     type="number"
-                    required
+                    step="0.01"
                     value={formData.deposit_amount}
-                    onChange={(e) => setFormData({...formData, deposit_amount: e.target.value})}
-                    placeholder="10000"
+                    onChange={(e) => {
+                      setFormData({...formData, deposit_amount: e.target.value});
+                      setFormErrors({...formErrors, deposit_amount: null});
+                    }}
+                    className={`w-full p-3 border-2 rounded-lg ${formErrors.deposit_amount ? 'border-red-500' : ''}`}
                     style={{
                       backgroundColor: colors.inputBg,
+                      borderColor: formErrors.deposit_amount ? '#EF4444' : colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                    placeholder="10000"
+                  />
+                  {formErrors.deposit_amount && (
+                    <p className="text-xs text-red-600 mt-1">{formErrors.deposit_amount}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.depositPaidDate} *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.deposit_paid_date}
+                    onChange={(e) => {
+                      setFormData({...formData, deposit_paid_date: e.target.value});
+                      setFormErrors({...formErrors, deposit_paid_date: null});
+                    }}
+                    className={`w-full p-3 border-2 rounded-lg ${formErrors.deposit_paid_date ? 'border-red-500' : ''}`}
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: formErrors.deposit_paid_date ? '#EF4444' : colors.borderColor,
                       color: colors.textPrimary,
-                      borderColor: colors.borderColor
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                      appearance: 'none',
                     }}
                   />
+                  {formErrors.deposit_paid_date && (
+                    <p className="text-xs text-red-600 mt-1">{formErrors.deposit_paid_date}</p>
+                  )}
                 </div>
+
                 <div>
-                  <Label htmlFor="address" style={{ color: colors.textPrimary }}>{strings.addressLabel}</Label>
-                  <Input
-                    id="address"
+                  <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.expectedReturnDate} *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.expected_return_date}
+                    onChange={(e) => {
+                      setFormData({...formData, expected_return_date: e.target.value});
+                      setFormErrors({...formErrors, expected_return_date: null});
+                    }}
+                    className={`w-full p-3 border-2 rounded-lg ${formErrors.expected_return_date ? 'border-red-500' : ''}`}
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: formErrors.expected_return_date ? '#EF4444' : colors.borderColor,
+                      color: colors.textPrimary,
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                      appearance: 'none',
+                    }}
+                  />
+                  {formErrors.expected_return_date && (
+                    <p className="text-xs text-red-600 mt-1">{formErrors.expected_return_date}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.propertyAddress}
+                  </label>
+                  <input
+                    type="text"
                     value={formData.property_address}
                     onChange={(e) => setFormData({...formData, property_address: e.target.value})}
-                    placeholder="123 Main St, Bangkok"
+                    className="w-full p-3 border-2 rounded-lg"
                     style={{
                       backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
-                      borderColor: colors.borderColor
-                    }}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="paid_date" style={{ color: colors.textPrimary }}>{strings.paidDateLabel}</Label>
-                  <Input
-                    id="paid_date"
-                    type="date"
-                    required
-                    value={formData.deposit_paid_date}
-                    onChange={(e) => setFormData({...formData, deposit_paid_date: e.target.value})}
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
                       borderColor: colors.borderColor,
-                      // Override default date input styling that might ignore color
-                      WebkitAppearance: 'none',
-                      MozAppearance: 'none',
-                      appearance: 'none',
+                      color: colors.textPrimary
                     }}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="return_date" style={{ color: colors.textPrimary }}>{strings.returnDateLabel}</Label>
-                  <Input
-                    id="return_date"
-                    type="date"
-                    required
-                    value={formData.expected_return_date}
-                    onChange={(e) => setFormData({...formData, expected_return_date: e.target.value})}
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
-                      borderColor: colors.borderColor,
-                      WebkitAppearance: 'none',
-                      MozAppearance: 'none',
-                      appearance: 'none',
-                    }}
+                    placeholder={language === 'th' ? 'ที่อยู่ทรัพย์สิน' : 'Property address'}
                   />
                 </div>
 
                 {/* Rent Alerts Section */}
-                <div className="pt-4" style={{borderTop: `1px solid ${colors.borderColor}`}}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <Label className="text-sm font-bold" style={{ color: colors.textPrimary }}>{strings.rentAlertsTitle}</Label>
-                      <p className="text-xs" style={{ color: colors.textSecondary }}>{strings.rentAlertsSubtitle}</p>
-                    </div>
-                    <Switch
-                      checked={formData.rent_alerts_enabled}
-                      onCheckedChange={(checked) => setFormData({...formData, rent_alerts_enabled: checked})}
-                    />
-                  </div>
-
-                  {formData.rent_alerts_enabled && (
-                    <>
-                      <div className="mb-3">
-                        <Label htmlFor="rent_amount" style={{ color: colors.textPrimary }}>{strings.rentAmountLabel}</Label>
-                        <Input
-                          id="rent_amount"
-                          type="number"
-                          value={formData.rent_amount}
-                          onChange={(e) => setFormData({...formData, rent_amount: e.target.value})}
-                          placeholder="15000"
-                          style={{
-                            backgroundColor: colors.inputBg,
-                            color: colors.textPrimary,
-                            borderColor: colors.borderColor
-                          }}
-                        />
+                <FeatureGate feature="rent_alerts_auto">
+                  <div className="p-4 rounded-lg border-2" style={{
+                    backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5',
+                    borderColor: isDarkMode ? '#10B981' : '#A7F3D0'
+                  }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Bell className="w-5 h-5 text-emerald-600" />
+                        <span className="font-semibold" style={{ color: colors.textPrimary }}>
+                          {strings.rentAlertsTitle}
+                        </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <Switch
+                        checked={formData.rent_alerts_enabled}
+                        onCheckedChange={(checked) => setFormData({...formData, rent_alerts_enabled: checked})}
+                      />
+                    </div>
+                    
+                    {formData.rent_alerts_enabled && (
+                      <div className="space-y-3 mt-3">
                         <div>
-                          <Label htmlFor="rent_due_day" style={{ color: colors.textPrimary }}>{strings.rentDueDayLabel}</Label>
-                          <Input
-                            id="rent_due_day"
+                          <label className="block text-xs font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                            {strings.monthlyRent} *
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.rent_amount}
+                            onChange={(e) => {
+                              setFormData({...formData, rent_amount: e.target.value});
+                              setFormErrors({...formErrors, rent_amount: null});
+                            }}
+                            className={`w-full p-2 border rounded-lg text-sm ${formErrors.rent_amount ? 'border-red-500' : ''}`}
+                            style={{
+                              backgroundColor: colors.inputBg,
+                              borderColor: formErrors.rent_amount ? '#EF4444' : colors.borderColor,
+                              color: colors.textPrimary
+                            }}
+                            placeholder="8000"
+                          />
+                          {formErrors.rent_amount && (
+                            <p className="text-xs text-red-600 mt-1">{formErrors.rent_amount}</p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-xs font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                            {strings.rentDueDay} *
+                          </label>
+                          <input
                             type="number"
                             min="1"
                             max="31"
                             value={formData.rent_due_day}
-                            onChange={(e) => setFormData({...formData, rent_due_day: e.target.value})}
-                            placeholder="1"
+                            onChange={(e) => {
+                              setFormData({...formData, rent_due_day: e.target.value});
+                              setFormErrors({...formErrors, rent_due_day: null});
+                            }}
+                            className={`w-full p-2 border rounded-lg text-sm ${formErrors.rent_due_day ? 'border-red-500' : ''}`}
                             style={{
                               backgroundColor: colors.inputBg,
-                              color: colors.textPrimary,
-                              borderColor: colors.borderColor
+                              borderColor: formErrors.rent_due_day ? '#EF4444' : colors.borderColor,
+                              color: colors.textPrimary
                             }}
+                            placeholder="5"
                           />
+                          {formErrors.rent_due_day && (
+                            <p className="text-xs text-red-600 mt-1">{formErrors.rent_due_day}</p>
+                          )}
                           <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
                             {language === 'th' ? 'เช่น: 1 = วันที่ 1 ของทุกเดือน' : 'e.g., 1 = 1st of every month'}
                           </p>
                         </div>
                         <div>
-                          <Label htmlFor="alert_days" style={{ color: colors.textPrimary }}>{strings.alertDaysLabel}</Label>
-                          <Input
-                            id="alert_days"
+                          <label className="block text-xs font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                            {strings.alertDaysLabel}
+                          </label>
+                          <input
                             type="number"
                             min="1"
                             max="14"
                             value={formData.rent_alert_days_before}
-                            onChange={(e) => setFormData({...formData, rent_alert_days_before: e.target.value})}
-                            placeholder="3"
+                            onChange={(e) => {
+                              setFormData({...formData, rent_alert_days_before: e.target.value});
+                            }}
+                            className="w-full p-2 border rounded-lg text-sm"
                             style={{
                               backgroundColor: colors.inputBg,
-                              color: colors.textPrimary,
-                              borderColor: colors.borderColor
+                              borderColor: colors.borderColor,
+                              color: colors.textPrimary
                             }}
+                            placeholder="3"
                           />
                         </div>
                       </div>
-                    </>
-                  )}
-                </div>
+                    )}
+                  </div>
+                </FeatureGate>
 
                 <div>
-                  <Label htmlFor="notes" style={{ color: colors.textPrimary }}>{strings.notesLabel}</Label>
-                  <Textarea
-                    id="notes"
+                  <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.notes}
+                  </label>
+                  <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                    placeholder="Any additional details..."
                     rows={3}
+                    className="w-full p-3 border-2 rounded-lg"
                     style={{
                       backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
-                      borderColor: colors.borderColor
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
                     }}
+                    placeholder={strings.additionalNotes}
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  disabled={createDepositMutation.isPending}
-                  className="w-full"
+
+                <button
+                  type="submit"
+                  disabled={submitting}
                   style={{
-                    backgroundColor: createDepositMutation.isPending ? '#9CA3AF' : '#0C3B2E',
+                    width: '100%',
+                    backgroundColor: submitting ? '#9CA3AF' : '#0C3B2E',
                     color: '#FFFFFF',
-                    opacity: createDepositMutation.isPending ? 0.6 : 1
+                    padding: '12px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    border: 'none',
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    opacity: submitting ? 0.6 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
                   }}
                 >
-                  {createDepositMutation.isPending ? (language === 'th' ? 'กำลังติดตาม...' : 'Tracking...') : strings.trackDepositButton}
-                </Button>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {strings.saving}
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      {strings.trackDepositButton}
+                    </>
+                  )}
+                </button>
               </form>
             </DialogContent>
           </Dialog>
@@ -568,7 +759,7 @@ export default function DepositTracker() {
                   
                   <CardContent className="p-3 sm:p-4">
                     {/* Rent Alert Display */}
-                    {deposit.rent_alerts_enabled && deposit.rent_amount && nextRentDue && (
+                    {hasRentAlertsAuto && deposit.rent_alerts_enabled && deposit.rent_amount && nextRentDue && (
                       <div className="mb-4 p-3 rounded-xl border-2" style={{ 
                         backgroundColor: colors.infoBg,
                         borderColor: colors.blueBorder
