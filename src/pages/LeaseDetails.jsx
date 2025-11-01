@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -230,26 +231,27 @@ export default function LeaseDetails() {
         <Button
           variant="outline"
           onClick={() => navigate(createPageUrl("UploadScan"))}
-          className="mb-6"
+          className="mb-4 md:mb-6"
+          size="sm"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           {strings.backToLeases}
         </Button>
 
-        <h1 className="text-2xl md:text-3xl font-bold mb-6" style={{ color: colors.textPrimary }}>
+        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6" style={{ color: colors.textPrimary }}>
           {strings.leaseDetails}
         </h1>
 
         {/* Basic Information */}
-        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="flex items-center gap-2">
-              <Home className="w-5 h-5 text-ls-forest" />
+        <Card className="mb-4 md:mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
+            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+              <Home className="w-4 h-4 md:w-5 md:h-5 text-ls-forest" />
               {strings.basicInfo}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid md:grid-cols-2 gap-6">
+          <CardContent className="p-4 md:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               <div>
                 <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
                   {strings.propertyAddress}
@@ -305,21 +307,21 @@ export default function LeaseDetails() {
         </Card>
 
         {/* Notice Settings */}
-        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-ls-forest" />
+        <Card className="mb-4 md:mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
+            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+              <Bell className="w-4 h-4 md:w-5 md:h-5 text-ls-forest" />
               {strings.noticeSettings}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-4 md:p-6">
             {/* Toggle Alerts */}
-            <div className="flex items-center justify-between mb-6 p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6 p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
               <div className="flex-1">
-                <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                <p className="font-semibold mb-1 text-sm md:text-base" style={{ color: colors.textPrimary }}>
                   {strings.noticeAlertsEnabled}
                 </p>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>
                   {strings.enableAlertsHelp}
                 </p>
               </div>
@@ -332,8 +334,8 @@ export default function LeaseDetails() {
             {/* Notice Period and Deadline */}
             {!editingNotice ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+                  <div className="flex-1">
                     <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
                       {strings.noticePeriod}
                     </p>
@@ -344,7 +346,7 @@ export default function LeaseDetails() {
                       {strings.noticeHelp}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={handleEditNotice}>
+                  <Button variant="outline" size="sm" onClick={handleEditNotice} className="w-full sm:w-auto">
                     <Edit2 className="w-4 h-4 mr-2" />
                     {strings.edit}
                   </Button>
@@ -391,11 +393,11 @@ export default function LeaseDetails() {
                   </p>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     variant="outline"
                     onClick={() => setEditingNotice(false)}
-                    className="flex-1"
+                    className="flex-1 w-full"
                   >
                     <X className="w-4 h-4 mr-2" />
                     {strings.cancel}
@@ -403,7 +405,7 @@ export default function LeaseDetails() {
                   <Button
                     onClick={handleSaveNoticeSettings}
                     disabled={updateLeaseMutation.isLoading}
-                    className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
+                    className="flex-1 w-full bg-ls-forest hover:bg-ls-forest/90"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     {strings.save}
@@ -416,45 +418,48 @@ export default function LeaseDetails() {
 
         {/* Risk Analysis */}
         {scan && (
-          <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-ls-forest" />
+          <Card className="mb-4 md:mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <Shield className="w-4 h-4 md:w-5 md:h-5 text-ls-forest" />
                 {strings.riskAnalysis}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                 <div>
                   <p className="text-sm font-semibold mb-2" style={{ color: colors.textSecondary }}>
                     {strings.riskScore}
                   </p>
                   <div className="flex items-center gap-3">
                     <div
-                      className="text-4xl font-bold"
+                      className="text-3xl md:text-4xl font-bold"
                       style={{ color: getRiskColor(scan.risk_score) }}
                     >
                       {scan.risk_score}
                     </div>
-                    <div className="text-2xl font-medium" style={{ color: colors.textSecondary }}>
+                    <div className="text-xl md:text-2xl font-medium" style={{ color: colors.textSecondary }}>
                       /100
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <Button
                     variant="outline"
                     onClick={() => navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
+                    size="sm"
+                    className="w-full sm:w-auto"
                   >
                     <Eye className="w-4 h-4 mr-2" />
-                    {strings.viewScanResults}
+                    <span className="text-xs md:text-sm">{strings.viewScanResults}</span>
                   </Button>
                   <Button
                     onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
-                    className="bg-ls-forest hover:bg-ls-forest/90"
+                    className="bg-ls-forest hover:bg-ls-forest/90 w-full sm:w-auto"
+                    size="sm"
                   >
                     <FileText className="w-4 h-4 mr-2" />
-                    {strings.viewFullReport}
+                    <span className="text-xs md:text-sm">{strings.viewFullReport}</span>
                   </Button>
                 </div>
               </div>
@@ -498,11 +503,11 @@ export default function LeaseDetails() {
 
         {/* Actions */}
         <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle>{strings.actions}</CardTitle>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
+            <CardTitle className="text-base md:text-lg">{strings.actions}</CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid md:grid-cols-2 gap-3">
+          <CardContent className="p-4 md:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {lease.file_url && (
                 <Button
                   variant="outline"
