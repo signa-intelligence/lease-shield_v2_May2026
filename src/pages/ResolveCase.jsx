@@ -249,72 +249,72 @@ export default function ResolveCase() {
             ? 'linear-gradient(135deg, #C7A338 0%, #d4af37 100%)'
             : 'linear-gradient(135deg, #C7A338 0%, #d4af37 100%)'
         }}>
-          <h2 className="text-3xl font-bold text-center mb-8 text-ls-charcoal">
+          <h2 className="text-3xl font-bold text-center mb-8" style={{ color: '#1A1D1F' }}>
             {strings.transparentPricing}
           </h2>
           
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             {/* Member Rate */}
-            <Card className="border-none shadow-2xl overflow-hidden">
+            <Card className="border-none shadow-2xl overflow-hidden" style={{ backgroundColor: '#FFFFFF' }}>
               <CardHeader className="bg-ls-forest text-white p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-2xl text-white">{strings.memberRate}</CardTitle>
-                  <Shield className="w-8 h-8 text-white" />
+                  <CardTitle className="text-2xl" style={{ color: '#FFFFFF' }}>{strings.memberRate}</CardTitle>
+                  <Shield className="w-8 h-8" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-white">฿{baseMemberPrice.toLocaleString()}</span>
+                  <span className="text-4xl font-bold" style={{ color: '#FFFFFF' }}>฿{baseMemberPrice.toLocaleString()}</span>
                 </div>
-                <p className="text-sm text-white/90 mt-2">+ {memberSuccessFee}% {strings.successFee}</p>
+                <p className="text-sm mt-2" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>+ {memberSuccessFee}% {strings.successFee}</p>
               </CardHeader>
               <CardContent className="p-6" style={{ backgroundColor: '#FFFFFF' }}>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-slate-700">{strings.forSubscribers}</span>
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
+                    <span className="text-sm" style={{ color: '#334155' }}>{strings.forSubscribers}</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-slate-700">{strings.lowerUpfront}</span>
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
+                    <span className="text-sm" style={{ color: '#334155' }}>{strings.lowerUpfront}</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-slate-700">{strings.prioritySupport}</span>
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
+                    <span className="text-sm" style={{ color: '#334155' }}>{strings.prioritySupport}</span>
                   </li>
                 </ul>
-                <p className="text-xs text-slate-500 mt-4">
+                <p className="text-xs mt-4" style={{ color: '#64748B' }}>
                   {strings.memberPricingNote}
                 </p>
               </CardContent>
             </Card>
 
             {/* Public Rate */}
-            <Card className="border-none shadow-2xl overflow-hidden">
+            <Card className="border-none shadow-2xl overflow-hidden" style={{ backgroundColor: '#FFFFFF' }}>
               <CardHeader className="bg-ls-charcoal text-white p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-2xl text-white">{strings.publicRate}</CardTitle>
-                  <Scale className="w-8 h-8 text-white" />
+                  <CardTitle className="text-2xl" style={{ color: '#FFFFFF' }}>{strings.publicRate}</CardTitle>
+                  <Scale className="w-8 h-8" style={{ color: '#FFFFFF' }} />
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-white">฿{basePublicPrice.toLocaleString()}</span>
+                  <span className="text-4xl font-bold" style={{ color: '#FFFFFF' }}>฿{basePublicPrice.toLocaleString()}</span>
                 </div>
-                <p className="text-sm text-white/90 mt-2">+ {publicSuccessFee}% {strings.successFee}</p>
+                <p className="text-sm mt-2" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>+ {publicSuccessFee}% {strings.successFee}</p>
               </CardHeader>
               <CardContent className="p-6" style={{ backgroundColor: '#FFFFFF' }}>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-slate-700">{strings.noSubRequired}</span>
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
+                    <span className="text-sm" style={{ color: '#334155' }}>{strings.noSubRequired}</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-slate-700">{strings.payAsYouGo}</span>
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
+                    <span className="text-sm" style={{ color: '#334155' }}>{strings.payAsYouGo}</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-slate-700">{strings.sameQuality}</span>
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
+                    <span className="text-sm" style={{ color: '#334155' }}>{strings.sameQuality}</span>
                   </li>
                 </ul>
-                <p className="text-xs text-slate-500 mt-4">
+                <p className="text-xs mt-4" style={{ color: '#64748B' }}>
                   {strings.publicPricingNote}
                 </p>
               </CardContent>
@@ -323,7 +323,7 @@ export default function ResolveCase() {
 
           {/* Available Add-ons */}
           <div>
-            <h3 className="text-2xl font-bold text-center mb-6 text-ls-charcoal">
+            <h3 className="text-2xl font-bold text-center mb-6" style={{ color: '#1A1D1F' }}>
               {strings.availableAddons}
             </h3>
             <div className="grid md:grid-cols-2 gap-6">
@@ -336,22 +336,22 @@ export default function ResolveCase() {
                         <Zap className="w-6 h-6 text-purple-600" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg text-slate-900">
+                        <h4 className="font-bold text-lg" style={{ color: '#1F2937' }}>
                           {strings.fastTrack}
                         </h4>
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm text-slate-600 mb-4">
+                  <p className="text-sm mb-4" style={{ color: '#4B5563' }}>
                     {strings.fastTrackDesc}
                   </p>
                   <div className="flex items-baseline gap-3">
-                    <span className="text-2xl font-bold text-ls-charcoal">฿500</span>
-                    <span className="text-sm text-slate-500">({strings.public})</span>
+                    <span className="text-2xl font-bold" style={{ color: '#1A1D1F' }}>฿500</span>
+                    <span className="text-sm" style={{ color: '#6B7280' }}>({strings.public})</span>
                   </div>
                   <div className="flex items-baseline gap-3 mt-1">
-                    <span className="text-2xl font-bold text-ls-forest">฿300</span>
-                    <span className="text-sm text-slate-500">({strings.member})</span>
+                    <span className="text-2xl font-bold" style={{ color: '#0C3B2E' }}>฿300</span>
+                    <span className="text-sm" style={{ color: '#6B7280' }}>({strings.member})</span>
                   </div>
                 </CardContent>
               </Card>
@@ -365,22 +365,22 @@ export default function ResolveCase() {
                         <FileText className="w-6 h-6 text-blue-600" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg text-slate-900">
+                        <h4 className="font-bold text-lg" style={{ color: '#1F2937' }}>
                           {strings.letterPack}
                         </h4>
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm text-slate-600 mb-4">
+                  <p className="text-sm mb-4" style={{ color: '#4B5563' }}>
                     {strings.letterPackDesc}
                   </p>
                   <div className="flex items-baseline gap-3">
-                    <span className="text-2xl font-bold text-ls-charcoal">฿1,500</span>
-                    <span className="text-sm text-slate-500">({strings.public})</span>
+                    <span className="text-2xl font-bold" style={{ color: '#1A1D1F' }}>฿1,500</span>
+                    <span className="text-sm" style={{ color: '#6B7280' }}>({strings.public})</span>
                   </div>
                   <div className="flex items-baseline gap-3 mt-1">
-                    <span className="text-2xl font-bold text-ls-forest">฿900</span>
-                    <span className="text-sm text-slate-500">({strings.member})</span>
+                    <span className="text-2xl font-bold" style={{ color: '#0C3B2E' }}>฿900</span>
+                    <span className="text-sm" style={{ color: '#6B7280' }}>({strings.member})</span>
                   </div>
                 </CardContent>
               </Card>
