@@ -8,11 +8,54 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Scale, Shield, Clock, Mail, AlertCircle, CheckCircle2, Zap } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Scale, Shield, Clock, Mail, CheckCircle2, Zap, FileText, Users, MessageCircle, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
+
+const SERVICE_COMPONENTS = [
+  {
+    category: 'Case Intake & Evidence Review',
+    description: 'Our team carefully reviews your lease agreement, photos, and message history to understand your situation and prepare your case summary.'
+  },
+  {
+    category: 'Professional Letter Pack',
+    description: 'Professionally written Thai and English letters and message templates to help you communicate clearly and confidently with your landlord.'
+  },
+  {
+    category: 'Negotiation Support',
+    description: 'Lease Shield guides you through each step of communication and dispute resolution — helping you stay organised and professional while keeping all contact in your name.'
+  },
+  {
+    category: 'Dispute Documentation Pack',
+    description: 'A complete, well-structured file that includes your contract, evidence, and a clear timeline — ready to use for any further action if needed.'
+  },
+  {
+    category: 'Optional Legal Referral',
+    description: 'If your case requires formal legal action, we can connect you with a trusted partner law firm. All legal work is handled directly between you and the firm at standard rates.'
+  }
+];
+
+const PROCESS_STEPS = [
+  {
+    number: 1,
+    title: 'Submit Your Case',
+    description: 'Upload your lease, evidence, and describe the issue',
+    icon: FileText
+  },
+  {
+    number: 2,
+    title: 'Get Documentation',
+    description: 'Receive professional letter templates and case summary',
+    icon: Mail
+  },
+  {
+    number: 3,
+    title: 'Negotiation Support',
+    description: 'We facilitate communication and track progress',
+    icon: Users
+  }
+];
 
 export default function ResolveCase() {
   const navigate = useNavigate();
@@ -61,93 +104,337 @@ export default function ResolveCase() {
   };
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
 
   // Pricing based on membership
+  const baseMemberPrice = 1490;
+  const basePublicPrice = 2490;
+  const memberSuccessFee = 10;
+  const publicSuccessFee = 15;
   const fastTrackPrice = isMember ? 300 : 500;
   const letterPackPrice = isMember ? 900 : 1500;
   const totalAddons = (formData.fast_track ? fastTrackPrice : 0) + (formData.letter_pack ? letterPackPrice : 0);
+
+  const colors = {
+    bg: isDarkMode ? '#1A1D1F' : '#F9FAFB',
+    cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
+    textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
+    textSecondary: isDarkMode ? '#9CA3AF' : '#6B7280',
+    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
+    inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
+  };
 
   const t = {
     en: {
       title: "Open Dispute Case",
       subtitle: "Get help resolving rental disputes with professional support",
-      notAvailable: "Resolve Service Coming Soon",
-      notAvailableDesc: "This feature is under development and will be available soon.",
+      serviceComponents: "Service Components",
+      serviceFees: "Service Fees",
+      howItWorks: "How It Works",
+      transparentPricing: "Transparent Pricing",
+      memberRate: "Member Rate",
+      publicRate: "Public Rate",
+      successFee: "success fee",
+      forSubscribers: "For subscription tier holders",
+      lowerUpfront: "Lower upfront cost",
+      prioritySupport: "Priority support",
+      noSubRequired: "No subscription required",
+      payAsYouGo: "Pay as you go",
+      sameQuality: "Same quality service",
+      getStarted: "Get Started",
+      availableAddons: "Available Add-ons",
+      fastTrack: "Fast Track",
+      fastTrackDesc: "Priority review within 12 hours instead of standard 24-48 hours",
+      letterPack: "Legal Letter Pack",
+      letterPackDesc: "Professional escalation templates for serious disputes",
+      public: "public",
+      member: "member",
       leaseLabel: "Related Lease (Optional)",
       selectLease: "Select a lease",
       amountLabel: "Dispute Amount (฿)",
       summaryLabel: "Case Summary",
       summaryPlaceholder: "Describe your dispute: What happened? What are you claiming? What evidence do you have?",
       addons: "Available Add-ons",
-      fastTrack: "Fast Track",
-      fastTrackDesc: "Priority review within 12 hours instead of standard 24-48 hours",
-      letterPack: "Legal Letter Pack",
-      letterPackDesc: "Professional escalation templates for serious disputes",
-      memberPrice: "Member Price",
-      publicPrice: "Public Price",
       totalCost: "Total Add-ons Cost",
       submitCase: "Submit Case",
-      submitting: "Submitting..."
+      submitting: "Submitting...",
+      memberPricingNote: "One-time review and support fee. Additional admin charges may apply for extended cases.",
+      publicPricingNote: "One-time review and support fee. Additional admin charges may apply for extended cases."
     },
     th: {
       title: "เปิดคดีข้อพิพาท",
       subtitle: "รับความช่วยเหลือในการแก้ไขข้อพิพาทการเช่าด้วยการสนับสนุนจากผู้เชี่ยวชาญ",
-      notAvailable: "บริการ Resolve เร็วๆ นี้",
-      notAvailableDesc: "ฟีเจอร์นี้อยู่ระหว่างการพัฒนาและจะพร้อมใช้งานในเร็วๆ นี้",
+      serviceComponents: "ส่วนประกอบของบริการ",
+      serviceFees: "ค่าบริการ",
+      howItWorks: "วิธีการทำงาน",
+      transparentPricing: "ราคาโปร่งใส",
+      memberRate: "ราคาสมาชิก",
+      publicRate: "ราคาทั่วไป",
+      successFee: "ค่าธรรมเนียมความสำเร็จ",
+      forSubscribers: "สำหรับผู้ถือแพ็กเกจสมาชิก",
+      lowerUpfront: "ค่าใช้จ่ายล่วงหน้าที่ต่ำกว่า",
+      prioritySupport: "การสนับสนุนแบบเร่งด่วน",
+      noSubRequired: "ไม่ต้องสมัครสมาชิก",
+      payAsYouGo: "จ่ายตามที่ใช้",
+      sameQuality: "บริการคุณภาพเดียวกัน",
+      getStarted: "เริ่มต้น",
+      availableAddons: "บริการเสริมที่มี",
+      fastTrack: "Fast Track",
+      fastTrackDesc: "ตรวจสอบแบบเร่งด่วนภายใน 12 ชั่วโมงแทนที่จะเป็น 24-48 ชั่วโมงมาตรฐาน",
+      letterPack: "ชุดจดหมายทางกฎหมาย",
+      letterPackDesc: "เทมเพลตการยกระดับอย่างมืออาชีพสำหรับข้อพิพาทร้ายแรง",
+      public: "ทั่วไป",
+      member: "สมาชิก",
       leaseLabel: "สัญญาเช่าที่เกี่ยวข้อง (ไม่บังคับ)",
       selectLease: "เลือกสัญญาเช่า",
       amountLabel: "จำนวนเงินที่พิพาท (฿)",
       summaryLabel: "สรุปคดี",
       summaryPlaceholder: "อธิบายข้อพิพาทของคุณ: เกิดอะไรขึ้น? คุณเรียกร้องอะไร? คุณมีหลักฐานอะไร?",
       addons: "บริการเสริมที่มี",
-      fastTrack: "Fast Track",
-      fastTrackDesc: "ตรวจสอบแบบเร่งด่วนภายใน 12 ชั่วโมงแทนที่จะเป็น 24-48 ชั่วโมงมาตรฐาน",
-      letterPack: "ชุดจดหมายทางกฎหมาย",
-      letterPackDesc: "เทมเพลตการยกระดับอย่างมืออาชีพสำหรับข้อพิพาทร้ายแรง",
-      memberPrice: "ราคาสมาชิก",
-      publicPrice: "ราคาทั่วไป",
       totalCost: "ค่าใช้จ่ายบริการเสริมทั้งหมด",
       submitCase: "ส่งคดี",
-      submitting: "กำลังส่ง..."
+      submitting: "กำลังส่ง...",
+      memberPricingNote: "ค่าธรรมเนียมการตรวจสอบและสนับสนุนครั้งเดียว อาจมีค่าบริหารเพิ่มเติมสำหรับกรณีที่ขยายเวลา",
+      publicPricingNote: "ค่าธรรมเนียมการตรวจสอบและสนับสนุนครั้งเดียว อาจมีค่าบริหารเพิ่มเติมสำหรับกรณีที่ขยายเวลา"
     }
   };
 
   const strings = t[language];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-6 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Scale className="w-8 h-8 text-ls-forest" />
-            <h1 className="text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <Scale className="w-8 h-8 md:w-10 md:h-10 text-ls-forest" />
+            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           </div>
-          <p className="text-slate-600">{strings.subtitle}</p>
+          <p className="text-lg" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
 
-        {/* Coming Soon Notice */}
-        <Alert className="mb-6 bg-blue-50 border-blue-200">
-          <AlertCircle className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">
-            <div className="font-semibold mb-1">{strings.notAvailable}</div>
-            <p className="text-sm">{strings.notAvailableDesc}</p>
-          </AlertDescription>
-        </Alert>
+        {/* How It Works */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-center mb-8" style={{ color: colors.textPrimary }}>
+            {strings.howItWorks}
+          </h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {PROCESS_STEPS.map((step) => {
+              const Icon = step.icon;
+              return (
+                <Card key={step.number} className="border-none shadow-lg text-center" style={{ backgroundColor: colors.cardBg }}>
+                  <CardContent className="p-6">
+                    <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{
+                      backgroundColor: '#C7A338'
+                    }}>
+                      <Icon className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                      {step.number}. {step.title}
+                    </h3>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      {step.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
 
-        <Card className="border-none shadow-xl">
-          <CardHeader className="border-b" style={{ backgroundColor: '#ECEFED' }}>
-            <CardTitle>Case Details</CardTitle>
+        {/* Transparent Pricing Section */}
+        <div className="mb-12 p-8 rounded-2xl" style={{
+          background: isDarkMode 
+            ? 'linear-gradient(135deg, #C7A338 0%, #d4af37 100%)'
+            : 'linear-gradient(135deg, #C7A338 0%, #d4af37 100%)'
+        }}>
+          <h2 className="text-3xl font-bold text-center mb-8 text-ls-charcoal">
+            {strings.transparentPricing}
+          </h2>
+          
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {/* Member Rate */}
+            <Card className="border-none shadow-2xl overflow-hidden">
+              <CardHeader className="bg-ls-forest text-white p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <CardTitle className="text-2xl">{strings.memberRate}</CardTitle>
+                  <Shield className="w-8 h-8" />
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold">฿{baseMemberPrice.toLocaleString()}</span>
+                </div>
+                <p className="text-sm text-white/80 mt-2">+ {memberSuccessFee}% {strings.successFee}</p>
+              </CardHeader>
+              <CardContent className="p-6">
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.forSubscribers}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.lowerUpfront}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.prioritySupport}</span>
+                  </li>
+                </ul>
+                <p className="text-xs mt-4" style={{ color: colors.textSecondary }}>
+                  {strings.memberPricingNote}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Public Rate */}
+            <Card className="border-none shadow-2xl overflow-hidden">
+              <CardHeader className="bg-ls-charcoal text-white p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <CardTitle className="text-2xl">{strings.publicRate}</CardTitle>
+                  <Scale className="w-8 h-8" />
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold">฿{basePublicPrice.toLocaleString()}</span>
+                </div>
+                <p className="text-sm text-white/80 mt-2">+ {publicSuccessFee}% {strings.successFee}</p>
+              </CardHeader>
+              <CardContent className="p-6">
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.noSubRequired}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.payAsYouGo}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.sameQuality}</span>
+                  </li>
+                </ul>
+                <p className="text-xs mt-4" style={{ color: colors.textSecondary }}>
+                  {strings.publicPricingNote}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Available Add-ons */}
+          <div>
+            <h3 className="text-2xl font-bold text-center mb-6 text-ls-charcoal">
+              {strings.availableAddons}
+            </h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Fast Track */}
+              <Card className="border-none shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <Zap className="w-6 h-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
+                          {strings.fastTrack}
+                        </h4>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                    {strings.fastTrackDesc}
+                  </p>
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-2xl font-bold text-ls-charcoal">฿500</span>
+                    <span className="text-sm" style={{ color: colors.textSecondary }}>({strings.public})</span>
+                  </div>
+                  <div className="flex items-baseline gap-3 mt-1">
+                    <span className="text-2xl font-bold text-ls-forest">฿300</span>
+                    <span className="text-sm" style={{ color: colors.textSecondary }}>({strings.member})</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Letter Pack */}
+              <Card className="border-none shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
+                          {strings.letterPack}
+                        </h4>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                    {strings.letterPackDesc}
+                  </p>
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-2xl font-bold text-ls-charcoal">฿1,500</span>
+                    <span className="text-sm" style={{ color: colors.textSecondary }}>({strings.public})</span>
+                  </div>
+                  <div className="flex items-baseline gap-3 mt-1">
+                    <span className="text-2xl font-bold text-ls-forest">฿900</span>
+                    <span className="text-sm" style={{ color: colors.textSecondary }}>({strings.member})</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+
+        {/* Service Components */}
+        <Card className="mb-8 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader className="border-b" style={{ borderBottomColor: colors.borderColor }}>
+            <CardTitle className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+              {strings.serviceComponents}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {SERVICE_COMPONENTS.map((component, index) => (
+                <div key={index} className="flex gap-4 pb-4 border-b last:border-0" style={{ borderBottomColor: colors.borderColor }}>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-ls-forest/10 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-ls-forest" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold mb-1" style={{ color: colors.textPrimary }}>
+                      {component.category}
+                    </h3>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      {component.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Case Submission Form */}
+        <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader className="border-b" style={{ borderBottomColor: colors.borderColor }}>
+            <CardTitle style={{ color: colors.textPrimary }}>Case Details</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Lease Selection */}
               <div>
-                <Label htmlFor="lease">{strings.leaseLabel}</Label>
+                <Label htmlFor="lease" style={{ color: colors.textPrimary }}>{strings.leaseLabel}</Label>
                 <select
                   id="lease"
                   value={selectedLease || ''}
                   onChange={(e) => setSelectedLease(e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-lg"
+                  className="w-full p-3 mt-2 border-2 rounded-lg"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
                 >
                   <option value="">{strings.selectLease}</option>
                   {leases.map((lease) => (
@@ -160,7 +447,7 @@ export default function ResolveCase() {
 
               {/* Dispute Amount */}
               <div>
-                <Label htmlFor="amount">{strings.amountLabel}</Label>
+                <Label htmlFor="amount" style={{ color: colors.textPrimary }}>{strings.amountLabel}</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -168,12 +455,18 @@ export default function ResolveCase() {
                   value={formData.dispute_amount}
                   onChange={(e) => setFormData({...formData, dispute_amount: e.target.value})}
                   placeholder="10000"
+                  className="mt-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
                 />
               </div>
 
               {/* Summary */}
               <div>
-                <Label htmlFor="summary">{strings.summaryLabel}</Label>
+                <Label htmlFor="summary" style={{ color: colors.textPrimary }}>{strings.summaryLabel}</Label>
                 <Textarea
                   id="summary"
                   required
@@ -181,18 +474,27 @@ export default function ResolveCase() {
                   onChange={(e) => setFormData({...formData, summary: e.target.value})}
                   placeholder={strings.summaryPlaceholder}
                   rows={6}
+                  className="mt-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
                 />
               </div>
 
               {/* Add-ons Section */}
-              <div className="pt-4 border-t border-slate-200">
-                <h3 className="text-lg font-bold text-ls-charcoal mb-4 flex items-center gap-2">
+              <div className="pt-4 border-t" style={{ borderTopColor: colors.borderColor }}>
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <Zap className="w-5 h-5 text-ls-gold" />
                   {strings.addons}
                 </h3>
 
                 {/* Fast Track */}
-                <Card className="mb-4 border-2 border-ls-forest/20 hover:border-ls-forest/40 transition-colors">
+                <Card className="mb-4 border-2 hover:border-ls-forest/40 transition-colors" style={{
+                  borderColor: formData.fast_track ? '#0C3B2E' : colors.borderColor,
+                  backgroundColor: colors.cardBg
+                }}>
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <Checkbox
@@ -204,30 +506,35 @@ export default function ResolveCase() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <Clock className="w-5 h-5 text-ls-forest" />
-                          <Label htmlFor="fast_track" className="text-base font-bold cursor-pointer">
+                          <Label htmlFor="fast_track" className="text-base font-bold cursor-pointer" style={{ color: colors.textPrimary }}>
                             {strings.fastTrack}
                           </Label>
                         </div>
-                        <p className="text-sm text-slate-600 mb-3">{strings.fastTrackDesc}</p>
+                        <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>{strings.fastTrackDesc}</p>
                         <div className="flex gap-3">
                           <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
-                            {strings.memberPrice}: ฿300
+                            {strings.memberRate}: ฿300
                           </Badge>
                           <Badge className="bg-slate-100 text-slate-700 border-slate-200">
-                            {strings.publicPrice}: ฿500
+                            {strings.publicRate}: ฿500
                           </Badge>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-ls-forest">฿{fastTrackPrice}</p>
-                        <p className="text-xs text-slate-500">{isMember ? strings.memberPrice : strings.publicPrice}</p>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {isMember ? strings.memberRate : strings.publicRate}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Letter Pack */}
-                <Card className="mb-4 border-2 border-ls-gold/30 hover:border-ls-gold/60 transition-colors">
+                <Card className="mb-4 border-2 hover:border-ls-gold/60 transition-colors" style={{
+                  borderColor: formData.letter_pack ? '#C7A338' : colors.borderColor,
+                  backgroundColor: colors.cardBg
+                }}>
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <Checkbox
@@ -239,23 +546,25 @@ export default function ResolveCase() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <Mail className="w-5 h-5 text-ls-gold" />
-                          <Label htmlFor="letter_pack" className="text-base font-bold cursor-pointer">
+                          <Label htmlFor="letter_pack" className="text-base font-bold cursor-pointer" style={{ color: colors.textPrimary }}>
                             {strings.letterPack}
                           </Label>
                         </div>
-                        <p className="text-sm text-slate-600 mb-3">{strings.letterPackDesc}</p>
+                        <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>{strings.letterPackDesc}</p>
                         <div className="flex gap-3">
                           <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
-                            {strings.memberPrice}: ฿900
+                            {strings.memberRate}: ฿900
                           </Badge>
                           <Badge className="bg-slate-100 text-slate-700 border-slate-200">
-                            {strings.publicPrice}: ฿1,500
+                            {strings.publicRate}: ฿1,500
                           </Badge>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-ls-gold">฿{letterPackPrice}</p>
-                        <p className="text-xs text-slate-500">{isMember ? strings.memberPrice : strings.publicPrice}</p>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {isMember ? strings.memberRate : strings.publicRate}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -263,7 +572,10 @@ export default function ResolveCase() {
 
                 {/* Total Cost */}
                 {totalAddons > 0 && (
-                  <div className="mt-4 p-4 bg-ls-forest/5 border-2 border-ls-forest/20 rounded-xl">
+                  <div className="mt-4 p-4 rounded-xl border-2" style={{
+                    backgroundColor: isDarkMode ? 'rgba(12, 59, 46, 0.1)' : 'rgba(12, 59, 46, 0.05)',
+                    borderColor: '#0C3B2E'
+                  }}>
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-ls-charcoal">{strings.totalCost}:</span>
                       <span className="text-2xl font-bold text-ls-forest">฿{totalAddons.toLocaleString()}</span>
@@ -280,8 +592,8 @@ export default function ResolveCase() {
                   width: '100%',
                   backgroundColor: createCaseMutation.isPending ? '#9CA3AF' : '#0C3B2E',
                   color: '#FFFFFF',
-                  padding: '14px 16px',
-                  borderRadius: '8px',
+                  padding: '16px',
+                  borderRadius: '10px',
                   fontWeight: 'bold',
                   fontSize: '16px',
                   border: 'none',
@@ -291,7 +603,7 @@ export default function ResolveCase() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px'
+                  gap: '10px'
                 }}
                 onMouseEnter={(e) => {
                   if (!createCaseMutation.isPending) {
