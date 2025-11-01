@@ -21,7 +21,8 @@ import {
   AlertTriangle,
   Shield,
   Eye,
-  ExternalLink
+  ExternalLink,
+  Loader2 // Added Loader2 import
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -67,6 +68,12 @@ export default function LeaseDetails() {
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       setEditingNotice(false);
     },
+    onError: (error) => {
+      console.error('Update failed:', error);
+      alert(language === 'th' 
+        ? 'ไม่สามารถบันทึกการเปลี่ยนแปลงได้ กรุณาลองอีกครั้ง' 
+        : 'Failed to save changes. Please try again.');
+    }
   });
 
   const language = user?.language || 'en';
@@ -201,8 +208,11 @@ export default function LeaseDetails() {
   if (leaseLoading) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-5xl mx-auto text-center py-20">
-          <p style={{ color: colors.textSecondary }}>{strings.loading}</p>
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: colors.textSecondary }} />
+            <p className="text-lg" style={{ color: colors.textSecondary }}>{strings.loading}</p>
+          </div>
         </div>
       </div>
     );
@@ -212,13 +222,27 @@ export default function LeaseDetails() {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-5xl mx-auto">
-          <Button variant="outline" onClick={() => navigate(createPageUrl("UploadScan"))}>
+          <Button variant="outline" onClick={() => navigate(createPageUrl("UploadScan"))} className="mb-6">
             <ArrowLeft className="w-4 h-4 mr-2" />
             {strings.backToLeases}
           </Button>
           <div className="text-center py-20">
-            <FileText className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
-            <p className="text-lg font-semibold" style={{ color: colors.textPrimary }}>{strings.notFound}</p>
+            <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{
+              backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6'
+            }}>
+              <FileText className="w-10 h-10" style={{ color: colors.textSecondary, opacity: 0.5 }} />
+            </div>
+            <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {strings.notFound}
+            </h2>
+            <p className="mb-6" style={{ color: colors.textSecondary }}>
+              {language === 'th' 
+                ? 'ไม่พบสัญญาเช่าที่คุณกำลังมองหา หรืออาจถูกลบไปแล้ว' 
+                : 'The lease you\'re looking for doesn\'t exist or may have been deleted.'}
+            </p>
+            <Button onClick={() => navigate(createPageUrl("UploadScan"))} className="bg-ls-forest hover:bg-ls-forest/90">
+              {language === 'th' ? 'กลับไปที่สัญญาเช่า' : 'Go to Leases'}
+            </Button>
           </div>
         </div>
       </div>
