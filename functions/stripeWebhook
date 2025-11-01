@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -156,7 +157,6 @@ Deno.serve(async (req) => {
             fast_track: metadata.fast_track === 'true',
             letter_pack: metadata.letter_pack === 'true',
             is_member_at_creation: metadata.is_member_at_creation === 'true',
-            success_fee_rate: parseFloat(metadata.success_fee_rate),
             status: 'active',
             created_by: user.email
           };
@@ -212,8 +212,7 @@ Case ID: ${newCase.id}
 User: ${user.full_name} (${user.email})
 Member: ${metadata.is_member_at_creation === 'true' ? 'Yes' : 'No'}
 Amount Paid: ฿${metadata.total_paid}
-Dispute Amount: ฿${metadata.dispute_amount}
-Success Fee Rate: ${metadata.success_fee_rate}%${leaseInfo}${addonsInfo}
+Dispute Amount: ฿${metadata.dispute_amount}${leaseInfo}${addonsInfo}
 
 Summary:
 ${metadata.summary}

@@ -67,6 +67,7 @@ export default function ResolveCase() {
     letter_pack: false
   });
   const [selectedLease, setSelectedLease] = useState(null);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false); // New state for payment submission loading
 
   const queryClient = useQueryClient();
   const { hasAccess: isMember } = useFeatureAccess('resolve_member_price');
@@ -92,6 +93,7 @@ export default function ResolveCase() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmittingPayment(true); // Set loading true at start
     
     // Calculate total amount
     const basePrice = isMember ? baseMemberPrice : basePublicPrice;
@@ -100,20 +102,18 @@ export default function ResolveCase() {
     // Prepare case metadata for Stripe
     const caseMetadata = {
       type: 'case',
-      dispute_amount: parseFloat(formData.dispute_amount).toString(), // Ensure string for metadata
+      dispute_amount: formData.dispute_amount, // Ensure string for metadata
       summary: formData.summary,
       lease_id: selectedLease || '',
       fast_track: formData.fast_track.toString(),
       letter_pack: formData.letter_pack.toString(),
       is_member_at_creation: isMember.toString(),
-      success_fee_rate: (isMember ? memberSuccessFee : publicSuccessFee).toString(),
+      // success_fee_rate removed as per all-inclusive pricing
       total_paid: totalAmount.toString()
     };
 
     // Create Stripe checkout session
     try {
-      // Temporarily disable the submit button
-      createCaseMutation.isPending = true; // Simulating pending state for UI
       
       const response = await base44.functions.invoke('createCheckout', {
         priceId: null, // Not using price ID for one-time payments
@@ -137,18 +137,17 @@ export default function ResolveCase() {
         ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' 
         : 'Failed to create checkout. Please try again.');
     } finally {
-      createCaseMutation.isPending = false; // Resetting pending state
+      setIsSubmittingPayment(false); // Resetting pending state
     }
   };
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
-  // Pricing based on membership
-  const baseMemberPrice = 1490;
-  const basePublicPrice = 2490;
-  const memberSuccessFee = 10;
-  const publicSuccessFee = 15;
+  // Pricing based on membership - ALL-INCLUSIVE
+  const baseMemberPrice = 2490;
+  const basePublicPrice = 3990;
+  // memberSuccessFee and publicSuccessFee removed as per all-inclusive pricing
   const fastTrackPrice = isMember ? 300 : 500;
   const letterPackPrice = isMember ? 900 : 1500;
   const totalAddons = (formData.fast_track ? fastTrackPrice : 0) + (formData.letter_pack ? letterPackPrice : 0);
@@ -172,9 +171,9 @@ export default function ResolveCase() {
       transparentPricing: "Transparent Pricing",
       memberRate: "Member Rate",
       publicRate: "Public Rate",
-      successFee: "success fee",
+      allInclusive: "All-Inclusive",
       forSubscribers: "For subscription tier holders",
-      lowerUpfront: "Lower upfront cost",
+      lowerUpfront: "Discounted rate",
       prioritySupport: "Priority support",
       noSubRequired: "No subscription required",
       payAsYouGo: "Pay as you go",
@@ -196,8 +195,8 @@ export default function ResolveCase() {
       totalCost: "Total Add-ons Cost",
       submitCase: "Submit Case",
       submitting: "Submitting...",
-      memberPricingNote: "One-time review and support fee. Additional admin charges may apply for extended cases.",
-      publicPricingNote: "One-time review and support fee. Additional admin charges may apply for extended cases."
+      memberPricingNote: "All-inclusive case support fee. Includes full review, documentation, and negotiation support.",
+      publicPricingNote: "All-inclusive case support fee. Includes full review, documentation, and negotiation support."
     },
     th: {
       title: "เปิดคดีข้อพิพาท",
@@ -208,9 +207,9 @@ export default function ResolveCase() {
       transparentPricing: "ราคาโปร่งใส",
       memberRate: "ราคาสมาชิก",
       publicRate: "ราคาทั่วไป",
-      successFee: "ค่าธรรมเนียมความสำเร็จ",
+      allInclusive: "ราคารวมทั้งหมด",
       forSubscribers: "สำหรับผู้ถือแพ็กเกจสมาชิก",
-      lowerUpfront: "ค่าใช้จ่ายล่วงหน้าที่ต่ำกว่า",
+      lowerUpfront: "ราคาพิเศษ",
       prioritySupport: "การสนับสนุนแบบเร่งด่วน",
       noSubRequired: "ไม่ต้องสมัครสมาชิก",
       payAsYouGo: "จ่ายตามที่ใช้",
@@ -232,8 +231,8 @@ export default function ResolveCase() {
       totalCost: "ค่าใช้จ่ายบริการเสริมทั้งหมด",
       submitCase: "ส่งคดี",
       submitting: "กำลังส่ง...",
-      memberPricingNote: "ค่าธรรมเนียมการตรวจสอบและสนับสนุนครั้งเดียว อาจมีค่าบริหารเพิ่มเติมสำหรับกรณีที่ขยายเวลา",
-      publicPricingNote: "ค่าธรรมเนียมการตรวจสอบและสนับสนุนครั้งเดียว อาจมีค่าบริหารเพิ่มเติมสำหรับกรณีที่ขยายเวลา"
+      memberPricingNote: "ค่าธรรมเนียมการสนับสนุนคดีรวมทั้งหมด รวมการตรวจสอบ เอกสาร และการเจรจาต่อรอง",
+      publicPricingNote: "ค่าธรรมเนียมการสนับสนุนคดีรวมทั้งหมด รวมการตรวจสอบ เอกสาร และการเจรจาต่อรอง"
     }
   };
 
@@ -347,7 +346,7 @@ export default function ResolveCase() {
                   color: '#FFFFFF',
                   opacity: 0.9
                 }}>
-                  + {memberSuccessFee}% {strings.successFee}
+                  {strings.allInclusive}
                 </p>
               </div>
               <CardContent style={{ 
@@ -480,7 +479,7 @@ export default function ResolveCase() {
                   color: '#FFFFFF',
                   opacity: 0.9
                 }}>
-                  + {publicSuccessFee}% {strings.successFee}
+                  {strings.allInclusive}
                 </p>
               </div>
               <CardContent style={{ 
@@ -889,18 +888,18 @@ export default function ResolveCase() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={createCaseMutation.isPending}
+                disabled={isSubmittingPayment}
                 style={{
                   width: '100%',
-                  backgroundColor: createCaseMutation.isPending ? '#9CA3AF' : '#0C3B2E',
+                  backgroundColor: isSubmittingPayment ? '#9CA3AF' : '#0C3B2E',
                   color: '#FFFFFF',
                   padding: '16px',
                   borderRadius: '10px',
                   fontWeight: 'bold',
                   fontSize: '16px',
                   border: 'none',
-                  cursor: createCaseMutation.isPending ? 'not-allowed' : 'pointer',
-                  opacity: createCaseMutation.isPending ? 0.6 : 1,
+                  cursor: isSubmittingPayment ? 'not-allowed' : 'pointer',
+                  opacity: isSubmittingPayment ? 0.6 : 1,
                   transition: 'all 0.2s',
                   display: 'flex',
                   alignItems: 'center',
@@ -908,18 +907,18 @@ export default function ResolveCase() {
                   gap: '10px'
                 }}
                 onMouseEnter={(e) => {
-                  if (!createCaseMutation.isPending) {
+                  if (!isSubmittingPayment) {
                     e.target.style.backgroundColor = '#0a2f25';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (!createCaseMutation.isPending) {
+                  if (!isSubmittingPayment) {
                     e.target.style.backgroundColor = '#0C3B2E';
                   }
                 }}
               >
                 <Scale className="w-5 h-5" />
-                {createCaseMutation.isPending ? strings.submitting : strings.submitCase}
+                {isSubmittingPayment ? strings.submitting : strings.submitCase}
               </button>
             </form>
           </CardContent>

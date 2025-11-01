@@ -248,19 +248,6 @@ export default function Cases() {
                       </div>
                     )}
 
-                    {caseItem.success_fee_rate > 0 && (
-                      <div className="p-3 bg-blue-50 rounded-xl mb-4 border border-blue-200">
-                        <p className="text-xs text-blue-800">
-                          {strings.successFee} <span className="font-bold">{caseItem.success_fee_rate}%</span>
-                          {caseItem.is_member_at_creation && hasMemberPrice && (
-                            <span className="ml-2 text-emerald-600 font-medium">
-                              {strings.memberDiscount}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    )}
-
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Button variant="outline" className="flex-1 text-xs sm:text-sm" size="sm">
                         {strings.viewDetails}
