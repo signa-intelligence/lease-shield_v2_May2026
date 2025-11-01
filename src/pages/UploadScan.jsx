@@ -6,20 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2 } from "lucide-react";
-import { format } from "date-fns";
-import { Link, useNavigate } from "react-router-dom"; // Added useNavigate
+import { format } = from "date-fns";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function UploadScan() {
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState(null);
-  const [showConfirmation, setShowConfirmation] = useState(false); // New state
-  const [leaseDetails, setLeaseDetails] = useState(null); // New state
-  const [pendingLeaseId, setPendingLeaseId] = useState(null); // New state
+  const [uploadProgress, setUploadProgress] = useState(0); // New state for upload progress
+  const [retryCount, setRetryCount] = useState(0); // New state for retry count
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [leaseDetails, setLeaseDetails] = useState(null);
+  const [pendingLeaseId, setPendingLeaseId] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -72,12 +74,12 @@ export default function UploadScan() {
   const handleFileSelect = (e) => {
     e.preventDefault();
     setDragActive(false);
-    setError(null);
+    setError(null); // Clear error on new file selection
 
     const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
     if (!files || files.length === 0) return;
 
-    const validFiles = Array.from(files).filter(file => 
+    const validFiles = Array.from(files).filter(file =>
       file.type.includes('pdf') || file.type.includes('image')
     );
 
@@ -94,99 +96,169 @@ export default function UploadScan() {
   };
 
   const handleUploadAll = async () => {
-    if (selectedFiles.length === 0) return;
+    if (selectedFiles.length === 0) {
+      setError(language === 'th' ? 'กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์' : 'Please select at least one file');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
 
     setUploading(true);
     setError(null);
+    setUploadProgress(0);
+    setRetryCount(0);
 
-    try {
-      const uploadPromises = selectedFiles.map(file => 
-        base44.integrations.Core.UploadFile({ file })
-      );
-      
-      const uploadResults = await Promise.all(uploadPromises);
-      const fileUrls = uploadResults.map(result => result.file_url);
+    let currentRetry = 0;
+    const maxRetries = 3; // Max retries for the entire upload/analysis process
 
-      const lease = await base44.entities.Lease.create({
-        file_url: fileUrls[0],
-        file_urls: fileUrls,
-        status: 'uploaded'
-      });
+    const attemptUpload = async () => {
+      try {
+        // Upload files
+        setUploadProgress(10);
+        const uploadPromises = selectedFiles.map(file =>
+          base44.integrations.Core.UploadFile({ file })
+        );
 
-      setAnalyzing(true);
-      
-      const scanResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant. 
-        
-        Provide:
-        1. A risk score from 0-100 (0 = very safe, 100 = very risky)
-        2. List of flags with severity (critical, high, medium, low), category, and description
-        3. A summary of the overall lease quality
-        4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)
-        5. IMPORTANT: Extract notice_period_days - the number of days before lease end that tenant must notify landlord about renewal/termination (common: 30, 45, 60, 90 days). Look for clauses like "notify landlord X days prior to end" or "แจ้งล่วงหน้า X วัน". If not found, return null.`,
-        file_urls: fileUrls,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            risk_score: { type: "integer" },
-            flags: {
-              type: "array",
-              items: {
+        const uploadResults = await Promise.all(uploadPromises);
+        const fileUrls = uploadResults.map(result => result.file_url);
+        setUploadProgress(40);
+
+        // Create lease
+        const lease = await base44.entities.Lease.create({
+          file_url: fileUrls[0],
+          file_urls: fileUrls,
+          status: 'uploaded'
+        });
+        setUploadProgress(50);
+
+        setAnalyzing(true);
+        setUploading(false);
+
+        // Analyze with retry logic
+        let scanResult;
+        let analysisRetry = 0;
+        const maxAnalysisRetries = 2; // Max retries for the LLM invocation specifically
+
+        while (analysisRetry <= maxAnalysisRetries) {
+          try {
+            scanResult = await base44.integrations.Core.InvokeLLM({
+              prompt: `Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant.
+
+              Provide:
+              1. A risk score from 0-100 (0 = very safe, 100 = very risky)
+              2. List of flags with severity (critical, high, medium, low), category, and description
+              3. A summary of the overall lease quality
+              4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)
+              5. IMPORTANT: Extract notice_period_days - the number of days before lease end that tenant must notify landlord about renewal/termination (common: 30, 45, 60, 90 days). Look for clauses like "notify landlord X days prior to end" or "แจ้งล่วงหน้า X วัน". If not found, return null.`,
+              file_urls: fileUrls,
+              response_json_schema: {
                 type: "object",
                 properties: {
-                  severity: { type: "string", enum: ["low", "medium", "high", "critical"] },
-                  category: { type: "string" },
-                  description: { type: "string" }
+                  risk_score: { type: "integer" },
+                  flags: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        severity: { type: "string", enum: ["low", "medium", "high", "critical"] },
+                        category: { type: "string" },
+                        description: { type: "string" }
+                      }
+                    }
+                  },
+                  summary: { type: "string" },
+                  property_address: { type: "string" },
+                  start_date: { type: "string" },
+                  end_date: { type: "string" },
+                  rent_amount: { type: "number" },
+                  deposit_amount: { type: "number" },
+                  language_detected: { type: "string", enum: ["en", "th", "mixed"] },
+                  notice_period_days: { type: ["integer", "null"] }
                 }
               }
-            },
-            summary: { type: "string" },
-            property_address: { type: "string" },
-            start_date: { type: "string" },
-            end_date: { type: "string" },
-            rent_amount: { type: "number" },
-            deposit_amount: { type: "number" },
-            language_detected: { type: "string", enum: ["en", "th", "mixed"] },
-            notice_period_days: { type: ["integer", "null"] } // Added
+            });
+            setUploadProgress(80);
+            break; // Success, exit retry loop
+          } catch (analysisError) {
+            analysisRetry++;
+            if (analysisRetry > maxAnalysisRetries) {
+              throw new Error(language === 'th'
+                ? 'การวิเคราะห์ล้มเหลว กรุณาลองอีกครั้งภายหลัง'
+                : 'Analysis failed. Please try again later.');
+            }
+            // Wait before retry with exponential backoff
+            await new Promise(resolve => setTimeout(resolve, 1000 * analysisRetry));
           }
         }
-      });
 
-      await base44.entities.Lease.update(lease.id, {
-        status: 'scanned',
-        property_address: scanResult.property_address,
-        start_date: scanResult.start_date,
-        end_date: scanResult.end_date,
-        rent_amount: scanResult.rent_amount,
-        deposit_amount: scanResult.deposit_amount,
-        language_detected: scanResult.language_detected
-      });
+        await base44.entities.Lease.update(lease.id, {
+          status: 'scanned',
+          property_address: scanResult.property_address,
+          start_date: scanResult.start_date,
+          end_date: scanResult.end_date,
+          rent_amount: scanResult.rent_amount,
+          deposit_amount: scanResult.deposit_amount,
+          language_detected: scanResult.language_detected
+        });
+        setUploadProgress(90);
 
-      await base44.entities.LeaseScan.create({
-        lease_id: lease.id,
-        risk_score: scanResult.risk_score,
-        flags: scanResult.flags || [],
-        summary: scanResult.summary,
-        scan_full: scanResult,
-        version: '1.0'
-      });
+        await base44.entities.LeaseScan.create({
+          lease_id: lease.id,
+          risk_score: scanResult.risk_score,
+          flags: scanResult.flags || [],
+          summary: scanResult.summary,
+          scan_full: scanResult,
+          version: '1.0'
+        });
+        setUploadProgress(100);
 
-      // Show confirmation modal for lease details
-      setLeaseDetails({
-        end_date: scanResult.end_date,
-        notice_period_days: scanResult.notice_period_days || 30
-      });
-      setPendingLeaseId(lease.id);
-      setShowConfirmation(true);
-      setUploading(false);
-      setAnalyzing(false);
-      
-    } catch (err) {
-      setError(language === 'th' ? 'การวิเคราะห์ล้มเหลว กรุณาลองอีกครั้ง' : 'Failed to analyze lease. Please try again.');
-      console.error(err);
-      setUploading(false);
-      setAnalyzing(false);
-    }
+        // Show confirmation modal for lease details
+        setLeaseDetails({
+          end_date: scanResult.end_date,
+          notice_period_days: scanResult.notice_period_days || 30
+        });
+        setPendingLeaseId(lease.id);
+        setShowConfirmation(true);
+        setSelectedFiles([]); // Clear selected files after successful upload and analysis
+
+      } catch (err) {
+        currentRetry++;
+        setRetryCount(currentRetry);
+
+        if (currentRetry <= maxRetries) {
+          // Show retry message
+          setError(language === 'th'
+            ? `เกิดข้อผิดพลาด กำลังลองใหม่... (${currentRetry}/${maxRetries})`
+            : `Error occurred. Retrying... (${currentRetry}/${maxRetries})`);
+
+          // Wait before retry with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry)));
+          return attemptUpload(); // Recursive call for retry
+        } else {
+          // Max retries reached
+          console.error('Upload failed after retries:', err);
+
+          let errorMessage = language === 'th'
+            ? 'ไม่สามารถอัปโหลดได้ กรุณาตรวจสอบ:\n• ไฟล์ไม่เสียหาย\n• ขนาดไฟล์ไม่เกิน 10MB\n• มีอินเทอร์เน็ตที่เสถียร'
+            : 'Upload failed. Please check:\n• File is not corrupted\n• File size is under 10MB\n• Stable internet connection';
+
+          if (err.message.includes('Analysis failed')) {
+            errorMessage = err.message;
+          } else if (err.message.toLowerCase().includes('file')) {
+            errorMessage = language === 'th'
+              ? 'ไฟล์ไม่ถูกต้อง กรุณาใช้ไฟล์ PDF หรือรูปภาพเท่านั้น'
+              : 'Invalid file. Please use PDF or image files only.';
+          }
+
+          setError(errorMessage);
+        }
+      } finally {
+        setUploading(false);
+        setAnalyzing(false);
+        setUploadProgress(0); // Reset progress on completion/failure
+      }
+    };
+
+    await attemptUpload();
   };
 
   const handleConfirmLeaseDetails = async () => {
@@ -210,7 +282,7 @@ export default function UploadScan() {
       await queryClient.invalidateQueries({ queryKey: ['leases'] });
       await queryClient.invalidateQueries({ queryKey: ['scans'] });
 
-      navigate(createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`);
+      navigate(createPageUrl("LeaseDetails") + `?leaseId=${pendingLeaseId}`);
     } catch (err) {
       console.error('Failed to save lease details:', err);
       alert(language === 'th' ? 'ไม่สามารถบันทึกข้อมูลได้' : 'Failed to save details');
@@ -224,7 +296,7 @@ export default function UploadScan() {
   const handleSkipConfirmation = async () => {
     await queryClient.invalidateQueries({ queryKey: ['leases'] });
     await queryClient.invalidateQueries({ queryKey: ['scans'] });
-    navigate(createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`);
+    navigate(createPageUrl("LeaseDetails") + `?leaseId=${pendingLeaseId}`);
     setShowConfirmation(false);
     setPendingLeaseId(null);
     setLeaseDetails(null);
@@ -238,13 +310,19 @@ export default function UploadScan() {
   };
 
   const handleDeleteLease = async (leaseId, leaseName) => {
-    const confirmMessage = language === 'th' 
+    const confirmMessage = language === 'th'
       ? `ลบ ${leaseName}?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`
       : `Delete ${leaseName}?\n\nThis action cannot be undone.`;
-    
+
     if (confirm(confirmMessage)) {
       await deleteLeaseMutation.mutateAsync(leaseId);
     }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setSelectedFiles([]);
+    setRetryCount(0); // Reset retry count as well
   };
 
   const getStatusColor = (status) => {
@@ -281,7 +359,14 @@ export default function UploadScan() {
       selectAtLeast: "Select at least one file to upload",
       delete: "Delete",
       deleting: "Deleting...",
-      manage: "Manage"
+      manage: "Manage",
+      errorOccurred: "Error Occurred",
+      retrying: "Retrying...",
+      pleaseSelectFile: "Please select at least one file",
+      errorRetryGeneric: "Error occurred. Retrying... (Attempt {currentRetry}/{maxRetries})",
+      uploadFailedGeneric: "Upload failed. Please check:\n• File is not corrupted\n• File size is under 10MB\n• Stable internet connection",
+      analysisFailedSpecific: "Analysis failed. Please try again later.",
+      invalidFileSpecific: "Invalid file. Please use PDF or image files only.",
     },
     th: {
       title: "สแกนความเสี่ยงสัญญาเช่า",
@@ -307,7 +392,14 @@ export default function UploadScan() {
       selectAtLeast: "เลือกไฟล์อย่างน้อยหนึ่งไฟล์เพื่ออัปโหลด",
       delete: "ลบ",
       deleting: "กำลังลบ...",
-      manage: "จัดการ"
+      manage: "จัดการ",
+      errorOccurred: "เกิดข้อผิดพลาด",
+      retrying: "กำลังลองใหม่...",
+      pleaseSelectFile: "กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์",
+      errorRetryGeneric: "เกิดข้อผิดพลาด กำลังลองใหม่... (ครั้งที่ {currentRetry}/{maxRetries})",
+      uploadFailedGeneric: "ไม่สามารถอัปโหลดได้ กรุณาตรวจสอบ:\n• ไฟล์ไม่เสียหาย\n• ขนาดไฟล์ไม่เกิน 10MB\n• มีอินเทอร์เน็ตที่เสถียร",
+      analysisFailedSpecific: "การวิเคราะห์ล้มเหลว กรุณาลองอีกครั้งภายหลัง",
+      invalidFileSpecific: "ไฟล์ไม่ถูกต้อง กรุณาใช้ไฟล์ PDF หรือรูปภาพเท่านั้น",
     }
   };
 
@@ -343,12 +435,30 @@ export default function UploadScan() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-lg border-2 border-red-200" style={{
+          <div className="mb-6 p-4 rounded-lg border-2 border-red-200 animate-shake" style={{
             backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2'
           }}>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-              <p className="text-red-600 font-semibold">{error}</p>
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-red-600 font-semibold mb-1">
+                  {strings.errorOccurred}
+                </p>
+                <p className="text-red-600 text-sm whitespace-pre-line">{error}</p>
+                {retryCount > 0 && retryCount <= 3 && ( // Show retry message if retrying and not past max attempts
+                  <p className="text-red-500 text-xs mt-2">
+                    {language === 'th'
+                      ? `🔄 กำลังลองอีกครั้ง... (ครั้งที่ ${retryCount}/3)`
+                      : `🔄 Retrying... (Attempt ${retryCount}/3)`}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={handleRetry}
+                className="text-red-600 hover:text-red-800 font-semibold text-sm"
+              >
+                ✕
+              </button>
             </div>
           </div>
         )}
@@ -360,7 +470,7 @@ export default function UploadScan() {
               <h2 className="text-2xl font-bold mb-4" style={{ color: colors.textPrimary }}>
                 {language === 'th' ? '📋 ยืนยันรายละเอียดสัญญา' : '📋 Confirm Lease Details'}
               </h2>
-              
+
               <div className="space-y-4 mb-6">
                 <div>
                   <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
@@ -397,7 +507,7 @@ export default function UploadScan() {
                     }}
                   />
                   <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                    {language === 'th' 
+                    {language === 'th'
                       ? 'จำนวนวันที่ต้องแจ้งเจ้าของบ้านก่อนสัญญาหมดอายุ'
                       : 'Days before lease end you must notify landlord'}
                   </p>
@@ -470,6 +580,29 @@ export default function UploadScan() {
                 <p style={{ color: colors.textSecondary }}>
                   {analyzing ? strings.analyzingDesc : (language === 'th' ? 'กรุณารอสักครู่' : 'Please wait')}
                 </p>
+
+                {/* Progress Bar */}
+                {uploadProgress > 0 && (
+                  <div className="mt-6 max-w-md mx-auto">
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
+                      {uploadProgress}%
+                    </p>
+                  </div>
+                )}
+
+                {retryCount > 0 && (
+                  <p className="text-sm mt-4 text-amber-600">
+                    {language === 'th'
+                      ? `กำลังลองใหม่... (ครั้งที่ ${retryCount}/3)`
+                      : `Retrying... (Attempt ${retryCount}/3)`}
+                  </p>
+                )}
               </div>
             ) : (
               <>
@@ -484,7 +617,7 @@ export default function UploadScan() {
                     borderColor: dragActive ? '#3B82F6' : colors.borderColor
                   }}
                 >
-                  <div 
+                  <div
                     className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6"
                     style={{
                       backgroundColor: '#0C3B2E',
@@ -493,7 +626,7 @@ export default function UploadScan() {
                   >
                     <Upload className="w-10 h-10 text-white" style={{ color: '#FFFFFF' }} />
                   </div>
-                  
+
                   <p className="text-base md:text-lg mb-6" style={{ color: colors.textSecondary }}>
                     {strings.dragDrop}
                   </p>
@@ -535,7 +668,7 @@ export default function UploadScan() {
                         {strings.browseFiles}
                       </div>
                     </label>
-                    
+
                     <label>
                       <input
                         type="file"
@@ -595,7 +728,7 @@ export default function UploadScan() {
                         {strings.uploadAll}
                       </Button>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {selectedFiles.map((file, index) => (
                         <div
@@ -613,7 +746,7 @@ export default function UploadScan() {
                           >
                             <X className="w-3 h-3" />
                           </button>
-                          
+
                           <div className="flex flex-col items-center">
                             {file.type.includes('image') ? (
                               <ImageIcon className="w-8 h-8 text-blue-500 mb-2" />
@@ -648,7 +781,7 @@ export default function UploadScan() {
                   <div className="p-4">
                     <div className="mb-3">
                       <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-bold text-sm leading-tight flex-1" style={{ 
+                        <h3 className="font-bold text-sm leading-tight flex-1" style={{
                           color: colors.textPrimary,
                           wordBreak: 'break-word',
                           overflowWrap: 'break-word',
@@ -661,13 +794,13 @@ export default function UploadScan() {
                           {lease.status.toUpperCase()}
                         </Badge>
                       </div>
-                      
+
                       {lease.rent_amount && (
                         <p className="text-sm mb-2" style={{ color: colors.textSecondary }}>
                           ฿{lease.rent_amount.toLocaleString()}/{language === 'th' ? 'เดือน' : 'month'}
                         </p>
                       )}
-                      
+
                       <div className="flex flex-wrap gap-2 text-xs mb-2" style={{ color: colors.textSecondary }}>
                         {lease.language_detected && (
                           <span>• {language === 'th' ? 'ภาษา' : 'Language'}: {lease.language_detected.toUpperCase()}</span>
@@ -676,7 +809,7 @@ export default function UploadScan() {
                           <span>• {lease.file_urls.length} {strings.pages}</span>
                         )}
                       </div>
-                      
+
                       <p className="text-xs" style={{ color: colors.textSecondary }}>
                         {strings.uploaded}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
                       </p>
@@ -743,7 +876,7 @@ export default function UploadScan() {
                       )}
                       <button
                         onClick={() => handleDeleteLease(
-                          lease.id, 
+                          lease.id,
                           lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease')
                         )}
                         disabled={deleteLeaseMutation.isLoading}
