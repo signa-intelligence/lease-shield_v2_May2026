@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Download, Copy, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Copy, Check, Loader2, AlertCircle } from "lucide-react"; // Added AlertCircle
 import { base44 } from "@/api/base44Client";
 
 const TEMPLATE_SCHEMAS = {
@@ -140,12 +140,13 @@ export default function TemplateForm() {
 
   const [generating, setGenerating] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState('');
-  const [letterSubject, setLetterSubject] = useState(''); // New state for letter subject
+  const [letterSubject, setLetterSubject] = useState('');
   const [generatedDocId, setGeneratedDocId] = useState(null);
   const [copied, setCopied] = useState(false);
   const [language, setLanguage] = useState('both');
   const [formData, setFormData] = useState({});
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const schema = TEMPLATE_SCHEMAS[templateId] || TEMPLATE_SCHEMAS.deposit_request;
 
@@ -155,20 +156,25 @@ export default function TemplateForm() {
     setError(null);
     setGeneratedLetter('');
     setLetterSubject('');
+    setRetryCount(0); // Reset retry count for a new generation attempt
 
-    let llmPrompt = '';
-    let llmSystemContext = '';
-    let finalFormattingInstruction = '\n\nFormat: Professional letter with proper Thai/English formatting, date, addresses, formal greeting, body paragraphs, and signature block.';
+    const maxRetries = 2;
+    let currentRetry = 0;
 
-    try {
-      const fieldValues = schema.fields.map(f => `${f.label}: ${formData[f.name] || 'N/A'}`).join('\n');
+    const attemptGeneration = async () => {
+      try {
+        const fieldValues = schema.fields.map(f => `${f.label}: ${formData[f.name] || 'N/A'}`).join('\n');
 
-      if (templateId === 'lease_extension') {
-        llmSystemContext = language === 'th'
-          ? 'คุณเป็นผู้เชี่ยวชาญด้านกฎหมายอสังหาริมทรัพย์ในประเทศไทย เขียนจดหมายขอต่อสัญญาเช่าอย่างเป็นทางการและสุภาพ'
-          : 'You are a Thai real estate legal expert. Write a formal and polite lease extension request letter.';
-        llmPrompt = language === 'th'
-          ? `เขียนจดหมายขอต่อสัญญาเช่าอย่างเป็นทางการ:
+        let llmPrompt = '';
+        let llmSystemContext = '';
+        let finalFormattingInstruction = '\n\nFormat: Professional letter with proper Thai/English formatting, date, addresses, formal greeting, body paragraphs, and signature block.';
+
+        if (templateId === 'lease_extension') {
+          llmSystemContext = language === 'th'
+            ? 'คุณเป็นผู้เชี่ยวชาญด้านกฎหมายอสังหาริมทรัพย์ในประเทศไทย เขียนจดหมายขอต่อสัญญาเช่าอย่างเป็นทางการและสุภาพ'
+            : 'You are a Thai real estate legal expert. Write a formal and polite lease extension request letter.';
+          llmPrompt = language === 'th'
+            ? `เขียนจดหมายขอต่อสัญญาเช่าอย่างเป็นทางการ:
 
 ชื่อผู้เช่า: ${formData.tenant_name || 'N/A'}
 ชื่อเจ้าของบ้าน: ${formData.landlord_name || 'N/A'}
@@ -184,7 +190,7 @@ export default function TemplateForm() {
 - ระบุความตั้งใจในการดูแลรักษาทรัพย์สิน
 - เสนอหารือเกี่ยวกับข้อกำหนดหากจำเป็น
 - ลงท้ายด้วยข้อมูลติดต่อ`
-          : `Write a formal lease extension request letter:
+            : `Write a formal lease extension request letter:
 
 Tenant Name: ${formData.tenant_name || 'N/A'}
 Landlord Name: ${formData.landlord_name || 'N/A'}
@@ -200,12 +206,12 @@ The letter should:
 - Mention commitment to property care
 - Offer to discuss terms if needed
 - End with contact information`;
-      } else if (templateId === 'lease_termination') {
-        llmSystemContext = language === 'th'
-          ? 'คุณเป็นผู้เชี่ยวชาญด้านกฎหมายอสังหาริมทรัพย์ในประเทศไทย เขียนจดหมายแจ้งยกเลิกสัญญาเช่าอย่างเป็นทางการและสุภาพ'
-          : 'You are a Thai real estate legal expert. Write a formal and polite lease termination notice.';
-        llmPrompt = language === 'th'
-          ? `เขียนจดหมายแจ้งยกเลิกสัญญาเช่าอย่างเป็นทางการ:
+        } else if (templateId === 'lease_termination') {
+          llmSystemContext = language === 'th'
+            ? 'คุณเป็นผู้เชี่ยวชาญด้านกฎหมายอสังหาริมทรัพย์ในประเทศไทย เขียนจดหมายแจ้งยกเลิกสัญญาเช่าอย่างเป็นทางการและสุภาพ'
+            : 'You are a Thai real estate legal expert. Write a formal and polite lease termination notice.';
+          llmPrompt = language === 'th'
+            ? `เขียนจดหมายแจ้งยกเลิกสัญญาเช่าอย่างเป็นทางการ:
 
 ชื่อผู้เช่า: ${formData.tenant_name || 'N/A'}
 ชื่อเจ้าของบ้าน: ${formData.landlord_name || 'N/A'}
@@ -223,7 +229,7 @@ The letter should:
 - ระบุที่อยู่สำหรับคืนเงินมัดจำ
 - แสดงความขอบคุณสำหรับการให้เช่า
 - ลงท้ายด้วยข้อมูลติดต่อ`
-          : `Write a formal lease termination notice:
+            : `Write a formal lease termination notice:
 
 Tenant Name: ${formData.tenant_name || 'N/A'}
 Landlord Name: ${formData.landlord_name || 'N/A'}
@@ -241,12 +247,12 @@ The letter should:
 - Provide forwarding address for deposit return
 - Express gratitude for tenancy
 - End with contact information`;
-      } else if (templateId === 'noise_complaint') {
-        llmSystemContext = language === 'th'
-          ? 'คุณเป็นผู้เชี่ยวชาญด้านกฎหมายอสังหาริมทรัพย์ในประเทศไทย เขียนจดหมายร้องเรียนเสียงรบกวนอย่างเป็นทางการและสุภาพ'
-          : 'You are a Thai real estate legal expert. Write a formal and polite noise complaint letter.';
-        llmPrompt = language === 'th'
-          ? `เขียนจดหมายร้องเรียนเสียงรบกวนอย่างเป็นทางการ:
+        } else if (templateId === 'noise_complaint') {
+          llmSystemContext = language === 'th'
+            ? 'คุณเป็นผู้เชี่ยวชาญด้านกฎหมายอสังหาริมทรัพย์ในประเทศไทย เขียนจดหมายร้องเรียนเสียงรบกวนอย่างเป็นทางการและสุภาพ'
+            : 'You are a Thai real estate legal expert. Write a formal and polite noise complaint letter.';
+          llmPrompt = language === 'th'
+            ? `เขียนจดหมายร้องเรียนเสียงรบกวนอย่างเป็นทางการ:
 
 ชื่อผู้เช่า: ${formData.tenant_name || 'N/A'}
 ชื่อเจ้าของบ้าน: ${formData.landlord_name || 'N/A'}
@@ -264,7 +270,7 @@ The letter should:
 - ขอให้แก้ไขปัญหา
 - เสนอให้หารือเพื่อหาทางออก
 - ลงท้ายด้วยข้อมูลติดต่อ`
-          : `Write a formal noise complaint letter:
+            : `Write a formal noise complaint letter:
 
 Tenant Name: ${formData.tenant_name || 'N/A'}
 Landlord Name: ${formData.landlord_name || 'N/A'}
@@ -282,9 +288,9 @@ The letter should:
 - Request resolution
 - Offer to discuss solutions
 - End with contact information`;
-      } else {
-        // Existing templates logic
-        llmPrompt = `${TEMPLATE_PROMPTS[templateId]}
+        } else {
+          // Existing templates logic
+          llmPrompt = `${TEMPLATE_PROMPTS[templateId]}
 
 Language: ${language === 'both' ? 'Generate both English and Thai versions' : language === 'en' ? 'English only' : 'Thai only'}
 
@@ -298,53 +304,91 @@ IMPORTANT:
 - If bilingual, clearly separate English and Thai sections
 
 Generate the letter now.`;
-        llmSystemContext = ''; // No specific system context for old templates
-      }
-
-      const fullPromptForLLM = `${llmSystemContext ? llmSystemContext + '\n\n' : ''}${llmPrompt}${finalFormattingInstruction}`;
-
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: fullPromptForLLM,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            letter_text: { type: "string" },
-            subject: { type: "string" }
-          },
-          required: ["letter_text", "subject"]
+          llmSystemContext = ''; // No specific system context for old templates
         }
-      });
 
-      setGeneratedLetter(result.letter_text);
-      setLetterSubject(result.subject);
+        const fullPromptForLLM = `${llmSystemContext ? llmSystemContext + '\n\n' : ''}${llmPrompt}${finalFormattingInstruction}`;
 
-      // Step 2: Save document to database
-      const templateTitles = {
-        deposit_request: 'Deposit Return Request',
-        deposit_late: 'Late Deposit Return Reminder',
-        repair_dispute: 'Repair Cost Dispute',
-        pdpa_request: 'PDPA Data Request',
-        pre_move_out: 'Pre-Move-Out Notice',
-        handover_check: 'Handover Inspection Checklist',
-        contract_clarification: 'Contract Clarification Request',
-        lease_extension: 'Lease Extension Request',
-        lease_termination: 'Lease Termination Notice',
-        noise_complaint: 'Noise Complaint',
-      };
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt: fullPromptForLLM,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              letter_text: { type: "string" },
+              subject: { type: "string" }
+            },
+            required: ["letter_text", "subject"]
+          }
+        });
 
-      const doc = await base44.entities.Document.create({
-        type: 'letter',
-        label: result.subject || templateTitles[templateId] || 'Generated Letter'
-      });
+        if (!result.letter_text || result.letter_text.length < 50) { // Check for incomplete letter
+          throw new Error(language === 'th' ? 'จดหมายที่สร้างไม่สมบูรณ์ หรือสั้นเกินไป กรุณาลองอีกครั้ง' : 'Generated letter is incomplete or too short. Please try again.');
+        }
 
-      setGeneratedDocId(doc.id);
+        setGeneratedLetter(result.letter_text);
+        setLetterSubject(result.subject);
 
-    } catch (err) {
-      console.error('Failed to generate letter:', err);
-      setError(err.message || (language === 'th' ? 'การสร้างจดหมายล้มเหลว กรุณาลองอีกครั้ง' : 'Failed to generate letter. Please try again.'));
-    } finally {
-      setGenerating(false);
-    }
+        // Step 2: Save document to database
+        const templateTitles = {
+          deposit_request: 'Deposit Return Request',
+          deposit_late: 'Late Deposit Return Reminder',
+          repair_dispute: 'Repair Cost Dispute',
+          pdpa_request: 'PDPA Data Request',
+          pre_move_out: 'Pre-Move-Out Notice',
+          handover_check: 'Handover Inspection Checklist',
+          contract_clarification: 'Contract Clarification Request',
+          lease_extension: 'Lease Extension Request',
+          lease_termination: 'Lease Termination Notice',
+          noise_complaint: 'Noise Complaint',
+        };
+
+        const doc = await base44.entities.Document.create({
+          type: 'letter',
+          label: result.subject || templateTitles[templateId] || 'Generated Letter'
+        });
+
+        setGeneratedDocId(doc.id);
+        setGenerating(false); // Only set to false on success
+        
+      } catch (err) {
+        currentRetry++;
+        setRetryCount(currentRetry);
+        
+        console.error('Generation failed:', err);
+        
+        if (currentRetry <= maxRetries) {
+          // Retry with exponential backoff
+          setError(language === 'th' 
+            ? `เกิดข้อผิดพลาดในการสร้างจดหมาย กำลังลองใหม่... (${currentRetry}/${maxRetries})` 
+            : `Error generating letter. Retrying... (${currentRetry}/${maxRetries})`);
+          
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry)));
+          return attemptGeneration(); // Recursively call to retry
+        } else {
+          // Max retries reached
+          let errorMessage = language === 'th' 
+            ? 'ไม่สามารถสร้างจดหมายได้หลังจากพยายามหลายครั้ง กรุณาตรวจสอบข้อมูลและลองอีกครั้ง' 
+            : 'Failed to generate letter after multiple attempts. Please check your information and try again.';
+          
+          if (err.message.includes('incomplete')) {
+            errorMessage = err.message;
+          } else if (err.message.includes('network') || err.message.includes('timeout') || err.message.includes('Failed to fetch')) {
+            errorMessage = language === 'th' 
+              ? 'ปัญหาการเชื่อมต่อ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณแล้วลองอีกครั้ง' 
+              : 'Connection issue. Please check your internet connection and try again.';
+          } else if (err.message.includes('quota') || err.message.includes('rate limit')) {
+            errorMessage = language === 'th'
+              ? 'คำขอมากเกินไป กรุณารอสักครู่แล้วลองอีกครั้ง'
+              : 'Too many requests. Please wait a moment and try again.';
+          }
+          
+          setError(errorMessage);
+          setGenerating(false); // Set to false when retries exhausted
+        }
+      }
+    };
+
+    await attemptGeneration();
   };
 
   const handleCopy = () => {
@@ -388,8 +432,29 @@ Generate the letter now.`;
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="mb-6 p-4 rounded-lg border-2 border-red-200 bg-red-50 animate-shake">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-red-600 font-semibold mb-1">
+                  {language === 'th' ? 'เกิดข้อผิดพลาด' : 'Error Occurred'}
+                </p>
+                <p className="text-red-600 text-sm">{error}</p>
+                {retryCount > 0 && retryCount <= 2 && (
+                  <p className="text-red-500 text-xs mt-2">
+                    {language === 'th' 
+                      ? `🔄 กำลังลองอีกครั้ง... (ครั้งที่ ${retryCount}/2)` 
+                      : `🔄 Retrying... (Attempt ${retryCount}/2)`}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-600 hover:text-red-800 font-semibold text-sm"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         )}
 
@@ -448,10 +513,11 @@ Generate the letter now.`;
                   {generating ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generating Letter...
+                      {language === 'th' ? 'กำลังสร้าง...' : 'Generating...'}
+                      {retryCount > 0 && ` (${retryCount}/2)`}
                     </>
                   ) : (
-                    'Generate Letter'
+                    language === 'th' ? 'สร้างจดหมาย' : 'Generate Letter'
                   )}
                 </Button>
               </form>
@@ -488,6 +554,7 @@ Generate the letter now.`;
                 setGeneratedLetter('');
                 setLetterSubject('');
                 setError(null);
+                setRetryCount(0); // Reset retry count when starting over
               }}
             >
               Generate Another Letter
