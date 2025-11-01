@@ -288,7 +288,7 @@ export default function Layout({ children, currentPageName }) {
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
-                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : colors.hoverBg,
+                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
@@ -299,12 +299,16 @@ export default function Layout({ children, currentPageName }) {
                 }}
                 onMouseEnter={(e) => {
                   if (location.pathname !== createPageUrl("Account")) {
-                    e.target.style.backgroundColor = '#0C3B2E';
+                    e.currentTarget.style.backgroundColor = '#0C3B2E';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.color = '#FFFFFF';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (location.pathname !== createPageUrl("Account")) {
-                    e.target.style.backgroundColor = colors.hoverBg;
+                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.color = '#0C3B2E';
                   }
                 }}
               >
