@@ -77,8 +77,8 @@ export default function Dashboard() {
     if (documents.length >= 5) breakdown.documentation += 5; // Bonus for thorough documentation
 
     // 2. Active Protections (30 points max)
-    const activeDeposits = deposits.filter(d => d.status === 'tracking');
-    if (activeDeposits.length > 0) breakdown.activeProtections += 10;
+    const activeDepositsForProtectionScore = deposits.filter(d => d.status === 'tracking'); // Use a specific variable for protection score logic
+    if (activeDepositsForProtectionScore.length > 0) breakdown.activeProtections += 10;
     
     const rentAlertsEnabled = deposits.some(d => d.rent_alerts_enabled);
     if (rentAlertsEnabled) breakdown.activeProtections += 7;
@@ -250,7 +250,7 @@ export default function Dashboard() {
   const protectionScoreColor = getProtectionScoreColor(protectionScore);
   const protectionScoreStatus = getProtectionScoreStatus(protectionScore);
 
-  const activeDeposits = deposits.filter(d => d.status === 'tracking');
+  const activeDeposits = deposits.filter(d => d.status === 'tracking' || d.status === 'dispute');
   const activeCases = cases.filter(c => !['closed'].includes(c.status));
 
   // Calculate trend for this month vs last month
@@ -262,9 +262,10 @@ export default function Dashboard() {
 
   // Calculate additional stats for mini info
   const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
-  const totalDepositValue = activeDeposits.reduce((sum, d) => sum + d.deposit_amount, 0);
+  const totalDepositValue = activeDeposits.reduce((sum, d) => sum + (d.deposit_amount || 0), 0);
   const avgDeposit = activeDeposits.length > 0 ? Math.round(totalDepositValue / activeDeposits.length) : 0;
   const urgentDeposits = activeDeposits.filter(d => {
+    if (!d.expected_return_date) return false;
     const daysRemaining = differenceInDays(new Date(d.expected_return_date), now);
     return daysRemaining <= 30 && daysRemaining > 0;
   }).length;
