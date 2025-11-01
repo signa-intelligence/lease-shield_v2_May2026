@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -139,45 +138,92 @@ Deno.serve(async (req) => {
         const metadata = session.metadata || {};
         
         // Handle case payment (Resolve service)
-        if (metadata.case_id) {
-          const caseId = metadata.case_id;
-          
-          await base44.asServiceRole.entities.Payment.create({
-            type: 'case',
-            amount: session.amount_total / 100,
-            currency: 'THB',
-            provider: 'stripe',
-            status: 'paid',
-            external_id: session.id
-          });
-
-          await base44.asServiceRole.entities.Case.update(caseId, {
-            status: 'active'
-          });
-
-          // Get user for language preference
+        if (metadata.type === 'case') {
+          // Find user by Stripe customer ID
           const users = await base44.asServiceRole.entities.User.list();
           const user = users.find(u => u.stripe_customer_id === customerId);
 
-          if (user) {
-            const language = user.language || 'en';
-            const subject = language === 'th' ? 'เคสของคุณเริ่มดำเนินการแล้ว' : 'Your Resolve Case Has Started';
-            const body = language === 'th' ?
-              `เคส Resolve ของคุณเริ่มดำเนินการแล้ว\nทีมงานจะติดต่อคุณภายใน 24-48 ชั่วโมง\n\n— Lease Shield` :
-              `Your Resolve case has started.\nOur team will contact you within 24-48 hours.\n\n— Lease Shield`;
-
-            await base44.asServiceRole.integrations.Core.SendEmail({
-              to: user.email,
-              subject,
-              body
-            });
+          if (!user) {
+            console.error('User not found for customer:', customerId);
+            break;
           }
 
-          // Notify ops team
+          // Create the case record
+          const caseData = {
+            dispute_amount: parseFloat(metadata.dispute_amount),
+            summary: metadata.summary,
+            lease_id: metadata.lease_id || null,
+            fast_track: metadata.fast_track === 'true',
+            letter_pack: metadata.letter_pack === 'true',
+            is_member_at_creation: metadata.is_member_at_creation === 'true',
+            success_fee_rate: parseFloat(metadata.success_fee_rate),
+            status: 'active',
+            created_by: user.email
+          };
+
+          const newCase = await base44.asServiceRole.entities.Case.create(caseData);
+
+          // Create payment record
+          await base44.asServiceRole.entities.Payment.create({
+            type: 'case',
+            amount: parseFloat(metadata.total_paid),
+            currency: 'THB',
+            provider: 'stripe',
+            status: 'paid',
+            external_id: session.id,
+            created_by: user.email
+          });
+
+          // Get lease details if available
+          let leaseInfo = '';
+          if (metadata.lease_id) {
+            try {
+              const lease = await base44.asServiceRole.entities.Lease.filter({ id: metadata.lease_id });
+              if (lease.length > 0) {
+                leaseInfo = `\nProperty: ${lease[0].property_address || 'N/A'}`;
+              }
+            } catch (e) {
+              console.error('Failed to fetch lease:', e);
+            }
+          }
+
+          // Send email to user
+          const language = user.language || 'en';
+          const userSubject = language === 'th' ? 'เคสของคุณเริ่มดำเนินการแล้ว' : 'Your Resolve Case Has Started';
+          const userBody = language === 'th' ?
+            `สวัสดี ${user.full_name},\n\nเคส Resolve ของคุณเริ่มดำเนินการแล้ว\nทีมงานจะติดต่อคุณภายใน 24-48 ชั่วโมง\n\nรายละเอียดคดี:\n- จำนวนเงินที่พิพาท: ฿${metadata.dispute_amount}${leaseInfo}\n\n— Lease Shield` :
+            `Hi ${user.full_name},\n\nYour Resolve case has started.\nOur team will contact you within 24-48 hours.\n\nCase Details:\n- Dispute Amount: ฿${metadata.dispute_amount}${leaseInfo}\n\n— Lease Shield`;
+
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            to: user.email,
+            subject: userSubject,
+            body: userBody
+          });
+
+          // Send email to ops team
+          const addonsText = [];
+          if (metadata.fast_track === 'true') addonsText.push('Fast Track');
+          if (metadata.letter_pack === 'true') addonsText.push('Letter Pack');
+          const addonsInfo = addonsText.length > 0 ? `\nAdd-ons: ${addonsText.join(', ')}` : '';
+
+          const opsBody = `New Resolve Case Payment Confirmed
+
+Case ID: ${newCase.id}
+User: ${user.full_name} (${user.email})
+Member: ${metadata.is_member_at_creation === 'true' ? 'Yes' : 'No'}
+Amount Paid: ฿${metadata.total_paid}
+Dispute Amount: ฿${metadata.dispute_amount}
+Success Fee Rate: ${metadata.success_fee_rate}%${leaseInfo}${addonsInfo}
+
+Summary:
+${metadata.summary}
+
+Please review and assign to an ops team member.`;
+
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: 'ops@leaseshield.asia',
-            subject: 'New Resolve Case Payment Confirmed',
-            body: `Case ${caseId} payment confirmed. Amount: ฿${session.amount_total / 100}\n\nPlease review and assign.`
+            subject: 'New Resolve Case - Payment Confirmed',
+            body: opsBody
           });
         }
         break;

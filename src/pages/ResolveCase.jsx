@@ -83,25 +83,62 @@ export default function ResolveCase() {
   });
 
   const createCaseMutation = useMutation({
-    mutationFn: (data) => base44.entities.Case.create(data),
+    mutationFn: (data) => base44.entities.Case.create(data), // This mutation is no longer directly used for submission, but could be for post-payment actions
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cases'] });
       navigate(createPageUrl("Cases"));
     },
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const caseData = {
-      ...formData,
-      dispute_amount: parseFloat(formData.dispute_amount),
-      lease_id: selectedLease,
-      status: 'intake',
-      is_member_at_creation: isMember
+    // Calculate total amount
+    const basePrice = isMember ? baseMemberPrice : basePublicPrice;
+    const totalAmount = basePrice + totalAddons;
+    
+    // Prepare case metadata for Stripe
+    const caseMetadata = {
+      type: 'case',
+      dispute_amount: parseFloat(formData.dispute_amount).toString(), // Ensure string for metadata
+      summary: formData.summary,
+      lease_id: selectedLease || '',
+      fast_track: formData.fast_track.toString(),
+      letter_pack: formData.letter_pack.toString(),
+      is_member_at_creation: isMember.toString(),
+      success_fee_rate: (isMember ? memberSuccessFee : publicSuccessFee).toString(),
+      total_paid: totalAmount.toString()
     };
 
-    createCaseMutation.mutate(caseData);
+    // Create Stripe checkout session
+    try {
+      // Temporarily disable the submit button
+      createCaseMutation.isPending = true; // Simulating pending state for UI
+      
+      const response = await base44.functions.invoke('createCheckout', {
+        priceId: null, // Not using price ID for one-time payments
+        mode: 'payment',
+        amount: totalAmount, // amount should be in the smallest currency unit (satang for THB)
+        currency: 'thb',
+        description: `Resolve Case - Dispute Amount: ฿${formData.dispute_amount}`,
+        successUrl: `${window.location.origin}${createPageUrl("Cases")}?payment=success`,
+        cancelUrl: `${window.location.origin}${createPageUrl("ResolveCase")}?payment=cancelled`,
+        metadata: caseMetadata
+      });
+
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Checkout creation failed:', error);
+      alert(language === 'th' 
+        ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' 
+        : 'Failed to create checkout. Please try again.');
+    } finally {
+      createCaseMutation.isPending = false; // Resetting pending state
+    }
   };
 
   const language = user?.language || 'en';
