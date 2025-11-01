@@ -36,12 +36,17 @@ Deno.serve(async (req) => {
       await base44.auth.updateMe({ stripe_customer_id: customerId });
     }
 
+    // Get origin from request for fallback URLs
+    const origin = new URL(req.url).origin.replace('/api/functions/createCheckout', '');
+    const defaultSuccessUrl = `${origin}/account?success=true`;
+    const defaultCancelUrl = `${origin}/account?canceled=true`;
+
     // Build session config based on mode
     const sessionConfig = {
       customer: customerId,
       mode: mode || 'subscription',
-      success_url: successUrl || `${Deno.env.get('BASE44_APP_URL')}/account?success=true`,
-      cancel_url: cancelUrl || `${Deno.env.get('BASE44_APP_URL')}/account?canceled=true`,
+      success_url: successUrl || defaultSuccessUrl,
+      cancel_url: cancelUrl || defaultCancelUrl,
       metadata: metadata || {},
     };
 
@@ -53,7 +58,7 @@ Deno.serve(async (req) => {
         {
           price_data: {
             currency: currency || 'thb',
-            unit_amount: Math.round(amount * 100), // Convert to cents
+            unit_amount: Math.round(amount * 100), // Convert to smallest currency unit
             product_data: {
               name: description || 'Lease Shield Resolve Service',
               description: description || 'Professional dispute resolution service',
@@ -80,15 +85,22 @@ Deno.serve(async (req) => {
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
-    console.log('Checkout session created:', session.id);
+    console.log('Checkout session created:', session.id, 'URL:', session.url);
 
     return Response.json({ url: session.url });
   } catch (error) {
     console.error('Checkout creation error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      param: error.param
+    });
     return Response.json({ 
       error: error.message,
-      details: error.raw?.message || 'Unknown error',
-      type: error.type || 'unknown'
+      details: error.raw?.message || error.message,
+      type: error.type || 'unknown',
+      code: error.code || 'unknown'
     }, { status: 500 });
   }
 });
