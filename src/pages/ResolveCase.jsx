@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -257,30 +258,30 @@ export default function ResolveCase() {
             <Card className="border-none shadow-2xl overflow-hidden">
               <CardHeader className="bg-ls-forest text-white p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-2xl">{strings.memberRate}</CardTitle>
-                  <Shield className="w-8 h-8" />
+                  <CardTitle className="text-2xl text-white">{strings.memberRate}</CardTitle>
+                  <Shield className="w-8 h-8 text-white" />
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold">฿{baseMemberPrice.toLocaleString()}</span>
+                  <span className="text-4xl font-bold text-white">฿{baseMemberPrice.toLocaleString()}</span>
                 </div>
-                <p className="text-sm text-white/80 mt-2">+ {memberSuccessFee}% {strings.successFee}</p>
+                <p className="text-sm text-white/90 mt-2">+ {memberSuccessFee}% {strings.successFee}</p>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-6" style={{ backgroundColor: '#FFFFFF' }}>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.forSubscribers}</span>
+                    <span className="text-sm text-slate-700">{strings.forSubscribers}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.lowerUpfront}</span>
+                    <span className="text-sm text-slate-700">{strings.lowerUpfront}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.prioritySupport}</span>
+                    <span className="text-sm text-slate-700">{strings.prioritySupport}</span>
                   </li>
                 </ul>
-                <p className="text-xs mt-4" style={{ color: colors.textSecondary }}>
+                <p className="text-xs text-slate-500 mt-4">
                   {strings.memberPricingNote}
                 </p>
               </CardContent>
@@ -290,30 +291,30 @@ export default function ResolveCase() {
             <Card className="border-none shadow-2xl overflow-hidden">
               <CardHeader className="bg-ls-charcoal text-white p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-2xl">{strings.publicRate}</CardTitle>
-                  <Scale className="w-8 h-8" />
+                  <CardTitle className="text-2xl text-white">{strings.publicRate}</CardTitle>
+                  <Scale className="w-8 h-8 text-white" />
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold">฿{basePublicPrice.toLocaleString()}</span>
+                  <span className="text-4xl font-bold text-white">฿{basePublicPrice.toLocaleString()}</span>
                 </div>
-                <p className="text-sm text-white/80 mt-2">+ {publicSuccessFee}% {strings.successFee}</p>
+                <p className="text-sm text-white/90 mt-2">+ {publicSuccessFee}% {strings.successFee}</p>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-6" style={{ backgroundColor: '#FFFFFF' }}>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.noSubRequired}</span>
+                    <span className="text-sm text-slate-700">{strings.noSubRequired}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.payAsYouGo}</span>
+                    <span className="text-sm text-slate-700">{strings.payAsYouGo}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm" style={{ color: colors.textPrimary }}>{strings.sameQuality}</span>
+                    <span className="text-sm text-slate-700">{strings.sameQuality}</span>
                   </li>
                 </ul>
-                <p className="text-xs mt-4" style={{ color: colors.textSecondary }}>
+                <p className="text-xs text-slate-500 mt-4">
                   {strings.publicPricingNote}
                 </p>
               </CardContent>
@@ -327,7 +328,7 @@ export default function ResolveCase() {
             </h3>
             <div className="grid md:grid-cols-2 gap-6">
               {/* Fast Track */}
-              <Card className="border-none shadow-lg">
+              <Card className="border-none shadow-lg" style={{ backgroundColor: '#FFFFFF' }}>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -335,28 +336,28 @@ export default function ResolveCase() {
                         <Zap className="w-6 h-6 text-purple-600" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
+                        <h4 className="font-bold text-lg text-slate-900">
                           {strings.fastTrack}
                         </h4>
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                  <p className="text-sm text-slate-600 mb-4">
                     {strings.fastTrackDesc}
                   </p>
                   <div className="flex items-baseline gap-3">
                     <span className="text-2xl font-bold text-ls-charcoal">฿500</span>
-                    <span className="text-sm" style={{ color: colors.textSecondary }}>({strings.public})</span>
+                    <span className="text-sm text-slate-500">({strings.public})</span>
                   </div>
                   <div className="flex items-baseline gap-3 mt-1">
                     <span className="text-2xl font-bold text-ls-forest">฿300</span>
-                    <span className="text-sm" style={{ color: colors.textSecondary }}>({strings.member})</span>
+                    <span className="text-sm text-slate-500">({strings.member})</span>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Letter Pack */}
-              <Card className="border-none shadow-lg">
+              <Card className="border-none shadow-lg" style={{ backgroundColor: '#FFFFFF' }}>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -364,22 +365,22 @@ export default function ResolveCase() {
                         <FileText className="w-6 h-6 text-blue-600" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
+                        <h4 className="font-bold text-lg text-slate-900">
                           {strings.letterPack}
                         </h4>
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                  <p className="text-sm text-slate-600 mb-4">
                     {strings.letterPackDesc}
                   </p>
                   <div className="flex items-baseline gap-3">
                     <span className="text-2xl font-bold text-ls-charcoal">฿1,500</span>
-                    <span className="text-sm" style={{ color: colors.textSecondary }}>({strings.public})</span>
+                    <span className="text-sm text-slate-500">({strings.public})</span>
                   </div>
                   <div className="flex items-baseline gap-3 mt-1">
                     <span className="text-2xl font-bold text-ls-forest">฿900</span>
-                    <span className="text-sm" style={{ color: colors.textSecondary }}>({strings.member})</span>
+                    <span className="text-sm text-slate-500">({strings.member})</span>
                   </div>
                 </CardContent>
               </Card>
