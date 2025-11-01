@@ -249,72 +249,278 @@ export default function ResolveCase() {
             ? 'linear-gradient(135deg, #C7A338 0%, #d4af37 100%)'
             : 'linear-gradient(135deg, #C7A338 0%, #d4af37 100%)'
         }}>
-          <h2 className="text-3xl font-bold text-center mb-8" style={{ color: '#1A1D1F' }}>
+          <h2 style={{ 
+            fontSize: '30px', 
+            fontWeight: 'bold', 
+            textAlign: 'center', 
+            marginBottom: '32px',
+            color: '#1A1D1F'
+          }}>
             {strings.transparentPricing}
           </h2>
           
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             {/* Member Rate */}
-            <Card className="border-none shadow-2xl overflow-hidden" style={{ backgroundColor: '#FFFFFF' }}>
-              <CardHeader className="bg-ls-forest text-white p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-2xl" style={{ color: '#FFFFFF' }}>{strings.memberRate}</CardTitle>
-                  <Shield className="w-8 h-8" style={{ color: '#FFFFFF' }} />
+            <Card style={{ 
+              border: 'none', 
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              overflow: 'hidden',
+              backgroundColor: '#FFFFFF'
+            }}>
+              <div style={{ 
+                backgroundColor: '#0C3B2E',
+                padding: '24px'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  marginBottom: '8px'
+                }}>
+                  <h3 style={{ 
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    color: '#FFFFFF',
+                    margin: 0
+                  }}>
+                    {strings.memberRate}
+                  </h3>
+                  <Shield style={{ 
+                    width: '32px', 
+                    height: '32px',
+                    color: '#FFFFFF'
+                  }} />
                 </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold" style={{ color: '#FFFFFF' }}>฿{baseMemberPrice.toLocaleString()}</span>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'baseline', 
+                  gap: '8px'
+                }}>
+                  <span style={{ 
+                    fontSize: '36px',
+                    fontWeight: 'bold',
+                    color: '#FFFFFF'
+                  }}>
+                    ฿{baseMemberPrice.toLocaleString()}
+                  </span>
                 </div>
-                <p className="text-sm mt-2" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>+ {memberSuccessFee}% {strings.successFee}</p>
-              </CardHeader>
-              <CardContent className="p-6" style={{ backgroundColor: '#FFFFFF' }}>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
-                    <span className="text-sm" style={{ color: '#334155' }}>{strings.forSubscribers}</span>
+                <p style={{ 
+                  fontSize: '14px',
+                  marginTop: '8px',
+                  color: '#FFFFFF',
+                  opacity: 0.9
+                }}>
+                  + {memberSuccessFee}% {strings.successFee}
+                </p>
+              </div>
+              <CardContent style={{ 
+                padding: '24px',
+                backgroundColor: '#FFFFFF'
+              }}>
+                <ul style={{ 
+                  listStyle: 'none',
+                  padding: 0,
+                  margin: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <li style={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '8px'
+                  }}>
+                    <CheckCircle2 style={{ 
+                      width: '20px', 
+                      height: '20px',
+                      flexShrink: 0,
+                      marginTop: '2px',
+                      color: '#10B981'
+                    }} />
+                    <span style={{ 
+                      fontSize: '14px',
+                      color: '#334155'
+                    }}>
+                      {strings.forSubscribers}
+                    </span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
-                    <span className="text-sm" style={{ color: '#334155' }}>{strings.lowerUpfront}</span>
+                  <li style={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '8px'
+                  }}>
+                    <CheckCircle2 style={{ 
+                      width: '20px', 
+                      height: '20px',
+                      flexShrink: 0,
+                      marginTop: '2px',
+                      color: '#10B981'
+                    }} />
+                    <span style={{ 
+                      fontSize: '14px',
+                      color: '#334155'
+                    }}>
+                      {strings.lowerUpfront}
+                    </span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
-                    <span className="text-sm" style={{ color: '#334155' }}>{strings.prioritySupport}</span>
+                  <li style={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '8px'
+                  }}>
+                    <CheckCircle2 style={{ 
+                      width: '20px', 
+                      height: '20px',
+                      flexShrink: 0,
+                      marginTop: '2px',
+                      color: '#10B981'
+                    }} />
+                    <span style={{ 
+                      fontSize: '14px',
+                      color: '#334155'
+                    }}>
+                      {strings.prioritySupport}
+                    </span>
                   </li>
                 </ul>
-                <p className="text-xs mt-4" style={{ color: '#64748B' }}>
+                <p style={{ 
+                  fontSize: '12px',
+                  marginTop: '16px',
+                  color: '#64748B'
+                }}>
                   {strings.memberPricingNote}
                 </p>
               </CardContent>
             </Card>
 
             {/* Public Rate */}
-            <Card className="border-none shadow-2xl overflow-hidden" style={{ backgroundColor: '#FFFFFF' }}>
-              <CardHeader className="bg-ls-charcoal text-white p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-2xl" style={{ color: '#FFFFFF' }}>{strings.publicRate}</CardTitle>
-                  <Scale className="w-8 h-8" style={{ color: '#FFFFFF' }} />
+            <Card style={{ 
+              border: 'none', 
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              overflow: 'hidden',
+              backgroundColor: '#FFFFFF'
+            }}>
+              <div style={{ 
+                backgroundColor: '#1A1D1F',
+                padding: '24px'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  marginBottom: '8px'
+                }}>
+                  <h3 style={{ 
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    color: '#FFFFFF',
+                    margin: 0
+                  }}>
+                    {strings.publicRate}
+                  </h3>
+                  <Scale style={{ 
+                    width: '32px', 
+                    height: '32px',
+                    color: '#FFFFFF'
+                  }} />
                 </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold" style={{ color: '#FFFFFF' }}>฿{basePublicPrice.toLocaleString()}</span>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'baseline', 
+                  gap: '8px'
+                }}>
+                  <span style={{ 
+                    fontSize: '36px',
+                    fontWeight: 'bold',
+                    color: '#FFFFFF'
+                  }}>
+                    ฿{basePublicPrice.toLocaleString()}
+                  </span>
                 </div>
-                <p className="text-sm mt-2" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>+ {publicSuccessFee}% {strings.successFee}</p>
-              </CardHeader>
-              <CardContent className="p-6" style={{ backgroundColor: '#FFFFFF' }}>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
-                    <span className="text-sm" style={{ color: '#334155' }}>{strings.noSubRequired}</span>
+                <p style={{ 
+                  fontSize: '14px',
+                  marginTop: '8px',
+                  color: '#FFFFFF',
+                  opacity: 0.9
+                }}>
+                  + {publicSuccessFee}% {strings.successFee}
+                </p>
+              </div>
+              <CardContent style={{ 
+                padding: '24px',
+                backgroundColor: '#FFFFFF'
+              }}>
+                <ul style={{ 
+                  listStyle: 'none',
+                  padding: 0,
+                  margin: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <li style={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '8px'
+                  }}>
+                    <CheckCircle2 style={{ 
+                      width: '20px', 
+                      height: '20px',
+                      flexShrink: 0,
+                      marginTop: '2px',
+                      color: '#10B981'
+                    }} />
+                    <span style={{ 
+                      fontSize: '14px',
+                      color: '#334155'
+                    }}>
+                      {strings.noSubRequired}
+                    </span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
-                    <span className="text-sm" style={{ color: '#334155' }}>{strings.payAsYouGo}</span>
+                  <li style={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '8px'
+                  }}>
+                    <CheckCircle2 style={{ 
+                      width: '20px', 
+                      height: '20px',
+                      flexShrink: 0,
+                      marginTop: '2px',
+                      color: '#10B981'
+                    }} />
+                    <span style={{ 
+                      fontSize: '14px',
+                      color: '#334155'
+                    }}>
+                      {strings.payAsYouGo}
+                    </span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
-                    <span className="text-sm" style={{ color: '#334155' }}>{strings.sameQuality}</span>
+                  <li style={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '8px'
+                  }}>
+                    <CheckCircle2 style={{ 
+                      width: '20px', 
+                      height: '20px',
+                      flexShrink: 0,
+                      marginTop: '2px',
+                      color: '#10B981'
+                    }} />
+                    <span style={{ 
+                      fontSize: '14px',
+                      color: '#334155'
+                    }}>
+                      {strings.sameQuality}
+                    </span>
                   </li>
                 </ul>
-                <p className="text-xs mt-4" style={{ color: '#64748B' }}>
+                <p style={{ 
+                  fontSize: '12px',
+                  marginTop: '16px',
+                  color: '#64748B'
+                }}>
                   {strings.publicPricingNote}
                 </p>
               </CardContent>
@@ -323,64 +529,122 @@ export default function ResolveCase() {
 
           {/* Available Add-ons */}
           <div>
-            <h3 className="text-2xl font-bold text-center mb-6" style={{ color: '#1A1D1F' }}>
+            <h3 style={{ 
+              fontSize: '24px',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              marginBottom: '24px',
+              color: '#1A1D1F'
+            }}>
               {strings.availableAddons}
             </h3>
             <div className="grid md:grid-cols-2 gap-6">
               {/* Fast Track */}
-              <Card className="border-none shadow-lg" style={{ backgroundColor: '#FFFFFF' }}>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
-                        <Zap className="w-6 h-6 text-purple-600" />
+              <Card style={{ 
+                border: 'none',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                backgroundColor: '#FFFFFF'
+              }}>
+                <CardContent style={{ padding: '24px' }}>
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ 
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '8px',
+                        backgroundColor: '#F3E8FF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Zap style={{ width: '24px', height: '24px', color: '#9333EA' }} />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg" style={{ color: '#1F2937' }}>
+                        <h4 style={{ 
+                          fontWeight: 'bold',
+                          fontSize: '18px',
+                          color: '#1F2937',
+                          margin: 0
+                        }}>
                           {strings.fastTrack}
                         </h4>
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm mb-4" style={{ color: '#4B5563' }}>
+                  <p style={{ 
+                    fontSize: '14px',
+                    marginBottom: '16px',
+                    color: '#4B5563'
+                  }}>
                     {strings.fastTrackDesc}
                   </p>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-2xl font-bold" style={{ color: '#1A1D1F' }}>฿500</span>
-                    <span className="text-sm" style={{ color: '#6B7280' }}>({strings.public})</span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                    <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#1A1D1F' }}>฿{fastTrackPrice}</span>
+                    <span style={{ fontSize: '14px', color: '#6B7280' }}>({strings.public})</span>
                   </div>
-                  <div className="flex items-baseline gap-3 mt-1">
-                    <span className="text-2xl font-bold" style={{ color: '#0C3B2E' }}>฿300</span>
-                    <span className="text-sm" style={{ color: '#6B7280' }}>({strings.member})</span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginTop: '4px' }}>
+                    <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#0C3B2E' }}>฿300</span>
+                    <span style={{ fontSize: '14px', color: '#6B7280' }}>({strings.member})</span>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Letter Pack */}
-              <Card className="border-none shadow-lg" style={{ backgroundColor: '#FFFFFF' }}>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <FileText className="w-6 h-6 text-blue-600" />
+              <Card style={{ 
+                border: 'none',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                backgroundColor: '#FFFFFF'
+              }}>
+                <CardContent style={{ padding: '24px' }}>
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ 
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '8px',
+                        backgroundColor: '#DBEAFE',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <FileText style={{ width: '24px', height: '24px', color: '#2563EB' }} />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg" style={{ color: '#1F2937' }}>
+                        <h4 style={{ 
+                          fontWeight: 'bold',
+                          fontSize: '18px',
+                          color: '#1F2937',
+                          margin: 0
+                        }}>
                           {strings.letterPack}
                         </h4>
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm mb-4" style={{ color: '#4B5563' }}>
+                  <p style={{ 
+                    fontSize: '14px',
+                    marginBottom: '16px',
+                    color: '#4B5563'
+                  }}>
                     {strings.letterPackDesc}
                   </p>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-2xl font-bold" style={{ color: '#1A1D1F' }}>฿1,500</span>
-                    <span className="text-sm" style={{ color: '#6B7280' }}>({strings.public})</span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                    <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#1A1D1F' }}>฿{letterPackPrice}</span>
+                    <span style={{ fontSize: '14px', color: '#6B7280' }}>({strings.public})</span>
                   </div>
-                  <div className="flex items-baseline gap-3 mt-1">
-                    <span className="text-2xl font-bold" style={{ color: '#0C3B2E' }}>฿900</span>
-                    <span className="text-sm" style={{ color: '#6B7280' }}>({strings.member})</span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginTop: '4px' }}>
+                    <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#0C3B2E' }}>฿900</span>
+                    <span style={{ fontSize: '14px', color: '#6B7280' }}>({strings.member})</span>
                   </div>
                 </CardContent>
               </Card>
