@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom"; // Added useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import RecentLeases from "../components/dashboard/RecentLeases";
 
 export default function Dashboard() {
   const [showImprovementDialog, setShowImprovementDialog] = useState(false);
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -365,30 +365,30 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-7xl mx-auto p-6 md:p-8">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="px-3 py-1 border rounded-full" style={{
+        <div className="mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="px-2 sm:px-3 py-1 border rounded-full" style={{
               backgroundColor: isDarkMode ? '#2A2D30' : '#ECEFED',
               borderColor: isDarkMode ? '#3A3D40' : 'rgba(12, 59, 46, 0.2)'
             }}>
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-ls-forest" />
-                <span className="text-sm font-semibold text-ls-forest">{strings.tagline}</span>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-ls-forest" />
+                <span className="text-xs sm:text-sm font-semibold text-ls-forest">{strings.tagline}</span>
               </div>
             </div>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ color: colors.textPrimary }}>
             {strings.welcome}, {user?.full_name?.split(' ')[0] || 'User'}
           </h1>
-          <p style={{ color: colors.textSecondary, fontSize: '18px' }}>
+          <p style={{ color: colors.textSecondary, fontSize: '16px', lineHeight: '1.5' }}>
             {strings.subtitle}
           </p>
         </div>
 
-        {/* Stats Grid - Optimized Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Stats Grid - Single column on mobile, 2 on tablet, 4 on desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Active Leases with mini stats */}
           <StatsCard
             title={strings.activeLeases}
@@ -547,27 +547,25 @@ export default function Dashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Stack on mobile */}
         <div style={{
           background: isDarkMode 
             ? 'linear-gradient(to right, #0C3B2E, #047857)'
             : 'linear-gradient(to right, #0C3B2E, #047857)',
           borderRadius: '16px',
-          padding: '32px',
-          marginBottom: '32px',
+          padding: '20px',
+          marginBottom: '24px',
           boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
         }}>
           <div style={{
             display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '24px',
-            flexWrap: 'wrap'
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            gap: '16px'
           }}>
-            <div style={{ flex: 1, minWidth: '250px' }}>
+            <div style={{ flex: 1 }}>
               <h2 style={{
-                fontSize: '24px',
+                fontSize: '20px',
                 fontWeight: 'bold',
                 color: '#FFFFFF',
                 marginBottom: '8px'
@@ -575,27 +573,27 @@ export default function Dashboard() {
                 {strings.protectRights}
               </h2>
               <p style={{
-                fontSize: '16px',
+                fontSize: '14px',
                 color: '#D1FAE5',
                 lineHeight: '1.5'
               }}>
                 {strings.uploadCta}
               </p>
             </div>
-            <Link to={createPageUrl("UploadScan")}>
+            <Link to={createPageUrl("UploadScan")} className="w-full">
               <button
                 style={{
+                  width: '100%',
                   backgroundColor: '#C7A338',
                   color: '#1A1D1F',
-                  padding: '14px 32px',
+                  padding: '14px 24px',
                   borderRadius: '8px',
                   fontWeight: 'bold',
                   fontSize: '16px',
                   border: 'none',
                   cursor: 'pointer',
                   boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap'
+                  transition: 'all 0.2s'
                 }}
                 onMouseEnter={(e) => e.target.style.backgroundColor = '#d4af37'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
@@ -606,8 +604,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-6">
+        {/* Main Content Grid - Stack on mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2">
             <RecentLeases leases={leases} language={language} />
           </div>
@@ -616,30 +614,28 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Upgrade Banner */}
+        {/* Upgrade Banner - Stack on mobile */}
         {user?.plan_tier === 'free' && (
           <div style={{
-            marginTop: '32px',
+            marginTop: '24px',
             background: isDarkMode
               ? 'linear-gradient(to right, #C7A338, #d97706)'
               : 'linear-gradient(to right, #C7A338, #d97706)',
             borderRadius: '16px',
-            padding: '32px',
+            padding: '20px',
             boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
           }}>
             <div style={{
               display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '24px',
-              flexWrap: 'wrap'
+              flexDirection: 'column',
+              alignItems: 'stretch',
+              gap: '16px'
             }}>
-              <div style={{ flex: 1, minWidth: '250px' }}>
+              <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <TrendingUp style={{ width: '24px', height: '24px', color: '#1A1D1F' }} />
+                  <TrendingUp style={{ width: '20px', height: '20px', color: '#1A1D1F' }} />
                   <h3 style={{
-                    fontSize: '20px',
+                    fontSize: '18px',
                     fontWeight: 'bold',
                     color: '#1A1D1F'
                   }}>
@@ -647,27 +643,27 @@ export default function Dashboard() {
                   </h3>
                 </div>
                 <p style={{
-                  fontSize: '14px',
+                  fontSize: '13px',
                   color: '#292524',
                   opacity: 0.8
                 }}>
                   {strings.upgradeDesc}
                 </p>
               </div>
-              <Link to={createPageUrl("Account")}>
+              <Link to={createPageUrl("Account")} className="w-full">
                 <button
                   style={{
+                    width: '100%',
                     backgroundColor: '#0C3B2E',
                     color: '#FFFFFF',
-                    padding: '14px 32px',
+                    padding: '14px 24px',
                     borderRadius: '8px',
                     fontWeight: 'bold',
                     fontSize: '16px',
                     border: 'none',
                     cursor: 'pointer',
                     boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap'
+                    transition: 'all 0.2s'
                   }}
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
