@@ -1,3 +1,4 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -97,32 +98,36 @@ export default function Cases() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Scale className="w-8 h-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-slate-900">{strings.title}</h1>
+            <div className="flex items-center gap-2 sm:gap-3 mb-2">
+              <Scale className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">{strings.title}</h1>
             </div>
-            <p className="text-slate-600">{strings.subtitle}</p>
+            <p className="text-sm sm:text-base text-slate-600">{strings.subtitle}</p>
           </div>
           
-          <Button size="lg" className="bg-blue-600 hover:bg-blue-700 shadow-lg" onClick={() => navigate(createPageUrl("ResolveCase"))}>
-            <Plus className="w-5 h-5 mr-2" />
-            {strings.openNewCase}
+          <Button 
+            size="lg" 
+            className="bg-blue-600 hover:bg-blue-700 shadow-lg w-full sm:w-auto" 
+            onClick={() => navigate(createPageUrl("ResolveCase"))}
+          >
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+            <span className="text-sm sm:text-base">{strings.openNewCase}</span>
           </Button>
         </div>
 
         {/* Premium Features Banner */}
         {(hasPriorityQueue || hasMemberPrice) && (
           <Card className="mb-6 border-none shadow-lg bg-gradient-to-r from-purple-500 to-purple-700 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                  <Crown className="w-6 h-6" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Crown className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-lg mb-1">{strings.premiumTitle}</h3>
-                  <div className="flex gap-3 text-sm text-purple-50">
+                  <h3 className="font-bold text-base sm:text-lg mb-1">{strings.premiumTitle}</h3>
+                  <div className="flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm text-purple-50">
                     {hasMemberPrice && <span>• {strings.memberPricing}</span>}
                     {hasPriorityQueue && <span>• {strings.priorityHandling}</span>}
                   </div>
@@ -134,41 +139,44 @@ export default function Cases() {
 
         {cases.length === 0 ? (
           <Card className="border-none shadow-xl">
-            <CardContent className="p-12 text-center">
-              <Scale className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-slate-900 mb-2">{strings.noCases}</h3>
-              <p className="text-slate-600 mb-6">
+            <CardContent className="p-8 sm:p-12 text-center">
+              <Scale className="w-12 h-12 sm:w-16 sm:h-16 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">{strings.noCases}</h3>
+              <p className="text-sm sm:text-base text-slate-600 mb-6">
                 {strings.noCasesSub}
               </p>
               {hasMemberPrice && (
                 <div className="bg-emerald-50 rounded-xl p-4 mb-6 border border-emerald-200">
-                  <p className="text-sm text-emerald-800 font-medium">
+                  <p className="text-xs sm:text-sm text-emerald-800 font-medium">
                     ✓ {strings.memberBenefit}
                   </p>
                 </div>
               )}
-              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => navigate(createPageUrl("ResolveCase"))}>
-                <Plus className="w-5 h-5 mr-2" />
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" 
+                onClick={() => navigate(createPageUrl("ResolveCase"))}
+              >
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 {strings.openFirstCase}
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {cases.map((caseItem) => {
               const statusConfig = getStatusConfig(caseItem.status);
               const StatusIcon = statusConfig.icon;
               
               return (
                 <Card key={caseItem.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300">
-                  <CardHeader className="border-b border-slate-100 pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-50 rounded-xl">
-                          <Scale className="w-5 h-5 text-blue-600" />
+                  <CardHeader className="border-b border-slate-100 pb-3 sm:pb-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                        <div className="p-2 bg-blue-50 rounded-xl flex-shrink-0">
+                          <Scale className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                         </div>
-                        <div>
-                          <CardTitle className="text-lg font-bold text-slate-900">
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="text-base sm:text-lg font-bold text-slate-900 break-words">
                             {strings.caseNumber}{caseItem.id.slice(0, 8)}
                           </CardTitle>
                           <p className="text-xs text-slate-500 mt-1">
@@ -176,22 +184,22 @@ export default function Cases() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-2 flex-wrap justify-end">
-                        <Badge className={`${statusConfig.color} border flex items-center gap-1 text-xs`}>
+                      <div className="flex flex-col gap-2 items-end flex-shrink-0">
+                        <Badge className={`${statusConfig.color} border flex items-center gap-1 text-xs whitespace-nowrap`}>
                           <StatusIcon className="w-3 h-3" />
-                          {statusConfig.label}
+                          <span className="hidden sm:inline">{statusConfig.label}</span>
                         </Badge>
                         {caseItem.fast_track && hasPriorityQueue && (
-                          <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
+                          <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs whitespace-nowrap">
                             <Zap className="w-3 h-3 mr-1" />
-                            {strings.fastTrack}
+                            <span className="hidden sm:inline">{strings.fastTrack}</span>
                           </Badge>
                         )}
                       </div>
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="p-4">
+                  <CardContent className="p-3 sm:p-4">
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       {caseItem.dispute_amount && (
                         <div>
@@ -253,12 +261,12 @@ export default function Cases() {
                       </div>
                     )}
 
-                    <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1 text-sm" size="sm">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button variant="outline" className="flex-1 text-xs sm:text-sm" size="sm">
                         {strings.viewDetails}
                       </Button>
                       {caseItem.status === 'user_action' && (
-                        <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm" size="sm">
+                        <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm" size="sm">
                           {strings.takeAction}
                         </Button>
                       )}
