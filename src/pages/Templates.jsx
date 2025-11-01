@@ -1,112 +1,137 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"; // Keep Button if used elsewhere, otherwise remove. Not used in the final snippet.
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+// Keep all icon imports from lucide-react as they are now used directly as JSX elements within the template data.
 import { FileCheck, ArrowLeft, Mail, AlertCircle, FileText, Shield, Scale, Clock, ClipboardCheck, ScrollText, FileX, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { FeatureGate, useFeatureAccess } from "../components/shared/FeatureGate";
+// Remove FeatureGate and useFeatureAccess as the new access logic is directly implemented using user?.plan_tier.
+// import { FeatureGate, useFeatureAccess } from "../components/shared/FeatureGate";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { CardContent } from "@/components/ui/card"; // Add CardContent import
 
+// Define colors and isDarkMode. Assuming a light theme for colors and isDarkMode=false as no context is provided.
+const isDarkMode = false; // Placeholder, integrate with actual theme context if available
+const colors = {
+  bg: '#F9FAFB', // Lighter background color
+  textPrimary: '#1A1D1F', // Dark charcoal for primary text
+  textSecondary: '#6B7280', // Slate gray for secondary text
+  cardBg: '#FFFFFF', // White card background
+};
+
+
+// Update TEMPLATES structure
 const TEMPLATES = [
   {
     id: 'deposit_request',
-    title: { en: 'Deposit Return Request', th: 'จดหมายขอคืนเงินมัดจำ' },
-    description: { en: 'Polite formal letter requesting return of security deposit (EN/TH)', th: 'จดหมายทางการสุภาพขอคืนเงินประกัน (ไทย/EN)' },
-    icon: Shield,
+    name_en: 'Deposit Return Request',
+    name_th: 'จดหมายขอคืนเงินมัดจำ',
+    description_en: 'Polite formal letter requesting return of security deposit (EN/TH)',
+    description_th: 'จดหมายทางการสุภาพขอคืนเงินประกัน (ไทย/EN)',
+    icon: <Shield className="w-full h-full" />,
     tier: 'lite',
-    category: { en: 'Deposit', th: 'เงินมัดจำ' },
-    languages: ['en', 'th']
+    color: 'from-blue-400 to-blue-600' // Example color gradient
   },
   {
     id: 'deposit_late',
-    title: { en: 'Late Deposit Return Reminder', th: 'จดหมายเตือนคืนเงินมัดจำล่าช้า' },
-    description: { en: 'Follow-up reminder for overdue deposit return with timeline request', th: 'จดหมายติดตามเงินมัดจำที่เกินกำหนดพร้อมขอกำหนดเวลา' },
-    icon: Clock,
+    name_en: 'Late Deposit Return Reminder',
+    name_th: 'จดหมายเตือนคืนเงินมัดจำล่าช้า',
+    description_en: 'Follow-up reminder for overdue deposit return with timeline request',
+    description_th: 'จดหมายติดตามเงินมัดจำที่เกินกำหนดพร้อมขอกำหนดเวลา',
+    icon: <Clock className="w-full h-full" />,
     tier: 'lite',
-    category: { en: 'Deposit', th: 'เงินมัดจำ' },
-    languages: ['en', 'th']
+    color: 'from-yellow-400 to-yellow-600'
   },
   {
     id: 'repair_dispute',
-    title: { en: 'Repair Cost Dispute', th: 'โต้แย้งค่าซ่อมแซม' },
-    description: { en: 'Dispute unfair repair charges with evidence references', th: 'โต้แย้งค่าซ่อมแซมที่ไม่ยุติธรรมพร้อมอ้างอิงหลักฐาน' },
-    icon: AlertCircle,
+    name_en: 'Repair Cost Dispute',
+    name_th: 'โต้แย้งค่าซ่อมแซม',
+    description_en: 'Dispute unfair repair charges with evidence references',
+    description_th: 'โต้แย้งค่าซ่อมแซมที่ไม่ยุติธรรมพร้อมอ้างอิงหลักฐาน',
+    icon: <AlertCircle className="w-full h-full" />,
     tier: 'protect',
-    category: { en: 'Dispute', th: 'ข้อพิพาท' },
-    languages: ['en', 'th']
+    color: 'from-red-400 to-red-600'
   },
   {
     id: 'pdpa_request',
-    title: { en: 'PDPA Data Request', th: 'ขอข้อมูลตาม พ.ร.บ. PDPA' },
-    description: { en: 'Request personal data and lease documents under PDPA', th: 'ขอข้อมูลส่วนบุคคลและเอกสารเช่าตาม พ.ร.บ. PDPA' },
-    icon: FileText,
+    name_en: 'PDPA Data Request',
+    name_th: 'ขอข้อมูลตาม พ.ร.บ. PDPA',
+    description_en: 'Request personal data and lease documents under PDPA',
+    description_th: 'ขอข้อมูลส่วนบุคคลและเอกสารเช่าตาม พ.ร.บ. PDPA',
+    icon: <FileText className="w-full h-full" />,
     tier: 'protect',
-    category: { en: 'Legal', th: 'กฎหมาย' },
-    languages: ['en', 'th']
+    color: 'from-purple-400 to-purple-600'
   },
   {
     id: 'pre_move_out',
-    title: { en: 'Pre-Move-Out Notice', th: 'แจ้งก่อนย้ายออก' },
-    description: { en: 'Formal notice of move-out date and inspection request', th: 'แจ้งวันย้ายออกและขอตรวจสอบอย่างเป็นทางการ' },
-    icon: Mail,
+    name_en: 'Pre-Move-Out Notice',
+    name_th: 'แจ้งก่อนย้ายออก',
+    description_en: 'Formal notice of move-out date and inspection request',
+    description_th: 'แจ้งวันย้ายออกและขอตรวจสอบอย่างเป็นทางการ',
+    icon: <Mail className="w-full h-full" />,
     tier: 'lite',
-    category: { en: 'Move-Out', th: 'ย้ายออก' },
-    languages: ['en', 'th']
+    color: 'from-indigo-400 to-indigo-600'
   },
   {
     id: 'handover_check',
-    title: { en: 'Handover Inspection Checklist', th: 'รายการตรวจสอบการส่งมอบ' },
-    description: { en: 'Comprehensive checklist for property handover with photo slots', th: 'รายการตรวจสอบครบถ้วนสำหรับการส่งมอบพร้อมช่องรูปภาพ' },
-    icon: ClipboardCheck,
+    name_en: 'Handover Inspection Checklist',
+    name_th: 'รายการตรวจสอบการส่งมอบ',
+    description_en: 'Comprehensive checklist for property handover with photo slots',
+    description_th: 'รายการตรวจสอบครบถ้วนสำหรับการส่งมอบพร้อมช่องรูปภาพ',
+    icon: <ClipboardCheck className="w-full h-full" />,
     tier: 'protect',
-    category: { en: 'Move-Out', th: 'ย้ายออก' },
-    languages: ['en', 'th']
+    color: 'from-teal-400 to-teal-600'
   },
   {
     id: 'contract_clarification',
-    title: { en: 'Contract Clarification Request', th: 'ขอชี้แจงสัญญา' },
-    description: { en: 'Request clarification on specific lease clauses', th: 'ขอให้ชี้แจงข้อกำหนดเฉพาะในสัญญาเช่า' },
-    icon: Scale,
+    name_en: 'Contract Clarification Request',
+    name_th: 'ขอชี้แจงสัญญา',
+    description_en: 'Request clarification on specific lease clauses',
+    description_th: 'ขอให้ชี้แจงข้อกำหนดเฉพาะในสัญญาเช่า',
+    icon: <Scale className="w-full h-full" />,
     tier: 'lite',
-    category: { en: 'Lease', th: 'สัญญาเช่า' },
-    languages: ['en', 'th']
+    color: 'from-lime-400 to-lime-600'
   },
   {
     id: 'lease_extension',
-    title: { en: 'Lease Extension Request', th: 'จดหมายขอต่อสัญญาเช่า' },
-    description: { en: 'Formal request to extend your lease agreement', th: 'จดหมายขอต่อสัญญาเช่าอย่างเป็นทางการ' },
-    icon: ScrollText,
+    name_en: 'Lease Extension Request',
+    name_th: 'จดหมายขอต่อสัญญาเช่า',
+    description_en: 'Formal request to extend your lease agreement',
+    description_th: 'จดหมายขอต่อสัญญาเช่าอย่างเป็นทางการ',
+    icon: <ScrollText className="w-full h-full" />,
     tier: 'lite',
-    category: { en: 'Lease', th: 'สัญญาเช่า' },
-    languages: ['en', 'th']
+    color: 'from-green-400 to-green-600'
   },
   {
     id: 'lease_termination',
-    title: { en: 'Lease Termination Notice', th: 'จดหมายแจ้งยกเลิกสัญญาเช่า' },
-    description: { en: 'Official notice to terminate your lease agreement', th: 'จดหมายแจ้งยกเลิกสัญญาเช่าอย่างเป็นทางการ' },
-    icon: FileX,
+    name_en: 'Lease Termination Notice',
+    name_th: 'จดหมายแจ้งยกเลิกสัญญาเช่า',
+    description_en: 'Official notice to terminate your lease agreement',
+    description_th: 'จดหมายแจ้งยกเลิกสัญญาเช่าอย่างเป็นทางการ',
+    icon: <FileX className="w-full h-full" />,
     tier: 'lite',
-    category: { en: 'Lease', th: 'สัญญาเช่า' },
-    languages: ['en', 'th']
+    color: 'from-orange-400 to-orange-600'
   },
   {
     id: 'noise_complaint',
-    title: { en: 'Noise Complaint Letter', th: 'จดหมายร้องเรียนเสียงรบกวน' },
-    description: { en: 'Formal complaint about noise disturbances', th: 'จดหมายร้องเรียนเสียงรบกวนอย่างเป็นทางการ' },
-    icon: Volume2,
+    name_en: 'Noise Complaint Letter',
+    name_th: 'จดหมายร้องเรียนเสียงรบกวน',
+    description_en: 'Formal complaint about noise disturbances',
+    description_th: 'จดหมายร้องเรียนเสียงรบกวนอย่างเป็นทางการ',
+    icon: <Volume2 className="w-full h-full" />,
     tier: 'lite',
-    category: { en: 'Complaint', th: 'ข้อร้องเรียน' },
-    languages: ['en', 'th']
+    color: 'from-pink-400 to-pink-600'
   }
 ];
 
 export default function Templates() {
   const navigate = useNavigate();
-  const { hasAccess: hasTemplatesLite } = useFeatureAccess('templates_lite');
-  const { hasAccess: hasTemplatesFull } = useFeatureAccess('templates_full');
+  // Remove useFeatureAccess as access is now determined by user?.plan_tier
+  // const { hasAccess: hasTemplatesLite } = useFeatureAccess('templates_lite');
+  // const { hasAccess: hasTemplatesFull } = useFeatureAccess('templates_full');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -115,133 +140,118 @@ export default function Templates() {
 
   const language = user?.language || 'en';
 
+  // Update t object with new string keys
   const t = {
     en: {
-      title: "Legal-safe Templates",
+      title: "Legal Templates", // Changed title slightly for conciseness
       subtitle: "Standard bilingual letters and messages for all situations",
-      backToEvidence: "Back to Evidence Vault",
-      generateLetter: "Generate Letter",
-      planRequired: "PLAN REQUIRED"
+      backToEvidence: "Back to Evidence Vault", // Not used in new UI, but keeping for completeness
+      generateLetter: "Generate Letter", // Not used in new UI, card click handles it
+      planRequired: "PLAN REQUIRED", // Not used in new UI, replaced by upgradeRequired
+      freeTier: "FREE",
+      liteTier: "LITE",
+      protectTier: "PROTECT",
+      secureTier: "SECURE",
+      upgradeRequired: "Upgrade plan to access"
     },
     th: {
-      title: "เทมเพลตที่ปลอดภัยทางกฎหมาย",
+      title: "เทมเพลตทางกฎหมาย", // Changed title slightly for conciseness
       subtitle: "จดหมายและข้อความสองภาษามาตรฐานสำหรับทุกสถานการณ์",
-      backToEvidence: "กลับไปยังคลังหลักฐาน",
-      generateLetter: "สร้างจดหมาย",
-      planRequired: "ต้องการแผน"
+      backToEvidence: "กลับไปยังคลังหลักฐาน", // Not used in new UI
+      generateLetter: "สร้างจดหมาย", // Not used in new UI
+      planRequired: "ต้องการแผน", // Not used in new UI
+      freeTier: "ฟรี",
+      liteTier: "ไลท์",
+      protectTier: "โปรเทค",
+      secureTier: "ซีเคียว",
+      upgradeRequired: "อัปเกรดแผนเพื่อเข้าถึง"
     }
   };
 
   const strings = t[language];
 
-  const canAccessTemplate = (tier) => {
-    if (tier === 'lite') return hasTemplatesLite || hasTemplatesFull;
-    if (tier === 'protect') return hasTemplatesFull;
-    return true;
-  };
+  // Remove canAccessTemplate as access logic is now inline
+  // const canAccessTemplate = (tier) => {
+  //   if (tier === 'lite') return hasTemplatesLite || hasTemplatesFull;
+  //   if (tier === 'protect') return hasTemplatesFull;
+  //   return true;
+  // };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            onClick={() => navigate(createPageUrl("DocumentVault"))}
-            style={{
-              backgroundColor: '#FFFFFF',
-              color: '#1A1D1F',
-              width: '40px',
-              height: '40px',
-              borderRadius: '8px',
-              border: '2px solid #D1D5DB',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#ECEFED'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#FFFFFF'}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <FileCheck className="w-7 h-7 text-ls-forest" />
-              <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
-            </div>
-            <p className="text-slate-600">{strings.subtitle}</p>
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="max-w-7xl mx-auto">
+        {/* Removed the back button as per outline */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            {/* Using FileText directly for consistency with new card icon usage */}
+            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-ls-forest" />
+            <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           </div>
+          <p className="text-sm sm:text-base" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
 
-        <div className="grid gap-4">
+        {/* Template Grid - Single column on mobile, 2 on tablet, 3 on desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {TEMPLATES.map((template) => {
-            const Icon = template.icon;
-            const hasAccess = canAccessTemplate(template.tier);
-            
+            const userTier = user?.plan_tier || 'free'; // Default to 'free' if no plan is set
+            // New access logic based on user's plan_tier
+            const hasAccess = template.tier === 'free' ||
+                            (template.tier === 'lite' && ['lite', 'protect', 'secure'].includes(userTier)) ||
+                            (template.tier === 'protect' && ['protect', 'secure'].includes(userTier)) ||
+                            (template.tier === 'secure' && userTier === 'secure');
+
+            const tierLabels = {
+              free: strings.freeTier,
+              lite: strings.liteTier,
+              protect: strings.protectTier,
+              secure: strings.secureTier
+            };
+
             return (
-              <Card 
-                key={template.id} 
-                className={`border-none shadow-md hover:shadow-lg transition-all duration-300 ${!hasAccess ? 'opacity-60' : ''}`}
+              <Card
+                key={template.id}
+                className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasAccess ? 'cursor-pointer' : 'opacity-75'}`}
+                style={{ backgroundColor: colors.cardBg }}
+                onClick={() => hasAccess && navigate(createPageUrl("TemplateForm") + `?template=${template.id}`)}
               >
-                <div className="p-5">
-                  <div className="flex items-start gap-4">
-                    <div 
-                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                {/* Dynamic color strip at the top of the card */}
+                <div className={`h-2 bg-gradient-to-r ${template.color} rounded-t-xl`} />
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4">
+                    {/* Render icon directly as JSX element */}
+                    <div className="text-3xl sm:text-4xl">{template.icon}</div>
+                    <Badge
+                      variant="outline"
+                      className="text-xs"
                       style={{
-                        background: 'linear-gradient(to bottom right, #0C3B2E, #14532d)',
-                        boxShadow: '0 4px 6px rgba(12, 59, 46, 0.2)'
+                        // Apply distinct colors based on access for the tier badge
+                        backgroundColor: hasAccess ? '#D1FAE5' : '#FEE2E2', // Green for access, Red for no access
+                        color: hasAccess ? '#059669' : '#DC2626', // Darker text for status
+                        borderColor: hasAccess ? '#A7F3D0' : '#FECACA' // Lighter border for status
                       }}
                     >
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="font-bold text-lg text-ls-charcoal mb-1">
-                            {template.title[language] || template.title.en}
-                          </h3>
-                          <div className="flex gap-2 mb-2">
-                            <Badge variant="outline" className="text-xs border-ls-forest text-ls-forest">
-                              {template.category[language] || template.category.en}
-                            </Badge>
-                            {template.languages.map(lang => (
-                              <Badge key={lang} variant="outline" className="text-xs border-ls-gold text-ls-gold">
-                                {lang.toUpperCase()}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-slate-600 mb-3">
-                        {template.description[language] || template.description.en}
-                      </p>
-                      {hasAccess ? (
-                        <button
-                          onClick={() => navigate(createPageUrl("TemplateForm") + `?templateId=${template.id}`)}
-                          style={{
-                            backgroundColor: '#0C3B2E',
-                            color: '#FFFFFF',
-                            padding: '8px 16px',
-                            borderRadius: '8px',
-                            fontWeight: 'bold',
-                            fontSize: '14px',
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => e.target.style.backgroundColor = '#C7A338'}
-                          onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-                        >
-                          {strings.generateLetter}
-                        </button>
-                      ) : (
-                        <Badge className="bg-ls-gold/20 text-ls-gold border border-ls-gold/30">
-                          {template.tier.toUpperCase()} {strings.planRequired}
-                        </Badge>
-                      )}
-                    </div>
+                      {/* Display tier label */}
+                      {tierLabels[template.tier]}
+                    </Badge>
                   </div>
-                </div>
+
+                  <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? template.name_th : template.name_en}
+                  </h3>
+
+                  <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? template.description_th : template.description_en}
+                  </p>
+
+                  {!hasAccess && (
+                    <div className="text-xs text-center p-2 rounded-lg" style={{
+                      backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2', // Darker red for dark mode, light red for light mode
+                      color: '#DC2626' // Red text for the upgrade message
+                    }}>
+                      {strings.upgradeRequired}
+                    </div>
+                  )}
+                </CardContent>
               </Card>
             );
           })}
