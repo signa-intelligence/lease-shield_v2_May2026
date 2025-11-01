@@ -215,6 +215,48 @@ export default function Layout({ children, currentPageName }) {
             box-shadow: 0 6px 12px rgba(199, 163, 56, 0.6), 0 0 0 6px rgba(199, 163, 56, 0.2);
           }
         }
+
+        /* Shake animation for errors */
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+          20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .animate-shake {
+          animation: shake 0.5s ease-in-out;
+        }
+
+        /* Smooth transitions for theme switching */
+        * {
+          transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        /* Focus visible for accessibility */
+        *:focus-visible {
+          outline: 2px solid var(--ls-gold);
+          outline-offset: 2px;
+        }
+
+        /* Better scrollbar styling */
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background: ${isDarkMode ? '#2A2D30' : '#F3F4F6'};
+          border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background: ${isDarkMode ? '#4B5563' : '#D1D5DB'};
+          border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background: ${isDarkMode ? '#6B7280' : '#9CA3AF'};
+        }
       `}</style>
 
       {/* Top Bar with Logo - FIXED TO TOP with safe area */}
