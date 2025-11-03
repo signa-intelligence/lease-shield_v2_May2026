@@ -157,32 +157,29 @@ export default function OpsConsole() {
   const handleGenerateLetters = async (caseItem) => {
     setGeneratingLetters(caseItem.id);
     try {
-      await base44.functions.invoke('generateLetters', {
-        caseId: caseItem.id,
-        tenant_name: "[TENANT_NAME]", // These should ideally come from caseItem data
-        landlord_name: "[LANDLORD_NAME]", // These should ideally come from caseItem data
-        property_address: "the rented apartment",
-        contract_ref: "Residential Lease Agreement",
-        deposit_amount_thb: caseItem.dispute_amount,
-        dispute_type: caseItem.type || "deposit",
-        facts: [
-          "Tenant moved out and returned keys on the agreed date",
-          "No damages were reported during handover",
-          "Professional cleaning was completed with receipt attached"
-        ],
-        tone: "standard"
+      // Use the new Phase 1 letter generation function
+      const response = await base44.functions.invoke('generatePhase1Letter', {
+        subject: caseItem.type || 'deposit',
+        tenant_name: user?.full_name || 'Tenant', // Assuming `user` here refers to the current logged-in admin, not the case's tenant.
+                                                  // For tenant's name, you might need to fetch caseItem.user_email's full_name
+        landlord_name: 'Landlord', // Placeholder, needs actual landlord data
+        property_address: caseItem.property_address || 'the rented property',
+        deposit_amount: caseItem.dispute_amount
       });
 
-      // Optionally, update the case status to 'ready_drafts' after generation
-      // For now, it's handled by the backend function.
-      // If the backend function doesn't update the status, you'd do it here:
-      // updateCaseMutation.mutate({ id: caseItem.id, data: { status: 'ready_drafts' } });
-
-      queryClient.invalidateQueries({ queryKey: ['allCases'] });
-      alert('Letters generated successfully! Case moved to "Drafts Ready" status.');
+      if (response.data?.success) {
+        // Optionally, update the case status to 'ready_drafts' after generation
+        // If the backend function doesn't update the status, you'd do it here:
+        // updateCaseMutation.mutate({ id: caseItem.id, data: { status: 'ready_drafts' } });
+        
+        queryClient.invalidateQueries({ queryKey: ['allCases'] });
+        alert('Letter generated successfully!');
+      } else {
+        throw new Error('Generation failed');
+      }
     } catch (error) {
       console.error('Letter generation failed:', error);
-      alert('Failed to generate letters. Please try again.');
+      alert('Failed to generate letter. Please try again.');
     } finally {
       setGeneratingLetters(null);
     }
