@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight, ChevronRight } from "lucide-react";
@@ -45,46 +44,46 @@ export default function StatsCard({
 
   return (
     <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col h-full" style={{ backgroundColor: colors.cardBg }}>
-      {/* Background circle - smaller */}
+      {/* Background circle */}
       {!showGauge && (
         <div 
-          className="absolute top-0 right-0 w-24 h-24 transform translate-x-6 -translate-y-6 rounded-full opacity-10"
+          className="absolute top-0 right-0 w-32 h-32 transform translate-x-8 -translate-y-8 rounded-full opacity-10"
           style={{
             backgroundColor: scoreColor || undefined
           }}
         />
       )}
-      <div className={`${showGauge ? 'p-3' : 'p-4'} relative z-10 flex flex-col h-full`}>
-        {/* Top section - Icon and trend - more compact */}
-        <div className="flex justify-between items-start mb-2">
+      <div className={`${showGauge ? 'p-4' : 'p-6'} relative z-10 flex flex-col h-full`}>
+        {/* Top section - Icon and trend */}
+        <div className="flex justify-between items-start mb-4">
           <div 
-            className={`p-2 rounded-lg ${bgGradient || ''}`}
+            className={`p-3 rounded-xl ${bgGradient || ''}`}
             style={
               scoreColor ? { backgroundColor: scoreColor } : {}
             }
           >
-            <Icon className="w-5 h-5 text-white" />
+            <Icon className="w-6 h-6 text-white" />
           </div>
           {trend && (
-            <div className={`flex items-center gap-1 text-xs font-medium ${trendUp ? 'text-emerald-600' : 'text-red-600'}`}>
-              {trendUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            <div className={`flex items-center gap-1 text-sm font-medium ${trendUp ? 'text-emerald-600' : 'text-red-600'}`}>
+              {trendUp ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
               {trend}
             </div>
           )}
         </div>
 
-        {/* Title - more compact */}
-        <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>{title}</p>
+        {/* Title */}
+        <p className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>{title}</p>
         
         {/* Main value area - flex-grow to push action button to bottom */}
         <div className="flex-grow flex flex-col">
           {showGauge ? (
-            <div className="flex items-center justify-center py-1">
-              <ProtectionScoreGauge score={scoreValue || 0} size={180} />
+            <div className="flex items-center justify-center py-2">
+              <ProtectionScoreGauge score={scoreValue || 0} size={220} />
             </div>
           ) : (
             <>
-              <p className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>{value}</p>
+              <p className="text-3xl font-bold mb-3" style={{ color: colors.textPrimary }}>{value}</p>
               {scoreStatus && (
                 <Badge 
                   style={{
@@ -92,17 +91,17 @@ export default function StatsCard({
                     color: scoreColor,
                     border: `1px solid ${scoreColor}30`
                   }}
-                  className="font-semibold mb-2 text-xs"
+                  className="font-semibold mb-3"
                 >
                   {scoreStatus}
                 </Badge>
               )}
               
-              {/* Mini Stats - more compact */}
+              {/* Mini Stats - consistent height */}
               {miniStats && miniStats.length > 0 && (
-                <div className="space-y-1.5 mb-3">
+                <div className="space-y-2 mb-4">
                   {miniStats.map((stat, idx) => (
-                    <div key={idx} className="flex items-center justify-between py-1.5 px-2.5 rounded-lg" style={{ backgroundColor: colors.miniStatBg }}>
+                    <div key={idx} className="flex items-center justify-between py-2 px-3 rounded-lg" style={{ backgroundColor: colors.miniStatBg }}>
                       <span className="text-xs font-medium" style={{ color: colors.textSecondary }}>{stat.label}</span>
                       <span className="text-sm font-bold" style={{ color: colors.textPrimary }}>{stat.value}</span>
                     </div>
@@ -113,13 +112,13 @@ export default function StatsCard({
           )}
         </div>
         
-        {/* Action buttons - always at bottom - more compact */}
+        {/* Action buttons - always at bottom */}
         <div className="mt-auto pt-2">
           {/* CTA Button */}
           {ctaText && onCtaClick && (
             <button
               onClick={onCtaClick}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs transition-all duration-200 hover:gap-3"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 hover:gap-3"
               style={{
                 backgroundColor: `${scoreColor}20`,
                 color: scoreColor,
@@ -135,7 +134,7 @@ export default function StatsCard({
               }}
             >
               {ctaText}
-              <ChevronRight className="w-3 h-3" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           )}
           
@@ -143,7 +142,7 @@ export default function StatsCard({
           {actionButton && (
             <Link to={actionButton.link}>
               <button
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs transition-all duration-200"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200"
                 style={{
                   backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
                   color: '#0C3B2E',
@@ -161,7 +160,7 @@ export default function StatsCard({
                 }}
               >
                 {actionButton.label}
-                <ChevronRight className="w-3 h-3" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             </Link>
           )}

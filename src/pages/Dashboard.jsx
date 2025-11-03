@@ -270,11 +270,6 @@ export default function Dashboard() {
     return daysRemaining <= 30 && daysRemaining > 0;
   }).length;
   const resolvedCases = cases.filter(c => c.status === 'closed').length;
-  const pendingCases = cases.filter(c => ['pending_review', 'intake', 'under_review'].includes(c.status)).length;
-  const activeLeasesWithAlerts = leases.filter(l => l.notice_alerts_enabled).length;
-  
-  // Calculate rent tracking stats
-  const depositsWithRentAlerts = deposits.filter(d => d.rent_alerts_enabled).length;
 
   const handleImproveScoreClick = () => {
     setShowImprovementDialog(true);
@@ -310,11 +305,7 @@ export default function Dashboard() {
       manageLeases: "Manage Leases",
       alertsEnabled: "Alerts Enabled",
       uploadFirstLease: "Upload First Lease",
-      scannedLeases: "Scanned",
-      alertsOn: "Alerts On",
-      pending: "Pending",
-      count: "Count",
-      total: "Total"
+      scannedLeases: "Scanned"
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -345,11 +336,7 @@ export default function Dashboard() {
       manageLeases: "จัดการสัญญา",
       alertsEnabled: "การแจ้งเตือนเปิดอยู่",
       uploadFirstLease: "อัปโหลดสัญญาแรก",
-      scannedLeases: "สัญญาที่สแกนแล้ว",
-      alertsOn: "แจ้งเตือนเปิด",
-      pending: "รอดำเนินการ",
-      count: "จำนวน",
-      total: "ทั้งหมด"
+      scannedLeases: "สัญญาที่สแกนแล้ว"
     }
   };
 
@@ -409,23 +396,19 @@ export default function Dashboard() {
             value={leases.length.toString()}
             icon={FileText}
             scoreColor="#3B82F6"
-            miniStats={[
+            miniStats={leases.length > 0 ? [
               {
-                label: language === 'th' ? 'สแกนแล้ว' : 'Scanned',
-                value: scannedLeases.length
+                label: language === 'th' ? 'สัญญาที่สแกนแล้ว' : 'Scanned',
+                value: leases.filter(l => l.status === 'scanned' || l.status === 'paid').length
               },
               {
-                label: language === 'th' ? 'แจ้งเตือนเปิด' : 'Alerts On',
-                value: activeLeasesWithAlerts
-              },
-              {
-                label: language === 'th' ? 'รอสแกน' : 'Pending',
-                value: leases.filter(l => l.status === 'uploaded').length
+                label: language === 'th' ? 'การแจ้งเตือนเปิดอยู่' : 'Alerts Enabled',
+                value: leases.filter(l => l.notice_alerts_enabled).length
               }
-            ]}
+            ] : undefined}
             actionButton={leases.length > 0 ? {
               label: language === 'th' ? 'จัดการสัญญา' : 'Manage Leases',
-              link: createPageUrl("UploadScan")
+              link: createPageUrl("UploadScan") // Following outline, though "Leases" page might be more fitting
             } : undefined}
             ctaText={leases.length === 0 ? (language === 'th' ? 'อัปโหลดสัญญาแรก' : 'Upload First Lease') : undefined}
             onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
@@ -438,18 +421,8 @@ export default function Dashboard() {
             icon={Wallet}
             bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
             miniStats={[
-              { 
-                label: language === 'th' ? 'จำนวนมัดจำ' : 'Count', 
-                value: activeDeposits.length 
-              },
-              { 
-                label: strings.avgDeposit, 
-                value: avgDeposit > 0 ? `฿${(avgDeposit / 1000).toFixed(0)}k` : '—' 
-              },
-              { 
-                label: strings.urgentReturns, 
-                value: urgentDeposits 
-              }
+              { label: strings.avgDeposit, value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
+              { label: strings.urgentReturns, value: urgentDeposits }
             ]}
             actionButton={{
               label: strings.addDeposit,
@@ -464,18 +437,7 @@ export default function Dashboard() {
             icon={Scale}
             bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
             miniStats={[
-              { 
-                label: language === 'th' ? 'รอดำเนินการ' : 'Pending', 
-                value: pendingCases 
-              },
-              { 
-                label: strings.resolved, 
-                value: resolvedCases 
-              },
-              { 
-                label: language === 'th' ? 'ทั้งหมด' : 'Total', 
-                value: cases.length 
-              }
+              { label: strings.resolved, value: resolvedCases }
             ]}
             actionButton={{
               label: strings.openCase,
@@ -483,7 +445,7 @@ export default function Dashboard() {
             }}
           />
           
-          {/* Protection Score with gauge - made smaller */}
+          {/* Protection Score with gauge - NO CHANGES TO THIS CARD */}
           <StatsCard
             title={strings.protectionScore}
             value={`${protectionScore}%`}
