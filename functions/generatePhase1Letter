@@ -140,18 +140,23 @@ Deno.serve(async (req) => {
     const content = SUBJECTS[subject];
     if (!content) {
       return Response.json({ 
+        ok: false,
         error: 'Invalid subject. Use: deposit, damages, or early_termination' 
       }, { status: 400 });
     }
 
     let vars = {};
     let caseData = null;
+    const mode = caseId ? 'case' : 'standalone';
 
     // MODE 1: Case-based generation (fetch data from case)
     if (caseId) {
       const cases = await base44.asServiceRole.entities.Case.filter({ id: caseId });
       if (!cases || cases.length === 0) {
-        return Response.json({ error: `Case not found: ${caseId}` }, { status: 404 });
+        return Response.json({ 
+          ok: false,
+          error: `Case not found: ${caseId}` 
+        }, { status: 404 });
       }
       
       caseData = cases[0];
@@ -181,7 +186,7 @@ Deno.serve(async (req) => {
       // Build vars with smart fallbacks and overrides
       vars = {
         tenant_name: safe(
-          tenant_name,  // Override first
+          tenant_name,
           safe(userData?.full_name, safe(caseData.user_email, "Tenant"))
         ),
         landlord_name: safe(
@@ -212,6 +217,7 @@ Deno.serve(async (req) => {
     else {
       if (!tenant_name || !landlord_name) {
         return Response.json({ 
+          ok: false,
           error: 'Missing required fields: tenant_name, landlord_name' 
         }, { status: 400 });
       }
@@ -245,7 +251,7 @@ Deno.serve(async (req) => {
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
     // Save to documents
-    await base44.asServiceRole.entities.Document.create({
+    const doc = await base44.asServiceRole.entities.Document.create({
       type: 'letter',
       file_url,
       label: `${content.subject_en}${caseId ? ` - Case ${caseId.slice(0, 8)}` : ''}`
@@ -272,15 +278,27 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Return standardized response
     return Response.json({ 
-      success: true,
-      url: file_url,
-      subject: subject,
-      caseId: caseId || null
+      ok: true,
+      mode,
+      subject,
+      urls: {
+        html: file_url,
+        pdf: null // PDF generation not yet implemented
+      },
+      docId: doc.id,
+      case: caseId && caseData ? {
+        id: caseData.id,
+        status: 'ready_drafts'
+      } : null
     });
 
   } catch (error) {
     console.error('Letter generation error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ 
+      ok: false,
+      error: error.message 
+    }, { status: 500 });
   }
 });
