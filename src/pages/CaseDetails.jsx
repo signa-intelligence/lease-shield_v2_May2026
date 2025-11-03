@@ -1,6 +1,6 @@
 
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -38,6 +38,9 @@ export default function CaseDetails() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const caseId = urlParams.get('caseId');
+  const queryClient = useQueryClient();
+
+  const [compilingPack, setCompilingPack] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -80,6 +83,26 @@ export default function CaseDetails() {
     borderColor: '#E5E7EB',
   };
 
+  const handleCompilePack = async () => {
+    setCompilingPack(true);
+    try {
+      const response = await base44.functions.invoke('compileLetterPack', {
+        caseId: caseItem.id
+      });
+
+      if (response.data.success) {
+        // Refresh case data to get the new pack URL
+        queryClient.invalidateQueries({ queryKey: ['case', caseId] });
+        alert(language === 'th' ? 'สร้าง Letter Pack สำเร็จ!' : 'Letter Pack compiled successfully!');
+      }
+    } catch (error) {
+      console.error('Failed to compile letter pack:', error);
+      alert(language === 'th' ? 'ไม่สามารถสร้าง Letter Pack ได้' : 'Failed to compile letter pack');
+    } finally {
+      setCompilingPack(false);
+    }
+  };
+
   const t = {
     en: {
       caseDetails: "Case Details",
@@ -115,6 +138,11 @@ export default function CaseDetails() {
       finalSettlementOffer: "Final Settlement Offer",
       beforeEscalation: "Before Escalation",
       view: "View",
+      compilePack: "Compile Pack",
+      compiling: "Compiling...",
+      completeLetterPack: "📄 Complete Letter Pack",
+      allLettersInOnePdf: "All letters in one PDF",
+      download: "Download",
     },
     th: {
       caseDetails: "รายละเอียดคดี",
@@ -150,6 +178,11 @@ export default function CaseDetails() {
       finalSettlementOffer: "จดหมายข้อเสนอสุดท้าย",
       beforeEscalation: "ก่อนการยกระดับ",
       view: "ดู",
+      compilePack: "รวม PDF",
+      compiling: "กำลังรวม...",
+      completeLetterPack: "📄 Letter Pack ฉบับเต็ม",
+      allLettersInOnePdf: "จดหมายทั้งหมดรวมใน PDF เดียว",
+      download: "ดาวน์โหลด",
     }
   };
 
@@ -190,7 +223,7 @@ export default function CaseDetails() {
             <p className="mb-6" style={{ color: colors.textSecondary }}>
               {language === 'th' 
                 ? 'ไม่พบคดีที่คุณกำลังมองหา' 
-                : 'The case you\'re looking for doesn\'t exist.'}
+                : "The case you're looking for doesn't exist."}
             </p>
             <Button onClick={() => navigate(createPageUrl("Cases"))} className="bg-ls-forest hover:bg-ls-forest/90">
               {strings.backToCases}
@@ -378,15 +411,67 @@ export default function CaseDetails() {
         </Card>
 
         {/* Letters Section */}
-        {caseItem.letters && (caseItem.letters.v1_url || caseItem.letters.v2_url || caseItem.letters.v3_url) && (
+        {caseItem.letters && (caseItem.letters.v1_url || caseItem.letters.v2_url || caseItem.letters.v3_url || caseItem.letter_pack_url) && (
           <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
-              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-                <FileText className="w-5 h-5 text-purple-600" />
-                {strings.generatedLetters}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                  {strings.generatedLetters}
+                </CardTitle>
+                {/* Letter Pack Compile Button */}
+                {!caseItem.letter_pack_url && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCompilePack}
+                    disabled={compilingPack}
+                    className="border-purple-600 text-purple-600"
+                  >
+                    {compilingPack ? (
+                      <>
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        {strings.compiling}
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-3 h-3 mr-1" />
+                        {strings.compilePack}
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
+              {/* Letter Pack - Full Compilation */}
+              {caseItem.letter_pack_url && (
+                <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                          {strings.completeLetterPack}
+                        </p>
+                        <p className="text-sm" style={{ color: colors.textSecondary }}>
+                          {strings.allLettersInOnePdf}
+                        </p>
+                      </div>
+                    </div>
+                    <a href={caseItem.letter_pack_url} target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        {strings.download}
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Individual Letters */}
               <div className="space-y-3">
                 {caseItem.letters.v1_url && (
                   <div className="flex items-center justify-between p-3 rounded-lg" style={{
@@ -514,7 +599,7 @@ export default function CaseDetails() {
                     <p className="text-sm" style={{ color: colors.textSecondary }}>
                       {language === 'th' 
                         ? 'เราจะติดต่อคุณเร็วๆ นี้' 
-                        : 'We\'ll be in touch soon'}
+                        : "We'll be in touch soon"}
                     </p>
                   </div>
                 </div>
