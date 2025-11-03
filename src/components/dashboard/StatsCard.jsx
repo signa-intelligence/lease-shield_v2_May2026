@@ -43,7 +43,7 @@ export default function StatsCard({
   };
 
   return (
-    <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: colors.cardBg }}>
+    <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col h-full" style={{ backgroundColor: colors.cardBg }}>
       {/* Background circle */}
       {!showGauge && (
         <div 
@@ -53,9 +53,9 @@ export default function StatsCard({
           }}
         />
       )}
-      <div className={`${showGauge ? 'p-4' : 'p-6'} relative z-10`}>
-        <div className="flex justify-between items-start mb-3">
-          {/* Icon box */}
+      <div className={`${showGauge ? 'p-4' : 'p-6'} relative z-10 flex flex-col h-full`}>
+        {/* Top section - Icon and trend */}
+        <div className="flex justify-between items-start mb-4">
           <div 
             className={`p-3 rounded-xl ${bgGradient || ''}`}
             style={
@@ -71,16 +71,19 @@ export default function StatsCard({
             </div>
           )}
         </div>
-        <div>
-          <p className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>{title}</p>
-          
+
+        {/* Title */}
+        <p className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>{title}</p>
+        
+        {/* Main value area - flex-grow to push action button to bottom */}
+        <div className="flex-grow flex flex-col">
           {showGauge ? (
-            <div className="mt-2 mb-2">
-              <ProtectionScoreGauge score={scoreValue || 0} size={240} />
+            <div className="flex items-center justify-center py-2">
+              <ProtectionScoreGauge score={scoreValue || 0} size={220} />
             </div>
           ) : (
             <>
-              <p className="text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{value}</p>
+              <p className="text-3xl font-bold mb-3" style={{ color: colors.textPrimary }}>{value}</p>
               {scoreStatus && (
                 <Badge 
                   style={{
@@ -88,15 +91,15 @@ export default function StatsCard({
                     color: scoreColor,
                     border: `1px solid ${scoreColor}30`
                   }}
-                  className="font-semibold"
+                  className="font-semibold mb-3"
                 >
                   {scoreStatus}
                 </Badge>
               )}
               
-              {/* Mini Stats - only for non-gauge cards */}
+              {/* Mini Stats - consistent height */}
               {miniStats && miniStats.length > 0 && (
-                <div className="mt-4 space-y-2">
+                <div className="space-y-2 mb-4">
                   {miniStats.map((stat, idx) => (
                     <div key={idx} className="flex items-center justify-between py-2 px-3 rounded-lg" style={{ backgroundColor: colors.miniStatBg }}>
                       <span className="text-xs font-medium" style={{ color: colors.textSecondary }}>{stat.label}</span>
@@ -107,12 +110,15 @@ export default function StatsCard({
               )}
             </>
           )}
-          
+        </div>
+        
+        {/* Action buttons - always at bottom */}
+        <div className="mt-auto pt-2">
           {/* CTA Button */}
           {ctaText && onCtaClick && (
             <button
               onClick={onCtaClick}
-              className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 hover:gap-3"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 hover:gap-3"
               style={{
                 backgroundColor: `${scoreColor}20`,
                 color: scoreColor,
@@ -132,11 +138,11 @@ export default function StatsCard({
             </button>
           )}
           
-          {/* Action Button - only for non-gauge cards */}
+          {/* Action Button */}
           {actionButton && (
             <Link to={actionButton.link}>
               <button
-                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200"
                 style={{
                   backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
                   color: '#0C3B2E',
