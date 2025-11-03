@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
@@ -21,8 +22,21 @@ const mapKey = (s="") => ({
 
 // --- helpers
 const esc = (s="") => String(s).replace(/[<&>"]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m]));
-const iso = (v) => { try { return new Date(v).toISOString().slice(0,10); } catch { return new Date().toISOString().slice(0,10); } };
-const later = (days=7) => iso(Date.now() + days * 864e5);
+
+// --- format helper to DD-MM-YYYY
+const fmtDate = (d) => {
+  try {
+    const dt = new Date(d);
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const yyyy = dt.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  } catch {
+    const now = new Date();
+    return `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth()+1).padStart(2, '0')}-${now.getFullYear()}`;
+  }
+};
+const later = (days=7) => fmtDate(Date.now() + days * 864e5);
 const fill = (tpl, vars) => tpl.replace(/{{\s*([\w.]+)\s*}}/g, (_, k) => (vars[k] ?? ""));
 
 // --- content library
@@ -36,7 +50,7 @@ I hope you're well. I'm writing about the wrap-up of my tenancy at {{property_ad
 
 To keep things transparent, could you please let me know: (1) whether any deductions are being considered and for what, (2) the refund amount, and (3) when/how the transfer will be made. If there are deductions, a short itemised note or supporting receipt is more than enough. Clear records protect both sides and avoid back-and-forth later.
 
-If it's workable, I'd appreciate an update by {{request_by_date_iso}} so we can close the account neatly. If you prefer a different date or method, just say—happy to accommodate.
+If it's workable, I'd appreciate an update by {{request_by_date}} so we can close the account neatly. If you prefer a different date or method, just say—happy to accommodate.
 
 Thank you again. I appreciate your cooperation and want to leave things on a good note.
 
@@ -46,7 +60,7 @@ Warm regards,
 
 ขอรบกวนสอบถามขั้นตอนและกำหนดเวลาการคืนเงินประกันจำนวน {{deposit_amount}} บาท สำหรับที่พัก {{property_address}} ตามสัญญา {{contract_ref}} ขณะนี้ได้ย้ายออกและส่งมอบกุญแจเรียบร้อยแล้ว ห้องอยู่ในสภาพดีและไม่มีค่าใช้จ่ายค้างชำระ
 
-เพื่อความชัดเจน กรุณาแจ้ง (1) รายการหัก (ถ้ามี) พร้อมเหตุผลสั้น ๆ หรือหลักฐานประกอบ (2) จำนวนเงินที่จะคืน และ (3) วันที่/วิธีการโอน หากสะดวก รบกวนอัปเดตภายใน {{request_by_date_iso}} หากต้องการข้อมูลเพิ่มเติม ยินดีจัดส่งทันที
+เพื่อความชัดเจน กรุณาแจ้ง (1) รายการหัก (ถ้ามี) พร้อมเหตุผลสั้น ๆ หรือหลักฐานประกอบ (2) จำนวนเงินที่จะคืน และ (3) วันที่/วิธีการโอน หากสะดวก รบกวนอัปเดตภายใน {{request_by_date}} หากต้องการข้อมูลเพิ่มเติม ยินดีจัดส่งทันที
 
 ขอแสดงความนับถือ
 {{tenant_name}}`
@@ -60,7 +74,7 @@ Thanks for your note regarding potential deductions from the deposit for {{prope
 
 I recognise normal wear-and-tear is to be expected; I'm only asking about items beyond that. If any point isn't clear, a brief explanation is perfect. Once I've reviewed the list, I'll respond quickly so we can wrap this up without delay.
 
-If it's convenient, please send the breakdown by {{request_by_date_iso}}. I appreciate your cooperation.
+If it's convenient, please send the breakdown by {{request_by_date}}. I appreciate your cooperation.
 
 Kind regards,
 {{tenant_name}}`,
@@ -68,7 +82,7 @@ Kind regards,
 
 ตามที่แจ้งเรื่องการหักเงินประกันของ {{property_address}} รบกวนขอรายการหักแบบแยกรายการ พร้อมเหตุผลและเอกสารประกอบ (เช่น ใบเสร็จหรือใบเสนอราคา) เพื่อความโปร่งใสและเป็นธรรมต่อทั้งสองฝ่าย ข้าพเจ้าทราบดีว่ามีการสึกหรอตามการใช้งานปกติ จึงขอข้อมูลเฉพาะส่วนที่เกินกว่าปกติเท่านั้น
 
-กรุณาส่งรายละเอียดภายใน {{request_by_date_iso}} หากต้องการข้อมูลจากฝั่งข้าพเจ้าเพิ่มเติม แจ้งได้ทันที
+กรุณาส่งรายละเอียดภายใน {{request_by_date}} หากต้องการข้อมูลจากฝั่งข้าพเจ้าเพิ่มเติม แจ้งได้ทันที
 
 ขอแสดงความนับถือ
 {{tenant_name}}`
@@ -80,13 +94,13 @@ Kind regards,
 
 Just a quick check-in regarding the deposit for {{property_address}} under {{contract_ref}}. If you're able, could you confirm the refund amount and transfer date? If deductions are still being reviewed, an estimate or brief status is fine for now.
 
-If {{request_by_date_iso}} works for you as a target, great; otherwise please suggest a date that does. Thanks again for your help.
+If {{request_by_date}} works for you as a target, great; otherwise please suggest a date that does. Thanks again for your help.
 
 Best regards,
 {{tenant_name}}`,
     thBody: `เรียน {{landlord_name}},
 
-ขอติดตามความคืบหน้าการคืนเงินประกันสำหรับ {{property_address}} หากยังอยู่ระหว่างตรวจสอบ สามารถแจ้งสถานะคร่าว ๆ ได้ หากสะดวกตั้งเป้าหมายภายใน {{request_by_date_iso}} จะช่วยให้ปิดบัญชีได้เรียบร้อยขึ้น ขอบคุณมากสำหรับความร่วมมือ
+ขอติดตามความคืบหน้าการคืนเงินประกันสำหรับ {{property_address}} หากยังอยู่ระหว่างตรวจสอบ สามารถแจ้งสถานะคร่าว ๆ ได้ หากสะดวกตั้งเป้าหมายภายใน {{request_by_date}} จะช่วยให้ปิดบัญชีได้เรียบร้อยขึ้น ขอบคุณมากสำหรับความร่วมมือ
 
 ขอแสดงความนับถือ
 {{tenant_name}}`
@@ -100,13 +114,13 @@ I'm writing to formally dispute the withholding of all or part of the deposit fo
 
 Please share: (1) an itemised list, (2) basis for each amount (invoice/quote), and (3) photos/notes indicating when and how the damage occurred. If a contractor's estimate is used, please include scope and rates.
 
-I'd prefer to settle this directly. If we can't align, we could consider an independent estimate or release undisputed funds first. Kindly confirm your position by {{request_by_date_iso}}.
+I'd prefer to settle this directly. If we can't align, we could consider an independent estimate or release undisputed funds first. Kindly confirm your position by {{request_by_date}}.
 
 Regards,
 {{tenant_name}}`,
     thBody: `เรียน {{landlord_name}},
 
-ขอคัดค้านการระงับ/หักเงินประกันของ {{property_address}} โดยขอให้ชี้แจงรายการ ค่าใช้จ่าย และหลักฐานสนับสนุนอย่างชัดเจน หากไม่สามารถตกลงกันได้ ขอเสนอให้คืนส่วนที่ไม่มีข้อโต้แย้งก่อน และทบทวนส่วนที่เหลือร่วมกัน โดยโปรดแจ้งจุดยืนภายใน {{request_by_date_iso}}
+ขอคัดค้านการระงับ/หักเงินประกันของ {{property_address}} โดยขอให้ชี้แจงรายการ ค่าใช้จ่าย และหลักฐานสนับสนุนอย่างชัดเจน หากไม่สามารถตกลงกันได้ ขอเสนอให้คืนส่วนที่ไม่มีข้อโต้แย้งก่อน และทบทวนส่วนที่เหลือร่วมกัน โดยโปรดแจ้งจุดยืนภายใน {{request_by_date}}
 
 ขอแสดงความนับถือ
 {{tenant_name}}`
@@ -118,13 +132,13 @@ Regards,
 
 This concerns the early termination at {{property_address}} under {{contract_ref}}. Please confirm: (1) any contractual fees, (2) key/possession handover steps, (3) meter/common-fee cut-offs, and (4) the final account (including the deposit). I can provide meter photos and move-out condition.
 
-I'd like to complete this by {{request_by_date_iso}} if possible; I'm flexible on timing.
+I'd like to complete this by {{request_by_date}} if possible; I'm flexible on timing.
 
 Thank you,
 {{tenant_name}}`,
     thBody: `เรียน {{landlord_name}},
 
-เรื่องการยุติสัญญาก่อนกำหนดของ {{property_address}} กรุณายืนยันค่าธรรมเนียมตามสัญญา ขั้นตอนส่งมอบกุญแจ วันที่ตัดยอดค่าสาธารณูปโภค/ค่าส่วนกลาง และใบสรุปยอดบัญชีสุดท้าย (รวมเงินประกัน) หากสะดวก ขอปิดบัญชีภายใน {{request_by_date_iso}}
+เรื่องการยุติสัญญาก่อนกำหนดของ {{property_address}} กรุณายืนยันค่าธรรมเนียมตามสัญญา ขั้นตอนส่งมอบกุญแจ วันที่ตัดยอดค่าสาธารณูปโภค/ค่าส่วนกลาง และใบสรุปยอดบัญชีสุดท้าย (รวมเงินประกัน) หากสะดวก ขอปิดบัญชีภายใน {{request_by_date}}
 
 ขอแสดงความนับถือ
 {{tenant_name}}`
@@ -168,13 +182,13 @@ Regards,
     thSubject: "โอกาสสุดท้ายก่อนดำเนินการต่อ",
     enBody: `Dear {{landlord_name}},
 
-One last follow-up regarding the unresolved deposit for {{property_address}} under {{contract_ref}}. If we can confirm either the refund or an evidence-based itemised deduction by {{request_by_date_iso}}, I'll consider the matter closed. Otherwise I'll seek external advice on next steps.
+One last follow-up regarding the unresolved deposit for {{property_address}} under {{contract_ref}}. If we can confirm either the refund or an evidence-based itemised deduction by {{request_by_date}}, I'll consider the matter closed. Otherwise I'll seek external advice on next steps.
 
 Sincerely,
 {{tenant_name}}`,
     thBody: `เรียน {{landlord_name}},
 
-ขอติดตามเป็นครั้งสุดท้าย หากสามารถยืนยันยอดคืนหรือรายการหักพร้อมหลักฐานภายใน {{request_by_date_iso}} จะถือว่าเสร็จสิ้น มิฉะนั้นอาจจำเป็นต้องพิจารณาดำเนินการต่อไป
+ขอติดตามเป็นครั้งสุดท้าย หากสามารถยืนยันยอดคืนหรือรายการหักพร้อมหลักฐานภายใน {{request_by_date}} จะถือว่าเสร็จสิ้น มิฉะนั้นอาจจำเป็นต้องพิจารณาดำเนินการต่อไป
 
 ขอแสดงความนับถือ
 {{tenant_name}}`
@@ -184,13 +198,13 @@ Sincerely,
     thSubject: "หนังสือแจ้งไม่ปฏิบัติตาม/ผิดสัญญา",
     enBody: `Dear {{landlord_name}},
 
-This notice relates to {{contract_ref}} for {{property_address}}. The following appears non-compliant: {{breach_summary}}. Please remedy or clarify by {{request_by_date_iso}}. I'm open to context; the goal is a practical, fair outcome.
+This notice relates to {{contract_ref}} for {{property_address}}. The following appears non-compliant: {{breach_summary}}. Please remedy or clarify by {{request_by_date}}. I'm open to context; the goal is a practical, fair outcome.
 
 Regards,
 {{tenant_name}}`,
     thBody: `เรียน {{landlord_name}},
 
-ขอแจ้งกรณีไม่ปฏิบัติตามที่ปรากฏใน {{contract_ref}} สำหรับ {{property_address}} ได้แก่ {{breach_summary}} กรุณาแก้ไขหรือชี้แจงภายใน {{request_by_date_iso}}
+ขอแจ้งกรณีไม่ปฏิบัติตามที่ปรากฏใน {{contract_ref}} สำหรับ {{property_address}} ได้แก่ {{breach_summary}} กรุณาแก้ไขหรือชี้แจงภายใน {{request_by_date}}
 
 ขอแสดงความนับถือ
 {{tenant_name}}`
@@ -240,7 +254,7 @@ hr { border: 0; border-top: 1px solid #E5E7EB; margin: 18px 0; }
   <div class="header">
     <div class="brand">LEASE SHIELD</div>
     <div class="meta">
-      <div><strong>Date:</strong> {{today_iso}}</div>
+      <div><strong>Date:</strong> {{today_date}}</div>
       <div><strong>Case ID:</strong> {{caseId}}</div>
       <div><strong>Property:</strong> {{property_address}}</div>
     </div>
@@ -252,7 +266,7 @@ hr { border: 0; border-top: 1px solid #E5E7EB; margin: 18px 0; }
   <div class="section th">{{thHtml}}</div>
   <div class="footer">
     <div><strong>Contract:</strong> {{contract_ref}}</div>
-    <div><strong>Requested reply by:</strong> {{request_by_date_iso}}</div>
+    <div><strong>Requested reply by:</strong> {{request_by_date}}</div>
     <div><strong>From:</strong> {{tenant_name}} <span class="muted">→</span> <strong>To:</strong> {{landlord_name}}</div>
   </div>
 </div>
@@ -323,8 +337,8 @@ Deno.serve(async (req) => {
     // Build vars
     const vars = {
       caseId: mode === "case" ? String(args.caseId).slice(0, 8) : `standalone-${Date.now()}`,
-      today_iso: iso(new Date()),
-      request_by_date_iso: esc(args?.request_by_date_iso || fromCase?.sla?.followup_due || later(7)),
+      today_date: fmtDate(new Date()),
+      request_by_date: args?.request_by_date_iso ? fmtDate(args.request_by_date_iso) : (fromCase?.sla?.followup_due ? fmtDate(fromCase.sla.followup_due) : later(7)),
       tenant_name: get("tenant_name") || userData?.full_name || fromCase?.user_email || "Tenant",
       landlord_name: get("landlord_name") || "Landlord",
       property_address: get("property_address") || "",
@@ -339,7 +353,7 @@ Deno.serve(async (req) => {
       example_item_3: get("example_item_3") || "",
       breach_summary: get("breach_summary") || "",
       settlement_amount: get("settlement_amount") || "",
-      settlement_date: get("settlement_date") || ""
+      settlement_date: get("settlement_date") ? fmtDate(get("settlement_date")) : ""
     };
 
     // Standalone mode validation
