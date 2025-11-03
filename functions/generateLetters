@@ -325,20 +325,22 @@ Deno.serve(async (req) => {
     // Check if this is a temporary case (not yet in database)
     const isTemporaryCase = caseId.startsWith('temp-');
 
-    // Build the prompt for letter generation
-    const userPrompt = JSON.stringify({
-      caseId,
-      tenant_name,
-      landlord_name,
-      property_address,
-      contract_ref,
-      deposit_amount_thb: deposit_amount_thb || null,
-      dispute_type,
-      facts,
-      request_by_date_iso: request_by_date_iso || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      attachments,
-      tone
-    });
+    // Build the prompt for letter generation with strong constraints
+    const userPrompt = `Generate EXACTLY 3 letters for this case. No more, no less.
+
+Case Details:
+- Tenant: ${tenant_name}
+- Landlord: ${landlord_name}
+- Property: ${property_address}
+- Contract: ${contract_ref}
+- Deposit Amount: ${deposit_amount_thb ? `฿${deposit_amount_thb}` : 'N/A'}
+- Dispute Type: ${dispute_type}
+- Key Facts: ${facts.length > 0 ? facts.join('; ') : 'Standard lease dispute'}
+- Response Deadline: ${request_by_date_iso || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+- Attachments: ${attachments.length > 0 ? attachments.join(', ') : 'Lease.pdf, Photos.zip'}
+- Tone: ${tone}
+
+CRITICAL: Return EXACTLY 3 letters with IDs: v1_notice, v2_follow_up, v3_final_offer`;
 
     // Call LLM to generate letter pack with increased timeout
     console.log('Calling LLM with payload...');
@@ -346,7 +348,6 @@ Deno.serve(async (req) => {
       base44.integrations.Core.InvokeLLM({
         prompt: `${LETTER_WRITER_SYSTEM_PROMPT}
 
-PAYLOAD:
 ${userPrompt}`,
         response_json_schema: {
           type: "object",
@@ -354,15 +355,17 @@ ${userPrompt}`,
             caseId: { type: "string" },
             letters: {
               type: "array",
+              minItems: 3,
+              maxItems: 3,
               items: {
                 type: "object",
                 properties: {
-                  id: { type: "string" },
+                  id: { type: "string", enum: ["v1_notice", "v2_follow_up", "v3_final_offer"] },
                   purpose: { type: "string" },
                   subject_en: { type: "string" },
                   subject_th: { type: "string" },
-                  body_en: { type: "array", items: { type: "string" } },
-                  body_th: { type: "array", items: { type: "string" } },
+                  body_en: { type: "array", items: { type: "string" }, minItems: 1 },
+                  body_th: { type: "array", items: { type: "string" }, minItems: 1 },
                   placeholders: { type: "object" },
                   next_steps_en: { type: "array", items: { type: "string" } },
                   next_steps_th: { type: "array", items: { type: "string" } }
@@ -385,21 +388,54 @@ ${userPrompt}`,
       throw new Error('Failed to generate letters - LLM returned no letters');
     }
 
-    // Validate each letter has required fields
+    // Filter and validate letters - only keep properly structured ones
+    const validLetters = [];
+    const expectedIds = ['v1_notice', 'v2_follow_up', 'v3_final_offer'];
+    
     for (const letter of result.letters) {
-      if (!letter.body_en || !Array.isArray(letter.body_en)) {
-        console.error('Invalid letter structure - missing body_en:', letter);
-        throw new Error(`Letter ${letter.id} is missing required body_en array`);
+      // Skip if missing critical fields
+      if (!letter.id) {
+        console.warn('Skipping letter without ID:', Object.keys(letter));
+        continue;
       }
+      
+      if (!expectedIds.includes(letter.id)) {
+        console.warn('Skipping letter with unexpected ID:', letter.id);
+        continue;
+      }
+      
+      if (!letter.body_en || !Array.isArray(letter.body_en) || letter.body_en.length === 0) {
+        console.error(`Letter ${letter.id} has invalid body_en:`, letter.body_en);
+        continue;
+      }
+      
+      // Ensure body_th exists and is an array
       if (!letter.body_th || !Array.isArray(letter.body_th)) {
-        console.warn('Letter missing body_th, setting to empty array:', letter.id);
+        console.warn(`Letter ${letter.id} missing body_th, setting to empty array`);
         letter.body_th = [];
       }
+      
+      // Ensure other required fields have defaults if missing after LLM response
+      if (!letter.subject_en) letter.subject_en = 'Letter from Lease Shield';
+      if (!letter.subject_th) letter.subject_th = 'จดหมายจาก Lease Shield';
+      if (!letter.purpose) letter.purpose = letter.id.replace('_', ' '); // Default purpose from ID
+      
+      validLetters.push(letter);
     }
 
-    // Save each letter as HTML and upload
+    console.log('Valid letters after filtering:', validLetters.length, validLetters.map(l => l.id));
+
+    if (validLetters.length === 0) {
+      throw new Error('No valid letters generated - all letters had structural issues');
+    }
+
+    if (validLetters.length < 3) {
+      console.warn(`Only ${validLetters.length} valid letters generated, expected 3`);
+    }
+
+    // Save each valid letter as HTML and upload
     const letterUrls = {};
-    for (const letter of result.letters) {
+    for (const letter of validLetters) {
       try {
         // Generate HTML with UTF-8 encoding
         const htmlContent = getLetterHTML(letter, caseId);
@@ -439,7 +475,7 @@ ${userPrompt}`,
           timestamp: new Date().toISOString(),
           event: 'Letters generated',
           actor: user.email,
-          meta: { letter_count: result.letters.length }
+          meta: { letter_count: validLetters.length }
         });
 
         await base44.entities.Case.update(caseId, {
@@ -448,7 +484,7 @@ ${userPrompt}`,
             v1_url: letterUrls['v1_notice'],
             v2_url: letterUrls['v2_follow_up'],
             v3_url: letterUrls['v3_final_offer'],
-            letters_data: result.letters
+            letters_data: validLetters
           },
           timeline
         });
@@ -486,7 +522,7 @@ ${userPrompt}`,
     return Response.json({
       success: true,
       caseId,
-      letters: result.letters,
+      letters: validLetters,
       letterUrls,
       isTemporary: isTemporaryCase
     });
