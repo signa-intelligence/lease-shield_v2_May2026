@@ -1,4 +1,36 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+// Decode HTML entities properly for Deno environment
+function decodeHTMLEntities(text: string): string {
+  if (typeof text !== 'string') {
+    return text;
+  }
+
+  // A basic HTML entity decoder for common entities, and numeric/hex references.
+  // Note: This does not cover all named entities beyond the basic 5 (&amp;, &lt;, &gt;, &quot;, &apos;).
+  let decodedText = text;
+
+  // Decode named entities
+  decodedText = decodedText.replace(/&amp;/g, '&');
+  decodedText = decodedText.replace(/&lt;/g, '<');
+  decodedText = decodedText.replace(/&gt;/g, '>');
+  decodedText = decodedText.replace(/&quot;/g, '"');
+  decodedText = decodedText.replace(/&#39;/g, "'"); // Numeric for apostrophe
+  decodedText = decodedText.replace(/&apos;/g, "'"); // Named for apostrophe
+
+  // Decode numeric character references (e.g., &#123;)
+  decodedText = decodedText.replace(/&#(\d+);/g, (match, dec) => {
+    return String.fromCharCode(parseInt(dec, 10));
+  });
+
+  // Decode hexadecimal character references (e.g., &#xAB;)
+  decodedText = decodedText.replace(/&#x([0-9a-fA-F]+);/g, (match, hex) => {
+    return String.fromCharCode(parseInt(hex, 16));
+  });
+
+  return decodedText;
+}
 
 const LETTER_WRITER_PROMPT = `You are a professional letter writer for rental disputes in Thailand.
 
@@ -257,6 +289,13 @@ Generate ONE letter requesting resolution. Be polite, factual, and professional.
     if (!Array.isArray(result.body_th) || result.body_th.length === 0) {
       throw new Error('Invalid body_th: must be non-empty array');
     }
+
+    // Decode HTML entities from LLM response to ensure proper display
+    // Although the prompt asks for UTF-8, LLMs can sometimes output entities.
+    result.subject_en = decodeHTMLEntities(result.subject_en);
+    result.subject_th = decodeHTMLEntities(result.subject_th);
+    result.body_en = result.body_en.map(p => decodeHTMLEntities(p));
+    result.body_th = result.body_th.map(p => decodeHTMLEntities(p));
 
     console.log('Letter validation passed');
 
