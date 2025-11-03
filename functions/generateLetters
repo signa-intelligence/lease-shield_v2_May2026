@@ -25,6 +25,11 @@ STRUCTURE:
 OUTPUT FORMAT:
 Return STRICT JSON. No text outside the JSON.
 
+CRITICAL ENCODING RULE:
+- Output ALL Thai text as raw UTF-8 characters
+- NEVER use HTML entities (no &# codes)
+- Example: Use "สวัสดี" NOT "&#3626;&#3623;&#3633;&#3626;&#3604;&#3637;"
+
 JSON SCHEMA:
 {
   "caseId": "string",
@@ -33,7 +38,7 @@ JSON SCHEMA:
       "id": "v1_notice",
       "purpose": "Initial clarification & documentation",
       "subject_en": "string",
-      "subject_th": "string",
+      "subject_th": "string (raw UTF-8 Thai)",
       "body_en": ["para1", "para2", "..."],
       "body_th": ["ย่อหน้า1", "ย่อหน้า2", "..."],
       "placeholders": {
@@ -73,19 +78,36 @@ STYLE:
 - Never assume guilt; emphasize cooperation and understanding.
 - All output must be bilingual (EN/TH).`;
 
+// Decode HTML entities - Deno-compatible
+function decodeHtmlEntities(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+  
+  return text
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
 // HTML template for rendering letters
-const getLetterHTML = (letter, caseId) => {
+const getLetterHTML = (letter: any, caseId: string) => {
   const today = new Date().toISOString().split('T')[0];
   const year = new Date().getFullYear();
   
-  // No HTML entity decoding needed - LLM outputs UTF-8 directly
-  const escapeHtml = (text) => {
+  // Decode HTML entities and escape for HTML output
+  const escapeHtml = (text: string) => {
     if (!text) return '';
-    return text; // Return as-is since we're using UTF-8
+    // First decode any HTML entities that might have been incorrectly introduced
+    const decoded = decodeHtmlEntities(text);
+    // Return as-is for UTF-8 output (no additional HTML escaping for standard chars)
+    return decoded;
   };
   
   // Helper to render EN/TH paragraph pairs with safety checks
-  const renderParagraphs = (bodyEn, bodyTh) => {
+  const renderParagraphs = (bodyEn: string[], bodyTh: string[]) => {
     // Safety checks - ensure both arrays exist and have content
     if (!Array.isArray(bodyEn) || bodyEn.length === 0) {
       console.warn('bodyEn is missing or empty:', bodyEn);
@@ -94,7 +116,7 @@ const getLetterHTML = (letter, caseId) => {
     
     if (!Array.isArray(bodyTh)) {
       console.warn('bodyTh is missing or not an array:', bodyTh);
-      bodyTh = [];
+      bodyTh = []; // Default to empty array to prevent errors
     }
     
     return bodyEn.map((para, i) => `
@@ -192,7 +214,7 @@ const getLetterHTML = (letter, caseId) => {
   ${letter.next_steps_en && Array.isArray(letter.next_steps_en) && letter.next_steps_en.length > 0 ? `
     <div class="block-title">Next Steps / ขั้นตอนถัดไป</div>
     <ul>
-      ${letter.next_steps_en.map((step, i) => `
+      ${letter.next_steps_en.map((step: string, i: number) => `
         <li>
           <div class="en">${escapeHtml(step)}</div>
           <div class="th small">${escapeHtml((letter.next_steps_th && letter.next_steps_th[i]) || '')}</div>
@@ -435,7 +457,7 @@ ${userPrompt}`,
     }
 
     // Save each valid letter as HTML and upload
-    const letterUrls = {};
+    const letterUrls: { [key: string]: string } = {};
     for (const letter of validLetters) {
       try {
         // Generate HTML with UTF-8 encoding
