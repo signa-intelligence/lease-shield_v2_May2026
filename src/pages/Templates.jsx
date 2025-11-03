@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -152,34 +153,45 @@ export default function Templates() {
       title: "Legal Letter Templates",
       subtitle: "Professional bilingual escalation ladder - from friendly to formal",
       liteTier: "LITE",
+      protectTier: "PROTECT",
       secureTier: "SECURE",
       upgradeRequired: "Upgrade to access",
       tierSection: {
-        lite: "Lite Tier - Friendly Approach",
-        secure: "Secure Tier - Formal Escalation"
+        lite: "Lite Tier - Friendly Approach (3 Letters)",
+        protect: "Protect Tier - Professional Escalation (7 Letters)",
+        secure: "Secure Tier - Complete Arsenal (10 Letters)"
       }
     },
     th: {
       title: "เทมเพลตจดหมายทางกฎหมาย",
       subtitle: "บันไดการยกระดับมืออาชีพสองภาษา - จากเป็นมิตรไปเป็นทางการ",
       liteTier: "ไลท์",
+      protectTier: "โปรเทค",
       secureTier: "ซีเคียว",
       upgradeRequired: "อัปเกรดเพื่อเข้าถึง",
       tierSection: {
-        lite: "ไลท์ เทียร์ - แนวทางเป็นมิตร",
-        secure: "ซีเคียว เทียร์ - การยกระดับอย่างเป็นทางการ"
+        lite: "ไลท์ เทียร์ - แนวทางเป็นมิตร (3 จดหมาย)",
+        protect: "โปรเทค เทียร์ - การยกระดับอย่างมืออาชีพ (7 จดหมาย)",
+        secure: "ซีเคียว เทียร์ - คลังแสงอาวุธครบครัน (10 จดหมาย)"
       }
     }
   };
 
   const strings = t[language];
 
-  // Group templates by tier
+  // Progressive tier access
+  const tierLetters = {
+    lite: ["deposit", "deductions", "reminder"],
+    protect: ["deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence"],
+    secure: ["deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence", "final_opportunity", "non_compliance", "settlement"]
+  };
+
+  const userLetters = tierLetters[userTier] || [];
+  const hasAccessToLetter = (letterId) => userLetters.includes(letterId);
+
+  // Group templates by display tiers
   const liteTemplates = TEMPLATES.filter(t => t.tier === 'lite');
   const secureTemplates = TEMPLATES.filter(t => t.tier === 'secure');
-
-  const hasLiteAccess = ['lite', 'protect', 'secure'].includes(userTier);
-  const hasSecureAccess = ['secure'].includes(userTier);
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
@@ -192,12 +204,15 @@ export default function Templates() {
           <p className="text-sm sm:text-base mb-4" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
           
           {/* Tier indicator */}
-          <div className="flex items-center gap-2">
-            <Badge className={`${hasLiteAccess ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-gray-100 text-gray-500'}`}>
-              {strings.liteTier}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge className={`${['lite', 'protect', 'secure'].includes(userTier) ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-gray-100 text-gray-500'}`}>
+              {strings.liteTier} (3)
             </Badge>
-            <Badge className={`${hasSecureAccess ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-gray-100 text-gray-500'}`}>
-              {strings.secureTier}
+            <Badge className={`${['protect', 'secure'].includes(userTier) ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'}`}>
+              {strings.protectTier} (7)
+            </Badge>
+            <Badge className={`${userTier === 'secure' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-gray-100 text-gray-500'}`}>
+              {strings.secureTier} (10)
             </Badge>
             <span className="text-xs ml-2" style={{ color: colors.textSecondary }}>
               {language === 'th' ? 'แผนปัจจุบัน: ' : 'Current plan: '} 
@@ -206,7 +221,7 @@ export default function Templates() {
           </div>
         </div>
 
-        {/* LITE TIER SECTION */}
+        {/* LITE TIER SECTION (L1-L3) */}
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded"></div>
@@ -219,7 +234,7 @@ export default function Templates() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {liteTemplates.map((template) => {
               const Icon = template.icon;
-              const hasAccess = hasLiteAccess;
+              const hasAccess = hasAccessToLetter(template.id);
 
               return (
                 <Card
@@ -283,20 +298,25 @@ export default function Templates() {
           </div>
         </div>
 
-        {/* SECURE TIER SECTION */}
+        {/* PROTECT & SECURE TIER SECTION (S1-S7) */}
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-1 flex-1 bg-gradient-to-r from-purple-500 to-red-600 rounded"></div>
+            <div className="h-1 flex-1 bg-gradient-to-r from-emerald-500 via-purple-500 to-red-600 rounded"></div>
             <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-              {strings.tierSection.secure}
+              {userTier === 'secure' ? strings.tierSection.secure : strings.tierSection.protect}
             </h2>
-            <div className="h-1 flex-1 bg-gradient-to-l from-purple-500 to-red-600 rounded"></div>
+            <div className="h-1 flex-1 bg-gradient-to-l from-emerald-500 via-purple-500 to-red-600 rounded"></div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {secureTemplates.map((template) => {
               const Icon = template.icon;
-              const hasAccess = hasSecureAccess;
+              const hasAccess = hasAccessToLetter(template.id);
+              
+              // Determine which tier unlocks this letter
+              const requiredTier = template.id === 'final_opportunity' || template.id === 'non_compliance' || template.id === 'settlement' 
+                ? 'secure' 
+                : 'protect';
 
               return (
                 <Card
@@ -316,9 +336,15 @@ export default function Templates() {
                           variant="outline"
                           className="text-xs"
                           style={{
-                            backgroundColor: hasAccess ? '#F3E8FF' : '#FEE2E2',
-                            color: hasAccess ? '#7C3AED' : '#DC2626',
-                            borderColor: hasAccess ? '#E9D5FF' : '#FECACA'
+                            backgroundColor: hasAccess 
+                              ? (requiredTier === 'secure' ? '#F3E8FF' : '#D1FAE5')
+                              : '#FEE2E2',
+                            color: hasAccess 
+                              ? (requiredTier === 'secure' ? '#7C3AED' : '#059669')
+                              : '#DC2626',
+                            borderColor: hasAccess 
+                              ? (requiredTier === 'secure' ? '#E9D5FF' : '#A7F3D0')
+                              : '#FECACA'
                           }}
                         >
                           {template.letterKey}
@@ -327,12 +353,18 @@ export default function Templates() {
                           variant="outline"
                           className="text-xs"
                           style={{
-                            backgroundColor: hasAccess ? '#F3E8FF' : '#FEE2E2',
-                            color: hasAccess ? '#7C3AED' : '#DC2626',
-                            borderColor: hasAccess ? '#E9D5FF' : '#FECACA'
+                            backgroundColor: hasAccess 
+                              ? (requiredTier === 'secure' ? '#F3E8FF' : '#D1FAE5')
+                              : '#FEE2E2',
+                            color: hasAccess 
+                              ? (requiredTier === 'secure' ? '#7C3AED' : '#059669')
+                              : '#DC2626',
+                            borderColor: hasAccess 
+                              ? (requiredTier === 'secure' ? '#E9D5FF' : '#A7F3D0')
+                              : '#FECACA'
                           }}
                         >
-                          {strings.secureTier}
+                          {requiredTier === 'secure' ? strings.secureTier : strings.protectTier}
                         </Badge>
                       </div>
                     </div>
