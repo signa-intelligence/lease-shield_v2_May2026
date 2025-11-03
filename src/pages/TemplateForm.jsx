@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,12 @@ export default function TemplateForm() {
     property_address: '',
     contract_ref: '',
     deposit_amount_thb: '',
+    example_item_1: '',
+    example_item_2: '',
+    example_item_3: '',
+    breach_summary: '',
+    settlement_amount: '',
+    settlement_date: '',
     subject: subjectFromUrl
   });
 
@@ -82,7 +89,18 @@ export default function TemplateForm() {
       successDesc: "Your bilingual letter has been created and saved to your Document Vault.",
       previewHtml: "Preview in Browser",
       downloadWord: "Download Word",
-      goToVault: "Go to Document Vault"
+      goToVault: "Go to Document Vault",
+      exampleItem1: "Example Item 1 (optional)",
+      exampleItem1Placeholder: "e.g., Wall scuff marks",
+      exampleItem2: "Example Item 2 (optional)",
+      exampleItem2Placeholder: "e.g., Minor carpet wear",
+      exampleItem3: "Example Item 3 (optional)",
+      exampleItem3Placeholder: "e.g., Light scratches",
+      breachSummary: "Breach Summary",
+      breachSummaryPlaceholder: "Describe the non-compliance issue...",
+      settlementAmount: "Settlement Amount (THB)",
+      settlementAmountPlaceholder: "18000",
+      settlementDate: "Settlement Date",
     },
     th: {
       generateLetter: "สร้างจดหมาย",
@@ -111,16 +129,34 @@ export default function TemplateForm() {
       successDesc: "จดหมายสองภาษาของคุณถูกสร้างและบันทึกไว้ใน Document Vault แล้ว",
       previewHtml: "ดูตัวอย่างในเบราว์เซอร์",
       downloadWord: "ดาวน์โหลด Word",
-      goToVault: "ไปที่ Document Vault"
+      goToVault: "ไปที่ Document Vault",
+      exampleItem1: "ตัวอย่างรายการ 1 (ไม่บังคับ)",
+      exampleItem1Placeholder: "เช่น รอยขีดข่วนกำแพง",
+      exampleItem2: "ตัวอย่างรายการ 2 (ไม่บังคับ)",
+      exampleItem2Placeholder: "เช่น พรมสึกเล็กน้อย",
+      exampleItem3: "ตัวอย่างรายการ 3 (ไม่บังคับ)",
+      exampleItem3Placeholder: "เช่น รอยขีดข่วนเล็กน้อย",
+      breachSummary: "สรุปการฝ่าฝืน",
+      breachSummaryPlaceholder: "อธิบายปัญหาการไม่ปฏิบัติตาม...",
+      settlementAmount: "จำนวนเงินชำระ (บาท)",
+      settlementAmountPlaceholder: "18000",
+      settlementDate: "วันที่ชำระเงิน",
     }
   };
 
   const strings = t[language];
 
   const letterTypeLabels = {
-    deposit: strings.depositReturn,
-    damages: strings.damageDispute,
-    early_termination: strings.earlyTermination
+    deposit: language === 'th' ? 'จดหมายขอคืนเงินมัดจำ' : 'Deposit Return Request',
+    deductions: language === 'th' ? 'ขอรายละเอียดการหักเงิน' : 'Request for Itemised Deductions',
+    reminder: language === 'th' ? 'จดหมายเตือนแบบมิตร' : 'Friendly Reminder',
+    dispute: language === 'th' ? 'จดหมายคัดค้านการระงับเงิน' : 'Formal Dispute of Withholding',
+    early_termination: language === 'th' ? 'ประสานยุติสัญญาก่อนกำหนด' : 'Early Termination Reconciliation',
+    condition_dispute: language === 'th' ? 'โต้แย้งสภาพทรัพย์สิน' : 'Property Condition Dispute',
+    evidence: language === 'th' ? 'ขอหลักฐานประกอบ' : 'Request for Evidence',
+    final_opportunity: language === 'th' ? 'โอกาสสุดท้าย' : 'Final Opportunity',
+    non_compliance: language === 'th' ? 'แจ้งไม่ปฏิบัติตามสัญญา' : 'Notice of Non-Compliance',
+    settlement: language === 'th' ? 'ยืนยันการตกลงชำระเงิน' : 'Settlement Confirmation'
   };
 
   const handleSubmit = async (e) => {
@@ -135,14 +171,31 @@ export default function TemplateForm() {
     setError(null);
 
     try {
-      const response = await base44.functions.invoke('generatePhase1Letter', {
+      const payload = {
         subject: formData.subject,
         tenant_name: formData.tenant_name,
         landlord_name: formData.landlord_name,
         property_address: formData.property_address || undefined,
         contract_ref: formData.contract_ref || undefined,
-        deposit_amount: formData.deposit_amount_thb || undefined
-      });
+      };
+
+      if (['deposit', 'deductions'].includes(formData.subject)) {
+        payload.deposit_amount = formData.deposit_amount_thb || undefined;
+      }
+      if (formData.subject === 'condition_dispute') {
+        payload.example_item_1 = formData.example_item_1 || undefined;
+        payload.example_item_2 = formData.example_item_2 || undefined;
+        payload.example_item_3 = formData.example_item_3 || undefined;
+      }
+      if (formData.subject === 'non_compliance') {
+        payload.breach_summary = formData.breach_summary || undefined;
+      }
+      if (formData.subject === 'settlement') {
+        payload.settlement_amount = formData.settlement_amount || undefined;
+        payload.settlement_date = formData.settlement_date || undefined;
+      }
+
+      const response = await base44.functions.invoke('generatePhase1Letter', payload);
 
       if (response.data?.ok) {
         setGeneratedUrls({
@@ -316,7 +369,7 @@ export default function TemplateForm() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Letter Type - Display Only (Read-only text) */}
+              {/* Letter Type - Display Only */}
               <div className="p-4 rounded-lg" style={{
                 backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
                 border: `1px solid ${colors.borderColor}`
@@ -329,6 +382,7 @@ export default function TemplateForm() {
                 </p>
               </div>
 
+              {/* Common Fields */}
               <div>
                 <Label htmlFor="tenant_name" style={{ color: colors.textPrimary }}>
                   {strings.yourName} <span className="text-red-500">*</span>
@@ -399,7 +453,8 @@ export default function TemplateForm() {
                 />
               </div>
 
-              {formData.subject === 'deposit' && (
+              {/* Conditional Fields Based on Letter Type */}
+              {['deposit', 'deductions'].includes(formData.subject) && (
                 <div>
                   <Label htmlFor="deposit_amount_thb" style={{ color: colors.textPrimary }}>
                     {strings.depositAmount}
@@ -417,6 +472,123 @@ export default function TemplateForm() {
                     }}
                   />
                 </div>
+              )}
+
+              {formData.subject === 'condition_dispute' && (
+                <>
+                  <div>
+                    <Label htmlFor="example_item_1" style={{ color: colors.textPrimary }}>
+                      {strings.exampleItem1}
+                    </Label>
+                    <Input
+                      id="example_item_1"
+                      value={formData.example_item_1}
+                      onChange={(e) => handleChange('example_item_1', e.target.value)}
+                      placeholder={strings.exampleItem1Placeholder}
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="example_item_2" style={{ color: colors.textPrimary }}>
+                      {strings.exampleItem2}
+                    </Label>
+                    <Input
+                      id="example_item_2"
+                      value={formData.example_item_2}
+                      onChange={(e) => handleChange('example_item_2', e.target.value)}
+                      placeholder={strings.exampleItem2Placeholder}
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="example_item_3" style={{ color: colors.textPrimary }}>
+                      {strings.exampleItem3}
+                    </Label>
+                    <Input
+                      id="example_item_3"
+                      value={formData.example_item_3}
+                      onChange={(e) => handleChange('example_item_3', e.target.value)}
+                      placeholder={strings.exampleItem3Placeholder}
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+
+              {formData.subject === 'non_compliance' && (
+                <div>
+                  <Label htmlFor="breach_summary" style={{ color: colors.textPrimary }}>
+                    {strings.breachSummary}
+                  </Label>
+                  <textarea
+                    id="breach_summary"
+                    value={formData.breach_summary}
+                    onChange={(e) => handleChange('breach_summary', e.target.value)}
+                    placeholder={strings.breachSummaryPlaceholder}
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      backgroundColor: colors.inputBg,
+                      color: colors.textPrimary,
+                      border: `1px solid ${colors.borderColor}`,
+                      outline: 'none',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                </div>
+              )}
+
+              {formData.subject === 'settlement' && (
+                <>
+                  <div>
+                    <Label htmlFor="settlement_amount" style={{ color: colors.textPrimary }}>
+                      {strings.settlementAmount}
+                    </Label>
+                    <Input
+                      id="settlement_amount"
+                      type="number"
+                      value={formData.settlement_amount}
+                      onChange={(e) => handleChange('settlement_amount', e.target.value)}
+                      placeholder={strings.settlementAmountPlaceholder}
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="settlement_date" style={{ color: colors.textPrimary }}>
+                      {strings.settlementDate}
+                    </Label>
+                    <Input
+                      id="settlement_date"
+                      type="date"
+                      value={formData.settlement_date}
+                      onChange={(e) => handleChange('settlement_date', e.target.value)}
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+                </>
               )}
 
               <div className="flex gap-3 pt-4">
