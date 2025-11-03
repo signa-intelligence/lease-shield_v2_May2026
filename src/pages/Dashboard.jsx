@@ -40,7 +40,7 @@ export default function Dashboard() {
 
   const { data: cases = [] } = useQuery({
     queryKey: ['cases'],
-    queryFn: () => base44.entities.Case.filter({ created_by: user?.email }),
+    queryFn: () => base44.entities.Case.filter({ user_email: user?.email }),
     enabled: !!user,
   });
 
