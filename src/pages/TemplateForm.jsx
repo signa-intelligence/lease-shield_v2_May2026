@@ -113,11 +113,12 @@ export default function TemplateForm() {
     setError(null);
 
     try {
-      const response = await base44.functions.invoke('simpleLetter', {
+      const response = await base44.functions.invoke('generatePhase1Letter', {
         subject: formData.subject,
         tenant_name: formData.tenant_name,
         landlord_name: formData.landlord_name,
         property_address: formData.property_address || undefined,
+        contract_ref: formData.contract_ref || undefined,
         deposit_amount: formData.deposit_amount_thb || undefined
       });
 
