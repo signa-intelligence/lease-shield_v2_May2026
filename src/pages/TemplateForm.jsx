@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -112,13 +113,12 @@ export default function TemplateForm() {
     setError(null);
 
     try {
-      const response = await base44.functions.invoke('generateLetters', {
+      const response = await base44.functions.invoke('simpleLetter', {
         subject: formData.subject,
         tenant_name: formData.tenant_name,
         landlord_name: formData.landlord_name,
         property_address: formData.property_address || undefined,
-        contract_ref: formData.contract_ref || undefined,
-        deposit_amount_thb: formData.deposit_amount_thb || undefined
+        deposit_amount: formData.deposit_amount_thb || undefined
       });
 
       if (response.data?.success) {
