@@ -20,6 +20,13 @@ const mapKey = (s="") => ({
   evidence: "S4", final_opportunity: "S5", non_compliance: "S6", settlement: "S7"
 }[s.toLowerCase()] || "");
 
+// Tier access control
+const tierLetters = {
+  lite: ["deposit", "deductions", "reminder"],
+  protect: ["deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence"],
+  secure: ["deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence", "final_opportunity", "non_compliance", "settlement"]
+};
+
 // --- helpers
 const esc = (s="") => String(s).replace(/[<&>"]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m]));
 
@@ -287,6 +294,31 @@ Deno.serve(async (req) => {
         ok: false, 
         error: 'Invalid subject. Use: deposit, deductions, reminder, dispute, early_termination, condition_dispute, evidence, final_opportunity, non_compliance, or settlement' 
       }, { status: 400 });
+    }
+
+    // Check user tier access
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ 
+        ok: false, 
+        error: 'Unauthorized - please log in' 
+      }, { status: 401 });
+    }
+
+    const userTier = user.plan_tier || 'free';
+    const allowedLetters = tierLetters[userTier] || [];
+
+    if (!allowedLetters.includes(subjectRaw)) {
+      const requiredTier = subjectRaw === 'final_opportunity' || subjectRaw === 'non_compliance' || subjectRaw === 'settlement' 
+        ? 'secure' 
+        : (subjectRaw === 'deposit' || subjectRaw === 'deductions' || subjectRaw === 'reminder' ? 'lite' : 'protect');
+      
+      return Response.json({ 
+        ok: false, 
+        error: `Upgrade to ${requiredTier.toUpperCase()} plan required for this letter type`,
+        required_tier: requiredTier,
+        current_tier: userTier
+      }, { status: 403 });
     }
 
     // Determine mode
