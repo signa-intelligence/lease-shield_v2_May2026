@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 const LETTER_WRITER_SYSTEM_PROMPT = `SYSTEM:
@@ -51,12 +52,12 @@ JSON SCHEMA:
     {
       "id": "v2_follow_up",
       "purpose": "Polite follow-up & proposed reconciliation plan",
-      ...
+      // ...
     },
     {
       "id": "v3_final_offer",
       "purpose": "Final amicable settlement proposal before escalation",
-      ...
+      // ...
     }
   ]
 }
@@ -367,7 +368,7 @@ ${userPrompt}`,
       console.log(`Letter ${letter.id} saved:`, doc.id);
     }
 
-    // Update the case with letter URLs and change status
+    // Update the case with letter URLs, letter data, and change status
     const cases = await base44.entities.Case.list();
     const existingCase = cases.find(c => c.id === caseId);
     
@@ -380,17 +381,20 @@ ${userPrompt}`,
         meta: { letter_count: result.letters.length }
       });
 
+      // CRITICAL: Store the letter JSON data for later compilation
       await base44.entities.Case.update(caseId, {
         status: 'ready_drafts',
         letters: {
           v1_url: letterUrls['v1_notice'],
           v2_url: letterUrls['v2_follow_up'],
-          v3_url: letterUrls['v3_final_offer']
+          v3_url: letterUrls['v3_final_offer'],
+          // Store the actual letter data
+          letters_data: result.letters
         },
         timeline
       });
 
-      console.log('Case updated with letter URLs');
+      console.log('Case updated with letter URLs and data');
 
       // Send notification to tenant
       const tenant = await base44.entities.User.list().then(users => 

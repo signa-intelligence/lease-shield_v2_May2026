@@ -309,134 +309,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Case not found' }, { status: 404 });
     }
 
-    // Check if letters exist
-    if (!caseData.letters || (!caseData.letters.v1_url && !caseData.letters.v2_url && !caseData.letters.v3_url)) {
-      return Response.json({ error: 'No letters found for this case' }, { status: 400 });
+    // Check if letters data exists (from generateLetters function)
+    if (!caseData.letters?.letters_data || caseData.letters.letters_data.length === 0) {
+      return Response.json({ 
+        error: 'No letter data found for this case. Please generate letters first.' 
+      }, { status: 400 });
     }
 
-    // We need to regenerate the letter content since we only stored URLs
-    // The letter pack needs the original JSON data from LLM
-    // For now, we'll create a simplified version with placeholders
-    // In production, you'd store the letter JSON in the Case entity or fetch from URLs
-
-    const letters = [];
-    
-    if (caseData.letters.v1_url) {
-      letters.push({
-        id: 'v1_notice',
-        purpose: 'Initial Clarification & Documentation',
-        subject_en: 'Request for clarification on refundable deposit',
-        subject_th: 'ขอความชัดเจนเกี่ยวกับเงินประกันการเช่า',
-        body_en: [
-          'Dear Landlord,',
-          'This message is to summarise the completion of the tenancy and to request clarification regarding the refundable deposit for the rented apartment.',
-          'According to the lease agreement, the property was vacated and the keys returned on the agreed date. No damages were recorded during handover, and supporting evidence is attached for reference.',
-          'To help close the account promptly, please confirm (1) any deductions with itemised reasons and (2) supporting invoices if applicable. If no deductions apply, please confirm the transfer details.',
-          'We kindly request a response by the date noted below so both parties can conclude this matter smoothly.',
-          'Kind regards,',
-          'Lease Shield'
-        ],
-        body_th: [
-          'เรียน เจ้าของห้อง',
-          'จดหมายฉบับนี้มีวัตถุประสงค์เพื่อสรุปการสิ้นสุดการเช่าและขอความชัดเจนเกี่ยวกับเงินประกันของห้องเช่าดังกล่าว',
-          'ตามสัญญาเช่า ผู้เช่าได้ย้ายออกและส่งมอบกุญแจในวันที่กำหนด โดยไม่พบความเสียหายระหว่างการตรวจห้อง และได้แนบหลักฐานประกอบเพื่ออ้างอิง',
-          'เพื่อให้การปิดบัญชีเป็นไปอย่างราบรื่น กรุณาแจ้ง (1) รายการหักพร้อมเหตุผล และ (2) ใบเสร็จหรือเอกสารประกอบ (ถ้ามี) หากไม่มีรายการหัก กรุณายืนยันรายละเอียดการโอนเงินคืน',
-          'กรุณาตอบกลับภายในวันที่ที่ระบุไว้ เพื่อให้ทั้งสองฝ่ายสามารถปิดเรื่องนี้ได้อย่างเรียบร้อย',
-          'ขอแสดงความนับถือ',
-          'Lease Shield'
-        ],
-        next_steps_en: [
-          'If deductions are proposed, provide the itemised details and documents.',
-          'If not, confirm the amount and expected transfer date.'
-        ],
-        next_steps_th: [
-          'หากมีรายการหัก กรุณาส่งรายละเอียดและเอกสารประกอบ',
-          'หากไม่มีรายการหัก กรุณายืนยันจำนวนเงินและวันที่โอน'
-        ]
-      });
-    }
-
-    if (caseData.letters.v2_url) {
-      letters.push({
-        id: 'v2_follow_up',
-        purpose: 'Follow-up & Reconciliation Plan',
-        subject_en: 'Follow-up: Deposit Return Request',
-        subject_th: 'ติดตาม: การขอคืนเงินมัดจำ',
-        body_en: [
-          'Dear Landlord,',
-          'This is a follow-up to our previous letter regarding the deposit return for the rented apartment.',
-          'As of today, we have not received a response to our initial request. We understand that processing may take time, and we remain committed to resolving this matter cooperatively.',
-          'We kindly request an update on the status of the deposit return, including any deductions being considered with supporting documentation.',
-          'To facilitate a smooth resolution, we propose a brief meeting or phone call to discuss any concerns.',
-          'We appreciate your attention to this matter and look forward to your response.',
-          'Kind regards,',
-          'Lease Shield'
-        ],
-        body_th: [
-          'เรียน เจ้าของห้อง',
-          'นี่คือการติดตามจดหมายของเราก่อนหน้านี้เกี่ยวกับการคืนเงินมัดจำสำหรับอพาร์ตเมนต์ที่เช่า',
-          'ณ วันนี้ เรายังไม่ได้รับการตอบกลับต่อคำขอเบื้องต้นของเรา เราเข้าใจว่าการดำเนินการอาจใช้เวลา และเรายังคงมุ่งมั่นที่จะแก้ไขปัญหานี้อย่างร่วมมือกัน',
-          'เราขอให้อัปเดตสถานะการคืนเงินมัดจำ รวมถึงการหักเงินใดๆ ที่กำลังพิจารณาพร้อมเอกสารประกอบ',
-          'เพื่อให้การแก้ไขเป็นไปอย่างราบรื่น เราเสนอการประชุมสั้นๆ หรือการโทรศัพท์เพื่อหารือเกี่ยวกับข้อกังวลใดๆ',
-          'เราขอขอบคุณสำหรับความสนใจในเรื่องนี้และหวังว่าจะได้รับการตอบกลับจากคุณ',
-          'ขอแสดงความนับถือ',
-          'Lease Shield'
-        ],
-        next_steps_en: [
-          'Respond with deposit return timeline',
-          'Provide itemised deductions if applicable',
-          'Schedule discussion if needed'
-        ],
-        next_steps_th: [
-          'ตอบกลับพร้อมกำหนดเวลาการคืนเงินมัดจำ',
-          'ให้รายละเอียดการหักเงินหากมี',
-          'นัดหมายการหารือหากจำเป็น'
-        ]
-      });
-    }
-
-    if (caseData.letters.v3_url) {
-      letters.push({
-        id: 'v3_final_offer',
-        purpose: 'Final Settlement Proposal',
-        subject_en: 'Final Proposal for Deposit Settlement',
-        subject_th: 'ข้อเสนอขั้นสุดท้ายสำหรับการตกลงคืนเงินมัดจำ',
-        body_en: [
-          'Dear Landlord,',
-          'This is our final correspondence regarding the outstanding deposit return.',
-          'Despite previous communications, the deposit has not been returned and we have not received clarification on any deductions.',
-          'In the spirit of reaching an amicable resolution, we propose the following settlement: full return of the deposit within 7 days, or itemised deductions with supporting invoices.',
-          'This is our final attempt to resolve this matter cooperatively before considering other options.',
-          'We hope to conclude this matter promptly and professionally.',
-          'Kind regards,',
-          'Lease Shield'
-        ],
-        body_th: [
-          'เรียน เจ้าของห้อง',
-          'นี่คือการติดต่อครั้งสุดท้ายของเราเกี่ยวกับการคืนเงินมัดจำที่ค้างอยู่',
-          'แม้จะมีการติดต่อหลายครั้ง เงินมัดจำยังไม่ได้รับการคืนและเรายังไม่ได้รับคำชี้แจงเกี่ยวกับการหักเงินใดๆ',
-          'ด้วยจิตวิญญาณของการหาทางออกที่เป็นมิตร เราเสนอการตกลงดังนี้: คืนเงินมัดจำเต็มจำนวนภายใน 7 วัน หรือการหักเงินพร้อมใบเสร็จรับเงิน',
-          'นี่คือความพยายามครั้งสุดท้ายของเราในการแก้ไขปัญหานี้อย่างร่วมมือกันก่อนที่จะพิจารณาตัวเลือกอื่นๆ',
-          'เราหวังว่าจะสามารถสรุปเรื่องนี้ได้อย่างรวดเร็วและเป็นมืออาชีพ',
-          'ขอแสดงความนับถือ',
-          'Lease Shield'
-        ],
-        next_steps_en: [
-          'Respond within 7 days with settlement plan',
-          'Return deposit or provide detailed deductions',
-          'Confirm resolution method'
-        ],
-        next_steps_th: [
-          'ตอบกลับภายใน 7 วันพร้อมแผนการตกลง',
-          'คืนเงินมัดจำหรือให้รายละเอียดการหักเงิน',
-          'ยืนยันวิธีการแก้ไข'
-        ]
-      });
-    }
-
-    if (letters.length === 0) {
-      return Response.json({ error: 'No letter content available' }, { status: 400 });
-    }
+    const letters = caseData.letters.letters_data;
+    console.log(`Compiling ${letters.length} letters for case ${caseId}`);
 
     // Generate HTML
     const htmlContent = getLetterPackHTML(caseData, letters);
@@ -450,13 +331,13 @@ Deno.serve(async (req) => {
 
     console.log('Letter pack compiled:', file_url);
 
-    // Optionally update case with pack URL
+    // Update case with pack URL
     const timeline = caseData.timeline || [];
     timeline.push({
       timestamp: new Date().toISOString(),
       event: 'Letter pack compiled',
       actor: user?.email || 'system',
-      meta: { pack_url: file_url }
+      meta: { pack_url: file_url, letters_count: letters.length }
     });
 
     await base44.asServiceRole.entities.Case.update(caseId, {
