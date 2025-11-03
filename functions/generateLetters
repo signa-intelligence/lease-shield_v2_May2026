@@ -289,6 +289,9 @@ Deno.serve(async (req) => {
 
     console.log('Generating letters for case:', caseId);
 
+    // Check if this is a temporary case (not yet in database)
+    const isTemporaryCase = caseId.startsWith('temp-');
+
     // Build the prompt for letter generation
     const userPrompt = JSON.stringify({
       caseId,
@@ -296,7 +299,7 @@ Deno.serve(async (req) => {
       landlord_name,
       property_address,
       contract_ref,
-      deposit_amount_thb: deposit_amount_thb || null, // Explicitly set to null if undefined
+      deposit_amount_thb: deposit_amount_thb || null,
       dispute_type,
       facts,
       request_by_date_iso: request_by_date_iso || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -373,56 +376,58 @@ ${userPrompt}`,
       console.log(`Letter ${letter.id} saved:`, doc.id);
     }
 
-    // Update the case with letter URLs, letter data, and change status
-    const cases = await base44.entities.Case.list();
-    const existingCase = cases.find(c => c.id === caseId);
-    
-    if (existingCase) {
-      const timeline = existingCase.timeline || [];
-      timeline.push({
-        timestamp: new Date().toISOString(),
-        event: 'Letters generated',
-        actor: user.email,
-        meta: { letter_count: result.letters.length }
-      });
-
-      // CRITICAL: Store the letter JSON data for later compilation
-      await base44.entities.Case.update(caseId, {
-        status: 'ready_drafts',
-        letters: {
-          v1_url: letterUrls['v1_notice'],
-          v2_url: letterUrls['v2_follow_up'],
-          v3_url: letterUrls['v3_final_offer'],
-          // Store the actual letter data
-          letters_data: result.letters
-        },
-        timeline
-      });
-
-      console.log('Case updated with letter URLs and data');
-
-      // Send notification to tenant
-      const tenant = await base44.entities.User.list().then(users => 
-        users.find(u => u.email === existingCase.user_email)
-      );
-
-      if (tenant) {
-        const language = tenant.language || 'en';
-        const subject = language === 'th' ? 
-          'จดหมายของคุณพร้อมแล้ว' : 
-          'Your Letters Are Ready';
-        const body = language === 'th' ?
-          `สวัสดี ${tenant.full_name},\n\nจดหมายสำหรับคดี #${caseId.slice(0, 8)} สร้างเสร็จแล้ว\n\nคุณสามารถตรวจสอบ ดาวน์โหลด และพิมพ์ได้ที่แดชบอร์ด\n\nจดหมายอยู่ในรูปแบบ HTML ที่พร้อมพิมพ์และส่งให้เจ้าของบ้าน\n\n— ทีม Lease Shield` :
-          `Hi ${tenant.full_name},\n\nYour letters for Case #${caseId.slice(0, 8)} are ready.\n\nYou can review, download, and print them from your dashboard.\n\nLetters are in print-ready HTML format for sending to your landlord.\n\n— The Lease Shield Team`;
-
-        await base44.integrations.Core.SendEmail({
-          to: tenant.email,
-          subject,
-          body
+    // Only update case if it's not temporary
+    if (!isTemporaryCase) {
+      const cases = await base44.entities.Case.list();
+      const existingCase = cases.find(c => c.id === caseId);
+      
+      if (existingCase) {
+        const timeline = existingCase.timeline || [];
+        timeline.push({
+          timestamp: new Date().toISOString(),
+          event: 'Letters generated',
+          actor: user.email,
+          meta: { letter_count: result.letters.length }
         });
 
-        console.log('Notification sent to tenant');
+        await base44.entities.Case.update(caseId, {
+          status: 'ready_drafts',
+          letters: {
+            v1_url: letterUrls['v1_notice'],
+            v2_url: letterUrls['v2_follow_up'],
+            v3_url: letterUrls['v3_final_offer'],
+            letters_data: result.letters
+          },
+          timeline
+        });
+
+        console.log('Case updated with letter URLs and data');
+
+        // Send notification to tenant
+        const tenant = await base44.entities.User.list().then(users => 
+          users.find(u => u.email === existingCase.user_email)
+        );
+
+        if (tenant) {
+          const language = tenant.language || 'en';
+          const subject = language === 'th' ? 
+            'จดหมายของคุณพร้อมแล้ว' : 
+            'Your Letters Are Ready';
+          const body = language === 'th' ?
+            `สวัสดี ${tenant.full_name},\n\nจดหมายสำหรับคดี #${caseId.slice(0, 8)} สร้างเสร็จแล้ว\n\nคุณสามารถตรวจสอบ ดาวน์โหลด และพิมพ์ได้ที่แดชบอร์ด\n\nจดหมายอยู่ในรูปแบบ HTML ที่พร้อมพิมพ์และส่งให้เจ้าของบ้าน\n\n— ทีม Lease Shield` :
+            `Hi ${tenant.full_name},\n\nYour letters for Case #${caseId.slice(0, 8)} are ready.\n\nYou can review, download, and print them from your dashboard.\n\nLetters are in print-ready HTML format for sending to your landlord.\n\n— The Lease Shield Team`;
+
+          await base44.integrations.Core.SendEmail({
+            to: tenant.email,
+            subject,
+            body
+          });
+
+          console.log('Notification sent to tenant');
+        }
       }
+    } else {
+      console.log('Temporary case - skipping case update and notification');
     }
 
     // Return the full letter pack
@@ -430,13 +435,14 @@ ${userPrompt}`,
       success: true,
       caseId,
       letters: result.letters,
-      letterUrls
+      letterUrls,
+      isTemporary: isTemporaryCase
     });
 
   } catch (error) {
     console.error('Letter generation error:', error);
     return Response.json({ 
-      error: error.message || 'Failed to generate letters', // Use a more generic message if error.message is not available
+      error: error.message || 'Failed to generate letters',
       details: error.stack 
     }, { status: 500 });
   }

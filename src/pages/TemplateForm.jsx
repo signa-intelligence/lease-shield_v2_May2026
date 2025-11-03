@@ -259,7 +259,9 @@ export default function TemplateForm() {
               {strings.generatingTitle}
             </h3>
             <p style={{ color: colors.textSecondary }}>
-              {strings.generatingDesc}
+              {language === 'th'
+                ? 'กำลังร่างจดหมายมืออาชีพสองภาษาสำหรับคดีของคุณ...'
+                : 'Drafting professional bilingual letters for your case...'}
             </p>
           </CardContent>
         </Card>
