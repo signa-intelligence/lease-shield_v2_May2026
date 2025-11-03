@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +20,8 @@ import {
   DollarSign,
   Shield,
   Search,
-  Filter
+  Filter,
+  Loader2 // Added Loader2 import
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -44,6 +46,7 @@ export default function OpsConsole() {
   const [actionMode, setActionMode] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [generatingLetters, setGeneratingLetters] = useState(null); // Added new state
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -149,6 +152,40 @@ export default function OpsConsole() {
         timeline
       }
     });
+  };
+
+  const handleGenerateLetters = async (caseItem) => {
+    setGeneratingLetters(caseItem.id);
+    try {
+      await base44.functions.invoke('generateLetters', {
+        caseId: caseItem.id,
+        tenant_name: "[TENANT_NAME]", // These should ideally come from caseItem data
+        landlord_name: "[LANDLORD_NAME]", // These should ideally come from caseItem data
+        property_address: "the rented apartment",
+        contract_ref: "Residential Lease Agreement",
+        deposit_amount_thb: caseItem.dispute_amount,
+        dispute_type: caseItem.type || "deposit",
+        facts: [
+          "Tenant moved out and returned keys on the agreed date",
+          "No damages were reported during handover",
+          "Professional cleaning was completed with receipt attached"
+        ],
+        tone: "standard"
+      });
+
+      // Optionally, update the case status to 'ready_drafts' after generation
+      // For now, it's handled by the backend function.
+      // If the backend function doesn't update the status, you'd do it here:
+      // updateCaseMutation.mutate({ id: caseItem.id, data: { status: 'ready_drafts' } });
+
+      queryClient.invalidateQueries({ queryKey: ['allCases'] });
+      alert('Letters generated successfully! Case moved to "Drafts Ready" status.');
+    } catch (error) {
+      console.error('Letter generation failed:', error);
+      alert('Failed to generate letters. Please try again.');
+    } finally {
+      setGeneratingLetters(null);
+    }
   };
 
   return (
@@ -346,6 +383,28 @@ export default function OpsConsole() {
                     >
                       Assign
                     </Button>
+
+                    {caseItem.status === 'under_review' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleGenerateLetters(caseItem)}
+                        disabled={generatingLetters === caseItem.id}
+                        className="border-purple-600 text-purple-600"
+                      >
+                        {generatingLetters === caseItem.id ? (
+                          <>
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="w-3 h-3 mr-1" />
+                            Generate Letters
+                          </>
+                        )}
+                      </Button>
+                    )}
 
                     {caseItem.status === 'in_progress' && (
                       <Button

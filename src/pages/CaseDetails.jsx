@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -19,7 +20,8 @@ import {
   Zap,
   Crown,
   Mail,
-  Loader2
+  Loader2,
+  ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -104,7 +106,15 @@ export default function CaseDetails() {
       actions: "Actions",
       uploadDocument: "Upload Document",
       contactSupport: "Contact Support",
-      caseHistory: "Case History"
+      caseHistory: "Case History",
+      generatedLetters: "Generated Letters",
+      initialNotice: "Initial Notice",
+      clarificationDocumentation: "Clarification & Documentation",
+      followupLetter: "Follow-up Letter",
+      reconciliationPlan: "Reconciliation Plan",
+      finalSettlementOffer: "Final Settlement Offer",
+      beforeEscalation: "Before Escalation",
+      view: "View",
     },
     th: {
       caseDetails: "รายละเอียดคดี",
@@ -131,7 +141,15 @@ export default function CaseDetails() {
       actions: "การดำเนินการ",
       uploadDocument: "อัปโหลดเอกสาร",
       contactSupport: "ติดต่อฝ่ายสนับสนุน",
-      caseHistory: "ประวัติคดี"
+      caseHistory: "ประวัติคดี",
+      generatedLetters: "จดหมายที่สร้าง",
+      initialNotice: "จดหมายแจ้งเบื้องต้น",
+      clarificationDocumentation: "ขอชี้แจงและเอกสาร",
+      followupLetter: "จดหมายติดตาม",
+      reconciliationPlan: "แผนการกระทบยอด",
+      finalSettlementOffer: "จดหมายข้อเสนอสุดท้าย",
+      beforeEscalation: "ก่อนการยกระดับ",
+      view: "ดู",
     }
   };
 
@@ -358,6 +376,102 @@ export default function CaseDetails() {
             )}
           </CardContent>
         </Card>
+
+        {/* Letters Section */}
+        {caseItem.letters && (caseItem.letters.v1_url || caseItem.letters.v2_url || caseItem.letters.v3_url) && (
+          <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <FileText className="w-5 h-5 text-purple-600" />
+                {strings.generatedLetters}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 md:p-6">
+              <div className="space-y-3">
+                {caseItem.letters.v1_url && (
+                  <div className="flex items-center justify-between p-3 rounded-lg" style={{
+                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                    border: `1px solid ${colors.borderColor}`
+                  }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                          {strings.initialNotice}
+                        </p>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {strings.clarificationDocumentation}
+                        </p>
+                      </div>
+                    </div>
+                    <a href={caseItem.letters.v1_url} target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" variant="outline">
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        {strings.view}
+                      </Button>
+                    </a>
+                  </div>
+                )}
+
+                {caseItem.letters.v2_url && (
+                  <div className="flex items-center justify-between p-3 rounded-lg" style={{
+                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                    border: `1px solid ${colors.borderColor}`
+                  }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                          {strings.followupLetter}
+                        </p>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {strings.reconciliationPlan}
+                        </p>
+                      </div>
+                    </div>
+                    <a href={caseItem.letters.v2_url} target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" variant="outline">
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        {strings.view}
+                      </Button>
+                    </a>
+                  </div>
+                )}
+
+                {caseItem.letters.v3_url && (
+                  <div className="flex items-center justify-between p-3 rounded-lg" style={{
+                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                    border: `1px solid ${colors.borderColor}`
+                  }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                          {strings.finalSettlementOffer}
+                        </p>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {strings.beforeEscalation}
+                        </p>
+                      </div>
+                    </div>
+                    <a href={caseItem.letters.v3_url} target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" variant="outline">
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        {strings.view}
+                      </Button>
+                    </a>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Timeline */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
