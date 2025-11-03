@@ -216,27 +216,34 @@ Deno.serve(async (req) => {
     // Generate HTML
     const html = fill(TEMPLATE, vars);
 
-    // === Save HTML file ===
+    // ---- WORD-ONLY SAVE (UTF-8 hardening for Thai) ----
+    const HTML_UTF8_BOM = "\uFEFF";
+    const htmlUtf8 = HTML_UTF8_BOM + html.replace(
+      /<head>/i,
+      `<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta charset="utf-8">`
+    );
+
+    // File paths
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const caseIdShort = args.caseId ? args.caseId.slice(0, 8) : Date.now();
     const baseName = `LS-${caseIdShort}-${subject}-${stamp}`;
-    
-    const htmlBlob = new Blob([html], { type: 'text/html; charset=utf-8' });
+
+    // Save as .doc (Word format)
+    const docBlob = new Blob([htmlUtf8], { type: 'application/msword; charset=utf-8' });
+    const docFile = new File([docBlob], `${baseName}.doc`);
+    const { file_url: docUrl } = await base44.integrations.Core.UploadFile({ file: docFile });
+
+    // Also save .html for browser preview
+    const htmlBlob = new Blob([htmlUtf8], { type: 'text/html; charset=utf-8' });
     const htmlFile = new File([htmlBlob], `${baseName}.html`);
     const { file_url: htmlUrl } = await base44.integrations.Core.UploadFile({ file: htmlFile });
-
-    // === Try to generate PDF (graceful fallback) ===
-    let pdfUrl = null;
-    try {
-      console.log('PDF generation not available - using HTML only');
-    } catch (e) {
-      console.error('PDF generation failed:', e);
-    }
 
     // === Save to documents ===
     const doc = await base44.asServiceRole.entities.Document.create({
       type: 'letter',
-      file_url: pdfUrl || htmlUrl,
+      file_url: docUrl,
       label: `${content.subject_en}${args.caseId ? ` - Case ${caseIdShort}` : ''}`,
       html_content: html
     });
@@ -250,14 +257,14 @@ Deno.serve(async (req) => {
         actor: 'system',
         meta: { 
           html_url: htmlUrl, 
-          pdf_url: pdfUrl,
+          doc_url: docUrl,
           subject 
         }
       });
 
       const letters = fromCase.letters || {};
-      letters[`${subject}_url`] = pdfUrl || htmlUrl;
-      letters.v1_url = pdfUrl || htmlUrl;
+      letters[`${subject}_url`] = docUrl;
+      letters.v1_url = docUrl;
 
       await base44.asServiceRole.entities.Case.update(args.caseId, {
         status: 'ready_drafts',
@@ -310,7 +317,7 @@ Deno.serve(async (req) => {
               to: landlordEmail,
               cc: fromCase.cc_emails || [],
               html_url: htmlUrl,
-              pdf_url: pdfUrl
+              doc_url: docUrl
             }
           });
 
@@ -344,8 +351,8 @@ Deno.serve(async (req) => {
       mode,
       subject,
       urls: {
-        html: htmlUrl,
-        pdf: pdfUrl
+        doc: docUrl,
+        html: htmlUrl
       },
       docId: doc.id,
       case: mode === "case" ? {
