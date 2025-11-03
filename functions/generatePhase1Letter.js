@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
@@ -21,7 +20,7 @@ const mapKey = (s="") => ({
 }[s.toLowerCase()] || "");
 
 // Tier access control
-const tierLetters = {
+const LETTER_ACCESS = {
   lite: ["deposit", "deductions", "reminder"],
   protect: ["deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence"],
   secure: ["deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence", "final_opportunity", "non_compliance", "settlement"]
@@ -44,6 +43,7 @@ const fmtDate = (d) => {
   }
 };
 const later = (days=7) => fmtDate(Date.now() + days * 864e5);
+
 const fill = (tpl, vars) => tpl.replace(/{{\s*([\w.]+)\s*}}/g, (_, k) => (vars[k] ?? ""));
 
 // --- content library
@@ -296,31 +296,6 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Check user tier access
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ 
-        ok: false, 
-        error: 'Unauthorized - please log in' 
-      }, { status: 401 });
-    }
-
-    const userTier = user.plan_tier || 'free';
-    const allowedLetters = tierLetters[userTier] || [];
-
-    if (!allowedLetters.includes(subjectRaw)) {
-      const requiredTier = subjectRaw === 'final_opportunity' || subjectRaw === 'non_compliance' || subjectRaw === 'settlement' 
-        ? 'secure' 
-        : (subjectRaw === 'deposit' || subjectRaw === 'deductions' || subjectRaw === 'reminder' ? 'lite' : 'protect');
-      
-      return Response.json({ 
-        ok: false, 
-        error: `Upgrade to ${requiredTier.toUpperCase()} plan required for this letter type`,
-        required_tier: requiredTier,
-        current_tier: userTier
-      }, { status: 403 });
-    }
-
     // Determine mode
     const mode = args?.caseId ? "case" : "standalone";
     
@@ -359,6 +334,60 @@ Deno.serve(async (req) => {
         }
       }
     }
+
+    // === DROP-IN ACCESS GATE ===
+    const resolveTier = () => {
+      // Priority: explicit arg -> case.plan -> user.plan -> default 'lite'
+      const explicit = (args?.tier || args?.plan || "").toString().toLowerCase();
+      if (explicit && LETTER_ACCESS[explicit]) return explicit;
+
+      const caseTier =
+        (fromCase?.plan?.toLowerCase && fromCase.plan.toLowerCase()) ||
+        (fromCase?.subscription?.tier?.toLowerCase && fromCase.subscription.tier.toLowerCase()) ||
+        (fromCase?.account?.tier?.toLowerCase && fromCase.account.tier.toLowerCase());
+
+      if (caseTier && LETTER_ACCESS[caseTier]) return caseTier;
+
+      // User tier from userData
+      const userTier = (userData?.plan_tier || "").toLowerCase();
+      if (userTier && LETTER_ACCESS[userTier]) return userTier;
+
+      return "lite";
+    };
+
+    const tier = resolveTier();
+    console.log(`🔐 Resolved tier: ${tier} for subject: ${subjectRaw}`);
+
+    // Validate subject is in allowed list
+    if (!LETTER_ACCESS.secure.includes(subjectRaw)) {
+      return Response.json({ 
+        ok: false, 
+        error: `Unknown letter subject: ${subjectRaw}` 
+      }, { status: 400 });
+    }
+
+    // Enforce tier access
+    if (!LETTER_ACCESS[tier].includes(subjectRaw)) {
+      const needed =
+        subjectRaw === "final_opportunity" || subjectRaw === "non_compliance" || subjectRaw === "settlement"
+          ? "secure"
+          : "protect";
+
+      console.log(`❌ Access denied: tier=${tier}, subject=${subjectRaw}, needed=${needed}`);
+
+      return Response.json({
+        ok: false,
+        error: `Your ${tier.toUpperCase()} plan does not include '${subjectRaw}'. Upgrade to ${needed.toUpperCase()} to use this letter.`,
+        code: "LETTER_UPGRADE_REQUIRED",
+        tierCurrent: tier,
+        tierNeeded: needed,
+        subject: subjectRaw
+      }, { status: 403 });
+    }
+
+    console.log(`✅ Access granted: tier=${tier}, subject=${subjectRaw}`);
+
+    // === END ACCESS GATE ===
 
     // Helper to get values with fallback chain
     const get = (k, d = "") => {
@@ -460,7 +489,8 @@ Deno.serve(async (req) => {
           html_url: htmlUrl, 
           doc_url: docUrl,
           subject: subjectRaw,
-          letter_key: key
+          letter_key: key,
+          tier: tier
         }
       });
 
@@ -481,6 +511,7 @@ Deno.serve(async (req) => {
       mode,
       subject: subjectRaw,
       letter_key: key,
+      tier: tier,
       urls: {
         doc: docUrl,
         html: htmlUrl
