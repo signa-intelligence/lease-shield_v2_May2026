@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tantml:react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +26,7 @@ export default function DocumentVault() {
   const [uploading, setUploading] = useState(false);
   const [uploadType, setUploadType] = useState('photo');
   const [uploadLabel, setUploadLabel] = useState('');
+  const [selectedDocs, setSelectedDocs] = useState([]);
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -53,6 +55,16 @@ export default function DocumentVault() {
     },
   });
 
+  const deleteBulkMutation = useMutation({
+    mutationFn: async (ids) => {
+      await Promise.all(ids.map(id => base44.entities.Document.delete(id)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setSelectedDocs([]);
+    },
+  });
+
   const handleFileUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -71,6 +83,34 @@ export default function DocumentVault() {
       console.error('Upload failed:', error);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedDocs.length === documents.length) {
+      setSelectedDocs([]);
+    } else {
+      setSelectedDocs(documents.map(doc => doc.id));
+    }
+  };
+
+  const handleToggleSelect = (docId) => {
+    setSelectedDocs(prev => 
+      prev.includes(docId) 
+        ? prev.filter(id => id !== docId)
+        : [...prev, docId]
+    );
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedDocs.length === 0) return;
+    
+    const confirmMessage = language === 'th' 
+      ? `ลบไฟล์ ${selectedDocs.length} ไฟล์ใช่หรือไม่?`
+      : `Delete ${selectedDocs.length} file(s)?`;
+    
+    if (confirm(confirmMessage)) {
+      deleteBulkMutation.mutate(selectedDocs);
     }
   };
 
@@ -111,7 +151,10 @@ export default function DocumentVault() {
       noDocsSub: "Start building your evidence vault for better protection",
       uploadFirst: "Upload First Document",
       deleteConfirm: "Are you sure?",
-      viewFile: "View File"
+      viewFile: "View File",
+      selectAll: "Select All",
+      deleteSelected: "Delete Selected",
+      selected: "selected"
     },
     th: {
       title: "คลังหลักฐาน",
@@ -128,7 +171,10 @@ export default function DocumentVault() {
       noDocsSub: "เริ่มสร้างคลังหลักฐานเพื่อการป้องกันที่ดีขึ้น",
       uploadFirst: "อัปโหลดเอกสารแรก",
       deleteConfirm: "คุณแน่ใจหรือไม่?",
-      viewFile: "ดูไฟล์"
+      viewFile: "ดูไฟล์",
+      selectAll: "เลือกทั้งหมด",
+      deleteSelected: "ลบที่เลือก",
+      selected: "เลือกแล้ว"
     }
   };
 
@@ -258,7 +304,45 @@ export default function DocumentVault() {
 
           {/* Recent Uploads - Right Side */}
           <div className="lg:col-span-2">
-            <h3 className="font-bold text-lg mb-4" style={{ color: colors.textPrimary }}>{strings.recentUploads}</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>{strings.recentUploads}</h3>
+              {documents.length > 0 && (
+                <div className="flex items-center gap-3">
+                  {selectedDocs.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+                        {selectedDocs.length} {strings.selected}
+                      </span>
+                      <Button
+                        onClick={handleDeleteSelected}
+                        variant="destructive"
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {strings.deleteSelected}
+                      </Button>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleSelectAll}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors"
+                    style={{
+                      backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                      color: colors.textPrimary
+                    }}
+                  >
+                    {selectedDocs.length === documents.length ? (
+                      <CheckSquare className="w-4 h-4 text-ls-forest" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                    <span className="text-sm font-medium">{strings.selectAll}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
             {documents.length === 0 ? (
               <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
                 <CardContent className="p-12 text-center">
@@ -282,36 +366,44 @@ export default function DocumentVault() {
                 {documents.map((doc) => {
                   const typeConfig = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
                   const TypeIcon = typeConfig.icon;
+                  const isSelected = selectedDocs.includes(doc.id);
                   
                   return (
-                    <Card key={doc.id} className="border-none shadow-md hover:shadow-lg transition-all duration-300" style={{
+                    <Card key={doc.id} className={`border-none shadow-md hover:shadow-lg transition-all duration-300 ${isSelected ? 'ring-2 ring-ls-forest' : ''}`} style={{
                       backgroundColor: colors.cardBg
                     }}>
                       <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-start gap-3 flex-1 min-w-0">
-                            <div className="p-2 rounded-lg flex-shrink-0" style={{
-                              backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED'
-                            }}>
-                              <TypeIcon className="w-5 h-5 text-ls-forest" />
+                        <div className="flex items-start gap-3 mb-3">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleToggleSelect(doc.id)}
+                            className="mt-1"
+                          />
+                          <div className="flex items-start justify-between flex-1 min-w-0">
+                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                              <div className="p-2 rounded-lg flex-shrink-0" style={{
+                                backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED'
+                              }}>
+                                <TypeIcon className="w-5 h-5 text-ls-forest" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-sm truncate" style={{ color: colors.textPrimary }}>
+                                  {doc.label}
+                                </p>
+                                <p className="text-xs" style={{ color: colors.textSecondary }}>
+                                  {format(new Date(doc.created_date), 'MMM d, yyyy')}
+                                </p>
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-sm truncate" style={{ color: colors.textPrimary }}>
-                                {doc.label}
-                              </p>
-                              <p className="text-xs" style={{ color: colors.textSecondary }}>
-                                {format(new Date(doc.created_date), 'MMM d, yyyy')}
-                              </p>
-                            </div>
+                            <Badge className={`${typeConfig.color} text-xs flex-shrink-0 ml-2`}>
+                              {typeConfig.label}
+                            </Badge>
                           </div>
-                          <Badge className={`${typeConfig.color} text-xs flex-shrink-0`}>
-                            {typeConfig.label}
-                          </Badge>
                         </div>
 
                         {/* Preview for images */}
                         {doc.type === 'photo' && doc.file_url && (
-                          <div className="mb-3">
+                          <div className="mb-3 ml-9">
                             <img
                               src={doc.file_url}
                               alt={doc.label}
@@ -321,7 +413,7 @@ export default function DocumentVault() {
                           </div>
                         )}
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 ml-9">
                           <a
                             href={doc.file_url}
                             target="_blank"
