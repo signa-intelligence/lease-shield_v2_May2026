@@ -154,24 +154,24 @@ export default function OpsConsole() {
     });
   };
 
-  const handleGenerateLetters = async (caseItem) => {
-    setGeneratingLetters(caseItem.id);
+  const handleGenerateLetter = async (caseItem, subject) => {
+    setGeneratingLetters(`${caseItem.id}-${subject}`);
     try {
-      // Use generatePhase1Letter with caseId for case-based generation
       const response = await base44.functions.invoke('generatePhase1Letter', {
         caseId: caseItem.id,
-        subject: caseItem.type || 'deposit'
+        subject: subject
       });
 
       if (response.data?.ok) {
         queryClient.invalidateQueries({ queryKey: ['allCases'] });
-        alert('Letter generated successfully!');
+        const url = response.data.urls.pdf || response.data.urls.html;
+        alert(`✅ ${subject.toUpperCase()} letter generated!\n\nView: ${url}`);
       } else {
         throw new Error(response.data?.error || 'Generation failed');
       }
     } catch (error) {
       console.error('Letter generation failed:', error);
-      alert('Failed to generate letter: ' + (error.message || 'Please try again'));
+      alert('❌ Failed to generate letter: ' + (error.message || 'Please try again'));
     } finally {
       setGeneratingLetters(null);
     }
@@ -374,25 +374,65 @@ export default function OpsConsole() {
                     </Button>
 
                     {caseItem.status === 'under_review' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleGenerateLetters(caseItem)}
-                        disabled={generatingLetters === caseItem.id}
-                        className="border-purple-600 text-purple-600"
-                      >
-                        {generatingLetters === caseItem.id ? (
-                          <>
-                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <FileText className="w-3 h-3 mr-1" />
-                            Generate Letters
-                          </>
-                        )}
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleGenerateLetter(caseItem, 'deposit')}
+                          disabled={generatingLetters === `${caseItem.id}-deposit`}
+                          className="border-blue-600 text-blue-600"
+                        >
+                          {generatingLetters === `${caseItem.id}-deposit` ? (
+                            <>
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <FileText className="w-3 h-3 mr-1" />
+                              Deposit
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleGenerateLetter(caseItem, 'damages')}
+                          disabled={generatingLetters === `${caseItem.id}-damages`}
+                          className="border-orange-600 text-orange-600"
+                        >
+                          {generatingLetters === `${caseItem.id}-damages` ? (
+                            <>
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <FileText className="w-3 h-3 mr-1" />
+                              Damages
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleGenerateLetter(caseItem, 'early_termination')}
+                          disabled={generatingLetters === `${caseItem.id}-early_termination`}
+                          className="border-purple-600 text-purple-600"
+                        >
+                          {generatingLetters === `${caseItem.id}-early_termination` ? (
+                            <>
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <FileText className="w-3 h-3 mr-1" />
+                              Early Term
+                            </>
+                          )}
+                        </Button>
+                      </>
                     )}
 
                     {caseItem.status === 'in_progress' && (
