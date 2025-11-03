@@ -21,7 +21,8 @@ import {
   Crown,
   Mail,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Download // Added Download icon
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -103,6 +104,21 @@ export default function CaseDetails() {
     }
   };
 
+  // New function to handle Word document downloads
+  const handleDownloadWord = (subject) => {
+    const urlKey = `${subject}_url`;
+    const url = caseItem?.letters?.[urlKey];
+    
+    if (!url) {
+      alert(language === 'th' 
+        ? `ไม่พบไฟล์ Word สำหรับ ${subject}` 
+        : `No Word file found for ${subject}`);
+      return;
+    }
+    
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   const t = {
     en: {
       caseDetails: "Case Details",
@@ -143,6 +159,7 @@ export default function CaseDetails() {
       completeLetterPack: "📄 Complete Letter Pack",
       allLettersInOnePdf: "All letters in one PDF",
       download: "Download",
+      downloadWord: "Download Word", // Added translation
     },
     th: {
       caseDetails: "รายละเอียดคดี",
@@ -183,6 +200,7 @@ export default function CaseDetails() {
       completeLetterPack: "📄 Letter Pack ฉบับเต็ม",
       allLettersInOnePdf: "จดหมายทั้งหมดรวมใน PDF เดียว",
       download: "ดาวน์โหลด",
+      downloadWord: "ดาวน์โหลด Word", // Added translation
     }
   };
 
@@ -411,7 +429,7 @@ export default function CaseDetails() {
         </Card>
 
         {/* Letters Section */}
-        {caseItem.letters && (caseItem.letters.v1_url || caseItem.letters.v2_url || caseItem.letters.v3_url || caseItem.letter_pack_url) && (
+        {caseItem.letters && (caseItem.letters.v1_url || caseItem.letters.v2_url || caseItem.letters.v3_url || caseItem.letter_pack_url || caseItem.letters.deposit_url || caseItem.letters.damages_url || caseItem.letters.early_termination_url) && (
           <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
               <div className="flex items-center justify-between">
@@ -471,8 +489,120 @@ export default function CaseDetails() {
                 </div>
               )}
 
-              {/* Individual Letters */}
+              {/* Individual Letters - Phase 1 (Subject-based) */}
               <div className="space-y-3">
+                {/* Deposit Letter */}
+                {caseItem.letters.deposit_url && (
+                  <div className="flex items-center justify-between p-3 rounded-lg" style={{
+                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                    border: `1px solid ${colors.borderColor}`
+                  }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                          {language === 'th' ? 'จดหมายขอคืนเงินมัดจำ' : 'Deposit Return Request'}
+                        </p>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {language === 'th' ? 'ขอชี้แจงและเอกสารประกอบ' : strings.clarificationDocumentation}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleDownloadWord('deposit')}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+                        style={{
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                      >
+                        <Download className="w-4 h-4" />
+                        Word
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Damages Letter */}
+                {caseItem.letters.damages_url && (
+                  <div className="flex items-center justify-between p-3 rounded-lg" style={{
+                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                    border: `1px solid ${colors.borderColor}`
+                  }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                          {language === 'th' ? 'จดหมายโต้แย้งค่าเสียหาย' : 'Damage Claim Response'}
+                        </p>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {language === 'th' ? 'ขอรายละเอียดการประเมิน' : 'Request itemised assessment'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleDownloadWord('damages')}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+                        style={{
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                      >
+                        <Download className="w-4 h-4" />
+                        Word
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Early Termination Letter */}
+                {caseItem.letters.early_termination_url && (
+                  <div className="flex items-center justify-between p-3 rounded-lg" style={{
+                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                    border: `1px solid ${colors.borderColor}`
+                  }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                          {language === 'th' ? 'จดหมายแจ้งยกเลิกก่อนกำหนด' : 'Early Termination Notice'}
+                        </p>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {language === 'th' ? 'ขอประสานการยกเลิกสัญญา' : 'Request reconciliation'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleDownloadWord('early_termination')}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+                        style={{
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                      >
+                        <Download className="w-4 h-4" />
+                        Word
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Legacy Letters (v1, v2, v3) */}
                 {caseItem.letters.v1_url && (
                   <div className="flex items-center justify-between p-3 rounded-lg" style={{
                     backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
