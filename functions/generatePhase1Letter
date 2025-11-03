@@ -135,87 +135,65 @@ Deno.serve(async (req) => {
     const content = SUBJECTS_CONTENT[subject];
 
     // Fetch case data if in case mode
-    let fromCase = {};
+    const fromCase = mode === "case" 
+      ? (await base44.asServiceRole.entities.Case.filter({ id: args.caseId }))[0] 
+      : {};
+    
+    if (mode === "case" && !fromCase) {
+      return Response.json({ 
+        ok: false,
+        error: `Case not found: ${args.caseId}` 
+      }, { status: 404 });
+    }
+
+    // Fetch related lease and user data
     let leaseData = null;
     let userData = null;
 
-    if (mode === "case") {
-      const cases = await base44.asServiceRole.entities.Case.filter({ id: args.caseId });
-      if (!cases || cases.length === 0) {
-        return Response.json({ 
-          ok: false,
-          error: `Case not found: ${args.caseId}` 
-        }, { status: 404 });
-      }
-      
-      fromCase = cases[0];
-
-      // Fetch related lease
-      if (fromCase.lease_id) {
-        try {
-          const leases = await base44.asServiceRole.entities.Lease.filter({ id: fromCase.lease_id });
-          if (leases && leases.length > 0) leaseData = leases[0];
-        } catch (e) {
-          console.error('Could not fetch lease:', e);
-        }
-      }
-
-      // Fetch user data
-      if (fromCase.user_email) {
-        try {
-          const users = await base44.asServiceRole.entities.User.filter({ email: fromCase.user_email });
-          if (users && users.length > 0) userData = users[0];
-        } catch (e) {
-          console.error('Could not fetch user:', e);
-        }
+    if (mode === "case" && fromCase.lease_id) {
+      try {
+        const leases = await base44.asServiceRole.entities.Lease.filter({ id: fromCase.lease_id });
+        if (leases && leases.length > 0) leaseData = leases[0];
+      } catch (e) {
+        console.error('Could not fetch lease:', e);
       }
     }
 
-    // Helper functions for building vars
-    const pick = (key, fallbackVal = "") => {
-      const argValue = args[key];
-      const caseValue = fromCase?.[key];
-      const leaseValue = leaseData?.[key];
-      const userValue = userData?.[key];
-      
-      // Special handling for specific fields
-      if (key === 'tenant_name') {
-        return sanitize(argValue || userValue?.full_name || fromCase?.user_email || fallbackVal);
+    if (mode === "case" && fromCase.user_email) {
+      try {
+        const users = await base44.asServiceRole.entities.User.filter({ email: fromCase.user_email });
+        if (users && users.length > 0) userData = users[0];
+      } catch (e) {
+        console.error('Could not fetch user:', e);
       }
-      if (key === 'landlord_name') {
-        return sanitize(argValue || leaseValue?.landlord_name || fallbackVal);
-      }
-      if (key === 'property_address') {
-        return sanitize(argValue || leaseValue?.property_address || fromCase?.property_address || fallbackVal);
-      }
-      if (key === 'deposit_amount_thb') {
-        const val = argValue || fromCase?.dispute_amount || leaseValue?.deposit_amount;
-        return sanitize(val != null ? String(val) : fallbackVal);
-      }
-      
-      // Default: arg > case > fallback
-      return sanitize(argValue || caseValue || fallbackVal);
-    };
+    }
 
-    const dateISO = (val) => { 
+    // Helper to pick value with fallback chain
+    const pick = (k, d = "") => sanitize(args[k] ?? fromCase?.[k] ?? d);
+    
+    const dateISO = (v) => { 
       try { 
-        if (val) return new Date(val).toISOString().slice(0, 10);
-      } catch {}
-      return new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
+        return v ? new Date(v).toISOString().slice(0, 10) : new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
+      } catch { 
+        return new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
+      } 
     };
 
     // Build vars with smart fallbacks
     const vars = {
-      tenant_name: pick("tenant_name", "Tenant"),
-      landlord_name: pick("landlord_name", "Landlord"),
-      property_address: pick("property_address", "[Property Address]"),
+      caseId: args.caseId || `standalone-${Date.now()}`,
+      tenant_name: sanitize(args.tenant_name ?? userData?.full_name ?? fromCase?.user_email ?? "Tenant"),
+      landlord_name: sanitize(args.landlord_name ?? leaseData?.landlord_name ?? "Landlord"),
+      property_address: sanitize(args.property_address ?? leaseData?.property_address ?? fromCase?.property_address ?? ""),
       contract_ref: args.contract_ref || (
         leaseData?.start_date 
           ? `Lease dated ${new Date(leaseData.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` 
           : "Lease Agreement"
       ),
-      deposit_amount_thb: pick("deposit_amount_thb", "[Amount]"),
-      request_by_date_iso: dateISO(args.request_by_date_iso || fromCase?.sla?.followup_due),
+      request_by_date_iso: dateISO(args.request_by_date_iso ?? fromCase?.sla?.followup_due),
+      deposit_amount_thb: Number.isFinite(Number(args.deposit_amount ?? fromCase?.dispute_amount ?? leaseData?.deposit_amount)) 
+        ? String(args.deposit_amount ?? fromCase?.dispute_amount ?? leaseData?.deposit_amount) 
+        : "",
       subject_en: content.subject_en,
       subject_th: content.subject_th
     };
