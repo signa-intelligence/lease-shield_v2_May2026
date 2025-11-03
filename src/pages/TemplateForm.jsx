@@ -228,19 +228,21 @@ export default function TemplateForm() {
 
       console.log('Letters generated:', response.data);
 
-      if (caseId) {
-        navigate(createPageUrl("CaseDetails") + `?caseId=${caseId}`);
+      if (response.data?.success) {
+        // If there's a case ID and it's not temporary, go to case details
+        if (caseId && !response.data.isTemporary) {
+          navigate(createPageUrl("CaseDetails") + `?caseId=${caseId}`);
+        } else {
+          // For standalone letter generation, go to documents page
+          navigate(createPageUrl("DocumentVault"));
+        }
       } else {
-        alert(language === 'th'
-          ? 'จดหมายถูกสร้างเรียบร้อยแล้ว!'
-          : 'Letters generated successfully!');
-        navigate(createPageUrl("Cases"));
+        throw new Error('Letter generation failed - no success response');
       }
     } catch (err) {
       console.error('Letter generation error:', err);
       setError(err.message || strings.errorGenerationFailed);
-    } finally {
-      setGenerating(false);
+      setGenerating(false); // Make sure generating state is reset on error
     }
   };
 
@@ -260,7 +262,7 @@ export default function TemplateForm() {
             </h3>
             <p style={{ color: colors.textSecondary }}>
               {language === 'th'
-                ? 'กำลังร่างจดหมายมืออาชีพสองภาษาสำหรับคดีของคุณ...'
+                ? 'กำลังร่างจดหมายมืออาศพสองภาษาสำหรับคดีของคุณ...'
                 : 'Drafting professional bilingual letters for your case...'}
             </p>
           </CardContent>
@@ -524,7 +526,7 @@ export default function TemplateForm() {
                       }}>
                         <SelectValue placeholder={strings.tone} />
                       </SelectTrigger>
-                      <SelectContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                        <SelectContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
                         <SelectItem value="standard" style={{ color: colors.textPrimary }}>{strings.toneStandard}</SelectItem>
                         <SelectItem value="softer" style={{ color: colors.textPrimary }}>{strings.toneSofter}</SelectItem>
                         <SelectItem value="firmer" style={{ color: colors.textPrimary }}>{strings.toneFirmer}</SelectItem>
