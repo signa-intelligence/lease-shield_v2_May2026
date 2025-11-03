@@ -73,30 +73,15 @@ STYLE:
 - Never assume guilt; emphasize cooperation and understanding.
 - All output must be bilingual (EN/TH).`;
 
-// Helper function to decode HTML entities
-const decodeHtmlEntities = (text) => {
-  if (!text) return '';
-  // Use DOMParser for robustness in Deno
-  const doc = new DOMParser().parseFromString(`<!doctype html><body>${text}`, 'text/html');
-  return doc.body.textContent || text;
-};
-
 // HTML template for rendering letters
 const getLetterHTML = (letter, caseId) => {
   const today = new Date().toISOString().split('T')[0];
   const year = new Date().getFullYear();
   
-  // Helper to safely decode HTML entities and preserve Thai characters
+  // No HTML entity decoding needed - LLM outputs UTF-8 directly
   const escapeHtml = (text) => {
     if (!text) return '';
-    // Decode HTML entities first (for Thai text that came encoded)
-    try {
-      const doc = new DOMParser().parseFromString(`<!doctype html><body>${text}`, 'text/html');
-      return doc.body.textContent || text;
-    } catch (e) {
-      console.warn("Failed to decode HTML entities, returning original text:", e);
-      return text;
-    }
+    return text; // Return as-is since we're using UTF-8
   };
   
   // Helper to render EN/TH paragraph pairs with safety checks
