@@ -18,6 +18,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import MaintenanceTracker from './pages/MaintenanceTracker';
 import Support from './pages/Support';
 import LeaseDetails from './pages/LeaseDetails';
+import CaseDetails from './pages/CaseDetails';
 import Layout from './Layout.jsx';
 
 
@@ -42,6 +43,7 @@ export const PAGES = {
     "MaintenanceTracker": MaintenanceTracker,
     "Support": Support,
     "LeaseDetails": LeaseDetails,
+    "CaseDetails": CaseDetails,
 }
 
 export const pagesConfig = {

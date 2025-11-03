@@ -203,8 +203,7 @@ export default function Cases() {
                     {hasPriorityQueue && <span>• {strings.priorityHandling}</span>}
                   </div>
                 </div>
-              </div>
-            </CardContent>
+              </CardContent>
           </Card>
         )}
 
@@ -320,11 +319,20 @@ export default function Cases() {
                     )}
 
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <Button variant="outline" className="flex-1 text-xs sm:text-sm" size="sm">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1 text-xs sm:text-sm" 
+                        size="sm"
+                        onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
+                      >
                         {strings.viewDetails}
                       </Button>
                       {caseItem.status === 'user_action' && (
-                        <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm" size="sm">
+                        <Button 
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm" 
+                          size="sm"
+                          onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
+                        >
                           {strings.takeAction}
                         </Button>
                       )}
