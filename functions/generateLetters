@@ -73,15 +73,30 @@ STYLE:
 - Never assume guilt; emphasize cooperation and understanding.
 - All output must be bilingual (EN/TH).`;
 
+// Helper function to decode HTML entities
+const decodeHtmlEntities = (text) => {
+  if (!text) return '';
+  // Use DOMParser for robustness in Deno
+  const doc = new DOMParser().parseFromString(`<!doctype html><body>${text}`, 'text/html');
+  return doc.body.textContent || text;
+};
+
 // HTML template for rendering letters
 const getLetterHTML = (letter, caseId) => {
   const today = new Date().toISOString().split('T')[0];
   const year = new Date().getFullYear();
   
-  // Helper to safely escape HTML but preserve Thai characters
+  // Helper to safely decode HTML entities and preserve Thai characters
   const escapeHtml = (text) => {
     if (!text) return '';
-    return text;
+    // Decode HTML entities first (for Thai text that came encoded)
+    try {
+      const doc = new DOMParser().parseFromString(`<!doctype html><body>${text}`, 'text/html');
+      return doc.body.textContent || text;
+    } catch (e) {
+      console.warn("Failed to decode HTML entities, returning original text:", e);
+      return text;
+    }
   };
   
   // Helper to render EN/TH paragraph pairs with safety checks
@@ -340,7 +355,8 @@ Case Details:
 - Attachments: ${attachments.length > 0 ? attachments.join(', ') : 'Lease.pdf, Photos.zip'}
 - Tone: ${tone}
 
-CRITICAL: Return EXACTLY 3 letters with IDs: v1_notice, v2_follow_up, v3_final_offer`;
+CRITICAL: Return EXACTLY 3 letters with IDs: v1_notice, v2_follow_up, v3_final_offer
+CRITICAL: Do NOT use HTML entities for Thai text - use actual Thai characters (UTF-8)`;
 
     // Call LLM to generate letter pack with increased timeout
     console.log('Calling LLM with payload...');
@@ -449,11 +465,15 @@ ${userPrompt}`,
         // Upload to storage
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-        // Save as Document with unique label
+        // Save as Document with contract reference in label
+        const labelPrefix = contract_ref && contract_ref !== 'Residential Lease Agreement' 
+          ? contract_ref 
+          : letter.purpose;
+        
         const doc = await base44.entities.Document.create({
           type: 'letter',
           file_url,
-          label: `${letter.purpose} - Case ${caseId.slice(0, 8)} - ${letter.id}`
+          label: `${labelPrefix} - ${letter.id}`
         });
 
         letterUrls[letter.id] = doc.file_url;
