@@ -1,15 +1,14 @@
-
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Scale, AlertCircle, Clock, CheckCircle2, UserCheck, Plus, Zap, Crown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { useFeatureAccess } from "../components/shared/FeatureGate";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Scale, Plus, Crown, Calendar, DollarSign, Zap, Mail, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { format } from "date-fns";
+import { useFeatureAccess } from "@/components/shared/FeatureGate";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -100,6 +99,7 @@ export default function Cases() {
   }, [location.search, user, refetchCases, location.pathname]);
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
 
   // Debug loading and error states
   if (isLoading) {
@@ -109,128 +109,128 @@ export default function Cases() {
     console.error('❌ Cases error:', error);
   }
 
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+  } : {
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+  };
+
   const t = {
     en: {
-      title: "My Cases",
-      subtitle: "Track your dispute cases",
+      myCases: "My Cases",
+      trackYourCases: "Track your dispute cases",
       openNewCase: "Open New Case",
-      premiumTitle: "Premium Case Benefits",
+      premiumBenefits: "Premium Case Benefits",
       memberPricing: "Member pricing on success fees",
       priorityHandling: "Priority case handling",
-      noCases: "No Cases Yet",
-      noCasesSub: "Need help with a dispute? Our team is here to support you.",
-      memberBenefit: "As a member, you get reduced success fees on all cases",
-      openFirstCase: "Open Your First Case",
       caseNumber: "Case #",
       opened: "Opened",
       disputeAmount: "Dispute Amount",
-      assignedTo: "Assigned To",
-      opsTeam: "Ops Team",
       features: "Features",
-      fastTrack: "Fast Track",
       letterPack: "Letter Pack",
+      fastTrack: "Fast Track",
       memberRate: "Member Rate",
-      successFee: "Success fee:",
-      memberDiscount: "(Member discount ✓)",
       viewDetails: "View Details",
-      takeAction: "Take Action"
+      takeAction: "Take Action",
+      noCases: "No Cases Yet",
+      noCasesDesc: "You haven't opened any dispute cases yet. When you need help resolving a deposit or rent dispute, we're here to help.",
+      openFirstCase: "Open Your First Case"
     },
     th: {
-      title: "คดีของฉัน",
-      subtitle: "ติดตามคดีข้อพิพาทของคุณ",
+      myCases: "คดีของฉัน",
+      trackYourCases: "ติดตามคดีพิพาทของคุณ",
       openNewCase: "เปิดคดีใหม่",
-      premiumTitle: "สิทธิประโยชน์คดีพรีเมียม",
+      premiumBenefits: "สิทธิพิเศษสำหรับคดี",
       memberPricing: "ราคาสมาชิกสำหรับค่าธรรมเนียมความสำเร็จ",
       priorityHandling: "การจัดการคดีแบบเร่งด่วน",
-      noCases: "ยังไม่มีคดี",
-      noCasesSub: "ต้องการความช่วยเหลือเรื่องข้อพิพาท? ทีมของเราพร้อมสนับสนุนคุณ",
-      memberBenefit: "ในฐานะสมาชิก คุณจะได้รับค่าธรรมเนียมความสำเร็จที่ลดลงสำหรับทุกคดี",
-      openFirstCase: "เปิดคดีแรกของคุณ",
       caseNumber: "คดีหมายเลข #",
       opened: "เปิด",
       disputeAmount: "จำนวนเงินที่พิพาท",
-      assignedTo: "มอบหมายให้",
-      opsTeam: "ทีมปฏิบัติการ",
       features: "คุณสมบัติ",
-      fastTrack: "Fast Track",
       letterPack: "ชุดจดหมาย",
+      fastTrack: "Fast Track",
       memberRate: "ราคาสมาชิก",
-      successFee: "ค่าธรรมเนียมความสำเร็จ:",
-      memberDiscount: "(ส่วนลดสมาชิก ✓)",
       viewDetails: "ดูรายละเอียด",
-      takeAction: "ดำเนินการ"
+      takeAction: "ดำเนินการ",
+      noCases: "ยังไม่มีคดี",
+      noCasesDesc: "คุณยังไม่ได้เปิดคดีพิพาทใดๆ เมื่อคุณต้องการความช่วยเหลือในการแก้ไขข้อพิพาทเกี่ยวกับเงินประกันหรือค่าเช่า เราพร้อมช่วยเหลือคุณ",
+      openFirstCase: "เปิดคดีแรกของคุณ"
     }
   };
 
   const strings = t[language];
 
-  const getStatusConfig = (status) => STATUS_CONFIG[status] || STATUS_CONFIG.intake;
+  const getStatusConfig = (status) => {
+    return STATUS_CONFIG[status] || STATUS_CONFIG.intake;
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
-            <div className="flex items-center gap-2 sm:gap-3 mb-2">
-              <Scale className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">{strings.title}</h1>
-            </div>
-            <p className="text-sm sm:text-base text-slate-600">{strings.subtitle}</p>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <Scale className="w-7 h-7 md:w-8 md:h-8 text-blue-600" />
+              {strings.myCases}
+            </h1>
+            <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>
+              {strings.trackYourCases}
+            </p>
           </div>
-          
-          <Button 
-            size="lg" 
-            className="bg-blue-600 hover:bg-blue-700 shadow-lg w-full sm:w-auto" 
+          <Button
             onClick={() => navigate(createPageUrl("ResolveCase"))}
+            className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+            size="sm"
           >
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            <span className="text-sm sm:text-base">{strings.openNewCase}</span>
+            <Plus className="w-4 h-4 mr-2" />
+            {strings.openNewCase}
           </Button>
         </div>
 
-        {/* Premium Features Banner */}
         {(hasPriorityQueue || hasMemberPrice) && (
-          <Card className="mb-6 border-none shadow-lg bg-gradient-to-r from-purple-500 to-purple-700 text-white">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Crown className="w-5 h-5 sm:w-6 sm:h-6" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-base sm:text-lg mb-1">{strings.premiumTitle}</h3>
-                  <div className="flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm text-purple-50">
-                    {hasMemberPrice && <span>• {strings.memberPricing}</span>}
-                    {hasPriorityQueue && <span>• {strings.priorityHandling}</span>}
-                  </div>
-                </div>
-              </CardContent>
-          </Card>
+          <div className="mb-6 p-4 md:p-6 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg">
+            <div className="flex items-start gap-3">
+              <Crown className="w-6 h-6 flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="font-bold text-base md:text-lg mb-2">{strings.premiumBenefits}</h3>
+                <ul className="space-y-1 text-xs md:text-sm opacity-90">
+                  {hasMemberPrice && <li>• {strings.memberPricing}</li>}
+                  {hasPriorityQueue && <li>• {strings.priorityHandling}</li>}
+                </ul>
+              </div>
+            </div>
+          </div>
         )}
 
         {cases.length === 0 ? (
-          <Card className="border-none shadow-xl">
-            <CardContent className="p-8 sm:p-12 text-center">
-              <Scale className="w-12 h-12 sm:w-16 sm:h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">{strings.noCases}</h3>
-              <p className="text-sm sm:text-base text-slate-600 mb-6">
-                {strings.noCasesSub}
-              </p>
-              {hasMemberPrice && (
-                <div className="bg-emerald-50 rounded-xl p-4 mb-6 border border-emerald-200">
-                  <p className="text-xs sm:text-sm text-emerald-800 font-medium">
-                    ✓ {strings.memberBenefit}
-                  </p>
-                </div>
-              )}
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" 
-                onClick={() => navigate(createPageUrl("ResolveCase"))}
-              >
-                <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                {strings.openFirstCase}
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="text-center py-12 md:py-20">
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style={{
+              backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6'
+            }}>
+              <Scale className="w-10 h-10 md:w-12 md:h-12" style={{ color: colors.textSecondary, opacity: 0.5 }} />
+            </div>
+            <h2 className="text-xl md:text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {strings.noCases}
+            </h2>
+            <p className="mb-6 max-w-md mx-auto text-sm md:text-base px-4" style={{ color: colors.textSecondary }}>
+              {strings.noCasesDesc}
+            </p>
+            <Button
+              onClick={() => navigate(createPageUrl("ResolveCase"))}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              {strings.openFirstCase}
+            </Button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {cases.map((caseItem) => {
@@ -238,83 +238,69 @@ export default function Cases() {
               const StatusIcon = statusConfig.icon;
               
               return (
-                <Card key={caseItem.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300">
-                  <CardHeader className="border-b border-slate-100 pb-3 sm:pb-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div className="p-2 bg-blue-50 rounded-xl flex-shrink-0">
-                          <Scale className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <CardTitle className="text-base sm:text-lg font-bold text-slate-900 break-words">
-                            {strings.caseNumber}{caseItem.id.slice(0, 8)}
-                          </CardTitle>
-                          <p className="text-xs text-slate-500 mt-1">
-                            {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
-                          </p>
-                        </div>
+                <Card key={caseItem.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: colors.cardBg }}>
+                  <CardHeader className="pb-3" style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Scale className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                        <CardTitle className="text-base md:text-lg truncate" style={{ color: colors.textPrimary }}>
+                          {strings.caseNumber}{caseItem.id.slice(0, 8)}
+                        </CardTitle>
                       </div>
-                      <div className="flex flex-col gap-2 items-end flex-shrink-0">
-                        <Badge className={`${statusConfig.color} border flex items-center gap-1 text-xs whitespace-nowrap`}>
-                          <StatusIcon className="w-3 h-3" />
-                          <span className="hidden sm:inline">{statusConfig.label}</span>
-                        </Badge>
-                        {caseItem.fast_track && hasPriorityQueue && (
-                          <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs whitespace-nowrap">
-                            <Zap className="w-3 h-3 mr-1" />
-                            <span className="hidden sm:inline">{strings.fastTrack}</span>
-                          </Badge>
-                        )}
-                      </div>
+                      <Badge className={`${statusConfig.color} border text-xs flex items-center gap-1 flex-shrink-0`}>
+                        <StatusIcon className="w-3 h-3" />
+                        {statusConfig.label}
+                      </Badge>
                     </div>
+                    <p className="text-xs mt-1 flex items-center gap-1" style={{ color: colors.textSecondary }}>
+                      <Calendar className="w-3 h-3" />
+                      {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
+                    </p>
                   </CardHeader>
-                  
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      {caseItem.dispute_amount && (
-                        <div>
-                          <p className="text-xs text-slate-500 mb-1">{strings.disputeAmount}</p>
-                          <p className="text-lg font-bold text-slate-900">
-                            ฿{caseItem.dispute_amount.toLocaleString()}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {caseItem.ops_assigned && (
-                        <div>
-                          <p className="text-xs text-slate-500 mb-1">{strings.assignedTo}</p>
-                          <div className="flex items-center gap-2">
-                            <UserCheck className="w-4 h-4 text-blue-600" />
-                            <p className="text-sm font-semibold text-slate-900">{strings.opsTeam}</p>
-                          </div>
-                        </div>
-                      )}
+                  <CardContent className="pt-4 space-y-4">
+                    <div>
+                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                        {strings.disputeAmount}
+                      </p>
+                      <p className="text-xl md:text-2xl font-bold flex items-baseline gap-1" style={{ color: colors.textPrimary }}>
+                        <DollarSign className="w-4 h-4 text-blue-600" />
+                        ฿{caseItem.dispute_amount?.toLocaleString() || 'N/A'}
+                      </p>
                     </div>
 
-                    <div className="mb-4">
-                      <p className="text-xs text-slate-500 mb-2">{strings.features}</p>
-                      <div className="flex gap-2 flex-wrap">
-                        {caseItem.fast_track && (
-                          <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
-                            {strings.fastTrack}
-                          </Badge>
-                        )}
-                        {caseItem.letter_pack && (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs">
-                            {strings.letterPack}
-                          </Badge>
-                        )}
-                        {caseItem.is_member_at_creation && (
-                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 text-xs">
-                            {strings.memberRate}
-                          </Badge>
-                        )}
+                    {(caseItem.fast_track || caseItem.letter_pack || caseItem.is_member_at_creation) && (
+                      <div>
+                        <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                          {strings.features}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {caseItem.fast_track && (
+                            <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
+                              <Zap className="w-3 h-3 mr-1" />
+                              {strings.fastTrack}
+                            </Badge>
+                          )}
+                          {caseItem.letter_pack && (
+                            <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                              <Mail className="w-3 h-3 mr-1" />
+                              {strings.letterPack}
+                            </Badge>
+                          )}
+                          {caseItem.is_member_at_creation && (
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                              <Crown className="w-3 h-3 mr-1" />
+                              {strings.memberRate}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {caseItem.summary && (
-                      <div className="p-3 bg-slate-50 rounded-xl mb-4">
-                        <p className="text-xs text-slate-700 line-clamp-2">{caseItem.summary}</p>
+                      <div>
+                        <p className="text-xs line-clamp-2" style={{ color: colors.textSecondary }}>
+                          {caseItem.summary}
+                        </p>
                       </div>
                     )}
 
