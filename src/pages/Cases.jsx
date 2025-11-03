@@ -1,7 +1,7 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Scale, AlertCircle, Clock, CheckCircle2, UserCheck, Plus, Zap, Crown } from "lucide-react";
@@ -22,6 +22,7 @@ const STATUS_CONFIG = {
 
 export default function Cases() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { hasAccess: hasPriorityQueue } = useFeatureAccess('priority_queue');
   const { hasAccess: hasMemberPrice } = useFeatureAccess('resolve_member_price');
 
@@ -35,6 +36,20 @@ export default function Cases() {
     queryFn: () => base44.entities.Case.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
+
+  // Handle payment success redirect - invalidate and refetch cases
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    
+    if (paymentStatus === 'success') {
+      // Invalidate cases query to force refresh
+      queryClient.invalidateQueries({ queryKey: ['cases'] });
+      
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [queryClient]);
 
   const language = user?.language || 'en';
 
