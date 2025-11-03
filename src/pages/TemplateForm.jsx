@@ -15,13 +15,18 @@ export default function TemplateForm() {
   const navigate = useNavigate();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Get subject from URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const subjectFromUrl = urlParams.get('subject') || 'deposit';
+  
   const [formData, setFormData] = useState({
     tenant_name: '',
     landlord_name: '',
     property_address: '',
     contract_ref: '',
     deposit_amount_thb: '',
-    subject: 'deposit'
+    subject: subjectFromUrl
   });
 
   const { data: user } = useQuery({
@@ -88,8 +93,8 @@ export default function TemplateForm() {
       depositAmount: "จำนวนเงินมัดจำ (ไม่บังคับ)",
       letterType: "ประเภทจดหมาย",
       depositReturn: "จดหมายขอคืนเงินมัดจำ",
-      damageDispute: "จดหมายโต้แย้งค่าเสียหาย",
-      earlyTermination: "จดหมายแจ้งยกเลิกก่อนกำหนด",
+      damageDispute: "โต้แย้งค่าซ่อมแซม",
+      earlyTermination: "แจ้งยกเลิกก่อนกำหนด",
       generateButton: "สร้างจดหมาย",
       generating: "กำลังสร้าง...",
       cancel: "กลับ",
@@ -124,7 +129,7 @@ export default function TemplateForm() {
 
       if (response.data?.ok) {
         const url = response.data.urls.pdf || response.data.urls.html;
-        alert(`✅ Letter generated!\n\nView: ${url}`);
+        alert(`✅ ${language === 'th' ? 'สร้างจดหมายสำเร็จ!' : 'Letter generated!'}\n\n${language === 'th' ? 'ดู:' : 'View:'} ${url}`);
         navigate(createPageUrl("DocumentVault"));
       } else {
         throw new Error(response.data?.error || 'Generation failed');
