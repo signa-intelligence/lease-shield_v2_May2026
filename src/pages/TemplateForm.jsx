@@ -122,10 +122,12 @@ export default function TemplateForm() {
         deposit_amount: formData.deposit_amount_thb || undefined
       });
 
-      if (response.data?.success) {
+      if (response.data?.ok) {
+        const url = response.data.urls.pdf || response.data.urls.html;
+        alert(`✅ Letter generated!\n\nView: ${url}`);
         navigate(createPageUrl("DocumentVault"));
       } else {
-        throw new Error('Generation failed');
+        throw new Error(response.data?.error || 'Generation failed');
       }
     } catch (err) {
       console.error('Letter generation error:', err);
