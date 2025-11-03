@@ -4,6 +4,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 const SUBJECTS = new Set(["deposit","damages","early_termination"]);
 const sanitize = (s="") => String(s).replace(/[<&>"']/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":"&#x27;"}[m]));
 
+// --- Email validation ---
+const isValidEmail = (s) => {
+  return typeof s === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+};
+
 // --- Utility functions ---
 const fill = (tpl, vars) => tpl.replace(/{{\s*([\w.]+)\s*}}/g, (_, k) => (vars[k] != null ? String(vars[k]) : ""));
 
@@ -181,7 +186,7 @@ Deno.serve(async (req) => {
     const vars = {
       caseId: args.caseId || `standalone-${Date.now()}`,
       tenant_name: sanitize(args.tenant_name ?? userData?.full_name ?? fromCase?.user_email ?? "Tenant"),
-      landlord_name: sanitize(args.landlord_name ?? leaseData?.landlord_name ?? "Landlord"),
+      landlord_name: sanitize(args.landlord_name ?? fromCase?.landlord_name ?? leaseData?.landlord_name ?? "Landlord"),
       property_address: sanitize(args.property_address ?? leaseData?.property_address ?? fromCase?.property_address ?? ""),
       contract_ref: args.contract_ref || (
         leaseData?.start_date 
@@ -223,9 +228,6 @@ Deno.serve(async (req) => {
     // === Try to generate PDF (graceful fallback) ===
     let pdfUrl = null;
     try {
-      // Note: PDF generation not currently available in Base44 Core integrations
-      // This is a placeholder for future PDF generation capability
-      // For now, we'll continue with HTML only
       console.log('PDF generation not available - using HTML only');
     } catch (e) {
       console.error('PDF generation failed:', e);
@@ -264,6 +266,78 @@ Deno.serve(async (req) => {
       });
     }
 
+    // === Optional Email Send ===
+    const sendRequested = !!args.sendToLandlord;
+    const landlordEmail = args.landlord_email?.trim() || 
+                         fromCase?.landlord_email?.trim() || 
+                         leaseData?.landlord_email?.trim() || 
+                         null;
+    
+    let sendResult = null;
+
+    if (sendRequested) {
+      if (!landlordEmail || !isValidEmail(landlordEmail)) {
+        return Response.json({ 
+          ok: false,
+          error: 'sendToLandlord is true, but landlord email is missing or invalid' 
+        }, { status: 400 });
+      }
+
+      try {
+        // Send email via Base44 Core integration
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          from_name: vars.tenant_name || "Lease Shield",
+          to: landlordEmail,
+          subject: content.subject_en,
+          body: html
+        });
+
+        sendResult = { 
+          ok: true, 
+          to: landlordEmail,
+          sent_at: new Date().toISOString() 
+        };
+
+        // Track email delivery in case
+        if (mode === "case") {
+          const timeline = fromCase.timeline || [];
+          timeline.push({
+            timestamp: new Date().toISOString(),
+            event: 'letter_sent_to_landlord',
+            actor: 'system',
+            meta: { 
+              subject,
+              to: landlordEmail,
+              cc: fromCase.cc_emails || [],
+              html_url: htmlUrl,
+              pdf_url: pdfUrl
+            }
+          });
+
+          const letters = fromCase.letters || {};
+          letters.last_sent = {
+            subject,
+            to: landlordEmail,
+            cc: fromCase.cc_emails || [],
+            at: new Date().toISOString(),
+            messageId: null
+          };
+
+          await base44.asServiceRole.entities.Case.update(args.caseId, {
+            timeline,
+            letters
+          });
+        }
+
+      } catch (emailError) {
+        console.error('Email send failed:', emailError);
+        sendResult = { 
+          ok: false, 
+          error: emailError.message || 'Email delivery failed' 
+        };
+      }
+    }
+
     // === Return standardized response ===
     return Response.json({ 
       ok: true,
@@ -277,7 +351,8 @@ Deno.serve(async (req) => {
       case: mode === "case" ? {
         id: fromCase.id,
         status: 'ready_drafts'
-      } : null
+      } : null,
+      email: sendResult
     });
 
   } catch (error) {
