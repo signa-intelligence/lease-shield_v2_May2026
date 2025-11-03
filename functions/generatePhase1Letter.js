@@ -1,26 +1,23 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
-// --- Validation & Security ---
+//////////////////////
+// Helpers & Copy  //
+//////////////////////
 const SUBJECTS = new Set(["deposit","damages","early_termination"]);
 const sanitize = (s="") => String(s).replace(/[<&>"']/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":"&#x27;"}[m]));
-
-// --- Email validation ---
-const isValidEmail = (s) => {
-  return typeof s === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+const safeISO = (v, plusDays=14) => { 
+  try { 
+    if (v) return new Date(v).toISOString().slice(0,10);
+  } catch {} 
+  return new Date(Date.now() + plusDays * 864e5).toISOString().slice(0,10); 
 };
-
-// --- Utility functions ---
 const fill = (tpl, vars) => tpl.replace(/{{\s*([\w.]+)\s*}}/g, (_, k) => (vars[k] != null ? String(vars[k]) : ""));
 
-// --- Static content bank ---
-const SUBJECTS_CONTENT = {
+const COPY = {
   deposit: {
     subject_en: "Request for clarification on refundable deposit",
     subject_th: "ขอความชัดเจนเกี่ยวกับเงินประกันการเช่า",
-    body_en: `Dear {{landlord_name}},
-
-This note summarises the completion of the tenancy for {{property_address}} and requests an update regarding the refundable deposit of {{deposit_amount_thb}} THB. {{contract_ref}}
+    body_en: `This note summarises the completion of the tenancy for {{property_address}} and requests an update regarding the refundable deposit of {{deposit_amount}} THB. {{contract_ref}}
 
 To reconcile promptly, please provide (1) any proposed deductions with itemised reasons and supporting documents, or (2) confirmation of refund amount and transfer details. If no deductions apply, kindly confirm the return timeline.
 
@@ -28,9 +25,7 @@ We would appreciate a reply by {{request_by_date_iso}} so both sides can close t
 
 Kind regards,
 {{tenant_name}}`,
-    body_th: `เรียน {{landlord_name}},
-
-จดหมายฉบับนี้สรุปการสิ้นสุดการเช่าสำหรับ {{property_address}} และขอความคืบหน้าเกี่ยวกับการคืนเงินประกัน {{deposit_amount_thb}} บาท {{contract_ref}}
+    body_th: `จดหมายฉบับนี้สรุปการสิ้นสุดการเช่าสำหรับ {{property_address}} และขอความคืบหน้าเกี่ยวกับการคืนเงินประกัน {{deposit_amount}} บาท {{contract_ref}}
 
 เพื่อให้ปิดบัญชีได้รวดเร็ว กรุณาแจ้ง (1) รายการหักพร้อมเหตุผลและเอกสารประกอบ หรือ (2) การยืนยันจำนวนเงินที่จะคืนและรายละเอียดการโอน หากไม่มีรายการหัก กรุณาแจ้งกำหนดการโอนคืน
 
@@ -42,17 +37,13 @@ Kind regards,
   damages: {
     subject_en: "Request for itemised assessment of damages",
     subject_th: "ขอรายละเอียดการประเมินความเสียหายแบบแยกรายการ",
-    body_en: `Dear {{landlord_name}},
-
-This note concerns {{property_address}} and requests an itemised assessment for any claimed damages. {{contract_ref}} If specific items are in question, please share the list, reasons, and supporting documents/quotes.
+    body_en: `This note concerns {{property_address}} and requests an itemised assessment for any claimed damages. {{contract_ref}} If specific items are in question, please share the list, reasons, and supporting documents/quotes.
 
 If no damages apply, please confirm the final refundable amount and transfer details. We aim to reconcile this by {{request_by_date_iso}}; if another timeline is preferable, please advise.
 
 Kind regards,
 {{tenant_name}}`,
-    body_th: `เรียน {{landlord_name}},
-
-หนังสือนี้เกี่ยวกับ {{property_address}} และขอรับรายละเอียดการประเมินความเสียหายแบบแยกรายการ {{contract_ref}} หากมีรายการที่ต้องตรวจสอบ กรุณาส่งรายชื่อ เหตุผล และเอกสาร/ใบเสนอราคา
+    body_th: `หนังสือนี้เกี่ยวกับ {{property_address}} และขอรับรายละเอียดการประเมินความเสียหายแบบแยกรายการ {{contract_ref}} หากมีรายการที่ต้องตรวจสอบ กรุณาส่งรายชื่อ เหตุผล และเอกสาร/ใบเสนอราคา
 
 หากไม่มีความเสียหาย กรุณายืนยันจำนวนเงินที่จะคืนและรายละเอียดการโอน ตั้งใจปิดเรื่องภายใน {{request_by_date_iso}} หากมีกำหนดการอื่นที่เหมาะสมกว่า กรุณาแจ้งได้
 
@@ -62,17 +53,13 @@ Kind regards,
   early_termination: {
     subject_en: "Request to reconcile early termination under the lease",
     subject_th: "ขอประสานงานการยกเลิกสัญญาก่อนกำหนด",
-    body_en: `Dear {{landlord_name}},
-
-This message relates to early termination for {{property_address}}. {{contract_ref}} To close the account properly, please confirm (1) any fees specified by the contract, (2) key/possession handover steps, and (3) the final account date.
+    body_en: `This message relates to early termination for {{property_address}}. {{contract_ref}} To close the account properly, please confirm (1) any fees specified by the contract, (2) key/possession handover steps, and (3) the final account date.
 
 Our preference is to complete this by {{request_by_date_iso}}. If an alternative schedule suits you better, please let us know so we can agree a practical plan.
 
 Kind regards,
 {{tenant_name}}`,
-    body_th: `เรียน {{landlord_name}},
-
-จดหมายนี้เกี่ยวกับการยกเลิกสัญญาก่อนกำหนดของ {{property_address}} {{contract_ref}} เพื่อให้ปิดบัญชีอย่างถูกต้อง กรุณายืนยัน (1) ค่าธรรมเนียมตามสัญญา (ถ้ามี) (2) ขั้นตอนการส่งมอบกุญแจ/ทรัพย์สิน และ (3) วันที่ปิดบัญชี
+    body_th: `จดหมายนี้เกี่ยวกับการยกเลิกสัญญาก่อนกำหนดของ {{property_address}} {{contract_ref}} เพื่อให้ปิดบัญชีอย่างถูกต้อง กรุณายืนยัน (1) ค่าธรรมเนียมตามสัญญา (ถ้ามี) (2) ขั้นตอนการส่งมอบกุญแจ/ทรัพย์สิน และ (3) วันที่ปิดบัญชี
 
 ต้องการดำเนินการให้เสร็จภายใน {{request_by_date_iso}} หากมีกำหนดการอื่นที่เหมาะสมกว่า กรุณาแจ้งเพื่อจะได้วางแผนร่วมกัน
 
@@ -81,11 +68,11 @@ Kind regards,
   }
 };
 
-// --- HTML Template ---
 const TEMPLATE = `<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 @page { size: A4; margin: 20mm 18mm; }
@@ -111,9 +98,13 @@ hr { margin: 30px 0; border: 0; border-top: 1px solid #E5E7EB; }
 <body>
 <h1>{{subject_en}}</h1>
 <p class="muted">{{subject_th}}</p>
-<div class="body-text">{{body_en}}</div>
+<div class="body-text">Dear {{landlord_name}},
+
+{{body_en}}</div>
 <hr>
-<div class="body-text body-th">{{body_th}}</div>
+<div class="body-text body-th">เรียน {{landlord_name}},
+
+{{body_th}}</div>
 <div class="footer">
 <p><strong>Property:</strong> {{property_address}}</p>
 <p><strong>Contract Reference:</strong> {{contract_ref}}</p>
@@ -123,83 +114,83 @@ hr { margin: 30px 0; border: 0; border-top: 1px solid #E5E7EB; }
 </body>
 </html>`;
 
+/////////////////////////////////////////////
+// Unified generator: returns/stores .doc  //
+/////////////////////////////////////////////
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const args = await req.json();
     
-    // Early validation and mode determination
-    const mode = args.caseId ? "case" : "standalone";
-    if (!SUBJECTS.has(args.subject || "deposit")) {
+    // Validate subject
+    const subjectRaw = (args?.subject || "deposit").toLowerCase();
+    if (!SUBJECTS.has(subjectRaw)) {
       return Response.json({ 
-        ok: false,
+        ok: false, 
         error: 'Invalid subject. Use: deposit, damages, or early_termination' 
       }, { status: 400 });
     }
 
-    const subject = args.subject || "deposit";
-    const content = SUBJECTS_CONTENT[subject];
-
-    // Fetch case data if in case mode
-    const fromCase = mode === "case" 
-      ? (await base44.asServiceRole.entities.Case.filter({ id: args.caseId }))[0] 
-      : {};
+    // Determine mode
+    const mode = args?.caseId ? "case" : "standalone";
     
-    if (mode === "case" && !fromCase) {
-      return Response.json({ 
-        ok: false,
-        error: `Case not found: ${args.caseId}` 
-      }, { status: 404 });
-    }
-
-    // Fetch related lease and user data
+    // Fetch case data if in case mode
+    let fromCase = {};
     let leaseData = null;
     let userData = null;
 
-    if (mode === "case" && fromCase.lease_id) {
-      try {
-        const leases = await base44.asServiceRole.entities.Lease.filter({ id: fromCase.lease_id });
-        if (leases && leases.length > 0) leaseData = leases[0];
-      } catch (e) {
-        console.error('Could not fetch lease:', e);
+    if (mode === "case") {
+      const cases = await base44.asServiceRole.entities.Case.filter({ id: args.caseId });
+      if (!cases || cases.length === 0) {
+        return Response.json({ 
+          ok: false, 
+          error: `Case not found: ${args.caseId}` 
+        }, { status: 404 });
+      }
+      fromCase = cases[0];
+
+      // Fetch related lease
+      if (fromCase.lease_id) {
+        try {
+          const leases = await base44.asServiceRole.entities.Lease.filter({ id: fromCase.lease_id });
+          if (leases && leases.length > 0) leaseData = leases[0];
+        } catch (e) {
+          console.error('Could not fetch lease:', e);
+        }
+      }
+
+      // Fetch related user
+      if (fromCase.user_email) {
+        try {
+          const users = await base44.asServiceRole.entities.User.filter({ email: fromCase.user_email });
+          if (users && users.length > 0) userData = users[0];
+        } catch (e) {
+          console.error('Could not fetch user:', e);
+        }
       }
     }
 
-    if (mode === "case" && fromCase.user_email) {
-      try {
-        const users = await base44.asServiceRole.entities.User.filter({ email: fromCase.user_email });
-        if (users && users.length > 0) userData = users[0];
-      } catch (e) {
-        console.error('Could not fetch user:', e);
-      }
-    }
-
-    // Helper functions
-    const dateISO = (v) => { 
-      try { 
-        return v ? new Date(v).toISOString().slice(0, 10) : new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
-      } catch { 
-        return new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
-      } 
+    // Helper to get values with fallback chain
+    const get = (k, d = "") => {
+      if (args?.[k] != null) return sanitize(String(args[k]));
+      if (fromCase?.[k] != null) return sanitize(String(fromCase[k]));
+      if (leaseData?.[k] != null) return sanitize(String(leaseData[k]));
+      return d;
     };
 
-    // Build vars with smart fallbacks
+    // Build vars
     const vars = {
-      caseId: args.caseId || `standalone-${Date.now()}`,
-      tenant_name: sanitize(args.tenant_name ?? userData?.full_name ?? fromCase?.user_email ?? "Tenant"),
-      landlord_name: sanitize(args.landlord_name ?? fromCase?.landlord_name ?? leaseData?.landlord_name ?? "Landlord"),
-      property_address: sanitize(args.property_address ?? leaseData?.property_address ?? fromCase?.property_address ?? ""),
-      contract_ref: args.contract_ref || (
+      caseId: mode === "case" ? String(args.caseId) : `standalone-${Date.now()}`,
+      tenant_name: get("tenant_name") || userData?.full_name || fromCase?.user_email || "Tenant",
+      landlord_name: get("landlord_name") || "Landlord",
+      property_address: get("property_address") || "",
+      contract_ref: get("contract_ref") || (
         leaseData?.start_date 
           ? `Lease dated ${new Date(leaseData.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` 
           : "Lease Agreement"
       ),
-      request_by_date_iso: dateISO(args.request_by_date_iso ?? fromCase?.sla?.followup_due),
-      deposit_amount_thb: Number.isFinite(Number(args.deposit_amount ?? fromCase?.dispute_amount ?? leaseData?.deposit_amount)) 
-        ? String(args.deposit_amount ?? fromCase?.dispute_amount ?? leaseData?.deposit_amount) 
-        : "",
-      subject_en: content.subject_en,
-      subject_th: content.subject_th
+      deposit_amount: get("deposit_amount") || fromCase?.dispute_amount || leaseData?.deposit_amount || "",
+      request_by_date_iso: safeISO(args?.request_by_date_iso || fromCase?.sla?.followup_due, 14)
     };
 
     // Standalone mode validation
@@ -210,64 +201,62 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Fill body templates
-    vars.body_en = fill(content.body_en, vars);
-    vars.body_th = fill(content.body_th, vars);
+    // Compose final bodies
+    const copy = COPY[subjectRaw];
+    const final = {
+      subject_en: copy.subject_en,
+      subject_th: copy.subject_th,
+      body_en: fill(copy.body_en, vars),
+      body_th: fill(copy.body_th, vars),
+      ...vars
+    };
 
-    // Generate HTML
-    const html = fill(TEMPLATE, vars);
+    // Build HTML and harden UTF-8 for Word
+    const UTF8_BOM = "\uFEFF";
+    const html = fill(TEMPLATE, final);
+    const htmlUtf8 = UTF8_BOM + html;
 
-    // ---- WORD-ONLY SAVE (UTF-8 hardening for Thai) ----
-    const HTML_UTF8_BOM = "\uFEFF";
-    const htmlUtf8 = HTML_UTF8_BOM + html.replace(
-      /<head>/i,
-      `<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta charset="utf-8">`
-    );
-
-    // File paths
+    // File naming
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const caseIdShort = args.caseId ? args.caseId.slice(0, 8) : Date.now();
-    const baseName = `LS-${caseIdShort}-${subject}-${stamp}`;
+    const caseIdShort = mode === "case" ? args.caseId.slice(0, 8) : Date.now();
+    const baseName = `LS-${caseIdShort}-${subjectRaw}-${stamp}`;
 
-    // Save as .doc (Word format)
+    // Save .doc (Word format with UTF-8)
     const docBlob = new Blob([htmlUtf8], { type: 'application/msword; charset=utf-8' });
     const docFile = new File([docBlob], `${baseName}.doc`);
     const { file_url: docUrl } = await base44.integrations.Core.UploadFile({ file: docFile });
 
-    // Also save .html for browser preview
+    // Save .html for browser preview
     const htmlBlob = new Blob([htmlUtf8], { type: 'text/html; charset=utf-8' });
     const htmlFile = new File([htmlBlob], `${baseName}.html`);
     const { file_url: htmlUrl } = await base44.integrations.Core.UploadFile({ file: htmlFile });
 
-    // === Save to documents ===
+    // Save to Document entity
     const doc = await base44.asServiceRole.entities.Document.create({
       type: 'letter',
       file_url: docUrl,
-      label: `${content.subject_en}${args.caseId ? ` - Case ${caseIdShort}` : ''}`,
+      label: `${copy.subject_en}${mode === "case" ? ` - Case ${caseIdShort}` : ''}`,
       html_content: html
     });
 
-    // === Update case if in case mode ===
+    // Update case if in case mode
     if (mode === "case") {
       const timeline = fromCase.timeline || [];
       timeline.push({
         timestamp: new Date().toISOString(),
-        event: `letter_generated_${subject}`,
+        event: `letter_generated_${subjectRaw}`,
         actor: 'system',
         meta: { 
           html_url: htmlUrl, 
           doc_url: docUrl,
-          subject 
+          subject: subjectRaw 
         }
       });
 
       const letters = fromCase.letters || {};
-      // Store BOTH URLs for flexibility
-      letters[`${subject}_url`] = docUrl;           // Primary = Word file
-      letters[`${subject}_html_url`] = htmlUrl;     // HTML preview
-      letters.v1_url = docUrl;                       // Legacy compatibility
+      letters[`${subjectRaw}_url`] = docUrl;           // Primary = Word file
+      letters[`${subjectRaw}_html_url`] = htmlUrl;     // HTML preview
+      letters.v1_url = docUrl;                          // Legacy compatibility
 
       await base44.asServiceRole.entities.Case.update(args.caseId, {
         status: 'ready_drafts',
@@ -276,83 +265,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // === Optional Email Send ===
-    const sendRequested = !!args.sendToLandlord;
-    const landlordEmail = args.landlord_email?.trim() || 
-                         fromCase?.landlord_email?.trim() || 
-                         leaseData?.landlord_email?.trim() || 
-                         null;
-    
-    let sendResult = null;
-
-    if (sendRequested) {
-      if (!landlordEmail || !isValidEmail(landlordEmail)) {
-        return Response.json({ 
-          ok: false,
-          error: 'sendToLandlord is true, but landlord email is missing or invalid' 
-        }, { status: 400 });
-      }
-
-      try {
-        // Send email via Base44 Core integration
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          from_name: vars.tenant_name || "Lease Shield",
-          to: landlordEmail,
-          subject: content.subject_en,
-          body: html
-        });
-
-        sendResult = { 
-          ok: true, 
-          to: landlordEmail,
-          sent_at: new Date().toISOString() 
-        };
-
-        // Track email delivery in case
-        if (mode === "case") {
-          const timeline = fromCase.timeline || [];
-          timeline.push({
-            timestamp: new Date().toISOString(),
-            event: 'letter_sent_to_landlord',
-            actor: 'system',
-            meta: { 
-              subject,
-              to: landlordEmail,
-              cc: fromCase.cc_emails || [],
-              html_url: htmlUrl,
-              doc_url: docUrl
-            }
-          });
-
-          const letters = fromCase.letters || {};
-          letters.last_sent = {
-            subject,
-            to: landlordEmail,
-            cc: fromCase.cc_emails || [],
-            at: new Date().toISOString(),
-            messageId: null
-          };
-
-          await base44.asServiceRole.entities.Case.update(args.caseId, {
-            timeline,
-            letters
-          });
-        }
-
-      } catch (emailError) {
-        console.error('Email send failed:', emailError);
-        sendResult = { 
-          ok: false, 
-          error: emailError.message || 'Email delivery failed' 
-        };
-      }
-    }
-
-    // === Return standardized response ===
+    // Return success response
     return Response.json({ 
       ok: true,
       mode,
-      subject,
+      subject: subjectRaw,
       urls: {
         doc: docUrl,
         html: htmlUrl
@@ -361,8 +278,7 @@ Deno.serve(async (req) => {
       case: mode === "case" ? {
         id: fromCase.id,
         status: 'ready_drafts'
-      } : null,
-      email: sendResult
+      } : null
     });
 
   } catch (error) {
