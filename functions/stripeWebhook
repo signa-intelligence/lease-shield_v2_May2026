@@ -23,16 +23,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing signature or webhook secret' }, { status: 400 });
     }
 
+    // CRITICAL: Get raw body as text for signature verification
     const body = await req.text();
     console.log('Body length:', body.length);
+    console.log('Body preview:', body.substring(0, 100));
     
     let event;
     try {
-      // FIXED: Use async version for Deno compatibility
-      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+      // Use constructEvent (synchronous) with the text body
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
       console.log('✅ Event verified:', event.type);
     } catch (err) {
       console.error('❌ Signature verification failed:', err.message);
+      console.error('Error type:', err.type);
+      console.error('Error code:', err.code);
       return Response.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
     }
 
