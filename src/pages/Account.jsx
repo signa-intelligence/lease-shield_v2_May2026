@@ -7,11 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+
 
 const PLAN_DETAILS = [
   {
@@ -118,6 +127,10 @@ export default function Account() {
   const [subscribing, setSubscribing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [billingInterval, setBillingInterval] = useState('monthly');
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelFeedback, setCancelFeedback] = useState('');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -209,6 +222,38 @@ export default function Account() {
       alert('Failed to export data. Please try again or contact support.');
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!cancelReason) {
+      alert(language === 'th' ? 'กรุณาเลือกเหตุผลในการยกเลิก' : 'Please select a reason for cancellation');
+      return;
+    }
+
+    setCancelling(true);
+    try {
+      const response = await base44.functions.invoke('cancelSubscription', {
+        reason: cancelReason,
+        feedback: cancelFeedback
+      });
+
+      if (response.data?.success) {
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        setShowCancelDialog(false);
+        setCancelReason('');
+        setCancelFeedback('');
+        alert(language === 'th' 
+          ? 'การยกเลิกสำเร็จ คุณจะยังคงสามารถเข้าถึงฟีเจอร์ได้จนถึงวันที่ต่ออายุ' 
+          : 'Cancellation successful. You\'ll keep access until your renewal date.');
+      }
+    } catch (error) {
+      console.error('Cancellation error:', error);
+      alert(language === 'th' 
+        ? 'ไม่สามารถยกเลิกได้ กรุณาลองอีกครั้งหรือติดต่อฝ่ายสนับสนุน' 
+        : 'Failed to cancel. Please try again or contact support.');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -306,7 +351,30 @@ export default function Account() {
       startPlan: "Start",
       processing: "Processing...",
       logout: "Logout",
-      notProvided: "Not provided"
+      notProvided: "Not provided",
+      manageSubscription: "Manage Subscription",
+      renewsOn: "Renews on",
+      cancelPlan: "Change or Cancel Plan",
+      cancelDialogTitle: "Cancel Your Subscription?",
+      cancelDialogDesc: "We're sorry to see you go. Help us improve by telling us why you're leaving.",
+      cancelReason: "Reason for Cancellation",
+      selectReason: "Select a reason",
+      reasonTooExpensive: "Too expensive",
+      reasonNotUsingEnough: "Not using it enough",
+      reasonFoundAlternative: "Found a better alternative",
+      reasonMissingFeatures: "Missing features I need",
+      reasonTechnicalIssues: "Technical issues",
+      reasonOther: "Other",
+      additionalFeedback: "Additional Feedback (Optional)",
+      feedbackPlaceholder: "Help us understand what we could do better...",
+      keepSubscription: "Keep My Subscription",
+      confirmCancel: "Confirm Cancellation",
+      cancelling: "Processing...",
+      whatYoullLose: "What you'll lose",
+      downgradeNote: "Your subscription will remain active until {date}. After that, you'll be downgraded to the Free plan.",
+      scheduledCancellation: "Scheduled for Cancellation",
+      cancelScheduledFor: "Cancels on",
+      reactivate: "Reactivate Subscription"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -374,11 +442,37 @@ export default function Account() {
       startPlan: "เริ่มต้น",
       processing: "กำลังดำเนินการ...",
       logout: "ออกจากระบบ",
-      notProvided: "ไม่ได้ระบุ"
+      notProvided: "ไม่ได้ระบุ",
+      manageSubscription: "จัดการการสมัครสมาชิก",
+      renewsOn: "ต่ออายุเมื่อ",
+      cancelPlan: "เปลี่ยนแปลงหรือยกเลิกแผน",
+      cancelDialogTitle: "ยกเลิกการสมัครสมาชิก?",
+      cancelDialogDesc: "เราเสียใจที่เห็นคุณจากไป ช่วยบอกเราว่าทำไมคุณถึงออกไป",
+      cancelReason: "เหตุผลในการยกเลิก",
+      selectReason: "เลือกเหตุผล",
+      reasonTooExpensive: "แพงเกินไป",
+      reasonNotUsingEnough: "ไม่ได้ใช้บ่อยพอ",
+      reasonFoundAlternative: "พบทางเลือกที่ดีกว่า",
+      reasonMissingFeatures: "ขาดฟีเจอร์ที่ต้องการ",
+      reasonTechnicalIssues: "มีปัญหาทางเทคนิค",
+      reasonOther: "อื่นๆ",
+      additionalFeedback: "ข้อเสนอแนะเพิ่มเติม (ไม่บังคับ)",
+      feedbackPlaceholder: "ช่วยบอกเราว่าเราสามารถทำอะไรได้ดีขึ้น...",
+      keepSubscription: "เก็บการสมัครสมาชิกของฉันไว้",
+      confirmCancel: "ยืนยันการยกเลิก",
+      cancelling: "กำลังดำเนินการ...",
+      whatYoullLose: "สิ่งที่คุณจะเสีย",
+      downgradeNote: "การสมัครสมาชิกของคุณจะยังคงใช้งานได้จนถึง {date} หลังจากนั้นคุณจะถูกเปลี่ยนเป็นแผนฟรี",
+      scheduledCancellation: "กำหนดการยกเลิกแล้ว",
+      cancelScheduledFor: "จะยกเลิกเมื่อ",
+      reactivate: "เปิดใช้งานการสมัครสมาชิกอีกครั้ง"
     }
   };
 
   const strings = t[language];
+
+  const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
+  const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
@@ -868,7 +962,7 @@ export default function Account() {
             </CardContent>
           </Card>
 
-          {/* Current Plan Card */}
+          {/* Current Plan Card with Manage Subscription */}
           <Card className="border-none shadow-xl overflow-hidden" style={{
             backgroundColor: colors.cardBg
           }}>
@@ -885,6 +979,20 @@ export default function Account() {
               <div className="text-center mb-4">
                 <div className="mb-3">
                   <PlanBadge tier={currentPlanTier} />
+                  {isScheduledForCancellation && (
+                    <div className="mt-2">
+                      <Badge style={{
+                        backgroundColor: isDarkMode ? '#EF444430' : '#FEE2E2',
+                        color: '#EF4444',
+                        border: isDarkMode ? '1px solid #EF444450' : '1px solid #FECACA',
+                        padding: '6px 12px',
+                        fontWeight: 'bold',
+                        borderRadius: '6px'
+                      }}>
+                        {strings.scheduledCancellation}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
                 <p className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
                   {isFree ? strings.freePlanName : (PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly ? `฿${PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly}` : '—')}
@@ -894,9 +1002,9 @@ export default function Account() {
                     {user.billing_interval === 'annual' ? strings.billedAnnually : strings.billedMonthly}
                   </p>
                 )}
-                {user?.subscription_status === 'active' && user?.plan_renews_at && (
+                {user?.plan_renews_at && (
                   <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
-                    {strings.renews} {new Date(user.plan_renews_at).toLocaleDateString()}
+                    {isScheduledForCancellation ? strings.cancelScheduledFor : strings.renewsOn} {new Date(user.plan_renews_at).toLocaleDateString()}
                   </p>
                 )}
               </div>
@@ -936,7 +1044,7 @@ export default function Account() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #0C3B2E' }}>
                     <p className="text-sm flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <CheckCircle2 className="w-4 h-4 text-ls-forest" />
@@ -951,6 +1059,38 @@ export default function Account() {
                       </p>
                     </div>
                   )}
+                  
+                  {/* Manage Subscription Button */}
+                  <button
+                    onClick={() => setShowCancelDialog(true)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      backgroundColor: 'transparent',
+                      color: colors.textPrimary,
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      border: `2px solid ${colors.borderColor}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = colors.hoverBg;
+                      e.target.style.borderColor = '#EF4444';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = 'transparent';
+                      e.target.style.borderColor = colors.borderColor;
+                    }}
+                  >
+                    <Settings className="w-4 h-4" />
+                    {strings.cancelPlan}
+                  </button>
                 </div>
               )}
             </CardContent>
@@ -1237,6 +1377,163 @@ export default function Account() {
             colors={colors} // Pass colors to NotificationSettings if it needs to adapt
           />
         </div>
+
+        {/* Cancel Subscription Dialog */}
+        <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <DialogContent className="sm:max-w-2xl" style={{
+            backgroundColor: colors.cardBg,
+            borderColor: colors.borderColor,
+            color: colors.textPrimary // Ensure text color is set for dialog content
+          }}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3 text-xl" style={{ color: colors.textPrimary }}>
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <XCircle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  {strings.cancelDialogTitle}
+                  <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
+                    {strings.cancelDialogDesc}
+                  </p>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6 mt-4">
+              {/* What You'll Lose */}
+              {currentPlan && (
+                <div className="p-4 rounded-lg" style={{
+                  backgroundColor: '#FEE2E2',
+                  border: '2px solid #FECACA'
+                }}>
+                  <p className="font-semibold text-red-900 mb-3">{strings.whatYoullLose}:</p>
+                  <ul className="space-y-2 text-sm text-red-800">
+                    {currentPlan.benefits.filter(b => !b.startsWith('Everything')).map((benefit, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Cancellation Form */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="cancelReason" style={{ color: colors.textPrimary }}>
+                    {strings.cancelReason} <span className="text-red-500">*</span>
+                  </Label>
+                  <Select value={cancelReason} onValueChange={setCancelReason}>
+                    <SelectTrigger style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}>
+                      <SelectValue placeholder={strings.selectReason} />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                      <SelectItem value="too_expensive">{strings.reasonTooExpensive}</SelectItem>
+                      <SelectItem value="not_using">{strings.reasonNotUsingEnough}</SelectItem>
+                      <SelectItem value="found_alternative">{strings.reasonFoundAlternative}</SelectItem>
+                      <SelectItem value="missing_features">{strings.reasonMissingFeatures}</SelectItem>
+                      <SelectItem value="technical_issues">{strings.reasonTechnicalIssues}</SelectItem>
+                      <SelectItem value="other">{strings.reasonOther}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="cancelFeedback" style={{ color: colors.textPrimary }}>
+                    {strings.additionalFeedback}
+                  </Label>
+                  <Textarea
+                    id="cancelFeedback"
+                    value={cancelFeedback}
+                    onChange={(e) => setCancelFeedback(e.target.value)}
+                    placeholder={strings.feedbackPlaceholder}
+                    rows={4}
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary,
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Important Note */}
+              <div className="p-4 rounded-lg" style={{
+                backgroundColor: isDarkMode ? '#2A2D30' : '#F3F4F6',
+                border: `1px solid ${colors.borderColor}`
+              }}>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  {strings.downgradeNote.replace('{date}', user?.plan_renews_at ? new Date(user.plan_renews_at).toLocaleDateString() : '')}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCancelDialog(false)}
+                  disabled={cancelling}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    border: 'none',
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF',
+                    cursor: cancelling ? 'not-allowed' : 'pointer',
+                    opacity: cancelling ? 0.5 : 1,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => !cancelling && (e.target.style.backgroundColor = '#0a2f25')}
+                  onMouseLeave={(e) => !cancelling && (e.target.style.backgroundColor = '#0C3B2E')}
+                >
+                  {strings.keepSubscription}
+                </button>
+                <button
+                  onClick={handleCancelSubscription}
+                  disabled={cancelling || !cancelReason}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    border: 'none',
+                    backgroundColor: '#EF4444',
+                    color: '#FFFFFF',
+                    cursor: (cancelling || !cancelReason) ? 'not-allowed' : 'pointer',
+                    opacity: (cancelling || !cancelReason) ? 0.5 : 1,
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                  onMouseEnter={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#DC2626')}
+                  onMouseLeave={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#EF4444')}
+                >
+                  {cancelling ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {strings.cancelling}
+                    </>
+                  ) : (
+                    strings.confirmCancel
+                  )}
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Prevention-First Subscription Positioning Banner */}
         <div style={{
