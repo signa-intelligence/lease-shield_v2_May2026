@@ -118,6 +118,15 @@ export default function TemplateForm() {
     setError(null);
 
     try {
+      console.log('Calling generatePhase1Letter with:', {
+        subject: formData.subject,
+        tenant_name: formData.tenant_name,
+        landlord_name: formData.landlord_name,
+        property_address: formData.property_address || undefined,
+        contract_ref: formData.contract_ref || undefined,
+        deposit_amount: formData.deposit_amount_thb || undefined
+      });
+
       const response = await base44.functions.invoke('generatePhase1Letter', {
         subject: formData.subject,
         tenant_name: formData.tenant_name,
@@ -127,17 +136,28 @@ export default function TemplateForm() {
         deposit_amount: formData.deposit_amount_thb || undefined
       });
 
+      console.log('Response received:', response);
+
       if (response.data?.ok) {
-        const url = response.data.urls.pdf || response.data.urls.html;
-        alert(`✅ ${language === 'th' ? 'สร้างจดหมายสำเร็จ!' : 'Letter generated!'}\n\n${language === 'th' ? 'ดู:' : 'View:'} ${url}`);
-        navigate(createPageUrl("DocumentVault"));
+        const url = response.data.urls?.html || response.data.urls?.pdf;
+        
+        if (url) {
+          // Success - navigate immediately without blocking alert
+          setTimeout(() => {
+            navigate(createPageUrl("DocumentVault"));
+          }, 100);
+          
+          // Show success message
+          window.open(url, '_blank');
+        } else {
+          throw new Error('No URL in response');
+        }
       } else {
-        throw new Error(response.data?.error || 'Generation failed');
+        throw new Error(response.data?.error || 'Generation failed - no ok flag');
       }
     } catch (err) {
       console.error('Letter generation error:', err);
-      setError(strings.errorGenerationFailed);
-    } finally {
+      setError(err.message || strings.errorGenerationFailed);
       setGenerating(false);
     }
   };
@@ -158,6 +178,9 @@ export default function TemplateForm() {
             </h3>
             <p style={{ color: colors.textSecondary }}>
               {language === 'th' ? 'กำลังสร้างจดหมายของคุณ...' : 'Creating your letter...'}
+            </p>
+            <p className="text-xs mt-4" style={{ color: colors.textSecondary }}>
+              {language === 'th' ? 'กรุณารอสักครู่...' : 'Please wait...'}
             </p>
           </CardContent>
         </Card>
