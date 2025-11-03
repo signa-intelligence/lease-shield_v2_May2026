@@ -21,7 +21,7 @@ import {
   Shield,
   Search,
   Filter,
-  Loader2 // Added Loader2 import
+  Loader2 
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -46,7 +46,7 @@ export default function OpsConsole() {
   const [actionMode, setActionMode] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [generatingLetters, setGeneratingLetters] = useState(null); // Added new state
+  const [generatingLetters, setGeneratingLetters] = useState(null); 
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -157,21 +157,21 @@ export default function OpsConsole() {
   const handleGenerateLetters = async (caseItem) => {
     setGeneratingLetters(caseItem.id);
     try {
-      // Use the Phase 1 engine directly with caseId
-      const response = await base44.functions.invoke('letters.generate.phase1', {
+      // Use generatePhase1Letter with caseId for case-based generation
+      const response = await base44.functions.invoke('generatePhase1Letter', {
         caseId: caseItem.id,
         subject: caseItem.type || 'deposit'
       });
 
-      if (response.data?.success) {
+      if (response.data?.ok) {
         queryClient.invalidateQueries({ queryKey: ['allCases'] });
         alert('Letter generated successfully!');
       } else {
-        throw new Error('Generation failed');
+        throw new Error(response.data?.error || 'Generation failed');
       }
     } catch (error) {
       console.error('Letter generation failed:', error);
-      alert('Failed to generate letter. Please try again.');
+      alert('Failed to generate letter: ' + (error.message || 'Please try again'));
     } finally {
       setGeneratingLetters(null);
     }
