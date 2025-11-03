@@ -1,104 +1,74 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
-// Decode HTML entities properly for Deno environment
-function decodeHTMLEntities(text: string): string {
-  if (typeof text !== 'string') {
-    return text;
-  }
-
-  // A basic HTML entity decoder for common entities, and numeric/hex references.
-  // Note: This does not cover all named entities beyond the basic 5 (&amp;, &lt;, &gt;, &quot;, &apos;).
-  let decodedText = text;
-
-  // Decode named entities
-  decodedText = decodedText.replace(/&amp;/g, '&');
-  decodedText = decodedText.replace(/&lt;/g, '<');
-  decodedText = decodedText.replace(/&gt;/g, '>');
-  decodedText = decodedText.replace(/&quot;/g, '"');
-  decodedText = decodedText.replace(/&#39;/g, "'"); // Numeric for apostrophe
-  decodedText = decodedText.replace(/&apos;/g, "'"); // Named for apostrophe
-
-  // Decode numeric character references (e.g., &#123;)
-  decodedText = decodedText.replace(/&#(\d+);/g, (match, dec) => {
+// Properly decode HTML entities in Deno
+function decodeHTML(html) {
+  if (!html) return '';
+  
+  // Decode numeric entities (&#3626; format)
+  let text = html.replace(/&#(\d+);/g, (match, dec) => {
     return String.fromCharCode(parseInt(dec, 10));
   });
-
-  // Decode hexadecimal character references (e.g., &#xAB;)
-  decodedText = decodedText.replace(/&#x([0-9a-fA-F]+);/g, (match, hex) => {
+  
+  // Decode hex entities (&#x0E2A; format)
+  text = text.replace(/&#x([0-9A-Fa-f]+);/g, (match, hex) => {
     return String.fromCharCode(parseInt(hex, 16));
   });
-
-  return decodedText;
+  
+  // Decode named entities
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&apos;/g, "'");
+  text = text.replace(/&lt;/g, '<');
+  text = text.replace(/&gt;/g, '>');
+  text = text.replace(/&amp;/g, '&');
+  
+  return text;
 }
 
-const LETTER_WRITER_PROMPT = `You are a professional letter writer for rental disputes in Thailand.
+const LETTER_PROMPT = `You generate professional bilingual letters for Thai rental disputes.
 
-Generate ONE professional, bilingual letter (English + Thai) based on the case details provided.
+OUTPUT RULES:
+1. Return ONLY valid JSON
+2. Use ACTUAL Thai Unicode characters - DO NOT use HTML entities
+3. Example of CORRECT Thai: "สวัสดี"
+4. Example of WRONG Thai: "&#3626;&#3623;&#3633;&#3626;&#3604;&#3637;"
+5. Each English paragraph must have a matching Thai paragraph
 
-CRITICAL RULES:
-1. Output ONLY valid JSON - no markdown, no explanations
-2. English and Thai paragraphs must be matched 1:1
-3. Use proper UTF-8 Thai characters (not HTML entities)
-4. Keep it professional, neutral, and factual
-5. 150-250 words in English (Thai should mirror)
-
-OUTPUT FORMAT (strict JSON):
+JSON FORMAT:
 {
   "subject_en": "Request for Deposit Return",
   "subject_th": "ขอคืนเงินประกันการเช่า",
-  "body_en": [
-    "Dear [Landlord Name],",
-    "I am writing to formally request...",
-    "Thank you for your attention to this matter."
-  ],
-  "body_th": [
-    "เรียนคุณ [ชื่อเจ้าของบ้าน]",
-    "ข้าพเจ้าเขียนจดหมายฉบับนี้เพื่อขอ...",
-    "ขอบคุณสำหรับความสนใจในเรื่องนี้"
-  ]
-}
-
-EXAMPLE based on input:
-Tenant: John, Landlord: Jane, Property: 123 Main St, Deposit: 10000 THB
-{
-  "subject_en": "Formal Request for Security Deposit Return",
-  "subject_th": "ขอคืนเงินประกันการเช่าอย่างเป็นทางการ",
-  "body_en": [
-    "Dear Jane,",
-    "I am writing to formally request the return of my security deposit of ฿10,000 for the property at 123 Main St.",
-    "As per our lease agreement, I vacated the property on the agreed date and returned the keys in good condition.",
-    "I would appreciate your prompt attention to this matter and look forward to receiving the deposit within 14 days.",
-    "Please feel free to contact me if you need any clarification.",
-    "Best regards,",
-    "John"
-  ],
-  "body_th": [
-    "เรียนคุณเจน",
-    "ข้าพเจ้าเขียนจดหมายฉบับนี้เพื่อขอคืนเงินประกันการเช่าจำนวน ฿10,000 สำหรับทรัพย์สินที่ 123 Main St",
-    "ตามสัญญาเช่า ข้าพเจ้าได้ย้ายออกจากทรัพย์สินในวันที่ตกลงกันและคืนกุญแจในสภาพดี",
-    "ข้าพเจ้าจะขอบคุณหากท่านให้ความสนใจในเรื่องนี้อย่างรวดเร็วและหวังว่าจะได้รับเงินประกันภายใน 14 วัน",
-    "โปรดติดต่อข้าพเจ้าหากท่านต้องการคำชี้แจงเพิ่มเติม",
-    "ขอแสดงความนับถือ",
-    "จอห์น"
-  ]
+  "body_en": ["Para 1 in English", "Para 2 in English"],
+  "body_th": ["ย่อหน้าที่ 1 เป็นภาษาไทย", "ย่อหน้าที่ 2 เป็นภาษาไทย"]
 }`;
 
-// Simple HTML template for one letter
-const getLetterHTML = (letter, caseInfo) => {
+function getLetterHTML(letter, caseInfo) {
   const today = new Date().toISOString().split('T')[0];
-  const year = new Date().getFullYear();
+  
+  // Decode any HTML entities in the letter data
+  const subjectEn = decodeHTML(letter.subject_en || 'Letter');
+  const subjectTh = decodeHTML(letter.subject_th || '');
+  const bodyEn = (letter.body_en || []).map(p => decodeHTML(p));
+  const bodyTh = (letter.body_th || []).map(p => decodeHTML(p));
+  
+  // Build paragraphs
+  const paragraphs = bodyEn.map((enPara, i) => {
+    const thPara = bodyTh[i] || '';
+    return `
+      <p class="en">${enPara}</p>
+      <p class="th">${thPara}</p>
+    `;
+  }).join('');
   
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>${letter.subject_en || 'Letter from Lease Shield'}</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${subjectEn}</title>
 <style>
   @page { size: A4; margin: 20mm; }
   body {
-    font-family: Inter, "Helvetica Neue", Arial, "Noto Sans Thai", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     line-height: 1.6;
     color: #111;
     max-width: 800px;
@@ -114,7 +84,6 @@ const getLetterHTML = (letter, caseInfo) => {
     font-size: 24px;
     font-weight: 700;
     color: #0C3B2E;
-    margin: 0;
   }
   .date {
     color: #666;
@@ -123,29 +92,24 @@ const getLetterHTML = (letter, caseInfo) => {
   }
   h1 {
     color: #0C3B2E;
-    font-size: 20px;
+    font-size: 22px;
     margin: 20px 0 10px;
   }
   .thai {
-    font-family: "Noto Sans Thai", "TH Sarabun New", sans-serif;
+    font-family: "Noto Sans Thai", "Sarabun", "Leelawadee UI", sans-serif;
     color: #666;
-    font-size: 16px;
+    font-size: 18px;
     margin-bottom: 30px;
   }
-  .section {
-    margin: 15px 0;
-  }
-  .section p {
-    margin: 10px 0;
-  }
   .en {
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    font-size: 15px;
   }
   .th {
-    font-family: "Noto Sans Thai", "TH Sarabun New", sans-serif;
+    font-family: "Noto Sans Thai", "Sarabun", "Leelawadee UI", sans-serif;
     color: #555;
-    font-size: 14px;
-    margin-bottom: 15px;
+    font-size: 15px;
+    margin-bottom: 20px;
   }
   .footer {
     margin-top: 40px;
@@ -163,28 +127,24 @@ const getLetterHTML = (letter, caseInfo) => {
     ${caseInfo.caseId ? `<div class="date">Case: ${caseInfo.caseId.slice(0, 8)}</div>` : ''}
   </div>
 
-  <h1>${letter.subject_en}</h1>
-  <p class="thai">${letter.subject_th}</p>
+  <h1>${subjectEn}</h1>
+  <p class="thai">${subjectTh}</p>
 
-  <div class="section">
-    ${letter.body_en.map((para, i) => `
-      <p class="en">${para}</p>
-      ${letter.body_th[i] ? `<p class="th">${letter.body_th[i]}</p>` : ''}
-    `).join('')}
+  <div class="content">
+    ${paragraphs}
   </div>
 
   <div class="footer">
-    <p><strong>Property:</strong> ${caseInfo.property_address}</p>
+    <p><strong>Property:</strong> ${decodeHTML(caseInfo.property_address || 'N/A')}</p>
     ${caseInfo.deposit_amount_thb ? `<p><strong>Deposit:</strong> ฿${caseInfo.deposit_amount_thb.toLocaleString()}</p>` : ''}
     <p style="margin-top: 15px; font-style: italic;">
-      This letter is generated by Lease Shield for documentation purposes only. 
-      It does not constitute legal advice.
+      This letter is for documentation purposes only and does not constitute legal advice.
     </p>
-    <p style="margin-top: 5px;">© ${year} Lease Shield</p>
+    <p>© ${new Date().getFullYear()} Lease Shield</p>
   </div>
 </body>
 </html>`;
-};
+}
 
 Deno.serve(async (req) => {
   try {
@@ -200,7 +160,7 @@ Deno.serve(async (req) => {
       caseId,
       tenant_name = "Tenant",
       landlord_name = "Landlord", 
-      property_address = "the rented property",
+      property_address = "the property",
       contract_ref = "Lease Agreement",
       deposit_amount_thb,
       dispute_type = "deposit",
@@ -226,7 +186,7 @@ Deno.serve(async (req) => {
     );
     
     if (existingLetter) {
-      console.log('Letter already exists for this case');
+      console.log('Letter already exists');
       return Response.json({
         success: true,
         caseId,
@@ -236,36 +196,32 @@ Deno.serve(async (req) => {
     }
 
     const isTemporaryCase = caseId.startsWith('temp-');
-
-    // Build simple, clear prompt
-    const factsText = facts.length > 0 ? facts.join('. ') : 'Tenant moved out and returned keys as agreed.';
+    const factsText = facts.length > 0 ? facts.join('. ') : 'Tenant vacated and returned keys as agreed.';
     const deadline = request_by_date_iso || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    const promptText = `Generate a professional bilingual letter for this rental dispute:
+    const userPrompt = `Write ONE professional letter for this case:
 
-CASE DETAILS:
-- Tenant Name: ${tenant_name}
-- Landlord Name: ${landlord_name}
-- Property: ${property_address}
-- Dispute: ${dispute_type}
-- Deposit Amount: ${deposit_amount_thb ? `฿${deposit_amount_thb}` : 'N/A'}
-- Key Facts: ${factsText}
-- Response Deadline: ${deadline}
-- Tone: ${tone}
+Tenant: ${tenant_name}
+Landlord: ${landlord_name}
+Property: ${property_address}
+Dispute: ${dispute_type}
+${deposit_amount_thb ? `Deposit: ฿${deposit_amount_thb}` : ''}
+Facts: ${factsText}
+Deadline: ${deadline}
 
-Generate ONE letter requesting resolution. Be polite, factual, and professional.`;
+CRITICAL: Output Thai text as UNICODE characters (สวัสดี) NOT HTML entities (&#xxxx;)`;
 
     console.log('Calling LLM...');
     
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `${LETTER_WRITER_PROMPT}\n\n${promptText}`,
+      prompt: `${LETTER_PROMPT}\n\n${userPrompt}`,
       response_json_schema: {
         type: "object",
         properties: {
           subject_en: { type: "string" },
           subject_th: { type: "string" },
-          body_en: { type: "array", items: { type: "string" }, minItems: 3 },
-          body_th: { type: "array", items: { type: "string" }, minItems: 3 }
+          body_en: { type: "array", items: { type: "string" } },
+          body_th: { type: "array", items: { type: "string" } }
         },
         required: ["subject_en", "subject_th", "body_en", "body_th"]
       }
@@ -273,46 +229,21 @@ Generate ONE letter requesting resolution. Be polite, factual, and professional.
 
     console.log('LLM response received');
 
-    // Validate response
-    if (!result || typeof result !== 'object') {
-      throw new Error('Invalid LLM response format');
+    // Validate
+    if (!result || !result.subject_en || !result.body_en || result.body_en.length === 0) {
+      throw new Error('Invalid LLM response');
     }
-
-    if (!result.subject_en || !result.subject_th) {
-      throw new Error('Missing subject lines');
-    }
-
-    if (!Array.isArray(result.body_en) || result.body_en.length === 0) {
-      throw new Error('Invalid body_en: must be non-empty array');
-    }
-
-    if (!Array.isArray(result.body_th) || result.body_th.length === 0) {
-      throw new Error('Invalid body_th: must be non-empty array');
-    }
-
-    // Decode HTML entities from LLM response to ensure proper display
-    // Although the prompt asks for UTF-8, LLMs can sometimes output entities.
-    result.subject_en = decodeHTMLEntities(result.subject_en);
-    result.subject_th = decodeHTMLEntities(result.subject_th);
-    result.body_en = result.body_en.map(p => decodeHTMLEntities(p));
-    result.body_th = result.body_th.map(p => decodeHTMLEntities(p));
-
-    console.log('Letter validation passed');
 
     // Generate HTML
-    const caseInfo = {
+    const htmlContent = getLetterHTML(result, {
       caseId,
       property_address,
       deposit_amount_thb
-    };
+    });
 
-    const htmlContent = getLetterHTML(result, caseInfo);
-
-    // Upload
-    const encoder = new TextEncoder();
-    const htmlBytes = encoder.encode(htmlContent);
-    const blob = new Blob([htmlBytes], { type: 'text/html; charset=utf-8' });
-    const file = new File([blob], `letter_${caseId}.html`, { type: 'text/html; charset=utf-8' });
+    // Upload with explicit UTF-8 encoding
+    const htmlBlob = new Blob([htmlContent], { type: 'text/html; charset=utf-8' });
+    const file = new File([htmlBlob], `letter_${caseId}.html`, { type: 'text/html; charset=utf-8' });
 
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
@@ -331,32 +262,21 @@ Generate ONE letter requesting resolution. Be polite, factual, and professional.
       const existingCase = cases.find(c => c.id === caseId);
       
       if (existingCase) {
-        const timeline = existingCase.timeline || [];
-        timeline.push({
-          timestamp: new Date().toISOString(),
-          event: 'Letter generated',
-          actor: user.email
-        });
-
         await base44.entities.Case.update(caseId, {
           status: 'ready_drafts',
           letters: {
             letter_url: file_url,
             letter_data: result
-          },
-          timeline
+          }
         });
 
-        console.log('Case updated');
-
-        // Send email notification
-        const language = user.language || 'en';
+        // Send email
         await base44.integrations.Core.SendEmail({
           to: user.email,
-          subject: language === 'th' ? 'จดหมายของคุณพร้อมแล้ว' : 'Your Letter is Ready',
-          body: language === 'th' ?
-            `สวัสดี ${user.full_name},\n\nจดหมายสำหรับคดี #${caseId.slice(0, 8)} พร้อมแล้ว\nคุณสามารถดูและพิมพ์ได้ที่แดชบอร์ด\n\n— ทีม Lease Shield` :
-            `Hi ${user.full_name},\n\nYour letter for Case #${caseId.slice(0, 8)} is ready.\nYou can view and print it from your dashboard.\n\n— The Lease Shield Team`
+          subject: user.language === 'th' ? 'จดหมายของคุณพร้อมแล้ว' : 'Your Letter is Ready',
+          body: user.language === 'th' ?
+            `สวัสดี ${user.full_name},\n\nจดหมายสำหรับคดี #${caseId.slice(0, 8)} พร้อมแล้ว\n\n— Lease Shield` :
+            `Hi ${user.full_name},\n\nYour letter for Case #${caseId.slice(0, 8)} is ready.\n\n— Lease Shield`
         });
       }
     }
@@ -370,10 +290,10 @@ Generate ONE letter requesting resolution. Be polite, factual, and professional.
     });
 
   } catch (error) {
-    console.error('Letter generation error:', error);
+    console.error('Error:', error);
     return Response.json({ 
-      error: error.message || 'Failed to generate letter',
-      details: error.stack 
+      error: error.message,
+      stack: error.stack 
     }, { status: 500 });
   }
 });
