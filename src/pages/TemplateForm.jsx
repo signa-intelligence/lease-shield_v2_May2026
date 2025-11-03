@@ -1,5 +1,6 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,559 +9,561 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Download, Copy, Check, Loader2, AlertCircle } from "lucide-react"; // Added AlertCircle
+import { ArrowLeft, Loader2, AlertCircle, FileText, User, Scale, Send } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-
-const TEMPLATE_SCHEMAS = {
-  deposit_request: {
-    fields: [
-      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
-      { name: 'landlord_name', label: 'Landlord Name', type: 'text', required: true },
-      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
-      { name: 'lease_end_date', label: 'Lease End Date', type: 'date', required: true },
-      { name: 'deposit_amount', label: 'Deposit Amount (฿)', type: 'number', required: true },
-      { name: 'bank_details', label: 'Bank Account Details', type: 'textarea', required: false },
-    ]
-  },
-  deposit_late: {
-    fields: [
-      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
-      { name: 'landlord_name', label: 'Landlord Name', type: 'text', required: true },
-      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
-      { name: 'days_overdue', label: 'Days Overdue', type: 'number', required: true },
-      { name: 'deposit_amount', label: 'Deposit Amount (฿)', type: 'number', required: true },
-    ]
-  },
-  repair_dispute: {
-    fields: [
-      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
-      { name: 'landlord_name', label: 'Landlord Name', type: 'text', required: true },
-      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
-      { name: 'itemized_costs', label: 'Disputed Charges (itemized)', type: 'textarea', required: true },
-      { name: 'evidence_refs', label: 'Evidence References', type: 'textarea', required: false },
-    ]
-  },
-  pdpa_request: {
-    fields: [
-      { name: 'name', label: 'Your Full Name', type: 'text', required: true },
-      { name: 'id_number', label: 'ID Number (optional)', type: 'text', required: false },
-      { name: 'lease_period', label: 'Lease Period', type: 'text', required: true },
-      { name: 'requested_documents', label: 'Requested Documents', type: 'textarea', required: true },
-    ]
-  },
-  pre_move_out: {
-    fields: [
-      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
-      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
-      { name: 'planned_move_out_date', label: 'Planned Move-Out Date', type: 'date', required: true },
-    ]
-  },
-  handover_check: {
-    fields: [
-      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
-      { name: 'date', label: 'Inspection Date', type: 'date', required: true },
-      { name: 'attendee_names', label: 'Attendees (tenant, landlord)', type: 'text', required: true },
-    ]
-  },
-  contract_clarification: {
-    fields: [
-      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
-      { name: 'landlord_name', label: 'Landlord Name', type: 'text', required: true },
-      { name: 'clauses_in_question', label: 'Clauses Needing Clarification', type: 'textarea', required: true },
-    ]
-  },
-  lease_extension: {
-    fields: [
-      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
-      { name: 'landlord_name', label: 'Landlord Name', type: 'text', required: true },
-      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
-      { name: 'current_end_date', label: 'Current Lease End Date', type: 'date', required: true },
-      { name: 'proposed_new_end_date', label: 'Proposed New End Date', type: 'date', required: true },
-      { name: 'reason', label: 'Reason for Extension', type: 'textarea', required: false },
-    ]
-  },
-  lease_termination: {
-    fields: [
-      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
-      { name: 'landlord_name', label: 'Landlord Name', type: 'text', required: true },
-      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
-      { name: 'lease_end_date', label: 'Lease End Date', type: 'date', required: true },
-      { name: 'vacate_date', label: 'Planned Move-Out Date', type: 'date', required: true },
-      { name: 'forwarding_address', label: 'Forwarding Address (for deposit return)', type: 'textarea', required: true },
-      { name: 'reason', label: 'Reason for Termination', type: 'textarea', required: false },
-    ]
-  },
-  noise_complaint: {
-    fields: [
-      { name: 'tenant_name', label: 'Your Name', type: 'text', required: true },
-      { name: 'landlord_name', label: 'Landlord Name', type: 'text', required: true },
-      { name: 'property_address', label: 'Property Address', type: 'text', required: true },
-      { name: 'noise_source', label: 'Source of Noise', type: 'text', required: true },
-      { name: 'dates_times', label: 'Dates and Times of Incidents', type: 'textarea', required: true },
-      { name: 'impact', label: 'Impact on You', type: 'textarea', required: false },
-    ]
-  },
-};
-
-const TEMPLATE_PROMPTS = {
-  deposit_request: `Draft a polite, neutral, **non-legal** deposit return request in EN and TH.
-Include facts (dates, amounts), cite tenancy best practices, and ask for return within 7 days.
-End with contact details. Keep it professional and concise.
-Format with clear sections for English and Thai.`,
-
-  deposit_late: `Write a courteous overdue reminder (EN and TH). Mention the days overdue,
-request a timeline, ask for itemized deductions if any. Neutral tone.
-Format with clear sections for English and Thai.`,
-
-  repair_dispute: `Draft a neutral dispute letter in EN/TH contesting repair charges.
-Include itemized costs and evidence references. Documentation tone; no legal advice.
-Format with clear sections for English and Thai.`,
-
-  pdpa_request: `Draft EN/TH request under PDPA to obtain personal data and copies of lease & receipts.
-Cite PDPA generally without legal advice. Keep neutral and professional.
-Format with clear sections for English and Thai.`,
-
-  pre_move_out: `Prepare a clear pre-move-out notice in EN/TH confirming the move-out date,
-scheduling inspection, and listing keys/cleaning expectations.
-Format with clear sections for English and Thai.`,
-
-  handover_check: `Generate a bilingual checklist with: rooms/items, condition notes, meter readings,
-photo attachment slots, and signature lines. Format as a structured inspection form.
-Include sections for both English and Thai.`,
-
-  contract_clarification: `Draft EN/TH questions asking for clarification of specific lease clauses.
-Neutral, documentation tone. No legal advice.
-Format with clear sections for English and Thai.`
-};
 
 export default function TemplateForm() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
-  const templateId = urlParams.get('templateId') || 'deposit_request';
+  const caseId = urlParams.get('caseId');
 
   const [generating, setGenerating] = useState(false);
-  const [generatedLetter, setGeneratedLetter] = useState('');
-  const [letterSubject, setLetterSubject] = useState('');
-  const [generatedDocId, setGeneratedDocId] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [language, setLanguage] = useState('both');
-  const [formData, setFormData] = useState({});
   const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [formData, setFormData] = useState(() => {
+    const defaultRequestDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    return {
+      // Personal details
+      tenant_name: '',
+      landlord_name: '',
+      property_address: '',
 
-  const schema = TEMPLATE_SCHEMAS[templateId] || TEMPLATE_SCHEMAS.deposit_request;
+      // Case details
+      contract_ref: 'Residential Lease Agreement',
+      deposit_amount_thb: '',
+      dispute_type: 'deposit',
+      facts: '',
+      request_by_date_iso: defaultRequestDate,
+      attachments: '', // Will be parsed into an array
+      tone: 'standard'
+    };
+  });
 
-  const handleGenerate = async (e) => {
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: caseItem } = useQuery({
+    queryKey: ['case', caseId],
+    queryFn: async () => {
+      if (!caseId) return null;
+      try {
+        const caseData = await base44.entities.Case.get(caseId);
+        return caseData;
+      } catch (err) {
+        console.error("Failed to fetch case:", err);
+        return null;
+      }
+    },
+    enabled: !!caseId,
+  });
+
+  // Pre-fill form with case data if available
+  useEffect(() => {
+    if (caseItem) {
+      setFormData(prev => ({
+        ...prev,
+        deposit_amount_thb: caseItem.dispute_amount ? String(caseItem.dispute_amount) : prev.deposit_amount_thb,
+        dispute_type: caseItem.type || prev.dispute_type,
+        facts: caseItem.summary || prev.facts,
+        request_by_date_iso: caseItem.request_by_date_iso || prev.request_by_date_iso
+      }));
+    }
+  }, [caseItem]);
+
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    inputBg: '#353A3D'
+  } : {
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+    inputBg: '#FFFFFF'
+  };
+
+  const t = {
+    en: {
+      generateLetters: "Generate Letters",
+      letterGeneration: "Letter Generation Form",
+      formDesc: "Fill in the details below to generate your professional letters",
+      personalDetails: "Personal Details",
+      tenantName: "Your Full Name",
+      tenantNamePlaceholder: "John Smith",
+      landlordName: "Landlord's Full Name",
+      landlordNamePlaceholder: "Jane Doe",
+      propertyAddress: "Property Address",
+      propertyAddressPlaceholder: "123 Main St, Bangkok 10110",
+      caseDetails: "Case Details",
+      contractRef: "Contract Reference",
+      contractRefPlaceholder: "Lease Agreement dated 2024-01-15",
+      depositAmount: "Deposit Amount (฿)",
+      disputeType: "Dispute Type",
+      facts: "Key Facts (one per line)",
+      factsPlaceholder: "Moved out on 2024-10-12\nKeys returned same day\nNo damages noted",
+      requestDate: "Response Deadline",
+      attachments: "Attachments",
+      attachmentsHelp: "List of documents you're including (e.g., Lease.pdf, Photos.zip)",
+      tone: "Letter Tone",
+      toneStandard: "Standard - Professional and neutral",
+      toneSofter: "Softer - More empathetic",
+      toneFirmer: "Firmer - More structured",
+      generateButton: "Generate Letters",
+      generating: "Generating Letters...",
+      cancel: "Cancel",
+      required: "Required",
+      depositDispute: "Deposit Return",
+      earlyTermination: "Early Termination",
+      damages: "Damages Dispute",
+      other: "Other",
+      generatingTitle: "Creating Your Letters",
+      generatingDesc: "Our AI is drafting professional bilingual letters for your case...",
+      errorFillRequired: 'Please fill in tenant name, landlord name, and property address.',
+      errorFillDeposit: 'Please fill in deposit amount.',
+      errorGenerationFailed: 'Failed to generate letters. Please try again.'
+    },
+    th: {
+      generateLetters: "สร้างจดหมาย",
+      letterGeneration: "แบบฟอร์มสร้างจดหมาย",
+      formDesc: "กรอกรายละเอียดด้านล่างเพื่อสร้างจดหมายมืออาชีพของคุณ",
+      personalDetails: "รายละเอียดส่วนตัว",
+      tenantName: "ชื่อเต็มของคุณ",
+      tenantNamePlaceholder: "สมชาย ใจดี",
+      landlordName: "ชื่อเต็มของเจ้าของบ้าน",
+      landlordNamePlaceholder: "สมหญิง รักดี",
+      propertyAddress: "ที่อยู่ทรัพย์สิน",
+      propertyAddressPlaceholder: "123 ถนนสุขุมวิท แขวงคลองเตย กรุงเทพฯ 10110",
+      caseDetails: "รายละเอียดคดี",
+      contractRef: "อ้างอิงสัญญา",
+      contractRefPlaceholder: "สัญญาเช่าลงวันที่ 15 มกราคม 2567",
+      depositAmount: "จำนวนเงินมัดจำ (฿)",
+      disputeType: "ประเภทข้อพิพาท",
+      facts: "ข้อเท็จจริงสำคัญ (บรรทัดละรายการ)",
+      factsPlaceholder: "ย้ายออกเมื่อ 12 ตุลาคม 2567\nคืนกุญแจในวันเดียวกัน\nไม่มีความเสียหาย",
+      requestDate: "กำหนดเวลาตอบกลับ",
+      attachments: "ไฟล์แนบ",
+      attachmentsHelp: "รายการเอกสารที่คุณแนบมาด้วย (เช่น Lease.pdf, Photos.zip)",
+      tone: "น้ำเสียงจดหมาย",
+      toneStandard: "มาตรฐาน - เป็นมืออาชีพและเป็นกลาง",
+      toneSofter: "อ่อนโยน - เห็นอกเห็นใจมากขึ้น",
+      toneFirmer: "เข้มงวด - มีโครงสร้างมากขึ้น",
+      generateButton: "สร้างจดหมาย",
+      generating: "กำลังสร้างจดหมาย...",
+      cancel: "ยกเลิก",
+      required: "จำเป็น",
+      depositDispute: "คืนเงินมัดจำ",
+      earlyTermination: "ยกเลิกสัญญาก่อนกำหนด",
+      damages: "ข้อพิพาทความเสียหาย",
+      other: "อื่นๆ",
+      generatingTitle: "กำลังสร้างจดหมายของคุณ",
+      generatingDesc: "AI กำลังร่างจดหมายมืออาชีพสองภาษาสำหรับคดีของคุณ...",
+      errorFillRequired: 'กรุณากรอกชื่อผู้เช่า ชื่อเจ้าของบ้าน และที่อยู่ทรัพย์สิน',
+      errorFillDeposit: 'กรุณากรอกจำนวนเงินมัดจำ',
+      errorGenerationFailed: 'ไม่สามารถสร้างจดหมายได้ กรุณาลองอีกครั้ง'
+    }
+  };
+
+  const strings = t[language];
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate required fields
+    if (!formData.tenant_name || !formData.landlord_name || !formData.property_address) {
+      setError(strings.errorFillRequired);
+      return;
+    }
+
+    if (!formData.deposit_amount_thb) {
+      setError(strings.errorFillDeposit);
+      return;
+    }
+
     setGenerating(true);
     setError(null);
-    setGeneratedLetter('');
-    setLetterSubject('');
-    setRetryCount(0); // Reset retry count for a new generation attempt
 
-    const maxRetries = 2;
-    let currentRetry = 0;
+    try {
+      // Parse facts from textarea (one per line)
+      const factsArray = formData.facts
+        .split('\n')
+        .map(f => f.trim())
+        .filter(f => f.length > 0);
 
-    const attemptGeneration = async () => {
-      try {
-        const fieldValues = schema.fields.map(f => `${f.label}: ${formData[f.name] || 'N/A'}`).join('\n');
+      // Parse attachments from textarea (one per line)
+      const attachmentsArray = formData.attachments
+        .split('\n')
+        .map(a => a.trim())
+        .filter(a => a.length > 0);
 
-        let llmPrompt = '';
-        let llmSystemContext = '';
-        let finalFormattingInstruction = '\n\nFormat: Professional letter with proper Thai/English formatting, date, addresses, formal greeting, body paragraphs, and signature block.';
+      const payload = {
+        caseId: caseId || `temp-${Date.now()}`,
+        tenant_name: formData.tenant_name,
+        landlord_name: formData.landlord_name,
+        property_address: formData.property_address,
+        contract_ref: formData.contract_ref || 'Residential Lease Agreement',
+        deposit_amount_thb: parseFloat(formData.deposit_amount_thb),
+        dispute_type: formData.dispute_type,
+        facts: factsArray.length > 0 ? factsArray : [
+          'Tenant moved out and returned keys on the agreed date',
+          'No damages noted during handover'
+        ],
+        request_by_date_iso: formData.request_by_date_iso,
+        attachments: attachmentsArray.length > 0 ? attachmentsArray : ['Lease.pdf', 'Photos.zip'],
+        tone: formData.tone,
+        language: language
+      };
 
-        if (templateId === 'lease_extension') {
-          llmSystemContext = language === 'th'
-            ? 'คุณเป็นผู้เชี่ยวชาญด้านกฎหมายอสังหาริมทรัพย์ในประเทศไทย เขียนจดหมายขอต่อสัญญาเช่าอย่างเป็นทางการและสุภาพ'
-            : 'You are a Thai real estate legal expert. Write a formal and polite lease extension request letter.';
-          llmPrompt = language === 'th'
-            ? `เขียนจดหมายขอต่อสัญญาเช่าอย่างเป็นทางการ:
+      console.log('Generating letters with payload:', payload);
 
-ชื่อผู้เช่า: ${formData.tenant_name || 'N/A'}
-ชื่อเจ้าของบ้าน: ${formData.landlord_name || 'N/A'}
-ที่อยู่อาคาร: ${formData.property_address || 'N/A'}
-วันที่สัญญาสิ้นสุดปัจจุบัน: ${formData.current_end_date || 'N/A'}
-วันที่สิ้นสุดที่เสนอใหม่: ${formData.proposed_new_end_date || 'N/A'}
-เหตุผลในการขอต่อ: ${formData.reason || 'ต้องการอยู่ต่อในทำเล'}
+      const response = await base44.functions.invoke('generateLetters', payload);
 
-จดหมายควร:
-- สุภาพและเป็นทางการ
-- แสดงความขอบคุณสำหรับการให้เช่าปัจจุบัน
-- ระบุวันที่ชัดเจน
-- ระบุความตั้งใจในการดูแลรักษาทรัพย์สิน
-- เสนอหารือเกี่ยวกับข้อกำหนดหากจำเป็น
-- ลงท้ายด้วยข้อมูลติดต่อ`
-            : `Write a formal lease extension request letter:
+      console.log('Letters generated:', response.data);
 
-Tenant Name: ${formData.tenant_name || 'N/A'}
-Landlord Name: ${formData.landlord_name || 'N/A'}
-Property Address: ${formData.property_address || 'N/A'}
-Current End Date: ${formData.current_end_date || 'N/A'}
-Proposed New End Date: ${formData.proposed_new_end_date || 'N/A'}
-Reason for Extension: ${formData.reason || 'Wish to continue residing at the property'}
-
-The letter should:
-- Be formal and polite
-- Express appreciation for current tenancy
-- Clearly state dates
-- Mention commitment to property care
-- Offer to discuss terms if needed
-- End with contact information`;
-        } else if (templateId === 'lease_termination') {
-          llmSystemContext = language === 'th'
-            ? 'คุณเป็นผู้เชี่ยวชาญด้านกฎหมายอสังหาริมทรัพย์ในประเทศไทย เขียนจดหมายแจ้งยกเลิกสัญญาเช่าอย่างเป็นทางการและสุภาพ'
-            : 'You are a Thai real estate legal expert. Write a formal and polite lease termination notice.';
-          llmPrompt = language === 'th'
-            ? `เขียนจดหมายแจ้งยกเลิกสัญญาเช่าอย่างเป็นทางการ:
-
-ชื่อผู้เช่า: ${formData.tenant_name || 'N/A'}
-ชื่อเจ้าของบ้าน: ${formData.landlord_name || 'N/A'}
-ที่อยู่อาคาร: ${formData.property_address || 'N/A'}
-วันที่สัญญาสิ้นสุด: ${formData.lease_end_date || 'N/A'}
-วันที่จะย้ายออก: ${formData.vacate_date || 'N/A'}
-ที่อยู่สำหรับส่งเงินมัดจำ: ${formData.forwarding_address || 'N/A'}
-เหตุผล: ${formData.reason || 'เหตุผลส่วนตัว'}
-
-จดหมายควร:
-- สุภาพและเป็นมืออาชีพ
-- แจ้งเจตนาที่ชัดเจนในการยกเลิก
-- ระบุวันที่ชัดเจน
-- ขอนัดตรวจสอบทรัพย์สิน
-- ระบุที่อยู่สำหรับคืนเงินมัดจำ
-- แสดงความขอบคุณสำหรับการให้เช่า
-- ลงท้ายด้วยข้อมูลติดต่อ`
-            : `Write a formal lease termination notice:
-
-Tenant Name: ${formData.tenant_name || 'N/A'}
-Landlord Name: ${formData.landlord_name || 'N/A'}
-Property Address: ${formData.property_address || 'N/A'}
-Lease End Date: ${formData.lease_end_date || 'N/A'}
-Move-Out Date: ${formData.vacate_date || 'N/A'}
-Forwarding Address: ${formData.forwarding_address || 'N/A'}
-Reason: ${formData.reason || 'Personal reasons'}
-
-The letter should:
-- Be formal and professional
-- Clearly state intent to terminate
-- Specify all relevant dates
-- Request final inspection appointment
-- Provide forwarding address for deposit return
-- Express gratitude for tenancy
-- End with contact information`;
-        } else if (templateId === 'noise_complaint') {
-          llmSystemContext = language === 'th'
-            ? 'คุณเป็นผู้เชี่ยวชาญด้านกฎหมายอสังหาริมทรัพย์ในประเทศไทย เขียนจดหมายร้องเรียนเสียงรบกวนอย่างเป็นทางการและสุภาพ'
-            : 'You are a Thai real estate legal expert. Write a formal and polite noise complaint letter.';
-          llmPrompt = language === 'th'
-            ? `เขียนจดหมายร้องเรียนเสียงรบกวนอย่างเป็นทางการ:
-
-ชื่อผู้เช่า: ${formData.tenant_name || 'N/A'}
-ชื่อเจ้าของบ้าน: ${formData.landlord_name || 'N/A'}
-ที่อยู่อาคาร: ${formData.property_address || 'N/A'}
-แหล่งที่มาของเสียง: ${formData.noise_source || 'N/A'}
-วันที่และเวลาที่เกิดเหตุ: ${formData.dates_times || 'N/A'}
-ผลกระทบ: ${formData.impact || 'รบกวนการนอนหลับและการทำงาน'}
-
-จดหมายควร:
-- สุภาพแต่มั่นคง
-- อธิบายปัญหาอย่างชัดเจน
-- ระบุวันที่และเวลาที่เฉพาะเจาะจง
-- อธิบายผลกระทบต่อคุณภาพชีวิต
-- อ้างถึงข้อตกลงสัญญาเช่าหากเกี่ยวข้อง
-- ขอให้แก้ไขปัญหา
-- เสนอให้หารือเพื่อหาทางออก
-- ลงท้ายด้วยข้อมูลติดต่อ`
-            : `Write a formal noise complaint letter:
-
-Tenant Name: ${formData.tenant_name || 'N/A'}
-Landlord Name: ${formData.landlord_name || 'N/A'}
-Property Address: ${formData.property_address || 'N/A'}
-Source of Noise: ${formData.noise_source || 'N/A'}
-Dates and Times: ${formData.dates_times || 'N/A'}
-Impact: ${formData.impact || 'Disturbing sleep and work'}
-
-The letter should:
-- Be polite but firm
-- Clearly describe the problem
-- Specify dates and times
-- Explain impact on quality of life
-- Reference lease agreement if relevant
-- Request resolution
-- Offer to discuss solutions
-- End with contact information`;
-        } else {
-          // Existing templates logic
-          llmPrompt = `${TEMPLATE_PROMPTS[templateId]}
-
-Language: ${language === 'both' ? 'Generate both English and Thai versions' : language === 'en' ? 'English only' : 'Thai only'}
-
-Input Data:
-${fieldValues}
-
-IMPORTANT:
-- This is documentation guidance, not legal advice
-- Keep neutral tone for both parties
-- Format professionally with proper headers and sections
-- If bilingual, clearly separate English and Thai sections
-
-Generate the letter now.`;
-          llmSystemContext = ''; // No specific system context for old templates
-        }
-
-        const fullPromptForLLM = `${llmSystemContext ? llmSystemContext + '\n\n' : ''}${llmPrompt}${finalFormattingInstruction}`;
-
-        const result = await base44.integrations.Core.InvokeLLM({
-          prompt: fullPromptForLLM,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              letter_text: { type: "string" },
-              subject: { type: "string" }
-            },
-            required: ["letter_text", "subject"]
-          }
-        });
-
-        if (!result.letter_text || result.letter_text.length < 50) { // Check for incomplete letter
-          throw new Error(language === 'th' ? 'จดหมายที่สร้างไม่สมบูรณ์ หรือสั้นเกินไป กรุณาลองอีกครั้ง' : 'Generated letter is incomplete or too short. Please try again.');
-        }
-
-        setGeneratedLetter(result.letter_text);
-        setLetterSubject(result.subject);
-
-        // Step 2: Save document to database
-        const templateTitles = {
-          deposit_request: 'Deposit Return Request',
-          deposit_late: 'Late Deposit Return Reminder',
-          repair_dispute: 'Repair Cost Dispute',
-          pdpa_request: 'PDPA Data Request',
-          pre_move_out: 'Pre-Move-Out Notice',
-          handover_check: 'Handover Inspection Checklist',
-          contract_clarification: 'Contract Clarification Request',
-          lease_extension: 'Lease Extension Request',
-          lease_termination: 'Lease Termination Notice',
-          noise_complaint: 'Noise Complaint',
-        };
-
-        const doc = await base44.entities.Document.create({
-          type: 'letter',
-          label: result.subject || templateTitles[templateId] || 'Generated Letter'
-        });
-
-        setGeneratedDocId(doc.id);
-        setGenerating(false); // Only set to false on success
-        
-      } catch (err) {
-        currentRetry++;
-        setRetryCount(currentRetry);
-        
-        console.error('Generation failed:', err);
-        
-        if (currentRetry <= maxRetries) {
-          // Retry with exponential backoff
-          setError(language === 'th' 
-            ? `เกิดข้อผิดพลาดในการสร้างจดหมาย กำลังลองใหม่... (${currentRetry}/${maxRetries})` 
-            : `Error generating letter. Retrying... (${currentRetry}/${maxRetries})`);
-          
-          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry)));
-          return attemptGeneration(); // Recursively call to retry
-        } else {
-          // Max retries reached
-          let errorMessage = language === 'th' 
-            ? 'ไม่สามารถสร้างจดหมายได้หลังจากพยายามหลายครั้ง กรุณาตรวจสอบข้อมูลและลองอีกครั้ง' 
-            : 'Failed to generate letter after multiple attempts. Please check your information and try again.';
-          
-          if (err.message.includes('incomplete')) {
-            errorMessage = err.message;
-          } else if (err.message.includes('network') || err.message.includes('timeout') || err.message.includes('Failed to fetch')) {
-            errorMessage = language === 'th' 
-              ? 'ปัญหาการเชื่อมต่อ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณแล้วลองอีกครั้ง' 
-              : 'Connection issue. Please check your internet connection and try again.';
-          } else if (err.message.includes('quota') || err.message.includes('rate limit')) {
-            errorMessage = language === 'th'
-              ? 'คำขอมากเกินไป กรุณารอสักครู่แล้วลองอีกครั้ง'
-              : 'Too many requests. Please wait a moment and try again.';
-          }
-          
-          setError(errorMessage);
-          setGenerating(false); // Set to false when retries exhausted
-        }
+      if (caseId) {
+        navigate(createPageUrl("CaseDetails") + `?caseId=${caseId}`);
+      } else {
+        alert(language === 'th'
+          ? 'จดหมายถูกสร้างเรียบร้อยแล้ว!'
+          : 'Letters generated successfully!');
+        navigate(createPageUrl("Cases"));
       }
-    };
-
-    await attemptGeneration();
+    } catch (err) {
+      console.error('Letter generation error:', err);
+      setError(strings.errorGenerationFailed);
+    } finally {
+      setGenerating(false);
+    }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(generatedLetter);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setError(null);
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([generatedLetter], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const defaultFilename = `${templateId}_${Date.now()}.txt`;
-    a.download = letterSubject ? `${letterSubject.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt` : defaultFilename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    a.remove();
-  };
-
-  const handleInputChange = (name, value) => {
-    setFormData({ ...formData, [name]: value });
-  };
+  if (generating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
+        <Card className="max-w-md w-full border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardContent className="p-8 text-center">
+            <Loader2 className="w-16 h-16 animate-spin text-purple-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {strings.generatingTitle}
+            </h3>
+            <p style={{ color: colors.textSecondary }}>
+              {strings.generatingDesc}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate(createPageUrl("Templates"))}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Generate Letter</h1>
-            <p className="text-slate-600">Fill in the details below</p>
-          </div>
-        </div>
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="max-w-3xl mx-auto">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 mb-6 text-sm font-medium hover:opacity-70 transition-opacity"
+          style={{ color: colors.textSecondary }}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {language === 'th' ? 'กลับ' : 'Back'}
+        </button>
 
-        {error && (
-          <div className="mb-6 p-4 rounded-lg border-2 border-red-200 bg-red-50 animate-shake">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-red-600 font-semibold mb-1">
-                  {language === 'th' ? 'เกิดข้อผิดพลาด' : 'Error Occurred'}
+        <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
+              <FileText className="w-6 h-6 text-purple-600" />
+              <div>
+                <div className="text-xl font-bold">{strings.letterGeneration}</div>
+                <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
+                  {strings.formDesc}
                 </p>
-                <p className="text-red-600 text-sm">{error}</p>
-                {retryCount > 0 && retryCount <= 2 && (
-                  <p className="text-red-500 text-xs mt-2">
-                    {language === 'th' 
-                      ? `🔄 กำลังลองอีกครั้ง... (ครั้งที่ ${retryCount}/2)` 
-                      : `🔄 Retrying... (Attempt ${retryCount}/2)`}
-                  </p>
-                )}
               </div>
-              <button
-                onClick={() => setError(null)}
-                className="text-red-600 hover:text-red-800 font-semibold text-sm"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        )}
+            </CardTitle>
+          </CardHeader>
 
-        {!generatedLetter ? (
-          <Card className="border-none shadow-xl">
-            <CardHeader className="border-b">
-              <CardTitle>Letter Details</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <form onSubmit={handleGenerate} className="space-y-4">
-                <div>
-                  <Label htmlFor="language">Language</Label>
-                  <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="both">English + Thai</SelectItem>
-                      <SelectItem value="en">English Only</SelectItem>
-                      <SelectItem value="th">Thai Only</SelectItem>
-                    </SelectContent>
-                  </Select>
+          <CardContent className="p-6">
+            {error && (
+              <div className="mb-6 p-4 rounded-lg border-2" style={{
+                backgroundColor: isDarkMode ? 'rgb(58, 38, 38)' : '#FEE2E2',
+                borderColor: isDarkMode ? 'rgb(80, 40, 40)' : '#FECACA'
+              }}>
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-red-600 text-sm">{error}</p>
                 </div>
+              </div>
+            )}
 
-                {schema.fields.map((field) => (
-                  <div key={field.name}>
-                    <Label htmlFor={field.name}>
-                      {field.label}
-                      {field.required && <span className="text-red-600 ml-1">*</span>}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Personal Details Section */}
+              <div>
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <User className="w-5 h-5 text-blue-600" />
+                  {strings.personalDetails}
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="tenant_name" style={{ color: colors.textPrimary }}>
+                      {strings.tenantName} <span className="text-red-500">*</span>
                     </Label>
-                    {field.type === 'textarea' ? (
-                      <Textarea
-                        id={field.name}
-                        required={field.required}
-                        value={formData[field.name] || ''}
-                        onChange={(e) => handleInputChange(field.name, e.target.value)}
-                        rows={4}
-                      />
-                    ) : (
-                      <Input
-                        id={field.name}
-                        type={field.type}
-                        required={field.required}
-                        value={formData[field.name] || ''}
-                        onChange={(e) => handleInputChange(field.name, e.target.value)}
-                      />
-                    )}
+                    <Input
+                      id="tenant_name"
+                      type="text"
+                      required
+                      value={formData.tenant_name}
+                      onChange={(e) => handleChange('tenant_name', e.target.value)}
+                      placeholder={strings.tenantNamePlaceholder}
+                      className="mt-2"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
                   </div>
-                ))}
 
+                  <div>
+                    <Label htmlFor="landlord_name" style={{ color: colors.textPrimary }}>
+                      {strings.landlordName} <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="landlord_name"
+                      type="text"
+                      required
+                      value={formData.landlord_name}
+                      onChange={(e) => handleChange('landlord_name', e.target.value)}
+                      placeholder={strings.landlordNamePlaceholder}
+                      className="mt-2"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="property_address" style={{ color: colors.textPrimary }}>
+                      {strings.propertyAddress} <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="property_address"
+                      type="text"
+                      required
+                      value={formData.property_address}
+                      onChange={(e) => handleChange('property_address', e.target.value)}
+                      placeholder={strings.propertyAddressPlaceholder}
+                      className="mt-2"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Case Details Section */}
+              <div>
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <Scale className="w-5 h-5 text-purple-600" />
+                  {strings.caseDetails}
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="contract_ref" style={{ color: colors.textPrimary }}>
+                      {strings.contractRef}
+                    </Label>
+                    <Input
+                      id="contract_ref"
+                      type="text"
+                      value={formData.contract_ref}
+                      onChange={(e) => handleChange('contract_ref', e.target.value)}
+                      placeholder={strings.contractRefPlaceholder}
+                      className="mt-2"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="deposit_amount" style={{ color: colors.textPrimary }}>
+                        {strings.depositAmount} <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="deposit_amount"
+                        type="number"
+                        required
+                        value={formData.deposit_amount_thb}
+                        onChange={(e) => handleChange('deposit_amount_thb', e.target.value)}
+                        placeholder="24900"
+                        className="mt-2"
+                        style={{
+                          backgroundColor: colors.inputBg,
+                          borderColor: colors.borderColor,
+                          color: colors.textPrimary
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="dispute_type" style={{ color: colors.textPrimary }}>
+                        {strings.disputeType}
+                      </Label>
+                      <Select
+                        value={formData.dispute_type}
+                        onValueChange={(value) => handleChange('dispute_type', value)}
+                      >
+                        <SelectTrigger className="mt-2" style={{
+                          backgroundColor: colors.inputBg,
+                          borderColor: colors.borderColor,
+                          color: colors.textPrimary,
+                        }}>
+                          <SelectValue placeholder={strings.disputeType} />
+                        </SelectTrigger>
+                        <SelectContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                          <SelectItem value="deposit" style={{ color: colors.textPrimary }}>{strings.depositDispute}</SelectItem>
+                          <SelectItem value="early_termination" style={{ color: colors.textPrimary }}>{strings.earlyTermination}</SelectItem>
+                          <SelectItem value="damages" style={{ color: colors.textPrimary }}>{strings.damages}</SelectItem>
+                          <SelectItem value="other" style={{ color: colors.textPrimary }}>{strings.other}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="facts" style={{ color: colors.textPrimary }}>
+                      {strings.facts}
+                    </Label>
+                    <Textarea
+                      id="facts"
+                      value={formData.facts}
+                      onChange={(e) => handleChange('facts', e.target.value)}
+                      placeholder={strings.factsPlaceholder}
+                      rows={4}
+                      className="mt-2"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="request_date" style={{ color: colors.textPrimary }}>
+                      {strings.requestDate}
+                    </Label>
+                    <Input
+                      id="request_date"
+                      type="date"
+                      value={formData.request_by_date_iso}
+                      onChange={(e) => handleChange('request_by_date_iso', e.target.value)}
+                      className="mt-2"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="attachments" style={{ color: colors.textPrimary }}>
+                      {strings.attachments}
+                    </Label>
+                    <Textarea
+                      id="attachments"
+                      value={formData.attachments}
+                      onChange={(e) => handleChange('attachments', e.target.value)}
+                      placeholder={strings.attachmentsHelp}
+                      rows={2}
+                      className="mt-2"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>{strings.attachmentsHelp}</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="tone" style={{ color: colors.textPrimary }}>
+                      {strings.tone}
+                    </Label>
+                    <Select
+                      value={formData.tone}
+                      onValueChange={(value) => handleChange('tone', value)}
+                    >
+                      <SelectTrigger className="mt-2" style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary,
+                      }}>
+                        <SelectValue placeholder={strings.tone} />
+                      </SelectTrigger>
+                      <SelectContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                        <SelectItem value="standard" style={{ color: colors.textPrimary }}>{strings.toneStandard}</SelectItem>
+                        <SelectItem value="softer" style={{ color: colors.textPrimary }}>{strings.toneSofter}</SelectItem>
+                        <SelectItem value="firmer" style={{ color: colors.textPrimary }}>{strings.toneFirmer}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(-1)}
+                  className="flex-1"
+                  style={{
+                    backgroundColor: colors.cardBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary,
+                  }}
+                >
+                  {strings.cancel}
+                </Button>
                 <Button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
                   disabled={generating}
                 >
                   {generating ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {language === 'th' ? 'กำลังสร้าง...' : 'Generating...'}
-                      {retryCount > 0 && ` (${retryCount}/2)`}
+                      {strings.generating}
                     </>
                   ) : (
-                    language === 'th' ? 'สร้างจดหมาย' : 'Generate Letter'
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      {strings.generateButton}
+                    </>
                   )}
                 </Button>
-              </form>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            <Card className="border-none shadow-xl">
-              <CardHeader className="border-b">
-                <div className="flex items-center justify-between">
-                  <CardTitle>{letterSubject || 'Generated Letter'}</CardTitle>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleCopy}>
-                      {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                      {copied ? 'Copied!' : 'Copy'}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleDownload}>
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="bg-white border border-slate-200 rounded-lg p-6 font-serif whitespace-pre-wrap max-h-96 overflow-y-auto">
-                  {generatedLetter}
-                </div>
-              </CardContent>
-            </Card>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setGeneratedLetter('');
-                setLetterSubject('');
-                setError(null);
-                setRetryCount(0); // Reset retry count when starting over
-              }}
-            >
-              Generate Another Letter
-            </Button>
-          </div>
-        )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
