@@ -1,3 +1,4 @@
+
 import React from "react";
 
 export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
@@ -137,7 +138,7 @@ export default function ProtectionScoreGauge({ score = 0, size = 260 }) {
         zIndex: 10
       }}>
         <div style={{
-          fontSize: '32px',
+          fontSize: '24px', /* Changed from '32px' to '24px' */
           fontWeight: 'bold',
           color: '#0C3B2E',
           lineHeight: '1'
