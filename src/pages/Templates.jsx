@@ -44,65 +44,67 @@ const TEMPLATES = [
     color: 'from-purple-400 to-purple-600'
   },
   
-  // SECURE TIER (S1-S7)
+  // PROTECT TIER (P1-P4)
   {
     id: 'dispute',
-    letterKey: 'S1',
+    letterKey: 'P1',
     name_en: 'Formal Dispute of Withholding',
     name_th: 'จดหมายคัดค้านการระงับเงิน',
     description_en: 'Formal dispute of unfair deposit withholding',
     description_th: 'จดหมายคัดค้านการระงับเงินประกันอย่างเป็นทางการ',
     icon: Scale,
-    tier: 'secure',
-    color: 'from-red-500 to-red-700'
+    tier: 'protect',
+    color: 'from-emerald-500 to-emerald-700'
   },
   {
     id: 'early_termination',
-    letterKey: 'S2',
+    letterKey: 'P2',
     name_en: 'Early Termination Reconciliation',
     name_th: 'ประสานยุติสัญญาก่อนกำหนด',
     description_en: 'Coordinate early lease termination details',
     description_th: 'ประสานรายละเอียดการยุติสัญญาก่อนกำหนด',
     icon: FileX,
-    tier: 'secure',
-    color: 'from-orange-500 to-orange-700'
+    tier: 'protect',
+    color: 'from-teal-500 to-teal-700'
   },
   {
     id: 'condition_dispute',
-    letterKey: 'S3',
+    letterKey: 'P3',
     name_en: 'Property Condition Dispute',
     name_th: 'โต้แย้งสภาพทรัพย์สิน',
     description_en: 'Dispute claimed property damages',
     description_th: 'โต้แย้งการเรียกร้องค่าเสียหายทรัพย์สิน',
     icon: Camera,
-    tier: 'secure',
-    color: 'from-pink-500 to-pink-700'
+    tier: 'protect',
+    color: 'from-cyan-500 to-cyan-700'
   },
   {
     id: 'evidence',
-    letterKey: 'S4',
+    letterKey: 'P4',
     name_en: 'Request for Evidence',
     name_th: 'ขอหลักฐานประกอบ',
     description_en: 'Request supporting documents for claimed damages',
     description_th: 'ขอเอกสารหลักฐานสำหรับค่าเสียหายที่อ้าง',
     icon: FileText,
-    tier: 'secure',
-    color: 'from-indigo-500 to-indigo-700'
+    tier: 'protect',
+    color: 'from-sky-500 to-sky-700'
   },
+  
+  // SECURE TIER (S1-S3)
   {
     id: 'final_opportunity',
-    letterKey: 'S5',
+    letterKey: 'S1',
     name_en: 'Final Opportunity',
     name_th: 'โอกาสสุดท้าย',
     description_en: 'Last chance before formal escalation',
     description_th: 'โอกาสสุดท้ายก่อนดำเนินการทางกฎหมาย',
     icon: AlertTriangle,
     tier: 'secure',
-    color: 'from-yellow-600 to-orange-700'
+    color: 'from-orange-600 to-red-600'
   },
   {
     id: 'non_compliance',
-    letterKey: 'S6',
+    letterKey: 'S2',
     name_en: 'Notice of Non-Compliance',
     name_th: 'แจ้งไม่ปฏิบัติตามสัญญา',
     description_en: 'Official notice of contract breach',
@@ -113,14 +115,14 @@ const TEMPLATES = [
   },
   {
     id: 'settlement',
-    letterKey: 'S7',
+    letterKey: 'S3',
     name_en: 'Settlement Confirmation',
     name_th: 'ยืนยันการตกลงชำระเงิน',
     description_en: 'Confirm successful deposit transfer',
     description_th: 'ยืนยันการคืนเงินประกันสำเร็จ',
     icon: CheckCircle,
     tier: 'secure',
-    color: 'from-emerald-500 to-emerald-700'
+    color: 'from-emerald-600 to-green-700'
   }
 ];
 
@@ -158,8 +160,8 @@ export default function Templates() {
       upgradeRequired: "Upgrade to access",
       tierSection: {
         lite: "Lite Tier - Friendly Approach (3 Letters)",
-        protect: "Protect Tier - Professional Escalation (7 Letters)",
-        secure: "Secure Tier - Complete Arsenal (10 Letters)"
+        protect: "Protect Tier - Professional Escalation (4 Letters)",
+        secure: "Secure Tier - Final Measures (3 Letters)"
       }
     },
     th: {
@@ -171,8 +173,8 @@ export default function Templates() {
       upgradeRequired: "อัปเกรดเพื่อเข้าถึง",
       tierSection: {
         lite: "ไลท์ เทียร์ - แนวทางเป็นมิตร (3 จดหมาย)",
-        protect: "โปรเทค เทียร์ - การยกระดับอย่างมืออาชีพ (7 จดหมาย)",
-        secure: "ซีเคียว เทียร์ - คลังแสงอาวุธครบครัน (10 จดหมาย)"
+        protect: "โปรเทค เทียร์ - การยกระดับอย่างมืออาชีพ (4 จดหมาย)",
+        secure: "ซีเคียว เทียร์ - มาตรการสุดท้าย (3 จดหมาย)"
       }
     }
   };
@@ -191,6 +193,7 @@ export default function Templates() {
 
   // Group templates by display tiers
   const liteTemplates = TEMPLATES.filter(t => t.tier === 'lite');
+  const protectTemplates = TEMPLATES.filter(t => t.tier === 'protect');
   const secureTemplates = TEMPLATES.filter(t => t.tier === 'secure');
 
   return (
@@ -298,25 +301,20 @@ export default function Templates() {
           </div>
         </div>
 
-        {/* PROTECT & SECURE TIER SECTION (S1-S7) */}
-        <div>
+        {/* PROTECT TIER SECTION (P1-P4) */}
+        <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-1 flex-1 bg-gradient-to-r from-emerald-500 via-purple-500 to-red-600 rounded"></div>
+            <div className="h-1 flex-1 bg-gradient-to-r from-emerald-500 to-cyan-600 rounded"></div>
             <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-              {userTier === 'secure' ? strings.tierSection.secure : strings.tierSection.protect}
+              {strings.tierSection.protect}
             </h2>
-            <div className="h-1 flex-1 bg-gradient-to-l from-emerald-500 via-purple-500 to-red-600 rounded"></div>
+            <div className="h-1 flex-1 bg-gradient-to-l from-emerald-500 to-cyan-600 rounded"></div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {secureTemplates.map((template) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {protectTemplates.map((template) => {
               const Icon = template.icon;
               const hasAccess = hasAccessToLetter(template.id);
-              
-              // Determine which tier unlocks this letter
-              const requiredTier = template.id === 'final_opportunity' || template.id === 'non_compliance' || template.id === 'settlement' 
-                ? 'secure' 
-                : 'protect';
 
               return (
                 <Card
@@ -336,15 +334,9 @@ export default function Templates() {
                           variant="outline"
                           className="text-xs"
                           style={{
-                            backgroundColor: hasAccess 
-                              ? (requiredTier === 'secure' ? '#F3E8FF' : '#D1FAE5')
-                              : '#FEE2E2',
-                            color: hasAccess 
-                              ? (requiredTier === 'secure' ? '#7C3AED' : '#059669')
-                              : '#DC2626',
-                            borderColor: hasAccess 
-                              ? (requiredTier === 'secure' ? '#E9D5FF' : '#A7F3D0')
-                              : '#FECACA'
+                            backgroundColor: hasAccess ? '#D1FAE5' : '#FEE2E2',
+                            color: hasAccess ? '#059669' : '#DC2626',
+                            borderColor: hasAccess ? '#A7F3D0' : '#FECACA'
                           }}
                         >
                           {template.letterKey}
@@ -353,18 +345,89 @@ export default function Templates() {
                           variant="outline"
                           className="text-xs"
                           style={{
-                            backgroundColor: hasAccess 
-                              ? (requiredTier === 'secure' ? '#F3E8FF' : '#D1FAE5')
-                              : '#FEE2E2',
-                            color: hasAccess 
-                              ? (requiredTier === 'secure' ? '#7C3AED' : '#059669')
-                              : '#DC2626',
-                            borderColor: hasAccess 
-                              ? (requiredTier === 'secure' ? '#E9D5FF' : '#A7F3D0')
-                              : '#FECACA'
+                            backgroundColor: hasAccess ? '#D1FAE5' : '#FEE2E2',
+                            color: hasAccess ? '#059669' : '#DC2626',
+                            borderColor: hasAccess ? '#A7F3D0' : '#FECACA'
                           }}
                         >
-                          {requiredTier === 'secure' ? strings.secureTier : strings.protectTier}
+                          {strings.protectTier}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? template.name_th : template.name_en}
+                    </h3>
+
+                    <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
+                      {language === 'th' ? template.description_th : template.description_en}
+                    </p>
+
+                    {!hasAccess && (
+                      <div className="text-xs text-center p-2 rounded-lg" style={{
+                        backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                        color: '#DC2626'
+                      }}>
+                        {strings.upgradeRequired}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* SECURE TIER SECTION (S1-S3) */}
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-1 flex-1 bg-gradient-to-r from-orange-600 to-red-700 rounded"></div>
+            <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+              {strings.tierSection.secure}
+            </h2>
+            <div className="h-1 flex-1 bg-gradient-to-l from-orange-600 to-red-700 rounded"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {secureTemplates.map((template) => {
+              const Icon = template.icon;
+              const hasAccess = hasAccessToLetter(template.id);
+
+              return (
+                <Card
+                  key={template.id}
+                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasAccess ? 'cursor-pointer' : 'opacity-75'}`}
+                  style={{ backgroundColor: colors.cardBg }}
+                  onClick={() => hasAccess && navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`)}
+                >
+                  <div className={`h-2 bg-gradient-to-r ${template.color} rounded-t-xl`} />
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start justify-between mb-3 sm:mb-4">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center`}>
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge
+                          variant="outline"
+                          className="text-xs"
+                          style={{
+                            backgroundColor: hasAccess ? '#FEF3C7' : '#FEE2E2',
+                            color: hasAccess ? '#D97706' : '#DC2626',
+                            borderColor: hasAccess ? '#FDE68A' : '#FECACA'
+                          }}
+                        >
+                          {template.letterKey}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className="text-xs"
+                          style={{
+                            backgroundColor: hasAccess ? '#FEF3C7' : '#FEE2E2',
+                            color: hasAccess ? '#D97706' : '#DC2626',
+                            borderColor: hasAccess ? '#FDE68A' : '#FECACA'
+                          }}
+                        >
+                          {strings.secureTier}
                         </Badge>
                       </div>
                     </div>

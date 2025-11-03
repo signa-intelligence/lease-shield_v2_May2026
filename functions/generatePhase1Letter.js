@@ -1,7 +1,8 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * Lease Shield – 10 Letters (Lite + Secure)
+ * Lease Shield – 10 Letters (3 Tiers)
  * One function: generatePhase1Letter
  * - Inputs: { subject, caseId?, request_by_date_iso?, ...overrides }
  * - Saves clean .doc (primary) + .html preview
@@ -9,17 +10,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 const SUBJECTS = new Set([
   "deposit", "deductions", "reminder",
-  "dispute", "early_termination", "condition_dispute",
-  "evidence", "final_opportunity", "non_compliance", "settlement"
+  "dispute", "early_termination", "condition_dispute", "evidence",
+  "final_opportunity", "non_compliance", "settlement"
 ]);
 
 const mapKey = (s="") => ({
   deposit: "L1", deductions: "L2", reminder: "L3",
-  dispute: "S1", early_termination: "S2", condition_dispute: "S3",
-  evidence: "S4", final_opportunity: "S5", non_compliance: "S6", settlement: "S7"
+  dispute: "P1", early_termination: "P2", condition_dispute: "P3", evidence: "P4",
+  final_opportunity: "S1", non_compliance: "S2", settlement: "S3"
 }[s.toLowerCase()] || "");
 
-// Tier access control
+// Tier access control - Progressive access model
 const LETTER_ACCESS = {
   lite: ["deposit", "deductions", "reminder"],
   protect: ["deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence"],
@@ -112,7 +113,7 @@ Best regards,
 ขอแสดงความนับถือ
 {{tenant_name}}`
   },
-  S1: {
+  P1: { // Formerly S1
     enSubject: "Formal Dispute of Withholding",
     thSubject: "หนังสือคัดค้านการหัก/ระงับคืนเงิน",
     enBody: `Dear {{landlord_name}},
@@ -132,7 +133,7 @@ Regards,
 ขอแสดงความนับถือ
 {{tenant_name}}`
   },
-  S2: {
+  P2: { // Formerly S2
     enSubject: "Early Termination Reconciliation",
     thSubject: "ประสานงานยุติสัญญาก่อนกำหนด",
     enBody: `Dear {{landlord_name}},
@@ -150,7 +151,7 @@ Thank you,
 ขอแสดงความนับถือ
 {{tenant_name}}`
   },
-  S3: {
+  P3: { // Formerly S3
     enSubject: "Notice of Property Condition Dispute",
     thSubject: "หนังสือโต้แย้งสภาพทรัพย์สิน",
     enBody: `Dear {{landlord_name}},
@@ -168,7 +169,7 @@ Best,
 ขอแสดงความนับถือ
 {{tenant_name}}`
   },
-  S4: {
+  P4: { // Formerly S4
     enSubject: "Request for Evidence or Supporting Documents",
     thSubject: "ขอหลักฐาน/เอกสารประกอบ",
     enBody: `Dear {{landlord_name}},
@@ -184,7 +185,7 @@ Regards,
 ขอแสดงความนับถือ
 {{tenant_name}}`
   },
-  S5: {
+  S1: { // Formerly S5
     enSubject: "Final Opportunity Before Formal Action",
     thSubject: "โอกาสสุดท้ายก่อนดำเนินการต่อ",
     enBody: `Dear {{landlord_name}},
@@ -200,7 +201,7 @@ Sincerely,
 ขอแสดงความนับถือ
 {{tenant_name}}`
   },
-  S6: {
+  S2: { // Formerly S6
     enSubject: "Notice of Non-Compliance (Breach of Obligations)",
     thSubject: "หนังสือแจ้งไม่ปฏิบัติตาม/ผิดสัญญา",
     enBody: `Dear {{landlord_name}},
@@ -216,7 +217,7 @@ Regards,
 ขอแสดงความนับถือ
 {{tenant_name}}`
   },
-  S7: {
+  S3: { // Formerly S7
     enSubject: "Confirmation of Settlement / Deposit Transfer",
     thSubject: "ยืนยันการชำระ/คืนเงินสำเร็จ",
     enBody: `Dear {{landlord_name}},
@@ -368,10 +369,13 @@ Deno.serve(async (req) => {
 
     // Enforce tier access
     if (!LETTER_ACCESS[tier].includes(subjectRaw)) {
-      const needed =
-        subjectRaw === "final_opportunity" || subjectRaw === "non_compliance" || subjectRaw === "settlement"
-          ? "secure"
-          : "protect";
+      // Determine which tier is needed
+      let needed = "secure";
+      if (LETTER_ACCESS.lite.includes(subjectRaw)) {
+        needed = "lite";
+      } else if (LETTER_ACCESS.protect.includes(subjectRaw)) {
+        needed = "protect";
+      }
 
       console.log(`❌ Access denied: tier=${tier}, subject=${subjectRaw}, needed=${needed}`);
 
