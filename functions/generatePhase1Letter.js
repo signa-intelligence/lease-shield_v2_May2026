@@ -1,70 +1,215 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
-//////////////////////
-// Helpers & Copy  //
-//////////////////////
-const SUBJECTS = new Set(["deposit","damages","early_termination"]);
+/**
+ * Lease Shield – 10 Letters (Lite + Secure)
+ * One function: generatePhase1Letter
+ * - Inputs: { subject, caseId?, request_by_date_iso?, ...overrides }
+ * - Saves clean .doc (primary) + .html preview
+ */
+
+const SUBJECTS = new Set([
+  "deposit", "deductions", "reminder",
+  "dispute", "early_termination", "condition_dispute",
+  "evidence", "final_opportunity", "non_compliance", "settlement"
+]);
+
+const mapKey = (s="") => ({
+  deposit: "L1", deductions: "L2", reminder: "L3",
+  dispute: "S1", early_termination: "S2", condition_dispute: "S3",
+  evidence: "S4", final_opportunity: "S5", non_compliance: "S6", settlement: "S7"
+}[s.toLowerCase()] || "");
+
+// --- helpers
 const esc = (s="") => String(s).replace(/[<&>"]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m]));
-const isoDate = (v) => { try { return new Date(v).toISOString().slice(0,10); } catch { return new Date().toISOString().slice(0,10); } };
-const safeISO = (v, plusDays=7) => v ? isoDate(v) : isoDate(Date.now() + plusDays * 864e5);
+const iso = (v) => { try { return new Date(v).toISOString().slice(0,10); } catch { return new Date().toISOString().slice(0,10); } };
+const later = (days=7) => iso(Date.now() + days * 864e5);
 const fill = (tpl, vars) => tpl.replace(/{{\s*([\w.]+)\s*}}/g, (_, k) => (vars[k] ?? ""));
 
-const COPY = {
-  deposit: {
-    subject_en: "Request for clarification on refundable deposit",
-    subject_th: "ขอความชัดเจนเกี่ยวกับเงินประกันการเช่า",
-    paragraphs_en: [
-      "Dear {{landlord_name}},",
-      "This letter concerns {{property_address}}. We kindly request an update regarding the refundable security deposit of {{deposit_amount}} THB under {{contract_ref}}.",
-      "To reconcile promptly, please provide either (1) any proposed deductions with itemised reasons and supporting documents, or (2) confirmation of the refund amount and transfer details. If no deductions apply, please confirm the return timeline.",
-      "We would appreciate a reply by {{request_by_date_iso}} so both sides can close this matter smoothly.",
-      "Kind regards,",
-      "{{tenant_name}}"
-    ],
-    paragraphs_th: [
-      "เรียน {{landlord_name}},",
-      "หนังสือนี้เกี่ยวกับ {{property_address}} จึงขอความคืบหน้าเกี่ยวกับการคืนเงินประกันจำนวน {{deposit_amount}} บาท ภายใต้ {{contract_ref}}",
-      "เพื่อให้ปิดบัญชีได้รวดเร็ว กรุณาแจ้ง (1) รายการหักพร้อมเหตุผลและเอกสารประกอบ หรือ (2) การยืนยันจำนวนเงินที่จะคืนและรายละเอียดการโอน หากไม่มีรายการหัก กรุณาแจ้งกำหนดการโอนคืน",
-      "ขอความกรุณาตอบกลับภายใน {{request_by_date_iso}} เพื่อให้ทั้งสองฝ่ายสามารถปิดเรื่องนี้ได้อย่างราบรื่น",
-      "ขอแสดงความนับถือ",
-      "{{tenant_name}}"
-    ]
+// --- content library
+const LETTER_TEMPLATES = {
+  L1: {
+    enSubject: "Request for Return of Security Deposit",
+    thSubject: "ขอคืนเงินประกันการเช่า",
+    enBody: `Dear {{landlord_name}},
+
+I hope you're well. I'm writing about the wrap-up of my tenancy at {{property_address}} and next steps to return the security deposit of {{deposit_amount}} THB under {{contract_ref}}. Now that I've moved out and returned the keys, could we confirm the refund process? The place was left tidy and in good order, with utilities cleared, so I'm not expecting significant deductions. If there's anything you'd like me to clarify, I'm happy to help—photos, meter shots, cleaning receipts—whatever makes this simple for both of us.
+
+To keep things transparent, could you please let me know: (1) whether any deductions are being considered and for what, (2) the refund amount, and (3) when/how the transfer will be made. If there are deductions, a short itemised note or supporting receipt is more than enough. Clear records protect both sides and avoid back-and-forth later.
+
+If it's workable, I'd appreciate an update by {{request_by_date_iso}} so we can close the account neatly. If you prefer a different date or method, just say—happy to accommodate.
+
+Thank you again. I appreciate your cooperation and want to leave things on a good note.
+
+Warm regards,
+{{tenant_name}}`,
+    thBody: `เรียน {{landlord_name}},
+
+ขอรบกวนสอบถามขั้นตอนและกำหนดเวลาการคืนเงินประกันจำนวน {{deposit_amount}} บาท สำหรับที่พัก {{property_address}} ตามสัญญา {{contract_ref}} ขณะนี้ได้ย้ายออกและส่งมอบกุญแจเรียบร้อยแล้ว ห้องอยู่ในสภาพดีและไม่มีค่าใช้จ่ายค้างชำระ
+
+เพื่อความชัดเจน กรุณาแจ้ง (1) รายการหัก (ถ้ามี) พร้อมเหตุผลสั้น ๆ หรือหลักฐานประกอบ (2) จำนวนเงินที่จะคืน และ (3) วันที่/วิธีการโอน หากสะดวก รบกวนอัปเดตภายใน {{request_by_date_iso}} หากต้องการข้อมูลเพิ่มเติม ยินดีจัดส่งทันที
+
+ขอแสดงความนับถือ
+{{tenant_name}}`
   },
-  damages: {
-    subject_en: "Request for itemised assessment of damages",
-    subject_th: "ขอรายละเอียดการประเมินความเสียหายแบบแยกรายการ",
-    paragraphs_en: [
-      "Dear {{landlord_name}},",
-      "This letter relates to {{property_address}}. If there are any claimed damages under {{contract_ref}}, please provide an itemised assessment with reasons and supporting documents/quotes.",
-      "If no damages apply, please confirm the final refundable amount and transfer details. Our target to reconcile is {{request_by_date_iso}}; please advise if another timeline is preferable.",
-      "Kind regards,",
-      "{{tenant_name}}"
-    ],
-    paragraphs_th: [
-      "เรียน {{landlord_name}},",
-      "หนังสือนี้เกี่ยวกับ {{property_address}} หากมีการเรียกร้องค่าเสียหายภายใต้ {{contract_ref}} กรุณาส่งรายละเอียดแบบแยกรายการพร้อมเหตุผลและเอกสาร/ใบเสนอราคา",
-      "หากไม่มีความเสียหาย กรุณายืนยันจำนวนเงินที่จะคืนและรายละเอียดการโอน ตั้งใจปิดเรื่องภายใน {{request_by_date_iso}} หากมีกำหนดอื่นที่เหมาะสมกว่า กรุณาแจ้ง",
-      "ขอแสดงความนับถือ",
-      "{{tenant_name}}"
-    ]
+  L2: {
+    enSubject: "Request for Itemised Deductions or Damage Report",
+    thSubject: "ขอรายละเอียดการหักเงิน/ความเสียหายแบบแยกรายการ",
+    enBody: `Dear {{landlord_name}},
+
+Thanks for your note regarding potential deductions from the deposit for {{property_address}}. To make sure we're aligned, could you please share an itemised breakdown—what's being charged, why, and the amounts involved—together with any supporting receipts or quotes. Clear documentation helps both sides evaluate the costs fairly and keeps the record tidy.
+
+I recognise normal wear-and-tear is to be expected; I'm only asking about items beyond that. If any point isn't clear, a brief explanation is perfect. Once I've reviewed the list, I'll respond quickly so we can wrap this up without delay.
+
+If it's convenient, please send the breakdown by {{request_by_date_iso}}. I appreciate your cooperation.
+
+Kind regards,
+{{tenant_name}}`,
+    thBody: `เรียน {{landlord_name}},
+
+ตามที่แจ้งเรื่องการหักเงินประกันของ {{property_address}} รบกวนขอรายการหักแบบแยกรายการ พร้อมเหตุผลและเอกสารประกอบ (เช่น ใบเสร็จหรือใบเสนอราคา) เพื่อความโปร่งใสและเป็นธรรมต่อทั้งสองฝ่าย ข้าพเจ้าทราบดีว่ามีการสึกหรอตามการใช้งานปกติ จึงขอข้อมูลเฉพาะส่วนที่เกินกว่าปกติเท่านั้น
+
+กรุณาส่งรายละเอียดภายใน {{request_by_date_iso}} หากต้องการข้อมูลจากฝั่งข้าพเจ้าเพิ่มเติม แจ้งได้ทันที
+
+ขอแสดงความนับถือ
+{{tenant_name}}`
   },
-  early_termination: {
-    subject_en: "Request to reconcile early termination under the lease",
-    subject_th: "ขอประสานงานการยกเลิกสัญญาก่อนกำหนด",
-    paragraphs_en: [
-      "Dear {{landlord_name}},",
-      "This letter concerns early termination for {{property_address}} under {{contract_ref}}. To close the account properly, please confirm (1) any fees specified by the contract, (2) key/possession handover steps, and (3) the final account date.",
-      "Our preference is to complete this by {{request_by_date_iso}}. If an alternative schedule suits you better, please let us know so we can agree on a practical plan.",
-      "Kind regards,",
-      "{{tenant_name}}"
-    ],
-    paragraphs_th: [
-      "เรียน {{landlord_name}},",
-      "หนังสือนี้เกี่ยวกับการยกเลิกสัญญาก่อนกำหนดของ {{property_address}} ภายใต้ {{contract_ref}} เพื่อให้ปิดบัญชีอย่างถูกต้อง กรุณายืนยัน (1) ค่าธรรมเนียมตามสัญญา (ถ้ามี) (2) ขั้นตอนการส่งมอบกุญแจ/ทรัพย์สิน และ (3) วันที่ปิดบัญชี",
-      "ต้องการดำเนินการให้เสร็จภายใน {{request_by_date_iso}} หากมีกำหนดการอื่นที่เหมาะสมกว่า กรุณาแจ้งเพื่อจะได้วางแผนร่วมกัน",
-      "ขอแสดงความนับถือ",
-      "{{tenant_name}}"
-    ]
+  L3: {
+    enSubject: "Friendly Reminder: Deposit Follow-Up",
+    thSubject: "ติดตามการคืนเงินประกัน",
+    enBody: `Dear {{landlord_name}},
+
+Just a quick check-in regarding the deposit for {{property_address}} under {{contract_ref}}. If you're able, could you confirm the refund amount and transfer date? If deductions are still being reviewed, an estimate or brief status is fine for now.
+
+If {{request_by_date_iso}} works for you as a target, great; otherwise please suggest a date that does. Thanks again for your help.
+
+Best regards,
+{{tenant_name}}`,
+    thBody: `เรียน {{landlord_name}},
+
+ขอติดตามความคืบหน้าการคืนเงินประกันสำหรับ {{property_address}} หากยังอยู่ระหว่างตรวจสอบ สามารถแจ้งสถานะคร่าว ๆ ได้ หากสะดวกตั้งเป้าหมายภายใน {{request_by_date_iso}} จะช่วยให้ปิดบัญชีได้เรียบร้อยขึ้น ขอบคุณมากสำหรับความร่วมมือ
+
+ขอแสดงความนับถือ
+{{tenant_name}}`
+  },
+  S1: {
+    enSubject: "Formal Dispute of Withholding",
+    thSubject: "หนังสือคัดค้านการหัก/ระงับคืนเงิน",
+    enBody: `Dear {{landlord_name}},
+
+I'm writing to formally dispute the withholding of all or part of the deposit for {{property_address}} under {{contract_ref}}. Based on the handover condition and records I have, the proposed deductions don't appear to be supported by clear evidence or fall outside normal wear-and-tear.
+
+Please share: (1) an itemised list, (2) basis for each amount (invoice/quote), and (3) photos/notes indicating when and how the damage occurred. If a contractor's estimate is used, please include scope and rates.
+
+I'd prefer to settle this directly. If we can't align, we could consider an independent estimate or release undisputed funds first. Kindly confirm your position by {{request_by_date_iso}}.
+
+Regards,
+{{tenant_name}}`,
+    thBody: `เรียน {{landlord_name}},
+
+ขอคัดค้านการระงับ/หักเงินประกันของ {{property_address}} โดยขอให้ชี้แจงรายการ ค่าใช้จ่าย และหลักฐานสนับสนุนอย่างชัดเจน หากไม่สามารถตกลงกันได้ ขอเสนอให้คืนส่วนที่ไม่มีข้อโต้แย้งก่อน และทบทวนส่วนที่เหลือร่วมกัน โดยโปรดแจ้งจุดยืนภายใน {{request_by_date_iso}}
+
+ขอแสดงความนับถือ
+{{tenant_name}}`
+  },
+  S2: {
+    enSubject: "Early Termination Reconciliation",
+    thSubject: "ประสานงานยุติสัญญาก่อนกำหนด",
+    enBody: `Dear {{landlord_name}},
+
+This concerns the early termination at {{property_address}} under {{contract_ref}}. Please confirm: (1) any contractual fees, (2) key/possession handover steps, (3) meter/common-fee cut-offs, and (4) the final account (including the deposit). I can provide meter photos and move-out condition.
+
+I'd like to complete this by {{request_by_date_iso}} if possible; I'm flexible on timing.
+
+Thank you,
+{{tenant_name}}`,
+    thBody: `เรียน {{landlord_name}},
+
+เรื่องการยุติสัญญาก่อนกำหนดของ {{property_address}} กรุณายืนยันค่าธรรมเนียมตามสัญญา ขั้นตอนส่งมอบกุญแจ วันที่ตัดยอดค่าสาธารณูปโภค/ค่าส่วนกลาง และใบสรุปยอดบัญชีสุดท้าย (รวมเงินประกัน) หากสะดวก ขอปิดบัญชีภายใน {{request_by_date_iso}}
+
+ขอแสดงความนับถือ
+{{tenant_name}}`
+  },
+  S3: {
+    enSubject: "Notice of Property Condition Dispute",
+    thSubject: "หนังสือโต้แย้งสภาพทรัพย์สิน",
+    enBody: `Dear {{landlord_name}},
+
+After reviewing your assessment alongside my move-out photos and the check-in inventory, I don't agree that the listed items exceed fair wear-and-tear. For example: {{example_item_1}}, {{example_item_2}}, {{example_item_3}}. Costs also appear disproportionate to scope.
+
+I'm open to reasonable evidence and alternative quotes. Please share itemised estimates or invoices so we can resolve this quickly.
+
+Best,
+{{tenant_name}}`,
+    thBody: `เรียน {{landlord_name}},
+
+จากการตรวจสอบเอกสารและภาพถ่าย เห็นว่ารายการที่ระบุเป็นการสึกหรอตามการใช้งานปกติ หากมีหลักฐานหรือใบเสนอราคาที่ชัดเจน กรุณาส่งมาเพื่อพิจารณา ยินดีหาข้อยุติร่วมกันโดยเร็ว
+
+ขอแสดงความนับถือ
+{{tenant_name}}`
+  },
+  S4: {
+    enSubject: "Request for Evidence or Supporting Documents",
+    thSubject: "ขอหลักฐาน/เอกสารประกอบ",
+    enBody: `Dear {{landlord_name}},
+
+To complete the review for {{property_address}}, please provide supporting records for each item—receipts, work orders, photos, or contractor quotes. A concise bundle is perfect. I'll respond within two working days after receipt.
+
+Regards,
+{{tenant_name}}`,
+    thBody: `เรียน {{landlord_name}},
+
+เพื่อพิจารณาอย่างครบถ้วน รบกวนส่งหลักฐานสำหรับแต่ละรายการ เช่น ใบเสร็จ ใบสั่งงาน รูปถ่าย หรือใบเสนอราคา เมื่อได้รับแล้วจะรีบตอบกลับภายใน 2 วันทำการ
+
+ขอแสดงความนับถือ
+{{tenant_name}}`
+  },
+  S5: {
+    enSubject: "Final Opportunity Before Formal Action",
+    thSubject: "โอกาสสุดท้ายก่อนดำเนินการต่อ",
+    enBody: `Dear {{landlord_name}},
+
+One last follow-up regarding the unresolved deposit for {{property_address}} under {{contract_ref}}. If we can confirm either the refund or an evidence-based itemised deduction by {{request_by_date_iso}}, I'll consider the matter closed. Otherwise I'll seek external advice on next steps.
+
+Sincerely,
+{{tenant_name}}`,
+    thBody: `เรียน {{landlord_name}},
+
+ขอติดตามเป็นครั้งสุดท้าย หากสามารถยืนยันยอดคืนหรือรายการหักพร้อมหลักฐานภายใน {{request_by_date_iso}} จะถือว่าเสร็จสิ้น มิฉะนั้นอาจจำเป็นต้องพิจารณาดำเนินการต่อไป
+
+ขอแสดงความนับถือ
+{{tenant_name}}`
+  },
+  S6: {
+    enSubject: "Notice of Non-Compliance (Breach of Obligations)",
+    thSubject: "หนังสือแจ้งไม่ปฏิบัติตาม/ผิดสัญญา",
+    enBody: `Dear {{landlord_name}},
+
+This notice relates to {{contract_ref}} for {{property_address}}. The following appears non-compliant: {{breach_summary}}. Please remedy or clarify by {{request_by_date_iso}}. I'm open to context; the goal is a practical, fair outcome.
+
+Regards,
+{{tenant_name}}`,
+    thBody: `เรียน {{landlord_name}},
+
+ขอแจ้งกรณีไม่ปฏิบัติตามที่ปรากฏใน {{contract_ref}} สำหรับ {{property_address}} ได้แก่ {{breach_summary}} กรุณาแก้ไขหรือชี้แจงภายใน {{request_by_date_iso}}
+
+ขอแสดงความนับถือ
+{{tenant_name}}`
+  },
+  S7: {
+    enSubject: "Confirmation of Settlement / Deposit Transfer",
+    thSubject: "ยืนยันการชำระ/คืนเงินสำเร็จ",
+    enBody: `Dear {{landlord_name}},
+
+Thank you for confirming the transfer relating to {{property_address}}. I acknowledge receipt of {{settlement_amount}} THB on {{settlement_date}} and consider the deposit matter resolved under {{contract_ref}}.
+
+Kind regards,
+{{tenant_name}}`,
+    thBody: `เรียน {{landlord_name}},
+
+ขอขอบคุณที่ยืนยันการโอนสำหรับ {{property_address}} ได้รับเงินจำนวน {{settlement_amount}} บาท เมื่อวันที่ {{settlement_date}} ถือว่าเสร็จสิ้นตาม {{contract_ref}}
+
+ขอแสดงความนับถือ
+{{tenant_name}}`
   }
 };
 
@@ -72,55 +217,45 @@ const TEMPLATE = `<!doctype html>
 <html lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta charset="utf-8">
 <style>
-  @page { size: A4; margin: 20mm 18mm; }
-  body { font-family: Inter, Arial, "Noto Sans Thai", "TH Sarabun New", sans-serif; color:#1A1D1F; font-size:12pt; line-height:1.65; }
-  .wrap { max-width: 820px; margin: 0 auto; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
-  .brand { font-weight:700; color:#0C3B2E; font-size:16pt; letter-spacing:0.3px; }
-  .meta { font-size:10.5pt; color:#475569; border:1px solid #E5E7EB; border-radius:8px; padding:10px 12px; }
-  .meta div { margin:3px 0; }
-  h1.en { font-size:18pt; margin:8px 0 2px; color:#0C3B2E; }
-  h2.th { font-size:15pt; margin:0 0 14px; color:#0C3B2E; font-family:"Noto Sans Thai","TH Sarabun New",sans-serif; }
-  .section { margin: 14px 0; }
-  p { margin: 6px 0 10px; }
-  .th { font-family:"Noto Sans Thai","TH Sarabun New",sans-serif; }
-  hr { border:0; border-top:1px solid #E5E7EB; margin:18px 0; }
-  .footer { margin-top:18px; padding:12px; background:#F8FAFC; border:1px solid #E5E7EB; border-radius:8px; font-size:10.5pt; color:#475569; }
-  .muted { color:#64748B; }
+@page { size: A4; margin: 20mm 18mm; }
+body { font-family: Inter, Arial, "Noto Sans Thai", "TH Sarabun New", sans-serif; color: #1A1D1F; font-size: 12pt; line-height: 1.65; }
+.wrap { max-width: 820px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+.brand { font-weight: 700; color: #0C3B2E; font-size: 16pt; letter-spacing: 0.3px; }
+.meta { font-size: 10.5pt; color: #475569; border: 1px solid #E5E7EB; border-radius: 8px; padding: 10px 12px; }
+.meta div { margin: 3px 0; }
+h1.en { font-size: 18pt; margin: 8px 0 2px; color: #0C3B2E; }
+h2.th { font-size: 15pt; margin: 0 0 14px; color: #0C3B2E; font-family: "Noto Sans Thai", "TH Sarabun New", sans-serif; }
+.section { margin: 14px 0; }
+p { margin: 6px 0 10px; }
+.th { font-family: "Noto Sans Thai", "TH Sarabun New", sans-serif; }
+hr { border: 0; border-top: 1px solid #E5E7EB; margin: 18px 0; }
+.footer { margin-top: 18px; padding: 12px; background: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 8px; font-size: 10.5pt; color: #475569; }
+.muted { color: #64748B; }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="header">
-      <div class="brand">LEASE SHIELD</div>
-      <div class="meta">
-        <div><strong>Date:</strong> {{today_iso}}</div>
-        <div><strong>Case ID:</strong> {{caseId}}</div>
-        <div><strong>Property:</strong> {{property_address}}</div>
-      </div>
-    </div>
-
-    <h1 class="en">{{subject_en}}</h1>
-    <h2 class="th">{{subject_th}}</h2>
-
-    <div class="section">
-      {{paragraphs_en}}
-    </div>
-
-    <hr>
-
-    <div class="section th">
-      {{paragraphs_th}}
-    </div>
-
-    <div class="footer">
-      <div><strong>Contract:</strong> {{contract_ref}}</div>
-      <div><strong>Requested reply by:</strong> {{request_by_date_iso}}</div>
-      <div><strong>From:</strong> {{tenant_name}} <span class="muted">→</span> <strong>To:</strong> {{landlord_name}}</div>
+<div class="wrap">
+  <div class="header">
+    <div class="brand">LEASE SHIELD</div>
+    <div class="meta">
+      <div><strong>Date:</strong> {{today_iso}}</div>
+      <div><strong>Case ID:</strong> {{caseId}}</div>
+      <div><strong>Property:</strong> {{property_address}}</div>
     </div>
   </div>
+  <h1 class="en">{{enSubject}}</h1>
+  <h2 class="th">{{thSubject}}</h2>
+  <div class="section">{{enHtml}}</div>
+  <hr>
+  <div class="section th">{{thHtml}}</div>
+  <div class="footer">
+    <div><strong>Contract:</strong> {{contract_ref}}</div>
+    <div><strong>Requested reply by:</strong> {{request_by_date_iso}}</div>
+    <div><strong>From:</strong> {{tenant_name}} <span class="muted">→</span> <strong>To:</strong> {{landlord_name}}</div>
+  </div>
+</div>
 </body>
 </html>`;
 
@@ -131,10 +266,12 @@ Deno.serve(async (req) => {
     
     // Validate subject
     const subjectRaw = (args?.subject || "deposit").toLowerCase();
-    if (!SUBJECTS.has(subjectRaw)) {
+    const key = mapKey(subjectRaw);
+    
+    if (!key) {
       return Response.json({ 
         ok: false, 
-        error: 'Invalid subject. Use: deposit, damages, or early_termination' 
+        error: 'Invalid subject. Use: deposit, deductions, reminder, dispute, early_termination, condition_dispute, evidence, final_opportunity, non_compliance, or settlement' 
       }, { status: 400 });
     }
 
@@ -178,27 +315,31 @@ Deno.serve(async (req) => {
     }
 
     // Helper to get values with fallback chain
-    const pick = (k, d = "") => {
-      if (args?.[k] != null) return esc(String(args[k]));
-      if (fromCase?.[k] != null) return esc(String(fromCase[k]));
-      if (leaseData?.[k] != null) return esc(String(leaseData[k]));
-      return d;
+    const get = (k, d = "") => {
+      const val = args?.[k] ?? fromCase?.[k] ?? leaseData?.[k] ?? d;
+      return val ? esc(String(val)) : d;
     };
 
     // Build vars
     const vars = {
       caseId: mode === "case" ? String(args.caseId).slice(0, 8) : `standalone-${Date.now()}`,
-      today_iso: isoDate(new Date()),
-      tenant_name: pick("tenant_name") || userData?.full_name || fromCase?.user_email || "Tenant",
-      landlord_name: pick("landlord_name") || "Landlord",
-      property_address: pick("property_address") || "",
-      contract_ref: pick("contract_ref") || (
+      today_iso: iso(new Date()),
+      request_by_date_iso: esc(args?.request_by_date_iso || fromCase?.sla?.followup_due || later(7)),
+      tenant_name: get("tenant_name") || userData?.full_name || fromCase?.user_email || "Tenant",
+      landlord_name: get("landlord_name") || "Landlord",
+      property_address: get("property_address") || "",
+      contract_ref: get("contract_ref") || (
         leaseData?.start_date 
           ? `Lease dated ${new Date(leaseData.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` 
           : "Lease Agreement"
       ),
-      deposit_amount: pick("deposit_amount") || fromCase?.dispute_amount || leaseData?.deposit_amount || "",
-      request_by_date_iso: safeISO(args?.request_by_date_iso || fromCase?.sla?.followup_due, 14)
+      deposit_amount: get("deposit_amount") || fromCase?.dispute_amount || leaseData?.deposit_amount || "",
+      example_item_1: get("example_item_1") || "",
+      example_item_2: get("example_item_2") || "",
+      example_item_3: get("example_item_3") || "",
+      breach_summary: get("breach_summary") || "",
+      settlement_amount: get("settlement_amount") || "",
+      settlement_date: get("settlement_date") || ""
     };
 
     // Standalone mode validation
@@ -209,17 +350,31 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Compose paragraphs
-    const cp = COPY[subjectRaw];
-    const paragraphs_en = cp.paragraphs_en.map(s => `<p>${fill(esc(s), vars)}</p>`).join("");
-    const paragraphs_th = cp.paragraphs_th.map(s => `<p>${fill(esc(s), vars)}</p>`).join("");
+    // Get letter template
+    const letter = LETTER_TEMPLATES[key];
+    
+    // Convert body text to HTML paragraphs
+    const enHtml = fill(esc(letter.enBody), vars)
+      .split('\n')
+      .map(x => x.trim())
+      .filter(Boolean)
+      .map(p => `<p>${p}</p>`)
+      .join("");
+      
+    const thHtml = fill(esc(letter.thBody), vars)
+      .split('\n')
+      .map(x => x.trim())
+      .filter(Boolean)
+      .map(p => `<p>${p}</p>`)
+      .join("");
 
+    // Build final HTML
     const html = fill(TEMPLATE, {
       ...vars,
-      subject_en: cp.subject_en,
-      subject_th: cp.subject_th,
-      paragraphs_en,
-      paragraphs_th
+      enSubject: letter.enSubject,
+      thSubject: letter.thSubject,
+      enHtml,
+      thHtml
     });
 
     // Build UTF-8 safe content for Word
@@ -228,7 +383,7 @@ Deno.serve(async (req) => {
 
     // File naming
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const baseName = `LS-${vars.caseId}-${subjectRaw}-${stamp}`;
+    const baseName = `LS-${vars.caseId}-${key}-${stamp}`;
 
     // Save .doc (Word format with UTF-8)
     const docBlob = new Blob([htmlUtf8], { type: 'application/msword; charset=utf-8' });
@@ -244,7 +399,7 @@ Deno.serve(async (req) => {
     const doc = await base44.entities.Document.create({
       type: 'letter',
       file_url: docUrl,
-      label: `${cp.subject_en}${mode === "case" ? ` - Case ${vars.caseId}` : ''}`,
+      label: `${letter.enSubject}${mode === "case" ? ` - Case ${vars.caseId}` : ''}`,
       html_content: html
     });
 
@@ -258,14 +413,14 @@ Deno.serve(async (req) => {
         meta: { 
           html_url: htmlUrl, 
           doc_url: docUrl,
-          subject: subjectRaw 
+          subject: subjectRaw,
+          letter_key: key
         }
       });
 
       const letters = fromCase.letters || {};
       letters[`${subjectRaw}_url`] = docUrl;           // Primary = Word file
       letters[`${subjectRaw}_html_url`] = htmlUrl;     // HTML preview
-      letters.v1_url = docUrl;                          // Legacy compatibility
 
       await base44.asServiceRole.entities.Case.update(args.caseId, {
         status: 'ready_drafts',
@@ -279,6 +434,7 @@ Deno.serve(async (req) => {
       ok: true,
       mode,
       subject: subjectRaw,
+      letter_key: key,
       urls: {
         doc: docUrl,
         html: htmlUrl
