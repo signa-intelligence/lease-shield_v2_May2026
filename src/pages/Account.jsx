@@ -86,7 +86,7 @@ const PLAN_DETAILS = [
       'Unlimited Lease Scans',
       'Deposit Shield Automation',
       'Rent Payment Alerts',
-      'All 7+ Letter Templates',
+      '7 Letter Templates', // Changed from '7+ Letter Templates'
       '5GB Document Storage',
       'LINE Notifications',
       'Automated Reminders'
@@ -109,7 +109,7 @@ const PLAN_DETAILS = [
     description: 'Maximum prevention with priority support',
     benefits: [
       'Everything in Protect',
-      'All 10 Letter Templates',
+      '10 Letter Templates', // Changed from 'All 10 Letter Templates'
       'Priority Case Queue',
       'Priority AI Scanning',
       '20GB Document Storage',
