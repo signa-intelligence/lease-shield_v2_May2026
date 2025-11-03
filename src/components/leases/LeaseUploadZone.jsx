@@ -10,6 +10,29 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
   });
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    zoneBg: '#2A2D30',
+    zoneBgActive: '#353A3D',
+    borderColor: '#3A3D40',
+    borderColorActive: '#3B82F6',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    iconBg: '#0C3B2E',
+    buttonBg: '#0C3B2E',
+    buttonBorder: '#0C3B2E'
+  } : {
+    zoneBg: '#F9FAFB',
+    zoneBgActive: '#ECEFED',
+    borderColor: '#D1D5DB',
+    borderColorActive: '#3B82F6',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    iconBg: '#0C3B2E',
+    buttonBg: '#0C3B2E',
+    buttonBorder: '#0C3B2E'
+  };
 
   const t = {
     en: {
@@ -39,11 +62,11 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
       onDragOver={onDrag}
       onDrop={onFileSelect}
       style={{
-        border: dragActive ? '3px dashed #0C3B2E' : '3px dashed #D1D5DB',
+        border: dragActive ? `3px dashed ${colors.borderColorActive}` : `3px dashed ${colors.borderColor}`,
         borderRadius: '16px',
         padding: '48px 24px',
         textAlign: 'center',
-        backgroundColor: dragActive ? '#ECEFED' : '#F9FAFB',
+        backgroundColor: dragActive ? colors.zoneBgActive : colors.zoneBg,
         transition: 'all 0.3s',
         cursor: 'pointer'
       }}
@@ -59,11 +82,11 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
           <Upload className="w-10 h-10 text-white" />
         </div>
         
-        <h3 className="text-xl font-bold text-ls-charcoal mb-2">
+        <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
           {strings.title}
         </h3>
         
-        <p className="text-slate-600 mb-1">
+        <p className="mb-1" style={{ color: colors.textSecondary }}>
           {strings.dragDrop}
         </p>
         
@@ -75,7 +98,7 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
           <label
             htmlFor="file-input"
             style={{
-              backgroundColor: '#0C3B2E',
+              backgroundColor: colors.buttonBg,
               color: '#FFFFFF',
               padding: '12px 24px',
               borderRadius: '8px',
@@ -89,7 +112,7 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
             }}
             onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = colors.buttonBg}
           >
             <FileText className="w-5 h-5" />
             {strings.browseFiles}
@@ -106,21 +129,25 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
           <label
             htmlFor="camera-input"
             style={{
-              backgroundColor: '#FFFFFF',
+              backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
               color: '#0C3B2E',
               padding: '12px 24px',
               borderRadius: '8px',
               fontWeight: 'bold',
               fontSize: '16px',
-              border: '2px solid #0C3B2E',
+              border: `2px solid ${colors.buttonBorder}`,
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#ECEFED'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#FFFFFF'}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = isDarkMode ? '#3A3D40' : '#ECEFED';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#FFFFFF';
+            }}
           >
             <Camera className="w-5 h-5" />
             {strings.takePhotos}
@@ -136,7 +163,7 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
           />
         </div>
 
-        <p className="text-xs text-slate-500 mt-6">
+        <p className="text-xs mt-6" style={{ color: colors.textSecondary }}>
           {strings.formats}
         </p>
       </div>
