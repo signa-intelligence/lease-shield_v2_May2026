@@ -21,15 +21,6 @@ export default function Layout({ children, currentPageName }) {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Register Service Worker
-  React.useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(reg => console.log('SW registered:', reg))
-        .catch(err => console.log('SW registration failed:', err));
-    }
-  }, []);
-
   // Apply theme to body
   React.useEffect(() => {
     if (user?.theme === 'dark') {
@@ -271,7 +262,7 @@ export default function Layout({ children, currentPageName }) {
               alt="Lease Shield"
               className="h-8 w-8"
             />
-            <span className="font-bold text-ls-forest text-lg">
+            <span className="font-bold text-ls-forest text-lg" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
               {strings.appName}
             </span>
             {isAdmin && (
