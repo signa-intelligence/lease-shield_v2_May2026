@@ -182,7 +182,8 @@ export default function TemplateForm() {
       return;
     }
 
-    if (!formData.deposit_amount_thb) {
+    // Only require deposit amount for deposit-related disputes
+    if (formData.dispute_type === 'deposit' && !formData.deposit_amount_thb) {
       setError(strings.errorFillDeposit);
       return;
     }
@@ -209,7 +210,7 @@ export default function TemplateForm() {
         landlord_name: formData.landlord_name,
         property_address: formData.property_address,
         contract_ref: formData.contract_ref || 'Residential Lease Agreement',
-        deposit_amount_thb: parseFloat(formData.deposit_amount_thb),
+        deposit_amount_thb: formData.deposit_amount_thb ? parseFloat(formData.deposit_amount_thb) : null,
         dispute_type: formData.dispute_type,
         facts: factsArray.length > 0 ? factsArray : [
           'Tenant moved out and returned keys on the agreed date',
@@ -237,7 +238,7 @@ export default function TemplateForm() {
       }
     } catch (err) {
       console.error('Letter generation error:', err);
-      setError(strings.errorGenerationFailed);
+      setError(err.message || strings.errorGenerationFailed);
     } finally {
       setGenerating(false);
     }
@@ -401,27 +402,30 @@ export default function TemplateForm() {
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="deposit_amount" style={{ color: colors.textPrimary }}>
-                        {strings.depositAmount} <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="deposit_amount"
-                        type="number"
-                        required
-                        value={formData.deposit_amount_thb}
-                        onChange={(e) => handleChange('deposit_amount_thb', e.target.value)}
-                        placeholder="24900"
-                        className="mt-2"
-                        style={{
-                          backgroundColor: colors.inputBg,
-                          borderColor: colors.borderColor,
-                          color: colors.textPrimary
-                        }}
-                      />
-                    </div>
+                    {/* Only show deposit amount for deposit disputes */}
+                    {formData.dispute_type === 'deposit' && (
+                      <div>
+                        <Label htmlFor="deposit_amount" style={{ color: colors.textPrimary }}>
+                          {strings.depositAmount} <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="deposit_amount"
+                          type="number"
+                          required
+                          value={formData.deposit_amount_thb}
+                          onChange={(e) => handleChange('deposit_amount_thb', e.target.value)}
+                          placeholder="24900"
+                          className="mt-2"
+                          style={{
+                            backgroundColor: colors.inputBg,
+                            borderColor: colors.borderColor,
+                            color: colors.textPrimary
+                          }}
+                        />
+                      </div>
+                    )}
 
-                    <div>
+                    <div className={formData.dispute_type === 'deposit' ? '' : 'sm:col-span-2'}>
                       <Label htmlFor="dispute_type" style={{ color: colors.textPrimary }}>
                         {strings.disputeType}
                       </Label>
