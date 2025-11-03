@@ -1,120 +1,59 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
-// Pre-written bilingual letter templates - NO ENCODING ISSUES
-const LETTER_TEMPLATES = {
-  deposit_return: {
-    subject_en: "Request for Return of Security Deposit",
-    subject_th: "ขอคืนเงินประกันการเช่า",
-    body_en: [
-      "Dear {{landlord_name}},",
-      "I am writing to formally request the return of my security deposit of ฿{{deposit_amount}} for the property located at {{property_address}}.",
-      "I vacated the property on the agreed date and returned all keys. The property was left in good condition with no damages beyond normal wear and tear.",
-      "According to our lease agreement ({{contract_ref}}), I expect the deposit to be returned by {{return_date}}.",
-      "Please arrange for the refund at your earliest convenience. I can be reached at this email address for any questions.",
-      "Thank you for your attention to this matter.",
-      "Sincerely,",
-      "{{tenant_name}}"
-    ],
-    body_th: [
-      "เรียน คุณ{{landlord_name}}",
-      "ข้าพเจ้าเขียนจดหมายฉบับนี้เพื่อขอคืนเงินประกันการเช่าจำนวน ฿{{deposit_amount}} สำหรับทรัพย์สินที่ตั้งอยู่ที่ {{property_address}}",
-      "ข้าพเจ้าได้ย้ายออกจากทรัพย์สินตามกำหนดและคืนกุญแจทั้งหมดแล้ว ทรัพย์สินอยู่ในสภาพดีโดยไม่มีความเสียหายนอกเหนือจากการสึกหรอตามปกติ",
-      "ตามสัญญาเช่า ({{contract_ref}}) ข้าพเจ้าคาดว่าจะได้รับเงินประกันคืนภายในวันที่ {{return_date}}",
-      "กรุณาจัดการคืนเงินโดยเร็วที่สุด ท่านสามารถติดต่อข้าพเจ้าได้ทางอีเมลนี้หากมีข้อสงสัย",
-      "ขอบคุณสำหรับความร่วมมือ",
-      "ขอแสดงความนับถือ",
-      "{{tenant_name}}"
-    ]
-  }
-};
+// Clean HTML template - no LLM, just fill placeholders
+const LETTER_TEMPLATE = `<!doctype html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deposit clarification – {{caseId}}</title>
+<style>
+  @page{size:A4;margin:20mm 18mm}
+  body{font-family:Inter,Arial,"Noto Sans Thai","TH Sarabun New",sans-serif;line-height:1.5;color:#111;font-size:12.2pt}
+  h1{color:#0C3B2E;margin:0 0 6mm}
+  .muted{color:#667085}
+  .pair{margin:0 0 5mm}
+  .th{font-family:"Noto Sans Thai","TH Sarabun New",sans-serif}
+</style></head><body>
+<h1>Request for clarification on refundable deposit</h1>
+<p class="muted th">ขอความชัดเจนเกี่ยวกับเงินประกันการเช่า</p>
+
+<div class="pair">
+  <p>Dear {{landlord_name}}, this note summarises the completion of the tenancy for {{property_address}} and requests an update about the refundable deposit.</p>
+  <p class="th">เรียน {{landlord_name}} หนังสือฉบับนี้สรุปการสิ้นสุดการเช่าสำหรับ {{property_address}} และขอความคืบหน้าเกี่ยวกับการคืนเงินประกัน</p>
+</div>
+
+<div class="pair">
+  <p>{{contract_ref}}. Supporting evidence is attached for easy reference.</p>
+  <p class="th">{{contract_ref}} และได้แนบหลักฐานประกอบเพื่อความสะดวก</p>
+</div>
+
+<div class="pair">
+  <p>To reconcile promptly, please provide: (1) any proposed deductions with itemised reasons and documents, or (2) confirmation of refund transfer details.</p>
+  <p class="th">เพื่อให้ปิดบัญชีได้รวดเร็ว กรุณาแจ้ง (1) รายการหักพร้อมเหตุผลและเอกสาร หรือ (2) การยืนยันรายละเอียดการโอนเงินคืน</p>
+</div>
+
+<div class="pair">
+  <p>Kindly reply by {{request_by_date_iso}} so both sides can close this matter smoothly.</p>
+  <p class="th">กรุณาตอบกลับภายในวันที่ {{request_by_date_iso}} เพื่อให้ทั้งสองฝ่ายสามารถปิดเรื่องนี้ได้อย่างราบรื่น</p>
+</div>
+
+<hr>
+<p><strong>Context / ข้อมูลอ้างอิง</strong></p>
+<p>Tenant / ผู้เช่า: {{tenant_name}}</p>
+<p>Landlord / เจ้าของ: {{landlord_name}}</p>
+<p>Deposit (THB) / เงินประกัน: {{deposit_amount_thb}}</p>
+<p>Attachments / ไฟล์แนบ: {{attachments_list}}</p>
+
+<p style="margin-top:10mm">Kind regards,<br>Lease Shield</p>
+<p class="th">ขอแสดงความนับถือ<br>Lease Shield</p>
+<p class="muted" style="margin-top:6mm">This is documentation & communication support, not legal advice.</p>
+</body></html>`;
 
 function fillTemplate(template, data) {
-  let text = template;
+  let html = template;
   for (const [key, value] of Object.entries(data)) {
     const placeholder = `{{${key}}}`;
-    text = text.replaceAll(placeholder, value || '—');
+    html = html.replaceAll(placeholder, String(value || '—'));
   }
-  return text;
-}
-
-function createLetterHTML(letterData, caseInfo) {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const paragraphs = letterData.body_en.map((enPara, i) => {
-    const thPara = letterData.body_th[i] || '';
-    return `    <p class="en">${enPara}</p>
-    <p class="th">${thPara}</p>`;
-  }).join('\n');
-  
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${letterData.subject_en}</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-      line-height: 1.6;
-      color: #111;
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-    }
-    .header {
-      border-bottom: 3px solid #0C3B2E;
-      padding-bottom: 15px;
-      margin-bottom: 30px;
-    }
-    .logo { font-size: 24px; font-weight: 700; color: #0C3B2E; }
-    .date { color: #666; font-size: 14px; margin-top: 5px; }
-    h1 { color: #0C3B2E; font-size: 22px; margin: 20px 0 10px; }
-    .thai-title {
-      font-family: 'Sarabun', 'Leelawadee UI', sans-serif;
-      color: #666;
-      font-size: 18px;
-      margin-bottom: 30px;
-    }
-    .en { margin-bottom: 8px; font-size: 15px; }
-    .th {
-      font-family: 'Sarabun', 'Leelawadee UI', sans-serif;
-      color: #555;
-      font-size: 15px;
-      margin-bottom: 20px;
-    }
-    .footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #ddd;
-      font-size: 12px;
-      color: #999;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div class="logo">LEASE SHIELD</div>
-    <div class="date">Date: ${today}</div>
-    <div class="date">Case: ${caseInfo.caseId.slice(0, 12)}</div>
-  </div>
-
-  <h1>${letterData.subject_en}</h1>
-  <p class="thai-title">${letterData.subject_th}</p>
-
-  <div class="content">
-${paragraphs}
-  </div>
-
-  <div class="footer">
-    <p><strong>Property:</strong> ${caseInfo.property_address}</p>
-    ${caseInfo.deposit_amount_thb ? `<p><strong>Deposit:</strong> ฿${caseInfo.deposit_amount_thb.toLocaleString()}</p>` : ''}
-    <p style="margin-top: 15px; font-style: italic;">
-      This letter is for documentation purposes only.
-    </p>
-    <p>© ${new Date().getFullYear()} Lease Shield</p>
-  </div>
-</body>
-</html>`;
+  return html;
 }
 
 Deno.serve(async (req) => {
@@ -132,10 +71,10 @@ Deno.serve(async (req) => {
       tenant_name = "Tenant",
       landlord_name = "Landlord", 
       property_address = "the property",
-      contract_ref = "Lease Agreement",
+      contract_ref = "Lease dated YYYY-MM-DD (optional)",
       deposit_amount_thb = 0,
-      request_by_date_iso,
-      dispute_type = "deposit"
+      request_by_date_iso = "YYYY-MM-DD",
+      attachments_list = "Lease.pdf; Photos.zip; Receipts.pdf"
     } = payload;
 
     if (!caseId) {
@@ -144,7 +83,7 @@ Deno.serve(async (req) => {
 
     console.log('Generating letter for case:', caseId);
 
-    // Check existing
+    // Check existing letter
     const existingDocs = await base44.entities.Document.filter({
       type: 'letter',
       created_by: user.email
@@ -163,58 +102,38 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get template
-    const template = LETTER_TEMPLATES.deposit_return;
-    
-    // Calculate return date
-    const returnDate = request_by_date_iso || 
-      new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    
-    // Template data
-    const templateData = {
+    // Fill template with actual data
+    const filledHTML = fillTemplate(LETTER_TEMPLATE, {
+      caseId: caseId.slice(0, 12),
+      tenant_name,
       landlord_name,
-      deposit_amount: deposit_amount_thb.toLocaleString(),
       property_address,
       contract_ref,
-      return_date: returnDate,
-      tenant_name
-    };
-
-    // Fill templates
-    const letter = {
-      subject_en: fillTemplate(template.subject_en, templateData),
-      subject_th: fillTemplate(template.subject_th, templateData),
-      body_en: template.body_en.map(para => fillTemplate(para, templateData)),
-      body_th: template.body_th.map(para => fillTemplate(para, templateData))
-    };
-
-    console.log('✅ Thai text sample:', letter.subject_th);
-
-    // Generate HTML
-    const htmlContent = createLetterHTML(letter, {
-      caseId,
-      property_address,
-      deposit_amount_thb
+      deposit_amount_thb: deposit_amount_thb.toLocaleString(),
+      request_by_date_iso,
+      attachments_list
     });
 
-    // Upload as UTF-8
+    console.log('Template filled successfully');
+
+    // Upload HTML file with proper UTF-8 encoding
     const encoder = new TextEncoder();
-    const utf8Bytes = encoder.encode(htmlContent);
+    const utf8Bytes = encoder.encode(filledHTML);
     const blob = new Blob([utf8Bytes], { type: 'text/html; charset=utf-8' });
     const file = new File([blob], `letter_${caseId}.html`, { type: 'text/html' });
     
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-    // Save
+    // Save document
     await base44.entities.Document.create({
       type: 'letter',
       file_url,
-      label: `${contract_ref} - Case ${caseId.slice(0, 8)}`
+      label: `Letter - Case ${caseId.slice(0, 8)}`
     });
 
     console.log('Letter saved:', file_url);
 
-    // Update case
+    // Update case if not temporary
     if (!caseId.startsWith('temp-')) {
       const cases = await base44.entities.Case.list();
       const caseData = cases.find(c => c.id === caseId);
@@ -222,13 +141,17 @@ Deno.serve(async (req) => {
       if (caseData) {
         await base44.entities.Case.update(caseId, {
           status: 'ready_drafts',
-          letters: { letter_url: file_url, letter_data: letter }
+          letters: { 
+            letter_url: file_url,
+            v1_url: file_url
+          }
         });
 
+        // Send email notification
         await base44.integrations.Core.SendEmail({
           to: user.email,
           subject: user.language === 'th' ? 'จดหมายพร้อมแล้ว' : 'Your Letter is Ready',
-          body: `Hi ${user.full_name},\n\nYour letter for case ${caseId.slice(0, 8)} is ready.\n\n— Lease Shield`
+          body: `Hi ${user.full_name},\n\nYour letter for case ${caseId.slice(0, 8)} is ready to view and download.\n\n— Lease Shield`
         });
       }
     }
@@ -236,8 +159,7 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       caseId,
-      letter_url: file_url,
-      letter
+      letter_url: file_url
     });
 
   } catch (error) {
