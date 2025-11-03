@@ -121,14 +121,14 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, message: 'Already generated' });
     }
 
-    // Prepare data for templates
+    // Prepare data - FIX: Handle null deposit_amount_thb
     const data = {
       caseId: caseId.slice(0, 12),
       tenant_name,
       landlord_name,
       property_address,
       contract_ref,
-      deposit_amount_thb: deposit_amount_thb.toLocaleString(),
+      deposit_amount_thb: deposit_amount_thb ? deposit_amount_thb.toLocaleString() : '—',
       request_by_date_iso,
       attachments_list
     };
