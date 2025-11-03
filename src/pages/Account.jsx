@@ -109,6 +109,7 @@ const PLAN_DETAILS = [
     description: 'Maximum prevention with priority support',
     benefits: [
       'Everything in Protect',
+      'All 10 Letter Templates',
       'Priority Case Queue',
       'Priority AI Scanning',
       '20GB Document Storage',
