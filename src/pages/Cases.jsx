@@ -8,7 +8,7 @@ import { Scale, AlertCircle, Clock, CheckCircle2, UserCheck, Plus, Zap, Crown } 
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const STATUS_CONFIG = {
@@ -22,6 +22,7 @@ const STATUS_CONFIG = {
 
 export default function Cases() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { hasAccess: hasPriorityQueue } = useFeatureAccess('priority_queue');
   const { hasAccess: hasMemberPrice } = useFeatureAccess('resolve_member_price');
@@ -35,32 +36,42 @@ export default function Cases() {
     queryKey: ['cases'],
     queryFn: () => base44.entities.Case.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
-  // Handle payment success redirect - force refetch
+  // Handle payment success - refetch cases
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(location.search);
     const paymentStatus = urlParams.get('payment');
     
     if (paymentStatus === 'success' && user) {
-      console.log('Payment success detected - refetching cases...');
+      console.log('Payment success detected - refetching cases immediately');
       
-      // Wait a bit for webhook to complete, then refetch multiple times
-      const refetchWithRetry = async () => {
-        for (let i = 0; i < 3; i++) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // 1s, 2s, 3s delays
-          console.log(`Refetch attempt ${i + 1}`);
-          await queryClient.invalidateQueries({ queryKey: ['cases'] });
-          await refetchCases();
-        }
-      };
+      // Force immediate refetch
+      refetchCases();
       
-      refetchWithRetry();
+      // Refetch again after delays to catch webhook processing
+      setTimeout(() => {
+        console.log('Refetch after 2s');
+        refetchCases();
+      }, 2000);
       
-      // Clean up URL after first refetch
-      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => {
+        console.log('Refetch after 4s');
+        refetchCases();
+      }, 4000);
+      
+      setTimeout(() => {
+        console.log('Final refetch after 6s');
+        refetchCases();
+      }, 6000);
+      
+      // Clean up URL
+      const newUrl = location.pathname;
+      window.history.replaceState({}, '', newUrl);
     }
-  }, [user, queryClient, refetchCases]);
+  }, [location.search, user, refetchCases, location.pathname]);
 
   const language = user?.language || 'en';
 
