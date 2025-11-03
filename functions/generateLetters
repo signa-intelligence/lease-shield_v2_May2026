@@ -30,7 +30,7 @@ function buildCopy(subject, v) {
         title_th: "ขอรายละเอียดการประเมินความเสียหายแบบแยกรายการ",
         p1_en: `Dear ${v.landlord_name}, this note summarises the tenancy at ${v.property_address} and requests an itemised assessment of any claimed damages.`,
         p1_th: `เรียน ${v.landlord_name} หนังสือนี้สรุปการเช่าสำหรับ ${v.property_address} และขอรับรายละเอียดการประเมินความเสียหายแบบแยกรายการ (ถ้ามี)`,
-        p2_en: `${v.contract_ref} To help reconcile promptly, please share (1) items, (2) reasons, and (3) supporting documents/quotes.`,
+        p2_en: `${v.contract_ref}. To help reconcile promptly, please share (1) items, (2) reasons, and (3) supporting documents/quotes.`,
         p2_th: `${v.contract_ref} เพื่อให้ปิดบัญชีได้รวดเร็ว กรุณาแจ้ง (1) รายการความเสียหาย (2) เหตุผล และ (3) เอกสาร/ใบเสนอราคา (ถ้ามี)`,
         p3_en: `If no damages apply, please confirm the refundable amount and transfer details. A reply by ${v.request_by_date_iso} would be appreciated.`,
         p3_th: `หากไม่มีความเสียหาย กรุณายืนยันจำนวนเงินที่จะคืนและรายละเอียดการโอน หากตอบกลับภายใน ${v.request_by_date_iso} จะขอบคุณมาก`
@@ -41,7 +41,7 @@ function buildCopy(subject, v) {
         title_th: "ขอประสานงานเรื่องการยกเลิกสัญญาก่อนกำหนด",
         p1_en: `Dear ${v.landlord_name}, this note concerns early termination for ${v.property_address} and proposes a clear reconciliation plan.`,
         p1_th: `เรียน ${v.landlord_name} หนังสือนี้เกี่ยวกับการยกเลิกสัญญาก่อนกำหนดของ ${v.property_address} และขอเสนอแนวทางการปิดบัญชีอย่างเป็นระบบ`,
-        p2_en: `${v.contract_ref} Please confirm (1) any fees specified by the contract, (2) key handover steps, and (3) the final account date.`,
+        p2_en: `${v.contract_ref}. Please confirm (1) any fees specified by the contract, (2) key handover steps, and (3) the final account date.`,
         p2_th: `${v.contract_ref} กรุณายืนยัน (1) ค่าธรรมเนียมตามสัญญา (ถ้ามี) (2) ขั้นตอนส่งมอบกุญแจ และ (3) วันที่ปิดบัญชี`,
         p3_en: `We aim to complete this by ${v.request_by_date_iso}. If an alternative timeline is preferable, please let us know.`,
         p3_th: `ตั้งใจดำเนินการให้เสร็จภายใน ${v.request_by_date_iso} หากมีกำหนดการอื่นที่เหมาะสมกว่า กรุณาแจ้งได้`
@@ -53,7 +53,7 @@ function buildCopy(subject, v) {
         title_th: "ขอความชัดเจนเกี่ยวกับเงินประกันการเช่า",
         p1_en: `Dear ${v.landlord_name}, this note summarises the completion of the tenancy for ${v.property_address} and requests an update about the refundable deposit.`,
         p1_th: `เรียน ${v.landlord_name} หนังสือนี้สรุปการสิ้นสุดการเช่าสำหรับ ${v.property_address} และขอความคืบหน้าเกี่ยวกับการคืนเงินประกัน`,
-        p2_en: `${v.contract_ref} To reconcile promptly, please provide: (1) any proposed deductions with itemised reasons and documents, or (2) confirmation of refund transfer details.`,
+        p2_en: `${v.contract_ref}. To reconcile promptly, please provide: (1) any proposed deductions with itemised reasons and documents, or (2) confirmation of refund transfer details.`,
         p2_th: `${v.contract_ref} เพื่อให้ปิดบัญชีได้รวดเร็ว กรุณาแจ้ง (1) รายการหักพร้อมเหตุผลและเอกสารประกอบ หรือ (2) การยืนยันการโอนเงินคืน`,
         p3_en: `Kindly reply by ${v.request_by_date_iso} so both sides can close this matter smoothly.`,
         p3_th: `กรุณาตอบกลับภายในวันที่ ${v.request_by_date_iso} เพื่อให้ทั้งสองฝ่ายสามารถปิดเรื่องนี้ได้อย่างราบรื่น`
@@ -111,41 +111,60 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { caseId, subject } = await req.json();
+    const payload = await req.json();
+    
+    // Extract data from payload - support both direct values and from case lookup
+    const caseId = payload.caseId;
+    const subject = payload.subject || payload.dispute_type || 'deposit';
     
     if (!caseId) return Response.json({ error: 'caseId required' }, { status: 400 });
 
     console.log('Generating letter for case:', caseId, 'subject:', subject);
 
-    // Load case
-    const cases = await base44.entities.Case.list();
-    const c = cases.find(cs => cs.id === caseId);
-    
-    if (!c) {
-      return Response.json({ error: `Case not found: ${caseId}` }, { status: 404 });
-    }
-
-    const vars = {
-      caseId: safe(c.id),
-      tenant_name: safe(c.tenant_name, "Tenant"),
-      landlord_name: safe(c.landlord_name, "Landlord"),
-      property_address: safe(c.property_address, ""),
-      contract_ref: safe(c.contract_ref, ""),
-      deposit_amount_thb: safeNum(c?.dispute_amount),
-      request_by_date_iso: safeISO(c?.sla?.followup_due, 7),
-      attachments_list: joinList(c?.evidence || [])
+    // Prepare variables - use payload data directly if provided, otherwise try to load from case
+    let vars = {
+      caseId: safe(caseId).slice(0, 12),
+      tenant_name: safe(payload.tenant_name, "Tenant"),
+      landlord_name: safe(payload.landlord_name, "Landlord"),
+      property_address: safe(payload.property_address, ""),
+      contract_ref: safe(payload.contract_ref, "Lease Agreement"),
+      deposit_amount_thb: payload.deposit_amount_thb ? safeNum(payload.deposit_amount_thb) : "—",
+      request_by_date_iso: safe(payload.request_by_date_iso, safeISO(null, 14)),
+      attachments_list: Array.isArray(payload.attachments) ? payload.attachments.join("; ") : safe(payload.attachments, "Lease.pdf")
     };
 
-    // Subject copy
-    const copy = buildCopy(subject, vars);
+    // If case ID is not temporary, try to load and merge case data
+    if (!caseId.startsWith('temp-')) {
+      try {
+        const cases = await base44.entities.Case.list();
+        const c = cases.find(cs => cs.id === caseId);
+        
+        if (c) {
+          // Merge case data with payload data (payload takes priority)
+          vars = {
+            caseId: safe(c.id).slice(0, 12),
+            tenant_name: payload.tenant_name || safe(c.tenant_name, "Tenant"),
+            landlord_name: payload.landlord_name || safe(c.landlord_name, "Landlord"),
+            property_address: payload.property_address || safe(c.property_address, ""),
+            contract_ref: payload.contract_ref || safe(c.contract_ref, "Lease Agreement"),
+            deposit_amount_thb: payload.deposit_amount_thb ? safeNum(payload.deposit_amount_thb) : safeNum(c?.dispute_amount),
+            request_by_date_iso: payload.request_by_date_iso || safeISO(c?.sla?.followup_due, 14),
+            attachments_list: payload.attachments ? (Array.isArray(payload.attachments) ? payload.attachments.join("; ") : payload.attachments) : joinList(c?.evidence || [])
+          };
+        }
+      } catch (err) {
+        console.log('Could not load case, using payload data only:', err.message);
+      }
+    }
 
-    // Merge fields for template
+    // Generate letter content
+    const copy = buildCopy(subject, vars);
     const html = fill(TEMPLATE_HTML, { ...vars, ...copy });
 
     // Upload HTML file
     const encoder = new TextEncoder();
     const blob = new Blob([encoder.encode(html)], { type: 'text/html; charset=utf-8' });
-    const filename = `${vars.caseId}_${(subject || "deposit")}.html`;
+    const filename = `${vars.caseId}_${subject}.html`;
     const file = new File([blob], filename, { type: 'text/html' });
     
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
@@ -154,25 +173,36 @@ Deno.serve(async (req) => {
     await base44.entities.Document.create({
       type: 'letter',
       file_url,
-      label: `Letter ${(subject || "deposit")} - Case ${caseId.slice(0, 8)}`
+      label: `Letter ${subject} - Case ${caseId.slice(0, 8)}`
     });
 
-    // Update case
-    const updateData = {
-      letters: {
-        ...(c.letters || {}),
-        [`${(subject || "deposit")}_url`]: file_url
+    // Update case if it exists and is not temporary
+    if (!caseId.startsWith('temp-')) {
+      try {
+        const cases = await base44.entities.Case.list();
+        const c = cases.find(cs => cs.id === caseId);
+        
+        if (c) {
+          await base44.entities.Case.update(caseId, {
+            letters: {
+              ...(c.letters || {}),
+              [`${subject}_url`]: file_url
+            }
+          });
+        }
+      } catch (err) {
+        console.log('Could not update case:', err.message);
       }
-    };
-    
-    await base44.entities.Case.update(caseId, updateData);
+    }
 
     console.log('Letter generated:', file_url);
 
     return Response.json({ 
+      success: true,
       ok: true, 
       url: file_url, 
-      subject: subject || "deposit" 
+      subject: subject,
+      isTemporary: caseId.startsWith('temp-')
     });
 
   } catch (error) {
