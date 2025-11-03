@@ -1,87 +1,96 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
-// Decode HTML entities - simple and reliable
-function decodeEntities(text) {
-  if (!text) return '';
-  return text
-    .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(parseInt(num, 10)))
-    .replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-}
+const LETTER_PROMPT = `You are a professional letter writer for Thai rental disputes.
 
-// Simple HTML template
-function createLetterHTML(letter, caseInfo) {
-  const today = new Date().toISOString().split('T')[0];
+Generate ONE bilingual letter (English + Thai).
+
+CRITICAL ENCODING RULES:
+- Output ONLY valid JSON
+- Use actual Unicode Thai characters: สวัสดี ขอบคุณ เช่า
+- DO NOT use HTML entities like &#xxxx;
+- DO NOT use escaped characters like \\u0E2A
+- Each English paragraph must have matching Thai paragraph
+
+Example of CORRECT output:
+{
+  "subject_en": "Request for Deposit Return",
+  "subject_th": "ขอคืนเงินประกันการเช่า",
+  "body_en": ["Dear Landlord", "I am writing to request..."],
+  "body_th": ["เรียนเจ้าของบ้าน", "ข้าพเจ้าเขียนจดหมายเพื่อขอ..."]
+}`;
+
+function createHTML(letter, caseInfo) {
+  const date = new Date().toISOString().split('T')[0];
   
-  const bodyHTML = letter.body_en.map((enPara, i) => `
-    <p style="margin-bottom: 8px; font-size: 15px;">${enPara}</p>
-    <p style="margin-bottom: 20px; font-size: 15px; color: #666; font-family: 'Noto Sans Thai', 'Sarabun', sans-serif;">${letter.body_th[i] || ''}</p>
-  `).join('');
+  const paragraphs = letter.body_en.map((en, i) => {
+    const th = letter.body_th[i] || '';
+    return `    <p class="en">${en}</p>
+    <p class="th">${th}</p>`;
+  }).join('\n');
   
+  // Use template literals - no encoding functions, just plain text
   return `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>${letter.subject_en}</title>
-<style>
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-    line-height: 1.6;
-    color: #111;
-    max-width: 800px;
-    margin: 40px auto;
-    padding: 20px;
-  }
-  .header {
-    border-bottom: 3px solid #0C3B2E;
-    padding-bottom: 15px;
-    margin-bottom: 30px;
-  }
-  .logo {
-    font-size: 24px;
-    font-weight: 700;
-    color: #0C3B2E;
-  }
-  .date {
-    color: #666;
-    font-size: 14px;
-    margin-top: 5px;
-  }
-  h1 {
-    color: #0C3B2E;
-    font-size: 22px;
-    margin: 20px 0 10px;
-  }
-  .thai-title {
-    font-family: 'Noto Sans Thai', 'Sarabun', 'Leelawadee UI', sans-serif;
-    color: #666;
-    font-size: 18px;
-    margin-bottom: 30px;
-  }
-  .footer {
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid #ddd;
-    font-size: 12px;
-    color: #999;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${letter.subject_en}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      line-height: 1.6;
+      color: #111;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    .header {
+      border-bottom: 3px solid #0C3B2E;
+      padding-bottom: 15px;
+      margin-bottom: 30px;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0C3B2E;
+    }
+    .date { color: #666; font-size: 14px; margin-top: 5px; }
+    h1 { color: #0C3B2E; font-size: 22px; margin: 20px 0 10px; }
+    .thai-title {
+      font-family: 'Noto Sans Thai', 'Sarabun', 'Leelawadee UI', sans-serif;
+      color: #666;
+      font-size: 18px;
+      margin-bottom: 30px;
+    }
+    .en { margin-bottom: 8px; font-size: 15px; }
+    .th {
+      font-family: 'Noto Sans Thai', 'Sarabun', 'Leelawadee UI', sans-serif;
+      color: #555;
+      font-size: 15px;
+      margin-bottom: 20px;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+      font-size: 12px;
+      color: #999;
+    }
+  </style>
 </head>
 <body>
   <div class="header">
     <div class="logo">LEASE SHIELD</div>
-    <div class="date">Date: ${today}</div>
+    <div class="date">Date: ${date}</div>
     <div class="date">Case: ${caseInfo.caseId.slice(0, 8)}</div>
   </div>
 
   <h1>${letter.subject_en}</h1>
   <p class="thai-title">${letter.subject_th}</p>
 
-  <div>${bodyHTML}</div>
+  <div class="content">
+${paragraphs}
+  </div>
 
   <div class="footer">
     <p><strong>Property:</strong> ${caseInfo.property_address}</p>
@@ -104,6 +113,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const payload = await req.json();
     const { 
       caseId,
       tenant_name = "Tenant",
@@ -112,7 +122,7 @@ Deno.serve(async (req) => {
       deposit_amount_thb,
       dispute_type = "deposit",
       facts = []
-    } = await req.json();
+    } = payload;
 
     if (!caseId) {
       return Response.json({ error: 'caseId required' }, { status: 400 });
@@ -120,7 +130,7 @@ Deno.serve(async (req) => {
 
     console.log('Generating letter for case:', caseId);
 
-    // Check existing
+    // Check for existing letter
     const existingDocs = await base44.entities.Document.filter({
       type: 'letter',
       created_by: user.email
@@ -134,43 +144,33 @@ Deno.serve(async (req) => {
       console.log('Letter already exists');
       return Response.json({
         success: true,
-        letter_url: existing.file_url,
-        message: 'Already generated'
+        letter_url: existing.file_url
       });
     }
 
-    // Build prompt
     const factsText = facts.length > 0 ? facts.join('. ') : 'Tenant moved out and returned keys as agreed.';
     
-    const prompt = `Write a professional bilingual letter (English + Thai) for this rental dispute:
+    const userPrompt = `Write a professional bilingual letter for this rental dispute:
 
-DETAILS:
-- Tenant: ${tenant_name}
-- Landlord: ${landlord_name}
-- Property: ${property_address}
-- Issue: ${dispute_type}
-${deposit_amount_thb ? `- Deposit: ฿${deposit_amount_thb}` : ''}
-- Facts: ${factsText}
+Tenant: ${tenant_name}
+Landlord: ${landlord_name}
+Property: ${property_address}
+Issue: ${dispute_type}
+${deposit_amount_thb ? `Deposit: ฿${deposit_amount_thb}` : ''}
+Facts: ${factsText}
 
-REQUIREMENTS:
+Requirements:
 - Professional and polite tone
-- Each English paragraph needs matching Thai paragraph
-- Keep it concise (150-200 words)
+- 150-200 words in English
+- Match each English paragraph with Thai translation
+- Keep it concise and clear
 
-CRITICAL: Output Thai as ACTUAL Unicode characters (สวัสดี), NOT HTML codes.
-
-Return JSON:
-{
-  "subject_en": "English subject",
-  "subject_th": "หัวข้อภาษาไทย",
-  "body_en": ["Para 1", "Para 2", "Para 3"],
-  "body_th": ["ย่อหน้า 1", "ย่อหน้า 2", "ย่อหน้า 3"]
-}`;
+IMPORTANT: Return actual Thai Unicode text (สวัสดี ขอบคุณ เช่า), NOT HTML codes or escape sequences.`;
 
     console.log('Calling LLM...');
     
-    const llmResult = await base44.integrations.Core.InvokeLLM({
-      prompt,
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: `${LETTER_PROMPT}\n\n${userPrompt}`,
       response_json_schema: {
         type: "object",
         properties: {
@@ -185,30 +185,37 @@ Return JSON:
 
     console.log('LLM responded');
 
-    if (!llmResult?.subject_en || !llmResult?.body_en) {
-      throw new Error('Invalid LLM response');
+    if (!result?.subject_en || !result?.body_en || !Array.isArray(result.body_en)) {
+      throw new Error('Invalid LLM response structure');
     }
 
-    // DECODE IMMEDIATELY after receiving from LLM
-    const cleanLetter = {
-      subject_en: decodeEntities(llmResult.subject_en),
-      subject_th: decodeEntities(llmResult.subject_th),
-      body_en: llmResult.body_en.map(p => decodeEntities(p)),
-      body_th: llmResult.body_th.map(p => decodeEntities(p))
-    };
-
     console.log('Letter decoded and validated');
+    
+    // Log first Thai character to verify encoding
+    if (result.subject_th) {
+      console.log('Thai subject first char code:', result.subject_th.charCodeAt(0));
+    }
 
-    // Generate HTML with clean data
-    const htmlContent = createLetterHTML(cleanLetter, {
+    // Generate HTML - NO ENCODING FUNCTIONS, just direct string insertion
+    const htmlContent = createHTML(result, {
       caseId,
       property_address,
       deposit_amount_thb
     });
 
-    // Upload
-    const htmlBlob = new Blob([htmlContent], { type: 'text/html; charset=utf-8' });
-    const file = new File([htmlBlob], `letter_${caseId}.html`, { type: 'text/html' });
+    // Convert to UTF-8 bytes using TextEncoder (proper UTF-8 encoding)
+    const encoder = new TextEncoder();
+    const utf8Bytes = encoder.encode(htmlContent);
+    
+    // Create blob with explicit UTF-8 charset
+    const blob = new Blob([utf8Bytes], { 
+      type: 'text/html; charset=utf-8'
+    });
+    
+    const file = new File([blob], `letter_${caseId}.html`, { 
+      type: 'text/html; charset=utf-8'
+    });
+
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
     // Save document
@@ -220,7 +227,7 @@ Return JSON:
 
     console.log('Letter saved successfully');
 
-    // Update case if not temporary
+    // Update case
     if (!caseId.startsWith('temp-')) {
       const cases = await base44.entities.Case.list();
       const caseData = cases.find(c => c.id === caseId);
@@ -228,10 +235,9 @@ Return JSON:
       if (caseData) {
         await base44.entities.Case.update(caseId, {
           status: 'ready_drafts',
-          letters: { letter_url: file_url, letter_data: cleanLetter }
+          letters: { letter_url: file_url, letter_data: result }
         });
 
-        // Email notification
         await base44.integrations.Core.SendEmail({
           to: user.email,
           subject: user.language === 'th' ? 'จดหมายพร้อมแล้ว' : 'Your Letter is Ready',
@@ -244,7 +250,7 @@ Return JSON:
       success: true,
       caseId,
       letter_url: file_url,
-      letter: cleanLetter
+      letter: result
     });
 
   } catch (error) {
