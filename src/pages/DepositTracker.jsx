@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Wallet, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Shield, Bell, Loader2 } from "lucide-react"; // Added Loader2
+import { Wallet, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Shield, Bell, Loader2, Trash2 } from "lucide-react"; // Added Loader2, Trash2
 import { Badge } from "@/components/ui/badge";
 import { format, differenceInDays, addMonths, startOfMonth } from "date-fns";
 import {
@@ -92,6 +92,10 @@ export default function DepositTracker() {
       'Please enter monthly rent': 'Please enter monthly rent',
       'Please enter due day (1-31)': 'Please enter due day (1-31)',
       'Failed to create deposit. Please try again.': 'Failed to create deposit. Please try again.',
+      deleteDeposit: "Delete Deposit",
+      confirmDelete: "Are you sure you want to delete this deposit? This action cannot be undone.",
+      delete: "Delete",
+      cancel: "Cancel",
     },
     th: {
       title: "ไฟล์ป้องกันเงินมัดจำ",
@@ -143,6 +147,10 @@ export default function DepositTracker() {
       'กรุณาระบุค่าเช่ารายเดือน': 'กรุณาระบุค่าเช่ารายเดือน',
       'กรุณาระบุวันครบกำหนดชำระ (1-31)': 'กรุณาระบุวันครบกำหนดชำระ (1-31)',
       'ไม่สามารถสร้างรายการได้ กรุณาลองอีกครั้ง': 'ไม่สามารถสร้างรายการได้ กรุณาลองอีกครั้ง',
+      deleteDeposit: "ลบเงินมัดจำ",
+      confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบเงินมัดจำนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+      delete: "ลบ",
+      cancel: "ยกเลิก",
     }
   };
 
@@ -187,6 +195,13 @@ export default function DepositTracker() {
 
   const updateDepositMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.DepositTracker.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deposits'] });
+    },
+  });
+
+  const deleteDepositMutation = useMutation({
+    mutationFn: (id) => base44.entities.DepositTracker.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
     },
@@ -270,6 +285,12 @@ export default function DepositTracker() {
       // Error handled by onError of mutation
     } finally {
       // Submitting state reset handled by onError/onSuccess of mutation
+    }
+  };
+
+  const handleDelete = (depositId) => {
+    if (window.confirm(strings.confirmDelete)) {
+      deleteDepositMutation.mutate(depositId);
     }
   };
 
@@ -744,9 +765,21 @@ export default function DepositTracker() {
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 items-end flex-shrink-0">
-                        <Badge className={`${getStatusColor(deposit.status)} border text-xs`}>
-                          {deposit.status.toUpperCase()}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={`${getStatusColor(deposit.status)} border text-xs`}>
+                            {deposit.status.toUpperCase()}
+                          </Badge>
+                          <button
+                            onClick={() => handleDelete(deposit.id)}
+                            className="p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                            style={{
+                              color: '#EF4444'
+                            }}
+                            title={strings.deleteDeposit}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                         {hasDepositShield && deposit.status === 'tracking' && (
                           <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs whitespace-nowrap">
                             <Shield className="w-3 h-3 mr-1" />
