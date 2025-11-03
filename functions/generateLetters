@@ -1,211 +1,184 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
-///////////////////////
-// Safe util helpers //
-///////////////////////
-const safe = (v, d = "") => (v === null || v === undefined ? d : v);
-const safeNum = (v) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n.toLocaleString("en-US", { maximumFractionDigits: 0 }) : "";
-};
-const safeISO = (v, plusDays = 7) => {
-  if (v) {
-    try { return new Date(v).toISOString().slice(0, 10); } catch {}
+// Simple letter templates - one per subject
+const LETTER_TEMPLATES = {
+  deposit: {
+    subject_en: "Request for Return of Security Deposit",
+    subject_th: "ขอคืนเงินประกันการเช่า",
+    body_en: (data) => `Dear ${data.landlord_name},
+
+I am writing to request the return of my security deposit for the property at ${data.property_address}.
+
+As per our lease agreement dated ${data.contract_ref}, I paid a security deposit of ${data.deposit_amount_thb} THB.
+
+I vacated the property on the agreed date and returned all keys. The property was left in good condition.
+
+Please arrange to return the deposit within 14 days. If there are any deductions, please provide an itemized list with supporting documentation.
+
+You can reach me at this email address for any questions.
+
+Sincerely,
+${data.tenant_name}`,
+    body_th: (data) => `เรียน ${data.landlord_name}
+
+ข้าพเจ้าเขียนจดหมายฉบับนี้เพื่อขอคืนเงินประกันการเช่าสำหรับทรัพย์สินที่ ${data.property_address}
+
+ตามสัญญาเช่าลงวันที่ ${data.contract_ref} ข้าพเจ้าได้ชำระเงินประกัน ${data.deposit_amount_thb} บาท
+
+ข้าพเจ้าได้ย้ายออกตามกำหนดและคืนกุญแจทั้งหมดแล้ว ทรัพย์สินอยู่ในสภาพดี
+
+กรุณาจัดการคืนเงินประกันภายใน 14 วัน หากมีการหักเงิน กรุณาแจ้งรายละเอียดพร้อมเอกสารประกอบ
+
+ติดต่อข้าพเจ้าได้ที่อีเมลนี้หากมีข้อสงสัย
+
+ขอแสดงความนับถือ
+${data.tenant_name}`
+  },
+  
+  damages: {
+    subject_en: "Response to Damage Claims",
+    subject_th: "ตอบกลับเรื่องการเรียกค่าเสียหาย",
+    body_en: (data) => `Dear ${data.landlord_name},
+
+I received your notice regarding damage claims for ${data.property_address}.
+
+I would like to respectfully dispute these claims for the following reasons:
+
+1. The property was in good condition when I moved out
+2. Normal wear and tear should not be charged to the tenant
+3. Some issues existed before I moved in
+
+I request an itemized breakdown of claimed damages with supporting evidence (photos, receipts, estimates).
+
+Please provide this information within 7 days so we can resolve this matter fairly.
+
+Sincerely,
+${data.tenant_name}`,
+    body_th: (data) => `เรียน ${data.landlord_name}
+
+ข้าพเจ้าได้รับแจ้งเรื่องการเรียกค่าเสียหายสำหรับ ${data.property_address}
+
+ข้าพเจ้าขอโต้แย้งการเรียกร้องนี้ด้วยเหตุผลดังนี้:
+
+1. ทรัพย์สินอยู่ในสภาพดีเมื่อข้าพเจ้าย้ายออก
+2. การสึกหรอตามปกติไม่ควรเรียกเก็บจากผู้เช่า
+3. บางปัญหามีอยู่แล้วก่อนที่ข้าพเจ้าเข้าอยู่
+
+ข้าพเจ้าขอรายละเอียดความเสียหายแบบแยกรายการพร้อมหลักฐาน (รูปถ่าย ใบเสร็จ ใบเสนอราคา)
+
+กรุณาให้ข้อมูลภายใน 7 วัน เพื่อเราจะได้แก้ไขปัญหานี้อย่างยุติธรรม
+
+ขอแสดงความนับถือ
+${data.tenant_name}`
+  },
+  
+  early_termination: {
+    subject_en: "Notice of Early Lease Termination",
+    subject_th: "แจ้งยกเลิกสัญญาเช่าก่อนกำหนด",
+    body_en: (data) => `Dear ${data.landlord_name},
+
+I am writing to formally notify you of my intention to terminate the lease for ${data.property_address} early.
+
+According to our agreement dated ${data.contract_ref}, I understand there may be penalties for early termination. I would like to discuss the following:
+
+1. The exact termination fees as per the contract
+2. The final move-out date
+3. The deposit return process
+4. Final utility readings and settlements
+
+Please let me know your availability to discuss these matters and finalize the termination terms.
+
+Sincerely,
+${data.tenant_name}`,
+    body_th: (data) => `เรียน ${data.landlord_name}
+
+ข้าพเจ้าเขียนจดหมายฉบับนี้เพื่อแจ้งความประสงค์ยกเลิกสัญญาเช่าสำหรับ ${data.property_address} ก่อนกำหนด
+
+ตามสัญญาลงวันที่ ${data.contract_ref} ข้าพเจ้าเข้าใจว่าอาจมีค่าปรับสำหรับการยกเลิกก่อนกำหนด ข้าพเจ้าต้องการหารือเรื่อง:
+
+1. ค่าธรรมเนียมการยกเลิกตามสัญญา
+2. วันที่ย้ายออกครั้งสุดท้าย
+3. กระบวนการคืนเงินประกัน
+4. การอ่านมิเตอร์และการชำระค่าสาธารณูปโภคครั้งสุดท้าย
+
+กรุณาแจ้งความพร้อมของท่านเพื่อหารือและสรุปเงื่อนไขการยกเลิก
+
+ขอแสดงความนับถือ
+${data.tenant_name}`
   }
-  return new Date(Date.now() + plusDays * 864e5).toISOString().slice(0, 10);
 };
-const joinList = (arr) => Array.isArray(arr) && arr.length ? arr.map(x => x?.filename || x).join("; ") : "";
 
-const fill = (tpl, vars) =>
-  tpl.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, k) => (k in vars && vars[k] !== null && vars[k] !== undefined ? String(vars[k]) : ""));
-
-//////////////////////////////
-// Subject-specific content //
-//////////////////////////////
-function buildCopy(subject, v) {
-  switch ((subject || "deposit").toLowerCase()) {
-    case "damages":
-      return {
-        title_en: "Request for itemised assessment of damages",
-        title_th: "ขอรายละเอียดการประเมินความเสียหายแบบแยกรายการ",
-        p1_en: `Dear ${v.landlord_name}, this note summarises the tenancy at ${v.property_address} and requests an itemised assessment of any claimed damages.`,
-        p1_th: `เรียน ${v.landlord_name} หนังสือนี้สรุปการเช่าสำหรับ ${v.property_address} และขอรับรายละเอียดการประเมินความเสียหายแบบแยกรายการ (ถ้ามี)`,
-        p2_en: `${v.contract_ref}. To help reconcile promptly, please share (1) items, (2) reasons, and (3) supporting documents/quotes.`,
-        p2_th: `${v.contract_ref} เพื่อให้ปิดบัญชีได้รวดเร็ว กรุณาแจ้ง (1) รายการความเสียหาย (2) เหตุผล และ (3) เอกสาร/ใบเสนอราคา (ถ้ามี)`,
-        p3_en: `If no damages apply, please confirm the refundable amount and transfer details. A reply by ${v.request_by_date_iso} would be appreciated.`,
-        p3_th: `หากไม่มีความเสียหาย กรุณายืนยันจำนวนเงินที่จะคืนและรายละเอียดการโอน หากตอบกลับภายใน ${v.request_by_date_iso} จะขอบคุณมาก`
-      };
-    case "early_termination":
-      return {
-        title_en: "Request to reconcile early termination under the lease",
-        title_th: "ขอประสานงานเรื่องการยกเลิกสัญญาก่อนกำหนด",
-        p1_en: `Dear ${v.landlord_name}, this note concerns early termination for ${v.property_address} and proposes a clear reconciliation plan.`,
-        p1_th: `เรียน ${v.landlord_name} หนังสือนี้เกี่ยวกับการยกเลิกสัญญาก่อนกำหนดของ ${v.property_address} และขอเสนอแนวทางการปิดบัญชีอย่างเป็นระบบ`,
-        p2_en: `${v.contract_ref}. Please confirm (1) any fees specified by the contract, (2) key handover steps, and (3) the final account date.`,
-        p2_th: `${v.contract_ref} กรุณายืนยัน (1) ค่าธรรมเนียมตามสัญญา (ถ้ามี) (2) ขั้นตอนส่งมอบกุญแจ และ (3) วันที่ปิดบัญชี`,
-        p3_en: `We aim to complete this by ${v.request_by_date_iso}. If an alternative timeline is preferable, please let us know.`,
-        p3_th: `ตั้งใจดำเนินการให้เสร็จภายใน ${v.request_by_date_iso} หากมีกำหนดการอื่นที่เหมาะสมกว่า กรุณาแจ้งได้`
-      };
-    case "deposit":
-    default:
-      return {
-        title_en: "Request for clarification on refundable deposit",
-        title_th: "ขอความชัดเจนเกี่ยวกับเงินประกันการเช่า",
-        p1_en: `Dear ${v.landlord_name}, this note summarises the completion of the tenancy for ${v.property_address} and requests an update about the refundable deposit.`,
-        p1_th: `เรียน ${v.landlord_name} หนังสือนี้สรุปการสิ้นสุดการเช่าสำหรับ ${v.property_address} และขอความคืบหน้าเกี่ยวกับการคืนเงินประกัน`,
-        p2_en: `${v.contract_ref}. To reconcile promptly, please provide: (1) any proposed deductions with itemised reasons and documents, or (2) confirmation of refund transfer details.`,
-        p2_th: `${v.contract_ref} เพื่อให้ปิดบัญชีได้รวดเร็ว กรุณาแจ้ง (1) รายการหักพร้อมเหตุผลและเอกสารประกอบ หรือ (2) การยืนยันการโอนเงินคืน`,
-        p3_en: `Kindly reply by ${v.request_by_date_iso} so both sides can close this matter smoothly.`,
-        p3_th: `กรุณาตอบกลับภายในวันที่ ${v.request_by_date_iso} เพื่อให้ทั้งสองฝ่ายสามารถปิดเรื่องนี้ได้อย่างราบรื่น`
-      };
-  }
-}
-
-/////////////////////////////////
-// Single inlined HTML template //
-/////////////////////////////////
-const TEMPLATE_HTML = `
-<!doctype html><html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{title_en}} – {{caseId}}</title>
-<style>
-  @page{size:A4;margin:20mm 18mm}
-  body{font-family:Inter,Arial,"Noto Sans Thai","TH Sarabun New",sans-serif;line-height:1.5;color:#111;font-size:12.2pt}
-  h1{color:#0C3B2E;margin:0 0 6mm}
-  .muted{color:#667085;margin:0 0 8mm}
-  .pair{margin:0 0 5mm}
-  .th{font-family:"Noto Sans Thai","TH Sarabun New",sans-serif}
-  hr{margin:10mm 0;border:0;border-top:1px solid #E4E7EC}
-</style></head><body>
-
-<h1>{{title_en}}</h1>
-<p class="muted th">{{title_th}}</p>
-
-<div class="pair"><p>{{p1_en}}</p><p class="th">{{p1_th}}</p></div>
-<div class="pair"><p>{{p2_en}}</p><p class="th">{{p2_th}}</p></div>
-<div class="pair"><p>{{p3_en}}</p><p class="th">{{p3_th}}</p></div>
-
-<hr>
-<p><strong>Context / ข้อมูลอ้างอิง</strong></p>
-<p>Tenant / ผู้เช่า: {{tenant_name}}</p>
-<p>Landlord / เจ้าของ: {{landlord_name}}</p>
-<p>Property / ทรัพย์สิน: {{property_address}}</p>
-<p>Contract / สัญญา: {{contract_ref}}</p>
-<p>Deposit (THB) / เงินประกัน: {{deposit_amount_thb}}</p>
-<p>Requested response by / ขอความคืบหน้าภายใน: {{request_by_date_iso}}</p>
-<p>Attachments / ไฟล์แนบ: {{attachments_list}}</p>
-
-<p style="margin-top:10mm">Kind regards,<br>Lease Shield</p>
-<p class="th">ขอแสดงความนับถือ<br>Lease Shield</p>
-<p class="muted" style="margin-top:6mm">This is documentation & communication support, not legal advice.</p>
-
-</body></html>
-`;
-
-///////////////////////////////
-// Main entry point //
-///////////////////////////////
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const payload = await req.json();
+    const { subject, tenant_name, landlord_name, property_address, contract_ref, deposit_amount_thb } = await req.json();
     
-    // Extract data from payload - support both direct values and from case lookup
-    const caseId = payload.caseId;
-    const subject = payload.subject || payload.dispute_type || 'deposit';
-    
-    if (!caseId) return Response.json({ error: 'caseId required' }, { status: 400 });
+    if (!subject || !tenant_name || !landlord_name) {
+      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    }
 
-    console.log('Generating letter for case:', caseId, 'subject:', subject);
+    const template = LETTER_TEMPLATES[subject];
+    if (!template) {
+      return Response.json({ error: 'Invalid subject' }, { status: 400 });
+    }
 
-    // Prepare variables - use payload data directly if provided, otherwise try to load from case
-    let vars = {
-      caseId: safe(caseId).slice(0, 12),
-      tenant_name: safe(payload.tenant_name, "Tenant"),
-      landlord_name: safe(payload.landlord_name, "Landlord"),
-      property_address: safe(payload.property_address, ""),
-      contract_ref: safe(payload.contract_ref, "Lease Agreement"),
-      deposit_amount_thb: payload.deposit_amount_thb ? safeNum(payload.deposit_amount_thb) : "—",
-      request_by_date_iso: safe(payload.request_by_date_iso, safeISO(null, 14)),
-      attachments_list: Array.isArray(payload.attachments) ? payload.attachments.join("; ") : safe(payload.attachments, "Lease.pdf")
+    const data = {
+      tenant_name,
+      landlord_name,
+      property_address: property_address || '[Property Address]',
+      contract_ref: contract_ref || '[Contract Reference]',
+      deposit_amount_thb: deposit_amount_thb || '[Amount]'
     };
 
-    // If case ID is not temporary, try to load and merge case data
-    if (!caseId.startsWith('temp-')) {
-      try {
-        const cases = await base44.entities.Case.list();
-        const c = cases.find(cs => cs.id === caseId);
-        
-        if (c) {
-          // Merge case data with payload data (payload takes priority)
-          vars = {
-            caseId: safe(c.id).slice(0, 12),
-            tenant_name: payload.tenant_name || safe(c.tenant_name, "Tenant"),
-            landlord_name: payload.landlord_name || safe(c.landlord_name, "Landlord"),
-            property_address: payload.property_address || safe(c.property_address, ""),
-            contract_ref: payload.contract_ref || safe(c.contract_ref, "Lease Agreement"),
-            deposit_amount_thb: payload.deposit_amount_thb ? safeNum(payload.deposit_amount_thb) : safeNum(c?.dispute_amount),
-            request_by_date_iso: payload.request_by_date_iso || safeISO(c?.sla?.followup_due, 14),
-            attachments_list: payload.attachments ? (Array.isArray(payload.attachments) ? payload.attachments.join("; ") : payload.attachments) : joinList(c?.evidence || [])
-          };
-        }
-      } catch (err) {
-        console.log('Could not load case, using payload data only:', err.message);
-      }
-    }
+    // Generate simple HTML
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>${template.subject_en}</title>
+<style>
+body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 20px; }
+.letter { margin-bottom: 40px; }
+.subject { font-weight: bold; margin-bottom: 20px; font-size: 16px; }
+.body { white-space: pre-wrap; margin-bottom: 20px; }
+.divider { border-top: 1px solid #ccc; margin: 40px 0; }
+</style>
+</head>
+<body>
+<div class="letter">
+<div class="subject">${template.subject_en}</div>
+<div class="body">${template.body_en(data)}</div>
+</div>
 
-    // Generate letter content
-    const copy = buildCopy(subject, vars);
-    const html = fill(TEMPLATE_HTML, { ...vars, ...copy });
+<div class="divider"></div>
 
-    // Create a proper UTF-8 encoded HTML file
+<div class="letter">
+<div class="subject">${template.subject_th}</div>
+<div class="body">${template.body_th(data)}</div>
+</div>
+</body>
+</html>`;
+
+    // Upload the letter
     const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
-    const filename = `letter_${vars.caseId}_${subject}.html`;
-    const file = new File([blob], filename, { type: 'text/html; charset=utf-8' });
+    const filename = `letter_${subject}_${Date.now()}.html`;
+    const file = new File([blob], filename);
     
-    // Upload to storage
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-    // Save to document vault
-    const doc = await base44.entities.Document.create({
+    // Save to documents
+    await base44.entities.Document.create({
       type: 'letter',
-      file_url: file_url,
-      label: `Letter ${subject} - Case ${caseId.slice(0, 8)}`
+      file_url,
+      label: `${template.subject_en}`
     });
-
-    console.log('Letter generated with ID:', doc.id, 'URL:', file_url);
-
-    // Update case if it exists and is not temporary
-    if (!caseId.startsWith('temp-')) {
-      try {
-        const cases = await base44.entities.Case.list();
-        const c = cases.find(cs => cs.id === caseId);
-        
-        if (c) {
-          await base44.entities.Case.update(caseId, {
-            letters: {
-              ...(c.letters || {}),
-              [`${subject}_url`]: file_url,
-              [`${subject}_doc_id`]: doc.id
-            }
-          });
-        }
-      } catch (err) {
-        console.log('Could not update case:', err.message);
-      }
-    }
 
     return Response.json({ 
       success: true,
-      ok: true, 
-      url: file_url,
-      doc_id: doc.id,
-      subject: subject,
-      isTemporary: caseId.startsWith('temp-')
+      url: file_url
     });
 
   } catch (error) {
