@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 // --- Validation & Security ---
@@ -263,8 +264,10 @@ Deno.serve(async (req) => {
       });
 
       const letters = fromCase.letters || {};
-      letters[`${subject}_url`] = docUrl;
-      letters.v1_url = docUrl;
+      // Store BOTH URLs for flexibility
+      letters[`${subject}_url`] = docUrl;           // Primary = Word file
+      letters[`${subject}_html_url`] = htmlUrl;     // HTML preview
+      letters.v1_url = docUrl;                       // Legacy compatibility
 
       await base44.asServiceRole.entities.Case.update(args.caseId, {
         status: 'ready_drafts',

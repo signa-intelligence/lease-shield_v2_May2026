@@ -22,7 +22,8 @@ import {
   Mail,
   Loader2,
   ExternalLink,
-  Download // Added Download icon
+  Download,
+  Eye // Added Eye icon for Preview
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -119,6 +120,23 @@ export default function CaseDetails() {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
+  const handlePreviewHtml = (subject) => {
+    const htmlKey = `${subject}_html_url`;
+    const docKey = `${subject}_url`;
+    
+    // Try HTML first, fallback to doc URL
+    const url = caseItem?.letters?.[htmlKey] || caseItem?.letters?.[docKey];
+    
+    if (!url) {
+      alert(language === 'th' 
+        ? `ไม่พบไฟล์สำหรับ ${subject}` 
+        : `No file found for ${subject}`);
+      return;
+    }
+    
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   const t = {
     en: {
       caseDetails: "Case Details",
@@ -160,6 +178,7 @@ export default function CaseDetails() {
       allLettersInOnePdf: "All letters in one PDF",
       download: "Download",
       downloadWord: "Download Word", // Added translation
+      preview: "Preview",
     },
     th: {
       caseDetails: "รายละเอียดคดี",
@@ -201,6 +220,7 @@ export default function CaseDetails() {
       allLettersInOnePdf: "จดหมายทั้งหมดรวมใน PDF เดียว",
       download: "ดาวน์โหลด",
       downloadWord: "ดาวน์โหลด Word", // Added translation
+      preview: "ดูตัวอย่าง",
     }
   };
 
@@ -497,11 +517,11 @@ export default function CaseDetails() {
                     backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
                     border: `1px solid ${colors.borderColor}`
                   }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
                         <FileText className="w-5 h-5 text-blue-600" />
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
                           {language === 'th' ? 'จดหมายขอคืนเงินมัดจำ' : 'Deposit Return Request'}
                         </p>
@@ -510,7 +530,27 @@ export default function CaseDetails() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handlePreviewHtml('deposit')}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+                        style={{
+                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                          color: colors.textPrimary,
+                          border: `1px solid ${colors.borderColor}`
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#EEF2FF';
+                          e.target.style.borderColor = '#6366F1';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                          e.target.style.borderColor = colors.borderColor;
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                        {strings.preview}
+                      </button>
                       <button
                         onClick={() => handleDownloadWord('deposit')}
                         className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
@@ -534,11 +574,11 @@ export default function CaseDetails() {
                     backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
                     border: `1px solid ${colors.borderColor}`
                   }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
                         <FileText className="w-5 h-5 text-amber-600" />
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
                           {language === 'th' ? 'จดหมายโต้แย้งค่าเสียหาย' : 'Damage Claim Response'}
                         </p>
@@ -547,7 +587,27 @@ export default function CaseDetails() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handlePreviewHtml('damages')}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+                        style={{
+                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                          color: colors.textPrimary,
+                          border: `1px solid ${colors.borderColor}`
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#EEF2FF';
+                          e.target.style.borderColor = '#6366F1';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                          e.target.style.borderColor = colors.borderColor;
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                        {strings.preview}
+                      </button>
                       <button
                         onClick={() => handleDownloadWord('damages')}
                         className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
@@ -571,11 +631,11 @@ export default function CaseDetails() {
                     backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
                     border: `1px solid ${colors.borderColor}`
                   }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
                         <FileText className="w-5 h-5 text-purple-600" />
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
                           {language === 'th' ? 'จดหมายแจ้งยกเลิกก่อนกำหนด' : 'Early Termination Notice'}
                         </p>
@@ -584,7 +644,27 @@ export default function CaseDetails() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handlePreviewHtml('early_termination')}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+                        style={{
+                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                          color: colors.textPrimary,
+                          border: `1px solid ${colors.borderColor}`
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#EEF2FF';
+                          e.target.style.borderColor = '#6366F1';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                          e.target.style.borderColor = colors.borderColor;
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                        {strings.preview}
+                      </button>
                       <button
                         onClick={() => handleDownloadWord('early_termination')}
                         className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
