@@ -4,11 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Loader2, FileText, User, Send, CheckCircle2, Download, Eye } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Send, CheckCircle2, Download, Eye } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function TemplateForm() {
@@ -67,7 +66,7 @@ export default function TemplateForm() {
       propertyAddress: "Property Address",
       propertyAddressPlaceholder: "123 Main St, Bangkok",
       contractRef: "Contract Reference (optional)",
-      contractRefPlaceholder: "Lease dated January 15, 2024",
+      contractRefPlaceholder: "e.g., Lease dated January 15, 2024",
       depositAmount: "Deposit Amount (optional)",
       letterType: "Letter Type",
       depositReturn: "Deposit Return Request",
@@ -96,7 +95,7 @@ export default function TemplateForm() {
       propertyAddress: "ที่อยู่ทรัพย์สิน",
       propertyAddressPlaceholder: "123 ถนนสุขุมวิท กรุงเทพฯ",
       contractRef: "อ้างอิงสัญญา (ไม่บังคับ)",
-      contractRefPlaceholder: "สัญญาเช่าลงวันที่ 15 มกราคม 2567",
+      contractRefPlaceholder: "เช่น สัญญาเช่าลงวันที่ 15 มกราคม 2567",
       depositAmount: "จำนวนเงินมัดจำ (ไม่บังคับ)",
       letterType: "ประเภทจดหมาย",
       depositReturn: "จดหมายขอคืนเงินมัดจำ",
@@ -118,6 +117,12 @@ export default function TemplateForm() {
 
   const strings = t[language];
 
+  const letterTypeLabels = {
+    deposit: strings.depositReturn,
+    damages: strings.damageDispute,
+    early_termination: strings.earlyTermination
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -130,15 +135,6 @@ export default function TemplateForm() {
     setError(null);
 
     try {
-      console.log('Calling generatePhase1Letter with:', {
-        subject: formData.subject,
-        tenant_name: formData.tenant_name,
-        landlord_name: formData.landlord_name,
-        property_address: formData.property_address || undefined,
-        contract_ref: formData.contract_ref || undefined,
-        deposit_amount: formData.deposit_amount_thb || undefined
-      });
-
       const response = await base44.functions.invoke('generatePhase1Letter', {
         subject: formData.subject,
         tenant_name: formData.tenant_name,
@@ -148,17 +144,14 @@ export default function TemplateForm() {
         deposit_amount: formData.deposit_amount_thb || undefined
       });
 
-      console.log('Response received:', response);
-
       if (response.data?.ok) {
-        // Store URLs and show success dialog
         setGeneratedUrls({
           html: response.data.urls?.html,
           doc: response.data.urls?.doc
         });
         setShowSuccess(true);
       } else {
-        throw new Error(response.data?.error || 'Generation failed - no ok flag');
+        throw new Error(response.data?.error || 'Generation failed');
       }
     } catch (err) {
       console.error('Letter generation error:', err);
@@ -201,9 +194,6 @@ export default function TemplateForm() {
             </h3>
             <p style={{ color: colors.textSecondary }}>
               {language === 'th' ? 'กำลังสร้างจดหมายของคุณ...' : 'Creating your letter...'}
-            </p>
-            <p className="text-xs mt-4" style={{ color: colors.textSecondary }}>
-              {language === 'th' ? 'กรุณารอสักครู่...' : 'Please wait...'}
             </p>
           </CardContent>
         </Card>
@@ -326,24 +316,17 @@ export default function TemplateForm() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="subject" style={{ color: colors.textPrimary }}>
-                  {strings.letterType} <span className="text-red-500">*</span>
+              {/* Letter Type - Display Only (Read-only text) */}
+              <div className="p-4 rounded-lg" style={{
+                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                border: `1px solid ${colors.borderColor}`
+              }}>
+                <Label style={{ color: colors.textSecondary, fontSize: '12px', fontWeight: '600' }}>
+                  {strings.letterType}
                 </Label>
-                <Select value={formData.subject} onValueChange={(value) => handleChange('subject', value)}>
-                  <SelectTrigger style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary,
-                  }}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-                    <SelectItem value="deposit" style={{ color: colors.textPrimary }}>{strings.depositReturn}</SelectItem>
-                    <SelectItem value="damages" style={{ color: colors.textPrimary }}>{strings.damageDispute}</SelectItem>
-                    <SelectItem value="early_termination" style={{ color: colors.textPrimary }}>{strings.earlyTermination}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <p className="mt-1 text-lg font-semibold" style={{ color: colors.textPrimary }}>
+                  {letterTypeLabels[formData.subject]}
+                </p>
               </div>
 
               <div>

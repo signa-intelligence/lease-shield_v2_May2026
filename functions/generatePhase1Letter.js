@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 //////////////////////
@@ -231,8 +232,8 @@ Deno.serve(async (req) => {
     const htmlFile = new File([htmlBlob], `${baseName}.html`);
     const { file_url: htmlUrl } = await base44.integrations.Core.UploadFile({ file: htmlFile });
 
-    // Save to Document entity
-    const doc = await base44.asServiceRole.entities.Document.create({
+    // Save to Document entity - USE REGULAR CLIENT (not asServiceRole) so created_by is set correctly
+    const doc = await base44.entities.Document.create({
       type: 'letter',
       file_url: docUrl,
       label: `${copy.subject_en}${mode === "case" ? ` - Case ${caseIdShort}` : ''}`,
