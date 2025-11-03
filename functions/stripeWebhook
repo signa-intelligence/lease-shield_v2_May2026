@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -110,16 +111,16 @@ Deno.serve(async (req) => {
             user_email: user.email
           });
 
-          // Create the case record
+          // Create the case record - FIXED: Added user_email field
           const caseData = {
+            user_email: user.email,  // ✅ ADDED: Explicit user email field
             dispute_amount: parseFloat(metadata.dispute_amount),
             summary: metadata.summary,
             lease_id: metadata.lease_id || null,
             fast_track: metadata.fast_track === 'true',
             letter_pack: metadata.letter_pack === 'true',
             is_member_at_creation: metadata.is_member_at_creation === 'true',
-            status: 'active',
-            created_by: user.email
+            status: 'active'
           };
 
           const newCase = await base44.asServiceRole.entities.Case.create(caseData);
@@ -132,8 +133,7 @@ Deno.serve(async (req) => {
             currency: 'THB',
             provider: 'stripe',
             status: 'paid',
-            external_id: session.id,
-            created_by: user.email
+            external_id: session.id
           });
           console.log('✅ Payment record created');
 

@@ -43,7 +43,7 @@ export default function Cases() {
     queryKey: ['cases', user?.email],
     queryFn: async () => {
       console.log('📊 Fetching cases for user:', user?.email);
-      const result = await base44.entities.Case.filter({ created_by: user?.email }, '-created_date');
+      const result = await base44.entities.Case.filter({ user_email: user?.email }, '-created_date');
       console.log('📊 Cases found:', result.length, result);
       return result;
     },
