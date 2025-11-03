@@ -31,25 +31,36 @@ export default function Cases() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: cases = [] } = useQuery({
+  const { data: cases = [], refetch: refetchCases } = useQuery({
     queryKey: ['cases'],
     queryFn: () => base44.entities.Case.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
 
-  // Handle payment success redirect - invalidate and refetch cases
+  // Handle payment success redirect - force refetch
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment');
     
-    if (paymentStatus === 'success') {
-      // Invalidate cases query to force refresh
-      queryClient.invalidateQueries({ queryKey: ['cases'] });
+    if (paymentStatus === 'success' && user) {
+      console.log('Payment success detected - refetching cases...');
       
-      // Clean up URL
+      // Wait a bit for webhook to complete, then refetch multiple times
+      const refetchWithRetry = async () => {
+        for (let i = 0; i < 3; i++) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // 1s, 2s, 3s delays
+          console.log(`Refetch attempt ${i + 1}`);
+          await queryClient.invalidateQueries({ queryKey: ['cases'] });
+          await refetchCases();
+        }
+      };
+      
+      refetchWithRetry();
+      
+      // Clean up URL after first refetch
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [queryClient]);
+  }, [user, queryClient, refetchCases]);
 
   const language = user?.language || 'en';
 
