@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +49,7 @@ export default function RecentLeases({ leases, language }) {
   const strings = t[language] || t.en;
 
   return (
-    <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+    <Card className="border-none shadow-lg h-full flex flex-col" style={{ backgroundColor: colors.cardBg }}>
       <CardHeader className="flex flex-row items-center justify-between pb-4" style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
         <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
           <FileText className="w-5 h-5 text-ls-forest" />
@@ -80,7 +81,7 @@ export default function RecentLeases({ leases, language }) {
           </button>
         </Link>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex-1">
         {leases.length === 0 ? (
           <div className="text-center py-8">
             <FileText className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.5 }} />

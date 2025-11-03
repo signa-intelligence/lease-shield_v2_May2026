@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,14 +59,14 @@ export default function DepositAlert({ deposits, language }) {
   const strings = t[language] || t.en;
 
   return (
-    <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+    <Card className="border-none shadow-lg h-full flex flex-col" style={{ backgroundColor: colors.cardBg }}>
       <CardHeader className="pb-4" style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
         <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
           <AlertTriangle className="w-5 h-5 text-amber-500" />
           {strings.depositAlerts}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex-1">
         {urgentDeposits.length === 0 ? (
           <div className="text-center py-8">
             <Clock className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.5 }} />
