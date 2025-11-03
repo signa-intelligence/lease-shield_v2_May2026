@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,15 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Loader2, FileText, User, Send } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, User, Send, CheckCircle2, Download, Eye } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function TemplateForm() {
   const navigate = useNavigate();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [generatedUrls, setGeneratedUrls] = useState(null);
   
   // Get subject from URL parameter
   const urlParams = new URLSearchParams(window.location.search);
@@ -76,7 +78,12 @@ export default function TemplateForm() {
       cancel: "Back",
       required: "Required",
       errorFillRequired: 'Please fill in your name and landlord name.',
-      errorGenerationFailed: 'Failed to generate letter. Please try again.'
+      errorGenerationFailed: 'Failed to generate letter. Please try again.',
+      successTitle: "Letter Generated Successfully!",
+      successDesc: "Your bilingual letter has been created and saved to your Document Vault.",
+      previewHtml: "Preview in Browser",
+      downloadWord: "Download Word",
+      goToVault: "Go to Document Vault"
     },
     th: {
       generateLetter: "สร้างจดหมาย",
@@ -100,7 +107,12 @@ export default function TemplateForm() {
       cancel: "กลับ",
       required: "จำเป็น",
       errorFillRequired: 'กรุณากรอกชื่อของคุณและชื่อเจ้าของบ้าน',
-      errorGenerationFailed: 'ไม่สามารถสร้างจดหมายได้ กรุณาลองอีกครั้ง'
+      errorGenerationFailed: 'ไม่สามารถสร้างจดหมายได้ กรุณาลองอีกครั้ง',
+      successTitle: "สร้างจดหมายสำเร็จ!",
+      successDesc: "จดหมายสองภาษาของคุณถูกสร้างและบันทึกไว้ใน Document Vault แล้ว",
+      previewHtml: "ดูตัวอย่างในเบราว์เซอร์",
+      downloadWord: "ดาวน์โหลด Word",
+      goToVault: "ไปที่ Document Vault"
     }
   };
 
@@ -139,25 +151,19 @@ export default function TemplateForm() {
       console.log('Response received:', response);
 
       if (response.data?.ok) {
-        const url = response.data.urls?.html || response.data.urls?.pdf;
-        
-        if (url) {
-          // Success - navigate immediately without blocking alert
-          setTimeout(() => {
-            navigate(createPageUrl("DocumentVault"));
-          }, 100);
-          
-          // Show success message
-          window.open(url, '_blank');
-        } else {
-          throw new Error('No URL in response');
-        }
+        // Store URLs and show success dialog
+        setGeneratedUrls({
+          html: response.data.urls?.html,
+          doc: response.data.urls?.doc
+        });
+        setShowSuccess(true);
       } else {
         throw new Error(response.data?.error || 'Generation failed - no ok flag');
       }
     } catch (err) {
       console.error('Letter generation error:', err);
       setError(err.message || strings.errorGenerationFailed);
+    } finally {
       setGenerating(false);
     }
   };
@@ -165,6 +171,23 @@ export default function TemplateForm() {
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setError(null);
+  };
+
+  const handlePreviewHtml = () => {
+    if (generatedUrls?.html) {
+      window.open(generatedUrls.html, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleDownloadWord = () => {
+    if (generatedUrls?.doc) {
+      window.open(generatedUrls.doc, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleGoToVault = () => {
+    setShowSuccess(false);
+    navigate(createPageUrl("DocumentVault"));
   };
 
   if (generating) {
@@ -199,6 +222,84 @@ export default function TemplateForm() {
           <ArrowLeft className="w-4 h-4" />
           {strings.cancel}
         </button>
+
+        {/* Success Dialog */}
+        <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+          <DialogContent className="sm:max-w-md" style={{
+            backgroundColor: colors.cardBg,
+            borderColor: colors.borderColor
+          }}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
+                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  {strings.successTitle}
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <p style={{ color: colors.textSecondary }}>
+                {strings.successDesc}
+              </p>
+              
+              <div className="space-y-3">
+                {/* Preview HTML Button */}
+                <button
+                  onClick={handlePreviewHtml}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-all"
+                  style={{
+                    backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                    color: colors.textPrimary,
+                    border: `2px solid ${colors.borderColor}`
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#EEF2FF';
+                    e.target.style.borderColor = '#6366F1';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                    e.target.style.borderColor = colors.borderColor;
+                  }}
+                >
+                  <Eye className="w-5 h-5" />
+                  {strings.previewHtml}
+                </button>
+
+                {/* Download Word Button */}
+                <button
+                  onClick={handleDownloadWord}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-all"
+                  style={{
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                >
+                  <Download className="w-5 h-5" />
+                  {strings.downloadWord}
+                </button>
+
+                {/* Go to Vault Button */}
+                <button
+                  onClick={handleGoToVault}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-all"
+                  style={{
+                    backgroundColor: '#C7A338',
+                    color: '#1A1D1F'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#d4af37'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
+                >
+                  <FileText className="w-5 h-5" />
+                  {strings.goToVault}
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
