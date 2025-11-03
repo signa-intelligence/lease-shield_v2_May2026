@@ -157,21 +157,13 @@ export default function OpsConsole() {
   const handleGenerateLetters = async (caseItem) => {
     setGeneratingLetters(caseItem.id);
     try {
-      // Use the new Phase 1 letter generation function
-      const response = await base44.functions.invoke('generatePhase1Letter', {
-        subject: caseItem.type || 'deposit',
-        tenant_name: user?.full_name || 'Tenant', // Assuming `user` here refers to the current logged-in admin, not the case's tenant.
-                                                  // For tenant's name, you might need to fetch caseItem.user_email's full_name
-        landlord_name: 'Landlord', // Placeholder, needs actual landlord data
-        property_address: caseItem.property_address || 'the rented property',
-        deposit_amount: caseItem.dispute_amount
+      // Use the Phase 1 engine directly with caseId
+      const response = await base44.functions.invoke('letters.generate.phase1', {
+        caseId: caseItem.id,
+        subject: caseItem.type || 'deposit'
       });
 
       if (response.data?.success) {
-        // Optionally, update the case status to 'ready_drafts' after generation
-        // If the backend function doesn't update the status, you'd do it here:
-        // updateCaseMutation.mutate({ id: caseItem.id, data: { status: 'ready_drafts' } });
-        
         queryClient.invalidateQueries({ queryKey: ['allCases'] });
         alert('Letter generated successfully!');
       } else {
