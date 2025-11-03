@@ -4,13 +4,15 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell } from "lucide-react"; // Added Bell icon
+import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell, Scale } from "lucide-react"; // Added Bell and Scale icons
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom"; // Added useNavigate
 
 export default function AdminConsole() {
   const [seeding, setSeeding] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate(); // Initialized useNavigate
 
   // New state for LINE notification testing
   const [testingNotification, setTestingNotification] = useState(false);
@@ -107,6 +109,10 @@ export default function AdminConsole() {
       days3FinalWarning: "3 days! Final warning",
       todayNotifyNow: "TODAY! Notify Now",
       noticeDeadlineToday: "Notice deadline today",
+      // New Ops Console strings
+      operationsConsoleTitle: "Operations Console",
+      operationsConsoleDesc: "Manage dispute cases, assign work, and track resolution progress",
+      openOpsConsole: "Open Ops Console",
     },
     th: {
       title: "คอนโซลแอดมิน",
@@ -152,10 +158,26 @@ export default function AdminConsole() {
       days3FinalWarning: "เหลือ 3 วัน! คำเตือนสุดท้าย",
       todayNotifyNow: "วันนี้! แจ้งด่วน",
       noticeDeadlineToday: "กำหนดแจ้งวันนี้",
+      // New Ops Console strings
+      operationsConsoleTitle: "คอนโซลปฏิบัติการ",
+      operationsConsoleDesc: "จัดการคดีพิพาท มอบหมายงาน และติดตามความคืบหน้า",
+      openOpsConsole: "เปิดคอนโซล Ops",
     }
   };
 
   const strings = t[language];
+
+  // Dummy function for navigation, replace with actual utility if available
+  const createPageUrl = (pageName) => {
+    switch (pageName) {
+      case "OpsConsole":
+        return "/admin/ops-console";
+      // Add other page mappings if needed
+      default:
+        return "/";
+    }
+  };
+
 
   const handleSeedDemoData = async () => {
     setSeeding(true);
@@ -203,6 +225,39 @@ export default function AdminConsole() {
           </div>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
+
+        {/* Ops Console Quick Access Card */}
+        <Card className="mb-6 border-none shadow-xl" style={{
+          backgroundColor: colors.cardBg,
+          background: isDarkMode
+            ? 'linear-gradient(135deg, #1e3a5f 0%, #2a4a6f 100%)'
+            : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
+        }}>
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <Scale className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    {strings.operationsConsoleTitle}
+                  </h3>
+                  <p className="text-white/80 text-sm mb-4">
+                    {strings.operationsConsoleDesc}
+                  </p>
+                  <Button
+                    onClick={() => navigate(createPageUrl("OpsConsole"))}
+                    className="bg-white text-blue-600 hover:bg-blue-50"
+                  >
+                    <Scale className="w-4 h-4 mr-2" />
+                    {strings.openOpsConsole}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Add new LINE Testing section before existing cards */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
