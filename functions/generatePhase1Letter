@@ -1,22 +1,14 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 // --- Validation & Security ---
-const SUBJECTS = new Set(["deposit","damages","early_termination"]); // Renamed from VALID_SUBJECT_TYPES
+const SUBJECTS = new Set(["deposit","damages","early_termination"]);
 const sanitize = (s="") => String(s).replace(/[<&>"']/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":"&#x27;"}[m]));
 
 // --- Utility functions ---
-const safe = (v, d = "") => (v == null ? d : sanitize(String(v)));
-const safeISO = (v, plusDays = 7) => {
-  try { 
-    if (v) return new Date(v).toISOString().slice(0, 10);
-  } catch {}
-  return new Date(Date.now() + plusDays * 864e5).toISOString().slice(0, 10);
-};
 const fill = (tpl, vars) => tpl.replace(/{{\s*([\w.]+)\s*}}/g, (_, k) => (vars[k] != null ? String(vars[k]) : ""));
 
 // --- Static content bank ---
-const SUBJECTS_CONTENT = { // Renamed from SUBJECTS
+const SUBJECTS_CONTENT = {
   deposit: {
     subject_en: "Request for clarification on refundable deposit",
     subject_th: "ขอความชัดเจนเกี่ยวกับเงินประกันการเช่า",
@@ -128,119 +120,113 @@ hr { margin: 30px 0; border: 0; border-top: 1px solid #E5E7EB; }
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const payload = await req.json();
+    const args = await req.json();
     
-    const {
-      caseId,
-      subject = "deposit",
-      tenant_name,
-      landlord_name,
-      property_address,
-      contract_ref,
-      deposit_amount,
-      request_by_date_iso
-    } = payload;
-
-    // Early validation
-    const mode = caseId ? "case" : "standalone";
-    if (!SUBJECTS.has(subject)) {
+    // Early validation and mode determination
+    const mode = args.caseId ? "case" : "standalone";
+    if (!SUBJECTS.has(args.subject || "deposit")) {
       return Response.json({ 
         ok: false,
         error: 'Invalid subject. Use: deposit, damages, or early_termination' 
       }, { status: 400 });
     }
 
+    const subject = args.subject || "deposit";
     const content = SUBJECTS_CONTENT[subject];
 
-    let vars = {};
-    let caseData = null;
+    // Fetch case data if in case mode
+    let fromCase = {};
+    let leaseData = null;
+    let userData = null;
 
-    // MODE 1: Case-based generation (fetch data from case)
     if (mode === "case") {
-      const cases = await base44.asServiceRole.entities.Case.filter({ id: caseId });
+      const cases = await base44.asServiceRole.entities.Case.filter({ id: args.caseId });
       if (!cases || cases.length === 0) {
         return Response.json({ 
           ok: false,
-          error: `Case not found: ${caseId}` 
+          error: `Case not found: ${args.caseId}` 
         }, { status: 404 });
       }
       
-      caseData = cases[0];
+      fromCase = cases[0];
 
-      // Fetch related lease if available
-      let leaseData = null;
-      if (caseData.lease_id) {
+      // Fetch related lease
+      if (fromCase.lease_id) {
         try {
-          const leases = await base44.asServiceRole.entities.Lease.filter({ id: caseData.lease_id });
+          const leases = await base44.asServiceRole.entities.Lease.filter({ id: fromCase.lease_id });
           if (leases && leases.length > 0) leaseData = leases[0];
         } catch (e) {
           console.error('Could not fetch lease:', e);
         }
       }
 
-      // Fetch user data for tenant name
-      let userData = null;
-      if (caseData.user_email) {
+      // Fetch user data
+      if (fromCase.user_email) {
         try {
-          const users = await base44.asServiceRole.entities.User.filter({ email: caseData.user_email });
+          const users = await base44.asServiceRole.entities.User.filter({ email: fromCase.user_email });
           if (users && users.length > 0) userData = users[0];
         } catch (e) {
           console.error('Could not fetch user:', e);
         }
       }
-
-      // Build vars with smart fallbacks and overrides
-      vars = {
-        tenant_name: safe(
-          tenant_name,
-          safe(userData?.full_name, safe(caseData.user_email, "Tenant"))
-        ),
-        landlord_name: safe(
-          landlord_name,
-          safe(leaseData?.landlord_name, "Landlord")
-        ),
-        property_address: safe(
-          property_address,
-          safe(leaseData?.property_address, safe(caseData.property_address, "[Property Address]"))
-        ),
-        contract_ref: safe(
-          contract_ref,
-          leaseData?.start_date 
-            ? `Lease dated ${new Date(leaseData.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` 
-            : "Lease Agreement"
-        ),
-        deposit_amount_thb: safe(
-          deposit_amount,
-          safe(caseData.dispute_amount, safe(leaseData?.deposit_amount, "[Amount]"))
-        ),
-        request_by_date_iso: safe(
-          request_by_date_iso,
-          safeISO(caseData.sla?.followup_due, 14)
-        )
-      };
-    } 
-    // MODE 2: Standalone generation (use provided data)
-    else {
-      if (!tenant_name || !landlord_name) {
-        return Response.json({ 
-          ok: false,
-          error: 'Missing required fields: tenant_name, landlord_name' 
-        }, { status: 400 });
-      }
-
-      vars = {
-        tenant_name: safe(tenant_name, "Tenant"),
-        landlord_name: safe(landlord_name, "Landlord"),
-        property_address: safe(property_address, "[Property Address]"),
-        contract_ref: safe(contract_ref, "Lease Agreement"),
-        deposit_amount_thb: safe(deposit_amount, "[Amount]"),
-        request_by_date_iso: safe(request_by_date_iso, safeISO(null, 14))
-      };
     }
 
-    // Add template metadata
-    vars.subject_en = content.subject_en;
-    vars.subject_th = content.subject_th;
+    // Helper functions for building vars
+    const pick = (key, fallbackVal = "") => {
+      const argValue = args[key];
+      const caseValue = fromCase?.[key];
+      const leaseValue = leaseData?.[key];
+      const userValue = userData?.[key];
+      
+      // Special handling for specific fields
+      if (key === 'tenant_name') {
+        return sanitize(argValue || userValue?.full_name || fromCase?.user_email || fallbackVal);
+      }
+      if (key === 'landlord_name') {
+        return sanitize(argValue || leaseValue?.landlord_name || fallbackVal);
+      }
+      if (key === 'property_address') {
+        return sanitize(argValue || leaseValue?.property_address || fromCase?.property_address || fallbackVal);
+      }
+      if (key === 'deposit_amount_thb') {
+        const val = argValue || fromCase?.dispute_amount || leaseValue?.deposit_amount;
+        return sanitize(val != null ? String(val) : fallbackVal);
+      }
+      
+      // Default: arg > case > fallback
+      return sanitize(argValue || caseValue || fallbackVal);
+    };
+
+    const dateISO = (val) => { 
+      try { 
+        if (val) return new Date(val).toISOString().slice(0, 10);
+      } catch {}
+      return new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
+    };
+
+    // Build vars with smart fallbacks
+    const vars = {
+      tenant_name: pick("tenant_name", "Tenant"),
+      landlord_name: pick("landlord_name", "Landlord"),
+      property_address: pick("property_address", "[Property Address]"),
+      contract_ref: args.contract_ref || (
+        leaseData?.start_date 
+          ? `Lease dated ${new Date(leaseData.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` 
+          : "Lease Agreement"
+      ),
+      deposit_amount_thb: pick("deposit_amount_thb", "[Amount]"),
+      request_by_date_iso: dateISO(args.request_by_date_iso || fromCase?.sla?.followup_due),
+      subject_en: content.subject_en,
+      subject_th: content.subject_th
+    };
+
+    // Standalone mode validation
+    if (mode === "standalone" && (!args.tenant_name || !args.landlord_name)) {
+      return Response.json({ 
+        ok: false,
+        error: 'Missing required fields: tenant_name, landlord_name' 
+      }, { status: 400 });
+    }
 
     // Fill body templates
     vars.body_en = fill(content.body_en, vars);
@@ -251,7 +237,7 @@ Deno.serve(async (req) => {
 
     // Save as HTML file
     const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
-    const filename = `letter_${subject}_${caseId ? caseId.slice(0, 8) : Date.now()}.html`;
+    const filename = `letter_${subject}_${args.caseId ? args.caseId.slice(0, 8) : Date.now()}.html`;
     const file = new File([blob], filename);
     
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
@@ -260,12 +246,12 @@ Deno.serve(async (req) => {
     const doc = await base44.asServiceRole.entities.Document.create({
       type: 'letter',
       file_url,
-      label: `${content.subject_en}${caseId ? ` - Case ${caseId.slice(0, 8)}` : ''}`
+      label: `${content.subject_en}${args.caseId ? ` - Case ${args.caseId.slice(0, 8)}` : ''}`
     });
 
-    // If caseId provided, update case
-    if (mode === "case" && caseData) {
-      const timeline = caseData.timeline || [];
+    // Update case if in case mode
+    if (mode === "case") {
+      const timeline = fromCase.timeline || [];
       timeline.push({
         timestamp: new Date().toISOString(),
         event: `letter_generated_${subject}`,
@@ -273,11 +259,11 @@ Deno.serve(async (req) => {
         meta: { letter_url: file_url, subject }
       });
 
-      const letters = caseData.letters || {};
+      const letters = fromCase.letters || {};
       letters[`${subject}_url`] = file_url;
-      letters.v1_url = file_url; // Also store as v1
+      letters.v1_url = file_url;
 
-      await base44.asServiceRole.entities.Case.update(caseId, {
+      await base44.asServiceRole.entities.Case.update(args.caseId, {
         status: 'ready_drafts',
         timeline,
         letters
@@ -291,11 +277,11 @@ Deno.serve(async (req) => {
       subject,
       urls: {
         html: file_url,
-        pdf: null // PDF generation not yet implemented
+        pdf: null
       },
       docId: doc.id,
-      case: mode === "case" && caseData ? {
-        id: caseData.id,
+      case: mode === "case" ? {
+        id: fromCase.id,
         status: 'ready_drafts'
       } : null
     });
