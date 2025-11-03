@@ -1,71 +1,70 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 //////////////////////
 // Helpers & Copy  //
 //////////////////////
 const SUBJECTS = new Set(["deposit","damages","early_termination"]);
-const sanitize = (s="") => String(s).replace(/[<&>"']/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":"&#x27;"}[m]));
-const safeISO = (v, plusDays=14) => { 
-  try { 
-    if (v) return new Date(v).toISOString().slice(0,10);
-  } catch {} 
-  return new Date(Date.now() + plusDays * 864e5).toISOString().slice(0,10); 
-};
-const fill = (tpl, vars) => tpl.replace(/{{\s*([\w.]+)\s*}}/g, (_, k) => (vars[k] != null ? String(vars[k]) : ""));
+const esc = (s="") => String(s).replace(/[<&>"]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m]));
+const isoDate = (v) => { try { return new Date(v).toISOString().slice(0,10); } catch { return new Date().toISOString().slice(0,10); } };
+const safeISO = (v, plusDays=7) => v ? isoDate(v) : isoDate(Date.now() + plusDays * 864e5);
+const fill = (tpl, vars) => tpl.replace(/{{\s*([\w.]+)\s*}}/g, (_, k) => (vars[k] ?? ""));
 
 const COPY = {
   deposit: {
     subject_en: "Request for clarification on refundable deposit",
     subject_th: "ขอความชัดเจนเกี่ยวกับเงินประกันการเช่า",
-    body_en: `This note summarises the completion of the tenancy for {{property_address}} and requests an update regarding the refundable deposit of {{deposit_amount}} THB. {{contract_ref}}
-
-To reconcile promptly, please provide (1) any proposed deductions with itemised reasons and supporting documents, or (2) confirmation of refund amount and transfer details. If no deductions apply, kindly confirm the return timeline.
-
-We would appreciate a reply by {{request_by_date_iso}} so both sides can close this matter smoothly.
-
-Kind regards,
-{{tenant_name}}`,
-    body_th: `จดหมายฉบับนี้สรุปการสิ้นสุดการเช่าสำหรับ {{property_address}} และขอความคืบหน้าเกี่ยวกับการคืนเงินประกัน {{deposit_amount}} บาท {{contract_ref}}
-
-เพื่อให้ปิดบัญชีได้รวดเร็ว กรุณาแจ้ง (1) รายการหักพร้อมเหตุผลและเอกสารประกอบ หรือ (2) การยืนยันจำนวนเงินที่จะคืนและรายละเอียดการโอน หากไม่มีรายการหัก กรุณาแจ้งกำหนดการโอนคืน
-
-ขอความกรุณาตอบกลับภายใน {{request_by_date_iso}} เพื่อให้ทั้งสองฝ่ายสามารถปิดเรื่องนี้ได้อย่างราบรื่น
-
-ขอแสดงความนับถือ
-{{tenant_name}}`
+    paragraphs_en: [
+      "Dear {{landlord_name}},",
+      "This letter concerns {{property_address}}. We kindly request an update regarding the refundable security deposit of {{deposit_amount}} THB under {{contract_ref}}.",
+      "To reconcile promptly, please provide either (1) any proposed deductions with itemised reasons and supporting documents, or (2) confirmation of the refund amount and transfer details. If no deductions apply, please confirm the return timeline.",
+      "We would appreciate a reply by {{request_by_date_iso}} so both sides can close this matter smoothly.",
+      "Kind regards,",
+      "{{tenant_name}}"
+    ],
+    paragraphs_th: [
+      "เรียน {{landlord_name}},",
+      "หนังสือนี้เกี่ยวกับ {{property_address}} จึงขอความคืบหน้าเกี่ยวกับการคืนเงินประกันจำนวน {{deposit_amount}} บาท ภายใต้ {{contract_ref}}",
+      "เพื่อให้ปิดบัญชีได้รวดเร็ว กรุณาแจ้ง (1) รายการหักพร้อมเหตุผลและเอกสารประกอบ หรือ (2) การยืนยันจำนวนเงินที่จะคืนและรายละเอียดการโอน หากไม่มีรายการหัก กรุณาแจ้งกำหนดการโอนคืน",
+      "ขอความกรุณาตอบกลับภายใน {{request_by_date_iso}} เพื่อให้ทั้งสองฝ่ายสามารถปิดเรื่องนี้ได้อย่างราบรื่น",
+      "ขอแสดงความนับถือ",
+      "{{tenant_name}}"
+    ]
   },
   damages: {
     subject_en: "Request for itemised assessment of damages",
     subject_th: "ขอรายละเอียดการประเมินความเสียหายแบบแยกรายการ",
-    body_en: `This note concerns {{property_address}} and requests an itemised assessment for any claimed damages. {{contract_ref}} If specific items are in question, please share the list, reasons, and supporting documents/quotes.
-
-If no damages apply, please confirm the final refundable amount and transfer details. We aim to reconcile this by {{request_by_date_iso}}; if another timeline is preferable, please advise.
-
-Kind regards,
-{{tenant_name}}`,
-    body_th: `หนังสือนี้เกี่ยวกับ {{property_address}} และขอรับรายละเอียดการประเมินความเสียหายแบบแยกรายการ {{contract_ref}} หากมีรายการที่ต้องตรวจสอบ กรุณาส่งรายชื่อ เหตุผล และเอกสาร/ใบเสนอราคา
-
-หากไม่มีความเสียหาย กรุณายืนยันจำนวนเงินที่จะคืนและรายละเอียดการโอน ตั้งใจปิดเรื่องภายใน {{request_by_date_iso}} หากมีกำหนดการอื่นที่เหมาะสมกว่า กรุณาแจ้งได้
-
-ขอแสดงความนับถือ
-{{tenant_name}}`
+    paragraphs_en: [
+      "Dear {{landlord_name}},",
+      "This letter relates to {{property_address}}. If there are any claimed damages under {{contract_ref}}, please provide an itemised assessment with reasons and supporting documents/quotes.",
+      "If no damages apply, please confirm the final refundable amount and transfer details. Our target to reconcile is {{request_by_date_iso}}; please advise if another timeline is preferable.",
+      "Kind regards,",
+      "{{tenant_name}}"
+    ],
+    paragraphs_th: [
+      "เรียน {{landlord_name}},",
+      "หนังสือนี้เกี่ยวกับ {{property_address}} หากมีการเรียกร้องค่าเสียหายภายใต้ {{contract_ref}} กรุณาส่งรายละเอียดแบบแยกรายการพร้อมเหตุผลและเอกสาร/ใบเสนอราคา",
+      "หากไม่มีความเสียหาย กรุณายืนยันจำนวนเงินที่จะคืนและรายละเอียดการโอน ตั้งใจปิดเรื่องภายใน {{request_by_date_iso}} หากมีกำหนดอื่นที่เหมาะสมกว่า กรุณาแจ้ง",
+      "ขอแสดงความนับถือ",
+      "{{tenant_name}}"
+    ]
   },
   early_termination: {
     subject_en: "Request to reconcile early termination under the lease",
     subject_th: "ขอประสานงานการยกเลิกสัญญาก่อนกำหนด",
-    body_en: `This message relates to early termination for {{property_address}}. {{contract_ref}} To close the account properly, please confirm (1) any fees specified by the contract, (2) key/possession handover steps, and (3) the final account date.
-
-Our preference is to complete this by {{request_by_date_iso}}. If an alternative schedule suits you better, please let us know so we can agree a practical plan.
-
-Kind regards,
-{{tenant_name}}`,
-    body_th: `จดหมายนี้เกี่ยวกับการยกเลิกสัญญาก่อนกำหนดของ {{property_address}} {{contract_ref}} เพื่อให้ปิดบัญชีอย่างถูกต้อง กรุณายืนยัน (1) ค่าธรรมเนียมตามสัญญา (ถ้ามี) (2) ขั้นตอนการส่งมอบกุญแจ/ทรัพย์สิน และ (3) วันที่ปิดบัญชี
-
-ต้องการดำเนินการให้เสร็จภายใน {{request_by_date_iso}} หากมีกำหนดการอื่นที่เหมาะสมกว่า กรุณาแจ้งเพื่อจะได้วางแผนร่วมกัน
-
-ขอแสดงความนับถือ
-{{tenant_name}}`
+    paragraphs_en: [
+      "Dear {{landlord_name}},",
+      "This letter concerns early termination for {{property_address}} under {{contract_ref}}. To close the account properly, please confirm (1) any fees specified by the contract, (2) key/possession handover steps, and (3) the final account date.",
+      "Our preference is to complete this by {{request_by_date_iso}}. If an alternative schedule suits you better, please let us know so we can agree on a practical plan.",
+      "Kind regards,",
+      "{{tenant_name}}"
+    ],
+    paragraphs_th: [
+      "เรียน {{landlord_name}},",
+      "หนังสือนี้เกี่ยวกับการยกเลิกสัญญาก่อนกำหนดของ {{property_address}} ภายใต้ {{contract_ref}} เพื่อให้ปิดบัญชีอย่างถูกต้อง กรุณายืนยัน (1) ค่าธรรมเนียมตามสัญญา (ถ้ามี) (2) ขั้นตอนการส่งมอบกุญแจ/ทรัพย์สิน และ (3) วันที่ปิดบัญชี",
+      "ต้องการดำเนินการให้เสร็จภายใน {{request_by_date_iso}} หากมีกำหนดการอื่นที่เหมาะสมกว่า กรุณาแจ้งเพื่อจะได้วางแผนร่วมกัน",
+      "ขอแสดงความนับถือ",
+      "{{tenant_name}}"
+    ]
   }
 };
 
@@ -74,50 +73,57 @@ const TEMPLATE = `<!doctype html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-@page { size: A4; margin: 20mm 18mm; }
-body {
-  font-family: Inter, Arial, "Noto Sans Thai", "TH Sarabun New", sans-serif;
-  font-size: 12pt;
-  line-height: 1.6;
-  color: #1A1D1F;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-h1 { color: #0C3B2E; margin: 0 0 8px; font-size: 18pt; font-weight: 700; }
-.muted { color: #64748b; margin: 0 0 20px; font-size: 11pt; }
-.body-text { white-space: pre-wrap; font-family: inherit; margin: 20px 0; }
-.body-th { font-family: 'Noto Sans Thai', 'TH Sarabun New', sans-serif; }
-hr { margin: 30px 0; border: 0; border-top: 1px solid #E5E7EB; }
-.footer { margin-top: 30px; padding: 15px; background: #F8FAFC; border-radius: 8px; font-size: 10pt; color: #64748b; }
-.footer p { margin: 4px 0; }
-.footer strong { color: #1A1D1F; }
+  @page { size: A4; margin: 20mm 18mm; }
+  body { font-family: Inter, Arial, "Noto Sans Thai", "TH Sarabun New", sans-serif; color:#1A1D1F; font-size:12pt; line-height:1.65; }
+  .wrap { max-width: 820px; margin: 0 auto; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+  .brand { font-weight:700; color:#0C3B2E; font-size:16pt; letter-spacing:0.3px; }
+  .meta { font-size:10.5pt; color:#475569; border:1px solid #E5E7EB; border-radius:8px; padding:10px 12px; }
+  .meta div { margin:3px 0; }
+  h1.en { font-size:18pt; margin:8px 0 2px; color:#0C3B2E; }
+  h2.th { font-size:15pt; margin:0 0 14px; color:#0C3B2E; font-family:"Noto Sans Thai","TH Sarabun New",sans-serif; }
+  .section { margin: 14px 0; }
+  p { margin: 6px 0 10px; }
+  .th { font-family:"Noto Sans Thai","TH Sarabun New",sans-serif; }
+  hr { border:0; border-top:1px solid #E5E7EB; margin:18px 0; }
+  .footer { margin-top:18px; padding:12px; background:#F8FAFC; border:1px solid #E5E7EB; border-radius:8px; font-size:10.5pt; color:#475569; }
+  .muted { color:#64748B; }
 </style>
 </head>
 <body>
-<h1>{{subject_en}}</h1>
-<p class="muted">{{subject_th}}</p>
-<div class="body-text">Dear {{landlord_name}},
+  <div class="wrap">
+    <div class="header">
+      <div class="brand">LEASE SHIELD</div>
+      <div class="meta">
+        <div><strong>Date:</strong> {{today_iso}}</div>
+        <div><strong>Case ID:</strong> {{caseId}}</div>
+        <div><strong>Property:</strong> {{property_address}}</div>
+      </div>
+    </div>
 
-{{body_en}}</div>
-<hr>
-<div class="body-text body-th">เรียน {{landlord_name}},
+    <h1 class="en">{{subject_en}}</h1>
+    <h2 class="th">{{subject_th}}</h2>
 
-{{body_th}}</div>
-<div class="footer">
-<p><strong>Property:</strong> {{property_address}}</p>
-<p><strong>Contract Reference:</strong> {{contract_ref}}</p>
-<p><strong>Response requested by:</strong> {{request_by_date_iso}}</p>
-<p><strong>From:</strong> {{tenant_name}} | <strong>To:</strong> {{landlord_name}}</p>
-</div>
+    <div class="section">
+      {{paragraphs_en}}
+    </div>
+
+    <hr>
+
+    <div class="section th">
+      {{paragraphs_th}}
+    </div>
+
+    <div class="footer">
+      <div><strong>Contract:</strong> {{contract_ref}}</div>
+      <div><strong>Requested reply by:</strong> {{request_by_date_iso}}</div>
+      <div><strong>From:</strong> {{tenant_name}} <span class="muted">→</span> <strong>To:</strong> {{landlord_name}}</div>
+    </div>
+  </div>
 </body>
 </html>`;
 
-/////////////////////////////////////////////
-// Unified generator: returns/stores .doc  //
-/////////////////////////////////////////////
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -172,25 +178,26 @@ Deno.serve(async (req) => {
     }
 
     // Helper to get values with fallback chain
-    const get = (k, d = "") => {
-      if (args?.[k] != null) return sanitize(String(args[k]));
-      if (fromCase?.[k] != null) return sanitize(String(fromCase[k]));
-      if (leaseData?.[k] != null) return sanitize(String(leaseData[k]));
+    const pick = (k, d = "") => {
+      if (args?.[k] != null) return esc(String(args[k]));
+      if (fromCase?.[k] != null) return esc(String(fromCase[k]));
+      if (leaseData?.[k] != null) return esc(String(leaseData[k]));
       return d;
     };
 
     // Build vars
     const vars = {
-      caseId: mode === "case" ? String(args.caseId) : `standalone-${Date.now()}`,
-      tenant_name: get("tenant_name") || userData?.full_name || fromCase?.user_email || "Tenant",
-      landlord_name: get("landlord_name") || "Landlord",
-      property_address: get("property_address") || "",
-      contract_ref: get("contract_ref") || (
+      caseId: mode === "case" ? String(args.caseId).slice(0, 8) : `standalone-${Date.now()}`,
+      today_iso: isoDate(new Date()),
+      tenant_name: pick("tenant_name") || userData?.full_name || fromCase?.user_email || "Tenant",
+      landlord_name: pick("landlord_name") || "Landlord",
+      property_address: pick("property_address") || "",
+      contract_ref: pick("contract_ref") || (
         leaseData?.start_date 
           ? `Lease dated ${new Date(leaseData.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` 
           : "Lease Agreement"
       ),
-      deposit_amount: get("deposit_amount") || fromCase?.dispute_amount || leaseData?.deposit_amount || "",
+      deposit_amount: pick("deposit_amount") || fromCase?.dispute_amount || leaseData?.deposit_amount || "",
       request_by_date_iso: safeISO(args?.request_by_date_iso || fromCase?.sla?.followup_due, 14)
     };
 
@@ -202,25 +209,26 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Compose final bodies
-    const copy = COPY[subjectRaw];
-    const final = {
-      subject_en: copy.subject_en,
-      subject_th: copy.subject_th,
-      body_en: fill(copy.body_en, vars),
-      body_th: fill(copy.body_th, vars),
-      ...vars
-    };
+    // Compose paragraphs
+    const cp = COPY[subjectRaw];
+    const paragraphs_en = cp.paragraphs_en.map(s => `<p>${fill(esc(s), vars)}</p>`).join("");
+    const paragraphs_th = cp.paragraphs_th.map(s => `<p>${fill(esc(s), vars)}</p>`).join("");
 
-    // Build HTML and harden UTF-8 for Word
+    const html = fill(TEMPLATE, {
+      ...vars,
+      subject_en: cp.subject_en,
+      subject_th: cp.subject_th,
+      paragraphs_en,
+      paragraphs_th
+    });
+
+    // Build UTF-8 safe content for Word
     const UTF8_BOM = "\uFEFF";
-    const html = fill(TEMPLATE, final);
     const htmlUtf8 = UTF8_BOM + html;
 
     // File naming
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const caseIdShort = mode === "case" ? args.caseId.slice(0, 8) : Date.now();
-    const baseName = `LS-${caseIdShort}-${subjectRaw}-${stamp}`;
+    const baseName = `LS-${vars.caseId}-${subjectRaw}-${stamp}`;
 
     // Save .doc (Word format with UTF-8)
     const docBlob = new Blob([htmlUtf8], { type: 'application/msword; charset=utf-8' });
@@ -232,11 +240,11 @@ Deno.serve(async (req) => {
     const htmlFile = new File([htmlBlob], `${baseName}.html`);
     const { file_url: htmlUrl } = await base44.integrations.Core.UploadFile({ file: htmlFile });
 
-    // Save to Document entity - USE REGULAR CLIENT (not asServiceRole) so created_by is set correctly
+    // Save to Document entity for vault
     const doc = await base44.entities.Document.create({
       type: 'letter',
       file_url: docUrl,
-      label: `${copy.subject_en}${mode === "case" ? ` - Case ${caseIdShort}` : ''}`,
+      label: `${cp.subject_en}${mode === "case" ? ` - Case ${vars.caseId}` : ''}`,
       html_content: html
     });
 
