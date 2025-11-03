@@ -1,294 +1,155 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
-const LETTER_WRITER_SYSTEM_PROMPT = `SYSTEM:
-You are "Lease Shield Letter Writer", assisting both tenants and landlords with clear, neutral correspondence for Thai rental disputes.
+const LETTER_WRITER_PROMPT = `You are a professional letter writer for rental disputes in Thailand.
 
-RULES:
-- Your letters must be courteous, factual, and completely neutral.
-- Write in English with a Thai mirror translation for every paragraph.
-- Each paragraph in English must have its Thai equivalent directly below it.
-- Keep tone calm, respectful, and professional — never accusatory or legalistic.
-- Avoid any mention of courts, threats, or escalation. Focus on communication and resolution.
-- Assume these letters are documentation support, **not legal advice**.
+Generate ONE professional, bilingual letter (English + Thai) based on the case details provided.
 
-STRUCTURE:
-- 3 letters total:
-  1️⃣ Initial Clarification & Documentation  
-  2️⃣ Follow-up & Reconciliation Plan  
-  3️⃣ Final Settlement Proposal  
-- Each letter: 180–280 English words mirrored in Thai.  
-- Use numbered lists for documents or requested items.  
-- Close with a cooperative, polite sign-off.  
-- Never include real addresses, phone numbers, or personal names.
+CRITICAL RULES:
+1. Output ONLY valid JSON - no markdown, no explanations
+2. English and Thai paragraphs must be matched 1:1
+3. Use proper UTF-8 Thai characters (not HTML entities)
+4. Keep it professional, neutral, and factual
+5. 150-250 words in English (Thai should mirror)
 
-OUTPUT FORMAT:
-Return STRICT JSON. No text outside the JSON.
-
-CRITICAL ENCODING RULE:
-- Output ALL Thai text as raw UTF-8 characters
-- NEVER use HTML entities (no &# codes)
-- Example: Use "สวัสดี" NOT "&#3626;&#3623;&#3633;&#3626;&#3604;&#3637;"
-
-JSON SCHEMA:
+OUTPUT FORMAT (strict JSON):
 {
-  "caseId": "string",
-  "letters": [
-    {
-      "id": "v1_notice",
-      "purpose": "Initial clarification & documentation",
-      "subject_en": "string",
-      "subject_th": "string (raw UTF-8 Thai)",
-      "body_en": ["para1", "para2", "..."],
-      "body_th": ["ย่อหน้า1", "ย่อหน้า2", "..."],
-      "placeholders": {
-        "tenant_name": "string",
-        "landlord_name": "string",
-        "property_address": "string",
-        "contract_ref": "string|null",
-        "deposit_amount_thb": "number|null",
-        "billing_items": ["string"],
-        "request_by_date_iso": "YYYY-MM-DD",
-        "attachments": ["Lease.pdf","Photos.zip","Messages.pdf"]
-      },
-      "next_steps_en": ["step1","step2"],
-      "next_steps_th": ["ขั้นตอน1","ขั้นตอน2"]
-    },
-    {
-      "id": "v2_follow_up",
-      "purpose": "Polite follow-up & proposed reconciliation plan",
-      // ...
-    },
-    {
-      "id": "v3_final_offer",
-      "purpose": "Final amicable settlement proposal before escalation",
-      // ...
-    }
+  "subject_en": "Request for Deposit Return",
+  "subject_th": "ขอคืนเงินประกันการเช่า",
+  "body_en": [
+    "Dear [Landlord Name],",
+    "I am writing to formally request...",
+    "Thank you for your attention to this matter."
+  ],
+  "body_th": [
+    "เรียนคุณ [ชื่อเจ้าของบ้าน]",
+    "ข้าพเจ้าเขียนจดหมายฉบับนี้เพื่อขอ...",
+    "ขอบคุณสำหรับความสนใจในเรื่องนี้"
   ]
 }
 
-VARIABLES PROVIDED:
-tenant_name, landlord_name, property_address, contract_ref,
-deposit_amount_thb, dispute_type, facts[], request_by_date_iso,
-attachments[], tone ("standard" | "softer" | "firmer").
+EXAMPLE based on input:
+Tenant: John, Landlord: Jane, Property: 123 Main St, Deposit: 10000 THB
+{
+  "subject_en": "Formal Request for Security Deposit Return",
+  "subject_th": "ขอคืนเงินประกันการเช่าอย่างเป็นทางการ",
+  "body_en": [
+    "Dear Jane,",
+    "I am writing to formally request the return of my security deposit of ฿10,000 for the property at 123 Main St.",
+    "As per our lease agreement, I vacated the property on the agreed date and returned the keys in good condition.",
+    "I would appreciate your prompt attention to this matter and look forward to receiving the deposit within 14 days.",
+    "Please feel free to contact me if you need any clarification.",
+    "Best regards,",
+    "John"
+  ],
+  "body_th": [
+    "เรียนคุณเจน",
+    "ข้าพเจ้าเขียนจดหมายฉบับนี้เพื่อขอคืนเงินประกันการเช่าจำนวน ฿10,000 สำหรับทรัพย์สินที่ 123 Main St",
+    "ตามสัญญาเช่า ข้าพเจ้าได้ย้ายออกจากทรัพย์สินในวันที่ตกลงกันและคืนกุญแจในสภาพดี",
+    "ข้าพเจ้าจะขอบคุณหากท่านให้ความสนใจในเรื่องนี้อย่างรวดเร็วและหวังว่าจะได้รับเงินประกันภายใน 14 วัน",
+    "โปรดติดต่อข้าพเจ้าหากท่านต้องการคำชี้แจงเพิ่มเติม",
+    "ขอแสดงความนับถือ",
+    "จอห์น"
+  ]
+}`;
 
-STYLE:
-- Default tone = "standard".
-- "softer" adds empathy, "firmer" adds structure and clarity.
-- Never assume guilt; emphasize cooperation and understanding.
-- All output must be bilingual (EN/TH).`;
-
-// Decode HTML entities - Deno-compatible
-function decodeHtmlEntities(text: string): string {
-  if (!text || typeof text !== 'string') return '';
-  
-  return text
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-}
-
-// HTML template for rendering letters
-const getLetterHTML = (letter: any, caseId: string) => {
+// Simple HTML template for one letter
+const getLetterHTML = (letter, caseInfo) => {
   const today = new Date().toISOString().split('T')[0];
   const year = new Date().getFullYear();
   
-  // Decode HTML entities and escape for HTML output
-  const escapeHtml = (text: string) => {
-    if (!text) return '';
-    // First decode any HTML entities that might have been incorrectly introduced
-    const decoded = decodeHtmlEntities(text);
-    // Return as-is for UTF-8 output (no additional HTML escaping for standard chars)
-    return decoded;
-  };
-  
-  // Helper to render EN/TH paragraph pairs with safety checks
-  const renderParagraphs = (bodyEn: string[], bodyTh: string[]) => {
-    // Safety checks - ensure both arrays exist and have content
-    if (!Array.isArray(bodyEn) || bodyEn.length === 0) {
-      console.warn('bodyEn is missing or empty:', bodyEn);
-      return '<div class="pair"><p class="en">Letter content unavailable.</p><p class="th">ไม่สามารถโหลดเนื้อหาจดหมายได้</p></div>';
-    }
-    
-    if (!Array.isArray(bodyTh)) {
-      console.warn('bodyTh is missing or not an array:', bodyTh);
-      bodyTh = []; // Default to empty array to prevent errors
-    }
-    
-    return bodyEn.map((para, i) => `
-      <div class="pair">
-        <p class="en">${escapeHtml(para)}</p>
-        <p class="th">${escapeHtml(bodyTh[i] || '')}</p>
-      </div>
-    `).join('');
-  };
-
-  // Safety checks for letter object
-  if (!letter) {
-    console.error('Letter object is undefined');
-    return '<html><body><h1>Error: Letter data unavailable</h1></body></html>';
-  }
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>${escapeHtml(letter.subject_en || 'Lease Shield Letter')}</title>
+<title>${letter.subject_en || 'Letter from Lease Shield'}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  :root{
-    --green:#0C3B2E; --gold:#C7A338; --ink:#111; --muted:#667085;
-  }
-  @page { size: A4; margin: 22mm 18mm 24mm 18mm; }
-  @media print {
-    body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  }
-  * { box-sizing: border-box; }
+  @page { size: A4; margin: 20mm; }
   body {
-    font-family: Inter, "Helvetica Neue", Arial, "Noto Sans Thai", "Segoe UI", sans-serif;
-    color: var(--ink); line-height: 1.5; font-size: 12.2pt;
-    margin: 0; padding: 22mm 18mm 24mm 18mm;
+    font-family: Inter, "Helvetica Neue", Arial, "Noto Sans Thai", sans-serif;
+    line-height: 1.6;
+    color: #111;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20mm;
   }
-  header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 14mm; }
-  .brand { display:flex; align-items:center; gap:10px; }
-  .logo {
-    width: 28mm; height: 28mm; border-radius: 8px;
-    background: var(--green); position: relative;
+  .header {
+    border-bottom: 3px solid #0C3B2E;
+    padding-bottom: 15px;
+    margin-bottom: 30px;
   }
-  .logo:after{
-    content:""; position:absolute; inset:4mm; border:1.8px solid var(--gold); border-radius:6px;
+  .logo-text {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0C3B2E;
+    margin: 0;
   }
-  .brand-title { font-weight:700; font-size: 14pt; color: var(--green); letter-spacing: .2px; }
-  .meta { text-align:right; font-size: 10.5pt; color: var(--muted); }
-
-  h1 { font-size: 16pt; margin: 0 0 2mm 0; color: var(--green); }
-  .subj { font-size: 11.5pt; color: var(--muted); margin: 0 0 8mm 0; }
-
-  .pair { margin: 0 0 6mm 0; }
-  .pair .en { margin: 0 0 3mm 0; }
-  .pair .th { margin: 0; font-family: "Noto Sans Thai", "TH Sarabun New", sans-serif; }
-
-  ul { margin: 3mm 0 6mm 0; padding-left: 5.5mm; list-style-type: decimal; }
-  li { margin: 1.2mm 0; }
-
-  .block-title { font-weight: 700; color: var(--green); margin: 8mm 0 2mm; font-size: 13pt; }
-  .hr { height:1px; background: linear-gradient(90deg, var(--gold), transparent); margin: 8mm 0; border:0; }
-
-  footer {
-    margin-top: 15mm; padding-top: 5mm; border-top: 1px solid #e5e5e5;
-    font-size: 9.8pt; color: var(--muted); display:flex; justify-content:space-between;
+  .date {
+    color: #666;
+    font-size: 14px;
+    margin-top: 5px;
   }
-  .badge { color: var(--gold); font-weight:600; }
-  .small { font-size: 10.5pt; color: var(--muted); line-height: 1.4; }
-
-  .signoff { margin-top: 10mm; }
-  .sigline { margin-top: 2mm; }
+  h1 {
+    color: #0C3B2E;
+    font-size: 20px;
+    margin: 20px 0 10px;
+  }
+  .thai {
+    font-family: "Noto Sans Thai", "TH Sarabun New", sans-serif;
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 30px;
+  }
+  .section {
+    margin: 15px 0;
+  }
+  .section p {
+    margin: 10px 0;
+  }
+  .en {
+    margin-bottom: 5px;
+  }
+  .th {
+    font-family: "Noto Sans Thai", "TH Sarabun New", sans-serif;
+    color: #555;
+    font-size: 14px;
+    margin-bottom: 15px;
+  }
+  .footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+    font-size: 12px;
+    color: #999;
+  }
 </style>
 </head>
 <body>
-
-<header>
-  <div class="brand">
-    <div class="logo"></div>
-    <div>
-      <div class="brand-title">Lease Shield</div>
-      <div class="small">Fair Protection for Tenants &amp; Landlords</div>
-    </div>
+  <div class="header">
+    <div class="logo-text">LEASE SHIELD</div>
+    <div class="date">Date: ${today}</div>
+    ${caseInfo.caseId ? `<div class="date">Case: ${caseInfo.caseId.slice(0, 8)}</div>` : ''}
   </div>
-  <div class="meta">
-    Case: ${caseId.slice(0, 8)}<br>
-    Date: ${today}<br>
+
+  <h1>${letter.subject_en}</h1>
+  <p class="thai">${letter.subject_th}</p>
+
+  <div class="section">
+    ${letter.body_en.map((para, i) => `
+      <p class="en">${para}</p>
+      ${letter.body_th[i] ? `<p class="th">${letter.body_th[i]}</p>` : ''}
+    `).join('')}
   </div>
-</header>
 
-<main>
-  <h1>${escapeHtml(letter.subject_en || 'Letter')}</h1>
-  <p class="subj">${escapeHtml(letter.subject_th || '')}</p>
-
-  ${renderParagraphs(letter.body_en, letter.body_th)}
-
-  ${letter.next_steps_en && Array.isArray(letter.next_steps_en) && letter.next_steps_en.length > 0 ? `
-    <div class="block-title">Next Steps / ขั้นตอนถัดไป</div>
-    <ul>
-      ${letter.next_steps_en.map((step: string, i: number) => `
-        <li>
-          <div class="en">${escapeHtml(step)}</div>
-          <div class="th small">${escapeHtml((letter.next_steps_th && letter.next_steps_th[i]) || '')}</div>
-        </li>
-      `).join('')}
-    </ul>
-  ` : ''}
-
-  <div class="hr"></div>
-  <div class="block-title">Context / ข้อมูลอ้างอิง</div>
-  
-  ${letter.placeholders && letter.placeholders.tenant_name ? `
-  <div class="pair">
-    <p class="en"><strong>Tenant</strong>: ${escapeHtml(letter.placeholders.tenant_name)}</p>
-    <p class="th"><strong>ผู้เช่า</strong>: ${escapeHtml(letter.placeholders.tenant_name)}</p>
-  </div>` : ''}
-  
-  ${letter.placeholders && letter.placeholders.landlord_name ? `
-  <div class="pair">
-    <p class="en"><strong>Landlord</strong>: ${escapeHtml(letter.placeholders.landlord_name)}</p>
-    <p class="th"><strong>เจ้าของห้อง</strong>: ${escapeHtml(letter.placeholders.landlord_name)}</p>
-  </div>` : ''}
-  
-  ${letter.placeholders && letter.placeholders.property_address ? `
-  <div class="pair">
-    <p class="en"><strong>Property</strong>: ${escapeHtml(letter.placeholders.property_address)}</p>
-    <p class="th"><strong>ทรัพย์สิน</strong>: ${escapeHtml(letter.placeholders.property_address)}</p>
-  </div>` : ''}
-  
-  ${letter.placeholders && letter.placeholders.contract_ref ? `
-  <div class="pair">
-    <p class="en"><strong>Contract</strong>: ${escapeHtml(letter.placeholders.contract_ref)}</p>
-    <p class="th"><strong>สัญญา</strong>: ${escapeHtml(letter.placeholders.contract_ref)}</p>
-  </div>` : ''}
-  
-  ${letter.placeholders && letter.placeholders.deposit_amount_thb ? `
-  <div class="pair">
-    <p class="en"><strong>Deposit Amount</strong>: ฿${letter.placeholders.deposit_amount_thb.toLocaleString()}</p>
-    <p class="th"><strong>จำนวนเงินประกัน</strong>: ฿${letter.placeholders.deposit_amount_thb.toLocaleString()}</p>
-  </div>` : ''}
-  
-  ${letter.placeholders && letter.placeholders.billing_items && Array.isArray(letter.placeholders.billing_items) && letter.placeholders.billing_items.length > 0 ? `
-  <div class="pair">
-    <p class="en"><strong>Billing Items</strong>: ${escapeHtml(letter.placeholders.billing_items.join(', '))}</p>
-    <p class="th"><strong>รายการค่าใช้จ่าย</strong>: ${escapeHtml(letter.placeholders.billing_items.join(', '))}</p>
-  </div>` : ''}
-  
-  ${letter.placeholders && letter.placeholders.attachments && Array.isArray(letter.placeholders.attachments) && letter.placeholders.attachments.length > 0 ? `
-  <div class="pair">
-    <p class="en"><strong>Attachments</strong>: ${escapeHtml(letter.placeholders.attachments.join(', '))}</p>
-    <p class="th"><strong>ไฟล์แนบ</strong>: ${escapeHtml(letter.placeholders.attachments.join(', '))}</p>
-  </div>` : ''}
-  
-  ${letter.placeholders && letter.placeholders.request_by_date_iso ? `
-  <div class="pair">
-    <p class="en"><strong>Response Requested By</strong>: ${letter.placeholders.request_by_date_iso}</p>
-    <p class="th"><strong>ขอความคืบหน้าภายใน</strong>: ${letter.placeholders.request_by_date_iso}</p>
-  </div>` : ''}
-
-  <div class="signoff">
-    <div class="pair">
-      <p class="en">Kind regards,<br><strong>Lease Shield</strong></p>
-      <p class="th">ขอแสดงความนับถือ<br><strong>Lease Shield</strong></p>
-    </div>
-    <div class="sigline small en">This correspondence is for documentation and communication support only, not legal advice.</div>
-    <div class="sigline small th">เอกสารฉบับนี้จัดทำเพื่อช่วยด้านเอกสารและการสื่อสาร ไม่ใช่คำแนะนำทางกฎหมาย</div>
+  <div class="footer">
+    <p><strong>Property:</strong> ${caseInfo.property_address}</p>
+    ${caseInfo.deposit_amount_thb ? `<p><strong>Deposit:</strong> ฿${caseInfo.deposit_amount_thb.toLocaleString()}</p>` : ''}
+    <p style="margin-top: 15px; font-style: italic;">
+      This letter is generated by Lease Shield for documentation purposes only. 
+      It does not constitute legal advice.
+    </p>
+    <p style="margin-top: 5px;">© ${year} Lease Shield</p>
   </div>
-</main>
-
-<footer>
-  <div>© ${year} Lease Shield</div>
-  <div class="badge">${letter.id || 'Letter'}</div>
-</footer>
-
 </body>
 </html>`;
 };
@@ -297,7 +158,6 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Validate user authentication
     const user = await base44.auth.me();
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -308,13 +168,12 @@ Deno.serve(async (req) => {
       caseId,
       tenant_name = "Tenant",
       landlord_name = "Landlord", 
-      property_address = "the rented apartment",
-      contract_ref = "Residential Lease Agreement",
+      property_address = "the rented property",
+      contract_ref = "Lease Agreement",
       deposit_amount_thb,
       dispute_type = "deposit",
       facts = [],
       request_by_date_iso,
-      attachments = [],
       tone = "standard"
     } = payload;
 
@@ -322,176 +181,112 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'caseId is required' }, { status: 400 });
     }
 
-    console.log('Generating letters for case:', caseId);
+    console.log('Generating letter for case:', caseId);
 
-    // Check if letters already exist for this case to prevent duplicates
+    // Check if letter already exists
     const existingDocs = await base44.entities.Document.filter({
       type: 'letter',
       created_by: user.email
     });
     
-    const existingLettersForCase = existingDocs.filter(doc => 
+    const existingLetter = existingDocs.find(doc => 
       doc.label && doc.label.includes(caseId.slice(0, 8))
     );
     
-    if (existingLettersForCase.length >= 3) {
-      console.log('Letters already exist for this case, returning existing');
+    if (existingLetter) {
+      console.log('Letter already exists for this case');
       return Response.json({
         success: true,
         caseId,
-        message: 'Letters already generated for this case',
-        isTemporary: caseId.startsWith('temp-')
+        message: 'Letter already generated',
+        letter_url: existingLetter.file_url
       });
     }
 
-    // Check if this is a temporary case (not yet in database)
     const isTemporaryCase = caseId.startsWith('temp-');
 
-    // Build the prompt for letter generation with strong constraints
-    const userPrompt = `Generate EXACTLY 3 letters for this case. No more, no less.
+    // Build simple, clear prompt
+    const factsText = facts.length > 0 ? facts.join('. ') : 'Tenant moved out and returned keys as agreed.';
+    const deadline = request_by_date_iso || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-Case Details:
-- Tenant: ${tenant_name}
-- Landlord: ${landlord_name}
+    const promptText = `Generate a professional bilingual letter for this rental dispute:
+
+CASE DETAILS:
+- Tenant Name: ${tenant_name}
+- Landlord Name: ${landlord_name}
 - Property: ${property_address}
-- Contract: ${contract_ref}
+- Dispute: ${dispute_type}
 - Deposit Amount: ${deposit_amount_thb ? `฿${deposit_amount_thb}` : 'N/A'}
-- Dispute Type: ${dispute_type}
-- Key Facts: ${facts.length > 0 ? facts.join('; ') : 'Standard lease dispute'}
-- Response Deadline: ${request_by_date_iso || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-- Attachments: ${attachments.length > 0 ? attachments.join(', ') : 'Lease.pdf, Photos.zip'}
+- Key Facts: ${factsText}
+- Response Deadline: ${deadline}
 - Tone: ${tone}
 
-CRITICAL: Return EXACTLY 3 letters with IDs: v1_notice, v2_follow_up, v3_final_offer
-CRITICAL: Do NOT use HTML entities for Thai text - use actual Thai characters (UTF-8)`;
+Generate ONE letter requesting resolution. Be polite, factual, and professional.`;
 
-    // Call LLM to generate letter pack with increased timeout
-    console.log('Calling LLM with payload...');
-    const result = await Promise.race([
-      base44.integrations.Core.InvokeLLM({
-        prompt: `${LETTER_WRITER_SYSTEM_PROMPT}
-
-${userPrompt}`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            caseId: { type: "string" },
-            letters: {
-              type: "array",
-              minItems: 3,
-              maxItems: 3,
-              items: {
-                type: "object",
-                properties: {
-                  id: { type: "string", enum: ["v1_notice", "v2_follow_up", "v3_final_offer"] },
-                  purpose: { type: "string" },
-                  subject_en: { type: "string" },
-                  subject_th: { type: "string" },
-                  body_en: { type: "array", items: { type: "string" }, minItems: 1 },
-                  body_th: { type: "array", items: { type: "string" }, minItems: 1 },
-                  placeholders: { type: "object" },
-                  next_steps_en: { type: "array", items: { type: "string" } },
-                  next_steps_th: { type: "array", items: { type: "string" } }
-                },
-                required: ["id", "purpose", "subject_en", "subject_th", "body_en", "body_th"]
-              }
-            }
-          },
-          required: ["caseId", "letters"]
-        }
-      }),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Letter generation timeout - please try again')), 60000)
-      )
-    ]);
-
-    console.log('LLM response received, letters generated:', result.letters?.length);
-
-    if (!result.letters || result.letters.length === 0) {
-      throw new Error('Failed to generate letters - LLM returned no letters');
-    }
-
-    // Filter and validate letters - only keep properly structured ones
-    const validLetters = [];
-    const expectedIds = ['v1_notice', 'v2_follow_up', 'v3_final_offer'];
+    console.log('Calling LLM...');
     
-    for (const letter of result.letters) {
-      // Skip if missing critical fields
-      if (!letter.id) {
-        console.warn('Skipping letter without ID:', Object.keys(letter));
-        continue;
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: `${LETTER_WRITER_PROMPT}\n\n${promptText}`,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          subject_en: { type: "string" },
+          subject_th: { type: "string" },
+          body_en: { type: "array", items: { type: "string" }, minItems: 3 },
+          body_th: { type: "array", items: { type: "string" }, minItems: 3 }
+        },
+        required: ["subject_en", "subject_th", "body_en", "body_th"]
       }
-      
-      if (!expectedIds.includes(letter.id)) {
-        console.warn('Skipping letter with unexpected ID:', letter.id);
-        continue;
-      }
-      
-      if (!letter.body_en || !Array.isArray(letter.body_en) || letter.body_en.length === 0) {
-        console.error(`Letter ${letter.id} has invalid body_en:`, letter.body_en);
-        continue;
-      }
-      
-      // Ensure body_th exists and is an array
-      if (!letter.body_th || !Array.isArray(letter.body_th)) {
-        console.warn(`Letter ${letter.id} missing body_th, setting to empty array`);
-        letter.body_th = [];
-      }
-      
-      // Ensure other required fields have defaults if missing after LLM response
-      if (!letter.subject_en) letter.subject_en = 'Letter from Lease Shield';
-      if (!letter.subject_th) letter.subject_th = 'จดหมายจาก Lease Shield';
-      if (!letter.purpose) letter.purpose = letter.id.replace('_', ' '); // Default purpose from ID
-      
-      validLetters.push(letter);
+    });
+
+    console.log('LLM response received');
+
+    // Validate response
+    if (!result || typeof result !== 'object') {
+      throw new Error('Invalid LLM response format');
     }
 
-    console.log('Valid letters after filtering:', validLetters.length, validLetters.map(l => l.id));
-
-    if (validLetters.length === 0) {
-      throw new Error('No valid letters generated - all letters had structural issues');
+    if (!result.subject_en || !result.subject_th) {
+      throw new Error('Missing subject lines');
     }
 
-    if (validLetters.length < 3) {
-      console.warn(`Only ${validLetters.length} valid letters generated, expected 3`);
+    if (!Array.isArray(result.body_en) || result.body_en.length === 0) {
+      throw new Error('Invalid body_en: must be non-empty array');
     }
 
-    // Save each valid letter as HTML and upload
-    const letterUrls: { [key: string]: string } = {};
-    for (const letter of validLetters) {
-      try {
-        // Generate HTML with UTF-8 encoding
-        const htmlContent = getLetterHTML(letter, caseId);
-
-        // Create HTML file blob with explicit UTF-8 encoding
-        const encoder = new TextEncoder();
-        const uint8array = encoder.encode(htmlContent);
-        const blob = new Blob([uint8array], { type: 'text/html; charset=utf-8' });
-        const file = new File([blob], `${letter.id}_${caseId}.html`, { type: 'text/html; charset=utf-8' });
-
-        // Upload to storage
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-
-        // Save as Document with contract reference in label
-        const labelPrefix = contract_ref && contract_ref !== 'Residential Lease Agreement' 
-          ? contract_ref 
-          : letter.purpose;
-        
-        const doc = await base44.entities.Document.create({
-          type: 'letter',
-          file_url,
-          label: `${labelPrefix} - ${letter.id}`
-        });
-
-        letterUrls[letter.id] = doc.file_url;
-        console.log(`Letter ${letter.id} saved:`, doc.id);
-      } catch (letterError) {
-        console.error(`Failed to save letter ${letter.id}:`, letterError);
-        throw new Error(`Failed to save letter ${letter.id}: ${letterError.message}`);
-      }
+    if (!Array.isArray(result.body_th) || result.body_th.length === 0) {
+      throw new Error('Invalid body_th: must be non-empty array');
     }
 
-    // Only update case if it's not temporary
+    console.log('Letter validation passed');
+
+    // Generate HTML
+    const caseInfo = {
+      caseId,
+      property_address,
+      deposit_amount_thb
+    };
+
+    const htmlContent = getLetterHTML(result, caseInfo);
+
+    // Upload
+    const encoder = new TextEncoder();
+    const htmlBytes = encoder.encode(htmlContent);
+    const blob = new Blob([htmlBytes], { type: 'text/html; charset=utf-8' });
+    const file = new File([blob], `letter_${caseId}.html`, { type: 'text/html; charset=utf-8' });
+
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
+    // Save document
+    const doc = await base44.entities.Document.create({
+      type: 'letter',
+      file_url,
+      label: `${contract_ref} - Case ${caseId.slice(0, 8)}`
+    });
+
+    console.log('Letter saved:', doc.id);
+
+    // Update case if not temporary
     if (!isTemporaryCase) {
       const cases = await base44.entities.Case.list();
       const existingCase = cases.find(c => c.id === caseId);
@@ -500,64 +295,45 @@ ${userPrompt}`,
         const timeline = existingCase.timeline || [];
         timeline.push({
           timestamp: new Date().toISOString(),
-          event: 'Letters generated',
-          actor: user.email,
-          meta: { letter_count: validLetters.length }
+          event: 'Letter generated',
+          actor: user.email
         });
 
         await base44.entities.Case.update(caseId, {
           status: 'ready_drafts',
           letters: {
-            v1_url: letterUrls['v1_notice'],
-            v2_url: letterUrls['v2_follow_up'],
-            v3_url: letterUrls['v3_final_offer'],
-            letters_data: validLetters
+            letter_url: file_url,
+            letter_data: result
           },
           timeline
         });
 
-        console.log('Case updated with letter URLs and data');
+        console.log('Case updated');
 
-        // Send notification to tenant
-        const tenant = await base44.entities.User.list().then(users => 
-          users.find(u => u.email === existingCase.user_email)
-        );
-
-        if (tenant) {
-          const language = tenant.language || 'en';
-          const subject = language === 'th' ? 
-            'จดหมายของคุณพร้อมแล้ว' : 
-            'Your Letters Are Ready';
-          const body = language === 'th' ?
-            `สวัสดี ${tenant.full_name},\n\nจดหมายสำหรับคดี #${caseId.slice(0, 8)} สร้างเสร็จแล้ว\n\nคุณสามารถตรวจสอบ ดาวน์โหลด และพิมพ์ได้ที่แดชบอร์ด\n\nจดหมายอยู่ในรูปแบบ HTML ที่พร้อมพิมพ์และส่งให้เจ้าของบ้าน\n\n— ทีม Lease Shield` :
-            `Hi ${tenant.full_name},\n\nYour letters for Case #${caseId.slice(0, 8)} are ready.\n\nYou can review, download, and print them from your dashboard.\n\nLetters are in print-ready HTML format for sending to your landlord.\n\n— The Lease Shield Team`;
-
-          await base44.integrations.Core.SendEmail({
-            to: tenant.email,
-            subject,
-            body
-          });
-
-          console.log('Notification sent to tenant');
-        }
+        // Send email notification
+        const language = user.language || 'en';
+        await base44.integrations.Core.SendEmail({
+          to: user.email,
+          subject: language === 'th' ? 'จดหมายของคุณพร้อมแล้ว' : 'Your Letter is Ready',
+          body: language === 'th' ?
+            `สวัสดี ${user.full_name},\n\nจดหมายสำหรับคดี #${caseId.slice(0, 8)} พร้อมแล้ว\nคุณสามารถดูและพิมพ์ได้ที่แดชบอร์ด\n\n— ทีม Lease Shield` :
+            `Hi ${user.full_name},\n\nYour letter for Case #${caseId.slice(0, 8)} is ready.\nYou can view and print it from your dashboard.\n\n— The Lease Shield Team`
+        });
       }
-    } else {
-      console.log('Temporary case - skipping case update and notification');
     }
 
-    // Return the full letter pack
     return Response.json({
       success: true,
       caseId,
-      letters: validLetters,
-      letterUrls,
+      letter_url: file_url,
+      letter: result,
       isTemporary: isTemporaryCase
     });
 
   } catch (error) {
     console.error('Letter generation error:', error);
     return Response.json({ 
-      error: error.message || 'Failed to generate letters',
+      error: error.message || 'Failed to generate letter',
       details: error.stack 
     }, { status: 500 });
   }
