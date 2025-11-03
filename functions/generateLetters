@@ -80,16 +80,23 @@ const getLetterHTML = (letter, caseId) => {
   
   // Helper to safely escape HTML but preserve Thai characters
   const escapeHtml = (text) => {
-    if (typeof text !== 'string') return text; // Handle non-string inputs like numbers
-    // This simple approach should be fine for Thai characters as they are UTF-8.
-    // For general HTML escaping, a more robust function would replace <, >, &, ", '
-    // However, given the context (LLM output), we prioritize preserving Thai characters
-    // and assume the LLM output itself is not malicious HTML.
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    if (!text) return '';
+    return text;
   };
   
-  // Helper to render EN/TH paragraph pairs
+  // Helper to render EN/TH paragraph pairs with safety checks
   const renderParagraphs = (bodyEn, bodyTh) => {
+    // Safety checks - ensure both arrays exist and have content
+    if (!Array.isArray(bodyEn) || bodyEn.length === 0) {
+      console.warn('bodyEn is missing or empty:', bodyEn);
+      return '<div class="pair"><p class="en">Letter content unavailable.</p><p class="th">ไม่สามารถโหลดเนื้อหาจดหมายได้</p></div>';
+    }
+    
+    if (!Array.isArray(bodyTh)) {
+      console.warn('bodyTh is missing or not an array:', bodyTh);
+      bodyTh = [];
+    }
+    
     return bodyEn.map((para, i) => `
       <div class="pair">
         <p class="en">${escapeHtml(para)}</p>
@@ -98,11 +105,17 @@ const getLetterHTML = (letter, caseId) => {
     `).join('');
   };
 
+  // Safety checks for letter object
+  if (!letter) {
+    console.error('Letter object is undefined');
+    return '<html><body><h1>Error: Letter data unavailable</h1></body></html>';
+  }
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>${escapeHtml(letter.subject_en)}</title>
+<title>${escapeHtml(letter.subject_en || 'Lease Shield Letter')}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root{
@@ -171,18 +184,18 @@ const getLetterHTML = (letter, caseId) => {
 </header>
 
 <main>
-  <h1>${escapeHtml(letter.subject_en)}</h1>
-  <p class="subj">${escapeHtml(letter.subject_th)}</p>
+  <h1>${escapeHtml(letter.subject_en || 'Letter')}</h1>
+  <p class="subj">${escapeHtml(letter.subject_th || '')}</p>
 
   ${renderParagraphs(letter.body_en, letter.body_th)}
 
-  ${letter.next_steps_en && letter.next_steps_en.length > 0 ? `
+  ${letter.next_steps_en && Array.isArray(letter.next_steps_en) && letter.next_steps_en.length > 0 ? `
     <div class="block-title">Next Steps / ขั้นตอนถัดไป</div>
     <ul>
       ${letter.next_steps_en.map((step, i) => `
         <li>
           <div class="en">${escapeHtml(step)}</div>
-          <div class="th small">${escapeHtml(letter.next_steps_th[i] || '')}</div>
+          <div class="th small">${escapeHtml((letter.next_steps_th && letter.next_steps_th[i]) || '')}</div>
         </li>
       `).join('')}
     </ul>
@@ -191,49 +204,49 @@ const getLetterHTML = (letter, caseId) => {
   <div class="hr"></div>
   <div class="block-title">Context / ข้อมูลอ้างอิง</div>
   
-  ${letter.placeholders.tenant_name ? `
+  ${letter.placeholders && letter.placeholders.tenant_name ? `
   <div class="pair">
     <p class="en"><strong>Tenant</strong>: ${escapeHtml(letter.placeholders.tenant_name)}</p>
     <p class="th"><strong>ผู้เช่า</strong>: ${escapeHtml(letter.placeholders.tenant_name)}</p>
   </div>` : ''}
   
-  ${letter.placeholders.landlord_name ? `
+  ${letter.placeholders && letter.placeholders.landlord_name ? `
   <div class="pair">
     <p class="en"><strong>Landlord</strong>: ${escapeHtml(letter.placeholders.landlord_name)}</p>
     <p class="th"><strong>เจ้าของห้อง</strong>: ${escapeHtml(letter.placeholders.landlord_name)}</p>
   </div>` : ''}
   
-  ${letter.placeholders.property_address ? `
+  ${letter.placeholders && letter.placeholders.property_address ? `
   <div class="pair">
     <p class="en"><strong>Property</strong>: ${escapeHtml(letter.placeholders.property_address)}</p>
     <p class="th"><strong>ทรัพย์สิน</strong>: ${escapeHtml(letter.placeholders.property_address)}</p>
   </div>` : ''}
   
-  ${letter.placeholders.contract_ref ? `
+  ${letter.placeholders && letter.placeholders.contract_ref ? `
   <div class="pair">
     <p class="en"><strong>Contract</strong>: ${escapeHtml(letter.placeholders.contract_ref)}</p>
     <p class="th"><strong>สัญญา</strong>: ${escapeHtml(letter.placeholders.contract_ref)}</p>
   </div>` : ''}
   
-  ${letter.placeholders.deposit_amount_thb ? `
+  ${letter.placeholders && letter.placeholders.deposit_amount_thb ? `
   <div class="pair">
     <p class="en"><strong>Deposit Amount</strong>: ฿${letter.placeholders.deposit_amount_thb.toLocaleString()}</p>
     <p class="th"><strong>จำนวนเงินประกัน</strong>: ฿${letter.placeholders.deposit_amount_thb.toLocaleString()}</p>
   </div>` : ''}
   
-  ${letter.placeholders.billing_items && letter.placeholders.billing_items.length > 0 ? `
+  ${letter.placeholders && letter.placeholders.billing_items && Array.isArray(letter.placeholders.billing_items) && letter.placeholders.billing_items.length > 0 ? `
   <div class="pair">
     <p class="en"><strong>Billing Items</strong>: ${escapeHtml(letter.placeholders.billing_items.join(', '))}</p>
     <p class="th"><strong>รายการค่าใช้จ่าย</strong>: ${escapeHtml(letter.placeholders.billing_items.join(', '))}</p>
   </div>` : ''}
   
-  ${letter.placeholders.attachments && letter.placeholders.attachments.length > 0 ? `
+  ${letter.placeholders && letter.placeholders.attachments && Array.isArray(letter.placeholders.attachments) && letter.placeholders.attachments.length > 0 ? `
   <div class="pair">
     <p class="en"><strong>Attachments</strong>: ${escapeHtml(letter.placeholders.attachments.join(', '))}</p>
     <p class="th"><strong>ไฟล์แนบ</strong>: ${escapeHtml(letter.placeholders.attachments.join(', '))}</p>
   </div>` : ''}
   
-  ${letter.placeholders.request_by_date_iso ? `
+  ${letter.placeholders && letter.placeholders.request_by_date_iso ? `
   <div class="pair">
     <p class="en"><strong>Response Requested By</strong>: ${letter.placeholders.request_by_date_iso}</p>
     <p class="th"><strong>ขอความคืบหน้าภายใน</strong>: ${letter.placeholders.request_by_date_iso}</p>
@@ -251,7 +264,7 @@ const getLetterHTML = (letter, caseId) => {
 
 <footer>
   <div>© ${year} Lease Shield</div>
-  <div class="badge">${letter.id}</div>
+  <div class="badge">${letter.id || 'Letter'}</div>
 </footer>
 
 </body>
@@ -292,33 +305,19 @@ Deno.serve(async (req) => {
     // Check if letters already exist for this case to prevent duplicates
     const existingDocs = await base44.entities.Document.filter({
       type: 'letter',
-      created_by: user.id // Filter by user ID as created_by is typically user.id, not email
+      created_by: user.email
     });
     
     const existingLettersForCase = existingDocs.filter(doc => 
-      doc.label && doc.label.includes(caseId.slice(0, 8)) &&
-      (doc.label.includes("v1_notice") || doc.label.includes("v2_follow_up") || doc.label.includes("v3_final_offer"))
+      doc.label && doc.label.includes(caseId.slice(0, 8))
     );
     
-    // If at least one letter for this case is found, we assume the set has been generated.
-    // The previous logic for `length >= 3` was specific, but any generated letter implies the process ran.
-    // For robustness, check if at least one letter with the specific caseId part exists.
-    if (existingLettersForCase.length > 0) {
-      console.log('Letters already exist for this case, returning existing letter URLs if available.');
-      // Attempt to retrieve existing letter URLs from an associated case if it exists, or generate placeholders
-      const cases = await base44.entities.Case.list();
-      const existingCase = cases.find(c => c.id === caseId);
-      const existingLetterUrls = existingCase?.letters ? {
-        v1_url: existingCase.letters.v1_url,
-        v2_url: existingCase.letters.v2_url,
-        v3_url: existingCase.letters.v3_url,
-      } : {};
-
+    if (existingLettersForCase.length >= 3) {
+      console.log('Letters already exist for this case, returning existing');
       return Response.json({
         success: true,
         caseId,
         message: 'Letters already generated for this case',
-        letterUrls: existingLetterUrls,
         isTemporary: caseId.startsWith('temp-')
       });
     }
@@ -383,33 +382,50 @@ ${userPrompt}`,
     console.log('LLM response received, letters generated:', result.letters?.length);
 
     if (!result.letters || result.letters.length === 0) {
-      throw new Error('Failed to generate letters');
+      throw new Error('Failed to generate letters - LLM returned no letters');
+    }
+
+    // Validate each letter has required fields
+    for (const letter of result.letters) {
+      if (!letter.body_en || !Array.isArray(letter.body_en)) {
+        console.error('Invalid letter structure - missing body_en:', letter);
+        throw new Error(`Letter ${letter.id} is missing required body_en array`);
+      }
+      if (!letter.body_th || !Array.isArray(letter.body_th)) {
+        console.warn('Letter missing body_th, setting to empty array:', letter.id);
+        letter.body_th = [];
+      }
     }
 
     // Save each letter as HTML and upload
     const letterUrls = {};
     for (const letter of result.letters) {
-      // Generate HTML with UTF-8 encoding
-      const htmlContent = getLetterHTML(letter, caseId);
+      try {
+        // Generate HTML with UTF-8 encoding
+        const htmlContent = getLetterHTML(letter, caseId);
 
-      // Create HTML file blob with explicit UTF-8 encoding
-      const encoder = new TextEncoder();
-      const uint8array = encoder.encode(htmlContent);
-      const blob = new Blob([uint8array], { type: 'text/html; charset=utf-8' });
-      const file = new File([blob], `${letter.id}_${caseId}.html`, { type: 'text/html; charset=utf-8' });
+        // Create HTML file blob with explicit UTF-8 encoding
+        const encoder = new TextEncoder();
+        const uint8array = encoder.encode(htmlContent);
+        const blob = new Blob([uint8array], { type: 'text/html; charset=utf-8' });
+        const file = new File([blob], `${letter.id}_${caseId}.html`, { type: 'text/html; charset=utf-8' });
 
-      // Upload to storage
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        // Upload to storage
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      // Save as Document with unique label
-      const doc = await base44.entities.Document.create({
-        type: 'letter',
-        file_url,
-        label: `${letter.purpose} - Case ${caseId.slice(0, 8)} - ${letter.id}`
-      });
+        // Save as Document with unique label
+        const doc = await base44.entities.Document.create({
+          type: 'letter',
+          file_url,
+          label: `${letter.purpose} - Case ${caseId.slice(0, 8)} - ${letter.id}`
+        });
 
-      letterUrls[letter.id] = doc.file_url;
-      console.log(`Letter ${letter.id} saved:`, doc.id);
+        letterUrls[letter.id] = doc.file_url;
+        console.log(`Letter ${letter.id} saved:`, doc.id);
+      } catch (letterError) {
+        console.error(`Failed to save letter ${letter.id}:`, letterError);
+        throw new Error(`Failed to save letter ${letter.id}: ${letterError.message}`);
+      }
     }
 
     // Only update case if it's not temporary
