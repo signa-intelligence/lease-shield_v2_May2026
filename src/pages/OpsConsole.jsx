@@ -9,19 +9,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Scale, 
-  User, 
-  Clock, 
-  FileText, 
-  AlertCircle, 
-  CheckCircle2, 
+import {
+  Scale,
+  User,
+  Clock,
+  FileText,
+  AlertCircle,
+  CheckCircle2,
   Mail,
   DollarSign,
   Shield,
   Search,
   Filter,
-  Loader2 
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -46,12 +46,37 @@ export default function OpsConsole() {
   const [actionMode, setActionMode] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [generatingLetters, setGeneratingLetters] = useState(null); 
+  const [generatingLetters, setGeneratingLetters] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
+
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    statBg: '#353A3D',
+    modalBg: '#2A2D30',
+    inputBg: '#353A3D',
+    inputBorder: '#4A4D50'
+  } : {
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+    statBg: '#FFFFFF',
+    modalBg: '#FFFFFF',
+    inputBg: '#FFFFFF',
+    inputBorder: '#E5E7EB'
+  };
 
   const { data: cases = [] } = useQuery({
     queryKey: ['allCases'],
@@ -76,11 +101,11 @@ export default function OpsConsole() {
 
   if (user?.role !== 'admin') {
     return (
-      <div className="min-h-screen p-6 bg-slate-50">
+      <div className="min-h-screen p-6 bg-slate-50" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto text-center py-20">
           <Shield className="w-16 h-16 mx-auto mb-4 text-red-600" />
-          <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-          <p className="text-slate-600 mb-6">You don't have permission to access the ops console.</p>
+          <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>Access Denied</h2>
+          <p className="mb-6" style={{ color: colors.textSecondary }}>You don't have permission to access the ops console.</p>
           <Button onClick={() => navigate(createPageUrl("Dashboard"))}>
             Go to Dashboard
           </Button>
@@ -91,7 +116,7 @@ export default function OpsConsole() {
 
   const filteredCases = cases.filter(c => {
     const matchesStatus = filterStatus === 'all' || c.status === filterStatus;
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.user_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.summary?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -101,7 +126,7 @@ export default function OpsConsole() {
   const handleUpdateStatus = (caseId, newStatus) => {
     const existingCase = cases.find(c => c.id === caseId);
     const timeline = existingCase?.timeline || [];
-    
+
     timeline.push({
       timestamp: new Date().toISOString(),
       event: `Status changed to ${newStatus}`,
@@ -117,7 +142,7 @@ export default function OpsConsole() {
   const handleAssign = (caseId, assigneeEmail) => {
     const existingCase = cases.find(c => c.id === caseId);
     const timeline = existingCase?.timeline || [];
-    
+
     timeline.push({
       timestamp: new Date().toISOString(),
       event: `Assigned to ${assigneeEmail}`,
@@ -133,7 +158,7 @@ export default function OpsConsole() {
   const handleRecordSettlement = (caseId, settlementData) => {
     const existingCase = cases.find(c => c.id === caseId);
     const timeline = existingCase?.timeline || [];
-    
+
     timeline.push({
       timestamp: new Date().toISOString(),
       event: `Settlement recorded: ฿${settlementData.amount}`,
@@ -143,7 +168,7 @@ export default function OpsConsole() {
 
     updateCaseMutation.mutate({
       id: caseId,
-      data: { 
+      data: {
         status: 'resolved',
         settlement: {
           ...settlementData,
@@ -178,36 +203,36 @@ export default function OpsConsole() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6 bg-slate-50">
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <Scale className="w-8 h-8 text-ls-forest" />
-            <h1 className="text-3xl font-bold text-slate-900">Ops Console</h1>
+            <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>Ops Console</h1>
           </div>
-          <p className="text-slate-600">Manage dispute cases through resolution</p>
+          <p style={{ color: colors.textSecondary }}>Manage dispute cases through resolution</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="border-none shadow-md">
+          <Card className="border-none shadow-md" style={{ backgroundColor: colors.statBg, borderColor: colors.borderColor }}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-600">Total Cases</p>
-                  <p className="text-2xl font-bold text-slate-900">{cases.length}</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>Total Cases</p>
+                  <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{cases.length}</p>
                 </div>
                 <Scale className="w-8 h-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-md">
+          <Card className="border-none shadow-md" style={{ backgroundColor: colors.statBg, borderColor: colors.borderColor }}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-600">Pending Review</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>Pending Review</p>
                   <p className="text-2xl font-bold text-amber-600">
                     {cases.filter(c => c.status === 'pending_review').length}
                   </p>
@@ -217,11 +242,11 @@ export default function OpsConsole() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-md">
+          <Card className="border-none shadow-md" style={{ backgroundColor: colors.statBg, borderColor: colors.borderColor }}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-600">In Progress</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>In Progress</p>
                   <p className="text-2xl font-bold text-blue-600">
                     {cases.filter(c => ['under_review', 'ready_drafts', 'client_review', 'awaiting_landlord', 'in_progress'].includes(c.status)).length}
                   </p>
@@ -231,11 +256,11 @@ export default function OpsConsole() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-md">
+          <Card className="border-none shadow-md" style={{ backgroundColor: colors.statBg, borderColor: colors.borderColor }}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-600">Resolved</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>Resolved</p>
                   <p className="text-2xl font-bold text-emerald-600">
                     {cases.filter(c => c.status === 'resolved' || c.status === 'closed').length}
                   </p>
@@ -247,11 +272,11 @@ export default function OpsConsole() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-6 border-none shadow-md">
+        <Card className="mb-6 border-none shadow-md" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
           <CardContent className="p-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="search" className="text-sm font-semibold mb-2 block">
+                <Label htmlFor="search" className="text-sm font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
                   <Search className="w-4 h-4 inline mr-2" />
                   Search Cases
                 </Label>
@@ -260,15 +285,24 @@ export default function OpsConsole() {
                   placeholder="Case ID, email, or summary..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.inputBorder,
+                    color: colors.textPrimary
+                  }}
                 />
               </div>
               <div>
-                <Label htmlFor="filter" className="text-sm font-semibold mb-2 block">
+                <Label htmlFor="filter" className="text-sm font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
                   <Filter className="w-4 h-4 inline mr-2" />
                   Filter by Status
                 </Label>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger>
+                  <SelectTrigger style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.inputBorder,
+                    color: colors.textPrimary
+                  }}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -297,16 +331,16 @@ export default function OpsConsole() {
             const assignee = users.find(u => u.email === caseItem.assignee_id);
 
             return (
-              <Card key={caseItem.id} className="border-none shadow-lg hover:shadow-xl transition-all">
-                <CardHeader className="pb-3 border-b">
+              <Card key={caseItem.id} className="border-none shadow-lg hover:shadow-xl transition-all" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                <CardHeader className="pb-3" style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <Scale className="w-6 h-6 text-blue-600" />
                       <div>
-                        <CardTitle className="text-lg">
+                        <CardTitle className="text-lg" style={{ color: colors.textPrimary }}>
                           Case #{caseItem.id.slice(0, 8)}
                         </CardTitle>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm" style={{ color: colors.textSecondary }}>
                           {tenant?.full_name || caseItem.user_email}
                         </p>
                       </div>
@@ -321,23 +355,23 @@ export default function OpsConsole() {
                 <CardContent className="p-6">
                   <div className="grid md:grid-cols-3 gap-6 mb-4">
                     <div>
-                      <p className="text-xs font-semibold text-slate-600 mb-1">Dispute Amount</p>
+                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>Dispute Amount</p>
                       <div className="flex items-baseline gap-1">
                         <DollarSign className="w-4 h-4 text-emerald-600" />
-                        <p className="text-xl font-bold">฿{caseItem.dispute_amount?.toLocaleString()}</p>
+                        <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>฿{caseItem.dispute_amount?.toLocaleString()}</p>
                       </div>
                     </div>
 
                     <div>
-                      <p className="text-xs font-semibold text-slate-600 mb-1">Assigned To</p>
-                      <p className="text-sm font-semibold">
+                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>Assigned To</p>
+                      <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
                         {assignee?.full_name || 'Unassigned'}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs font-semibold text-slate-600 mb-1">Opened</p>
-                      <p className="text-sm font-semibold">
+                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>Opened</p>
+                      <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
                         {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
                       </p>
                     </div>
@@ -345,8 +379,8 @@ export default function OpsConsole() {
 
                   {caseItem.summary && (
                     <div className="mb-4">
-                      <p className="text-xs font-semibold text-slate-600 mb-1">Summary</p>
-                      <p className="text-sm text-slate-700 line-clamp-2">{caseItem.summary}</p>
+                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>Summary</p>
+                      <p className="text-sm line-clamp-2" style={{ color: colors.textPrimary }}>{caseItem.summary}</p>
                     </div>
                   )}
 
@@ -466,9 +500,9 @@ export default function OpsConsole() {
         {/* Action Modal */}
         {selectedCase && actionMode && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-md border-none shadow-2xl">
-              <CardHeader className="border-b">
-                <CardTitle>
+            <Card className="w-full max-w-md border-none shadow-2xl" style={{ backgroundColor: colors.modalBg }}>
+              <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+                <CardTitle style={{ color: colors.textPrimary }}>
                   {actionMode === 'status' && 'Update Status'}
                   {actionMode === 'assign' && 'Assign Case'}
                   {actionMode === 'settlement' && 'Record Settlement'}
@@ -477,14 +511,18 @@ export default function OpsConsole() {
               <CardContent className="p-6">
                 {actionMode === 'status' && (
                   <div className="space-y-4">
-                    <Label>New Status</Label>
+                    <Label style={{ color: colors.textPrimary }}>New Status</Label>
                     <Select
                       defaultValue={selectedCase.status}
                       onValueChange={(value) => {
                         handleUpdateStatus(selectedCase.id, value);
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.inputBorder,
+                        color: colors.textPrimary
+                      }}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -503,14 +541,18 @@ export default function OpsConsole() {
 
                 {actionMode === 'assign' && (
                   <div className="space-y-4">
-                    <Label>Assign To</Label>
+                    <Label style={{ color: colors.textPrimary }}>Assign To</Label>
                     <Select
                       defaultValue={selectedCase.assignee_id}
                       onValueChange={(value) => {
                         handleAssign(selectedCase.id, value);
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.inputBorder,
+                        color: colors.textPrimary
+                      }}>
                         <SelectValue placeholder="Select team member" />
                       </SelectTrigger>
                       <SelectContent>
@@ -539,30 +581,45 @@ export default function OpsConsole() {
                     className="space-y-4"
                   >
                     <div>
-                      <Label htmlFor="amount">Settlement Amount (฿)</Label>
+                      <Label htmlFor="amount" style={{ color: colors.textPrimary }}>Settlement Amount (฿)</Label>
                       <Input
                         id="amount"
                         name="amount"
                         type="number"
                         required
                         placeholder="15000"
+                        style={{
+                          backgroundColor: colors.inputBg,
+                          borderColor: colors.inputBorder,
+                          color: colors.textPrimary
+                        }}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="method">Payment Method</Label>
+                      <Label htmlFor="method" style={{ color: colors.textPrimary }}>Payment Method</Label>
                       <Input
                         id="method"
                         name="method"
                         placeholder="Bank transfer, Cash, etc."
+                        style={{
+                          backgroundColor: colors.inputBg,
+                          borderColor: colors.inputBorder,
+                          color: colors.textPrimary
+                        }}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="notes">Notes</Label>
+                      <Label htmlFor="notes" style={{ color: colors.textPrimary }}>Notes</Label>
                       <Textarea
                         id="notes"
                         name="notes"
                         rows={3}
                         placeholder="Settlement details..."
+                        style={{
+                          backgroundColor: colors.inputBg,
+                          borderColor: colors.inputBorder,
+                          color: colors.textPrimary
+                        }}
                       />
                     </div>
                     <div className="flex gap-2">

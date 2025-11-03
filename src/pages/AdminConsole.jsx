@@ -4,15 +4,16 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell, Scale } from "lucide-react"; // Added Bell and Scale icons
+import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell, Scale } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { useNavigate } from "react-router-dom"; // Added useNavigate
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils"; // Added createPageUrl import
 
 export default function AdminConsole() {
   const [seeding, setSeeding] = useState(false);
   const queryClient = useQueryClient();
-  const navigate = useNavigate(); // Initialized useNavigate
+  const navigate = useNavigate();
 
   // New state for LINE notification testing
   const [testingNotification, setTestingNotification] = useState(false);
@@ -109,10 +110,6 @@ export default function AdminConsole() {
       days3FinalWarning: "3 days! Final warning",
       todayNotifyNow: "TODAY! Notify Now",
       noticeDeadlineToday: "Notice deadline today",
-      // New Ops Console strings
-      operationsConsoleTitle: "Operations Console",
-      operationsConsoleDesc: "Manage dispute cases, assign work, and track resolution progress",
-      openOpsConsole: "Open Ops Console",
     },
     th: {
       title: "คอนโซลแอดมิน",
@@ -158,26 +155,10 @@ export default function AdminConsole() {
       days3FinalWarning: "เหลือ 3 วัน! คำเตือนสุดท้าย",
       todayNotifyNow: "วันนี้! แจ้งด่วน",
       noticeDeadlineToday: "กำหนดแจ้งวันนี้",
-      // New Ops Console strings
-      operationsConsoleTitle: "คอนโซลปฏิบัติการ",
-      operationsConsoleDesc: "จัดการคดีพิพาท มอบหมายงาน และติดตามความคืบหน้า",
-      openOpsConsole: "เปิดคอนโซล Ops",
     }
   };
 
   const strings = t[language];
-
-  // Dummy function for navigation, replace with actual utility if available
-  const createPageUrl = (pageName) => {
-    switch (pageName) {
-      case "OpsConsole":
-        return "/admin/ops-console";
-      // Add other page mappings if needed
-      default:
-        return "/";
-    }
-  };
-
 
   const handleSeedDemoData = async () => {
     setSeeding(true);
@@ -241,17 +222,19 @@ export default function AdminConsole() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">
-                    {strings.operationsConsoleTitle}
+                    {language === 'th' ? 'คอนโซลปฏิบัติการ' : 'Operations Console'}
                   </h3>
                   <p className="text-white/80 text-sm mb-4">
-                    {strings.operationsConsoleDesc}
+                    {language === 'th'
+                      ? 'จัดการคดีพิพาท มอบหมายงาน และติดตามความคืบหน้า'
+                      : 'Manage dispute cases, assign work, and track resolution progress'}
                   </p>
                   <Button
                     onClick={() => navigate(createPageUrl("OpsConsole"))}
                     className="bg-white text-blue-600 hover:bg-blue-50"
                   >
                     <Scale className="w-4 h-4 mr-2" />
-                    {strings.openOpsConsole}
+                    {language === 'th' ? 'เปิดคอนโซล Ops' : 'Open Ops Console'}
                   </Button>
                 </div>
               </div>
