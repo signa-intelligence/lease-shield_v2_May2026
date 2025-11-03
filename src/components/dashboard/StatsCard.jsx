@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight, ChevronRight } from "lucide-react";
@@ -53,9 +54,9 @@ export default function StatsCard({
           }}
         />
       )}
-      <div className={`${showGauge ? 'p-4' : 'p-6'} relative z-10 flex flex-col h-full`}>
+      <div className={`${showGauge ? 'p-3' : 'p-4'} relative z-10 flex flex-col h-full`}>
         {/* Top section - Icon and trend */}
-        <div className="flex justify-between items-start mb-4">
+        <div className="flex justify-between items-start mb-3">
           <div 
             className={`p-3 rounded-xl ${bgGradient || ''}`}
             style={
@@ -73,17 +74,17 @@ export default function StatsCard({
         </div>
 
         {/* Title */}
-        <p className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>{title}</p>
+        <p className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>{title}</p>
         
         {/* Main value area - flex-grow to push action button to bottom */}
         <div className="flex-grow flex flex-col">
           {showGauge ? (
-            <div className="flex items-center justify-center py-2">
+            <div className="flex items-center justify-center py-1">
               <ProtectionScoreGauge score={scoreValue || 0} size={220} />
             </div>
           ) : (
             <>
-              <p className="text-3xl font-bold mb-3" style={{ color: colors.textPrimary }}>{value}</p>
+              <p className="text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{value}</p>
               {scoreStatus && (
                 <Badge 
                   style={{
@@ -91,7 +92,7 @@ export default function StatsCard({
                     color: scoreColor,
                     border: `1px solid ${scoreColor}30`
                   }}
-                  className="font-semibold mb-3"
+                  className="font-semibold mb-2"
                 >
                   {scoreStatus}
                 </Badge>
@@ -99,7 +100,7 @@ export default function StatsCard({
               
               {/* Mini Stats - consistent height */}
               {miniStats && miniStats.length > 0 && (
-                <div className="space-y-2 mb-4">
+                <div className="space-y-2 mb-3">
                   {miniStats.map((stat, idx) => (
                     <div key={idx} className="flex items-center justify-between py-2 px-3 rounded-lg" style={{ backgroundColor: colors.miniStatBg }}>
                       <span className="text-xs font-medium" style={{ color: colors.textSecondary }}>{stat.label}</span>
