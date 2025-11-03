@@ -37,14 +37,20 @@ export default function Leases() {
     textPrimary: '#ECEFED',
     textSecondary: '#A8ABAD',
     borderColor: '#3A3D40',
-    loaderBg: '#353A3D'
+    loaderBg: '#353A3D',
+    uploadZoneBg: '#2A2D30', // Changed from outline's '#ECEFED' to match Card background for dark theme consistently, or could use '#ECEFED' if it's meant to be brighter
+    leaseCardBg: '#353A3D',
+    leaseCardHover: '#3A3D40'
   } : {
     bg: '#F8FAFC',
     cardBg: '#FFFFFF',
     textPrimary: '#1A1D1F',
     textSecondary: '#64748b',
     borderColor: '#E5E7EB',
-    loaderBg: '#F8FAFC'
+    loaderBg: '#F8FAFC',
+    uploadZoneBg: '#FFFFFF',
+    leaseCardBg: '#FFFFFF',
+    leaseCardHover: '#F9FAFB'
   };
 
   const t = {
@@ -253,7 +259,10 @@ export default function Leases() {
 
         {!currentScan ? (
           <>
-            <Card className="border-none shadow-xl mb-8 overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
+            <Card className="border-none shadow-xl mb-8 overflow-hidden" style={{ 
+              backgroundColor: isDarkMode ? colors.cardBg : colors.uploadZoneBg,
+              border: isDarkMode ? `1px solid ${colors.borderColor}` : 'none'
+            }}>
               <div className="p-8">
                 {uploading || analyzing ? (
                   <div className="text-center py-12">
@@ -280,57 +289,82 @@ export default function Leases() {
                 <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>{strings.previousLeases}</h2>
                 <div className="grid gap-4">
                   {leases.map((lease) => (
-                    <Card key={lease.id} className="p-6 border-none shadow-lg hover:shadow-xl transition-all duration-300" style={{ 
-                      backgroundColor: colors.cardBg,
-                      borderColor: colors.borderColor
-                    }}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-bold mb-1" style={{ color: colors.textPrimary }}>
-                            {lease.property_address || strings.leaseAgreement}
-                          </h3>
-                          {lease.rent_amount && (
-                            <p className="mb-2" style={{ color: colors.textSecondary }}>
-                              ฿{lease.rent_amount.toLocaleString()}/{strings.month}
-                            </p>
-                          )}
-                          <div className="flex gap-2 text-sm mb-2" style={{ color: colors.textSecondary }}>
-                            {lease.language_detected && (
-                              <span>• {strings.language}: {lease.language_detected.toUpperCase()}</span>
+                    <Card 
+                      key={lease.id} 
+                      className="border-none shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer" 
+                      style={{ 
+                        backgroundColor: colors.leaseCardBg,
+                        borderColor: colors.borderColor,
+                        border: isDarkMode ? `1px solid ${colors.borderColor}` : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = colors.leaseCardHover;
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = colors.leaseCardBg;
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }}
+                      onClick={() => handleViewDetails(lease)}
+                    >
+                      <div className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-bold mb-1" style={{ color: colors.textPrimary }}>
+                              {lease.property_address || strings.leaseAgreement}
+                            </h3>
+                            {lease.rent_amount && (
+                              <p className="mb-2" style={{ color: colors.textSecondary }}>
+                                ฿{lease.rent_amount.toLocaleString()}/{strings.month}
+                              </p>
                             )}
-                            {lease.file_urls && lease.file_urls.length > 1 && (
-                              <span>• {lease.file_urls.length} {strings.pages}</span>
+                            <div className="flex gap-2 text-sm mb-2" style={{ color: colors.textSecondary }}>
+                              {lease.language_detected && (
+                                <span>• {strings.language}: {lease.language_detected.toUpperCase()}</span>
+                              )}
+                              {lease.file_urls && lease.file_urls.length > 1 && (
+                                <span>• {lease.file_urls.length} {strings.pages}</span>
+                              )}
+                            </div>
+                            <p className="text-xs" style={{ color: colors.textSecondary, opacity: 0.7 }}>
+                              {strings.uploaded}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <Badge className={getStatusColor(lease.status)}>
+                              {lease.status}
+                            </Badge>
+                            {(lease.status === 'scanned' || lease.status === 'paid') && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewDetails(lease);
+                                }}
+                                style={{
+                                  backgroundColor: '#3B82F6',
+                                  color: '#FFFFFF',
+                                  padding: '8px 16px',
+                                  borderRadius: '6px',
+                                  fontSize: '14px',
+                                  fontWeight: '600',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s',
+                                  whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.stopPropagation();
+                                  e.target.style.backgroundColor = '#2563EB';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.stopPropagation();
+                                  e.target.style.backgroundColor = '#3B82F6';
+                                }}
+                              >
+                                {strings.viewDetails}
+                              </button>
                             )}
                           </div>
-                          <p className="text-xs" style={{ color: colors.textSecondary, opacity: 0.7 }}>
-                            {strings.uploaded}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
-                          </p>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Badge className={getStatusColor(lease.status)}>
-                            {lease.status}
-                          </Badge>
-                          {(lease.status === 'scanned' || lease.status === 'paid') && (
-                            <button
-                              onClick={() => handleViewDetails(lease)}
-                              style={{
-                                backgroundColor: '#3B82F6',
-                                color: '#FFFFFF',
-                                padding: '8px 16px',
-                                borderRadius: '6px',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                whiteSpace: 'nowrap'
-                              }}
-                              onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
-                              onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
-                            >
-                              {strings.viewDetails}
-                            </button>
-                          )}
                         </div>
                       </div>
                     </Card>
