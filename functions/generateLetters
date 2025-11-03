@@ -162,16 +162,22 @@ Deno.serve(async (req) => {
     const copy = buildCopy(subject, vars);
     const html = fill(TEMPLATE_HTML, { ...vars, ...copy });
 
-    // Save to document vault with HTML content stored directly
-    // Using btoa(unescape(encodeURIComponent(html))) to handle UTF-8 characters properly in base64
+    // Create a proper UTF-8 encoded HTML file
+    const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+    const filename = `letter_${vars.caseId}_${subject}.html`;
+    const file = new File([blob], filename, { type: 'text/html; charset=utf-8' });
+    
+    // Upload to storage
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
+    // Save to document vault
     const doc = await base44.entities.Document.create({
       type: 'letter',
-      file_url: `data:text/html;charset=utf-8;base64,${btoa(unescape(encodeURIComponent(html)))}`,
-      label: `Letter ${subject} - Case ${caseId.slice(0, 8)}`,
-      html_content: html // Store raw HTML
+      file_url: file_url,
+      label: `Letter ${subject} - Case ${caseId.slice(0, 8)}`
     });
 
-    console.log('Letter generated with ID:', doc.id);
+    console.log('Letter generated with ID:', doc.id, 'URL:', file_url);
 
     // Update case if it exists and is not temporary
     if (!caseId.startsWith('temp-')) {
@@ -183,7 +189,7 @@ Deno.serve(async (req) => {
           await base44.entities.Case.update(caseId, {
             letters: {
               ...(c.letters || {}),
-              [`${subject}_url`]: doc.file_url,
+              [`${subject}_url`]: file_url,
               [`${subject}_doc_id`]: doc.id
             }
           });
@@ -196,7 +202,7 @@ Deno.serve(async (req) => {
     return Response.json({ 
       success: true,
       ok: true, 
-      url: doc.file_url,
+      url: file_url,
       doc_id: doc.id,
       subject: subject,
       isTemporary: caseId.startsWith('temp-')
