@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
-// Clean HTML template - no LLM, just fill placeholders
-const LETTER_TEMPLATE = `<!doctype html><html lang="en"><head>
+// V1: Initial polite clarification request
+const LETTER_V1_TEMPLATE = `<!doctype html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Deposit clarification – {{caseId}}</title>
 <style>
@@ -47,6 +47,77 @@ const LETTER_TEMPLATE = `<!doctype html><html lang="en"><head>
 <p class="muted" style="margin-top:6mm">This is documentation & communication support, not legal advice.</p>
 </body></html>`;
 
+// V2: Follow-up with timeline reference
+const LETTER_V2_TEMPLATE = `<!doctype html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Follow-up on deposit – {{caseId}}</title>
+<style>
+  @page{size:A4;margin:20mm 18mm}
+  body{font-family:Inter,Arial,"Noto Sans Thai","TH Sarabun New",sans-serif;line-height:1.5;color:#111;font-size:12.2pt}
+  h1{color:#0C3B2E;margin:0 0 6mm}
+  .muted{color:#667085}
+  .pair{margin:0 0 5mm}
+  .th{font-family:"Noto Sans Thai","TH Sarabun New",sans-serif}
+</style></head><body>
+<h1>Follow-up: deposit return timeline</h1>
+<p class="muted th">ติดตามเรื่องกำหนดเวลาคืนเงินประกัน</p>
+
+<div class="pair">
+  <p>Dear {{landlord_name}}, further to our previous note about {{property_address}}, we're writing to request an update on the deposit return process.</p>
+  <p class="th">เรียน {{landlord_name}} ตามหนังสือที่แล้วเกี่ยวกับ {{property_address}} ขอติดตามความคืบหน้าในการคืนเงินประกัน</p>
+</div>
+
+<div class="pair">
+  <p>As per standard rental practice and {{contract_ref}}, we'd like to confirm: (a) the refund schedule or (b) any withholding reasons supported by itemised documentation.</p>
+  <p class="th">ตามหลักการเช่ามาตรฐานและ {{contract_ref}} ขอยืนยัน (ก) กำหนดการคืนเงิน หรือ (ข) เหตุผลการหักเงินที่มีเอกสารประกอบ</p>
+</div>
+
+<div class="pair">
+  <p>A clear reply by {{request_by_date_iso}} will help us both move forward constructively.</p>
+  <p class="th">การตอบกลับที่ชัดเจนภายในวันที่ {{request_by_date_iso}} จะช่วยให้ทั้งสองฝ่ายดำเนินการต่อได้อย่างสร้างสรรค์</p>
+</div>
+
+<hr>
+<p>Tenant / ผู้เช่า: {{tenant_name}} &nbsp; | &nbsp; Landlord / เจ้าของ: {{landlord_name}}</p>
+<p>Property / ทรัพย์สิน: {{property_address}} &nbsp; | &nbsp; Deposit / เงินประกัน: {{deposit_amount_thb}} THB</p>
+
+<p style="margin-top:10mm">Kind regards,<br>Lease Shield</p>
+<p class="th">ขอแสดงความนับถือ<br>Lease Shield</p>
+</body></html>`;
+
+// V3: Final proposal with settlement terms
+const LETTER_V3_TEMPLATE = `<!doctype html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Final proposal – {{caseId}}</title>
+<style>
+  @page{size:A4;margin:20mm 18mm}
+  body{font-family:Inter,Arial,"Noto Sans Thai","TH Sarabun New",sans-serif;line-height:1.5;color:#111;font-size:12.2pt}
+  h1{color:#0C3B2E;margin:0 0 6mm}
+  .muted{color:#667085}
+  .pair{margin:0 0 5mm}
+  .th{font-family:"Noto Sans Thai","TH Sarabun New",sans-serif}
+</style></head><body>
+<h1>Final proposal to close deposit matter amicably</h1>
+<p class="muted th">ข้อเสนอสุดท้ายเพื่อปิดประเด็นเงินประกันอย่างเป็นมิตร</p>
+
+<div class="pair">
+  <p>Dear {{landlord_name}}, to conclude this matter smoothly, we propose the following: refund of the deposit (THB {{deposit_amount_thb}}) less any documented deductions, with a transfer confirmation by {{request_by_date_iso}}.</p>
+  <p class="th">เรียน {{landlord_name}} เพื่อปิดเรื่องนี้อย่างราบรื่น ขอเสนอให้คืนเงินประกัน ({{deposit_amount_thb}} บาท) หักด้วยรายการที่มีเอกสารยืนยัน โดยขอยืนยันการโอนภายใน {{request_by_date_iso}}</p>
+</div>
+
+<div class="pair">
+  <p>If an alternative plan suits you better, please share it—we're happy to agree on a fair and practical outcome for both parties.</p>
+  <p class="th">หากมีแนวทางอื่นที่เหมาะสม กรุณาแจ้งได้ เรายินดีตกลงร่วมกันในแนวทางที่เหมาะสมและเป็นธรรมต่อทั้งสองฝ่าย</p>
+</div>
+
+<hr>
+<p>Tenant / ผู้เช่า: {{tenant_name}} &nbsp; | &nbsp; Landlord / เจ้าของ: {{landlord_name}}</p>
+<p>Property / ทรัพย์สิน: {{property_address}} &nbsp; | &nbsp; Contract / สัญญา: {{contract_ref}}</p>
+
+<p style="margin-top:10mm">Kind regards,<br>Lease Shield</p>
+<p class="th">ขอแสดงความนับถือ<br>Lease Shield</p>
+</body></html>`;
+
 function fillTemplate(template, data) {
   let html = template;
   for (const [key, value] of Object.entries(data)) {
@@ -71,7 +142,7 @@ Deno.serve(async (req) => {
       tenant_name = "Tenant",
       landlord_name = "Landlord", 
       property_address = "the property",
-      contract_ref = "Lease dated YYYY-MM-DD (optional)",
+      contract_ref = "Lease dated YYYY-MM-DD",
       deposit_amount_thb = 0,
       request_by_date_iso = "YYYY-MM-DD",
       attachments_list = "Lease.pdf; Photos.zip; Receipts.pdf"
@@ -81,9 +152,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'caseId required' }, { status: 400 });
     }
 
-    console.log('Generating letter for case:', caseId);
+    console.log('Generating 3-letter pack for case:', caseId);
 
-    // Check existing letter
+    // Check existing letters
     const existingDocs = await base44.entities.Document.filter({
       type: 'letter',
       created_by: user.email
@@ -94,7 +165,7 @@ Deno.serve(async (req) => {
     );
     
     if (existing) {
-      console.log('Letter already exists');
+      console.log('Letters already exist');
       return Response.json({
         success: true,
         letter_url: existing.file_url,
@@ -102,8 +173,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fill template with actual data
-    const filledHTML = fillTemplate(LETTER_TEMPLATE, {
+    // Template data for all letters
+    const templateData = {
       caseId: caseId.slice(0, 12),
       tenant_name,
       landlord_name,
@@ -112,26 +183,134 @@ Deno.serve(async (req) => {
       deposit_amount_thb: deposit_amount_thb.toLocaleString(),
       request_by_date_iso,
       attachments_list
-    });
+    };
 
-    console.log('Template filled successfully');
+    // Generate all 3 letters
+    console.log('Filling templates...');
+    const v1HTML = fillTemplate(LETTER_V1_TEMPLATE, templateData);
+    const v2HTML = fillTemplate(LETTER_V2_TEMPLATE, templateData);
+    const v3HTML = fillTemplate(LETTER_V3_TEMPLATE, templateData);
 
-    // Upload HTML file with proper UTF-8 encoding
+    // Upload all 3 letters
+    console.log('Uploading letter files...');
     const encoder = new TextEncoder();
-    const utf8Bytes = encoder.encode(filledHTML);
-    const blob = new Blob([utf8Bytes], { type: 'text/html; charset=utf-8' });
-    const file = new File([blob], `letter_${caseId}.html`, { type: 'text/html' });
     
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const v1Blob = new Blob([encoder.encode(v1HTML)], { type: 'text/html; charset=utf-8' });
+    const v1File = new File([v1Blob], `letter_v1_${caseId}.html`, { type: 'text/html' });
+    const { file_url: v1_url } = await base44.integrations.Core.UploadFile({ file: v1File });
 
-    // Save document
+    const v2Blob = new Blob([encoder.encode(v2HTML)], { type: 'text/html; charset=utf-8' });
+    const v2File = new File([v2Blob], `letter_v2_${caseId}.html`, { type: 'text/html' });
+    const { file_url: v2_url } = await base44.integrations.Core.UploadFile({ file: v2File });
+
+    const v3Blob = new Blob([encoder.encode(v3HTML)], { type: 'text/html; charset=utf-8' });
+    const v3File = new File([v3Blob], `letter_v3_${caseId}.html`, { type: 'text/html' });
+    const { file_url: v3_url } = await base44.integrations.Core.UploadFile({ file: v3File });
+
+    console.log('All 3 letters uploaded successfully');
+
+    // Create structured letter data for compilation
+    const lettersData = [
+      {
+        id: 'v1_initial',
+        purpose: 'Initial Clarification Request',
+        subject_en: 'Request for clarification on refundable deposit',
+        subject_th: 'ขอความชัดเจนเกี่ยวกับเงินประกันการเช่า',
+        body_en: [
+          `Dear ${landlord_name}, this note summarises the completion of the tenancy for ${property_address} and requests an update about the refundable deposit.`,
+          `${contract_ref}. Supporting evidence is attached for easy reference.`,
+          'To reconcile promptly, please provide: (1) any proposed deductions with itemised reasons and documents, or (2) confirmation of refund transfer details.',
+          `Kindly reply by ${request_by_date_iso} so both sides can close this matter smoothly.`
+        ],
+        body_th: [
+          `เรียน ${landlord_name} หนังสือฉบับนี้สรุปการสิ้นสุดการเช่าสำหรับ ${property_address} และขอความคืบหน้าเกี่ยวกับการคืนเงินประกัน`,
+          `${contract_ref} และได้แนบหลักฐานประกอบเพื่อความสะดวก`,
+          'เพื่อให้ปิดบัญชีได้รวดเร็ว กรุณาแจ้ง (1) รายการหักพร้อมเหตุผลและเอกสาร หรือ (2) การยืนยันรายละเอียดการโอนเงินคืน',
+          `กรุณาตอบกลับภายในวันที่ ${request_by_date_iso} เพื่อให้ทั้งสองฝ่ายสามารถปิดเรื่องนี้ได้อย่างราบรื่น`
+        ],
+        next_steps_en: [
+          'Review attached evidence',
+          'Wait for landlord response',
+          'Prepare for next steps if needed'
+        ],
+        next_steps_th: [
+          'ตรวจสอบหลักฐานที่แนบมา',
+          'รอคำตอบจากเจ้าของบ้าน',
+          'เตรียมการสำหรับขั้นตอนต่อไปหากจำเป็น'
+        ]
+      },
+      {
+        id: 'v2_followup',
+        purpose: 'Follow-up with Timeline',
+        subject_en: 'Follow-up: deposit return timeline',
+        subject_th: 'ติดตามเรื่องกำหนดเวลาคืนเงินประกัน',
+        body_en: [
+          `Dear ${landlord_name}, further to our previous note about ${property_address}, we're writing to request an update on the deposit return process.`,
+          `As per standard rental practice and ${contract_ref}, we'd like to confirm: (a) the refund schedule or (b) any withholding reasons supported by itemised documentation.`,
+          `A clear reply by ${request_by_date_iso} will help us both move forward constructively.`
+        ],
+        body_th: [
+          `เรียน ${landlord_name} ตามหนังสือที่แล้วเกี่ยวกับ ${property_address} ขอติดตามความคืบหน้าในการคืนเงินประกัน`,
+          `ตามหลักการเช่ามาตรฐานและ ${contract_ref} ขอยืนยัน (ก) กำหนดการคืนเงิน หรือ (ข) เหตุผลการหักเงินที่มีเอกสารประกอบ`,
+          `การตอบกลับที่ชัดเจนภายในวันที่ ${request_by_date_iso} จะช่วยให้ทั้งสองฝ่ายดำเนินการต่อได้อย่างสร้างสรรค์`
+        ],
+        next_steps_en: [
+          'Document all correspondence',
+          'Consider mediation if no response',
+          'Prepare final proposal'
+        ],
+        next_steps_th: [
+          'บันทึกการสื่อสารทั้งหมด',
+          'พิจารณาการไกล่เกลี่ยหากไม่มีการตอบกลับ',
+          'เตรียมข้อเสนอสุดท้าย'
+        ]
+      },
+      {
+        id: 'v3_final',
+        purpose: 'Final Settlement Proposal',
+        subject_en: 'Final proposal to close deposit matter amicably',
+        subject_th: 'ข้อเสนอสุดท้ายเพื่อปิดประเด็นเงินประกันอย่างเป็นมิตร',
+        body_en: [
+          `Dear ${landlord_name}, to conclude this matter smoothly, we propose the following: refund of the deposit (THB ${deposit_amount_thb.toLocaleString()}) less any documented deductions, with a transfer confirmation by ${request_by_date_iso}.`,
+          'If an alternative plan suits you better, please share it—we're happy to agree on a fair and practical outcome for both parties.'
+        ],
+        body_th: [
+          `เรียน ${landlord_name} เพื่อปิดเรื่องนี้อย่างราบรื่น ขอเสนอให้คืนเงินประกัน (${deposit_amount_thb.toLocaleString()} บาท) หักด้วยรายการที่มีเอกสารยืนยัน โดยขอยืนยันการโอนภายใน ${request_by_date_iso}`,
+          'หากมีแนวทางอื่นที่เหมาะสม กรุณาแจ้งได้ เรายินดีตกลงร่วมกันในแนวทางที่เหมาะสมและเป็นธรรมต่อทั้งสองฝ่าย'
+        ],
+        next_steps_en: [
+          'Final opportunity for settlement',
+          'Consider legal options if unresolved',
+          'Contact Lease Shield support for guidance'
+        ],
+        next_steps_th: [
+          'โอกาสสุดท้ายสำหรับการตกลง',
+          'พิจารณาทางเลือกทางกฎหมายหากไม่สามารถแก้ไขได้',
+          'ติดต่อฝ่ายสนับสนุน Lease Shield เพื่อขอคำแนะนำ'
+        ]
+      }
+    ];
+
+    // Save documents to vault
     await base44.entities.Document.create({
       type: 'letter',
-      file_url,
-      label: `Letter - Case ${caseId.slice(0, 8)}`
+      file_url: v1_url,
+      label: `Letter V1 - Case ${caseId.slice(0, 8)}`
     });
 
-    console.log('Letter saved:', file_url);
+    await base44.entities.Document.create({
+      type: 'letter',
+      file_url: v2_url,
+      label: `Letter V2 - Case ${caseId.slice(0, 8)}`
+    });
+
+    await base44.entities.Document.create({
+      type: 'letter',
+      file_url: v3_url,
+      label: `Letter V3 - Case ${caseId.slice(0, 8)}`
+    });
+
+    console.log('Documents saved to vault');
 
     // Update case if not temporary
     if (!caseId.startsWith('temp-')) {
@@ -142,24 +321,34 @@ Deno.serve(async (req) => {
         await base44.entities.Case.update(caseId, {
           status: 'ready_drafts',
           letters: { 
-            letter_url: file_url,
-            v1_url: file_url
+            v1_url,
+            v2_url,
+            v3_url,
+            letters_data: lettersData
           }
         });
 
         // Send email notification
         await base44.integrations.Core.SendEmail({
           to: user.email,
-          subject: user.language === 'th' ? 'จดหมายพร้อมแล้ว' : 'Your Letter is Ready',
-          body: `Hi ${user.full_name},\n\nYour letter for case ${caseId.slice(0, 8)} is ready to view and download.\n\n— Lease Shield`
+          subject: user.language === 'th' ? 'จดหมายพร้อมแล้ว - 3 ฉบับ' : 'Your Letters are Ready - 3 Letters',
+          body: `Hi ${user.full_name},\n\nYour 3-letter escalation pack for case ${caseId.slice(0, 8)} is ready to view and download.\n\nYou now have:\n- Letter 1: Initial clarification request\n- Letter 2: Follow-up with timeline\n- Letter 3: Final settlement proposal\n\n— Lease Shield`
         });
+
+        console.log('Case updated with all letter URLs');
       }
     }
 
     return Response.json({
       success: true,
       caseId,
-      letter_url: file_url
+      letters: {
+        v1_url,
+        v2_url,
+        v3_url
+      },
+      letters_data: lettersData,
+      message: '3-letter pack generated successfully'
     });
 
   } catch (error) {
