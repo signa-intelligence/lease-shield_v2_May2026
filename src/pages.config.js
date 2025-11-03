@@ -19,6 +19,7 @@ import MaintenanceTracker from './pages/MaintenanceTracker';
 import Support from './pages/Support';
 import LeaseDetails from './pages/LeaseDetails';
 import CaseDetails from './pages/CaseDetails';
+import OpsConsole from './pages/OpsConsole';
 import Layout from './Layout.jsx';
 
 
@@ -44,6 +45,7 @@ export const PAGES = {
     "Support": Support,
     "LeaseDetails": LeaseDetails,
     "CaseDetails": CaseDetails,
+    "OpsConsole": OpsConsole,
 }
 
 export const pagesConfig = {

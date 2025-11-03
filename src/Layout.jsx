@@ -2,7 +2,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -43,6 +43,7 @@ export default function Layout({ children, currentPageName }) {
       deposit: "Deposit",
       evidence: "Evidence",
       admin: "Admin",
+      ops: "Ops",
       disclaimer: "We are not a law firm and do not provide legal advice.",
       privacyPolicy: "Privacy Policy"
     },
@@ -54,6 +55,7 @@ export default function Layout({ children, currentPageName }) {
       deposit: "เงินมัดจำ",
       evidence: "หลักฐาน",
       admin: "แอดมิน",
+      ops: "ปฏิบัติการ",
       disclaimer: "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย",
       privacyPolicy: "นโยบายความเป็นส่วนตัว"
     }
@@ -95,6 +97,12 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   if (isAdmin) {
+    navTabs.push({
+      key: "ops",
+      label: strings.ops,
+      route: createPageUrl("OpsConsole"),
+      icon: Scale,
+    });
     navTabs.push({
       key: "admin",
       label: strings.admin,
