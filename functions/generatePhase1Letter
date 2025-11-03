@@ -2,7 +2,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 // --- Validation & Security ---
-const VALID_SUBJECT_TYPES = new Set(["deposit","damages","early_termination"]);
+const SUBJECTS = new Set(["deposit","damages","early_termination"]); // Renamed from VALID_SUBJECT_TYPES
 const sanitize = (s="") => String(s).replace(/[<&>"']/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":"&#x27;"}[m]));
 
 // --- Utility functions ---
@@ -16,7 +16,7 @@ const safeISO = (v, plusDays = 7) => {
 const fill = (tpl, vars) => tpl.replace(/{{\s*([\w.]+)\s*}}/g, (_, k) => (vars[k] != null ? String(vars[k]) : ""));
 
 // --- Static content bank ---
-const SUBJECTS = {
+const SUBJECTS_CONTENT = { // Renamed from SUBJECTS
   deposit: {
     subject_en: "Request for clarification on refundable deposit",
     subject_th: "ขอความชัดเจนเกี่ยวกับเงินประกันการเช่า",
@@ -141,21 +141,22 @@ Deno.serve(async (req) => {
       request_by_date_iso
     } = payload;
 
-    // Validate subject
-    if (!VALID_SUBJECT_TYPES.has(subject)) {
+    // Early validation
+    const mode = caseId ? "case" : "standalone";
+    if (!SUBJECTS.has(subject)) {
       return Response.json({ 
         ok: false,
         error: 'Invalid subject. Use: deposit, damages, or early_termination' 
       }, { status: 400 });
     }
-    const content = SUBJECTS[subject];
+
+    const content = SUBJECTS_CONTENT[subject];
 
     let vars = {};
     let caseData = null;
-    const mode = caseId ? 'case' : 'standalone';
 
     // MODE 1: Case-based generation (fetch data from case)
-    if (caseId) {
+    if (mode === "case") {
       const cases = await base44.asServiceRole.entities.Case.filter({ id: caseId });
       if (!cases || cases.length === 0) {
         return Response.json({ 
@@ -263,7 +264,7 @@ Deno.serve(async (req) => {
     });
 
     // If caseId provided, update case
-    if (caseId && caseData) {
+    if (mode === "case" && caseData) {
       const timeline = caseData.timeline || [];
       timeline.push({
         timestamp: new Date().toISOString(),
@@ -293,7 +294,7 @@ Deno.serve(async (req) => {
         pdf: null // PDF generation not yet implemented
       },
       docId: doc.id,
-      case: caseId && caseData ? {
+      case: mode === "case" && caseData ? {
         id: caseData.id,
         status: 'ready_drafts'
       } : null
