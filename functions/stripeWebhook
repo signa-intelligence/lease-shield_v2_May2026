@@ -7,24 +7,37 @@ const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
 });
 
 Deno.serve(async (req) => {
+  console.log('=== WEBHOOK RECEIVED ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  
   try {
     const signature = req.headers.get('stripe-signature');
-    const webhookSecret = Deno.env.get('Webhook_stripe'); // FIXED: Using correct secret name
+    const webhookSecret = Deno.env.get('Webhook_stripe');
+    
+    console.log('Has signature:', !!signature);
+    console.log('Has webhook secret:', !!webhookSecret);
+    console.log('Webhook secret (first 10 chars):', webhookSecret?.substring(0, 10));
     
     if (!signature || !webhookSecret) {
+      console.error('MISSING:', { signature: !!signature, webhookSecret: !!webhookSecret });
       return Response.json({ error: 'Missing signature or webhook secret' }, { status: 400 });
     }
 
     const body = await req.text();
+    console.log('Body length:', body.length);
     
     let event;
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      console.log('✅ Event verified:', event.type);
     } catch (err) {
+      console.error('❌ Signature verification failed:', err.message);
       return Response.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
     }
 
     const base44 = createClientFromRequest(req);
+    console.log('Base44 client created');
 
     // Map price IDs to plan tiers
     const planMap = {
@@ -38,6 +51,8 @@ Deno.serve(async (req) => {
       'price_1SNqkMQwoI6NhlUxHb2VADjs': { tier: 'protect', interval: 'annual' },
       'price_1SNqkxQwoI6NhlUx09mj0Lur': { tier: 'secure', interval: 'annual' }
     };
+
+    console.log('Processing event type:', event.type);
 
     // Handle different event types
     switch (event.type) {
@@ -134,20 +149,40 @@ Deno.serve(async (req) => {
       }
 
       case 'checkout.session.completed': {
+        console.log('=== CHECKOUT SESSION COMPLETED ===');
         const session = event.data.object;
         const customerId = session.customer;
         const metadata = session.metadata || {};
         
+        console.log('Customer ID:', customerId);
+        console.log('Metadata:', JSON.stringify(metadata, null, 2));
+        
         // Handle case payment (Resolve service)
         if (metadata.type === 'case') {
+          console.log('Processing CASE payment');
+          
           // Find user by Stripe customer ID
           const users = await base44.asServiceRole.entities.User.list();
+          console.log('Total users in system:', users.length);
+          
           const user = users.find(u => u.stripe_customer_id === customerId);
+          console.log('User found:', !!user, user?.email);
 
           if (!user) {
-            console.error('User not found for customer:', customerId);
+            console.error('❌ User not found for customer:', customerId);
             break;
           }
+
+          console.log('Creating case with data:', {
+            dispute_amount: metadata.dispute_amount,
+            summary: metadata.summary?.substring(0, 50),
+            lease_id: metadata.lease_id || null,
+            fast_track: metadata.fast_track === 'true',
+            letter_pack: metadata.letter_pack === 'true',
+            is_member_at_creation: metadata.is_member_at_creation === 'true',
+            status: 'active',
+            created_by: user.email
+          });
 
           // Create the case record
           const caseData = {
@@ -162,6 +197,7 @@ Deno.serve(async (req) => {
           };
 
           const newCase = await base44.asServiceRole.entities.Case.create(caseData);
+          console.log('✅ Case created:', newCase.id);
 
           // Create payment record
           await base44.asServiceRole.entities.Payment.create({
@@ -173,6 +209,7 @@ Deno.serve(async (req) => {
             external_id: session.id,
             created_by: user.email
           });
+          console.log('✅ Payment record created');
 
           // Get lease details if available
           let leaseInfo = '';
@@ -194,11 +231,13 @@ Deno.serve(async (req) => {
             `สวัสดี ${user.full_name},\n\nเคส Resolve ของคุณเริ่มดำเนินการแล้ว\nทีมงานจะติดต่อคุณภายใน 24-48 ชั่วโมง\n\nรายละเอียดคดี:\n- จำนวนเงินที่พิพาท: ฿${metadata.dispute_amount}${leaseInfo}\n\n— Lease Shield` :
             `Hi ${user.full_name},\n\nYour Resolve case has started.\nOur team will contact you within 24-48 hours.\n\nCase Details:\n- Dispute Amount: ฿${metadata.dispute_amount}${leaseInfo}\n\n— Lease Shield`;
 
+          console.log('Sending email to user:', user.email);
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: user.email,
             subject: userSubject,
             body: userBody
           });
+          console.log('✅ User email sent');
 
           // Send email to ops team
           const addonsText = [];
@@ -219,11 +258,17 @@ ${metadata.summary}
 
 Please review and assign to an ops team member.`;
 
+          console.log('Sending email to ops team');
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: 'ops@leaseshield.asia',
             subject: 'New Resolve Case - Payment Confirmed',
             body: opsBody
           });
+          console.log('✅ Ops email sent');
+          
+          console.log('=== CASE PROCESSING COMPLETE ===');
+        } else {
+          console.log('Not a case payment, metadata.type:', metadata.type);
         }
         break;
       }
@@ -246,9 +291,11 @@ Please review and assign to an ops team member.`;
       }
     }
 
+    console.log('=== WEBHOOK COMPLETE ===');
     return Response.json({ received: true });
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('❌ WEBHOOK ERROR:', error);
+    console.error('Error stack:', error.stack);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
