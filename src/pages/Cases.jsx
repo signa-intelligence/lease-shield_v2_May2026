@@ -32,13 +32,30 @@ export default function Cases() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: cases = [], refetch: refetchCases } = useQuery({
-    queryKey: ['cases'],
-    queryFn: () => base44.entities.Case.filter({ created_by: user?.email }, '-created_date'),
+  // Debug: Log user email when it loads
+  useEffect(() => {
+    if (user) {
+      console.log('🔍 Current user email:', user.email);
+    }
+  }, [user]);
+
+  const { data: cases = [], refetch: refetchCases, isLoading, error } = useQuery({
+    queryKey: ['cases', user?.email],
+    queryFn: async () => {
+      console.log('📊 Fetching cases for user:', user?.email);
+      const result = await base44.entities.Case.filter({ created_by: user?.email }, '-created_date');
+      console.log('📊 Cases found:', result.length, result);
+      return result;
+    },
     enabled: !!user,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
+
+  // Debug: Log cases when they change
+  useEffect(() => {
+    console.log('📦 Cases data updated:', cases.length, 'cases');
+  }, [cases]);
 
   // Handle payment success - refetch cases
   useEffect(() => {
@@ -46,26 +63,35 @@ export default function Cases() {
     const paymentStatus = urlParams.get('payment');
     
     if (paymentStatus === 'success' && user) {
-      console.log('Payment success detected - refetching cases immediately');
+      console.log('💰 Payment success detected - refetching cases');
+      console.log('👤 User email:', user.email);
       
       // Force immediate refetch
-      refetchCases();
+      refetchCases().then((result) => {
+        console.log('🔄 Immediate refetch result:', result.data?.length || 0, 'cases');
+      });
       
       // Refetch again after delays to catch webhook processing
       setTimeout(() => {
-        console.log('Refetch after 2s');
-        refetchCases();
+        console.log('⏱️ Refetch after 2s');
+        refetchCases().then((result) => {
+          console.log('🔄 2s refetch result:', result.data?.length || 0, 'cases');
+        });
       }, 2000);
       
       setTimeout(() => {
-        console.log('Refetch after 4s');
-        refetchCases();
-      }, 4000);
+        console.log('⏱️ Refetch after 5s');
+        refetchCases().then((result) => {
+          console.log('🔄 5s refetch result:', result.data?.length || 0, 'cases');
+        });
+      }, 5000);
       
       setTimeout(() => {
-        console.log('Final refetch after 6s');
-        refetchCases();
-      }, 6000);
+        console.log('⏱️ Final refetch after 10s');
+        refetchCases().then((result) => {
+          console.log('🔄 10s refetch result:', result.data?.length || 0, 'cases');
+        });
+      }, 10000);
       
       // Clean up URL
       const newUrl = location.pathname;
@@ -74,6 +100,14 @@ export default function Cases() {
   }, [location.search, user, refetchCases, location.pathname]);
 
   const language = user?.language || 'en';
+
+  // Debug loading and error states
+  if (isLoading) {
+    console.log('⏳ Cases loading...');
+  }
+  if (error) {
+    console.error('❌ Cases error:', error);
+  }
 
   const t = {
     en: {
