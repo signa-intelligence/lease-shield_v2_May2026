@@ -28,6 +28,66 @@ export default function Leases() {
     queryFn: () => base44.auth.me(),
   });
 
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    loaderBg: '#353A3D'
+  } : {
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+    loaderBg: '#F8FAFC'
+  };
+
+  const t = {
+    en: {
+      myLeases: "My Leases",
+      uploadAnalyze: "Upload and analyze your rental agreements",
+      uploadingLease: "Uploading Lease...",
+      analyzingAgreement: "Analyzing Agreement...",
+      aiReviewing: "Our AI is reviewing your lease for potential issues",
+      pleaseWait: "Please wait",
+      previousLeases: "Previous Leases",
+      leaseAgreement: "Lease Agreement",
+      month: "month",
+      language: "Language",
+      pages: "pages",
+      uploaded: "Uploaded",
+      viewDetails: "View Details",
+      uploadPDFImage: "Please upload a PDF or image file",
+      failedAnalyze: "Failed to analyze lease. Please try again.",
+      scanNotFound: "Scan results not found for this lease."
+    },
+    th: {
+      myLeases: "สัญญาเช่าของฉัน",
+      uploadAnalyze: "อัปโหลดและวิเคราะห์สัญญาเช่าของคุณ",
+      uploadingLease: "กำลังอัปโหลดสัญญาเช่า...",
+      analyzingAgreement: "กำลังวิเคราะห์สัญญา...",
+      aiReviewing: "AI กำลังตรวจสอบสัญญาเช่าของคุณเพื่อหาปัญหาที่อาจเกิดขึ้น",
+      pleaseWait: "กรุณารอสักครู่",
+      previousLeases: "สัญญาเช่าก่อนหน้า",
+      leaseAgreement: "สัญญาเช่า",
+      month: "เดือน",
+      language: "ภาษา",
+      pages: "หน้า",
+      uploaded: "อัปโหลดเมื่อ",
+      viewDetails: "ดูรายละเอียด",
+      uploadPDFImage: "กรุณาอัปโหลดไฟล์ PDF หรือรูปภาพ",
+      failedAnalyze: "ไม่สามารถวิเคราะห์สัญญาเช่าได้ กรุณาลองอีกครั้ง",
+      scanNotFound: "ไม่พบผลการสแกนสำหรับสัญญาเช่านี้"
+    }
+  };
+
+  const strings = t[language];
+
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
@@ -64,7 +124,7 @@ export default function Leases() {
     const file = files[0];
     
     if (!file.type.includes('pdf') && !file.type.includes('image')) {
-      setError('Please upload a PDF or image file');
+      setError(strings.uploadPDFImage);
       return;
     }
 
@@ -138,7 +198,7 @@ export default function Leases() {
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       
     } catch (err) {
-      setError('Failed to analyze lease. Please try again.');
+      setError(strings.failedAnalyze);
       console.error(err);
     } finally {
       setUploading(false);
@@ -160,28 +220,28 @@ export default function Leases() {
       navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`);
     } else {
       // If no scan found, alert user
-      alert('Scan results not found for this lease.');
+      alert(strings.scanNotFound);
     }
   };
 
   const getStatusColor = (status) => {
-    const colors = {
+    const statusColors = {
       uploaded: "bg-amber-100 text-amber-800",
       scanned: "bg-blue-100 text-blue-800",
       paid: "bg-emerald-100 text-emerald-800"
     };
-    return colors[status] || "bg-slate-100 text-slate-800";
+    return statusColors[status] || "bg-slate-100 text-slate-800";
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6 md:p-8">
+    <div className="min-h-screen p-6 md:p-8" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <FileText className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-slate-900">My Leases</h1>
+            <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.myLeases}</h1>
           </div>
-          <p className="text-slate-600">Upload and analyze your rental agreements</p>
+          <p style={{ color: colors.textSecondary }}>{strings.uploadAnalyze}</p>
         </div>
 
         {error && (
@@ -193,16 +253,16 @@ export default function Leases() {
 
         {!currentScan ? (
           <>
-            <Card className="border-none shadow-xl mb-8 overflow-hidden">
+            <Card className="border-none shadow-xl mb-8 overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
               <div className="p-8">
                 {uploading || analyzing ? (
                   <div className="text-center py-12">
                     <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">
-                      {uploading ? 'Uploading Lease...' : 'Analyzing Agreement...'}
+                    <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                      {uploading ? strings.uploadingLease : strings.analyzingAgreement}
                     </h3>
-                    <p className="text-slate-600">
-                      {analyzing ? 'Our AI is reviewing your lease for potential issues' : 'Please wait'}
+                    <p style={{ color: colors.textSecondary }}>
+                      {analyzing ? strings.aiReviewing : strings.pleaseWait}
                     </p>
                   </div>
                 ) : (
@@ -217,30 +277,33 @@ export default function Leases() {
 
             {leases.length > 0 && (
               <div>
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Previous Leases</h2>
+                <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>{strings.previousLeases}</h2>
                 <div className="grid gap-4">
                   {leases.map((lease) => (
-                    <Card key={lease.id} className="p-6 border-none shadow-lg hover:shadow-xl transition-all duration-300">
+                    <Card key={lease.id} className="p-6 border-none shadow-lg hover:shadow-xl transition-all duration-300" style={{ 
+                      backgroundColor: colors.cardBg,
+                      borderColor: colors.borderColor
+                    }}>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h3 className="font-bold text-slate-900 mb-1">
-                            {lease.property_address || 'Lease Agreement'}
+                          <h3 className="font-bold mb-1" style={{ color: colors.textPrimary }}>
+                            {lease.property_address || strings.leaseAgreement}
                           </h3>
                           {lease.rent_amount && (
-                            <p className="text-slate-600 mb-2">
-                              ฿{lease.rent_amount.toLocaleString()}/month
+                            <p className="mb-2" style={{ color: colors.textSecondary }}>
+                              ฿{lease.rent_amount.toLocaleString()}/{strings.month}
                             </p>
                           )}
-                          <div className="flex gap-2 text-sm text-slate-500 mb-2">
+                          <div className="flex gap-2 text-sm mb-2" style={{ color: colors.textSecondary }}>
                             {lease.language_detected && (
-                              <span>• Language: {lease.language_detected.toUpperCase()}</span>
+                              <span>• {strings.language}: {lease.language_detected.toUpperCase()}</span>
                             )}
                             {lease.file_urls && lease.file_urls.length > 1 && (
-                              <span>• {lease.file_urls.length} pages</span>
+                              <span>• {lease.file_urls.length} {strings.pages}</span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-400">
-                            Uploaded: {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                          <p className="text-xs" style={{ color: colors.textSecondary, opacity: 0.7 }}>
+                            {strings.uploaded}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
                           </p>
                         </div>
                         <div className="flex flex-col gap-2">
@@ -265,7 +328,7 @@ export default function Leases() {
                               onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
                               onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
                             >
-                              View Details
+                              {strings.viewDetails}
                             </button>
                           )}
                         </div>
