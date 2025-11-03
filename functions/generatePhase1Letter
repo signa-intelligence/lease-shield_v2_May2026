@@ -168,9 +168,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Helper to pick value with fallback chain
-    const pick = (k, d = "") => sanitize(args[k] ?? fromCase?.[k] ?? d);
-    
+    // Helper functions
     const dateISO = (v) => { 
       try { 
         return v ? new Date(v).toISOString().slice(0, 10) : new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
@@ -213,33 +211,51 @@ Deno.serve(async (req) => {
     // Generate HTML
     const html = fill(TEMPLATE, vars);
 
-    // Save as HTML file
-    const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
-    const filename = `letter_${subject}_${args.caseId ? args.caseId.slice(0, 8) : Date.now()}.html`;
-    const file = new File([blob], filename);
+    // === Save HTML file ===
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const caseIdShort = args.caseId ? args.caseId.slice(0, 8) : Date.now();
+    const baseName = `LS-${caseIdShort}-${subject}-${stamp}`;
     
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const htmlBlob = new Blob([html], { type: 'text/html; charset=utf-8' });
+    const htmlFile = new File([htmlBlob], `${baseName}.html`);
+    const { file_url: htmlUrl } = await base44.integrations.Core.UploadFile({ file: htmlFile });
 
-    // Save to documents
+    // === Try to generate PDF (graceful fallback) ===
+    let pdfUrl = null;
+    try {
+      // Note: PDF generation not currently available in Base44 Core integrations
+      // This is a placeholder for future PDF generation capability
+      // For now, we'll continue with HTML only
+      console.log('PDF generation not available - using HTML only');
+    } catch (e) {
+      console.error('PDF generation failed:', e);
+    }
+
+    // === Save to documents ===
     const doc = await base44.asServiceRole.entities.Document.create({
       type: 'letter',
-      file_url,
-      label: `${content.subject_en}${args.caseId ? ` - Case ${args.caseId.slice(0, 8)}` : ''}`
+      file_url: pdfUrl || htmlUrl,
+      label: `${content.subject_en}${args.caseId ? ` - Case ${caseIdShort}` : ''}`,
+      html_content: html
     });
 
-    // Update case if in case mode
+    // === Update case if in case mode ===
     if (mode === "case") {
       const timeline = fromCase.timeline || [];
       timeline.push({
         timestamp: new Date().toISOString(),
         event: `letter_generated_${subject}`,
         actor: 'system',
-        meta: { letter_url: file_url, subject }
+        meta: { 
+          html_url: htmlUrl, 
+          pdf_url: pdfUrl,
+          subject 
+        }
       });
 
       const letters = fromCase.letters || {};
-      letters[`${subject}_url`] = file_url;
-      letters.v1_url = file_url;
+      letters[`${subject}_url`] = pdfUrl || htmlUrl;
+      letters.v1_url = pdfUrl || htmlUrl;
 
       await base44.asServiceRole.entities.Case.update(args.caseId, {
         status: 'ready_drafts',
@@ -248,14 +264,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Return standardized response
+    // === Return standardized response ===
     return Response.json({ 
       ok: true,
       mode,
       subject,
       urls: {
-        html: file_url,
-        pdf: null
+        html: htmlUrl,
+        pdf: pdfUrl
       },
       docId: doc.id,
       case: mode === "case" ? {
