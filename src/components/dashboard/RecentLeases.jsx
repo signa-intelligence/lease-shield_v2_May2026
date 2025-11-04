@@ -12,7 +12,7 @@ export default function RecentLeases({ leases, language }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const deleteL easeMutation = useMutation({
+  const deleteLeaseMutation = useMutation({
     mutationFn: (leaseId) => base44.entities.Lease.delete(leaseId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leases'] });
