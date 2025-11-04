@@ -18,7 +18,7 @@ export default function Layout({ children, currentPageName }) {
   // Scroll to top on route change
   React.useEffect(() => {
     window.scrollTo(0, 0);
-  }, [location.pathname]);
+  }, [location?.pathname]);
 
   // Apply theme to body
   React.useEffect(() => {
@@ -60,37 +60,63 @@ export default function Layout({ children, currentPageName }) {
 
   const strings = t[language] || t.en;
   
-  // Build navigation tabs with safe route generation
+  // Safe route creation helper
+  const safeCreatePageUrl = React.useCallback((pageName) => {
+    try {
+      if (!pageName || typeof pageName !== 'string') {
+        console.warn('Invalid page name:', pageName);
+        return '/';
+      }
+      const url = createPageUrl(pageName);
+      return (url && typeof url === 'string') ? url : '/';
+    } catch (error) {
+      console.error('Error creating page URL:', error);
+      return '/';
+    }
+  }, []);
+
+  // Pre-compute all routes with safety checks
+  const routes = React.useMemo(() => ({
+    dashboard: safeCreatePageUrl("Dashboard"),
+    uploadScan: safeCreatePageUrl("UploadScan"),
+    maintenance: safeCreatePageUrl("MaintenanceTracker"),
+    deposit: safeCreatePageUrl("DepositTracker"),
+    documents: safeCreatePageUrl("DocumentVault"),
+    admin: safeCreatePageUrl("AdminConsole"),
+    account: safeCreatePageUrl("Account")
+  }), [safeCreatePageUrl]);
+  
+  // Build navigation tabs with pre-computed routes
   const navTabs = React.useMemo(() => {
     const tabs = [
       {
         key: "home",
         label: strings.home,
-        route: createPageUrl("Dashboard"),
+        route: routes.dashboard,
         icon: Home,
       },
       {
         key: "scan",
         label: strings.scan,
-        route: createPageUrl("UploadScan"),
+        route: routes.uploadScan,
         icon: Upload,
       },
       {
         key: "maintenance",
         label: strings.repairs,
-        route: createPageUrl("MaintenanceTracker"),
+        route: routes.maintenance,
         icon: Wrench,
       },
       {
         key: "deposit",
         label: strings.deposit,
-        route: createPageUrl("DepositTracker"),
+        route: routes.deposit,
         icon: Shield,
       },
       {
         key: "docs",
         label: strings.evidence,
-        route: createPageUrl("DocumentVault"),
+        route: routes.documents,
         icon: FileText,
       },
     ];
@@ -99,31 +125,33 @@ export default function Layout({ children, currentPageName }) {
       tabs.push({
         key: "admin",
         label: strings.admin,
-        route: createPageUrl("AdminConsole"),
+        route: routes.admin,
         icon: Settings,
       });
     }
 
-    // Filter out any tabs with undefined routes (safety check)
-    return tabs.filter(tab => tab.route && typeof tab.route === 'string');
-  }, [isAdmin, strings]);
+    // Filter out any tabs with invalid routes
+    return tabs.filter(tab => {
+      const isValid = tab.route && typeof tab.route === 'string' && tab.route.length > 0;
+      if (!isValid) {
+        console.warn('Invalid tab route:', tab);
+      }
+      return isValid;
+    });
+  }, [isAdmin, strings, routes]);
 
-  const isActiveTab = (route) => {
+  const isActiveTab = React.useCallback((route) => {
     // Comprehensive null/undefined checks
-    if (!route || typeof route !== 'string') return false;
+    if (!route || typeof route !== 'string' || route.length === 0) return false;
     if (!location || !location.pathname || typeof location.pathname !== 'string') return false;
-    return location.pathname === route;
-  };
-
-  // Safe account route generation
-  const accountRoute = React.useMemo(() => {
+    
     try {
-      return createPageUrl("Account") || '/';
+      return location.pathname === route;
     } catch (error) {
-      console.error('Error creating account route:', error);
-      return '/';
+      console.error('Error checking active tab:', error);
+      return false;
     }
-  }, []);
+  }, [location]);
 
   // Theme colors
   const colors = isDarkMode ? {
@@ -149,6 +177,10 @@ export default function Layout({ children, currentPageName }) {
     bottomTabBg: '#FFFFFF',
     hoverBg: '#ECEFED'
   };
+
+  // Safe account route
+  const accountRoute = routes.account || '/';
+  const isAccountActive = isActiveTab(accountRoute);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bg }}>
@@ -185,12 +217,10 @@ export default function Layout({ children, currentPageName }) {
           font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
         }
         
-        /* Bottom tabs styling with safe area support */
         .bottom-tabs {
           padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         
-        /* Top bar safe area support for notches */
         .top-bar {
           padding-top: env(safe-area-inset-top, 0px);
         }
@@ -206,7 +236,6 @@ export default function Layout({ children, currentPageName }) {
           }
         }
 
-        /* PWA Install prompt styling */
         @media (display-mode: standalone) {
           body {
             user-select: none;
@@ -215,7 +244,6 @@ export default function Layout({ children, currentPageName }) {
           }
         }
 
-        /* Pulse animation for Most Popular badge */
         @keyframes pulse {
           0%, 100% {
             box-shadow: 0 6px 12px rgba(199, 163, 56, 0.4), 0 0 0 4px rgba(199, 163, 56, 0.1);
@@ -225,7 +253,6 @@ export default function Layout({ children, currentPageName }) {
           }
         }
 
-        /* Shake animation for errors */
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
           10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
@@ -236,18 +263,15 @@ export default function Layout({ children, currentPageName }) {
           animation: shake 0.5s ease-in-out;
         }
 
-        /* Smooth transitions for theme switching */
         * {
           transition: background-color 0.2s ease, border-color 0.2s ease;
         }
 
-        /* Focus visible for accessibility */
         *:focus-visible {
           outline: 2px solid var(--ls-gold);
           outline-offset: 2px;
         }
 
-        /* Better scrollbar styling */
         ::-webkit-scrollbar {
           width: 8px;
           height: 8px;
@@ -268,7 +292,7 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Top Bar with Logo - FIXED TO TOP with safe area */}
+      {/* Top Bar with Logo */}
       <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
         backgroundColor: colors.topBarBg,
         borderBottomColor: colors.borderColor
@@ -291,50 +315,52 @@ export default function Layout({ children, currentPageName }) {
           </div>
           <div className="flex items-center gap-3">
             <LanguageToggle />
-            <Link to={accountRoute}>
-              <button
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  backgroundColor: isActiveTab(accountRoute) ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActiveTab(accountRoute)) {
-                    e.currentTarget.style.backgroundColor = '#0C3B2E';
-                    const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = '#FFFFFF';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActiveTab(accountRoute)) {
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
-                    const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = '#0C3B2E';
-                  }
-                }}
-              >
-                <User 
-                  className="w-5 h-5" 
-                  style={{ 
-                    color: isActiveTab(accountRoute) ? '#FFFFFF' : '#0C3B2E',
-                    transition: 'color 0.2s'
+            {accountRoute && accountRoute !== '/' && (
+              <Link to={accountRoute}>
+                <button
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: isAccountActive ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                   }}
-                />
-              </button>
-            </Link>
+                  onMouseEnter={(e) => {
+                    if (!isAccountActive) {
+                      e.currentTarget.style.backgroundColor = '#0C3B2E';
+                      const icon = e.currentTarget.querySelector('svg');
+                      if (icon) icon.style.color = '#FFFFFF';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isAccountActive) {
+                      e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
+                      const icon = e.currentTarget.querySelector('svg');
+                      if (icon) icon.style.color = '#0C3B2E';
+                    }
+                  }}
+                >
+                  <User 
+                    className="w-5 h-5" 
+                    style={{ 
+                      color: isAccountActive ? '#FFFFFF' : '#0C3B2E',
+                      transition: 'color 0.2s'
+                    }}
+                  />
+                </button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Main Content - Added top padding to account for fixed header + safe area */}
+      {/* Main Content */}
       <main className="flex-1 overflow-auto" style={{
         paddingTop: 'calc(64px + env(safe-area-inset-top, 0px))',
         paddingBottom: `calc(76px + env(safe-area-inset-bottom, 0px))`
@@ -355,7 +381,7 @@ export default function Layout({ children, currentPageName }) {
             return (
               <Link
                 key={tab.key}
-                to={tab.route || '/'}
+                to={tab.route}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
