@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 // Test LINE notifications - Admin only
@@ -74,10 +73,9 @@ Deno.serve(async (req) => {
 • Maintenance tracker / ติดตามการซ่อมบำรุง
 • Evidence vault / ที่เก็บหลักฐาน
 
-🔗 Sign up at app.leaseshield.asia
-ลงทะเบียนที่ app.leaseshield.asia
-or visit our website www.leaseshield.asia
-หรือเยี่ยมชมเว็บไซต์ของเรา www.leaseshield.asia
+🔗 Already have an account? / มีบัญชีอยู่แล้ว?
+Send: connect your@email.com
+ส่ง: connect อีเมลของคุณ
 
 💡 Type "help" anytime for commands
    พิมพ์ "help" เพื่อดูคำสั่ง`;
