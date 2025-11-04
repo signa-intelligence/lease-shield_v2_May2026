@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -86,7 +85,7 @@ const PLAN_DETAILS = [
       'Unlimited Lease Scans',
       'Deposit Shield Automation',
       'Rent Payment Alerts',
-      '7 Letter Templates', // Changed from '7+ Letter Templates'
+      '7 Letter Templates',
       '5GB Document Storage',
       'LINE Notifications',
       'Automated Reminders'
@@ -109,7 +108,7 @@ const PLAN_DETAILS = [
     description: 'Maximum prevention with priority support',
     benefits: [
       'Everything in Protect',
-      '10 Letter Templates', // Changed from 'All 10 Letter Templates'
+      '10 Letter Templates',
       'Priority Case Queue',
       'Priority AI Scanning',
       '20GB Document Storage',
@@ -257,6 +256,7 @@ export default function Account() {
   };
 
   const handleCancelSubscription = async () => {
+    const language = user?.language || 'en';
     if (!cancelReason) {
       alert(language === 'th' ? 'กรุณาเลือกเหตุผลในการยกเลิก' : 'Please select a reason for cancellation');
       return;
@@ -297,12 +297,10 @@ export default function Account() {
   };
 
   const generateLineOALink = (role) => {
-    // Generate tracking link with user ID and role
-    // Replace @leaseshield with your actual LINE OA ID
     const baseUrl = 'https://line.me/R/ti/p/@leaseshield';
     const params = new URLSearchParams({
       user_id: user?.id || '',
-      role: role // 'landlord' or 'juristic'
+      role: role
     });
     return `${baseUrl}?${params.toString()}`;
   };
@@ -315,12 +313,11 @@ export default function Account() {
       setTimeout(() => setCopiedLink(null), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
-      // Optional: Show a temporary message to the user that copying failed
-      // alert(language === 'th' ? 'ไม่สามารถคัดลอกลิงก์ได้' : 'Failed to copy link.');
     }
   };
 
   const handleShareLink = async (role) => {
+    const language = user?.language || 'en';
     const link = generateLineOALink(role);
     const title = role === 'landlord' 
       ? (language === 'th' ? 'เชื่อมต่อกับ Lease Shield' : 'Connect to Lease Shield')
@@ -337,11 +334,9 @@ export default function Account() {
         });
       } catch (err) {
         console.error('Share failed:', err);
-        // Fallback to copy if Web Share API fails or is cancelled by user
         handleCopyLink(role);
       }
     } else {
-      // Fallback to copy if Web Share API is not supported
       handleCopyLink(role);
     }
   };
@@ -352,7 +347,6 @@ export default function Account() {
   const currentTheme = user?.theme || 'light';
   const isDarkMode = currentTheme === 'dark';
 
-  // Dark mode colors
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
     cardBg: '#2A2D30',
@@ -609,9 +603,6 @@ export default function Account() {
   };
 
   const strings = t[language];
-
-  const currentPlanTier = user?.plan_tier || 'free';
-  const isFree = currentPlanTier === 'free';
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
@@ -1201,7 +1192,6 @@ export default function Account() {
                     </div>
                   )}
                   
-                  {/* Manage Subscription Button */}
                   <button
                     onClick={() => setShowCancelDialog(true)}
                     style={{
@@ -1520,7 +1510,7 @@ export default function Account() {
                 <div style={{
                   width: '40px',
                   height: '40px',
-                  backgroundColor: '#F59E0B', // gold for LINE
+                  backgroundColor: '#F59E0B',
                   borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
@@ -1538,7 +1528,7 @@ export default function Account() {
                       style={{
                         padding: '8px 16px',
                         borderRadius: '8px',
-                        backgroundColor: copiedLink === 'juristic' ? '#F59E0B' : isDarkMode ? '#353A3D' : '#FFFFFF',
+                        backgroundColor: copiedLink === 'juristic' ? '#F59E0B' : (isDarkMode ? '#353A3D' : '#FFFFFF'),
                         color: copiedLink === 'juristic' ? '#FFFFFF' : colors.textPrimary,
                         border: `2px solid ${copiedLink === 'juristic' ? '#F59E0B' : colors.borderColor}`,
                         fontWeight: 'bold',
@@ -1579,7 +1569,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: '#F59E0B',
                         color: '#FFFFFF',
-                        border: '2px solid '#F59E0B'',
+                        border: '2px solid #F59E0B',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -1607,7 +1597,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                         color: '#F59E0B',
-                        border: '2px solid '#F59E0B'',
+                        border: '2px solid #F59E0B',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -1748,7 +1738,6 @@ export default function Account() {
             </p>
             
             <div className="grid md:grid-cols-2 gap-4">
-              {/* Submit Support Ticket */}
               <Link to={createPageUrl("Support")}>
                 <div
                   style={{
@@ -1792,7 +1781,6 @@ export default function Account() {
                 </div>
               </Link>
 
-              {/* Email Support */}
               <a
                 href="mailto:support@leaseshield.asia"
                 style={{
@@ -1861,7 +1849,6 @@ export default function Account() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              {/* Privacy Policy Link */}
               <div style={{
                 padding: '16px',
                 backgroundColor: colors.fieldBg,
@@ -1913,7 +1900,6 @@ export default function Account() {
                 </div>
               </div>
 
-              {/* Export Data (PDPA Right to Portability) */}
               <div style={{
                 padding: '16px',
                 backgroundColor: colors.fieldBg,
@@ -1983,10 +1969,9 @@ export default function Account() {
                 </div>
               </div>
 
-              {/* Delete Account Notice */}
               <div style={{
                 padding: '16px',
-                backgroundColor: '#FEE2E2', // This is a warning, keeps red background
+                backgroundColor: '#FEE2E2',
                 borderRadius: '12px',
                 borderLeft: '4px solid #DC2626'
               }}>
@@ -2011,7 +1996,7 @@ export default function Account() {
           <NotificationSettings 
             user={user} 
             onUpdate={handleNotificationUpdate}
-            colors={colors} // Pass colors to NotificationSettings if it needs to adapt
+            colors={colors}
           />
         </div>
 
@@ -2020,7 +2005,7 @@ export default function Account() {
           <DialogContent className="sm:max-w-2xl" style={{
             backgroundColor: colors.cardBg,
             borderColor: colors.borderColor,
-            color: colors.textPrimary // Ensure text color is set for dialog content
+            color: colors.textPrimary
           }}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl" style={{ color: colors.textPrimary }}>
@@ -2037,7 +2022,6 @@ export default function Account() {
             </DialogHeader>
 
             <div className="space-y-6 mt-4">
-              {/* What You'll Lose */}
               {currentPlan && (
                 <div className="p-4 rounded-lg" style={{
                   backgroundColor: '#FEE2E2',
@@ -2055,7 +2039,6 @@ export default function Account() {
                 </div>
               )}
 
-              {/* Cancellation Form */}
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="cancelReason" style={{ color: colors.textPrimary }}>
@@ -2102,7 +2085,6 @@ export default function Account() {
                 </div>
               </div>
 
-              {/* Important Note */}
               <div className="p-4 rounded-lg" style={{
                 backgroundColor: isDarkMode ? '#2A2D30' : '#F3F4F6',
                 border: `1px solid ${colors.borderColor}`
@@ -2112,7 +2094,6 @@ export default function Account() {
                 </p>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowCancelDialog(false)}
@@ -2255,7 +2236,7 @@ export default function Account() {
               const isCurrentPlan = currentPlanTier === plan.key;
               const isFreeplan = plan.key === 'free';
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
-              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.priceMonthly ? '/month' : '');
+              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly);
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
               
               return (
@@ -2371,7 +2352,6 @@ export default function Account() {
                       gap: '10px'
                     }}>
                       {plan.benefits.map((benefit, idx) => {
-                        // Check if this is the "Everything in..." benefit
                         const isEverythingBenefit = benefit.startsWith('Everything in');
                         
                         return (
@@ -2467,7 +2447,7 @@ export default function Account() {
           </div>
         </div>
 
-        {/* Logout Button - with extra margin */}
+        {/* Logout Button */}
         <div className="mt-8 mb-4">
           <Button
             variant="outline"
