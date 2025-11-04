@@ -50,7 +50,6 @@ export default function MaintenanceTracker() {
 
   const createRequestMutation = useMutation({
     mutationFn: (data) => base44.entities.MaintenanceRequest.create(data),
-    // onSuccess removed here, logic moved to handleSubmit after mutateAsync
   });
 
   const updateRequestMutation = useMutation({
@@ -169,7 +168,17 @@ export default function MaintenanceTracker() {
         requestData.photo_urls = formData.photo_urls;
       }
 
-      await createRequestMutation.mutateAsync(requestData);
+      const createdRequest = await createRequestMutation.mutateAsync(requestData);
+      
+      // Send notifications after successful creation
+      try {
+        await base44.functions.invoke('sendMaintenanceNotification', {
+          maintenanceRequest: createdRequest
+        });
+      } catch (notificationError) {
+        console.error('Failed to send notifications:', notificationError);
+        // Don't fail the request creation if notifications fail
+      }
       
       // On success actions
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
