@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -238,14 +239,16 @@ export default function DepositTracker() {
               {strings.trackDeposits}
             </p>
           </div>
-          <Button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal w-full sm:w-auto"
-            size="sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {strings.addDeposit}
-          </Button>
+          {deposits.length > 0 && (
+            <Button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal w-full sm:w-auto"
+              size="sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {strings.addDeposit}
+            </Button>
+          )}
         </div>
 
         {showAddForm && (
