@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,12 +9,13 @@ import { ArrowLeft, Download, AlertTriangle, CheckCircle2, XCircle, FileText } f
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import FeatureGate from "../components/shared/FeatureGate";
-import { jsPDF } from "jspdf";
 
 export default function ReportFull() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const scanId = urlParams.get('scanId');
+  const leaseId = urlParams.get('leaseId'); // Added leaseId retrieval
+  const [downloading, setDownloading] = useState(false); // Added downloading state
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -39,66 +41,37 @@ export default function ReportFull() {
   });
 
   const handleDownloadPDF = async () => {
-    if (!scan || !lease) return;
-    
+    if (!scan || !lease || downloading) return; // Prevent multiple downloads
+
+    setDownloading(true);
     try {
-      const doc = new jsPDF();
-      
-      // Title
-      doc.setFontSize(20);
-      doc.text('Lease Shield - Full Report', 20, 20);
-      
-      // Property details
-      doc.setFontSize(12);
-      doc.text(`Property: ${lease.property_address || 'N/A'}`, 20, 35);
-      doc.text(`Risk Score: ${scan.risk_score}/100`, 20, 45);
-      doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 55);
-      
-      // Summary
-      doc.setFontSize(14);
-      doc.text('Summary', 20, 70);
-      doc.setFontSize(10);
-      const summaryLines = doc.splitTextToSize(scan.summary || 'No summary available', 170);
-      doc.text(summaryLines, 20, 80);
-      
-      let yPos = 80 + (summaryLines.length * 7) + 10;
-      
-      // Flags
-      if (scan.scan_full?.flags && scan.scan_full.flags.length > 0) {
-        doc.setFontSize(14);
-        doc.text('Issues Found', 20, yPos);
-        yPos += 10;
-        
-        scan.scan_full.flags.forEach((flag, idx) => {
-          if (yPos > 270) {
-            doc.addPage();
-            yPos = 20;
-          }
-          
-          doc.setFontSize(12);
-          doc.text(`${idx + 1}. ${flag.title || flag.category}`, 20, yPos);
-          yPos += 7;
-          
-          doc.setFontSize(10);
-          doc.text(`Severity: ${flag.severity}`, 25, yPos);
-          yPos += 7;
-          
-          if (flag.description) {
-            const descLines = doc.splitTextToSize(flag.description, 165);
-            doc.text(descLines, 25, yPos);
-            yPos += (descLines.length * 7) + 5;
-          }
-          
-          yPos += 5;
-        });
-      }
-      
-      // Download
-      doc.save(`lease-report-${lease.id?.slice(0, 8) || 'report'}.pdf`);
-      
+      // Invoke the backend function to generate the PDF
+      const response = await base44.functions.invoke('generateLeaseReportPDF', {
+        scanId: scan.id,
+        leaseId: lease.id
+      });
+
+      // The backend function is expected to return the PDF data as an ArrayBuffer or similar binary format
+      // Create blob from response data
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+
+      // Create download link
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lease-report-${lease.id.slice(0, 8)}.pdf`; // Use lease ID for filename
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
     } catch (error) {
-      console.error('PDF generation failed:', error);
+      console.error('PDF download failed:', error);
       alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -161,12 +134,13 @@ export default function ReportFull() {
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Full Lease Report</h1>
               <p className="text-slate-600">{lease.property_address || 'Lease Agreement'}</p>
             </div>
-            <Button 
+            <Button
               className="bg-blue-600 hover:bg-blue-700"
               onClick={handleDownloadPDF}
+              disabled={downloading} // Disable button while downloading
             >
               <Download className="w-4 h-4 mr-2" />
-              Download PDF
+              {downloading ? 'Generating...' : 'Download PDF'} {/* Change text based on state */}
             </Button>
           </div>
 
