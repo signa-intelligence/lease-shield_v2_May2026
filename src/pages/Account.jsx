@@ -1,5 +1,4 @@
 
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -2353,6 +2352,7 @@ export default function Account() {
                         <>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                             <span style={{ fontSize: '36px', fontWeight: 'bold' }}>{strings.freePlanName}</span>
+                            <span style={{ fontSize: '16px', opacity: 0, visibility: 'hidden' }}>/month</span>
                           </div>
                           <p style={{ fontSize: '12px', opacity: 0.8, margin: '4px 0 0 0', minHeight: '16px' }}>
                             {strings.noCreditCard}
