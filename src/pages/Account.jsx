@@ -146,6 +146,21 @@ export default function Account() {
     theme: user?.theme || 'light'
   });
 
+  const [landlordData, setLandlordData] = useState({
+    landlord_name: user?.landlord_name || '',
+    landlord_email: user?.landlord_email || '',
+    landlord_phone: user?.landlord_phone || '',
+    landlord_line: user?.landlord_line || '',
+    landlord_address: user?.landlord_address || ''
+  });
+
+  const [juristicData, setJuristicData] = useState({
+    juristic_name: user?.juristic_name || '',
+    juristic_email: user?.juristic_email || '',
+    juristic_phone: user?.juristic_phone || '',
+    juristic_line: user?.juristic_line || ''
+  });
+
   React.useEffect(() => {
     if (user) {
       setFormData({
@@ -154,6 +169,19 @@ export default function Account() {
         country: user.country || '',
         language: user.language || 'en',
         theme: user.theme || 'light'
+      });
+      setLandlordData({
+        landlord_name: user.landlord_name || '',
+        landlord_email: user.landlord_email || '',
+        landlord_phone: user.landlord_phone || '',
+        landlord_line: user.landlord_line || '',
+        landlord_address: user.landlord_address || ''
+      });
+      setJuristicData({
+        juristic_name: user.juristic_name || '',
+        juristic_email: user.juristic_email || '',
+        juristic_phone: user.juristic_phone || '',
+        juristic_line: user.juristic_line || ''
       });
     }
   }, [user]);
@@ -256,6 +284,14 @@ export default function Account() {
     } finally {
       setCancelling(false);
     }
+  };
+
+  const handleLandlordUpdate = () => {
+    updateProfileMutation.mutate(landlordData);
+  };
+
+  const handleJuristicUpdate = () => {
+    updateProfileMutation.mutate(juristicData);
   };
 
   const currentPlanTier = user?.plan_tier || 'free';
@@ -375,7 +411,21 @@ export default function Account() {
       downgradeNote: "Your subscription will remain active until {date}. After that, you'll be downgraded to the Free plan.",
       scheduledCancellation: "Scheduled for Cancellation",
       cancelScheduledFor: "Cancels on",
-      reactivate: "Reactivate Subscription"
+      reactivate: "Reactivate Subscription",
+      landlordInfo: "Landlord Information",
+      landlordInfoDesc: "Store your landlord's contact details for quick notifications",
+      landlordName: "Landlord Name",
+      landlordEmail: "Landlord Email",
+      landlordPhone: "Landlord Phone (WhatsApp)",
+      landlordLine: "Landlord LINE ID",
+      landlordAddress: "Landlord Address",
+      juristicInfo: "Juristic Office Contact",
+      juristicInfoDesc: "Store juristic office details for maintenance notifications",
+      juristicName: "Contact Name",
+      juristicEmail: "Email",
+      juristicPhone: "Phone (WhatsApp)",
+      juristicLine: "LINE ID",
+      saveContactInfo: "Save Contact Info"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -466,7 +516,21 @@ export default function Account() {
       downgradeNote: "การสมัครสมาชิกของคุณจะยังคงใช้งานได้จนถึง {date} หลังจากนั้นคุณจะถูกเปลี่ยนเป็นแผนฟรี",
       scheduledCancellation: "กำหนดการยกเลิกแล้ว",
       cancelScheduledFor: "จะยกเลิกเมื่อ",
-      reactivate: "เปิดใช้งานการสมัครสมาชิกอีกครั้ง"
+      reactivate: "เปิดใช้งานการสมัครสมาชิกอีกครั้ง",
+      landlordInfo: "ข้อมูลเจ้าของบ้าน",
+      landlordInfoDesc: "เก็บข้อมูลติดต่อเจ้าของบ้านเพื่อการแจ้งเตือนอย่างรวดเร็ว",
+      landlordName: "ชื่อเจ้าของบ้าน",
+      landlordEmail: "อีเมลเจ้าของบ้าน",
+      landlordPhone: "โทรศัพท์เจ้าของบ้าน (WhatsApp)",
+      landlordLine: "LINE ID เจ้าของบ้าน",
+      landlordAddress: "ที่อยู่เจ้าของบ้าน",
+      juristicInfo: "ข้อมูลนิติบุคคล",
+      juristicInfoDesc: "เก็บข้อมูลนิติบุคคลเพื่อการแจ้งเตือนการซ่อมบำรุง",
+      juristicName: "ชื่อผู้ติดต่อ",
+      juristicEmail: "อีเมล",
+      juristicPhone: "โทรศัพท์ (WhatsApp)",
+      juristicLine: "LINE ID",
+      saveContactInfo: "บันทึกข้อมูลติดต่อ"
     }
   };
 
@@ -1097,6 +1161,200 @@ export default function Account() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Landlord Information Card */}
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader className="border-b pb-4" style={{
+            backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
+            borderBottomColor: colors.borderColor
+          }}>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-lg font-bold flex items-center gap-2 mb-1" style={{ color: colors.textPrimary }}>
+                  <User className="w-5 h-5 text-ls-forest" />
+                  {strings.landlordInfo}
+                </CardTitle>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.landlordInfoDesc}</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="landlord_name" style={{ color: colors.textPrimary }}>{strings.landlordName}</Label>
+                <Input
+                  id="landlord_name"
+                  value={landlordData.landlord_name}
+                  onChange={(e) => setLandlordData({...landlordData, landlord_name: e.target.value})}
+                  placeholder={language === 'th' ? 'ชื่อเจ้าของบ้าน' : 'Landlord name'}
+                  className="mt-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                />
+              </div>
+              <div>
+                <Label htmlFor="landlord_email" style={{ color: colors.textPrimary }}>{strings.landlordEmail}</Label>
+                <Input
+                  id="landlord_email"
+                  type="email"
+                  value={landlordData.landlord_email}
+                  onChange={(e) => setLandlordData({...landlordData, landlord_email: e.target.value})}
+                  placeholder={language === 'th' ? 'landlord@example.com' : 'landlord@example.com'}
+                  className="mt-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                />
+              </div>
+              <div>
+                <Label htmlFor="landlord_phone" style={{ color: colors.textPrimary }}>{strings.landlordPhone}</Label>
+                <Input
+                  id="landlord_phone"
+                  value={landlordData.landlord_phone}
+                  onChange={(e) => setLandlordData({...landlordData, landlord_phone: e.target.value})}
+                  placeholder="+66 XX XXX XXXX"
+                  className="mt-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                />
+              </div>
+              <div>
+                <Label htmlFor="landlord_line" style={{ color: colors.textPrimary }}>{strings.landlordLine}</Label>
+                <Input
+                  id="landlord_line"
+                  value={landlordData.landlord_line}
+                  onChange={(e) => setLandlordData({...landlordData, landlord_line: e.target.value})}
+                  placeholder="@lineid"
+                  className="mt-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="landlord_address" style={{ color: colors.textPrimary }}>{strings.landlordAddress}</Label>
+                <Textarea
+                  id="landlord_address"
+                  value={landlordData.landlord_address}
+                  onChange={(e) => setLandlordData({...landlordData, landlord_address: e.target.value})}
+                  placeholder={language === 'th' ? 'ที่อยู่เจ้าของบ้าน' : 'Landlord address'}
+                  className="mt-2"
+                  rows={2}
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Button onClick={handleLandlordUpdate} className="bg-ls-forest hover:bg-ls-forest/90 text-white w-full md:w-auto">
+                <Save className="w-4 h-4 mr-2" />
+                {strings.saveContactInfo}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Juristic Office Card */}
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader className="border-b pb-4" style={{
+            backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
+            borderBottomColor: colors.borderColor
+          }}>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-lg font-bold flex items-center gap-2 mb-1" style={{ color: colors.textPrimary }}>
+                  <Settings className="w-5 h-5 text-ls-gold" />
+                  {strings.juristicInfo}
+                </CardTitle>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.juristicInfoDesc}</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="juristic_name" style={{ color: colors.textPrimary }}>{strings.juristicName}</Label>
+                <Input
+                  id="juristic_name"
+                  value={juristicData.juristic_name}
+                  onChange={(e) => setJuristicData({...juristicData, juristic_name: e.target.value})}
+                  placeholder={language === 'th' ? 'ชื่อผู้ติดต่อ' : 'Contact name'}
+                  className="mt-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                />
+              </div>
+              <div>
+                <Label htmlFor="juristic_email" style={{ color: colors.textPrimary }}>{strings.juristicEmail}</Label>
+                <Input
+                  id="juristic_email"
+                  type="email"
+                  value={juristicData.juristic_email}
+                  onChange={(e) => setJuristicData({...juristicData, juristic_email: e.target.value})}
+                  placeholder={language === 'th' ? 'juristic@example.com' : 'juristic@example.com'}
+                  className="mt-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                />
+              </div>
+              <div>
+                <Label htmlFor="juristic_phone" style={{ color: colors.textPrimary }}>{strings.juristicPhone}</Label>
+                <Input
+                  id="juristic_phone"
+                  value={juristicData.juristic_phone}
+                  onChange={(e) => setJuristicData({...juristicData, juristic_phone: e.target.value})}
+                  placeholder="+66 XX XXX XXXX"
+                  className="mt-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                />
+              </div>
+              <div>
+                <Label htmlFor="juristic_line" style={{ color: colors.textPrimary }}>{strings.juristicLine}</Label>
+                <Input
+                  id="juristic_line"
+                  value={juristicData.juristic_line}
+                  onChange={(e) => setJuristicData({...juristicData, juristic_line: e.target.value})}
+                  placeholder="@lineid"
+                  className="mt-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Button onClick={handleJuristicUpdate} className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal w-full md:w-auto">
+                <Save className="w-4 h-4 mr-2" />
+                {strings.saveContactInfo}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Help & Support Section */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
