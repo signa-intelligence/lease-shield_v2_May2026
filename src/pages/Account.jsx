@@ -115,8 +115,7 @@ const PLAN_DETAILS = [
       'Priority Scanning', // Changed from 'Priority AI Scanning'
       '20GB Document Storage',
       'Advanced Reminders',
-      'Premium Support',
-      'Document Archive' // Changed from 'Legal Document Archive'
+      'Premium Support' // 'Document Archive' removed
     ],
     bgColor: '#1A1D1F',
     icon: Crown
@@ -2285,16 +2284,17 @@ export default function Account() {
                   {plan.popular && (
                     <div style={{
                       position: 'absolute',
-                      top: '16px',
-                      right: '-32px',
+                      top: '20px',
+                      right: '-38px',
                       backgroundColor: '#C7A338',
                       color: '#1A1D1F',
                       padding: '6px 40px',
-                      fontSize: '12px',
+                      fontSize: '11px',
                       fontWeight: 'bold',
                       transform: 'rotate(45deg)',
                       boxShadow: '0 4px 8px rgba(199, 163, 56, 0.4)',
-                      zIndex: 10
+                      zIndex: 10,
+                      letterSpacing: '0.5px'
                     }}>
                       ⭐ {strings.mostPopular} ⭐
                     </div>
