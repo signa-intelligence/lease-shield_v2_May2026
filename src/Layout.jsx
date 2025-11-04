@@ -60,53 +60,70 @@ export default function Layout({ children, currentPageName }) {
 
   const strings = t[language] || t.en;
   
-  const navTabs = [
-    {
-      key: "home",
-      label: strings.home,
-      route: createPageUrl("Dashboard"),
-      icon: Home,
-    },
-    {
-      key: "scan",
-      label: strings.scan,
-      route: createPageUrl("UploadScan"),
-      icon: Upload,
-    },
-    {
-      key: "maintenance",
-      label: strings.repairs,
-      route: createPageUrl("MaintenanceTracker"),
-      icon: Wrench,
-    },
-    {
-      key: "deposit",
-      label: strings.deposit,
-      route: createPageUrl("DepositTracker"),
-      icon: Shield,
-    },
-    {
-      key: "docs",
-      label: strings.evidence,
-      route: createPageUrl("DocumentVault"),
-      icon: FileText,
-    },
-  ];
+  // Build navigation tabs with safe route generation
+  const navTabs = React.useMemo(() => {
+    const tabs = [
+      {
+        key: "home",
+        label: strings.home,
+        route: createPageUrl("Dashboard"),
+        icon: Home,
+      },
+      {
+        key: "scan",
+        label: strings.scan,
+        route: createPageUrl("UploadScan"),
+        icon: Upload,
+      },
+      {
+        key: "maintenance",
+        label: strings.repairs,
+        route: createPageUrl("MaintenanceTracker"),
+        icon: Wrench,
+      },
+      {
+        key: "deposit",
+        label: strings.deposit,
+        route: createPageUrl("DepositTracker"),
+        icon: Shield,
+      },
+      {
+        key: "docs",
+        label: strings.evidence,
+        route: createPageUrl("DocumentVault"),
+        icon: FileText,
+      },
+    ];
 
-  if (isAdmin) {
-    navTabs.push({
-      key: "admin",
-      label: strings.admin,
-      route: createPageUrl("AdminConsole"),
-      icon: Settings,
-    });
-  }
+    if (isAdmin) {
+      tabs.push({
+        key: "admin",
+        label: strings.admin,
+        route: createPageUrl("AdminConsole"),
+        icon: Settings,
+      });
+    }
+
+    // Filter out any tabs with undefined routes (safety check)
+    return tabs.filter(tab => tab.route && typeof tab.route === 'string');
+  }, [isAdmin, strings]);
 
   const isActiveTab = (route) => {
-    // Add null check to prevent error
-    if (!route || !location.pathname) return false;
+    // Comprehensive null/undefined checks
+    if (!route || typeof route !== 'string') return false;
+    if (!location || !location.pathname || typeof location.pathname !== 'string') return false;
     return location.pathname === route;
   };
+
+  // Safe account route generation
+  const accountRoute = React.useMemo(() => {
+    try {
+      return createPageUrl("Account") || '/';
+    } catch (error) {
+      console.error('Error creating account route:', error);
+      return '/';
+    }
+  }, []);
 
   // Theme colors
   const colors = isDarkMode ? {
@@ -274,13 +291,13 @@ export default function Layout({ children, currentPageName }) {
           </div>
           <div className="flex items-center gap-3">
             <LanguageToggle />
-            <Link to={createPageUrl("Account")}>
+            <Link to={accountRoute}>
               <button
                 style={{
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
-                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
+                  backgroundColor: isActiveTab(accountRoute) ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
@@ -290,14 +307,14 @@ export default function Layout({ children, currentPageName }) {
                   boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                 }}
                 onMouseEnter={(e) => {
-                  if (location.pathname !== createPageUrl("Account")) {
+                  if (!isActiveTab(accountRoute)) {
                     e.currentTarget.style.backgroundColor = '#0C3B2E';
                     const icon = e.currentTarget.querySelector('svg');
                     if (icon) icon.style.color = '#FFFFFF';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (location.pathname !== createPageUrl("Account")) {
+                  if (!isActiveTab(accountRoute)) {
                     e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
                     const icon = e.currentTarget.querySelector('svg');
                     if (icon) icon.style.color = '#0C3B2E';
@@ -307,7 +324,7 @@ export default function Layout({ children, currentPageName }) {
                 <User 
                   className="w-5 h-5" 
                   style={{ 
-                    color: location.pathname === createPageUrl("Account") ? '#FFFFFF' : '#0C3B2E',
+                    color: isActiveTab(accountRoute) ? '#FFFFFF' : '#0C3B2E',
                     transition: 'color 0.2s'
                   }}
                 />
