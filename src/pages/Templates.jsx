@@ -3,11 +3,10 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { FileText, Shield, AlertCircle, FileX, Scale, Camera, Mail, AlertTriangle, Gavel, CheckCircle, ArrowLeft } from "lucide-react";
+import { FileText, Shield, AlertCircle, FileX, Scale, Camera, Mail, AlertTriangle, Gavel, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Button } from "@/components/ui/button";
 
 const TEMPLATES = [
   // LITE TIER (L1-L3)
@@ -200,17 +199,6 @@ export default function Templates() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        {/* Back button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          {language === 'th' ? 'กลับ' : 'Back'}
-        </Button>
-
         <div className="mb-8">
           <div className="flex items-center gap-2 sm:gap-3 mb-2">
             <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-ls-forest" />

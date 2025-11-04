@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -21,22 +22,9 @@ import {
   Shield,
   Eye,
   ExternalLink,
-  Loader2 
+  Loader2 // Added Loader2 import
 } from "lucide-react";
 import { format } from "date-fns";
-
-// Helper function to safely format dates
-const safeFormatDate = (dateValue, formatString = 'MMM d, yyyy') => {
-  if (!dateValue) return '';
-  try {
-    const date = new Date(dateValue);
-    if (isNaN(date.getTime())) return '';
-    return format(date, formatString);
-  } catch (e) {
-    console.error('Date formatting error:', e);
-    return '';
-  }
-};
 
 export default function LeaseDetails() {
   const navigate = useNavigate();
@@ -82,7 +70,6 @@ export default function LeaseDetails() {
     },
     onError: (error) => {
       console.error('Update failed:', error);
-      const language = user?.language || 'en';
       alert(language === 'th' 
         ? 'ไม่สามารถบันทึกการเปลี่ยนแปลงได้ กรุณาลองอีกครั้ง' 
         : 'Failed to save changes. Please try again.');
@@ -326,7 +313,7 @@ export default function LeaseDetails() {
                     {strings.leasePeriod}
                   </p>
                   <p className="font-medium" style={{ color: colors.textPrimary }}>
-                    {safeFormatDate(lease.start_date)} {strings.to} {safeFormatDate(lease.end_date)}
+                    {format(new Date(lease.start_date), 'MMM d, yyyy')} {strings.to} {format(new Date(lease.end_date), 'MMM d, yyyy')}
                   </p>
                 </div>
               )}
@@ -336,7 +323,7 @@ export default function LeaseDetails() {
                   <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
                     {strings.language}
                   </p>
-                  <Badge variant="outline">{(lease.language_detected || '').toUpperCase()}</Badge>
+                  <Badge variant="outline">{lease.language_detected.toUpperCase()}</Badge>
                 </div>
               )}
             </div>
@@ -352,6 +339,7 @@ export default function LeaseDetails() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 md:p-6">
+            {/* Toggle Alerts */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6 p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
               <div className="flex-1">
                 <p className="font-semibold mb-1 text-sm md:text-base" style={{ color: colors.textPrimary }}>
@@ -367,6 +355,7 @@ export default function LeaseDetails() {
               />
             </div>
 
+            {/* Notice Period and Deadline */}
             {!editingNotice ? (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
@@ -396,7 +385,7 @@ export default function LeaseDetails() {
                       {strings.noticeDeadline}
                     </p>
                     <p className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                      {safeFormatDate(lease.notice_deadline, 'MMMM d, yyyy')}
+                      {format(new Date(lease.notice_deadline), 'MMMM d, yyyy')}
                     </p>
                     <p className="text-xs" style={{ color: colors.textSecondary }}>
                       {strings.deadlineCalculated}
@@ -486,7 +475,7 @@ export default function LeaseDetails() {
                     className="w-full sm:w-auto"
                   >
                     <Eye className="w-4 h-4 mr-2" />
-                    <span className="text-xs md:text-sm" style={{ color: colors.textPrimary }}>{strings.viewScanResults}</span>
+                    <span className="text-xs md:text-sm">{strings.viewScanResults}</span>
                   </Button>
                   <Button
                     onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
@@ -494,7 +483,7 @@ export default function LeaseDetails() {
                     size="sm"
                   >
                     <FileText className="w-4 h-4 mr-2" />
-                    <span className="text-xs md:text-sm text-white">{strings.viewFullReport}</span>
+                    <span className="text-xs md:text-sm">{strings.viewFullReport}</span>
                   </Button>
                 </div>
               </div>
