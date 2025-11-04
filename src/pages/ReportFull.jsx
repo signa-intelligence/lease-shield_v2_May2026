@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -8,14 +7,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, AlertTriangle, CheckCircle2, XCircle, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import FeatureGate from "../components/shared/FeatureGate";
+import { FeatureGate } from "../components/shared/FeatureGate";
 
 export default function ReportFull() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const scanId = urlParams.get('scanId');
-  const leaseId = urlParams.get('leaseId'); // Added leaseId retrieval
-  const [downloading, setDownloading] = useState(false); // Added downloading state
+  const [downloading, setDownloading] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -41,32 +39,27 @@ export default function ReportFull() {
   });
 
   const handleDownloadPDF = async () => {
-    if (!scan || !lease || downloading) return; // Prevent multiple downloads
-
+    if (!scan || !lease || downloading) return;
+    
     setDownloading(true);
     try {
-      // Invoke the backend function to generate the PDF
       const response = await base44.functions.invoke('generateLeaseReportPDF', {
         scanId: scan.id,
         leaseId: lease.id
       });
 
-      // The backend function is expected to return the PDF data as an ArrayBuffer or similar binary format
-      // Create blob from response data
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
-
-      // Create download link
+      
       const a = document.createElement('a');
       a.href = url;
-      a.download = `lease-report-${lease.id.slice(0, 8)}.pdf`; // Use lease ID for filename
+      a.download = `lease-report-${lease.id.slice(0, 8)}.pdf`;
       document.body.appendChild(a);
       a.click();
-
-      // Cleanup
+      
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-
+      
     } catch (error) {
       console.error('PDF download failed:', error);
       alert('Failed to generate PDF. Please try again.');
@@ -134,17 +127,16 @@ export default function ReportFull() {
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Full Lease Report</h1>
               <p className="text-slate-600">{lease.property_address || 'Lease Agreement'}</p>
             </div>
-            <Button
+            <Button 
               className="bg-blue-600 hover:bg-blue-700"
               onClick={handleDownloadPDF}
-              disabled={downloading} // Disable button while downloading
+              disabled={downloading}
             >
               <Download className="w-4 h-4 mr-2" />
-              {downloading ? 'Generating...' : 'Download PDF'} {/* Change text based on state */}
+              {downloading ? 'Generating...' : 'Download PDF'}
             </Button>
           </div>
 
-          {/* Risk Score Overview */}
           <Card className="mb-6 border-none shadow-xl bg-gradient-to-br from-white to-blue-50">
             <CardHeader>
               <CardTitle>Risk Assessment</CardTitle>
@@ -179,7 +171,6 @@ export default function ReportFull() {
             </CardContent>
           </Card>
 
-          {/* Detailed Findings */}
           {scan.scan_full?.flags && scan.scan_full.flags.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-slate-900 mb-4">Detailed Findings</h2>
@@ -228,7 +219,6 @@ export default function ReportFull() {
             </div>
           )}
 
-          {/* Next Steps */}
           <Card className="mt-6 border-none shadow-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white">
             <CardHeader>
               <CardTitle className="text-white">What's Next?</CardTitle>
