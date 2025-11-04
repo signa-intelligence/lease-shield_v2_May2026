@@ -5,6 +5,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell, Scale } from "lucide-react";
+import { MoreVertical, UserCheck, UserX } from "lucide-react"; // Added new icons
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; // Added dropdown components
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -195,6 +203,49 @@ export default function AdminConsole() {
       setTimeout(() => setTestResult(null), 5000);
     } finally {
       setTestingNotification(false);
+    }
+  };
+
+  const handleUserAction = async (userId, action) => {
+    try {
+      const targetUser = allUsers.find(u => u.id === userId);
+      if (!targetUser) return;
+
+      switch (action) {
+        case 'make_admin':
+          await base44.asServiceRole.auth.updateUser(userId, { role: 'admin' });
+          break;
+        case 'make_user':
+          await base44.asServiceRole.auth.updateUser(userId, { role: 'user' });
+          break;
+        case 'upgrade_lite':
+          await base44.entities.User.update(userId, { plan_tier: 'lite', subscription_status: 'active' });
+          break;
+        case 'upgrade_protect':
+          await base44.entities.User.update(userId, { plan_tier: 'protect', subscription_status: 'active' });
+          break;
+        case 'upgrade_secure':
+          await base44.entities.User.update(userId, { plan_tier: 'secure', subscription_status: 'active' });
+          break;
+        case 'downgrade_free':
+          await base44.entities.User.update(userId, { plan_tier: 'free', subscription_status: 'none' });
+          break;
+        case 'delete':
+          if (window.confirm(`Are you sure you want to delete ${targetUser.full_name}? This action cannot be undone.`)) {
+            await base44.asServiceRole.auth.deleteUser(userId);
+          }
+          break;
+        default:
+          console.warn('Unknown action:', action);
+          break;
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      // If there's a specific payments query, you might want to invalidate it too
+      // queryClient.invalidateQueries({ queryKey: ['payments'] }); 
+    } catch (error) {
+      console.error('User action failed:', error);
+      alert('Action failed. Please try again.');
     }
   };
 
@@ -726,7 +777,7 @@ export default function AdminConsole() {
         <Card className="border-none shadow-lg mb-8" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <Users className="w-5 h-5 text-ls-forest" />
+              <Users className="w-5 h-5 text-blue-600" />
               {strings.userManagement}
             </CardTitle>
           </CardHeader>
@@ -735,13 +786,13 @@ export default function AdminConsole() {
               <table className="w-full">
                 <thead>
                   <tr style={{ borderBottom: `2px solid ${colors.borderColor}` }}>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.status}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.role}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.joined}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.user}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.email}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.plan}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.status}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.role}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.joined}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -762,28 +813,26 @@ export default function AdminConsole() {
                       </td>
                       <td className="py-3 px-4">
                         <Badge className={
-                          u.plan_tier === 'secure' ? 'bg-purple-100 text-purple-700' :
-                          u.plan_tier === 'protect' ? 'bg-blue-100 text-blue-700' :
-                          u.plan_tier === 'lite' ? 'bg-emerald-100 text-emerald-700' :
-                          'bg-slate-100 text-slate-700'
+                          u.plan_tier === 'free' ? 'bg-slate-100 text-slate-800' :
+                          u.plan_tier === 'lite' ? 'bg-emerald-100 text-emerald-800' :
+                          u.plan_tier === 'protect' ? 'bg-amber-100 text-amber-800' :
+                          'bg-purple-100 text-purple-800'
                         }>
-                          {u.plan_tier === 'secure' ? strings.secure :
-                           u.plan_tier === 'protect' ? 'Protect' :
-                           u.plan_tier === 'lite' ? 'Lite' :
-                           'Free'}
+                          {u.plan_tier?.toUpperCase() || 'FREE'}
                         </Badge>
                       </td>
                       <td className="py-3 px-4">
-                        {u.subscription_status === 'active' && (
-                          <Badge className="bg-emerald-100 text-emerald-700">
-                            {strings.active}
-                          </Badge>
-                        )}
+                        <Badge className={
+                          u.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                          'bg-slate-100 text-slate-800 border-slate-200'
+                        } style={{ border: '1px solid' }}>
+                          {u.subscription_status || 'none'}
+                        </Badge>
                       </td>
                       <td className="py-3 px-4">
                         {u.role === 'admin' && (
-                          <Badge className="bg-ls-gold text-ls-charcoal">
-                            <Crown className="w-3 h-3 mr-1" />
+                          <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200">
+                            <Shield className="w-3 h-3 mr-1" />
                             {strings.admin}
                           </Badge>
                         )}
@@ -792,18 +841,67 @@ export default function AdminConsole() {
                         {format(new Date(u.created_date), 'MMM d, yyyy')}
                       </td>
                       <td className="py-3 px-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                            color: colors.textPrimary,
-                            borderColor: colors.borderColor
-                          }}
-                        >
-                          {strings.actions}
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                            {/* Role Management */}
+                            {u.role !== 'admin' ? (
+                              <DropdownMenuItem onClick={() => handleUserAction(u.id, 'make_admin')} style={{ color: colors.textPrimary, backgroundColor: colors.cardBg }}>
+                                <UserCheck className="w-4 h-4 mr-2" />
+                                {language === 'th' ? 'เปลี่ยนเป็นแอดมิน' : 'Make Admin'}
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => handleUserAction(u.id, 'make_user')} style={{ color: colors.textPrimary, backgroundColor: colors.cardBg }}>
+                                <UserX className="w-4 h-4 mr-2" />
+                                {language === 'th' ? 'เปลี่ยนเป็นผู้ใช้' : 'Make User'}
+                              </DropdownMenuItem>
+                            )}
+                            
+                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
+                            
+                            {/* Plan Management */}
+                            {u.plan_tier !== 'lite' && (
+                              <DropdownMenuItem onClick={() => handleUserAction(u.id, 'upgrade_lite')} style={{ color: colors.textPrimary, backgroundColor: colors.cardBg }}>
+                                <Crown className="w-4 h-4 mr-2 text-emerald-600" />
+                                {language === 'th' ? 'อัปเกรดเป็น Lite' : 'Upgrade to Lite'}
+                              </DropdownMenuItem>
+                            )}
+                            {u.plan_tier !== 'protect' && (
+                              <DropdownMenuItem onClick={() => handleUserAction(u.id, 'upgrade_protect')} style={{ color: colors.textPrimary, backgroundColor: colors.cardBg }}>
+                                <Crown className="w-4 h-4 mr-2 text-amber-600" />
+                                {language === 'th' ? 'อัปเกรดเป็น Protect' : 'Upgrade to Protect'}
+                              </DropdownMenuItem>
+                            )}
+                            {u.plan_tier !== 'secure' && (
+                              <DropdownMenuItem onClick={() => handleUserAction(u.id, 'upgrade_secure')} style={{ color: colors.textPrimary, backgroundColor: colors.cardBg }}>
+                                <Crown className="w-4 h-4 mr-2 text-purple-600" />
+                                {language === 'th' ? 'อัปเกรดเป็น Secure' : 'Upgrade to Secure'}
+                              </DropdownMenuItem>
+                            )}
+                            {u.plan_tier !== 'free' && (
+                              <DropdownMenuItem onClick={() => handleUserAction(u.id, 'downgrade_free')} style={{ color: colors.textPrimary, backgroundColor: colors.cardBg }}>
+                                <Crown className="w-4 h-4 mr-2 text-slate-600" />
+                                {language === 'th' ? 'ลดระดับเป็น Free' : 'Downgrade to Free'}
+                              </DropdownMenuItem>
+                            )}
+                            
+                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
+                            
+                            {/* Delete User */}
+                            <DropdownMenuItem 
+                              onClick={() => handleUserAction(u.id, 'delete')}
+                              className="text-red-600"
+                              style={{ backgroundColor: colors.cardBg }}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              {language === 'th' ? 'ลบผู้ใช้' : 'Delete User'}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
@@ -817,7 +915,7 @@ export default function AdminConsole() {
         <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <FileText className="w-5 h-5 text-ls-forest" />
+              <FileText className="w-5 h-5 text-blue-600" />
               {strings.recentLeases} ({allLeases.length})
             </CardTitle>
           </CardHeader>
@@ -826,33 +924,54 @@ export default function AdminConsole() {
               <p className="text-center py-8" style={{ color: colors.textSecondary }}>{strings.noLeases}</p>
             ) : (
               <div className="space-y-3">
-                {allLeases.slice(0, 10).map((lease) => (
-                  <div key={lease.id} className="p-4 rounded-lg border" style={{
-                    backgroundColor: colors.leaseBg,
-                    borderColor: colors.borderColor
-                  }}>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold" style={{ color: colors.textPrimary }}>
-                          {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
-                        </p>
-                        <p className="text-sm" style={{ color: colors.textSecondary }}>
-                          {language === 'th' ? 'โดย' : 'by'} {lease.created_by}
-                        </p>
-                        <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                          {format(new Date(lease.created_date), 'MMM d, yyyy HH:mm')}
-                        </p>
+                {allLeases.slice(0, 10).map((lease) => {
+                  const leaseUser = allUsers.find(u => u.email === lease.created_by);
+                  return (
+                    <button
+                      key={lease.id}
+                      onClick={() => navigate(createPageUrl("LeaseDetails") + `?leaseId=${lease.id}`)}
+                      className="w-full p-4 rounded-lg border-2 transition-all hover:shadow-md text-left"
+                      style={{
+                        backgroundColor: colors.leaseBg,
+                        borderColor: colors.borderColor
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#3B82F6';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = colors.borderColor;
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FileText className="w-4 h-4 text-blue-600" />
+                            <h4 className="font-bold" style={{ color: colors.textPrimary }}>
+                              {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
+                            </h4>
+                          </div>
+                          {leaseUser && (
+                            <p className="text-sm mb-1" style={{ color: colors.textSecondary }}>
+                              {language === 'th' ? 'ผู้ใช้' : 'User'}: {leaseUser.full_name}
+                            </p>
+                          )}
+                          <p className="text-xs" style={{ color: colors.textSecondary }}>
+                            {language === 'th' ? 'สแกนเมื่อ' : 'Scanned'}: {format(new Date(lease.created_date), 'MMM d, yyyy HH:mm')}
+                          </p>
+                        </div>
+                        <Badge className={
+                          lease.status === 'scanned' ? 'bg-blue-100 text-blue-800' :
+                          lease.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
+                          'bg-amber-100 text-amber-800'
+                        }>
+                          {lease.status}
+                        </Badge>
                       </div>
-                      <Badge className={
-                        lease.status === 'scanned' ? 'bg-blue-100 text-blue-800' :
-                        lease.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
-                        'bg-amber-100 text-amber-800'
-                      }>
-                        {lease.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </CardContent>
