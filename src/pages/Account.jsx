@@ -2289,15 +2289,16 @@ export default function Account() {
                       transform: 'translateX(-50%)',
                       backgroundColor: '#1A1D1F',
                       color: '#C7A338',
-                      padding: '8px 20px',
-                      fontSize: '10px',
+                      padding: '10px 28px',
+                      fontSize: '12px',
                       fontWeight: 'bold',
-                      border: '2px solid #1A1D1F',
-                      borderRadius: '20px',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                      border: '3px solid #C7A338',
+                      borderRadius: '30px',
+                      boxShadow: '0 6px 16px rgba(0, 0, 0, 0.4)',
                       zIndex: 10,
-                      letterSpacing: '0.5px',
-                      whiteSpace: 'nowrap'
+                      letterSpacing: '1.5px',
+                      whiteSpace: 'nowrap',
+                      textTransform: 'uppercase'
                     }}>
                       ★ {strings.mostPopular} ★
                     </div>
