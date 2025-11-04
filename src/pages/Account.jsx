@@ -1,4 +1,5 @@
 
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -608,33 +609,6 @@ export default function Account() {
       hideQR: "ซ่อน QR Code",
       scanQR: "สแกน QR Code นี้ด้วยแอป LINE"
     }
-  };
-
-  const strings = t[language];
-  const currentPlanTier = user?.plan_tier || 'free';
-  const isFree = currentPlanTier === 'free';
-  const language = user?.language || 'en';
-  const currentTheme = user?.theme || 'light';
-  const isDarkMode = currentTheme === 'dark';
-
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D',
-    fieldBg: '#353A3D',
-    hoverBg: '#3A3D40'
-  } : {
-    bg: '#ECEFED',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    inputBg: '#FFFFFF',
-    fieldBg: '#ECEFED',
-    hoverBg: '#F8FAFC'
   };
 
   const strings = t[language];
