@@ -73,16 +73,14 @@ Deno.serve(async (req) => {
 ✅ ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น
 
 📱 What we offer / บริการของเรา:
-• AI-powered lease analysis / วิเคราะห์สัญญาเช่าด้วย AI
+• Lease analysis / วิเคราะห์สัญญาเช่า
 • Deposit protection & reminders / ปกป้องเงินมัดจำและแจ้งเตือน
 • Maintenance tracker / ติดตามการซ่อมบำรุง
 • Evidence vault / ที่เก็บหลักฐาน
 
-🔗 To connect your account / เชื่อมต่อบัญชี:
-1. Sign up at app.leaseshield.asia
-   ลงทะเบียนที่ app.leaseshield.asia
-2. Send: connect your@email.com
-   ส่ง: connect อีเมลของคุณ
+🔗 Already have an account? / มีบัญชีอยู่แล้ว?
+Send: connect your@email.com
+ส่ง: connect อีเมลของคุณ
 
 💡 Type "help" anytime for commands
    พิมพ์ "help" เพื่อดูคำสั่ง`;
