@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Plus, Clock, CheckCircle2, AlertTriangle, Home, Zap, Droplet, Hammer, Thermometer, Bug, Package, Loader2, Camera, X, Image as ImageIcon } from "lucide-react"; // Added Loader2, Camera, X, ImageIcon
+import { Wrench, Plus, Clock, CheckCircle2, AlertTriangle, Home, Zap, Droplet, Hammer, Thermometer, Bug, Package, Loader2, Camera, X, Image as ImageIcon, Pencil, Trash2 } from "lucide-react"; // Added Pencil, Trash2
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import {
@@ -21,6 +21,8 @@ import {
 
 export default function MaintenanceTracker() {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingRequest, setEditingRequest] = useState(null);
+  const [deletingRequest, setDeletingRequest] = useState(null);
   const [formData, setFormData] = useState({
     issue_title: '',
     description: '',
@@ -50,12 +52,23 @@ export default function MaintenanceTracker() {
 
   const createRequestMutation = useMutation({
     mutationFn: (data) => base44.entities.MaintenanceRequest.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+    },
   });
 
   const updateRequestMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.MaintenanceRequest.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+    },
+  });
+
+  const deleteRequestMutation = useMutation({
+    mutationFn: (id) => base44.entities.MaintenanceRequest.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      setDeletingRequest(null);
     },
   });
 
@@ -143,6 +156,33 @@ export default function MaintenanceTracker() {
     }));
   };
 
+  const handleEdit = (request) => {
+    setEditingRequest(request);
+    setFormData({
+      issue_title: request.issue_title,
+      description: request.description,
+      category: request.category,
+      priority: request.priority,
+      property_address: request.property_address || '',
+      reported_date: request.reported_date,
+      photo_urls: request.photo_urls || []
+    });
+    setShowAddDialog(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingRequest) return;
+    
+    try {
+      await deleteRequestMutation.mutateAsync(deletingRequest.id);
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert(language === 'th' 
+        ? 'ไม่สามารถลบได้ กรุณาลองอีกครั้ง' 
+        : 'Failed to delete. Please try again.');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -160,7 +200,7 @@ export default function MaintenanceTracker() {
         priority: formData.priority,
         property_address: formData.property_address.trim() || undefined,
         reported_date: formData.reported_date,
-        status: 'reported'
+        status: editingRequest ? editingRequest.status : 'reported' // Preserve status if editing, else 'reported'
       };
 
       // Only include photo_urls if there are photos
@@ -168,21 +208,31 @@ export default function MaintenanceTracker() {
         requestData.photo_urls = formData.photo_urls;
       }
 
-      const createdRequest = await createRequestMutation.mutateAsync(requestData);
-      
-      // Send notifications after successful creation
-      try {
-        await base44.functions.invoke('sendMaintenanceNotification', {
-          maintenanceRequest: createdRequest
+      if (editingRequest) {
+        // Update existing request
+        await updateRequestMutation.mutateAsync({
+          id: editingRequest.id,
+          data: requestData
         });
-      } catch (notificationError) {
-        console.error('Failed to send notifications:', notificationError);
-        // Don't fail the request creation if notifications fail
+      } else {
+        // Create new request
+        const createdRequest = await createRequestMutation.mutateAsync(requestData);
+        
+        // Send notifications after successful creation
+        try {
+          await base44.functions.invoke('sendMaintenanceNotification', {
+            maintenanceRequest: createdRequest
+          });
+        } catch (notificationError) {
+          console.error('Failed to send notifications:', notificationError);
+          // Don't fail the request creation if notifications fail
+        }
       }
       
       // On success actions
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       setShowAddDialog(false);
+      setEditingRequest(null); // Reset editing request
       setFormData({
         issue_title: '',
         description: '',
@@ -194,11 +244,11 @@ export default function MaintenanceTracker() {
       });
       setFormErrors({});
     } catch (error) {
-      console.error('Failed to create request:', error);
+      console.error('Failed to save request:', error);
       setFormErrors({ 
         submit: language === 'th' 
-          ? 'ไม่สามารถสร้างรายการได้ กรุณาลองอีกครั้ง' 
-          : 'Failed to create request. Please try again.' 
+          ? 'ไม่สามารถบันทึกรายการได้ กรุณาลองอีกครั้ง' 
+          : 'Failed to save request. Please try again.' 
       });
     } finally {
       setSubmitting(false);
@@ -259,7 +309,14 @@ export default function MaintenanceTracker() {
       photosOptional: "Photos (Optional)",
       photosHelp: "Add photos to document the issue",
       uploading: "Uploading...",
-      photos: "photos"
+      photos: "photos",
+      editRequest: "Edit Request",
+      deleteRequest: "Delete Request",
+      confirmDelete: "Are you sure?",
+      confirmDeleteDesc: "This will permanently delete this maintenance request. This action cannot be undone.",
+      cancelDelete: "Cancel",
+      confirmDeleteBtn: "Delete",
+      updateButton: "Update"
     },
     th: {
       title: "ติดตามการซ่อมบำรุง",
@@ -314,7 +371,14 @@ export default function MaintenanceTracker() {
       photosOptional: "รูปภาพ (ไม่บังคับ)",
       photosHelp: "เพิ่มรูปภาพเพื่อบันทึกปัญหา",
       uploading: "กำลังอัปโหลด...",
-      photos: "รูป"
+      photos: "รูป",
+      editRequest: "แก้ไขคำขอ",
+      deleteRequest: "ลบคำขอ",
+      confirmDelete: "คุณแน่ใจหรือไม่?",
+      confirmDeleteDesc: "การดำเนินการนี้จะลบคำขอซ่อมบำรุงนี้อย่างถาวร และไม่สามารถยกเลิกได้",
+      cancelDelete: "ยกเลิก",
+      confirmDeleteBtn: "ลบ",
+      updateButton: "อัปเดต"
     }
   };
 
@@ -382,6 +446,7 @@ export default function MaintenanceTracker() {
             <Dialog open={showAddDialog} onOpenChange={(open) => {
               setShowAddDialog(open);
               if (!open) {
+                setEditingRequest(null); // Reset editing request when dialog closes
                 setFormErrors({});
                 setFormData({
                   issue_title: '',
@@ -426,7 +491,9 @@ export default function MaintenanceTracker() {
                 margin: '16px'
               }}>
                 <DialogHeader>
-                  <DialogTitle style={{ color: colors.textPrimary }}>{strings.reportNewIssue}</DialogTitle>
+                  <DialogTitle style={{ color: colors.textPrimary }}>
+                    {editingRequest ? strings.editRequest : strings.reportNewIssue}
+                  </DialogTitle>
                 </DialogHeader>
                 
                 {formErrors.submit && (
@@ -747,7 +814,7 @@ export default function MaintenanceTracker() {
                     ) : (
                       <>
                         <Plus className="w-4 h-4" />
-                        {strings.submitButton}
+                        {editingRequest ? strings.updateButton : strings.submitButton}
                       </>
                     )}
                   </button>
@@ -884,6 +951,39 @@ export default function MaintenanceTracker() {
                     )}
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                    <button
+                      onClick={() => handleEdit(request)}
+                      style={{
+                        flex: 1,
+                        backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                        color: colors.textPrimary,
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        border: `2px solid ${colors.borderColor}`,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.borderColor = '#0C3B2E';
+                        e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.color = '#FFFFFF';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.borderColor = colors.borderColor;
+                        e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                        e.target.style.color = colors.textPrimary;
+                      }}
+                    >
+                      <Pencil style={{ width: '14px', height: '14px' }} />
+                      {language === 'th' ? 'แก้ไข' : 'Edit'}
+                    </button>
+
                     {request.status === 'reported' && (
                       <button
                         onClick={() => updateRequestMutation.mutate({ 
@@ -891,7 +991,7 @@ export default function MaintenanceTracker() {
                           data: { status: 'completed' } 
                         })}
                         style={{
-                          width: '100%',
+                          flex: 1,
                           backgroundColor: '#10B981',
                           color: '#FFFFFF',
                           padding: '8px 12px',
@@ -913,12 +1013,143 @@ export default function MaintenanceTracker() {
                         {strings.completed}
                       </button>
                     )}
+
+                    <button
+                      onClick={() => setDeletingRequest(request)}
+                      style={{
+                        flex: request.status === 'reported' ? 0 : 1,
+                        minWidth: request.status === 'reported' ? '44px' : 'auto',
+                        backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                        color: '#EF4444',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        border: '2px solid #FCA5A5',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#EF4444';
+                        e.target.style.color = '#FFFFFF';
+                        e.target.style.borderColor = '#EF4444';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
+                        e.target.style.color = '#EF4444';
+                        e.target.style.borderColor = '#FCA5A5';
+                      }}
+                    >
+                      <Trash2 style={{ width: '14px', height: '14px' }} />
+                      {request.status === 'reported' ? '' : (language === 'th' ? 'ลบ' : 'Delete')}
+                    </button>
                   </div>
                 </CardContent>
               </Card>
             ))
           )}
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!deletingRequest} onOpenChange={(open) => !open && setDeletingRequest(null)}>
+          <DialogContent style={{
+            backgroundColor: colors.cardBg,
+            borderColor: colors.borderColor
+          }}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  {strings.confirmDelete}
+                  <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
+                    {strings.confirmDeleteDesc}
+                  </p>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+
+            {deletingRequest && (
+              <div className="p-4 rounded-lg" style={{
+                backgroundColor: isDarkMode ? '#2A2D30' : '#F9FAFB',
+                border: `1px solid ${colors.borderColor}`
+              }}>
+                <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                  {deletingRequest.issue_title}
+                </p>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  {deletingRequest.description}
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setDeletingRequest(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  border: `2px solid ${colors.borderColor}`,
+                  backgroundColor: colors.cardBg,
+                  color: colors.textPrimary,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F9FAFB';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = colors.cardBg;
+                }}
+              >
+                {strings.cancelDelete}
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteRequestMutation.isLoading}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  border: 'none',
+                  backgroundColor: '#EF4444',
+                  color: '#FFFFFF',
+                  cursor: deleteRequestMutation.isLoading ? 'not-allowed' : 'pointer',
+                  opacity: deleteRequestMutation.isLoading ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => !deleteRequestMutation.isLoading && (e.target.style.backgroundColor = '#DC2626')}
+                onMouseLeave={(e) => !deleteRequestMutation.isLoading && (e.target.style.backgroundColor = '#EF4444')}
+              >
+                {deleteRequestMutation.isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {language === 'th' ? 'กำลังลบ...' : 'Deleting...'}
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    {strings.confirmDeleteBtn}
+                  </>
+                )}
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
