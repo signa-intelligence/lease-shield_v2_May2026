@@ -2284,8 +2284,8 @@ export default function Account() {
                   {plan.popular && (
                     <div style={{
                       position: 'absolute',
-                      top: '20px',
-                      right: '-38px',
+                      top: '12px',
+                      right: '-32px',
                       backgroundColor: '#C7A338',
                       color: '#1A1D1F',
                       padding: '6px 40px',
