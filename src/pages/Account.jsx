@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, QrCode, Share2 } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, QrCode, Share2, ExternalLink } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
@@ -126,7 +126,7 @@ export default function Account() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [exportingData, setExportingData] = useState(false); // Renamed from 'exporting'
   const [billingInterval, setBillingInterval] = useState('monthly');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -235,7 +235,7 @@ export default function Account() {
   };
 
   const handleExportData = async () => {
-    setExporting(true);
+    setExportingData(true); // Changed from setExporting
     try {
       const response = await base44.functions.invoke('exportUserData');
       
@@ -252,7 +252,7 @@ export default function Account() {
       console.error('Export failed:', error);
       alert('Failed to export data. Please try again or contact support.');
     } finally {
-      setExporting(false);
+      setExportingData(false); // Changed from setExporting
     }
   };
 
@@ -391,12 +391,15 @@ export default function Account() {
       billedMonthly: "Billed monthly",
       billedAnnually: "Billed annually",
       renews: "Renews",
-      freePlanName: "Free",
-      freeIncludes: "Free Plan Includes:",
-      freeBenefit1: "1 Lease Scan (lifetime)",
-      freeBenefit2: "Basic Risk Score Preview",
-      freeBenefit3: "3 Files (100MB storage)",
-      freeBenefit4: "Read-only Deposit Tracker",
+      free: "Free", // Changed from freePlanName
+      tryBeforeCommit: "Try Before You Commit",
+      oneLeaseScan: "1 Lease Scan",
+      lifetime: "lifetime",
+      basicRiskScore: "Basic Risk Score Preview",
+      fiveDayStorage: "Files",
+      basicDepositTracker: "Basic Deposit Tracker",
+      readOnly: "Read-only",
+      basicMaintenance: "Basic Maintenance Tracker",
       upgradeNow: "Upgrade Now",
       allActive: "All features active",
       lineEnabled: "LINE reminders enabled",
@@ -429,6 +432,7 @@ export default function Account() {
       monthsFree: "2 MONTHS FREE",
       noCreditCard: "No credit card required",
       perMonth: "/month",
+      perYear: "/year",
       save: "Save",
       currentPlanBadge: "Current Plan",
       signupFree: "Sign Up to Get Free",
@@ -483,7 +487,42 @@ export default function Account() {
       juristicLineConnect: "Connect Juristic to LINE",
       showQR: "Show QR Code",
       hideQR: "Hide QR Code",
-      scanQR: "Scan this QR code with LINE app"
+      scanQR: "Scan this QR code with LINE app",
+
+      // New strings for pricing plans and privacy section
+      signUpFree: "Sign Up for Free",
+      lite: "Lite",
+      essentialProtection: "Essential Protection",
+      everythingInFree: "Everything in Free",
+      fiveScansPerMonth: "5 Lease Scans per month",
+      fullRiskReports: "Full AI Risk Reports",
+      emailNotifications: "Email Notifications",
+      basicLetterTemplates: "Basic Letter Templates",
+      documentStorage: "Document Storage",
+      startLite: "Start Lite",
+      protect: "Protect",
+      comprehensiveProtection: "Comprehensive Protection",
+      everythingInLite: "Everything in Lite",
+      unlimitedLeaseScans: "Unlimited Lease Scans",
+      depositShieldAutomation: "Deposit Shield Automation",
+      rentPaymentAlerts: "Rent Payment Alerts",
+      fullLetterTemplates: "Letter Templates",
+      lineNotificationsEnabled: "LINE Notifications",
+      automatedReminders: "Automated Reminders",
+      startProtect: "Start Protect",
+      secure: "Secure",
+      premiumProtection: "Premium Protection",
+      everythingInProtect: "Everything in Protect",
+      tenLetterTemplates: "Letter Templates",
+      priorityCaseQueue: "Priority Case Queue",
+      documentArchive: "Document Archive",
+      advancedReminders: "Advanced Reminders",
+      premiumSupport: "Premium Support",
+      startSecure: "Start Secure",
+      privacyData: "Privacy & Data",
+      reviewOurPrivacy: "Review our privacy policy to understand how your data is handled.",
+      downloadAllData: "Download all your personal data (PDPA compliant).",
+      exportMyData: "Export My Data"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -507,12 +546,15 @@ export default function Account() {
       billedMonthly: "เรียกเก็บรายเดือน",
       billedAnnually: "เรียกเก็บรายปี",
       renews: "ต่ออายุ",
-      freePlanName: "ฟรี",
-      freeIncludes: "แผนฟรีประกอบด้วย:",
-      freeBenefit1: "สแกนสัญญาเช่า 1 ครั้ง (ตลอดชีพ)",
-      freeBenefit2: "แสดงตัวอย่างคะแนนความเสี่ยงพื้นฐาน",
-      freeBenefit3: "3 ไฟล์ (พื้นที่เก็บข้อมูล 100MB)",
-      freeBenefit4: "เครื่องมือติดตามเงินมัดจำแบบอ่านอย่างเดียว",
+      free: "ฟรี", // Changed from freePlanName
+      tryBeforeCommit: "ทดลองใช้ก่อนตัดสินใจ",
+      oneLeaseScan: "1 สแกนสัญญาเช่า",
+      lifetime: "ตลอดชีพ",
+      basicRiskScore: "แสดงตัวอย่างคะแนนความเสี่ยงพื้นฐาน",
+      fiveDayStorage: "ไฟล์",
+      basicDepositTracker: "เครื่องมือติดตามเงินมัดจำพื้นฐาน",
+      readOnly: "อ่านอย่างเดียว",
+      basicMaintenance: "เครื่องมือติดตามการบำรุงรักษาพื้นฐาน",
       upgradeNow: "อัปเกรดเลย",
       allActive: "ฟีเจอร์ทั้งหมดใช้งานได้",
       lineEnabled: "การแจ้งเตือน LINE เปิดใช้งาน",
@@ -545,6 +587,7 @@ export default function Account() {
       monthsFree: "ฟรี 2 เดือน",
       noCreditCard: "ไม่ต้องใช้บัตรเครดิต",
       perMonth: "/เดือน",
+      perYear: "/ปี",
       save: "ประหยัด",
       currentPlanBadge: "แผนปัจจุบัน",
       signupFree: "สมัครเพื่อรับฟรี",
@@ -599,13 +642,132 @@ export default function Account() {
       juristicLineConnect: "เชื่อมต่อนิติบุคคลกับ LINE",
       showQR: "แสดง QR Code",
       hideQR: "ซ่อน QR Code",
-      scanQR: "สแกน QR Code นี้ด้วยแอป LINE"
+      scanQR: "สแกน QR Code นี้ด้วยแอป LINE",
+
+      // New strings for pricing plans and privacy section
+      signUpFree: "สมัครใช้งานฟรี",
+      lite: "ไลท์",
+      essentialProtection: "การป้องกันที่จำเป็น",
+      everythingInFree: "ทั้งหมดที่มีในแผนฟรี",
+      fiveScansPerMonth: "5 สแกนสัญญาเช่าต่อเดือน",
+      fullRiskReports: "รายงานความเสี่ยง AI เต็มรูปแบบ",
+      emailNotifications: "การแจ้งเตือนทางอีเมล",
+      basicLetterTemplates: "เทมเพลตจดหมายพื้นฐาน",
+      documentStorage: "พื้นที่เก็บเอกสาร",
+      startLite: "เริ่มต้นแผนไลท์",
+      protect: "ป้องกัน",
+      comprehensiveProtection: "การป้องกันที่ครอบคลุม",
+      everythingInLite: "ทั้งหมดที่มีในแผนไลท์",
+      unlimitedLeaseScans: "สแกนสัญญาเช่าไม่จำกัด",
+      depositShieldAutomation: "ระบบอัตโนมัติ Deposit Shield",
+      rentPaymentAlerts: "การแจ้งเตือนการชำระค่าเช่า",
+      fullLetterTemplates: "เทมเพลตจดหมาย",
+      lineNotificationsEnabled: "การแจ้งเตือน LINE",
+      automatedReminders: "การแจ้งเตือนอัตโนมัติ",
+      startProtect: "เริ่มต้นแผนป้องกัน",
+      secure: "ปลอดภัย",
+      premiumProtection: "การป้องกันพรีเมียม",
+      everythingInProtect: "ทั้งหมดที่มีในแผนป้องกัน",
+      tenLetterTemplates: "เทมเพลตจดหมาย",
+      priorityCaseQueue: "คิวเคสพิเศษ",
+      documentArchive: "เอกสารสำคัญ",
+      advancedReminders: "การแจ้งเตือนขั้นสูง",
+      premiumSupport: "การสนับสนุนระดับพรีเมียม",
+      startSecure: "เริ่มต้นแผนปลอดภัย",
+      privacyData: "ความเป็นส่วนตัวและข้อมูล",
+      reviewOurPrivacy: "ตรวจสอบนโยบายความเป็นส่วนตัวของเราเพื่อทำความเข้าใจวิธีการจัดการข้อมูลของคุณ",
+      downloadAllData: "ดาวน์โหลดข้อมูลส่วนบุคคลทั้งหมดของคุณ (เป็นไปตาม PDPA)",
+      exportMyData: "ส่งออกข้อมูลของฉัน"
     }
   };
 
   const strings = t[language];
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
+
+  const pricingPlans = [
+    {
+      tier: 'free',
+      name: strings.free,
+      subtitle: strings.tryBeforeCommit,
+      price: strings.free, // Use the 'free' string for price too
+      monthlyPrice: 0,
+      annualPrice: 0,
+      color: 'from-slate-600 to-slate-700',
+      features: [
+        { text: strings.oneLeaseScan, enabled: true, note: strings.lifetime },
+        { text: strings.basicRiskScore, enabled: true },
+        { text: `3 ${strings.fiveDayStorage}`, enabled: true, note: '100MB' }, // Adjusted to use strings.fiveDayStorage
+        { text: strings.basicDepositTracker, enabled: true, note: strings.readOnly },
+        { text: strings.basicMaintenance, enabled: true }
+      ],
+      cta: user?.plan_tier === 'free' ? strings.currentPlan : strings.signUpFree,
+      current: user?.plan_tier === 'free'
+    },
+    {
+      tier: 'lite',
+      name: strings.lite,
+      subtitle: strings.essentialProtection,
+      price: '฿390',
+      monthlyPrice: 390,
+      annualPrice: 3900,
+      color: 'from-ls-forest to-emerald-700',
+      badge: null,
+      features: [
+        { text: strings.everythingInFree, enabled: true, bold: true },
+        { text: strings.fiveScansPerMonth, enabled: true },
+        { text: strings.fullRiskReports, enabled: true },
+        { text: strings.emailNotifications, enabled: true },
+        { text: `3 ${strings.basicLetterTemplates}`, enabled: true }, // Adjusted
+        { text: `1GB ${strings.documentStorage}`, enabled: true }, // Adjusted
+        { text: strings.maintenanceTracker, enabled: true },
+        { text: strings.depositTracker, enabled: true }
+      ],
+      cta: user?.plan_tier === 'lite' ? strings.currentPlan : strings.startLite,
+      current: user?.plan_tier === 'lite'
+    },
+    {
+      tier: 'protect',
+      name: strings.protect,
+      subtitle: strings.comprehensiveProtection, // Changed from comprehensiveMonthly
+      price: '฿690',
+      monthlyPrice: 690,
+      annualPrice: 6900,
+      color: 'from-ls-gold to-amber-600',
+      badge: strings.mostPopular,
+      features: [
+        { text: strings.everythingInLite, enabled: true, bold: true },
+        { text: strings.unlimitedLeaseScans, enabled: true },
+        { text: strings.depositShieldAutomation, enabled: true },
+        { text: strings.rentPaymentAlerts, enabled: true },
+        { text: `7 ${strings.fullLetterTemplates}`, enabled: true }, // Adjusted
+        { text: `5GB ${strings.documentStorage}`, enabled: true }, // Adjusted
+        { text: strings.lineNotificationsEnabled, enabled: true },
+        { text: strings.automatedReminders, enabled: true }
+      ],
+      cta: user?.plan_tier === 'protect' ? strings.currentPlan : strings.startProtect,
+      current: user?.plan_tier === 'protect'
+    },
+    {
+      tier: 'secure',
+      name: strings.secure,
+      subtitle: strings.premiumProtection,
+      price: '฿1,290',
+      monthlyPrice: 1290,
+      annualPrice: 12900,
+      color: 'from-purple-600 to-purple-700',
+      features: [
+        { text: strings.everythingInProtect, enabled: true, bold: true },
+        { text: `10 ${strings.tenLetterTemplates}`, enabled: true }, // Adjusted
+        { text: strings.priorityCaseQueue, enabled: true },
+        { text: `20GB ${strings.documentArchive}`, enabled: true }, // Adjusted
+        { text: strings.advancedReminders, enabled: true },
+        { text: strings.premiumSupport, enabled: true }
+      ],
+      cta: user?.plan_tier === 'secure' ? strings.currentPlan : strings.startSecure,
+      current: user?.plan_tier === 'secure'
+    }
+  ];
 
   // Updated LINE QR Code URL
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46470_M_gainfriends_2dbarcodes_GW.png";
@@ -1131,7 +1293,7 @@ export default function Account() {
                   )}
                 </div>
                 <p className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                  {isFree ? strings.freePlanName : (PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly ? `฿${PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly}` : '—')}
+                  {isFree ? strings.free : (PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly ? `฿${PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly}` : '—')}
                 </p>
                 {!isFree && user?.billing_interval && (
                   <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
@@ -1149,13 +1311,13 @@ export default function Account() {
                 <div className="space-y-3">
                   <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
                     <p style={{ fontSize: '14px', color: colors.textPrimary, fontWeight: '600', marginBottom: '8px' }}>
-                      {strings.freeIncludes}
+                      {strings.free} {strings.freeIncludes}
                     </p>
                     <ul style={{ fontSize: '12px', color: colors.textPrimary, lineHeight: '1.5' }}>
-                      <li>• {strings.freeBenefit1}</li>
-                      <li>• {strings.freeBenefit2}</li>
-                      <li>• {strings.freeBenefit3}</li>
-                      <li>• {strings.freeBenefit4}</li>
+                      <li>• {strings.oneLeaseScan} ({strings.lifetime})</li>
+                      <li>• {strings.basicRiskScore}</li>
+                      <li>• 3 {strings.fiveDayStorage} (100MB)</li>
+                      <li>• {strings.basicDepositTracker} ({strings.readOnly})</li>
                     </ul>
                   </div>
                   <button 
@@ -1231,6 +1393,98 @@ export default function Account() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Plan Feature Cards */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {pricingPlans.map((plan) => (
+            <Card
+              key={plan.tier}
+              className={`relative border-none shadow-xl transition-all duration-300 ${
+                plan.current ? 'ring-4 ring-ls-gold' : ''
+              }`}
+              style={{ backgroundColor: colors.cardBg }}
+            >
+              {plan.badge && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                  <Badge className="bg-ls-gold text-ls-charcoal font-bold px-4 py-1 text-xs shadow-lg animate-pulse">
+                    ⭐ {plan.badge}
+                  </Badge>
+                </div>
+              )}
+              
+              <CardHeader className="text-center pb-3">
+                <div
+                  className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mx-auto mb-3 shadow-lg`}
+                >
+                  {plan.tier === 'free' && <Zap className="w-8 h-8 text-white" />}
+                  {plan.tier === 'lite' && <FileText className="w-8 h-8 text-white" />}
+                  {plan.tier === 'protect' && <Shield className="w-8 h-8 text-white" />}
+                  {plan.tier === 'secure' && <Crown className="w-8 h-8 text-white" />}
+                </div>
+                
+                <CardTitle className="text-xl font-bold mb-1" style={{ color: colors.textPrimary }}>
+                  {plan.name}
+                </CardTitle>
+                <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
+                  {plan.subtitle}
+                </p>
+                
+                <div className="mb-2">
+                  <p className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
+                    {billingInterval === 'annual' && plan.tier !== 'free' ? `฿${plan.annualPrice}` : plan.price}
+                  </p>
+                  {plan.tier !== 'free' && (
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>
+                      {billingInterval === 'annual' ? strings.perYear : strings.perMonth}
+                    </p>
+                  )}
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-2 pb-4">
+                {plan.features.map((feature, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-sm">
+                    <CheckCircle2 
+                      className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                        feature.enabled ? 'text-emerald-500' : 'text-slate-300'
+                      }`}
+                    />
+                    <span style={{ 
+                      color: feature.enabled ? colors.textPrimary : colors.textSecondary,
+                      fontWeight: feature.bold ? 'bold' : 'normal'
+                    }}>
+                      {feature.text}
+                      {feature.note && (
+                        <span className="text-xs ml-1" style={{ color: colors.textSecondary }}>
+                          ({feature.note})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+                
+                <Button
+                  onClick={() => handleSubscribe(plan.tier, billingInterval)}
+                  disabled={plan.current || (plan.tier === 'free' && user?.plan_tier === 'free') || subscribing}
+                  className={`w-full mt-4 font-bold ${
+                    plan.current
+                      ? 'bg-slate-400 cursor-not-allowed'
+                      : ''
+                  }`}
+                  style={{
+                    background: plan.current 
+                      ? undefined 
+                      : `linear-gradient(to right, ${plan.color.split(' ')[1].replace('from-', '')}, ${plan.color.split(' ')[2].replace('to-', '')})`,
+                    color: '#FFFFFF'
+                  }}
+                >
+                  {subscribing && !plan.current ? strings.processing : plan.cta}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
 
         {/* Landlord Information Card */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
@@ -1843,155 +2097,52 @@ export default function Account() {
           </CardContent>
         </Card>
 
-        {/* Data Privacy & Rights Section */}
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
-            <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+        {/* Privacy & Data Section */}
+        <Card className="border-none shadow-lg mb-6" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <Shield className="w-5 h-5 text-ls-forest" />
-              {strings.dataPrivacy}
+              {strings.privacyData}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <div style={{
-                padding: '16px',
-                backgroundColor: colors.fieldBg,
-                borderRadius: '12px',
-                borderLeft: '4px solid #0C3B2E'
-              }}>
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div className="flex items-center gap-3">
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#0C3B2E',
-                      borderRadius: '10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <FileText className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.privacyPolicy}</p>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.privacyDesc}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => window.open(createPageUrl("PrivacyPolicy"), '_blank')}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: '2px solid #0C3B2E',
-                      backgroundColor: colors.cardBg,
-                      color: '#0C3B2E',
-                      fontWeight: 'bold',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#0C3B2E';
-                      e.target.style.color = '#FFFFFF';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = colors.cardBg;
-                      e.target.style.color = '#0C3B2E';
-                    }}
-                  >
-                    {strings.viewPolicy}
-                  </button>
-                </div>
+          <CardContent className="p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
+              <div className="flex-1">
+                <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                  {strings.privacyPolicy}
+                </p>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  {strings.reviewOurPrivacy}
+                </p>
               </div>
+              <Button
+                variant="outline"
+                onClick={() => window.open('https://www.leaseshield.asia/legal#privacy', '_blank')}
+                className="w-full sm:w-auto"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                {strings.viewPolicy}
+              </Button>
+            </div>
 
-              <div style={{
-                padding: '16px',
-                backgroundColor: colors.fieldBg,
-                borderRadius: '12px',
-                borderLeft: '4px solid #C7A338'
-              }}>
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div className="flex items-center gap-3">
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#C7A338',
-                      borderRadius: '10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <Download className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.exportData}</p>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.exportDesc}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleExportData}
-                    disabled={exporting}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: '2px solid #C7A338',
-                      backgroundColor: exporting ? colors.fieldBg : colors.cardBg,
-                      color: exporting ? colors.textSecondary : '#C7A338',
-                      fontWeight: 'bold',
-                      fontSize: '14px',
-                      cursor: exporting ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!exporting) {
-                        e.target.style.backgroundColor = '#C7A338';
-                        e.target.style.color = '#FFFFFF';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!exporting) {
-                        e.target.style.backgroundColor = colors.cardBg;
-                        e.target.style.color = '#C7A338';
-                      }
-                    }}
-                  >
-                    {exporting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        {strings.exporting}
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-4 h-4" />
-                        {strings.export}
-                      </>
-                    )}
-                  </button>
-                </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
+              <div className="flex-1">
+                <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                  {strings.exportData}
+                </p>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  {strings.downloadAllData}
+                </p>
               </div>
-
-              <div style={{
-                padding: '16px',
-                backgroundColor: '#FEE2E2',
-                borderRadius: '12px',
-                borderLeft: '4px solid #DC2626'
-              }}>
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-red-900 mb-1">{strings.deleteAccount}</p>
-                    <p className="text-sm text-red-800 mb-2">
-                      {strings.deleteDesc} <strong>privacy@leaseshield.asia</strong>
-                    </p>
-                    <p className="text-xs text-red-700">
-                      {strings.deleteNote}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <Button
+                variant="outline"
+                onClick={handleExportData}
+                disabled={exportingData} // Changed from 'exporting'
+                className="w-full sm:w-auto"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {exportingData ? strings.exporting : strings.exportMyData} {/* Changed from 'export' */}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -2318,7 +2469,7 @@ export default function Account() {
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
                       {isFreeplan ? (
                         <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
-                          {strings.freePlanName}
+                          {strings.free}
                         </span>
                       ) : (
                         <>
