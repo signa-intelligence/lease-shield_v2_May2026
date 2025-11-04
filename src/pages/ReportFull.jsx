@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,14 +7,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, AlertTriangle, CheckCircle2, XCircle, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { FeatureGate } from "../components/shared/FeatureGate";
+import FeatureGate from "../components/shared/FeatureGate";
+import { jsPDF } from "jspdf";
 
 export default function ReportFull() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const scanId = urlParams.get('scanId');
-  const leaseIdFromUrl = urlParams.get('leaseId');
-  const [downloading, setDownloading] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -31,48 +30,75 @@ export default function ReportFull() {
   });
 
   const { data: lease } = useQuery({
-    queryKey: ['lease', scan?.lease_id || leaseIdFromUrl],
+    queryKey: ['lease', scan?.lease_id],
     queryFn: async () => {
       const leases = await base44.entities.Lease.list();
-      const targetLeaseId = scan?.lease_id || leaseIdFromUrl;
-      return leases.find(l => l.id === targetLeaseId);
+      return leases.find(l => l.id === scan.lease_id);
     },
-    enabled: !!(scan?.lease_id || leaseIdFromUrl),
+    enabled: !!scan?.lease_id,
   });
 
   const handleDownloadPDF = async () => {
-    if (!scan || !lease || downloading) return;
+    if (!scan || !lease) return;
     
-    // Extra safety check
-    if (!lease.id) {
-      alert('Unable to generate PDF: lease information is incomplete');
-      return;
-    }
-    
-    setDownloading(true);
     try {
-      const response = await base44.functions.invoke('generateLeaseReportPDF', {
-        scanId: scan.id,
-        leaseId: lease.id
-      });
-
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
+      const doc = new jsPDF();
       
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `lease-report-${lease.id.slice(0, 8)}.pdf`;
-      document.body.appendChild(a);
-      a.click();
+      // Title
+      doc.setFontSize(20);
+      doc.text('Lease Shield - Full Report', 20, 20);
       
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Property details
+      doc.setFontSize(12);
+      doc.text(`Property: ${lease.property_address || 'N/A'}`, 20, 35);
+      doc.text(`Risk Score: ${scan.risk_score}/100`, 20, 45);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 55);
+      
+      // Summary
+      doc.setFontSize(14);
+      doc.text('Summary', 20, 70);
+      doc.setFontSize(10);
+      const summaryLines = doc.splitTextToSize(scan.summary || 'No summary available', 170);
+      doc.text(summaryLines, 20, 80);
+      
+      let yPos = 80 + (summaryLines.length * 7) + 10;
+      
+      // Flags
+      if (scan.scan_full?.flags && scan.scan_full.flags.length > 0) {
+        doc.setFontSize(14);
+        doc.text('Issues Found', 20, yPos);
+        yPos += 10;
+        
+        scan.scan_full.flags.forEach((flag, idx) => {
+          if (yPos > 270) {
+            doc.addPage();
+            yPos = 20;
+          }
+          
+          doc.setFontSize(12);
+          doc.text(`${idx + 1}. ${flag.title || flag.category}`, 20, yPos);
+          yPos += 7;
+          
+          doc.setFontSize(10);
+          doc.text(`Severity: ${flag.severity}`, 25, yPos);
+          yPos += 7;
+          
+          if (flag.description) {
+            const descLines = doc.splitTextToSize(flag.description, 165);
+            doc.text(descLines, 25, yPos);
+            yPos += (descLines.length * 7) + 5;
+          }
+          
+          yPos += 5;
+        });
+      }
+      
+      // Download
+      doc.save(`lease-report-${lease.id?.slice(0, 8) || 'report'}.pdf`);
       
     } catch (error) {
-      console.error('PDF download failed:', error);
+      console.error('PDF generation failed:', error);
       alert('Failed to generate PDF. Please try again.');
-    } finally {
-      setDownloading(false);
     }
   };
 
@@ -138,13 +164,13 @@ export default function ReportFull() {
             <Button 
               className="bg-blue-600 hover:bg-blue-700"
               onClick={handleDownloadPDF}
-              disabled={downloading}
             >
               <Download className="w-4 h-4 mr-2" />
-              {downloading ? 'Generating...' : 'Download PDF'}
+              Download PDF
             </Button>
           </div>
 
+          {/* Risk Score Overview */}
           <Card className="mb-6 border-none shadow-xl bg-gradient-to-br from-white to-blue-50">
             <CardHeader>
               <CardTitle>Risk Assessment</CardTitle>
@@ -179,6 +205,7 @@ export default function ReportFull() {
             </CardContent>
           </Card>
 
+          {/* Detailed Findings */}
           {scan.scan_full?.flags && scan.scan_full.flags.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-slate-900 mb-4">Detailed Findings</h2>
@@ -227,6 +254,7 @@ export default function ReportFull() {
             </div>
           )}
 
+          {/* Next Steps */}
           <Card className="mt-6 border-none shadow-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white">
             <CardHeader>
               <CardTitle className="text-white">What's Next?</CardTitle>
