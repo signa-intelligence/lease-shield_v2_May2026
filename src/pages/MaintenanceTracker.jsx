@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Plus, Clock, CheckCircle2, AlertTriangle, Home, Zap, Droplet, Hammer, Thermometer, Bug, Package, Loader2 } from "lucide-react"; // Added Loader2
+import { Wrench, Plus, Clock, CheckCircle2, AlertTriangle, Home, Zap, Droplet, Hammer, Thermometer, Bug, Package, Loader2, Camera, X, Image as ImageIcon } from "lucide-react"; // Added Loader2, Camera, X, ImageIcon
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import {
@@ -27,10 +27,12 @@ export default function MaintenanceTracker() {
     category: 'other',
     priority: 'medium',
     property_address: '',
-    reported_date: new Date().toISOString().split('T')[0]
+    reported_date: new Date().toISOString().split('T')[0],
+    photo_urls: []
   });
-  const [formErrors, setFormErrors] = useState({}); // New state
-  const [submitting, setSubmitting] = useState(false); // New state
+  const [formErrors, setFormErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [filter, setFilter] = useState('all');
 
   const queryClient = useQueryClient();
@@ -100,6 +102,48 @@ export default function MaintenanceTracker() {
     return Object.keys(errors).length === 0;
   };
 
+  const handlePhotoUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setUploadingPhotos(true);
+    // Clear previous photo errors
+    setFormErrors(prev => ({...prev, photos: undefined})); 
+
+    try {
+      const uploadPromises = files.map(file => 
+        base44.integrations.Core.UploadFile({ file })
+      );
+      
+      const uploadResults = await Promise.all(uploadPromises);
+      const photoUrls = uploadResults.map(result => result.file_url);
+      
+      setFormData(prev => ({
+        ...prev,
+        photo_urls: [...prev.photo_urls, ...photoUrls]
+      }));
+    } catch (error) {
+      console.error('Photo upload failed:', error);
+      setFormErrors(prev => ({
+        ...prev,
+        photos: language === 'th' 
+          ? 'ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองอีกครั้ง' 
+          : 'Failed to upload photos. Please try again.'
+      }));
+    } finally {
+      setUploadingPhotos(false);
+      // Reset the file input to allow uploading the same file again if needed
+      e.target.value = '';
+    }
+  };
+
+  const handleRemovePhoto = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      photo_urls: prev.photo_urls.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -110,7 +154,7 @@ export default function MaintenanceTracker() {
     setSubmitting(true);
     
     try {
-      await createRequestMutation.mutateAsync({
+      const requestData = {
         issue_title: formData.issue_title.trim(),
         description: formData.description.trim(),
         category: formData.category,
@@ -118,7 +162,14 @@ export default function MaintenanceTracker() {
         property_address: formData.property_address.trim() || undefined,
         reported_date: formData.reported_date,
         status: 'reported'
-      });
+      };
+
+      // Only include photo_urls if there are photos
+      if (formData.photo_urls.length > 0) {
+        requestData.photo_urls = formData.photo_urls;
+      }
+
+      await createRequestMutation.mutateAsync(requestData);
       
       // On success actions
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
@@ -129,9 +180,10 @@ export default function MaintenanceTracker() {
         category: 'other',
         priority: 'medium',
         property_address: '',
-        reported_date: new Date().toISOString().split('T')[0]
+        reported_date: new Date().toISOString().split('T')[0],
+        photo_urls: []
       });
-      setFormErrors({}); // Clear form errors
+      setFormErrors({});
     } catch (error) {
       console.error('Failed to create request:', error);
       setFormErrors({ 
@@ -151,7 +203,7 @@ export default function MaintenanceTracker() {
       reportIssue: "Report Issue",
       reportFirst: "Report First Request",
       dialogTitle: "New Maintenance Request",
-      reportNewIssue: "New Maintenance Request", // New property
+      reportNewIssue: "New Maintenance Request",
       issueTitle: "Issue Title",
       description: "Description",
       category: "Category",
@@ -177,7 +229,7 @@ export default function MaintenanceTracker() {
         completed: "Completed",
         rejected: "Rejected"
       },
-      categories: { // New
+      categories: {
         plumbing: "Plumbing",
         electrical: "Electrical",
         structural: "Structural",
@@ -186,12 +238,19 @@ export default function MaintenanceTracker() {
         pest: "Pest",
         other: "Other"
       },
-      priorities: { // New
+      priorities: {
         low: "Low",
         medium: "Medium",
         high: "High",
         urgent: "Urgent"
-      }
+      },
+      addPhotos: "Add Photos",
+      takePhoto: "Take Photo",
+      uploadPhoto: "Upload Photo",
+      photosOptional: "Photos (Optional)",
+      photosHelp: "Add photos to document the issue",
+      uploading: "Uploading...",
+      photos: "photos"
     },
     th: {
       title: "ติดตามการซ่อมบำรุง",
@@ -199,7 +258,7 @@ export default function MaintenanceTracker() {
       reportIssue: "แจ้งปัญหา",
       reportFirst: "แจ้งปัญหาแรก",
       dialogTitle: "คำขอซ่อมบำรุงใหม่",
-      reportNewIssue: "คำขอซ่อมบำรุงใหม่", // New property
+      reportNewIssue: "คำขอซ่อมบำรุงใหม่",
       issueTitle: "หัวข้อปัญหา",
       description: "รายละเอียด",
       category: "หมวดหมู่",
@@ -225,7 +284,7 @@ export default function MaintenanceTracker() {
         completed: "เสร็จสิ้น",
         rejected: "ถูกปฏิเสธ"
       },
-      categories: { // New
+      categories: {
         plumbing: "ประปา",
         electrical: "ไฟฟ้า",
         structural: "โครงสร้าง",
@@ -234,12 +293,19 @@ export default function MaintenanceTracker() {
         pest: "สัตว์รบกวน",
         other: "อื่น ๆ"
       },
-      priorities: { // New
+      priorities: {
         low: "ต่ำ",
         medium: "ปานกลาง",
         high: "สูง",
         urgent: "เร่งด่วน"
-      }
+      },
+      addPhotos: "เพิ่มรูปภาพ",
+      takePhoto: "ถ่ายรูป",
+      uploadPhoto: "อัปโหลดรูป",
+      photosOptional: "รูปภาพ (ไม่บังคับ)",
+      photosHelp: "เพิ่มรูปภาพเพื่อบันทึกปัญหา",
+      uploading: "กำลังอัปโหลด...",
+      photos: "รูป"
     }
   };
 
@@ -308,6 +374,15 @@ export default function MaintenanceTracker() {
               setShowAddDialog(open);
               if (!open) {
                 setFormErrors({});
+                setFormData({
+                  issue_title: '',
+                  description: '',
+                  category: 'other',
+                  priority: 'medium',
+                  property_address: '',
+                  reported_date: new Date().toISOString().split('T')[0],
+                  photo_urls: []
+                });
               }
             }}>
               <DialogTrigger asChild>
@@ -513,19 +588,142 @@ export default function MaintenanceTracker() {
                     )}
                   </div>
 
+                  {/* Photo Upload Section */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                      {strings.photosOptional}
+                    </label>
+                    <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
+                      {strings.photosHelp}
+                    </p>
+
+                    {/* Photo Preview Grid */}
+                    {formData.photo_urls.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        {formData.photo_urls.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url}
+                              alt={`Photo ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                              style={{ border: `1px solid ${colors.borderColor}` }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePhoto(index)}
+                              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upload Buttons */}
+                    <div className="flex gap-2">
+                      {/* Take Photo Button */}
+                      <label
+                        className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg cursor-pointer transition-all text-center"
+                        style={{
+                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                          border: `2px dashed ${colors.borderColor}`,
+                          color: colors.textPrimary
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#0C3B2E';
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#ECEFED';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = colors.borderColor;
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          multiple
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                          disabled={uploadingPhotos}
+                        />
+                        {uploadingPhotos ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-sm font-medium">{strings.uploading}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="w-4 h-4" />
+                            <span className="text-sm font-medium">{strings.takePhoto}</span>
+                          </>
+                        )}
+                      </label>
+
+                      {/* Upload Photo Button */}
+                      <label
+                        className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg cursor-pointer transition-all text-center"
+                        style={{
+                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                          border: `2px dashed ${colors.borderColor}`,
+                          color: colors.textPrimary
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#0C3B2E';
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#ECEFED';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = colors.borderColor;
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                          disabled={uploadingPhotos}
+                        />
+                        {uploadingPhotos ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-sm font-medium">{strings.uploading}</span>
+                          </>
+                        ) : (
+                          <>
+                            <ImageIcon className="w-4 h-4" />
+                            <span className="text-sm font-medium">{strings.uploadPhoto}</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+
+                    {formData.photo_urls.length > 0 && (
+                      <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                        {formData.photo_urls.length} {strings.photos}
+                      </p>
+                    )}
+
+                    {formErrors.photos && (
+                      <p className="text-xs text-red-600 mt-1">{formErrors.photos}</p>
+                    )}
+                  </div>
+
                   <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || uploadingPhotos}
                     style={{
                       width: '100%',
-                      backgroundColor: submitting ? '#9CA3AF' : '#0C3B2E',
+                      backgroundColor: (submitting || uploadingPhotos) ? '#9CA3AF' : '#0C3B2E',
                       color: '#FFFFFF',
                       padding: '12px',
                       borderRadius: '8px',
                       fontWeight: 'bold',
                       border: 'none',
-                      cursor: submitting ? 'not-allowed' : 'pointer',
-                      opacity: submitting ? 0.6 : 1,
+                      cursor: (submitting || uploadingPhotos) ? 'not-allowed' : 'pointer',
+                      opacity: (submitting || uploadingPhotos) ? 0.6 : 1,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -652,6 +850,21 @@ export default function MaintenanceTracker() {
                   {request.description && (
                     <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>{request.description}</p>
                   )}
+
+                  {request.photo_urls && request.photo_urls.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      {request.photo_urls.map((url, index) => (
+                        <img
+                          key={index}
+                          src={url}
+                          alt={`Issue Photo ${index + 1}`}
+                          className="w-full h-20 object-cover rounded-md"
+                          style={{ border: `1px solid ${colors.borderColor}` }}
+                        />
+                      ))}
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between text-xs mb-3" style={{ color: colors.textSecondary }}>
                     <span>
                       <Clock className="w-3 h-3 inline mr-1" />
