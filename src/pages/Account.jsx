@@ -58,8 +58,9 @@ const PLAN_DETAILS = [
     tagline: 'Essential Protection',
     description: 'Core prevention tools for individuals',
     benefits: [
+      'Everything in Free',
       '5 Lease Scans per month',
-      'Full AI Risk Reports',
+      'Full Risk Reports', // Changed from 'Full AI Risk Reports'
       'Email Notifications',
       '3 Basic Letter Templates',
       '1GB Document Storage',
@@ -111,11 +112,11 @@ const PLAN_DETAILS = [
       'Everything in Protect',
       '10 Letter Templates',
       'Priority Case Queue',
-      'Priority AI Scanning',
+      'Priority Scanning', // Changed from 'Priority AI Scanning'
       '20GB Document Storage',
       'Advanced Reminders',
       'Premium Support',
-      'Legal Document Archive'
+      'Document Archive' // Changed from 'Legal Document Archive'
     ],
     bgColor: '#1A1D1F',
     icon: Crown
@@ -1877,8 +1878,10 @@ export default function Account() {
                       <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.privacyDesc}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => window.open(createPageUrl("PrivacyPolicy"), '_blank')}
+                  <a
+                    href="https://www.leaseshield.asia/legal#privacy" // Changed to direct URL
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                       padding: '8px 16px',
                       borderRadius: '8px',
@@ -1887,8 +1890,10 @@ export default function Account() {
                       color: '#0C3B2E',
                       fontWeight: 'bold',
                       fontSize: '14px',
+                      textDecoration: 'none', // Added for anchor tag
                       cursor: 'pointer',
-                      transition: 'all 0.2s'
+                      transition: 'all 0.2s',
+                      display: 'inline-block' // Added to make it behave like a block for styling
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#0C3B2E';
@@ -1900,7 +1905,7 @@ export default function Account() {
                     }}
                   >
                     {strings.viewPolicy}
-                  </button>
+                  </a>
                 </div>
               </div>
 
@@ -2240,7 +2245,7 @@ export default function Account() {
               const isCurrentPlan = currentPlanTier === plan.key;
               const isFreeplan = plan.key === 'free';
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
-              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly);
+              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.priceMonthly === 0 ? '' : plan.intervalMonthly); // Adjusted for free plan
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
               
               return (
@@ -2367,16 +2372,24 @@ export default function Account() {
                             color: colors.textPrimary,
                             lineHeight: '1.4'
                           }}>
-                            <CheckCircle2 style={{ 
-                              width: '18px', 
-                              height: '18px', 
-                              color: '#0C3B2E',
-                              flexShrink: 0,
-                              marginTop: '1px'
-                            }} />
-                            <span style={{ fontWeight: isEverythingBenefit ? 'bold' : 'normal' }}>
-                              {benefit}
-                            </span>
+                            {isEverythingBenefit ? (
+                              <span style={{ fontWeight: 'bold', width: '100%' }}>
+                                {benefit}
+                              </span>
+                            ) : (
+                              <>
+                                <CheckCircle2 style={{ 
+                                  width: '18px', 
+                                  height: '18px', 
+                                  color: '#0C3B2E',
+                                  flexShrink: 0,
+                                  marginTop: '1px'
+                                }} />
+                                <span>
+                                  {benefit}
+                                </span>
+                              </>
+                            )}
                           </li>
                         );
                       })}
