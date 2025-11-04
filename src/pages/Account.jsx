@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1377,7 +1376,7 @@ export default function Account() {
                     {strings.scanQR}
                   </p>
                   <img 
-                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9271b4543_M_gainfriends_2dbarcodes_GW.png"
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/49e0d2da2_line-oa-qr-code-B_eMlFo6.png"
                     alt="LINE OA QR Code"
                     className="mx-auto"
                     style={{
@@ -1633,7 +1632,7 @@ export default function Account() {
                     {strings.scanQR}
                   </p>
                   <img 
-                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9271b4543_M_gainfriends_2dbarcodes_GW.png"
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/49e0d2da2_line-oa-qr-code-B_eMlFo6.png"
                     alt="LINE OA QR Code"
                     className="mx-auto"
                     style={{
