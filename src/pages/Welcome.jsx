@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -69,7 +70,9 @@ export default function Welcome() {
       feature4Title: "Maintenance Tracker",
       feature4Desc: "Log all repair requests and communications with your landlord",
       getStarted: "Get Started",
-      learnMore: "Learn More"
+      learnMore: "Learn More",
+      preventTitle: "Prevent Problems",
+      preventDesc: "Automated lease analysis identifies risks before signing",
     },
     th: {
       welcome: "ยินดีต้อนรับสู่ Lease Shield",
@@ -85,7 +88,9 @@ export default function Welcome() {
       feature4Title: "ตัวติดตามการซ่อมบำรุง",
       feature4Desc: "บันทึกคำขอซ่อมแซมและการสื่อสารกับเจ้าของบ้านทั้งหมด",
       getStarted: "เริ่มต้นใช้งาน",
-      learnMore: "เรียนรู้เพิ่มเติม"
+      learnMore: "เรียนรู้เพิ่มเติม",
+      preventTitle: "ป้องกันปัญหา",
+      preventDesc: "การวิเคราะห์สัญญาเช่าอัตโนมัติระบุความเสี่ยงก่อนลงนาม",
     }
   };
 
