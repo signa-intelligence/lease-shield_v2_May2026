@@ -1400,6 +1400,7 @@ export default function Account() {
                   </p>
                 </div>
               )}
+            </div>
 
             <div className="mb-4 text-center">
               <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.orManualEntry}</p>
@@ -1578,7 +1579,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: '#F59E0B',
                         color: '#FFFFFF',
-                        border: '2px solid #F59E0B',
+                        border: '2px solid '#F59E0B'',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -1606,7 +1607,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                         color: '#F59E0B',
-                        border: '2px solid #F59E0B',
+                        border: '2px solid '#F59E0B'',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
