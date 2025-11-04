@@ -388,7 +388,6 @@ export default function Account() {
       phone: "Phone Number",
       phonePlaceholder: "+66 XX XXX XXXX",
       country: "Country",
-      countryPlaceholder: "Thailand",
       language: "Language",
       theme: "Theme",
       lightMode: "Light Mode",
@@ -609,6 +608,33 @@ export default function Account() {
       hideQR: "ซ่อน QR Code",
       scanQR: "สแกน QR Code นี้ด้วยแอป LINE"
     }
+  };
+
+  const strings = t[language];
+  const currentPlanTier = user?.plan_tier || 'free';
+  const isFree = currentPlanTier === 'free';
+  const language = user?.language || 'en';
+  const currentTheme = user?.theme || 'light';
+  const isDarkMode = currentTheme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    inputBg: '#353A3D',
+    fieldBg: '#353A3D',
+    hoverBg: '#3A3D40'
+  } : {
+    bg: '#ECEFED',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+    inputBg: '#FFFFFF',
+    fieldBg: '#ECEFED',
+    hoverBg: '#F8FAFC'
   };
 
   const strings = t[language];
@@ -2351,8 +2377,10 @@ export default function Account() {
                         </>
                       ) : (
                         <>
-                          <div style={{ fontSize: '36px', fontWeight: 'bold' }}>{strings.freePlanName}</div>
-                          <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px' }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                            <span style={{ fontSize: '36px', fontWeight: 'bold' }}>{strings.freePlanName}</span>
+                          </div>
+                          <p style={{ fontSize: '12px', opacity: 0.8, margin: '4px 0 0 0', minHeight: '16px' }}>
                             {strings.noCreditCard}
                           </p>
                         </>
