@@ -33,7 +33,8 @@ export default function UploadScanPage() {
 
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.list('-created_date'),
+    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
+    enabled: !!user,
     initialData: [],
   });
 
