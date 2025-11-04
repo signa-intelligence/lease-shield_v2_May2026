@@ -2250,7 +2250,7 @@ export default function Account() {
               const Icon = plan.icon;
               const isCurrentPlan = user?.plan_tier === plan.key;
               const price = billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
-              const interval = billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly;
+              const interval = billingInterval === 'annual' ? plan.intervalAnnual : plan.priceMonthly === 0 ? '' : plan.intervalMonthly; // Adjust interval for free plan
               const savings = billingInterval === 'annual' ? plan.savingsAnnual : 0;
               const effectiveMonthlyPrice = billingInterval === 'annual' && plan.priceAnnual > 0 ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
               
@@ -2322,39 +2322,42 @@ export default function Account() {
                     backgroundColor: plan.bgColor,
                     padding: '24px',
                     color: '#FFFFFF',
-                    minHeight: '180px',
+                    height: '200px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between'
                   }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                    <div style={{ height: '80px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                         <Icon className="w-8 h-8" />
-                        <h3 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0 }}>{plan.label}</h3>
+                        <h3 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0, lineHeight: '1' }}>{plan.label}</h3>
                       </div>
-                      <p style={{ fontSize: '14px', opacity: 0.9, margin: 0 }}>{plan.tagline}</p>
+                      <p style={{ fontSize: '14px', opacity: 0.9, margin: 0, lineHeight: '1.4' }}>{plan.tagline}</p>
                     </div>
                     
-                    <div style={{ marginTop: '16px' }}>
+                    <div style={{ height: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                       {plan.key !== 'free' ? (
                         <>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                            <span style={{ fontSize: '36px', fontWeight: 'bold' }}>฿{price.toLocaleString()}</span>
-                            <span style={{ fontSize: '16px', opacity: 0.9 }}>{interval}</span>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '36px', fontWeight: 'bold', lineHeight: '1' }}>฿{price.toLocaleString()}</span>
+                            <span style={{ fontSize: '16px', opacity: 0.9, lineHeight: '1' }}>{interval}</span>
                           </div>
-                          {savings > 0 && (
-                            <p style={{ fontSize: '12px', opacity: 0.8, margin: '4px 0 0 0' }}>
+                          {savings > 0 ? (
+                            <p style={{ fontSize: '12px', opacity: 0.8, margin: 0, lineHeight: '1.2' }}>
                               ฿{effectiveMonthlyPrice}{strings.perMonth} • {strings.save} ฿{savings.toLocaleString()}
+                            </p>
+                          ) : (
+                            <p style={{ fontSize: '12px', opacity: 0, margin: 0, lineHeight: '1.2', visibility: 'hidden' }}>
+                              placeholder
                             </p>
                           )}
                         </>
                       ) : (
                         <>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                            <span style={{ fontSize: '36px', fontWeight: 'bold' }}>{strings.freePlanName}</span>
-                            <span style={{ fontSize: '16px', opacity: 0, visibility: 'hidden' }}>/month</span>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '36px', fontWeight: 'bold', lineHeight: '1' }}>{strings.freePlanName}</span>
                           </div>
-                          <p style={{ fontSize: '12px', opacity: 0.8, margin: '4px 0 0 0', minHeight: '16px' }}>
+                          <p style={{ fontSize: '12px', opacity: 0.8, margin: 0, lineHeight: '1.2' }}>
                             {strings.noCreditCard}
                           </p>
                         </>
