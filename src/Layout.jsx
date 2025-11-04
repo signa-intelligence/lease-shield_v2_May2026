@@ -1,5 +1,6 @@
+
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -7,6 +8,7 @@ import LanguageToggle from "./components/shared/LanguageToggle";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -189,45 +191,44 @@ export default function Layout({ children, currentPageName }) {
           </div>
           <div className="flex items-center gap-3">
             <LanguageToggle />
-            <Link to={accountRoute}>
-              <button
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  backgroundColor: isAccountActive ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            <button
+              onClick={() => navigate(accountRoute)}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: isAccountActive ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+              onMouseEnter={(e) => {
+                if (!isAccountActive) {
+                  e.currentTarget.style.backgroundColor = '#0C3B2E';
+                  const icon = e.currentTarget.querySelector('svg');
+                  if (icon) icon.style.color = '#FFFFFF';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isAccountActive) {
+                  e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
+                  const icon = e.currentTarget.querySelector('svg');
+                  if (icon) icon.style.color = '#0C3B2E';
+                }
+              }}
+            >
+              <User 
+                className="w-5 h-5" 
+                style={{ 
+                  color: isAccountActive ? '#FFFFFF' : '#0C3B2E',
+                  transition: 'color 0.2s'
                 }}
-                onMouseEnter={(e) => {
-                  if (!isAccountActive) {
-                    e.currentTarget.style.backgroundColor = '#0C3B2E';
-                    const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = '#FFFFFF';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isAccountActive) {
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
-                    const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = '#0C3B2E';
-                  }
-                }}
-              >
-                <User 
-                  className="w-5 h-5" 
-                  style={{ 
-                    color: isAccountActive ? '#FFFFFF' : '#0C3B2E',
-                    transition: 'color 0.2s'
-                  }}
-                />
-              </button>
-            </Link>
+              />
+            </button>
           </div>
         </div>
       </div>
