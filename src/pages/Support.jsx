@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Clock, CheckCircle2, HelpCircle, Upload, Shield, FileText, CreditCard, Wrench } from "lucide-react";
-import { format } = "date-fns";
+import { format } from "date-fns";
 
 const STATUS_CONFIG = {
   open: { label: 'Open', color: 'bg-blue-100 text-blue-800', icon: Clock },
