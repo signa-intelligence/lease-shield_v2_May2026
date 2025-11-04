@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -605,6 +606,9 @@ export default function Account() {
   const strings = t[language];
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
+
+  // Updated LINE QR Code URL
+  const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46470_M_gainfriends_2dbarcodes_GW.png";
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
@@ -1376,7 +1380,7 @@ export default function Account() {
                     {strings.scanQR}
                   </p>
                   <img 
-                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/49e0d2da2_line-oa-qr-code-B_eMlFo6.png"
+                    src={lineQRCodeUrl}
                     alt="LINE OA QR Code"
                     className="mx-auto"
                     style={{
@@ -1632,7 +1636,7 @@ export default function Account() {
                     {strings.scanQR}
                   </p>
                   <img 
-                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/49e0d2da2_line-oa-qr-code-B_eMlFo6.png"
+                    src={lineQRCodeUrl}
                     alt="LINE OA QR Code"
                     className="mx-auto"
                     style={{
