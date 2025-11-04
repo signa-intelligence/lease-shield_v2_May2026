@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -83,7 +84,7 @@ export default function NotificationSettings({ user, onUpdate }) {
   };
 
   const handleLineConnect = () => {
-    const lineOfficialAccountId = '@071vchfv';
+    const lineOfficialAccountId = '@leaseshield'; // Changed from '@071vchfv' to '@leaseshield'
     const addFriendUrl = `https://line.me/R/ti/p/${lineOfficialAccountId}`;
     window.open(addFriendUrl, '_blank');
   };
