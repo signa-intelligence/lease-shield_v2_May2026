@@ -522,7 +522,9 @@ export default function Account() {
       privacyData: "Privacy & Data",
       reviewOurPrivacy: "Review our privacy policy to understand how your data is handled.",
       downloadAllData: "Download all your personal data (PDPA compliant).",
-      exportMyData: "Export My Data"
+      exportMyData: "Export My Data",
+      maintenanceTracker: "Maintenance Tracker",
+      depositTracker: "Deposit Tracker"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -677,7 +679,9 @@ export default function Account() {
       privacyData: "ความเป็นส่วนตัวและข้อมูล",
       reviewOurPrivacy: "ตรวจสอบนโยบายความเป็นส่วนตัวของเราเพื่อทำความเข้าใจวิธีการจัดการข้อมูลของคุณ",
       downloadAllData: "ดาวน์โหลดข้อมูลส่วนบุคคลทั้งหมดของคุณ (เป็นไปตาม PDPA)",
-      exportMyData: "ส่งออกข้อมูลของฉัน"
+      exportMyData: "ส่งออกข้อมูลของฉัน",
+      maintenanceTracker: "เครื่องมือติดตามการบำรุงรักษา",
+      depositTracker: "เครื่องมือติดตามเงินมัดจำ"
     }
   };
 
