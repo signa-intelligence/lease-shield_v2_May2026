@@ -60,6 +60,27 @@ Deno.serve(async (req) => {
     };
 
     switch (notificationType) {
+      case 'first_add':
+        // Message sent when user first adds @leaseshield bot (before account connection)
+        messageText = `🎉 Welcome to Lease Shield / ยินดีต้อนรับสู่ Lease Shield!
+
+✅ Prevent rental problems before they happen
+✅ ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น
+
+📱 What we offer / บริการของเรา:
+• Lease analysis / วิเคราะห์สัญญาเช่า
+• Deposit protection & reminders / ปกป้องเงินมัดจำและแจ้งเตือน
+• Maintenance tracker / ติดตามการซ่อมบำรุง
+• Evidence vault / ที่เก็บหลักฐาน
+
+🔗 Already have an account? / มีบัญชีอยู่แล้ว?
+Send: connect your@email.com
+ส่ง: connect อีเมลของคุณ
+
+💡 Type "help" anytime for commands
+   พิมพ์ "help" เพื่อดูคำสั่ง`;
+        break;
+
       case '30day':
         messageText = language === 'th' ?
           `🔔 แจ้งเตือน Lease Shield\n\nถึงกำหนดคืนเงินมัดจำในอีก 30 วัน\n\n` +
