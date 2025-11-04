@@ -2284,19 +2284,22 @@ export default function Account() {
                   {plan.popular && (
                     <div style={{
                       position: 'absolute',
-                      top: '12px',
-                      right: '-32px',
-                      backgroundColor: '#C7A338',
-                      color: '#1A1D1F',
-                      padding: '6px 40px',
+                      top: '-12px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      backgroundColor: '#1A1D1F',
+                      color: '#C7A338',
+                      padding: '8px 24px',
                       fontSize: '11px',
                       fontWeight: 'bold',
-                      transform: 'rotate(45deg)',
-                      boxShadow: '0 4px 8px rgba(199, 163, 56, 0.4)',
+                      border: '3px solid #1A1D1F',
+                      borderRadius: '24px',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
                       zIndex: 10,
-                      letterSpacing: '0.5px'
+                      letterSpacing: '1px',
+                      whiteSpace: 'nowrap'
                     }}>
-                      ⭐ {strings.mostPopular} ⭐
+                      ★ {strings.mostPopular} ★
                     </div>
                   )}
                   
