@@ -1,6 +1,5 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -42,8 +41,6 @@ export default function Layout({ children, currentPageName }) {
       deposit: "Deposit",
       evidence: "Evidence",
       admin: "Admin",
-      disclaimer: "We are not a law firm and do not provide legal advice.",
-      privacyPolicy: "Privacy Policy"
     },
     th: {
       appName: "ลีสชีลด์",
@@ -53,192 +50,91 @@ export default function Layout({ children, currentPageName }) {
       deposit: "เงินมัดจำ",
       evidence: "หลักฐาน",
       admin: "แอดมิน",
-      disclaimer: "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย",
-      privacyPolicy: "นโยบายความเป็นส่วนตัว"
     }
   };
 
   const strings = t[language] || t.en;
   
-  // Safe route creation helper with extensive error handling
-  const safeCreatePageUrl = React.useCallback((pageName) => {
-    try {
-      if (!pageName || typeof pageName !== 'string' || pageName.trim() === '') {
-        console.warn('Invalid page name provided to safeCreatePageUrl:', pageName);
-        return '/';
-      }
-      
-      // Attempt to create the URL
-      const url = createPageUrl(pageName);
-      
-      // Validate the result
-      if (!url || typeof url !== 'string' || url.trim() === '') {
-        console.warn('createPageUrl returned invalid value for:', pageName, 'Result:', url);
-        return '/';
-      }
-      
-      return url;
-    } catch (error) {
-      console.error('Error in safeCreatePageUrl for page:', pageName, 'Error:', error);
-      return '/';
-    }
-  }, []);
+  const navTabs = [
+    {
+      key: "home",
+      label: strings.home,
+      route: "/Dashboard",
+      icon: Home,
+    },
+    {
+      key: "scan",
+      label: strings.scan,
+      route: "/UploadScan",
+      icon: Upload,
+    },
+    {
+      key: "maintenance",
+      label: strings.repairs,
+      route: "/MaintenanceTracker",
+      icon: Wrench,
+    },
+    {
+      key: "deposit",
+      label: strings.deposit,
+      route: "/DepositTracker",
+      icon: Shield,
+    },
+    {
+      key: "docs",
+      label: strings.evidence,
+      route: "/DocumentVault",
+      icon: FileText,
+    },
+  ];
 
-  // Pre-compute all routes with safety checks - memoized to prevent recreation
-  const routes = React.useMemo(() => {
-    const routeMap = {
-      dashboard: safeCreatePageUrl("Dashboard"),
-      uploadScan: safeCreatePageUrl("UploadScan"),
-      maintenance: safeCreatePageUrl("MaintenanceTracker"),
-      deposit: safeCreatePageUrl("DepositTracker"),
-      documents: safeCreatePageUrl("DocumentVault"),
-      admin: safeCreatePageUrl("AdminConsole"),
-      account: safeCreatePageUrl("Account")
-    };
-    
-    // Validate all routes
-    Object.entries(routeMap).forEach(([key, value]) => {
-      if (!value || value === '/') {
-        console.warn(`Route ${key} is invalid:`, value);
-      }
+  if (isAdmin) {
+    navTabs.push({
+      key: "admin",
+      label: strings.admin,
+      route: "/AdminConsole",
+      icon: Settings,
     });
-    
-    return routeMap;
-  }, [safeCreatePageUrl]);
-  
-  // Build navigation tabs with pre-computed routes
-  const navTabs = React.useMemo(() => {
-    const tabs = [
-      {
-        key: "home",
-        label: strings.home,
-        route: routes.dashboard,
-        icon: Home,
-      },
-      {
-        key: "scan",
-        label: strings.scan,
-        route: routes.uploadScan,
-        icon: Upload,
-      },
-      {
-        key: "maintenance",
-        label: strings.repairs,
-        route: routes.maintenance,
-        icon: Wrench,
-      },
-      {
-        key: "deposit",
-        label: strings.deposit,
-        route: routes.deposit,
-        icon: Shield,
-      },
-      {
-        key: "docs",
-        label: strings.evidence,
-        route: routes.documents,
-        icon: FileText,
-      },
-    ];
+  }
 
-    if (isAdmin) {
-      tabs.push({
-        key: "admin",
-        label: strings.admin,
-        route: routes.admin,
-        icon: Settings,
-      });
-    }
+  const isActiveTab = (route) => {
+    if (!route || !location?.pathname) return false;
+    return location.pathname === route;
+  };
 
-    // Filter out any tabs with invalid routes and log warnings
-    return tabs.filter(tab => {
-      const isValid = tab.route && typeof tab.route === 'string' && tab.route.length > 0 && tab.route !== '/';
-      if (!isValid) {
-        console.warn('Filtering out invalid tab:', tab.key, 'Route:', tab.route);
-      }
-      return isValid;
-    });
-  }, [isAdmin, strings, routes]);
-
-  const isActiveTab = React.useCallback((route) => {
-    // Comprehensive null/undefined checks
-    if (!route || typeof route !== 'string' || route.trim() === '') {
-      return false;
-    }
-    if (!location || !location.pathname || typeof location.pathname !== 'string') {
-      return false;
-    }
-    
-    try {
-      return location.pathname === route;
-    } catch (error) {
-      console.error('Error in isActiveTab:', error);
-      return false;
-    }
-  }, [location]);
+  const accountRoute = "/Account";
+  const isAccountActive = isActiveTab(accountRoute);
 
   // Theme colors
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
-    bgGradientStart: '#0f1214',
-    bgGradientEnd: '#1A1D1F',
-    cardBg: '#2A2D30',
-    borderColor: '#3A3D40',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
     topBarBg: '#1A1D1F',
     bottomTabBg: '#1A1D1F',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
     hoverBg: '#3A3D40'
   } : {
     bg: '#ECEFED',
-    bgGradientStart: '#ECEFED',
-    bgGradientEnd: '#ECEFED',
-    cardBg: '#FFFFFF',
-    borderColor: '#ECEFED',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
     topBarBg: '#FFFFFF',
     bottomTabBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#ECEFED',
     hoverBg: '#ECEFED'
   };
 
-  // Safe account route with fallback
-  const accountRoute = routes.account && routes.account !== '/' ? routes.account : '/';
-  const isAccountActive = isActiveTab(accountRoute);
-
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bg }}>
-      {/* PWA Meta Tags */}
-      <helmet>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content={isDarkMode ? '#1A1D1F' : '#0C3B2E'} />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="LeaseShield" />
-        <link rel="apple-touch-icon" href="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" />
-      </helmet>
-
       <style>{`
         :root {
           --ls-forest: #0C3B2E;
           --ls-gold: #C7A338;
-          --ls-charcoal: #1A1D1F;
-          --ls-stone: #ECEFED;
-          --ls-white: #FFFFFF;
-          
-          --primary: 166 60% 15%;
-          --primary-foreground: 0 0% 100%;
-          --accent: 45 55% 50%;
-          --accent-foreground: 0 0% 100%;
         }
         
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           background-color: ${colors.bg};
-        }
-        
-        h1, h2, h3, h4, h5, h6 {
-          font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
         }
         
         .bottom-tabs {
@@ -260,33 +156,6 @@ export default function Layout({ children, currentPageName }) {
           }
         }
 
-        @media (display-mode: standalone) {
-          body {
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-          }
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            box-shadow: 0 6px 12px rgba(199, 163, 56, 0.4), 0 0 0 4px rgba(199, 163, 56, 0.1);
-          }
-          50% {
-            box-shadow: 0 6px 12px rgba(199, 163, 56, 0.6), 0 0 0 6px rgba(199, 163, 56, 0.2);
-          }
-        }
-
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-          20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-
-        .animate-shake {
-          animation: shake 0.5s ease-in-out;
-        }
-
         * {
           transition: background-color 0.2s ease, border-color 0.2s ease;
         }
@@ -294,25 +163,6 @@ export default function Layout({ children, currentPageName }) {
         *:focus-visible {
           outline: 2px solid var(--ls-gold);
           outline-offset: 2px;
-        }
-
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-          background: ${isDarkMode ? '#2A2D30' : '#F3F4F6'};
-          border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-          background: ${isDarkMode ? '#4B5563' : '#D1D5DB'};
-          border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-          background: ${isDarkMode ? '#6B7280' : '#9CA3AF'};
         }
       `}</style>
 
@@ -339,67 +189,45 @@ export default function Layout({ children, currentPageName }) {
           </div>
           <div className="flex items-center gap-3">
             <LanguageToggle />
-            {accountRoute && accountRoute !== '/' ? (
-              <Link to={accountRoute}>
-                <button
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    backgroundColor: isAccountActive ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isAccountActive) {
-                      e.currentTarget.style.backgroundColor = '#0C3B2E';
-                      const icon = e.currentTarget.querySelector('svg');
-                      if (icon) icon.style.color = '#FFFFFF';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isAccountActive) {
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
-                      const icon = e.currentTarget.querySelector('svg');
-                      if (icon) icon.style.color = '#0C3B2E';
-                    }
-                  }}
-                >
-                  <User 
-                    className="w-5 h-5" 
-                    style={{ 
-                      color: isAccountActive ? '#FFFFFF' : '#0C3B2E',
-                      transition: 'color 0.2s'
-                    }}
-                  />
-                </button>
-              </Link>
-            ) : (
+            <Link to={accountRoute}>
               <button
-                onClick={() => console.warn('Account route not available')}
                 style={{
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
-                  backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
+                  backgroundColor: isAccountActive ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  opacity: 0.5
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isAccountActive) {
+                    e.currentTarget.style.backgroundColor = '#0C3B2E';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.color = '#FFFFFF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isAccountActive) {
+                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.color = '#0C3B2E';
+                  }
                 }}
               >
-                <User className="w-5 h-5" style={{ color: '#0C3B2E' }} />
+                <User 
+                  className="w-5 h-5" 
+                  style={{ 
+                    color: isAccountActive ? '#FFFFFF' : '#0C3B2E',
+                    transition: 'color 0.2s'
+                  }}
+                />
               </button>
-            )}
+            </Link>
           </div>
         </div>
       </div>
@@ -451,7 +279,7 @@ export default function Layout({ children, currentPageName }) {
                   }
                 }}
               >
-                <Icon className="w-5 h-5 mb-1" style={{ animation: isActive ? 'pulse 2s infinite' : 'none' }} />
+                <Icon className="w-5 h-5 mb-1" />
                 <span style={{ fontSize: '12px', fontWeight: '500', whiteSpace: 'nowrap' }}>{tab.label}</span>
               </Link>
             );
