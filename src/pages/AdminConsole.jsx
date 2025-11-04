@@ -92,6 +92,8 @@ export default function AdminConsole() {
       noLeases: "No leases yet",
       // New LINE Notification strings
       testLineNotifications: "Test LINE Notifications",
+      firstAddWelcome: "First Add Welcome",
+      whenUserAddsBot: "When user first adds bot",
       day30Reminder: "30-Day Reminder",
       depositDue30Days: "Deposit due in 30 days",
       day7Warning: "7-Day Warning",
@@ -137,6 +139,8 @@ export default function AdminConsole() {
       noLeases: "ยังไม่มีสัญญาเช่า",
       // New LINE Notification strings
       testLineNotifications: "ทดสอบการแจ้งเตือน LINE",
+      firstAddWelcome: "ข้อความต้อนรับแรก",
+      whenUserAddsBot: "เมื่อผู้ใช้เพิ่มบอทครั้งแรก",
       day30Reminder: "เตือน 30 วัน",
       depositDue30Days: "เงินมัดจำครบกำหนดใน 30 วัน",
       day7Warning: "เตือน 7 วัน",
@@ -262,6 +266,43 @@ export default function AdminConsole() {
             )}
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <button
+                onClick={() => handleTestNotification('first_add')}
+                disabled={testingNotification}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: testingNotification ? 'not-allowed' : 'pointer',
+                  opacity: testingNotification ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = '#8B5CF6';
+                    e.target.style.backgroundColor = isDarkMode ? '#2D1B4E' : '#F5F3FF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!testingNotification) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🆕</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.firstAddWelcome}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.whenUserAddsBot}
+                </p>
+              </button>
+
               <button
                 onClick={() => handleTestNotification('30day')}
                 disabled={testingNotification}
