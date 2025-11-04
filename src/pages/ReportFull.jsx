@@ -13,6 +13,7 @@ export default function ReportFull() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const scanId = urlParams.get('scanId');
+  const leaseIdFromUrl = urlParams.get('leaseId');
   const [downloading, setDownloading] = useState(false);
 
   const { data: user } = useQuery({
@@ -30,16 +31,23 @@ export default function ReportFull() {
   });
 
   const { data: lease } = useQuery({
-    queryKey: ['lease', scan?.lease_id],
+    queryKey: ['lease', scan?.lease_id || leaseIdFromUrl],
     queryFn: async () => {
       const leases = await base44.entities.Lease.list();
-      return leases.find(l => l.id === scan.lease_id);
+      const targetLeaseId = scan?.lease_id || leaseIdFromUrl;
+      return leases.find(l => l.id === targetLeaseId);
     },
-    enabled: !!scan?.lease_id,
+    enabled: !!(scan?.lease_id || leaseIdFromUrl),
   });
 
   const handleDownloadPDF = async () => {
     if (!scan || !lease || downloading) return;
+    
+    // Extra safety check
+    if (!lease.id) {
+      alert('Unable to generate PDF: lease information is incomplete');
+      return;
+    }
     
     setDownloading(true);
     try {
