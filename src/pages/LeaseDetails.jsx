@@ -22,7 +22,7 @@ import {
   Shield,
   Eye,
   ExternalLink,
-  Loader2 // Added Loader2 import
+  Loader2 
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -475,7 +475,7 @@ export default function LeaseDetails() {
                     className="w-full sm:w-auto"
                   >
                     <Eye className="w-4 h-4 mr-2" />
-                    <span className="text-xs md:text-sm">{strings.viewScanResults}</span>
+                    <span className="text-xs md:text-sm" style={{ color: colors.textPrimary }}>{strings.viewScanResults}</span>
                   </Button>
                   <Button
                     onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
@@ -483,7 +483,7 @@ export default function LeaseDetails() {
                     size="sm"
                   >
                     <FileText className="w-4 h-4 mr-2" />
-                    <span className="text-xs md:text-sm">{strings.viewFullReport}</span>
+                    <span className="text-xs md:text-sm text-white">{strings.viewFullReport}</span>
                   </Button>
                 </div>
               </div>
