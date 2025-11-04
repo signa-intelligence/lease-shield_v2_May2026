@@ -34,6 +34,19 @@ export default function RecentLeases({ leases, language }) {
     }
   };
 
+  // Helper to safely format dates
+  const safeFormatDate = (dateValue) => {
+    if (!dateValue) return 'N/A';
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return 'N/A';
+      return format(date, 'MMM d, yyyy');
+    } catch (e) {
+      console.error('Date formatting error:', e);
+      return 'N/A';
+    }
+  };
+
   const isDarkMode = document.documentElement.classList.contains('dark');
 
   const colors = isDarkMode ? {
@@ -180,7 +193,7 @@ export default function RecentLeases({ leases, language }) {
                     )}
                     <div className="flex items-center gap-2 text-xs" style={{ color: colors.textSecondary }}>
                       <Calendar className="w-3 h-3" />
-                      {strings.scanned}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                      {strings.scanned}: {safeFormatDate(lease.created_date)}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 items-end">
