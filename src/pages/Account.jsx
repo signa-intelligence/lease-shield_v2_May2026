@@ -489,7 +489,7 @@ export default function Account() {
       juristicLineConnect: "Connect Juristic to LINE",
       showQR: "Show QR Code",
       hideQR: "Hide QR Code",
-      scanQR: "Scan this QR code with LINE app"
+      scanQR: "Scan this QR Code with LINE app"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -2284,23 +2284,20 @@ export default function Account() {
                   {plan.popular && (
                     <div style={{
                       position: 'absolute',
-                      top: '-16px',
+                      top: '16px',
                       left: '50%',
                       transform: 'translateX(-50%)',
                       backgroundColor: '#1A1D1F',
                       color: '#C7A338',
-                      padding: '10px 28px',
-                      fontSize: '12px',
+                      padding: '6px 16px',
+                      fontSize: '11px',
                       fontWeight: 'bold',
-                      border: '3px solid #C7A338',
-                      borderRadius: '30px',
-                      boxShadow: '0 6px 16px rgba(0, 0, 0, 0.4)',
+                      borderRadius: '16px',
+                      border: '2px solid #C7A338',
                       zIndex: 10,
-                      letterSpacing: '1.5px',
-                      whiteSpace: 'nowrap',
-                      textTransform: 'uppercase'
+                      whiteSpace: 'nowrap'
                     }}>
-                      ★ {strings.mostPopular} ★
+                      {strings.mostPopular}
                     </div>
                   )}
                   
