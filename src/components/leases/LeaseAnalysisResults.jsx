@@ -210,7 +210,7 @@ export default function LeaseAnalysisResults({ scan, onSave, onDownload }) {
                 </p>
               </div>
               <button
-                onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}`)}
+                onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${scan.lease_id}`)}
                 style={{
                   backgroundColor: '#9333EA',
                   color: '#FFFFFF',
