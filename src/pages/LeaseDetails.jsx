@@ -323,7 +323,7 @@ export default function LeaseDetails() {
                   <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
                     {strings.language}
                   </p>
-                  <Badge variant="outline">{lease.language_detected.toUpperCase()}</Badge>
+                  <Badge variant="outline">{(lease.language_detected || '').toUpperCase()}</Badge>
                 </div>
               )}
             </div>
