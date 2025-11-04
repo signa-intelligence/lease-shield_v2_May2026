@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2 } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
@@ -132,6 +132,7 @@ export default function Account() {
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelFeedback, setCancelFeedback] = useState('');
+  const [copiedLink, setCopiedLink] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -294,6 +295,56 @@ export default function Account() {
     updateProfileMutation.mutate(juristicData);
   };
 
+  const generateLineOALink = (role) => {
+    // Generate tracking link with user ID and role
+    // Replace @leaseshield with your actual LINE OA ID
+    const baseUrl = 'https://line.me/R/ti/p/@leaseshield';
+    const params = new URLSearchParams({
+      user_id: user?.id || '',
+      role: role // 'landlord' or 'juristic'
+    });
+    return `${baseUrl}?${params.toString()}`;
+  };
+
+  const handleCopyLink = async (role) => {
+    const link = generateLineOALink(role);
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedLink(role);
+      setTimeout(() => setCopiedLink(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      // Optional: Show a temporary message to the user that copying failed
+      alert(language === 'th' ? 'ไม่สามารถคัดลอกลิงก์ได้' : 'Failed to copy link.');
+    }
+  };
+
+  const handleShareLink = async (role) => {
+    const link = generateLineOALink(role);
+    const title = role === 'landlord' 
+      ? (language === 'th' ? 'เชื่อมต่อกับ Lease Shield' : 'Connect to Lease Shield')
+      : (language === 'th' ? 'เชื่อมต่อนิติบุคคลกับ Lease Shield' : 'Connect Juristic to Lease Shield');
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: language === 'th' 
+            ? 'คลิกเพื่อเพิ่มเพื่อน Lease Shield LINE Official Account' 
+            : 'Click to add Lease Shield LINE Official Account',
+          url: link
+        });
+      } catch (err) {
+        console.error('Share failed:', err);
+        // Fallback to copy if Web Share API fails or is cancelled by user
+        handleCopyLink(role);
+      }
+    } else {
+      // Fallback to copy if Web Share API is not supported
+      handleCopyLink(role);
+    }
+  };
+
   const currentPlanTier = user?.plan_tier || 'free';
   const isFree = currentPlanTier === 'free';
   const language = user?.language || 'en';
@@ -425,7 +476,15 @@ export default function Account() {
       juristicEmail: "Email",
       juristicPhone: "Phone (WhatsApp)",
       juristicLine: "LINE ID",
-      saveContactInfo: "Save Contact Info"
+      saveContactInfo: "Save Contact Info",
+      connectLineOA: "Connect to LINE OA",
+      connectLineOADesc: "Share this link to add them to Lease Shield notifications",
+      copyLink: "Copy Link",
+      shareLink: "Share Link",
+      linkCopied: "Link Copied!",
+      orManualEntry: "Or enter LINE ID manually",
+      landlordLineConnect: "Connect Landlord to LINE",
+      juristicLineConnect: "Connect Juristic to LINE"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -530,7 +589,15 @@ export default function Account() {
       juristicEmail: "อีเมล",
       juristicPhone: "โทรศัพท์ (WhatsApp)",
       juristicLine: "LINE ID",
-      saveContactInfo: "บันทึกข้อมูลติดต่อ"
+      saveContactInfo: "บันทึกข้อมูลติดต่อ",
+      connectLineOA: "เชื่อมต่อกับ LINE OA",
+      connectLineOADesc: "แชร์ลิงก์นี้เพื่อเพิ่มพวกเขาในการแจ้งเตือน Lease Shield",
+      copyLink: "คัดลอกลิงก์",
+      shareLink: "แชร์ลิงก์",
+      linkCopied: "คัดลอกลิงก์แล้ว!",
+      orManualEntry: "หรือใส่ LINE ID ด้วยตนเอง",
+      landlordLineConnect: "เชื่อมต่อเจ้าของบ้านกับ LINE",
+      juristicLineConnect: "เชื่อมต่อนิติบุคคลกับ LINE"
     }
   };
 
@@ -1179,6 +1246,104 @@ export default function Account() {
             </div>
           </CardHeader>
           <CardContent className="p-6">
+            {/* LINE OA Connection Section */}
+            <div className="mb-6 p-4 rounded-xl border-2 border-dashed" style={{
+              backgroundColor: isDarkMode ? '#2A2D30' : '#F0FDF4',
+              borderColor: isDarkMode ? '#10B981' : '#86EFAC'
+            }}>
+              <div className="flex items-start gap-3 mb-3">
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  backgroundColor: '#10B981', // green for LINE
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <MessageCircle className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold mb-1" style={{ color: colors.textPrimary }}>{strings.landlordLineConnect}</h4>
+                  <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>{strings.connectLineOADesc}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleCopyLink('landlord')}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        backgroundColor: copiedLink === 'landlord' ? '#10B981' : (isDarkMode ? '#353A3D' : '#FFFFFF'),
+                        color: copiedLink === 'landlord' ? '#FFFFFF' : colors.textPrimary,
+                        border: `2px solid ${copiedLink === 'landlord' ? '#10B981' : colors.borderColor}`,
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (copiedLink !== 'landlord') {
+                          e.target.style.borderColor = '#10B981';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (copiedLink !== 'landlord') {
+                          e.target.style.borderColor = colors.borderColor;
+                        }
+                      }}
+                    >
+                      {copiedLink === 'landlord' ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          {strings.linkCopied}
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          {strings.copyLink}
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleShareLink('landlord')}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        backgroundColor: '#10B981',
+                        color: '#FFFFFF',
+                        border: '2px solid #10B981',
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#059669';
+                        e.target.style.borderColor = '#059669';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = '#10B981';
+                        e.target.style.borderColor = '#10B981';
+                      }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      {strings.shareLink}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-4 text-center">
+              <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.orManualEntry}</p>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="landlord_name" style={{ color: colors.textPrimary }}>{strings.landlordName}</Label>
@@ -1284,6 +1449,104 @@ export default function Account() {
             </div>
           </CardHeader>
           <CardContent className="p-6">
+            {/* LINE OA Connection Section */}
+            <div className="mb-6 p-4 rounded-xl border-2 border-dashed" style={{
+              backgroundColor: isDarkMode ? '#2A2D30' : '#FFFBEB',
+              borderColor: isDarkMode ? '#F59E0B' : '#FDE047'
+            }}>
+              <div className="flex items-start gap-3 mb-3">
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  backgroundColor: '#F59E0B', // gold for LINE
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <MessageCircle className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold mb-1" style={{ color: colors.textPrimary }}>{strings.juristicLineConnect}</h4>
+                  <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>{strings.connectLineOADesc}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleCopyLink('juristic')}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        backgroundColor: copiedLink === 'juristic' ? '#F59E0B' : (isDarkMode ? '#353A3D' : '#FFFFFF'),
+                        color: copiedLink === 'juristic' ? '#FFFFFF' : colors.textPrimary,
+                        border: `2px solid ${copiedLink === 'juristic' ? '#F59E0B' : colors.borderColor}`,
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (copiedLink !== 'juristic') {
+                          e.target.style.borderColor = '#F59E0B';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (copiedLink !== 'juristic') {
+                          e.target.style.borderColor = colors.borderColor;
+                        }
+                      }}
+                    >
+                      {copiedLink === 'juristic' ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          {strings.linkCopied}
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          {strings.copyLink}
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleShareLink('juristic')}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        backgroundColor: '#F59E0B',
+                        color: '#FFFFFF',
+                        border: '2px solid #F59E0B',
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#D97706';
+                        e.target.style.borderColor = '#D97706';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = '#F59E0B';
+                        e.target.style.borderColor = '#F59E0B';
+                      }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      {strings.shareLink}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-4 text-center">
+              <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.orManualEntry}</p>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="juristic_name" style={{ color: colors.textPrimary }}>{strings.juristicName}</Label>
