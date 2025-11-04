@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -51,14 +52,14 @@ export default function UploadScanPage() {
   const strings = {
     en: {
       title: "Scan Your Lease",
-      subtitle: "Upload your lease agreement for AI-powered analysis",
+      subtitle: "Upload your lease agreement for automated analysis",
       uploadArea: "Drop your lease files here or click to browse",
       supportedFormats: "PDF, PNG, JPG (Max 10MB each)",
       selectFiles: "Select Files",
       uploadAll: "Upload & Analyze",
       uploading: "Uploading...",
       analyzingTitle: "Analyzing Your Lease",
-      analyzingDesc: "Our AI is reviewing your lease agreement. This may take up to 30 seconds...",
+      analyzingDesc: "Our system is reviewing your lease agreement. This may take up to 30 seconds...",
       recentScans: "Recent Scans",
       viewAll: "View All Leases",
       noScans: "No recent scans",
@@ -78,14 +79,14 @@ export default function UploadScanPage() {
     },
     th: {
       title: "สแกนสัญญาเช่า",
-      subtitle: "อัปโหลดสัญญาเช่าเพื่อวิเคราะห์ด้วย AI",
+      subtitle: "อัปโหลดสัญญาเช่าเพื่อวิเคราะห์อัตโนมัติ",
       uploadArea: "วางไฟล์สัญญาเช่าที่นี่ หรือคลิกเพื่อเลือกไฟล์",
       supportedFormats: "รองรับ PDF, PNG, JPG (ไฟล์ละไม่เกิน 10MB)",
       selectFiles: "เลือกไฟล์",
       uploadAll: "อัปโหลดและวิเคราะห์",
       uploading: "กำลังอัปโหลด...",
       analyzingTitle: "กำลังวิเคราะห์สัญญาเช่า",
-      analyzingDesc: "AI กำลังตรวจสอบสัญญาเช่าของคุณ อาจใช้เวลาประมาณ 30 วินาที...",
+      analyzingDesc: "ระบบกำลังตรวจสอบสัญญาเช่าของคุณ อาจใช้เวลาประมาณ 30 วินาที...",
       recentScans: "การสแกนล่าสุด",
       viewAll: "ดูสัญญาเช่าทั้งหมด",
       noScans: "ยังไม่มีการสแกน",
@@ -443,8 +444,8 @@ export default function UploadScanPage() {
                 {retryCount > 0 && (
                   <p className="text-sm mt-4 text-amber-600">
                     {language === 'th' 
-                      ? `กำลังลองอีกครั้ง... (${retryCount}/3)` 
-                      : `Retrying... (${retryCount}/3)`}
+                      ? `กำลังลองอีกครั้ง... (ครั้งที่ ${retryCount}/3)` 
+                      : `Retrying... (Attempt ${retryCount}/3)`}
                   </p>
                 )}
               </div>
