@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-react"; // Removed Scale icon
+import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -43,7 +42,6 @@ export default function Layout({ children, currentPageName }) {
       deposit: "Deposit",
       evidence: "Evidence",
       admin: "Admin",
-      // ops: "Ops", // Removed 'ops' from translations
       disclaimer: "We are not a law firm and do not provide legal advice.",
       privacyPolicy: "Privacy Policy"
     },
@@ -55,13 +53,12 @@ export default function Layout({ children, currentPageName }) {
       deposit: "เงินมัดจำ",
       evidence: "หลักฐาน",
       admin: "แอดมิน",
-      // ops: "ปฏิบัติการ", // Removed 'ops' from translations
       disclaimer: "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย",
       privacyPolicy: "นโยบายความเป็นส่วนตัว"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
   
   const navTabs = [
     {
@@ -97,7 +94,6 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   if (isAdmin) {
-    // Removed the 'ops' tab push
     navTabs.push({
       key: "admin",
       label: strings.admin,
@@ -107,6 +103,8 @@ export default function Layout({ children, currentPageName }) {
   }
 
   const isActiveTab = (route) => {
+    // Add null check to prevent error
+    if (!route || !location.pathname) return false;
     return location.pathname === route;
   };
 
@@ -340,7 +338,7 @@ export default function Layout({ children, currentPageName }) {
             return (
               <Link
                 key={tab.key}
-                to={tab.route}
+                to={tab.route || '/'}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
