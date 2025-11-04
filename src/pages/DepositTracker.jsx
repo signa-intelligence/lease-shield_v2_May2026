@@ -60,6 +60,12 @@ export default function DepositTracker() {
         notes: ''
       });
     },
+    onError: (error) => {
+      console.error('Failed to create deposit:', error);
+      alert(user?.language === 'th'
+        ? 'ไม่สามารถบันทึกเงินมัดจำได้ กรุณาลองอีกครั้ง'
+        : 'Failed to save deposit. Please try again.');
+    }
   });
 
   const updateDepositMutation = useMutation({
@@ -137,6 +143,7 @@ export default function DepositTracker() {
       lineNotifyDisabled: "LINE Notify Disabled",
       delete: "Delete",
       confirmDelete: "Are you sure you want to delete this deposit? This action cannot be undone.",
+      saving: "Saving...", // Added for loading state
     },
     th: {
       depositTracker: "ติดตามเงินมัดจำ",
@@ -175,14 +182,49 @@ export default function DepositTracker() {
       lineNotifyDisabled: "ปิดการแจ้งเตือน LINE",
       delete: "ลบ",
       confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบเงินมัดจำนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+      saving: "กำลังบันทึก...", // Added for loading state
     }
   };
 
   const strings = t[language];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    createDepositMutation.mutate(formData);
+
+    // Prepare data with proper types
+    const depositData = {
+      deposit_amount: parseFloat(formData.deposit_amount),
+      deposit_paid_date: formData.deposit_paid_date,
+      expected_return_date: formData.expected_return_date,
+      status: 'tracking', // Default status for new deposits
+    };
+
+    // Conditionally add optional fields
+    if (formData.property_address) {
+      depositData.property_address = formData.property_address;
+    }
+    if (formData.notes) {
+      depositData.notes = formData.notes;
+    }
+
+    // Only include rent fields if they have values and user has access
+    if (hasRentAlerts && formData.rent_amount) {
+      depositData.rent_amount = parseFloat(formData.rent_amount);
+      if (formData.rent_due_day) {
+        depositData.rent_due_day = parseInt(formData.rent_due_day, 10);
+      }
+      depositData.rent_alerts_enabled = formData.rent_alerts_enabled;
+      if (formData.rent_alert_days_before) {
+        depositData.rent_alert_days_before = parseInt(formData.rent_alert_days_before, 10);
+      }
+    }
+
+    try {
+      await createDepositMutation.mutateAsync(depositData);
+    } catch (error) {
+      console.error('Submit error:', error);
+      // Error is already handled by onError in mutation, but catching it here prevents unhandled promise rejection
+    }
   };
 
   const handleDelete = (depositId) => {
@@ -382,11 +424,27 @@ export default function DepositTracker() {
                 </div>
 
                 <div className="flex gap-3 justify-end">
-                  <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAddForm(false)}
+                    disabled={createDepositMutation.isPending}
+                  >
                     {strings.cancel}
                   </Button>
-                  <Button type="submit" className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal">
-                    {strings.save}
+                  <Button
+                    type="submit"
+                    className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal"
+                    disabled={createDepositMutation.isPending}
+                  >
+                    {createDepositMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {strings.saving}
+                      </>
+                    ) : (
+                      strings.save
+                    )}
                   </Button>
                 </div>
               </form>
@@ -502,7 +560,7 @@ export default function DepositTracker() {
                             isUrgent ? 'bg-amber-100 text-amber-800 border-amber-200' :
                             'bg-blue-100 text-blue-800 border-blue-200'
                           } border`}>
-                            {isOverdue 
+                            {isOverdue
                               ? `${strings.overdue} ${Math.abs(daysRemaining)} days`
                               : `${daysRemaining} ${strings.daysRemaining}`
                             }
