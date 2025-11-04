@@ -60,31 +60,51 @@ export default function Layout({ children, currentPageName }) {
 
   const strings = t[language] || t.en;
   
-  // Safe route creation helper
+  // Safe route creation helper with extensive error handling
   const safeCreatePageUrl = React.useCallback((pageName) => {
     try {
-      if (!pageName || typeof pageName !== 'string') {
-        console.warn('Invalid page name:', pageName);
+      if (!pageName || typeof pageName !== 'string' || pageName.trim() === '') {
+        console.warn('Invalid page name provided to safeCreatePageUrl:', pageName);
         return '/';
       }
+      
+      // Attempt to create the URL
       const url = createPageUrl(pageName);
-      return (url && typeof url === 'string') ? url : '/';
+      
+      // Validate the result
+      if (!url || typeof url !== 'string' || url.trim() === '') {
+        console.warn('createPageUrl returned invalid value for:', pageName, 'Result:', url);
+        return '/';
+      }
+      
+      return url;
     } catch (error) {
-      console.error('Error creating page URL:', error);
+      console.error('Error in safeCreatePageUrl for page:', pageName, 'Error:', error);
       return '/';
     }
   }, []);
 
-  // Pre-compute all routes with safety checks
-  const routes = React.useMemo(() => ({
-    dashboard: safeCreatePageUrl("Dashboard"),
-    uploadScan: safeCreatePageUrl("UploadScan"),
-    maintenance: safeCreatePageUrl("MaintenanceTracker"),
-    deposit: safeCreatePageUrl("DepositTracker"),
-    documents: safeCreatePageUrl("DocumentVault"),
-    admin: safeCreatePageUrl("AdminConsole"),
-    account: safeCreatePageUrl("Account")
-  }), [safeCreatePageUrl]);
+  // Pre-compute all routes with safety checks - memoized to prevent recreation
+  const routes = React.useMemo(() => {
+    const routeMap = {
+      dashboard: safeCreatePageUrl("Dashboard"),
+      uploadScan: safeCreatePageUrl("UploadScan"),
+      maintenance: safeCreatePageUrl("MaintenanceTracker"),
+      deposit: safeCreatePageUrl("DepositTracker"),
+      documents: safeCreatePageUrl("DocumentVault"),
+      admin: safeCreatePageUrl("AdminConsole"),
+      account: safeCreatePageUrl("Account")
+    };
+    
+    // Validate all routes
+    Object.entries(routeMap).forEach(([key, value]) => {
+      if (!value || value === '/') {
+        console.warn(`Route ${key} is invalid:`, value);
+      }
+    });
+    
+    return routeMap;
+  }, [safeCreatePageUrl]);
   
   // Build navigation tabs with pre-computed routes
   const navTabs = React.useMemo(() => {
@@ -130,11 +150,11 @@ export default function Layout({ children, currentPageName }) {
       });
     }
 
-    // Filter out any tabs with invalid routes
+    // Filter out any tabs with invalid routes and log warnings
     return tabs.filter(tab => {
-      const isValid = tab.route && typeof tab.route === 'string' && tab.route.length > 0;
+      const isValid = tab.route && typeof tab.route === 'string' && tab.route.length > 0 && tab.route !== '/';
       if (!isValid) {
-        console.warn('Invalid tab route:', tab);
+        console.warn('Filtering out invalid tab:', tab.key, 'Route:', tab.route);
       }
       return isValid;
     });
@@ -142,13 +162,17 @@ export default function Layout({ children, currentPageName }) {
 
   const isActiveTab = React.useCallback((route) => {
     // Comprehensive null/undefined checks
-    if (!route || typeof route !== 'string' || route.length === 0) return false;
-    if (!location || !location.pathname || typeof location.pathname !== 'string') return false;
+    if (!route || typeof route !== 'string' || route.trim() === '') {
+      return false;
+    }
+    if (!location || !location.pathname || typeof location.pathname !== 'string') {
+      return false;
+    }
     
     try {
       return location.pathname === route;
     } catch (error) {
-      console.error('Error checking active tab:', error);
+      console.error('Error in isActiveTab:', error);
       return false;
     }
   }, [location]);
@@ -178,8 +202,8 @@ export default function Layout({ children, currentPageName }) {
     hoverBg: '#ECEFED'
   };
 
-  // Safe account route
-  const accountRoute = routes.account || '/';
+  // Safe account route with fallback
+  const accountRoute = routes.account && routes.account !== '/' ? routes.account : '/';
   const isAccountActive = isActiveTab(accountRoute);
 
   return (
@@ -315,7 +339,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
           <div className="flex items-center gap-3">
             <LanguageToggle />
-            {accountRoute && accountRoute !== '/' && (
+            {accountRoute && accountRoute !== '/' ? (
               <Link to={accountRoute}>
                 <button
                   style={{
@@ -355,6 +379,26 @@ export default function Layout({ children, currentPageName }) {
                   />
                 </button>
               </Link>
+            ) : (
+              <button
+                onClick={() => console.warn('Account route not available')}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  opacity: 0.5
+                }}
+              >
+                <User className="w-5 h-5" style={{ color: '#0C3B2E' }} />
+              </button>
             )}
           </div>
         </div>
