@@ -34,7 +34,7 @@ const PLAN_DETAILS = [
     intervalMonthly: '',
     intervalAnnual: '',
     tagline: 'Try Before You Commit',
-    description: 'Experience our AI-powered lease analysis',
+    description: 'Experience our automated lease analysis',
     benefits: [
       '1 Lease Scan (lifetime)',
       'Basic Risk Score Preview',
