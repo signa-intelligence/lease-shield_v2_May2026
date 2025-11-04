@@ -60,6 +60,52 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
 
     for (const event of events) {
+      // Handle "follow" event - user just added the bot
+      if (event.type === 'follow') {
+        const userLineId = event.source.userId;
+        
+        console.log('New user followed bot:', userLineId);
+        
+        // Send bilingual welcome message
+        const welcomeMessage = `🎉 Welcome to Lease Shield / ยินดีต้อนรับสู่ Lease Shield!
+
+✅ Prevent rental problems before they happen
+✅ ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น
+
+📱 What we offer / บริการของเรา:
+• AI-powered lease analysis / วิเคราะห์สัญญาเช่าด้วย AI
+• Deposit protection & reminders / ปกป้องเงินมัดจำและแจ้งเตือน
+• Maintenance tracker / ติดตามการซ่อมบำรุง
+• Evidence vault / ที่เก็บหลักฐาน
+
+🔗 To connect your account / เชื่อมต่อบัญชี:
+1. Sign up at app.leaseshield.asia
+   ลงทะเบียนที่ app.leaseshield.asia
+2. Send: connect your@email.com
+   ส่ง: connect อีเมลของคุณ
+
+💡 Type "help" anytime for commands
+   พิมพ์ "help" เพื่อดูคำสั่ง`;
+
+        await fetch('https://api.line.me/v2/bot/message/push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${channelAccessToken}`
+          },
+          body: JSON.stringify({
+            to: userLineId,
+            messages: [{
+              type: 'text',
+              text: welcomeMessage
+            }]
+          })
+        });
+        
+        console.log('Welcome message sent to new follower');
+      }
+      
+      // Handle "message" events
       if (event.type === 'message' && event.message.type === 'text') {
         const userLineId = event.source.userId;
         const text = event.message.text.trim();
@@ -90,8 +136,8 @@ Deno.serve(async (req) => {
                 messages: [{
                   type: 'text',
                   text: user.language === 'th' 
-                    ? 'เชื่อมต่อสำเร็จ! ✅\nคุณจะได้รับการแจ้งเตือนเกี่ยวกับเงินมัดจำทาง LINE'
-                    : 'Connected successfully! ✅\nYou\'ll now receive deposit reminders via LINE'
+                    ? '✅ เชื่อมต่อสำเร็จ!\n\nคุณจะได้รับการแจ้งเตือนสำหรับ:\n📅 เงินมัดจำครบกำหนด\n💰 การชำระค่าเช่า\n🔧 สถานะการซ่อมบำรุง\n📋 การอัปเดตคดี\n\n🚀 เริ่มใช้งานเลย: app.leaseshield.asia'
+                    : '✅ Connected successfully!\n\nYou\'ll receive notifications for:\n📅 Deposit return deadlines\n💰 Rent payment reminders\n🔧 Maintenance updates\n📋 Case status changes\n\n🚀 Get started: app.leaseshield.asia'
                 }]
               })
             });
@@ -107,7 +153,7 @@ Deno.serve(async (req) => {
                 to: userLineId,
                 messages: [{
                   type: 'text',
-                  text: 'Email not found. Please check and try again.\nExample: connect yourname@email.com'
+                  text: '❌ Email not found / ไม่พบอีเมล\n\nPlease check and try again / กรุณาตรวจสอบและลองอีกครั้ง\n\nExample: connect yourname@email.com'
                 }]
               })
             });
@@ -191,7 +237,7 @@ Deno.serve(async (req) => {
                 to: userLineId,
                 messages: [{
                   type: 'text',
-                  text: 'Account not connected. Please connect your account first.\n\nSend: connect your@email.com'
+                  text: '❌ Account not connected / บัญชียังไม่ได้เชื่อมต่อ\n\nPlease connect first:\nกรุณาเชื่อมต่อก่อน:\n\nSend: connect your@email.com'
                 }]
               })
             });
@@ -275,7 +321,7 @@ Deno.serve(async (req) => {
                 to: userLineId,
                 messages: [{
                   type: 'text',
-                  text: 'Account not connected. Please connect your account first.\n\nSend: connect your@email.com'
+                  text: '❌ Account not connected / บัญชียังไม่ได้เชื่อมต่อ\n\nPlease connect first:\nกรุณาเชื่อมต่อก่อน:\n\nSend: connect your@email.com'
                 }]
               })
             });
@@ -294,7 +340,12 @@ Deno.serve(async (req) => {
               to: userLineId,
               messages: [{
                 type: 'text',
-                text: 'Lease Shield Commands:\n\n• connect {your_email} - Link your account\n• stop - Stop lease notice alerts\n• resume - Resume lease notice alerts\n• status - Check connection status\n• help - Show this message'
+                text: '📱 Lease Shield Commands / คำสั่ง:\n\n' +
+                      '• connect {your_email} - Link account / เชื่อมต่อบัญชี\n' +
+                      '• stop - Stop lease alerts / หยุดการแจ้งเตือนสัญญา\n' +
+                      '• resume - Resume alerts / เปิดการแจ้งเตือนอีกครั้ง\n' +
+                      '• help - Show this message / แสดงข้อความนี้\n\n' +
+                      '🌐 Visit: app.leaseshield.asia'
               }]
             })
           });
