@@ -1,3 +1,4 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -36,6 +37,80 @@ export default function ReportFull() {
     },
     enabled: !!scan?.lease_id,
   });
+
+  const handleDownloadPDF = async () => {
+    if (!scan || !lease) return;
+    
+    try {
+      // Generate PDF using jsPDF
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      // Title
+      doc.setFontSize(20);
+      doc.text('Lease Shield - Full Report', 20, 20);
+      
+      // Property details
+      doc.setFontSize(12);
+      doc.text(`Property: ${lease.property_address || 'N/A'}`, 20, 35);
+      doc.text(`Risk Score: ${scan.risk_score}/100`, 20, 45);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 55);
+      
+      // Summary
+      doc.setFontSize(14);
+      doc.text('Summary', 20, 70);
+      doc.setFontSize(10);
+      const summaryLines = doc.splitTextToSize(scan.summary || 'No summary available', 170);
+      doc.text(summaryLines, 20, 80);
+      
+      let yPos = 80 + (summaryLines.length * 7) + 10; // Start position after summary + some padding
+      
+      // Flags
+      if (scan.scan_full?.flags && scan.scan_full.flags.length > 0) {
+        doc.setFontSize(14);
+        // Check if there's enough space for "Issues Found" header, if not, add page
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text('Issues Found', 20, yPos);
+        yPos += 10;
+        
+        scan.scan_full.flags.forEach((flag, idx) => {
+          // Check for space before adding a new flag detail
+          // Estimate space needed for title, severity, and description (approx 3 lines for description)
+          const estimatedFlagHeight = 7 + 7 + (3 * 7) + 5; 
+          if (yPos + estimatedFlagHeight > 270) { // 270 is roughly the bottom margin
+            doc.addPage();
+            yPos = 20;
+          }
+          
+          doc.setFontSize(12);
+          doc.text(`${idx + 1}. ${flag.title || flag.category}`, 20, yPos);
+          yPos += 7;
+          
+          doc.setFontSize(10);
+          doc.text(`Severity: ${flag.severity}`, 25, yPos);
+          yPos += 7;
+          
+          if (flag.explanation) { // Changed from description to explanation based on flag structure
+            const descLines = doc.splitTextToSize(flag.explanation, 165);
+            doc.text(descLines, 25, yPos);
+            yPos += (descLines.length * 7); // + 5 will be added globally below
+          }
+          
+          yPos += 5; // Padding between flags
+        });
+      }
+      
+      // Download
+      doc.save(`lease-report-${lease.id?.slice(0, 8) || 'report'}.pdf`);
+      
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
+  };
 
   if (!scan || !lease) {
     return (
@@ -86,7 +161,10 @@ export default function ReportFull() {
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Full Lease Report</h1>
               <p className="text-slate-600">{lease.property_address || 'Lease Agreement'}</p>
             </div>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleDownloadPDF}
+            >
               <Download className="w-4 h-4 mr-2" />
               Download PDF
             </Button>
