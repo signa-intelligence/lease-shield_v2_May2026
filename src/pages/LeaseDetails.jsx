@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -25,6 +24,19 @@ import {
   Loader2 
 } from "lucide-react";
 import { format } from "date-fns";
+
+// Helper function to safely format dates
+const safeFormatDate = (dateValue, formatString = 'MMM d, yyyy') => {
+  if (!dateValue) return '';
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return '';
+    return format(date, formatString);
+  } catch (e) {
+    console.error('Date formatting error:', e);
+    return '';
+  }
+};
 
 export default function LeaseDetails() {
   const navigate = useNavigate();
@@ -70,6 +82,7 @@ export default function LeaseDetails() {
     },
     onError: (error) => {
       console.error('Update failed:', error);
+      const language = user?.language || 'en';
       alert(language === 'th' 
         ? 'ไม่สามารถบันทึกการเปลี่ยนแปลงได้ กรุณาลองอีกครั้ง' 
         : 'Failed to save changes. Please try again.');
@@ -203,19 +216,6 @@ export default function LeaseDetails() {
     if (score >= 50) return '#F59E0B';
     if (score >= 25) return '#EAB308';
     return '#10B981';
-  };
-
-  // Helper function to safely format dates
-  const safeFormatDate = (dateValue, formatString = 'MMM d, yyyy') => {
-    if (!dateValue) return '';
-    try {
-      const date = new Date(dateValue);
-      if (isNaN(date.getTime())) return '';
-      return format(date, formatString);
-    } catch (e) {
-      console.error('Date formatting error:', e);
-      return '';
-    }
   };
 
   if (leaseLoading) {
@@ -352,7 +352,6 @@ export default function LeaseDetails() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 md:p-6">
-            {/* Toggle Alerts */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6 p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
               <div className="flex-1">
                 <p className="font-semibold mb-1 text-sm md:text-base" style={{ color: colors.textPrimary }}>
@@ -368,7 +367,6 @@ export default function LeaseDetails() {
               />
             </div>
 
-            {/* Notice Period and Deadline */}
             {!editingNotice ? (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
