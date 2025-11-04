@@ -205,6 +205,19 @@ export default function LeaseDetails() {
     return '#10B981';
   };
 
+  // Helper function to safely format dates
+  const safeFormatDate = (dateValue, formatString = 'MMM d, yyyy') => {
+    if (!dateValue) return '';
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return '';
+      return format(date, formatString);
+    } catch (e) {
+      console.error('Date formatting error:', e);
+      return '';
+    }
+  };
+
   if (leaseLoading) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
@@ -313,7 +326,7 @@ export default function LeaseDetails() {
                     {strings.leasePeriod}
                   </p>
                   <p className="font-medium" style={{ color: colors.textPrimary }}>
-                    {format(new Date(lease.start_date), 'MMM d, yyyy')} {strings.to} {format(new Date(lease.end_date), 'MMM d, yyyy')}
+                    {safeFormatDate(lease.start_date)} {strings.to} {safeFormatDate(lease.end_date)}
                   </p>
                 </div>
               )}
@@ -385,7 +398,7 @@ export default function LeaseDetails() {
                       {strings.noticeDeadline}
                     </p>
                     <p className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                      {format(new Date(lease.notice_deadline), 'MMMM d, yyyy')}
+                      {safeFormatDate(lease.notice_deadline, 'MMMM d, yyyy')}
                     </p>
                     <p className="text-xs" style={{ color: colors.textSecondary }}>
                       {strings.deadlineCalculated}
