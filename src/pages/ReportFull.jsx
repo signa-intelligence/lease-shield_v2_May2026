@@ -1,14 +1,13 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, AlertTriangle, CheckCircle2, XCircle, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import FeatureGate from "../components/shared/FeatureGate";
-import { jsPDF } from "jspdf";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle } from "lucide-react";
+import { FeatureGate } from "../components/shared/FeatureGate";
 
 export default function ReportFull() {
   const navigate = useNavigate();
@@ -38,112 +37,38 @@ export default function ReportFull() {
     enabled: !!scan?.lease_id,
   });
 
-  const handleDownloadPDF = async () => {
-    if (!scan || !lease) return;
-    
-    try {
-      const doc = new jsPDF();
-      
-      // Title
-      doc.setFontSize(20);
-      doc.text('Lease Shield - Full Report', 20, 20);
-      
-      // Property details
-      doc.setFontSize(12);
-      doc.text(`Property: ${lease.property_address || 'N/A'}`, 20, 35);
-      doc.text(`Risk Score: ${scan.risk_score}/100`, 20, 45);
-      doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 55);
-      
-      // Summary
-      doc.setFontSize(14);
-      doc.text('Summary', 20, 70);
-      doc.setFontSize(10);
-      const summaryLines = doc.splitTextToSize(scan.summary || 'No summary available', 170);
-      doc.text(summaryLines, 20, 80);
-      
-      let yPos = 80 + (summaryLines.length * 7) + 10;
-      
-      // Flags
-      if (scan.scan_full?.flags && scan.scan_full.flags.length > 0) {
-        doc.setFontSize(14);
-        doc.text('Issues Found', 20, yPos);
-        yPos += 10;
-        
-        scan.scan_full.flags.forEach((flag, idx) => {
-          if (yPos > 270) {
-            doc.addPage();
-            yPos = 20;
-          }
-          
-          doc.setFontSize(12);
-          doc.text(`${idx + 1}. ${flag.title || flag.category}`, 20, yPos);
-          yPos += 7;
-          
-          doc.setFontSize(10);
-          doc.text(`Severity: ${flag.severity}`, 25, yPos);
-          yPos += 7;
-          
-          if (flag.description) {
-            const descLines = doc.splitTextToSize(flag.description, 165);
-            doc.text(descLines, 25, yPos);
-            yPos += (descLines.length * 7) + 5;
-          }
-          
-          yPos += 5;
-        });
-      }
-      
-      // Download
-      doc.save(`lease-report-${lease.id?.slice(0, 8) || 'report'}.pdf`);
-      
-    } catch (error) {
-      console.error('PDF generation failed:', error);
-      alert('Failed to generate PDF. Please try again.');
-    }
-  };
-
   if (!scan || !lease) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6 flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="p-6 text-center">
-            <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">Loading Report...</h3>
-            <p className="text-slate-600">Please wait while we load your lease report.</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="text-center">
+          <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-600 mb-4">No scan report found</p>
+          <Button onClick={() => navigate(createPageUrl("UploadScan"))}>
+            Upload a Lease
+          </Button>
+        </div>
       </div>
     );
   }
 
-  const getSeverityColor = (severity) => {
-    switch (severity?.toLowerCase()) {
-      case 'critical':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'high':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      default:
-        return 'bg-slate-100 text-slate-800 border-slate-200';
-    }
+  const getSeverityIcon = (severity) => {
+    const icons = { critical: AlertTriangle, high: AlertTriangle, medium: Info, low: CheckCircle2 };
+    return icons[severity] || Info;
   };
 
-  const getSeverityIcon = (severity) => {
-    switch (severity?.toLowerCase()) {
-      case 'critical':
-      case 'high':
-        return <XCircle className="w-5 h-5 text-red-600" />;
-      case 'medium':
-        return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
-      case 'low':
-        return <CheckCircle2 className="w-5 h-5 text-blue-600" />;
-      default:
-        return <AlertTriangle className="w-5 h-5 text-slate-600" />;
-    }
+  const getSeverityColor = (severity) => {
+    const colors = {
+      critical: "text-red-600 bg-red-50 border-red-200",
+      high: "text-orange-600 bg-orange-50 border-orange-200",
+      medium: "text-amber-600 bg-amber-50 border-amber-200",
+      low: "text-blue-600 bg-blue-50 border-blue-200"
+    };
+    return colors[severity] || "text-slate-600 bg-slate-50 border-slate-200";
   };
+
+  const fullFlags = scan.scan_full?.flags || [];
+  const missingItems = scan.scan_full?.missing_items || [];
+  const keyTerms = scan.scan_full?.key_terms || {};
 
   return (
     <FeatureGate feature="full_report">
@@ -161,138 +86,198 @@ export default function ReportFull() {
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Full Lease Report</h1>
               <p className="text-slate-600">{lease.property_address || 'Lease Agreement'}</p>
             </div>
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={handleDownloadPDF}
-            >
+            <Button className="bg-blue-600 hover:bg-blue-700">
               <Download className="w-4 h-4 mr-2" />
               Download PDF
             </Button>
           </div>
 
-          {/* Risk Score Overview */}
-          <Card className="mb-6 border-none shadow-xl bg-gradient-to-br from-white to-blue-50">
-            <CardHeader>
-              <CardTitle>Risk Assessment</CardTitle>
+          {/* Risk Score Summary */}
+          <Card className="mb-6 border-none shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+              <CardTitle className="flex items-center justify-between">
+                <span>Risk Assessment</span>
+                <Badge className="bg-white text-blue-800 text-lg px-4 py-2">
+                  Score: {scan.risk_score}/100
+                </Badge>
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm text-slate-600 mb-1">Overall Risk Score</p>
-                  <p className="text-5xl font-bold text-slate-900">{scan.risk_score}<span className="text-2xl text-slate-500">/100</span></p>
-                </div>
-                <div className={`px-6 py-3 rounded-xl ${
-                  scan.risk_score >= 80 ? 'bg-red-100 text-red-800' :
-                  scan.risk_score >= 60 ? 'bg-orange-100 text-orange-800' :
-                  scan.risk_score >= 40 ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-green-100 text-green-800'
-                }`}>
-                  <p className="text-xs font-medium mb-1">Risk Level</p>
-                  <p className="text-lg font-bold">
-                    {scan.risk_score >= 80 ? 'High Risk' :
-                     scan.risk_score >= 60 ? 'Medium-High' :
-                     scan.risk_score >= 40 ? 'Medium' :
-                     'Low Risk'}
-                  </p>
-                </div>
-              </div>
-              
-              {scan.summary && (
-                <div className="p-4 bg-white rounded-lg border border-slate-200">
-                  <p className="text-sm text-slate-700 leading-relaxed">{scan.summary}</p>
-                </div>
-              )}
+            <CardContent className="p-6">
+              <p className="text-slate-700 leading-relaxed">{scan.summary}</p>
             </CardContent>
           </Card>
 
-          {/* Detailed Findings */}
-          {scan.scan_full?.flags && scan.scan_full.flags.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 mb-4">Detailed Findings</h2>
-              {scan.scan_full.flags.map((flag, index) => (
-                <Card key={index} className="border-none shadow-lg hover:shadow-xl transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        {getSeverityIcon(flag.severity)}
-                        <div>
-                          <CardTitle className="text-lg mb-1">{flag.title || flag.category}</CardTitle>
-                          {flag.clause_reference && (
-                            <p className="text-sm text-slate-500">Section: {flag.clause_reference}</p>
+          {/* Key Terms */}
+          {Object.keys(keyTerms).length > 0 && (
+            <Card className="mb-6 border-none shadow-lg">
+              <CardHeader className="border-b border-slate-100">
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  Key Lease Terms
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid md:grid-cols-2 gap-4">
+                  {keyTerms.property_address && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Property Address</p>
+                      <p className="font-medium text-slate-900">{keyTerms.property_address}</p>
+                    </div>
+                  )}
+                  {keyTerms.rent_amount && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Monthly Rent</p>
+                      <p className="font-medium text-slate-900">฿{keyTerms.rent_amount.toLocaleString()}</p>
+                    </div>
+                  )}
+                  {keyTerms.deposit_amount && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Security Deposit</p>
+                      <p className="font-medium text-slate-900">฿{keyTerms.deposit_amount.toLocaleString()}</p>
+                    </div>
+                  )}
+                  {keyTerms.start_date && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Lease Period</p>
+                      <p className="font-medium text-slate-900">
+                        {keyTerms.start_date} {keyTerms.end_date && `to ${keyTerms.end_date}`}
+                      </p>
+                    </div>
+                  )}
+                  {keyTerms.lease_type_detected && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Lease Type</p>
+                      <p className="font-medium text-slate-900 capitalize">{keyTerms.lease_type_detected.replace('_', ' ')}</p>
+                    </div>
+                  )}
+                  {keyTerms.language_detected && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">Language</p>
+                      <p className="font-medium text-slate-900 uppercase">{keyTerms.language_detected}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Detailed Flags */}
+          {fullFlags.length > 0 && (
+            <Card className="mb-6 border-none shadow-lg">
+              <CardHeader className="border-b border-slate-100">
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                  Detailed Issues & Recommendations ({fullFlags.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {fullFlags.map((flag, index) => {
+                    const SeverityIcon = getSeverityIcon(flag.severity);
+                    return (
+                      <div key={index} className={`p-5 rounded-xl border-2 ${getSeverityColor(flag.severity)}`}>
+                        <div className="flex items-start gap-3 mb-3">
+                          <SeverityIcon className="w-6 h-6 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-bold text-lg">{flag.title}</h4>
+                              <Badge variant="outline" className="text-xs font-bold uppercase">
+                                {flag.severity}
+                              </Badge>
+                            </div>
+                            <Badge variant="outline" className="mb-3 text-xs">
+                              {flag.category}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3 ml-9">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-70">Evidence</p>
+                            <p className="text-sm italic border-l-2 border-current pl-3 py-1">"{flag.evidence}"</p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-70">Explanation</p>
+                            <p className="text-sm leading-relaxed">{flag.explanation}</p>
+                          </div>
+                          
+                          <div className="bg-white/50 rounded-lg p-3 border border-current/20">
+                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-70">Recommendation</p>
+                            <p className="text-sm font-medium leading-relaxed">{flag.recommendation}</p>
+                          </div>
+                          
+                          {(flag.impact_0_10 || flag.likelihood_0_10) && (
+                            <div className="flex gap-4 text-xs">
+                              {flag.impact_0_10 && (
+                                <div>
+                                  <span className="font-semibold">Impact:</span> {flag.impact_0_10}/10
+                                </div>
+                              )}
+                              {flag.likelihood_0_10 && (
+                                <div>
+                                  <span className="font-semibold">Likelihood:</span> {flag.likelihood_0_10}/10
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
-                      <Badge className={`${getSeverityColor(flag.severity)} border`}>
-                        {flag.severity}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {flag.description && (
-                      <div className="mb-4">
-                        <h4 className="font-semibold text-sm text-slate-700 mb-2">Issue Description</h4>
-                        <p className="text-sm text-slate-600 leading-relaxed">{flag.description}</p>
-                      </div>
-                    )}
-                    
-                    {flag.recommendation && (
-                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <h4 className="font-semibold text-sm text-blue-900 mb-2">💡 Our Recommendation</h4>
-                        <p className="text-sm text-blue-800 leading-relaxed">{flag.recommendation}</p>
-                      </div>
-                    )}
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-                    {flag.legal_basis && (
-                      <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                        <h4 className="font-semibold text-xs text-slate-700 mb-1">Legal Basis</h4>
-                        <p className="text-xs text-slate-600">{flag.legal_basis}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          {/* Missing Protections */}
+          {missingItems.length > 0 && (
+            <Card className="mb-6 border-none shadow-lg">
+              <CardHeader className="border-b border-slate-100">
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                  Missing Protections ({missingItems.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid md:grid-cols-2 gap-3">
+                  {missingItems.map((item, index) => (
+                    <div key={index} className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-amber-900 leading-relaxed">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Next Steps */}
-          <Card className="mt-6 border-none shadow-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white">
-            <CardHeader>
-              <CardTitle className="text-white">What's Next?</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 font-bold">1</div>
-                  <p className="text-sm">Review all flagged issues carefully and understand your rights</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 font-bold">2</div>
-                  <p className="text-sm">Document everything - photos, communications, and receipts</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 font-bold">3</div>
-                  <p className="text-sm">Use our letter templates to communicate with your landlord</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 font-bold">4</div>
-                  <p className="text-sm">If issues persist, open a dispute case for professional support</p>
-                </div>
-              </div>
-              
-              <div className="mt-6 flex gap-3">
-                <Button 
-                  variant="secondary"
-                  onClick={() => navigate(createPageUrl("Templates"))}
-                  className="flex-1"
+          <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-blue-50">
+            <CardContent className="p-6">
+              <h3 className="font-bold text-lg text-slate-900 mb-4">Suggested Next Steps</h3>
+              <div className="grid md:grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto py-4"
+                  onClick={() => navigate(createPageUrl("DepositTracker"))}
                 >
-                  View Templates
+                  <Shield className="w-5 h-5 mr-3 text-emerald-600" />
+                  <div className="text-left">
+                    <div className="font-semibold">Enable Deposit Shield</div>
+                    <div className="text-xs text-slate-500">Track your security deposit</div>
+                  </div>
                 </Button>
-                <Button 
-                  variant="secondary"
-                  onClick={() => navigate(createPageUrl("ResolveCase"))}
-                  className="flex-1"
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto py-4"
+                  onClick={() => navigate(createPageUrl("Templates"))}
                 >
-                  Open Case
+                  <FileText className="w-5 h-5 mr-3 text-blue-600" />
+                  <div className="text-left">
+                    <div className="font-semibold">Generate Letter</div>
+                    <div className="text-xs text-slate-500">Professional tenant letters</div>
+                  </div>
                 </Button>
               </div>
             </CardContent>

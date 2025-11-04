@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -195,6 +194,21 @@ export default function Cases() {
             {strings.openNewCase}
           </Button>
         </div>
+
+        {(hasPriorityQueue || hasMemberPrice) && (
+          <div className="mb-6 p-4 md:p-6 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg">
+            <div className="flex items-start gap-3">
+              <Crown className="w-6 h-6 flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="font-bold text-base md:text-lg mb-2">{strings.premiumBenefits}</h3>
+                <ul className="space-y-1 text-xs md:text-sm opacity-90">
+                  {hasMemberPrice && <li>• {strings.memberPricing}</li>}
+                  {hasPriorityQueue && <li>• {strings.priorityHandling}</li>}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
 
         {cases.length === 0 ? (
           <div className="text-center py-12 md:py-20">
