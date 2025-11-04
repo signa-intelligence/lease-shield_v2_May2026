@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2 } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, QrCode, Share2 } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
@@ -133,6 +133,7 @@ export default function Account() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelFeedback, setCancelFeedback] = useState('');
   const [copiedLink, setCopiedLink] = useState(null);
+  const [showQR, setShowQR] = useState({ landlord: false, juristic: false });
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -315,7 +316,7 @@ export default function Account() {
     } catch (err) {
       console.error('Failed to copy:', err);
       // Optional: Show a temporary message to the user that copying failed
-      alert(language === 'th' ? 'ไม่สามารถคัดลอกลิงก์ได้' : 'Failed to copy link.');
+      // alert(language === 'th' ? 'ไม่สามารถคัดลอกลิงก์ได้' : 'Failed to copy link.');
     }
   };
 
@@ -484,7 +485,10 @@ export default function Account() {
       linkCopied: "Link Copied!",
       orManualEntry: "Or enter LINE ID manually",
       landlordLineConnect: "Connect Landlord to LINE",
-      juristicLineConnect: "Connect Juristic to LINE"
+      juristicLineConnect: "Connect Juristic to LINE",
+      showQR: "Show QR Code",
+      hideQR: "Hide QR Code",
+      scanQR: "Scan this QR code with LINE app"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -597,12 +601,17 @@ export default function Account() {
       linkCopied: "คัดลอกลิงก์แล้ว!",
       orManualEntry: "หรือใส่ LINE ID ด้วยตนเอง",
       landlordLineConnect: "เชื่อมต่อเจ้าของบ้านกับ LINE",
-      juristicLineConnect: "เชื่อมต่อนิติบุคคลกับ LINE"
+      juristicLineConnect: "เชื่อมต่อนิติบุคคลกับ LINE",
+      showQR: "แสดง QR Code",
+      hideQR: "ซ่อน QR Code",
+      scanQR: "สแกน QR Code นี้ด้วยแอป LINE"
     }
   };
 
   const strings = t[language];
 
+  const currentPlanTier = user?.plan_tier || 'free';
+  const isFree = currentPlanTier === 'free';
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
@@ -1255,7 +1264,7 @@ export default function Account() {
                 <div style={{
                   width: '40px',
                   height: '40px',
-                  backgroundColor: '#10B981', // green for LINE
+                  backgroundColor: '#10B981',
                   borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
@@ -1335,10 +1344,62 @@ export default function Account() {
                       <Share2 className="w-4 h-4" />
                       {strings.shareLink}
                     </button>
+                    <button
+                      onClick={() => setShowQR({...showQR, landlord: !showQR.landlord})}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
+                        color: '#10B981',
+                        border: '2px solid #10B981',
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#10B981';
+                        e.target.style.color = '#FFFFFF';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#FFFFFF';
+                        e.target.style.color = '#10B981';
+                      }}
+                    >
+                      <QrCode className="w-4 h-4" />
+                      {showQR.landlord ? strings.hideQR : strings.showQR}
+                    </button>
                   </div>
                 </div>
               </div>
-            </div>
+              
+              {/* QR Code Display */}
+              {showQR.landlord && (
+                <div className="mt-4 p-4 rounded-lg text-center" style={{
+                  backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
+                  border: `2px solid ${colors.borderColor}`
+                }}>
+                  <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
+                    {strings.scanQR}
+                  </p>
+                  <img 
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/49e0d2da2_line-oa-qr-code-B_eMlFo6.png"
+                    alt="LINE OA QR Code"
+                    className="mx-auto"
+                    style={{
+                      width: '200px',
+                      height: '200px',
+                      borderRadius: '12px'
+                    }}
+                  />
+                  <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                    Lease Shield Official Account
+                  </p>
+                </div>
+              )}
 
             <div className="mb-4 text-center">
               <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.orManualEntry}</p>
@@ -1476,7 +1537,7 @@ export default function Account() {
                       style={{
                         padding: '8px 16px',
                         borderRadius: '8px',
-                        backgroundColor: copiedLink === 'juristic' ? '#F59E0B' : (isDarkMode ? '#353A3D' : '#FFFFFF'),
+                        backgroundColor: copiedLink === 'juristic' ? '#F59E0B' : isDarkMode ? '#353A3D' : '#FFFFFF',
                         color: copiedLink === 'juristic' ? '#FFFFFF' : colors.textPrimary,
                         border: `2px solid ${copiedLink === 'juristic' ? '#F59E0B' : colors.borderColor}`,
                         fontWeight: 'bold',
@@ -1538,9 +1599,62 @@ export default function Account() {
                       <Share2 className="w-4 h-4" />
                       {strings.shareLink}
                     </button>
+                    <button
+                      onClick={() => setShowQR({...showQR, juristic: !showQR.juristic})}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
+                        color: '#F59E0B',
+                        border: '2px solid #F59E0B',
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#F59E0B';
+                        e.target.style.color = '#FFFFFF';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#FFFFFF';
+                        e.target.style.color = '#F59E0B';
+                      }}
+                    >
+                      <QrCode className="w-4 h-4" />
+                      {showQR.juristic ? strings.hideQR : strings.showQR}
+                    </button>
                   </div>
                 </div>
               </div>
+              
+              {/* QR Code Display */}
+              {showQR.juristic && (
+                <div className="mt-4 p-4 rounded-lg text-center" style={{
+                  backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
+                  border: `2px solid ${colors.borderColor}`
+                }}>
+                  <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
+                    {strings.scanQR}
+                  </p>
+                  <img 
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/49e0d2da2_line-oa-qr-code-B_eMlFo6.png"
+                    alt="LINE OA QR Code"
+                    className="mx-auto"
+                    style={{
+                      width: '200px',
+                      height: '200px',
+                      borderRadius: '12px'
+                    }}
+                  />
+                  <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                    Lease Shield Official Account
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="mb-4 text-center">
@@ -2140,7 +2254,7 @@ export default function Account() {
               const isCurrentPlan = currentPlanTier === plan.key;
               const isFreeplan = plan.key === 'free';
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
-              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly);
+              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.priceMonthly ? '/month' : '');
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
               
               return (
