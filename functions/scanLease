@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     console.log('File URLs:', fileUrls.length, 'files');
     console.log('Lease ID:', leaseId);
 
-    // Simplified, more robust prompt
+    // Fixed JSON schema - compatible with Vertex AI
     const scanResult = await base44.integrations.Core.InvokeLLM({
       prompt: `Analyze this rental lease agreement and identify potential issues for the tenant.
 
@@ -38,13 +38,14 @@ INSTRUCTIONS:
    - explanation: Why this is a problem (2-3 sentences)
    - recommendation: What the tenant should do (2-3 sentences)
 
-5. Extract these details if found (use null if not found):
+5. Extract these details if found (leave empty string if not found):
    - property_address
-   - start_date (YYYY-MM-DD)
-   - end_date (YYYY-MM-DD)
-   - rent_amount (number only)
-   - deposit_amount (number only)
-   - notice_period_days (days before lease end to notify landlord)
+   - start_date (YYYY-MM-DD format)
+   - end_date (YYYY-MM-DD format)
+   - rent_amount (number only, 0 if not found)
+   - deposit_amount (number only, 0 if not found)
+   - notice_period_days (days before lease end to notify landlord, 0 if not found)
+   - language_detected (en, th, or mixed)
 
 6. Write a summary paragraph about the overall lease quality`,
       file_urls: fileUrls,
@@ -78,35 +79,37 @@ INSTRUCTIONS:
               required: ["severity", "description"]
             }
           },
-          property_address: { type: ["string", "null"] },
-          start_date: { type: ["string", "null"] },
-          end_date: { type: ["string", "null"] },
-          rent_amount: { type: ["number", "null"] },
-          deposit_amount: { type: ["number", "null"] },
+          property_address: { type: "string" },
+          start_date: { type: "string" },
+          end_date: { type: "string" },
+          rent_amount: { type: "number" },
+          deposit_amount: { type: "number" },
           language_detected: { 
-            type: ["string", "null"],
-            enum: ["en", "th", "mixed", null]
+            type: "string",
+            enum: ["en", "th", "mixed"]
           },
-          notice_period_days: { type: ["integer", "null"] }
+          notice_period_days: { type: "integer" }
         },
-        required: ["risk_score", "summary"]
+        required: ["risk_score", "summary", "flags"]
       }
     });
 
     console.log('Analysis complete. Risk score:', scanResult.risk_score);
     console.log('Flags found:', scanResult.flags?.length || 0);
 
-    // Update lease with extracted information
+    // Update lease with extracted information (convert empty strings to null)
     if (leaseId) {
-      await base44.entities.Lease.update(leaseId, {
+      const updateData = {
         status: 'scanned',
-        property_address: scanResult.property_address,
-        start_date: scanResult.start_date,
-        end_date: scanResult.end_date,
-        rent_amount: scanResult.rent_amount,
-        deposit_amount: scanResult.deposit_amount,
+        property_address: scanResult.property_address || null,
+        start_date: scanResult.start_date || null,
+        end_date: scanResult.end_date || null,
+        rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
+        deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
         language_detected: scanResult.language_detected || 'en'
-      });
+      };
+      
+      await base44.entities.Lease.update(leaseId, updateData);
       console.log('Updated lease:', leaseId);
     }
 
