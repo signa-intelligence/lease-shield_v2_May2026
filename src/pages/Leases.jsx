@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileText, Upload, AlertCircle, Loader2 } from "lucide-react";
+import { FileText, Upload, AlertCircle, Loader2, Trash2 } from "lucide-react"; // Added Trash2
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -230,6 +230,31 @@ export default function Leases() {
     }
   };
 
+  const deleteLeaseWithScanMutation = useMutation({
+    mutationFn: async (leaseId) => {
+      // First delete any associated scans
+      const associatedScans = scans.filter(s => s.lease_id === leaseId);
+      for (const scan of associatedScans) {
+        await base44.entities.LeaseScan.delete(scan.id);
+      }
+      // Then delete the lease
+      await base44.entities.Lease.delete(leaseId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leases'] });
+      queryClient.invalidateQueries({ queryKey: ['scans'] });
+    },
+  });
+
+  const handleDeleteLease = (leaseId, e) => {
+    e.stopPropagation();
+    if (window.confirm(language === 'th' 
+      ? 'คุณแน่ใจหรือไม่ว่าต้องการลบสัญญาเช่านี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้'
+      : 'Are you sure you want to delete this lease? This action cannot be undone.')) {
+      deleteLeaseWithScanMutation.mutate(leaseId);
+    }
+  };
+
   const getStatusColor = (status) => {
     const statusColors = {
       uploaded: "bg-amber-100 text-amber-800",
@@ -334,36 +359,70 @@ export default function Leases() {
                             <Badge className={getStatusColor(lease.status)}>
                               {lease.status}
                             </Badge>
-                            {(lease.status === 'scanned' || lease.status === 'paid') && (
+                            <div className="flex gap-2">
+                              {(lease.status === 'scanned' || lease.status === 'paid') && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewDetails(lease);
+                                  }}
+                                  style={{
+                                    backgroundColor: '#3B82F6',
+                                    color: '#FFFFFF',
+                                    padding: '8px 16px',
+                                    borderRadius: '6px',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.stopPropagation();
+                                    e.target.style.backgroundColor = '#2563EB';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.stopPropagation();
+                                    e.target.style.backgroundColor = '#3B82F6';
+                                  }}
+                                >
+                                  {strings.viewDetails}
+                                </button>
+                              )}
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewDetails(lease);
-                                }}
+                                onClick={(e) => handleDeleteLease(lease.id, e)}
+                                disabled={deleteLeaseWithScanMutation.isPending}
                                 style={{
-                                  backgroundColor: '#3B82F6',
-                                  color: '#FFFFFF',
-                                  padding: '8px 16px',
+                                  backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                                  color: '#EF4444',
+                                  padding: '8px 12px',
                                   borderRadius: '6px',
                                   fontSize: '14px',
                                   fontWeight: '600',
                                   border: 'none',
-                                  cursor: 'pointer',
+                                  cursor: deleteLeaseWithScanMutation.isPending ? 'not-allowed' : 'pointer',
                                   transition: 'all 0.2s',
-                                  whiteSpace: 'nowrap'
+                                  opacity: deleteLeaseWithScanMutation.isPending ? 0.5 : 1
                                 }}
                                 onMouseEnter={(e) => {
                                   e.stopPropagation();
-                                  e.target.style.backgroundColor = '#2563EB';
+                                  if (!deleteLeaseWithScanMutation.isPending) {
+                                    e.target.style.backgroundColor = '#DC2626';
+                                    e.target.style.color = '#FFFFFF';
+                                  }
                                 }}
                                 onMouseLeave={(e) => {
                                   e.stopPropagation();
-                                  e.target.style.backgroundColor = '#3B82F6';
+                                  if (!deleteLeaseWithScanMutation.isPending) {
+                                    e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
+                                    e.target.style.color = '#EF4444';
+                                  }
                                 }}
                               >
-                                {strings.viewDetails}
+                                <Trash2 className="w-4 h-4" />
                               </button>
-                            )}
+                            </div>
                           </div>
                         </div>
                       </div>

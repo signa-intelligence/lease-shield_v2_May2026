@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -303,7 +304,7 @@ export default function ScanPreview() {
                   flex: 1,
                   backgroundColor: '#0C3B2E',
                   color: '#FFFFFF',
-                  padding: '14px 24px',
+                  padding: '16px 24px',
                   borderRadius: '10px',
                   fontSize: '16px',
                   fontWeight: 'bold',
@@ -314,7 +315,8 @@ export default function ScanPreview() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 6px -1px rgba(12, 59, 46, 0.3), 0 2px 4px -1px rgba(12, 59, 46, 0.2)'
+                  boxShadow: '0 4px 6px -1px rgba(12, 59, 46, 0.3), 0 2px 4px -1px rgba(12, 59, 46, 0.2)',
+                  minHeight: '56px'
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.backgroundColor = '#0a2f25';
@@ -328,7 +330,7 @@ export default function ScanPreview() {
                 }}
               >
                 <FileText className="w-5 h-5" />
-                <span>{strings.viewFullReport}</span>
+                <span style={{ fontSize: '16px', fontWeight: '700' }}>{strings.viewFullReport}</span>
               </button>
               {lease.file_url && (
                 <button
@@ -337,7 +339,7 @@ export default function ScanPreview() {
                     flex: 1,
                     backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
                     color: '#0C3B2E',
-                    padding: '14px 24px',
+                    padding: '16px 24px',
                     borderRadius: '10px',
                     fontSize: '16px',
                     fontWeight: 'bold',
@@ -348,7 +350,8 @@ export default function ScanPreview() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+                    minHeight: '56px'
                   }}
                   onMouseEnter={(e) => {
                     e.target.style.backgroundColor = '#0C3B2E';
@@ -364,7 +367,7 @@ export default function ScanPreview() {
                   }}
                 >
                   <ExternalLink className="w-5 h-5" />
-                  <span>{strings.viewLease}</span>
+                  <span style={{ fontSize: '16px', fontWeight: '700' }}>{strings.viewLease}</span>
                 </button>
               )}
             </div>

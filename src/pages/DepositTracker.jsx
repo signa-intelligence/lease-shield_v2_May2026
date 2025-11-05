@@ -9,11 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Wallet, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Shield, Bell, Loader2, Trash2, ChevronDown } from "lucide-react";
+import { Wallet, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Shield, Bell, Loader2, Trash2, ChevronDown, ArrowLeft } from "lucide-react";
 import { format, differenceInDays, addMonths } from "date-fns";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function DepositTracker() {
+  const navigate = useNavigate();
   const [showAddForm, setShowAddForm] = useState(false);
   const [expandedDeposit, setExpandedDeposit] = useState(null);
   const [formData, setFormData] = useState({
@@ -144,6 +147,7 @@ export default function DepositTracker() {
       delete: "Delete",
       confirmDelete: "Are you sure you want to delete this deposit? This action cannot be undone.",
       saving: "Saving...", // Added for loading state
+      back: "Back",
     },
     th: {
       depositTracker: "ติดตามเงินมัดจำ",
@@ -183,6 +187,7 @@ export default function DepositTracker() {
       delete: "ลบ",
       confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบเงินมัดจำนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้",
       saving: "กำลังบันทึก...", // Added for loading state
+      back: "กลับ",
     }
   };
 
@@ -271,6 +276,15 @@ export default function DepositTracker() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-6xl mx-auto">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(createPageUrl("Dashboard"))}
+          className="mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          {strings.back}
+        </Button>
+
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
