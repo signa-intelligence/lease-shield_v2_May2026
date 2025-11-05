@@ -60,14 +60,21 @@ const PROCESS_STEPS = [
 
 export default function ResolveCase() {
   const navigate = useNavigate();
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false); // New state for payment submission loading
+
+  // Get URL parameters for pre-filling
+  const urlParams = new URLSearchParams(window.location.search);
+  const prefilledAmount = urlParams.get('amount') || '';
+  const prefilledAddress = urlParams.get('address') || '';
+  const prefilledType = urlParams.get('type') || '';
+  
   const [formData, setFormData] = useState({
-    dispute_amount: '',
+    dispute_amount: prefilledAmount,
     summary: '',
     fast_track: false,
     letter_pack: false
   });
   const [selectedLease, setSelectedLease] = useState(null);
-  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false); // New state for payment submission loading
 
   const queryClient = useQueryClient();
   const { hasAccess: isMember } = useFeatureAccess('resolve_member_price');
@@ -91,56 +98,6 @@ export default function ResolveCase() {
     },
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmittingPayment(true); // Set loading true at start
-    
-    // Calculate total amount
-    const basePrice = isMember ? baseMemberPrice : basePublicPrice;
-    const totalAmount = basePrice + totalAddons;
-    
-    // Prepare case metadata for Stripe
-    const caseMetadata = {
-      type: 'case',
-      dispute_amount: formData.dispute_amount, // Ensure string for metadata
-      summary: formData.summary,
-      lease_id: selectedLease || '',
-      fast_track: formData.fast_track.toString(),
-      letter_pack: formData.letter_pack.toString(),
-      is_member_at_creation: isMember.toString(),
-      // success_fee_rate removed as per all-inclusive pricing
-      total_paid: totalAmount.toString()
-    };
-
-    // Create Stripe checkout session
-    try {
-      
-      const response = await base44.functions.invoke('createCheckout', {
-        priceId: null, // Not using price ID for one-time payments
-        mode: 'payment',
-        amount: totalAmount, // amount should be in the smallest currency unit (satang for THB)
-        currency: 'thb',
-        description: `Resolve Case - Dispute Amount: ฿${formData.dispute_amount}`,
-        successUrl: `${window.location.origin}${createPageUrl("Cases")}?payment=success`,
-        cancelUrl: `${window.location.origin}${createPageUrl("ResolveCase")}?payment=cancelled`,
-        metadata: caseMetadata
-      });
-
-      if (response.data?.url) {
-        window.location.href = response.data.url;
-      } else {
-        throw new Error('No checkout URL returned');
-      }
-    } catch (error) {
-      console.error('Checkout creation failed:', error);
-      alert(language === 'th' 
-        ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' 
-        : 'Failed to create checkout. Please try again.');
-    } finally {
-      setIsSubmittingPayment(false); // Resetting pending state
-    }
-  };
-
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
@@ -151,6 +108,18 @@ export default function ResolveCase() {
   const fastTrackPrice = isMember ? 300 : 500;
   const letterPackPrice = isMember ? 900 : 1500;
   const totalAddons = (formData.fast_track ? fastTrackPrice : 0) + (formData.letter_pack ? letterPackPrice : 0);
+
+  // Pre-fill property address if available
+  React.useEffect(() => {
+    if (prefilledAddress && leases.length > 0) {
+      const matchingLease = leases.find(lease => 
+        lease.property_address?.toLowerCase().includes(prefilledAddress.toLowerCase())
+      );
+      if (matchingLease) {
+        setSelectedLease(matchingLease.id);
+      }
+    }
+  }, [prefilledAddress, leases]);
 
   const colors = {
     bg: isDarkMode ? '#1A1D1F' : '#F9FAFB',
@@ -237,6 +206,57 @@ export default function ResolveCase() {
   };
 
   const strings = t[language];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmittingPayment(true); // Set loading true at start
+    
+    // Calculate total amount
+    const basePrice = isMember ? baseMemberPrice : basePublicPrice;
+    const totalAmount = basePrice + totalAddons;
+    
+    // Prepare case metadata for Stripe
+    const caseMetadata = {
+      type: 'case',
+      dispute_amount: formData.dispute_amount, // Ensure string for metadata
+      summary: formData.summary,
+      lease_id: selectedLease || '',
+      fast_track: formData.fast_track.toString(),
+      letter_pack: formData.letter_pack.toString(),
+      is_member_at_creation: isMember.toString(),
+      // success_fee_rate removed as per all-inclusive pricing
+      total_paid: totalAmount.toString()
+    };
+
+    // Create Stripe checkout session
+    try {
+      
+      const response = await base44.functions.invoke('createCheckout', {
+        priceId: null, // Not using price ID for one-time payments
+        mode: 'payment',
+        amount: totalAmount, // amount should be in the smallest currency unit (satang for THB)
+        currency: 'thb',
+        description: `Resolve Case - Dispute Amount: ฿${formData.dispute_amount}`,
+        successUrl: `${window.location.origin}${createPageUrl("Cases")}?payment=success`,
+        cancelUrl: `${window.location.origin}${createPageUrl("ResolveCase")}?payment=cancelled`,
+        metadata: caseMetadata
+      });
+
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Checkout creation failed:', error);
+      alert(language === 'th' 
+        ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' 
+        : 'Failed to create checkout. Please try again.');
+    } finally {
+      setIsSubmittingPayment(false); // Resetting pending state
+    }
+  };
+
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>

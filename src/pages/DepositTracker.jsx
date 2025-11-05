@@ -9,16 +9,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Wallet, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Shield, Bell, Loader2, Trash2, ChevronDown, ArrowLeft } from "lucide-react";
+import { Wallet, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Shield, Bell, Loader2, Trash2, ChevronDown, ArrowLeft, AlertCircle, Scale } from "lucide-react";
 import { format, differenceInDays, addMonths } from "date-fns";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 export default function DepositTracker() {
   const navigate = useNavigate();
   const [showAddForm, setShowAddForm] = useState(false);
   const [expandedDeposit, setExpandedDeposit] = useState(null);
+  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
+  const [selectedDispute, setSelectedDispute] = useState(null);
   const [formData, setFormData] = useState({
     deposit_amount: '',
     deposit_paid_date: '',
@@ -148,6 +151,14 @@ export default function DepositTracker() {
       confirmDelete: "Are you sure you want to delete this deposit? This action cannot be undone.",
       saving: "Saving...", // Added for loading state
       back: "Back",
+      openDisputeCase: "Open Dispute Case",
+      openDisputeCaseDesc: "When you mark a deposit as disputed, you should open a formal case to get help resolving it.",
+      depositDetails: "Deposit Details",
+      amount: "Amount:",
+      address: "Address:",
+      weAreHereToHelp: "We're here to help",
+      openCaseToGet: "Open a case to get: Expert review, letter templates, and negotiation support",
+      openCase: "Open Case",
     },
     th: {
       depositTracker: "ติดตามเงินมัดจำ",
@@ -188,6 +199,14 @@ export default function DepositTracker() {
       confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบเงินมัดจำนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้",
       saving: "กำลังบันทึก...", // Added for loading state
       back: "กลับ",
+      openDisputeCase: "เปิดคดีพิพาท",
+      openDisputeCaseDesc: "เมื่อคุณทำเครื่องหมายเงินมัดจำว่าเป็นข้อพิพาท คุณควรเปิดคดีอย่างเป็นทางการเพื่อรับความช่วยเหลือในการแก้ปัญหา",
+      depositDetails: "รายละเอียดเงินมัดจำ",
+      amount: "จำนวนเงิน:",
+      address: "ที่อยู่:",
+      weAreHereToHelp: "เราพร้อมช่วยคุณ",
+      openCaseToGet: "เปิดคดีเพื่อรับ: การตรวจสอบโดยผู้เชี่ยวชาญ, เทมเพลตจดหมาย และการสนับสนุนการเจรจา",
+      openCase: "เปิดคดี",
     }
   };
 
@@ -239,10 +258,43 @@ export default function DepositTracker() {
   };
 
   const handleStatusChange = (depositId, newStatus) => {
+    if (newStatus === 'dispute') {
+      // Find the deposit being disputed
+      const deposit = deposits.find(d => d.id === depositId);
+      setSelectedDispute(deposit);
+      setDisputeDialogOpen(true);
+    } else {
+      // For other statuses, just update
+      updateDepositMutation.mutate({
+        id: depositId,
+        data: { status: newStatus }
+      });
+    }
+  };
+
+  const handleOpenCase = () => {
+    if (!selectedDispute) return;
+    
+    // Update deposit status to dispute
     updateDepositMutation.mutate({
-      id: depositId,
-      data: { status: newStatus }
+      id: selectedDispute.id,
+      data: { status: 'dispute' }
     });
+    
+    // Navigate to ResolveCase with pre-filled data
+    const params = new URLSearchParams({
+      amount: selectedDispute.deposit_amount.toString(),
+      address: selectedDispute.property_address || '',
+      type: 'deposit'
+    });
+    
+    navigate(createPageUrl("ResolveCase") + `?${params.toString()}`);
+    setDisputeDialogOpen(false);
+  };
+
+  const handleCancelDispute = () => {
+    setDisputeDialogOpen(false);
+    setSelectedDispute(null);
   };
 
   const getStatusColor = (status) => {
@@ -284,6 +336,87 @@ export default function DepositTracker() {
           <ArrowLeft className="w-4 h-4 mr-2" />
           {strings.back}
         </Button>
+
+        {/* Dispute Dialog */}
+        <Dialog open={disputeDialogOpen} onOpenChange={setDisputeDialogOpen}>
+          <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <AlertCircle className="w-6 h-6 text-red-600" />
+                {strings.openDisputeCase}
+              </DialogTitle>
+              <DialogDescription style={{ color: colors.textSecondary }}>
+                {strings.openDisputeCaseDesc}
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedDispute && (
+              <div className="py-4 space-y-3">
+                <div className="p-4 rounded-lg border" style={{ 
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  borderColor: colors.borderColor 
+                }}>
+                  <p className="text-sm font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                    {strings.depositDetails}
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm" style={{ color: colors.textSecondary }}>
+                        {strings.amount}
+                      </span>
+                      <span className="text-sm font-bold" style={{ color: colors.textPrimary }}>
+                        ฿{selectedDispute.deposit_amount.toLocaleString()}
+                      </span>
+                    </div>
+                    {selectedDispute.property_address && (
+                      <div className="flex justify-between">
+                        <span className="text-sm" style={{ color: colors.textSecondary }}>
+                          {strings.address}
+                        </span>
+                        <span className="text-sm" style={{ color: colors.textPrimary }}>
+                          {selectedDispute.property_address}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg border-2 border-blue-200" style={{ 
+                  backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.1)' : '#EFF6FF'
+                }}>
+                  <div className="flex items-start gap-3">
+                    <Scale className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-sm mb-1" style={{ color: colors.textPrimary }}>
+                        {strings.weAreHereToHelp}
+                      </p>
+                      <p className="text-xs" style={{ color: colors.textSecondary }}>
+                        {strings.openCaseToGet}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={handleCancelDispute}
+                style={{ borderColor: colors.borderColor }}
+              >
+                {strings.cancel}
+              </Button>
+              <Button
+                onClick={handleOpenCase}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Scale className="w-4 h-4 mr-2" />
+                {strings.openCase}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
