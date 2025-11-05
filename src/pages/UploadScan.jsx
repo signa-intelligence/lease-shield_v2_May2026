@@ -146,153 +146,64 @@ export default function UploadScanPage() {
         setAnalyzing(true);
         setUploading(false);
 
-        // Analyze with retry logic - Enhanced for Word documents and detailed reporting
-        let scanResult;
-        let analysisRetry = 0;
-        const maxAnalysisRetries = 2;
+        // Use backend function for scanning (more reliable)
+        try {
+          const { data: scanResponse } = await base44.functions.invoke('scanLease', {
+            fileUrls: fileUrls,
+            leaseId: lease.id
+          });
 
-        while (analysisRetry <= maxAnalysisRetries) {
-          try {
-            // Enhanced prompt with detailed flag structure for full reports
-            scanResult = await base44.integrations.Core.InvokeLLM({
-              prompt: `Analyze this lease agreement thoroughly and extract key information. The document may be in PDF, image, or Word (DOC/DOCX) format.
-
-IMPORTANT INSTRUCTIONS:
-1. Provide a detailed risk score from 0-100 (0 = very safe, 100 = very risky)
-2. For EACH issue found, provide ALL of the following details:
-   - title: A clear, short title for the issue
-   - severity: critical, high, medium, or low
-   - category: The type of issue (e.g., "Deposit Terms", "Entry Rights", "Termination", "Maintenance")
-   - description: Brief summary (1 sentence)
-   - evidence: The EXACT text/clause from the lease that causes concern (quote the actual wording)
-   - explanation: Detailed explanation of WHY this is problematic (2-3 sentences)
-   - recommendation: Specific action the tenant should take (2-3 sentences)
-   - impact_0_10: Rate the potential financial/legal impact (0-10 scale)
-   - likelihood_0_10: Rate how likely this will cause problems (0-10 scale)
-
-3. Extract key lease information:
-   - property_address
-   - start_date (YYYY-MM-DD format)
-   - end_date (YYYY-MM-DD format)
-   - rent_amount (number only)
-   - deposit_amount (number only)
-   - language_detected (en, th, or mixed)
-   - notice_period_days (number of days tenant must notify landlord before lease end, commonly 30/45/60/90 days)
-
-4. Provide an overall summary of the lease quality
-
-CRITICAL: Make sure to fill in the evidence, explanation, and recommendation fields with actual detailed content, not empty strings!`,
-              file_urls: fileUrls,
-              response_json_schema: {
-                type: "object",
-                properties: {
-                  risk_score: { type: "integer" },
-                  flags: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        title: { type: "string" },
-                        severity: { type: "string", enum: ["low", "medium", "high", "critical"] },
-                        category: { type: "string" },
-                        description: { type: "string" },
-                        evidence: { type: "string" },
-                        explanation: { type: "string" },
-                        recommendation: { type: "string" },
-                        impact_0_10: { type: "integer" },
-                        likelihood_0_10: { type: "integer" }
-                      },
-                      required: ["title", "severity", "category", "description", "evidence", "explanation", "recommendation"]
-                    }
-                  },
-                  summary: { type: "string" },
-                  property_address: { type: "string" },
-                  start_date: { type: "string" },
-                  end_date: { type: "string" },
-                  rent_amount: { type: "number" },
-                  deposit_amount: { type: "number" },
-                  language_detected: { type: "string", enum: ["en", "th", "mixed"] },
-                  notice_period_days: { type: ["integer", "null"] }
-                }
-              }
-            });
-            
-            // Check if analysis indicates document couldn't be read
-            if (scanResult.risk_score === 0 && scanResult.summary && (scanResult.summary.toLowerCase().includes('could not') || scanResult.summary.toLowerCase().includes('unable to'))) {
-              throw new Error(language === 'th'
-                ? 'ไม่สามารถอ่านเอกสารได้ กรุณาลองใช้ไฟล์ PDF หรือรูปภาพแทน'
-                : 'Unable to read document. Please try using PDF or image format instead.');
-            }
-            
-            setUploadProgress(80);
-            break; // Success, exit retry loop
-          } catch (analysisError) {
-            console.error(`Analysis attempt ${analysisRetry + 1} failed:`, analysisError);
-            analysisRetry++;
-            
-            if (analysisRetry > maxAnalysisRetries) {
-              // Check if it's a Word document specific error
-              const isWordDoc = selectedFiles.some(f => 
-                f.name.toLowerCase().endsWith('.doc') || 
-                f.name.toLowerCase().endsWith('.docx')
-              );
-              
-              if (isWordDoc) {
-                throw new Error(language === 'th'
-                  ? 'ไม่สามารถวิเคราะห์ไฟล์ Word ได้ กรุณาลองแปลงเป็น PDF หรือถ่ายภาพหน้าสัญญาแทน'
-                  : 'Unable to analyze Word document. Please try converting to PDF or take photos of the lease pages instead.');
-              }
-              
-              throw new Error(language === 'th'
-                ? 'การวิเคราะห์ล้มเหลว กรุณาตรวจสอบว่าไฟล์ไม่เสียหายและลองอีกครั้ง'
-                : 'Analysis failed. Please ensure the file is not corrupted and try again.');
-            }
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 1000 * analysisRetry));
+          if (!scanResponse.success) {
+            throw new Error(scanResponse.error || 'Scan failed');
           }
+
+          const scanResult = scanResponse.result;
+          setUploadProgress(90);
+
+          // Update lease with extracted data
+          await base44.entities.Lease.update(lease.id, {
+            status: 'scanned',
+            property_address: scanResult.property_address,
+            start_date: scanResult.start_date,
+            end_date: scanResult.end_date,
+            rent_amount: scanResult.rent_amount,
+            deposit_amount: scanResult.deposit_amount,
+            language_detected: scanResult.language_detected
+          });
+
+          // Create scan record
+          await base44.entities.LeaseScan.create({
+            lease_id: lease.id,
+            risk_score: scanResult.risk_score,
+            flags: scanResult.flags || [],
+            summary: scanResult.summary,
+            scan_full: scanResult,
+            version: '1.0'
+          });
+          setUploadProgress(100);
+
+          // Show confirmation modal
+          setLeaseDetails({
+            end_date: scanResult.end_date,
+            notice_period_days: scanResult.notice_period_days || 30
+          });
+          setPendingLeaseId(lease.id);
+          setShowConfirmation(true);
+          setSelectedFiles([]);
+
+        } catch (analysisError) {
+          console.error('Analysis error from backend function:', analysisError);
+          throw analysisError;
         }
-
-        await base44.entities.Lease.update(lease.id, {
-          status: 'scanned',
-          property_address: scanResult.property_address,
-          start_date: scanResult.start_date,
-          end_date: scanResult.end_date,
-          rent_amount: scanResult.rent_amount,
-          deposit_amount: scanResult.deposit_amount,
-          language_detected: scanResult.language_detected
-        });
-        setUploadProgress(90);
-
-        await base44.entities.LeaseScan.create({
-          lease_id: lease.id,
-          risk_score: scanResult.risk_score,
-          flags: scanResult.flags || [],
-          summary: scanResult.summary,
-          scan_full: scanResult,
-          version: '1.0'
-        });
-        setUploadProgress(100);
-
-        // Show confirmation modal
-        setLeaseDetails({
-          end_date: scanResult.end_date,
-          notice_period_days: scanResult.notice_period_days || 30
-        });
-        setPendingLeaseId(lease.id);
-        setShowConfirmation(true);
-        setSelectedFiles([]);
 
       } catch (err) {
         console.error('Upload/Analysis error:', err);
         
-        // If this is already a formatted error message, use it directly
-        if (err.message && (err.message.includes('Word') || err.message.includes('PDF') || err.message.includes('วิเคราะห์') || err.message.includes('อ่าน'))) {
-          setError(err.message);
-          setUploading(false);
-          setAnalyzing(false);
-          setUploadProgress(0);
-          return;
-        }
+        // Check if it's a Word document specific error
+        const isWordDoc = selectedFiles.some(f => 
+          f.name.toLowerCase().endsWith('.doc') || 
+          f.name.toLowerCase().endsWith('.docx')
+        );
         
         currentRetry++;
         setRetryCount(currentRetry);
@@ -307,13 +218,21 @@ CRITICAL: Make sure to fill in the evidence, explanation, and recommendation fie
           await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry)));
           return attemptUpload();
         } else {
-          // Max retries reached
-          let errorMessage = language === 'th'
-            ? 'ไม่สามารถอัปโหลดได้ กรุณาตรวจสอบ:\n• ไฟล์ไม่เสียหาย\n• ขนาดไฟล์ไม่เกิน 10MB\n• มีอินเทอร์เน็ตที่เสถียร\n\n💡 เคล็ดลับ: ลองแปลงเป็น PDF หรือถ่ายภาพหน้าสัญญาแทน'
-            : 'Upload failed. Please check:\n• File is not corrupted\n• File size is under 10MB\n• Stable internet connection\n\n💡 Tip: Try converting to PDF or take photos of the lease pages instead';
-
-          if (err.message) {
-            errorMessage = err.message;
+          // Max retries reached - provide helpful error message
+          let errorMessage;
+          
+          if (isWordDoc) {
+            errorMessage = language === 'th'
+              ? 'ไม่สามารถวิเคราะห์ไฟล์ Word ได้\n\n💡 กรุณาลอง:\n• แปลงเป็น PDF ก่อนอัปโหลด\n• ถ่ายภาพหน้าสัญญาแทน\n• เปิดด้วย Google Docs แล้ว Download เป็น PDF'
+              : 'Unable to analyze Word document\n\n💡 Please try:\n• Convert to PDF before uploading\n• Take photos of lease pages\n• Open in Google Docs and save as PDF';
+          } else if (err.message?.toLowerCase().includes('timeout') || err.message?.toLowerCase().includes('function execution limit')) {
+            errorMessage = language === 'th'
+              ? 'การวิเคราะห์ใช้เวลานานเกินไป\n\n💡 กรุณาลอง:\n• ใช้ไฟล์ที่เล็กกว่า\n• แยกอัปโหลดทีละหน้า\n• ถ่ายภาพที่ชัดเจนกว่า'
+              : 'Analysis timed out\n\n💡 Please try:\n• Use smaller files\n• Upload pages separately\n• Take clearer photos';
+          } else {
+            errorMessage = language === 'th'
+              ? 'ไม่สามารถวิเคราะห์ได้\n\n💡 กรุณาตรวจสอบ:\n• ไฟล์เป็นสัญญาเช่าที่อ่านได้\n• ขนาดไฟล์ไม่เกิน 10MB\n• ภาพชัดเจนและอ่านได้\n\nหรือลองแปลงเป็น PDF'
+              : 'Analysis failed\n\n💡 Please check:\n• File is a readable lease agreement\n• File size is under 10MB\n• Images are clear and readable\n\nOr try converting to PDF';
           }
 
           setError(errorMessage);
@@ -351,9 +270,8 @@ CRITICAL: Make sure to fill in the evidence, explanation, and recommendation fie
   const deleteLeaseWithScanMutation = useMutation({
     mutationFn: async (leaseId) => {
       // First delete any associated scans
-      const associatedScans = await base44.entities.LeaseScan.list();
-      const scansToDelete = associatedScans.filter(s => s.lease_id === leaseId);
-      for (const scan of scansToDelete) {
+      const associatedScans = await base44.entities.LeaseScan.filter({ lease_id: leaseId });
+      for (const scan of associatedScans) {
         await base44.entities.LeaseScan.delete(scan.id);
       }
       // Then delete the lease
