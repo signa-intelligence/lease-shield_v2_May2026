@@ -3,12 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Clock, CheckCircle2, HelpCircle, Upload, Shield, FileText, CreditCard, Wrench } from "lucide-react";
 import { format } from "date-fns";
@@ -16,15 +14,9 @@ import { format } from "date-fns";
 const STATUS_CONFIG = {
   open: { label: 'Open', color: 'bg-blue-100 text-blue-800', icon: Clock },
   in_progress: { label: 'In Progress', color: 'bg-amber-100 text-amber-800', icon: MessageCircle },
-  resolved: { label: 'Resolved', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 }
-};
-
-const CATEGORY_CONFIG = {
-  technical: { label: 'Technical Issue', icon: Upload },
-  billing: { label: 'Billing', icon: CreditCard },
-  feature: { label: 'Feature Request', icon: HelpCircle },
-  account: { label: 'Account', icon: Shield },
-  other: { label: 'Other', icon: MessageCircle }
+  waiting_user: { label: 'Waiting for You', color: 'bg-purple-100 text-purple-800', icon: HelpCircle },
+  resolved: { label: 'Resolved', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 },
+  closed: { label: 'Closed', color: 'bg-slate-100 text-slate-800', icon: CheckCircle2 }
 };
 
 const FAQ_ITEMS = [
@@ -35,7 +27,7 @@ const FAQ_ITEMS = [
   },
   {
     question: "What's included in the lease scan?",
-    answer: "We analyze your lease for unfair clauses, excessive fees, unclear terms, and missing protections based on Thai rental standards.",
+    answer: "Our AI analyzes your lease for unfair clauses, excessive fees, unclear terms, and missing protections based on Thai rental standards.",
     icon: FileText
   },
   {
@@ -55,349 +47,285 @@ const FAQ_ITEMS = [
   }
 ];
 
-export default function SupportPage() {
-  const [showNewTicket, setShowNewTicket] = useState(false);
-  const [newTicket, setNewTicket] = useState({
+export default function Support() {
+  const [uploading, setUploading] = useState(false);
+  const [formData, setFormData] = useState({
     subject: '',
-    category: 'technical',
     description: '',
-    priority: 'medium'
+    category: 'technical',
+    attachments: []
   });
 
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
+    queryFn: () => base44.auth.me(),
   });
 
   const { data: tickets = [] } = useQuery({
-    queryKey: ['supportTickets'],
+    queryKey: ['tickets'],
     queryFn: () => base44.entities.SupportTicket.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
-    initialData: []
   });
 
   const createTicketMutation = useMutation({
-    mutationFn: (ticketData) => base44.entities.SupportTicket.create(ticketData),
+    mutationFn: (data) => base44.entities.SupportTicket.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supportTickets'] });
-      setShowNewTicket(false);
-      setNewTicket({ subject: '', category: 'technical', description: '', priority: 'medium' });
-    }
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      setFormData({
+        subject: '',
+        description: '',
+        category: 'technical',
+        attachments: []
+      });
+    },
   });
 
-  const handleSubmitTicket = (e) => {
+  const handleFileUpload = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const urls = [];
+      for (const file of files) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        urls.push(file_url);
+      }
+      setFormData({ ...formData, attachments: [...formData.attachments, ...urls] });
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    createTicketMutation.mutate({
-      ...newTicket,
-      status: 'open'
-    });
+    createTicketMutation.mutate(formData);
   };
 
   const language = user?.language || 'en';
-  const isDarkMode = user?.theme === 'dark';
 
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40'
-  } : {
-    bg: '#ECEFED',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB'
+  const t = {
+    en: {
+      title: "Help & Support",
+      subtitle: "We're here to help you protect your rights",
+      submitTicket: "Submit Support Request",
+      subject: "Subject",
+      description: "Description",
+      category: "Category",
+      attachments: "Attachments",
+      uploadFiles: "Upload Files",
+      submitButton: "Submit Ticket",
+      myTickets: "My Support Tickets",
+      noTickets: "No Support Tickets",
+      noTicketsSub: "Need help? Submit a support request and we'll get back to you.",
+      faqTitle: "Frequently Asked Questions",
+      recentTickets: "Recent Tickets"
+    },
+    th: {
+      title: "ความช่วยเหลือและการสนับสนุน",
+      subtitle: "เราพร้อมช่วยคุณปกป้องสิทธิ์ของคุณ",
+      submitTicket: "ส่งคำขอสนับสนุน",
+      subject: "หัวข้อ",
+      description: "รายละเอียด",
+      category: "หมวดหมู่",
+      attachments: "ไฟล์แนบ",
+      uploadFiles: "อัปโหลดไฟล์",
+      submitButton: "ส่งคำขอ",
+      myTickets: "คำขอสนับสนุนของฉัน",
+      noTickets: "ไม่มีคำขอสนับสนุน",
+      noTicketsSub: "ต้องการความช่วยเหลือ? ส่งคำขอสนับสนุนและเราจะติดต่อกลับ",
+      faqTitle: "คำถามที่พบบ่อย",
+      recentTickets: "คำขอล่าสุด"
+    }
   };
 
-  const strings = language === 'th' ? {
-    title: 'ศูนย์ช่วยเหลือ',
-    subtitle: 'เราพร้อมช่วยเหลือคุณ',
-    newTicket: 'เปิดตั๋วใหม่',
-    myTickets: 'ตั๋วของฉัน',
-    noTickets: 'ยังไม่มีตั๋วช่วยเหลือ',
-    subject: 'หัวข้อ',
-    category: 'หมวดหมู่',
-    description: 'รายละเอียด',
-    priority: 'ความสำคัญ',
-    submit: 'ส่ง',
-    cancel: 'ยกเลิก',
-    faq: 'คำถามที่พบบ่อย',
-    status: 'สถานะ',
-    created: 'สร้างเมื่อ',
-    low: 'ต่ำ',
-    medium: 'กลาง',
-    high: 'สูง',
-    technical: 'ปัญหาทางเทคนิค',
-    billing: 'การเรียกเก็บเงิน',
-    feature: 'ขอคุณสมบัติใหม่',
-    account: 'บัญชี',
-    other: 'อื่นๆ'
-  } : {
-    title: 'Help Center',
-    subtitle: 'We\'re here to help',
-    newTicket: 'New Support Ticket',
-    myTickets: 'My Tickets',
-    noTickets: 'No support tickets yet',
-    subject: 'Subject',
-    category: 'Category',
-    description: 'Description',
-    priority: 'Priority',
-    submit: 'Submit',
-    cancel: 'Cancel',
-    faq: 'Frequently Asked Questions',
-    status: 'Status',
-    created: 'Created',
-    low: 'Low',
-    medium: 'Medium',
-    high: 'High',
-    technical: 'Technical Issue',
-    billing: 'Billing',
-    feature: 'Feature Request',
-    account: 'Account',
-    other: 'Other'
-  };
+  const strings = t[language];
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
-              <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
-            </div>
-            <Button
-              onClick={() => setShowNewTicket(!showNewTicket)}
-              style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
-            >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              {strings.newTicket}
-            </Button>
+          <div className="flex items-center gap-3 mb-2">
+            <MessageCircle className="w-8 h-8 text-ls-forest" />
+            <h1 className="text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
           </div>
+          <p className="text-slate-600">{strings.subtitle}</p>
         </div>
 
-        {showNewTicket && (
-          <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-              <CardTitle style={{ color: colors.textPrimary }}>{strings.newTicket}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <form onSubmit={handleSubmitTicket} className="space-y-4">
-                <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.subject}</Label>
-                  <Input
-                    value={newTicket.subject}
-                    onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
-                    required
-                    style={{
-                      backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
-                  <Select
-                    value={newTicket.category}
-                    onValueChange={(value) => setNewTicket({ ...newTicket, category: value })}
-                  >
-                    <SelectTrigger style={{
-                      backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="technical">{strings.technical}</SelectItem>
-                      <SelectItem value="billing">{strings.billing}</SelectItem>
-                      <SelectItem value="feature">{strings.feature}</SelectItem>
-                      <SelectItem value="account">{strings.account}</SelectItem>
-                      <SelectItem value="other">{strings.other}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.priority}</Label>
-                  <Select
-                    value={newTicket.priority}
-                    onValueChange={(value) => setNewTicket({ ...newTicket, priority: value })}
-                  >
-                    <SelectTrigger style={{
-                      backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">{strings.low}</SelectItem>
-                      <SelectItem value="medium">{strings.medium}</SelectItem>
-                      <SelectItem value="high">{strings.high}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.description}</Label>
-                  <Textarea
-                    value={newTicket.description}
-                    onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
-                    required
-                    rows={4}
-                    style={{
-                      backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}
-                  />
-                </div>
-
-                <div className="flex gap-3">
-                  <Button type="submit" style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}>
-                    {strings.submit}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowNewTicket(false)}
-                    style={{
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}
-                  >
-                    {strings.cancel}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* FAQ Section */}
-        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <HelpCircle className="w-5 h-5 text-ls-forest" />
-              {strings.faq}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {FAQ_ITEMS.map((faq, idx) => {
-                const Icon = faq.icon;
-                return (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-lg"
-                    style={{
-                      backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                      border: `1px solid ${colors.borderColor}`
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#0C3B2E',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}>
-                        <Icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                          {faq.question}
-                        </h3>
-                        <p className="text-sm" style={{ color: colors.textSecondary }}>
-                          {faq.answer}
-                        </p>
-                      </div>
-                    </div>
+        <div className="grid lg:grid-cols-5 gap-6">
+          {/* Left Side - Submit Form (2/5) */}
+          <div className="lg:col-span-2">
+            <Card className="border-none shadow-lg mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-ls-forest" />
+                  {strings.submitTicket}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="subject">{strings.subject}</Label>
+                    <Input
+                      id="subject"
+                      required
+                      value={formData.subject}
+                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      placeholder="Brief description of your issue"
+                    />
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* My Tickets */}
-        <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle style={{ color: colors.textPrimary }}>{strings.myTickets}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {tickets.length === 0 ? (
-              <div className="text-center py-12">
-                <MessageCircle className="w-12 h-12 mx-auto mb-4" style={{ color: colors.textSecondary }} />
-                <p style={{ color: colors.textSecondary }}>{strings.noTickets}</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {tickets.map((ticket) => {
-                  const StatusIcon = STATUS_CONFIG[ticket.status]?.icon || Clock;
-                  const CategoryIcon = CATEGORY_CONFIG[ticket.category]?.icon || MessageCircle;
-
-                  return (
-                    <div
-                      key={ticket.id}
-                      className="p-4 rounded-lg border"
-                      style={{
-                        backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                        borderColor: colors.borderColor
-                      }}
+                  <div>
+                    <Label htmlFor="category">{strings.category}</Label>
+                    <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="technical">Technical</SelectItem>
+                        <SelectItem value="billing">Billing</SelectItem>
+                        <SelectItem value="deposit">Deposit</SelectItem>
+                        <SelectItem value="scan">Lease Scan</SelectItem>
+                        <SelectItem value="legal">Legal Question</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="description">{strings.description}</Label>
+                    <Textarea
+                      id="description"
+                      required
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Please provide as much detail as possible..."
+                      rows={5}
+                    />
+                  </div>
+                  <div>
+                    <Label>{strings.attachments}</Label>
+                    <label
+                      htmlFor="file-upload"
+                      className="mt-2 flex items-center justify-center gap-2 p-4 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-ls-forest transition-colors"
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-start gap-3 flex-1">
-                          <CategoryIcon className="w-5 h-5 mt-1" style={{ color: '#0C3B2E' }} />
-                          <div className="flex-1">
-                            <h3 className="font-semibold" style={{ color: colors.textPrimary }}>
-                              {ticket.subject}
-                            </h3>
-                            <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-                              {ticket.description}
-                            </p>
-                          </div>
+                      <Upload className="w-5 h-5 text-slate-500" />
+                      <span className="text-sm text-slate-600">
+                        {uploading ? 'Uploading...' : strings.uploadFiles}
+                      </span>
+                      <input
+                        id="file-upload"
+                        type="file"
+                        multiple
+                        onChange={handleFileUpload}
+                        disabled={uploading}
+                        className="hidden"
+                      />
+                    </label>
+                    {formData.attachments.length > 0 && (
+                      <p className="text-xs text-slate-500 mt-2">
+                        {formData.attachments.length} file(s) attached
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={createTicketMutation.isPending}
+                    className="w-full"
+                    style={{
+                      backgroundColor: createTicketMutation.isPending ? '#9CA3AF' : '#0C3B2E',
+                      color: '#FFFFFF'
+                    }}
+                  >
+                    {createTicketMutation.isPending ? 'Submitting...' : strings.submitButton}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* FAQ Section - Below form on left side */}
+            <Card className="border-none shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-ls-forest" />
+                  {strings.faqTitle}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {FAQ_ITEMS.map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={idx} className="p-3 bg-ls-stone rounded-lg border border-ls-forest/10">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-white rounded-lg flex-shrink-0">
+                          <Icon className="w-4 h-4 text-ls-forest" />
                         </div>
-                        <Badge className={STATUS_CONFIG[ticket.status]?.color}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
-                          {STATUS_CONFIG[ticket.status]?.label}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs" style={{ color: colors.textSecondary }}>
-                        <span>{strings.created}: {format(new Date(ticket.created_date), 'MMM d, yyyy')}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {CATEGORY_CONFIG[ticket.category]?.label}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${
-                            ticket.priority === 'high' ? 'border-red-500 text-red-700' :
-                            ticket.priority === 'medium' ? 'border-amber-500 text-amber-700' :
-                            'border-blue-500 text-blue-700'
-                          }`}
-                        >
-                          {ticket.priority === 'high' ? strings.high :
-                           ticket.priority === 'medium' ? strings.medium :
-                           strings.low}
-                        </Badge>
+                        <div>
+                          <p className="font-bold text-sm text-ls-charcoal mb-1">{item.question}</p>
+                          <p className="text-xs text-slate-600 leading-relaxed">{item.answer}</p>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Side - Tickets List (3/5) */}
+          <div className="lg:col-span-3">
+            <h3 className="font-bold text-lg text-ls-charcoal mb-4">{strings.recentTickets}</h3>
+            {tickets.length === 0 ? (
+              <Card className="border-none shadow-lg">
+                <CardContent className="p-12 text-center">
+                  <MessageCircle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <h4 className="text-lg font-bold text-ls-charcoal mb-2">{strings.noTickets}</h4>
+                  <p className="text-slate-600">{strings.noTicketsSub}</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {tickets.map((ticket) => {
+                  const statusConfig = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.open;
+                  const StatusIcon = statusConfig.icon;
+
+                  return (
+                    <Card key={ticket.id} className="border-none shadow-md hover:shadow-lg transition-all duration-300">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className="p-2 bg-ls-stone rounded-lg flex-shrink-0">
+                              <StatusIcon className="w-5 h-5 text-ls-forest" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-base text-ls-charcoal mb-1">{ticket.subject}</p>
+                              <p className="text-xs text-slate-500">
+                                Opened {format(new Date(ticket.created_date), 'MMM d, yyyy')}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge className={`${statusConfig.color} text-xs flex-shrink-0`}>
+                            {statusConfig.label}
+                          </Badge>
+                        </div>
+                        <div className="p-3 bg-slate-50 rounded-lg">
+                          <p className="text-sm text-slate-700 line-clamp-2">{ticket.description}</p>
+                        </div>
+                        {ticket.attachments && ticket.attachments.length > 0 && (
+                          <p className="text-xs text-slate-500 mt-2">
+                            📎 {ticket.attachments.length} attachment(s)
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -115,7 +115,8 @@ const PLAN_DETAILS = [
       'Priority Scanning', // Changed from 'Priority AI Scanning'
       '20GB Document Storage',
       'Advanced Reminders',
-      'Premium Support' // 'Document Archive' removed
+      'Premium Support',
+      'Document Archive' // Changed from 'Legal Document Archive'
     ],
     bgColor: '#1A1D1F',
     icon: Crown
@@ -215,13 +216,6 @@ export default function Account() {
     if (!plan) return;
 
     const priceId = interval === 'annual' ? plan.priceIdAnnual : plan.priceIdMonthly;
-
-    // For free plan, if a priceId is null, don't initiate a Stripe checkout
-    // A user on a paid plan cannot "subscribe" to free. Downgrade is via cancellation.
-    if (!priceId && planKey === 'free') {
-      alert("This is the free plan. You cannot subscribe to it directly.");
-      return;
-    }
 
     setSubscribing(true);
     try {
@@ -387,6 +381,7 @@ export default function Account() {
       phone: "Phone Number",
       phonePlaceholder: "+66 XX XXX XXXX",
       country: "Country",
+      countryPlaceholder: "Thailand",
       language: "Language",
       theme: "Theme",
       lightMode: "Light Mode",
@@ -489,7 +484,7 @@ export default function Account() {
       juristicLineConnect: "Connect Juristic to LINE",
       showQR: "Show QR Code",
       hideQR: "Hide QR Code",
-      scanQR: "Scan this QR Code with LINE app"
+      scanQR: "Scan this QR code with LINE app"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -2244,64 +2239,57 @@ export default function Account() {
           <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
           <p className="mb-6 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
           
-          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
-              const isCurrentPlan = user?.plan_tier === plan.key;
-              const price = billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
-              const interval = billingInterval === 'annual' ? plan.intervalAnnual : plan.priceMonthly === 0 ? '' : plan.intervalMonthly; // Adjust interval for free plan
-              const savings = billingInterval === 'annual' ? plan.savingsAnnual : 0;
-              const effectiveMonthlyPrice = billingInterval === 'annual' && plan.priceAnnual > 0 ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
+              const isCurrentPlan = currentPlanTier === plan.key;
+              const isFreeplan = plan.key === 'free';
+              const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
+              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.priceMonthly === 0 ? '' : plan.intervalMonthly); // Adjusted for free plan
+              const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
               
               return (
                 <div 
-                  key={plan.key} 
-                  style={{ 
+                  key={plan.key}
+                  style={{
                     position: 'relative',
                     borderRadius: '16px',
-                    border: plan.popular ? '3px solid #C7A338' : `1px solid ${colors.borderColor}`,
+                    overflow: 'visible',
+                    boxShadow: plan.popular ? '0 20px 25px -5px rgba(199, 163, 56, 0.3), 0 10px 10px -5px rgba(199, 163, 56, 0.15)' : '0 10px 15px -3px rgba(0,0,0,0.1)',
+                    border: plan.popular ? '3px solid #C7A338' : `2px solid ${colors.borderColor}`,
                     backgroundColor: colors.cardBg,
-                    boxShadow: plan.popular ? '0 10px 40px rgba(199, 163, 56, 0.3)' : '0 4px 6px rgba(0, 0, 0, 0.05)',
-                    transition: 'all 0.3s',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-8px)';
-                    e.currentTarget.style.boxShadow = plan.popular 
-                      ? '0 20px 60px rgba(199, 163, 56, 0.4)' 
-                      : '0 12px 24px rgba(0, 0, 0, 0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = plan.popular 
-                      ? '0 10px 40px rgba(199, 163, 56, 0.3)' 
-                      : '0 4px 6px rgba(0, 0, 0, 0.05)';
+                    transform: plan.popular ? 'scale(1.02)' : 'scale(1)',
+                    transition: 'all 0.3s ease'
                   }}
                 >
                   {plan.popular && (
                     <div style={{
                       position: 'absolute',
-                      top: '-12px',
+                      top: '-16px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      backgroundColor: '#1A1D1F',
-                      color: '#C7A338',
-                      padding: '6px 16px',
-                      fontSize: '11px',
+                      backgroundColor: '#C7A338',
+                      color: '#0C3B2E',
+                      fontSize: '13px',
                       fontWeight: 'bold',
-                      borderRadius: '16px',
-                      border: '2px solid #C7A338',
+                      padding: '10px 24px',
+                      borderRadius: '20px',
+                      border: '2px solid #0C3B2E',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
                       zIndex: 10,
-                      whiteSpace: 'nowrap'
+                      letterSpacing: '0.5px',
+                      boxShadow: '0 4px 12px rgba(199, 163, 56, 0.4)'
                     }}>
-                      {strings.mostPopular}
+                      <Star style={{ width: '16px', height: '16px', fill: '#0C3B2E', color: '#0C3B2E' }} />
+                      <span>{strings.mostPopular}</span>
+                      <Star style={{ width: '16px', height: '16px', fill: '#0C3B2E', color: '#0C3B2E' }} />
                     </div>
                   )}
-                  
-                  {billingInterval === 'annual' && plan.key !== 'free' && (
+
+                  {billingInterval === 'annual' && !isFreeplan && (
                     <div style={{
                       position: 'absolute',
                       top: 0,
@@ -2318,56 +2306,49 @@ export default function Account() {
                     </div>
                   )}
                   
-                  {/* Fixed height header with color band */}
-                  <div style={{ 
+                  <div style={{
                     backgroundColor: plan.bgColor,
-                    padding: '24px',
-                    color: '#FFFFFF',
-                    height: '200px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between'
+                    padding: plan.popular ? '48px 24px 24px 24px' : '32px 24px 24px 24px',
+                    color: '#FFFFFF'
                   }}>
-                    <div style={{ height: '80px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <Icon className="w-8 h-8" />
-                        <h3 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0, lineHeight: '1' }}>{plan.label}</h3>
-                      </div>
-                      <p style={{ fontSize: '14px', opacity: 0.9, margin: 0, lineHeight: '1.4' }}>{plan.tagline}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <Icon style={{ width: '28px', height: '28px', color: '#FFFFFF' }} />
+                      <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#FFFFFF', margin: 0 }}>
+                        {plan.label}
+                      </h3>
                     </div>
-                    
-                    <div style={{ height: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                      {plan.key !== 'free' ? (
-                        <>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '36px', fontWeight: 'bold', lineHeight: '1' }}>฿{price.toLocaleString()}</span>
-                            <span style={{ fontSize: '16px', opacity: 0.9, lineHeight: '1' }}>{interval}</span>
-                          </div>
-                          {savings > 0 ? (
-                            <p style={{ fontSize: '12px', opacity: 0.8, margin: 0, lineHeight: '1.2' }}>
-                              ฿{effectiveMonthlyPrice}{strings.perMonth} • {strings.save} ฿{savings.toLocaleString()}
-                            </p>
-                          ) : (
-                            <p style={{ fontSize: '12px', opacity: 0, margin: 0, lineHeight: '1.2', visibility: 'hidden' }}>
-                              placeholder
-                            </p>
-                          )}
-                        </>
+                    <p style={{ fontSize: '14px', color: '#FFFFFF', opacity: 0.95, marginBottom: '16px', minHeight: '20px' }}>
+                      {plan.tagline}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
+                      {isFreeplan ? (
+                        <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
+                          {strings.freePlanName}
+                        </span>
                       ) : (
                         <>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '36px', fontWeight: 'bold', lineHeight: '1' }}>{strings.freePlanName}</span>
-                          </div>
-                          <p style={{ fontSize: '12px', opacity: 0.8, margin: 0, lineHeight: '1.2' }}>
-                            {strings.noCreditCard}
-                          </p>
+                          <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
+                            ฿{displayPrice.toLocaleString()}
+                          </span>
+                          <span style={{ fontSize: '16px', color: '#FFFFFF', opacity: 0.9 }}>
+                            {displayInterval}
+                          </span>
                         </>
                       )}
                     </div>
+                    {billingInterval === 'annual' && !isFreeplan && (
+                      <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px' }}>
+                        ฿{effectiveMonthly}{strings.perMonth} • {strings.save} ฿{plan.savingsAnnual.toLocaleString()}
+                      </p>
+                    )}
+                    {isFreeplan && (
+                      <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px' }}>
+                        {strings.noCreditCard}
+                      </p>
+                    )}
                   </div>
 
-                  {/* Flexible content area */}
-                  <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '24px' }}>
                     <p style={{ fontSize: '14px', color: colors.textSecondary, marginBottom: '20px', minHeight: '40px', lineHeight: '1.5' }}>
                       {plan.description}
                     </p>
@@ -2377,8 +2358,7 @@ export default function Account() {
                       margin: '0 0 24px 0',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '10px',
-                      flex: 1
+                      gap: '10px'
                     }}>
                       {plan.benefits.map((benefit, idx) => {
                         const isEverythingBenefit = benefit.startsWith('Everything in');
@@ -2414,86 +2394,69 @@ export default function Account() {
                         );
                       })}
                     </ul>
-
-                    {/* Fixed position CTA */}
-                    <div style={{ marginTop: 'auto' }}>
-                      {isCurrentPlan ? (
-                        <button
-                          disabled
-                          style={{
-                            width: '100%',
-                            padding: '14px 24px',
-                            borderRadius: '10px',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            border: `2px solid ${colors.borderColor}`,
-                            backgroundColor: colors.cardBg,
-                            color: colors.textSecondary,
-                            cursor: 'not-allowed',
-                            opacity: 0.6
-                          }}
-                        >
-                          {strings.currentPlanBadge}
-                        </button>
-                      ) : plan.key === 'free' ? (
-                        <button
-                          disabled={true} // User on paid plan cannot 'start' free. Downgrade is via cancellation.
-                          style={{
-                            width: '100%',
-                            padding: '14px 24px',
-                            borderRadius: '10px',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            border: '2px solid #64748b',
-                            backgroundColor: colors.cardBg,
-                            color: '#64748b',
-                            cursor: 'not-allowed',
-                            opacity: 0.6
-                          }}
-                        >
-                          {strings.signupFree}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleSubscribe(plan.key, billingInterval)}
-                          disabled={subscribing}
-                          style={{
-                            width: '100%',
-                            padding: '14px 24px',
-                            borderRadius: '10px',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            border: 'none',
-                            backgroundColor: plan.bgColor,
-                            color: '#FFFFFF',
-                            cursor: subscribing ? 'not-allowed' : 'pointer',
-                            opacity: subscribing ? 0.7 : 1,
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!subscribing) {
-                              e.target.style.opacity = '0.9';
-                              e.target.style.transform = 'translateY(-2px)';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!subscribing) {
-                              e.target.style.opacity = '1';
-                              e.target.style.transform = 'translateY(0)';
-                            }
-                          }}
-                        >
-                          {subscribing ? (
-                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                              {strings.processing}
-                            </span>
-                          ) : (
-                            `${strings.startPlan} ${plan.label}`
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    
+                    {isCurrentPlan ? (
+                      <button
+                        disabled
+                        style={{
+                          width: '100%',
+                          padding: '14px 20px',
+                          borderRadius: '10px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: `2px solid ${colors.borderColor}`,
+                          backgroundColor: colors.fieldBg,
+                          color: colors.textSecondary,
+                          cursor: 'not-allowed'
+                        }}
+                      >
+                        {strings.currentPlanBadge}
+                      </button>
+                    ) : isFreeplan ? (
+                      <button
+                        disabled
+                        style={{
+                          width: '100%',
+                          padding: '14px 20px',
+                          borderRadius: '10px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: `2px solid ${colors.textSecondary}`,
+                          backgroundColor: colors.cardBg,
+                          color: colors.textSecondary,
+                          cursor: 'not-allowed'
+                        }}
+                      >
+                        {strings.signupFree}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleSubscribe(plan.key, billingInterval)}
+                        disabled={subscribing}
+                        style={{
+                          width: '100%',
+                          padding: '14px 20px',
+                          borderRadius: '10px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: 'none',
+                          backgroundColor: plan.bgColor,
+                          color: '#FFFFFF',
+                          cursor: subscribing ? 'not-allowed' : 'pointer',
+                          opacity: subscribing ? 0.7 : 1,
+                          transition: 'all 0.2s',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!subscribing) e.target.style.opacity = '0.9';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!subscribing) e.target.style.opacity = '1';
+                        }}
+                      >
+                        {subscribing ? strings.processing : `${strings.startPlan} ${plan.label}`}
+                      </button>
+                    )}
                   </div>
                 </div>
               );

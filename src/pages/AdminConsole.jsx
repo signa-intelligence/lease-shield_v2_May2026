@@ -19,20 +19,6 @@ export default function AdminConsole() {
   const [testingNotification, setTestingNotification] = useState(false);
   const [testResult, setTestResult] = useState(null);
 
-  const deleteUserMutation = useMutation({
-    mutationFn: (userId) => base44.asServiceRole.entities.User.delete(userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-    },
-  });
-
-  const updateUserMutation = useMutation({
-    mutationFn: ({ userId, data }) => base44.asServiceRole.entities.User.update(userId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-    },
-  });
-
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -212,42 +198,6 @@ export default function AdminConsole() {
     }
   };
 
-  const handleUserAction = (userId, action, currentData) => {
-    const confirmMessage = language === 'th'
-      ? `คุณแน่ใจหรือไม่ว่าต้องการ${action === 'delete' ? 'ลบ' : 'เปลี่ยนแปลง'}ผู้ใช้นี้?`
-      : `Are you sure you want to ${action} this user?`;
-    
-    if (!confirm(confirmMessage)) return;
-
-    switch (action) {
-      case 'delete':
-        deleteUserMutation.mutate(userId);
-        break;
-      case 'make_admin':
-        updateUserMutation.mutate({ userId, data: { role: 'admin' } });
-        break;
-      case 'remove_admin':
-        updateUserMutation.mutate({ userId, data: { role: 'user' } });
-        break;
-      case 'upgrade_tier':
-        const tierLevels = ['free', 'lite', 'protect', 'secure'];
-        const currentIndex = tierLevels.indexOf(currentData.plan_tier);
-        if (currentIndex < tierLevels.length - 1) {
-          updateUserMutation.mutate({ userId, data: { plan_tier: tierLevels[currentIndex + 1] } });
-        }
-        break;
-      case 'downgrade_tier':
-        const levels = ['free', 'lite', 'protect', 'secure'];
-        const idx = levels.indexOf(currentData.plan_tier);
-        if (idx > 0) {
-          updateUserMutation.mutate({ userId, data: { plan_tier: levels[idx - 1] } });
-        }
-        break;
-      default:
-        console.warn('Unknown user action:', action);
-    }
-  };
-
   const activeSubscribers = allUsers.filter(u => u.subscription_status === 'active').length;
 
   return (
@@ -331,14 +281,14 @@ export default function AdminConsole() {
                 }}
                 onMouseEnter={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = '#8B5CF6';
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#2D1B4E' : '#F5F3FF';
+                    e.target.style.borderColor = '#8B5CF6';
+                    e.target.style.backgroundColor = isDarkMode ? '#2D1B4E' : '#F5F3FF';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
                   }
                 }}
               >
@@ -368,14 +318,14 @@ export default function AdminConsole() {
                 }}
                 onMouseEnter={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = '#10B981';
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#1E4435' : '#ECFDF5';
+                    e.target.style.borderColor = '#10B981';
+                    e.target.style.backgroundColor = isDarkMode ? '#1E4435' : '#ECFDF5';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
                   }
                 }}
               >
@@ -405,14 +355,14 @@ export default function AdminConsole() {
                 }}
                 onMouseEnter={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = '#F59E0B';
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#3A2D1C' : '#FFF7ED';
+                    e.target.style.borderColor = '#F59E0B';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2D1C' : '#FFF7ED';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
                   }
                 }}
               >
@@ -442,14 +392,14 @@ export default function AdminConsole() {
                 }}
                 onMouseEnter={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = '#EF4444';
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
+                    e.target.style.borderColor = '#EF4444';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
                   }
                 }}
               >
@@ -479,14 +429,14 @@ export default function AdminConsole() {
                 }}
                 onMouseEnter={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = '#3B82F6';
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#1E3A5F' : '#EFF6FF';
+                    e.target.style.borderColor = '#3B82F6';
+                    e.target.style.backgroundColor = isDarkMode ? '#1E3A5F' : '#EFF6FF';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
                   }
                 }}
               >
@@ -516,14 +466,14 @@ export default function AdminConsole() {
                 }}
                 onMouseEnter={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = '#8B5CF6';
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#2D1B4E' : '#F5F3FF';
+                    e.target.style.borderColor = '#8B5CF6';
+                    e.target.style.backgroundColor = isDarkMode ? '#2D1B4E' : '#F5F3FF';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
                   }
                 }}
               >
@@ -553,14 +503,14 @@ export default function AdminConsole() {
                 }}
                 onMouseEnter={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = '#06B6D4';
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#164E63' : '#ECFEFF';
+                    e.target.style.borderColor = '#06B6D4';
+                    e.target.style.backgroundColor = isDarkMode ? '#164E63' : '#ECFEFF';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
                   }
                 }}
               >
@@ -590,14 +540,14 @@ export default function AdminConsole() {
                 }}
                 onMouseEnter={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = '#F59E0B';
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#3A2D1C' : '#FFF7ED';
+                    e.target.style.borderColor = '#F59E0B';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2D1C' : '#FFF7ED';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
                   }
                 }}
               >
@@ -627,14 +577,14 @@ export default function AdminConsole() {
                 }}
                 onMouseEnter={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = '#EF4444';
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
+                    e.target.style.borderColor = '#EF4444';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
                   }
                 }}
               >
@@ -664,14 +614,14 @@ export default function AdminConsole() {
                 }}
                 onMouseEnter={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = '#DC2626';
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#3A1A1A' : '#FEE2E2';
+                    e.target.style.borderColor = '#DC2626';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A1A1A' : '#FEE2E2';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!testingNotification) {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
                   }
                 }}
               >
@@ -842,48 +792,18 @@ export default function AdminConsole() {
                         {format(new Date(u.created_date), 'MMM d, yyyy')}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          {u.role !== 'admin' && (
-                            <button
-                              onClick={() => handleUserAction(u.id, 'make_admin', u)}
-                              className="text-xs px-2 py-1 rounded hover:bg-emerald-100"
-                              style={{
-                                backgroundColor: isDarkMode ? '#353A3D' : '#F0FDF4',
-                                color: '#059669',
-                                border: `1px solid ${isDarkMode ? '#059669' : '#BBF7D0'}`
-                              }}
-                              title={language === 'th' ? 'ตั้งเป็นแอดมิน' : 'Make Admin'}
-                            >
-                              <Crown className="w-3 h-3" />
-                            </button>
-                          )}
-                          {u.role === 'admin' && u.id !== user?.id && (
-                            <button
-                              onClick={() => handleUserAction(u.id, 'remove_admin', u)}
-                              className="text-xs px-2 py-1 rounded hover:bg-slate-100"
-                              style={{
-                                backgroundColor: isDarkMode ? '#353A3D' : '#F1F5F9',
-                                color: colors.textSecondary,
-                                border: `1px solid ${colors.borderColor}`
-                              }}
-                              title={language === 'th' ? 'ลบสิทธิ์แอดมิน' : 'Remove Admin'}
-                            >
-                              <Crown className="w-3 h-3" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleUserAction(u.id, 'delete', u)}
-                            className="text-xs px-2 py-1 rounded hover:bg-red-100"
-                            style={{
-                              backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                              color: '#DC2626',
-                              border: `1px solid ${isDarkMode ? '#DC2626' : '#FECACA'}`
-                            }}
-                            title={language === 'th' ? 'ลบผู้ใช้' : 'Delete User'}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          style={{
+                            backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
+                            color: colors.textPrimary,
+                            borderColor: colors.borderColor
+                          }}
+                        >
+                          {strings.actions}
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -907,51 +827,31 @@ export default function AdminConsole() {
             ) : (
               <div className="space-y-3">
                 {allLeases.slice(0, 10).map((lease) => (
-                  <button
-                    key={lease.id}
-                    onClick={() => navigate(createPageUrl("LeaseDetails") + `?id=${lease.id}`)}
-                    className="w-full p-4 rounded-lg border transition-all duration-200"
-                    style={{
-                      backgroundColor: colors.leaseBg,
-                      borderColor: colors.borderColor,
-                      textAlign: 'left',
-                      cursor: 'pointer'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#0C3B2E';
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#F0FDF4';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = colors.borderColor;
-                      e.currentTarget.style.backgroundColor = colors.leaseBg;
-                    }}
-                  >
+                  <div key={lease.id} className="p-4 rounded-lg border" style={{
+                    backgroundColor: colors.leaseBg,
+                    borderColor: colors.borderColor
+                  }}>
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
+                      <div>
                         <p className="font-semibold" style={{ color: colors.textPrimary }}>
                           {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
                         </p>
-                        <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
+                        <p className="text-sm" style={{ color: colors.textSecondary }}>
                           {language === 'th' ? 'โดย' : 'by'} {lease.created_by}
                         </p>
                         <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
                           {format(new Date(lease.created_date), 'MMM d, yyyy HH:mm')}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={
-                          lease.status === 'scanned' ? 'bg-blue-100 text-blue-800' :
-                          lease.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
-                          'bg-amber-100 text-amber-800'
-                        }>
-                          {lease.status}
-                        </Badge>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: colors.textSecondary }}>
-                          <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                      </div>
+                      <Badge className={
+                        lease.status === 'scanned' ? 'bg-blue-100 text-blue-800' :
+                        lease.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
+                        'bg-amber-100 text-amber-800'
+                      }>
+                        {lease.status}
+                      </Badge>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
