@@ -2310,7 +2310,10 @@ export default function Account() {
                   <div style={{
                     backgroundColor: plan.bgColor,
                     padding: plan.popular ? '48px 24px 24px 24px' : '32px 24px 24px 24px',
-                    color: '#FFFFFF'
+                    color: '#FFFFFF',
+                    minHeight: '180px',
+                    display: 'flex',
+                    flexDirection: 'column'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                       <Icon style={{ width: '28px', height: '28px', color: '#FFFFFF' }} />
@@ -2321,7 +2324,7 @@ export default function Account() {
                     <p style={{ fontSize: '14px', color: '#FFFFFF', opacity: 0.95, marginBottom: '16px', minHeight: '20px' }}>
                       {plan.tagline}
                     </p>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px', marginTop: 'auto' }}>
                       {isFreeplan ? (
                         <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
                           {strings.freePlanName}
@@ -2337,16 +2340,18 @@ export default function Account() {
                         </>
                       )}
                     </div>
-                    {billingInterval === 'annual' && !isFreeplan && (
-                      <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px' }}>
-                        ฿{effectiveMonthly}{strings.perMonth} • {strings.save} ฿{plan.savingsAnnual.toLocaleString()}
-                      </p>
-                    )}
-                    {isFreeplan && (
-                      <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px' }}>
-                        {strings.noCreditCard}
-                      </p>
-                    )}
+                    <div style={{ minHeight: '20px' }}>
+                      {billingInterval === 'annual' && !isFreeplan && (
+                        <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px', margin: 0 }}>
+                          ฿{effectiveMonthly}{strings.perMonth} • {strings.save} ฿{plan.savingsAnnual.toLocaleString()}
+                        </p>
+                      )}
+                      {isFreeplan && (
+                        <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px', margin: 0 }}>
+                          {strings.noCreditCard}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div style={{ 
