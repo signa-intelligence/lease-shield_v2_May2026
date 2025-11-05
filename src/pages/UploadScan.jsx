@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2, ExternalLink, Shield, FileVideo, Mail, HelpCircle, CheckSquare, Square } from "lucide-react";
 import { format } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -293,6 +293,31 @@ export default function UploadScanPage() {
     }
   };
 
+  const deleteLeaseWithScanMutation = useMutation({
+    mutationFn: async (leaseId) => {
+      // First delete any associated scans
+      const associatedScans = await base44.entities.LeaseScan.list();
+      const scansToDelete = associatedScans.filter(s => s.lease_id === leaseId);
+      for (const scan of scansToDelete) {
+        await base44.entities.LeaseScan.delete(scan.id);
+      }
+      // Then delete the lease
+      await base44.entities.Lease.delete(leaseId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leases'] });
+    },
+  });
+
+  const handleDeleteLease = (leaseId, e) => {
+    e.stopPropagation(); // Prevent card onClick from firing
+    if (window.confirm(language === 'th' 
+      ? 'คุณแน่ใจหรือไม่ว่าต้องการลบการสแกนนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้'
+      : 'Are you sure you want to delete this scan? This action cannot be undone.')) {
+      deleteLeaseWithScanMutation.mutate(leaseId);
+    }
+  };
+
   const handleViewDetails = (leaseId) => {
     navigate(createPageUrl("LeaseDetails") + `?leaseId=${leaseId}`);
   };
@@ -554,11 +579,11 @@ export default function UploadScanPage() {
                   onClick={() => handleViewDetails(lease.id)}
                 >
                   <CardContent className="p-4 md:p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
-                          <FileText className="w-5 h-5 text-ls-forest" />
-                          <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                          <FileText className="w-5 h-5 text-ls-forest flex-shrink-0" />
+                          <h3 className="font-bold truncate" style={{ color: colors.textPrimary }}>
                             {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
                           </h3>
                         </div>
@@ -566,12 +591,49 @@ export default function UploadScanPage() {
                           {strings.scanDate}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
                         </p>
                       </div>
-                      {lease.status === 'scanned' && (
-                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
-                          {language === 'th' ? 'วิเคราะห์แล้ว' : 'Analyzed'}
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {lease.status === 'scanned' && (
+                          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                            {language === 'th' ? 'วิเคราะห์แล้ว' : 'Analyzed'}
+                          </Badge>
+                        )}
+                        <button
+                          onClick={(e) => handleDeleteLease(lease.id, e)}
+                          disabled={deleteLeaseWithScanMutation.isPending}
+                          style={{
+                            backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                            color: '#EF4444',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            border: 'none',
+                            cursor: deleteLeaseWithScanMutation.isPending ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                            opacity: deleteLeaseWithScanMutation.isPending ? 0.5 : 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            if (!deleteLeaseWithScanMutation.isPending) {
+                              e.target.style.backgroundColor = '#DC2626';
+                              e.target.style.color = '#FFFFFF';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.stopPropagation();
+                            if (!deleteLeaseWithScanMutation.isPending) {
+                              e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
+                              e.target.style.color = '#EF4444';
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
