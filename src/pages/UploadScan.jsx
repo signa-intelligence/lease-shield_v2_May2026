@@ -460,14 +460,21 @@ export default function UploadScanPage() {
                     {strings.noticePeriodHelp}
                   </p>
                 </div>
-                <div className="flex gap-3 pt-4">
-                  <Button variant="outline" onClick={handleSkipConfirmation} className="flex-1">
-                    {strings.skipReminder}
-                  </Button>
-                  <Button onClick={handleConfirmLeaseDetails} className="flex-1 bg-ls-forest hover:bg-ls-forest/90">
-                    {strings.setReminder}
-                  </Button>
-                </div>
+                <Button 
+                  onClick={handleConfirmLeaseDetails} 
+                  className="w-full bg-ls-forest hover:bg-ls-forest/90 py-6 text-base font-bold"
+                >
+                  {strings.setReminder}
+                </Button>
+                <button
+                  onClick={handleSkipConfirmation}
+                  className="w-full text-center py-2 text-sm font-medium transition-colors"
+                  style={{ color: colors.textSecondary }}
+                  onMouseEnter={(e) => e.target.style.color = colors.textPrimary}
+                  onMouseLeave={(e) => e.target.style.color = colors.textSecondary}
+                >
+                  {strings.skipReminder}
+                </button>
               </div>
             </DialogContent>
           </Dialog>
