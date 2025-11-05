@@ -1,0 +1,136 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Authenticate user
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get request body
+    const { fileUrls, leaseId } = await req.json();
+    
+    if (!fileUrls || fileUrls.length === 0) {
+      return Response.json({ error: 'No file URLs provided' }, { status: 400 });
+    }
+
+    console.log('Starting lease scan for user:', user.email);
+    console.log('File URLs:', fileUrls.length, 'files');
+    console.log('Lease ID:', leaseId);
+
+    // Simplified, more robust prompt
+    const scanResult = await base44.integrations.Core.InvokeLLM({
+      prompt: `Analyze this rental lease agreement and identify potential issues for the tenant.
+
+INSTRUCTIONS:
+1. Read the document carefully
+2. Identify unfair or risky clauses
+3. Rate the overall risk from 0-100 (0=safe, 100=very risky)
+4. For each issue found, provide:
+   - title: Brief title
+   - severity: low, medium, high, or critical
+   - category: Type of issue (e.g., "Deposit", "Termination", "Entry Rights")
+   - description: What's wrong (1 sentence)
+   - evidence: Quote the exact problematic text
+   - explanation: Why this is a problem (2-3 sentences)
+   - recommendation: What the tenant should do (2-3 sentences)
+
+5. Extract these details if found (use null if not found):
+   - property_address
+   - start_date (YYYY-MM-DD)
+   - end_date (YYYY-MM-DD)
+   - rent_amount (number only)
+   - deposit_amount (number only)
+   - notice_period_days (days before lease end to notify landlord)
+
+6. Write a summary paragraph about the overall lease quality`,
+      file_urls: fileUrls,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          risk_score: { 
+            type: "integer",
+            minimum: 0,
+            maximum: 100
+          },
+          summary: { 
+            type: "string" 
+          },
+          flags: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                severity: { 
+                  type: "string", 
+                  enum: ["low", "medium", "high", "critical"] 
+                },
+                category: { type: "string" },
+                description: { type: "string" },
+                evidence: { type: "string" },
+                explanation: { type: "string" },
+                recommendation: { type: "string" }
+              },
+              required: ["severity", "description"]
+            }
+          },
+          property_address: { type: ["string", "null"] },
+          start_date: { type: ["string", "null"] },
+          end_date: { type: ["string", "null"] },
+          rent_amount: { type: ["number", "null"] },
+          deposit_amount: { type: ["number", "null"] },
+          language_detected: { 
+            type: ["string", "null"],
+            enum: ["en", "th", "mixed", null]
+          },
+          notice_period_days: { type: ["integer", "null"] }
+        },
+        required: ["risk_score", "summary"]
+      }
+    });
+
+    console.log('Analysis complete. Risk score:', scanResult.risk_score);
+    console.log('Flags found:', scanResult.flags?.length || 0);
+
+    // Update lease with extracted information
+    if (leaseId) {
+      await base44.entities.Lease.update(leaseId, {
+        status: 'scanned',
+        property_address: scanResult.property_address,
+        start_date: scanResult.start_date,
+        end_date: scanResult.end_date,
+        rent_amount: scanResult.rent_amount,
+        deposit_amount: scanResult.deposit_amount,
+        language_detected: scanResult.language_detected || 'en'
+      });
+      console.log('Updated lease:', leaseId);
+    }
+
+    return Response.json({
+      success: true,
+      result: scanResult
+    });
+
+  } catch (error) {
+    console.error('Lease scan error:', error);
+    
+    // Provide helpful error message
+    let errorMessage = 'Failed to analyze lease';
+    
+    if (error.message?.includes('timeout')) {
+      errorMessage = 'Analysis timed out. Please try with a smaller file or clearer images.';
+    } else if (error.message?.includes('schema')) {
+      errorMessage = 'Unable to extract information from document. Please ensure it\'s a valid lease agreement.';
+    }
+    
+    return Response.json({ 
+      success: false,
+      error: errorMessage,
+      details: error.message 
+    }, { status: 500 });
+  }
+});
