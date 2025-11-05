@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -136,11 +137,10 @@ export default function UploadScanPage() {
 
     let currentRetry = 0;
     const maxRetries = 3;
-    let createdLeaseId = null; // Track the lease ID we create
+    let createdLeaseId = null;
 
     const attemptUpload = async () => {
       try {
-        // Step 1: Upload files
         console.log('📤 Step 1: Uploading files...');
         setAnalysisStage('uploading');
         setUploadProgress(10);
@@ -154,7 +154,6 @@ export default function UploadScanPage() {
         console.log('✅ Files uploaded:', fileUrls.length);
         setUploadProgress(30);
 
-        // Step 2: Create lease record
         console.log('📝 Step 2: Creating lease record...');
         setAnalysisStage('creating');
         setUploadProgress(40);
@@ -164,38 +163,47 @@ export default function UploadScanPage() {
           file_urls: fileUrls,
           status: 'uploaded'
         });
-        createdLeaseId = lease.id; // Store the ID
+        createdLeaseId = lease.id;
         console.log('✅ Lease created with ID:', createdLeaseId);
         setUploadProgress(50);
 
-        // Step 3: Start AI analysis
         console.log('🤖 Step 3: Starting AI analysis...');
         setAnalyzing(true);
         setUploading(false);
         setAnalysisStage('scanning');
         setUploadProgress(60);
 
-        // Call backend function for scanning
         const { data: scanResponse } = await base44.functions.invoke('scanLease', {
-          fileUrls: fileUrls,
-          leaseId: createdLeaseId // Use the stored ID
+          fileUrls: fileUrls
         });
 
         if (!scanResponse || !scanResponse.success) {
-          throw new Error(scanResponse?.error || 'Scan failed - no response from backend');
+          throw new Error(scanResponse?.error || 'Scan failed');
         }
 
         const scanResult = scanResponse.result;
         console.log('✅ AI analysis complete. Risk score:', scanResult.risk_score);
         setAnalysisStage('extracting');
+        setUploadProgress(70);
+
+        console.log('💾 Step 4: Updating lease with extracted data...');
+        await base44.entities.Lease.update(createdLeaseId, {
+          status: 'scanned',
+          property_address: scanResult.property_address || null,
+          start_date: scanResult.start_date || null,
+          end_date: scanResult.end_date || null,
+          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
+          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
+          language_detected: scanResult.language_detected || 'en'
+        });
+        console.log('✅ Lease updated');
         setUploadProgress(80);
 
-        // Step 4: Create scan record
-        console.log('💾 Step 4: Saving scan results...');
+        console.log('💾 Step 5: Saving scan results...');
         setAnalysisStage('finalizing');
         
         await base44.entities.LeaseScan.create({
-          lease_id: createdLeaseId, // Use the stored ID
+          lease_id: createdLeaseId,
           risk_score: scanResult.risk_score,
           flags: scanResult.flags || [],
           summary: scanResult.summary,
@@ -205,7 +213,6 @@ export default function UploadScanPage() {
         console.log('✅ Scan record created');
         setUploadProgress(100);
 
-        // Step 5: Show confirmation modal for notice period
         if (scanResult.end_date) {
           setLeaseDetails({
             end_date: scanResult.end_date,
@@ -214,7 +221,6 @@ export default function UploadScanPage() {
           setPendingLeaseId(createdLeaseId);
           setShowConfirmation(true);
         } else {
-          // No end date detected, go straight to results
           navigate(createPageUrl("ScanPreview") + `?leaseId=${createdLeaseId}`);
         }
         
@@ -223,14 +229,7 @@ export default function UploadScanPage() {
 
       } catch (err) {
         console.error('❌ Upload/Analysis error:', err);
-        console.error('Error details:', {
-          message: err.message,
-          leaseId: createdLeaseId,
-          retry: currentRetry,
-          stage: analysisStage
-        });
         
-        // Check if it's a Word document specific error
         const isWordDoc = selectedFiles.some(f => 
           f.name.toLowerCase().endsWith('.doc') || 
           f.name.toLowerCase().endsWith('.docx')
@@ -240,20 +239,17 @@ export default function UploadScanPage() {
         setRetryCount(currentRetry);
 
         if (currentRetry <= maxRetries) {
-          // Show retry message
           setError(language === 'th'
             ? `เกิดข้อผิดพลาด กำลังลองใหม่... (${currentRetry}/${maxRetries})`
             : `Error occurred. Retrying... (${currentRetry}/${maxRetries})`);
 
-          // Wait before retry with exponential backoff
-          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry)));
+          await new Promise(resolve => setTimeout(resolve, 2000 * currentRetry));
           
-          // If we created a lease but analysis failed, delete it before retrying
           if (createdLeaseId && analysisStage !== 'uploading') {
             try {
               console.log('🗑️ Cleaning up failed lease:', createdLeaseId);
               await base44.entities.Lease.delete(createdLeaseId);
-              createdLeaseId = null; // Reset
+              createdLeaseId = null;
             } catch (cleanupErr) {
               console.error('Failed to cleanup lease:', cleanupErr);
             }
@@ -261,33 +257,27 @@ export default function UploadScanPage() {
           
           return attemptUpload();
         } else {
-          // Max retries reached - provide helpful error message
           let errorMessage;
           
           if (isWordDoc) {
             errorMessage = language === 'th'
               ? 'ไม่สามารถวิเคราะห์ไฟล์ Word ได้\n\n💡 กรุณาลอง:\n• แปลงเป็น PDF ก่อนอัปโหลด\n• ถ่ายภาพหน้าสัญญาแทน\n• เปิดด้วย Google Docs แล้ว Download เป็น PDF'
               : 'Unable to analyze Word document\n\n💡 Please try:\n• Convert to PDF before uploading\n• Take photos of lease pages\n• Open in Google Docs and save as PDF';
-          } else if (err.message?.toLowerCase().includes('timeout') || err.message?.toLowerCase().includes('function execution limit')) {
+          } else if (err.message?.toLowerCase().includes('timeout')) {
             errorMessage = language === 'th'
               ? 'การวิเคราะห์ใช้เวลานานเกินไป\n\n💡 กรุณาลอง:\n• ใช้ไฟล์ที่เล็กกว่า\n• แยกอัปโหลดทีละหน้า\n• ถ่ายภาพที่ชัดเจนกว่า'
               : 'Analysis timed out\n\n💡 Please try:\n• Use smaller files\n• Upload pages separately\n• Take clearer photos';
-          } else if (err.message?.includes('not Found')) {
-            errorMessage = language === 'th'
-              ? 'เกิดข้อผิดพลาดในการบันทึกข้อมูล\n\n💡 กรุณา:\n• รีเฟรชหน้าเว็บ\n• ลองอัปโหลดอีกครั้ง\n• หากปัญหายังคงอยู่ ติดต่อฝ่ายสนับสนุน'
-              : 'Data saving error occurred\n\n💡 Please:\n• Refresh the page\n• Try uploading again\n• Contact support if issue persists';
           } else {
             errorMessage = language === 'th'
-              ? 'ไม่สามารถวิเคราะห์ได้\n\n💡 กรุณาตรวจสอบ:\n• ไฟล์เป็นสัญญาเช่าที่อ่านได้\n• ขนาดไฟล์ไม่เกิน 10MB\n• ภาพชัดเจนและอ่านได้\n\nหรือลองแปลงเป็น PDF'
-              : 'Analysis failed\n\n💡 Please check:\n• File is a readable lease agreement\n• File size is under 10MB\n• Images are clear and readable\n\nOr try converting to PDF';
+              ? 'ไม่สามารถวิเคราะห์ได้\n\n💡 กรุณาตรวจสอบ:\n• ไฟล์เป็นสัญญาเช่าที่อ่านได้\n• ขนาดไฟล์ไม่เกิน 10MB\n• ภาพชัดเจนและอ่านได้'
+              : 'Analysis failed\n\n💡 Please check:\n• File is a readable lease agreement\n• File size is under 10MB\n• Images are clear and readable';
           }
 
           setError(errorMessage);
           
-          // Cleanup failed lease if it exists
           if (createdLeaseId) {
             try {
-              console.log('🗑️ Final cleanup of failed lease:', createdLeaseId);
+              console.log('🗑️ Final cleanup:', createdLeaseId);
               await base44.entities.Lease.delete(createdLeaseId);
             } catch (cleanupErr) {
               console.error('Failed final cleanup:', cleanupErr);

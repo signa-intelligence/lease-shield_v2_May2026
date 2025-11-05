@@ -4,14 +4,12 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Authenticate user
     const user = await base44.auth.me();
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get request body
-    const { fileUrls, leaseId } = await req.json();
+    const { fileUrls } = await req.json();
     
     if (!fileUrls || fileUrls.length === 0) {
       return Response.json({ error: 'No file URLs provided' }, { status: 400 });
@@ -19,9 +17,7 @@ Deno.serve(async (req) => {
 
     console.log('Starting lease scan for user:', user.email);
     console.log('File URLs:', fileUrls.length, 'files');
-    console.log('Lease ID:', leaseId);
 
-    // Fixed JSON schema - compatible with Vertex AI
     const scanResult = await base44.integrations.Core.InvokeLLM({
       prompt: `Analyze this rental lease agreement and identify potential issues for the tenant.
 
@@ -32,22 +28,22 @@ INSTRUCTIONS:
 4. For each issue found, provide:
    - title: Brief title
    - severity: low, medium, high, or critical
-   - category: Type of issue (e.g., "Deposit", "Termination", "Entry Rights")
-   - description: What's wrong (1 sentence)
-   - evidence: Quote the exact problematic text
-   - explanation: Why this is a problem (2-3 sentences)
-   - recommendation: What the tenant should do (2-3 sentences)
+   - category: Type of issue
+   - description: What's wrong
+   - evidence: Quote the problematic text
+   - explanation: Why this is a problem
+   - recommendation: What the tenant should do
 
-5. Extract these details if found (leave empty string if not found):
+5. Extract these details (use empty string if not found):
    - property_address
    - start_date (YYYY-MM-DD format)
    - end_date (YYYY-MM-DD format)
-   - rent_amount (number only, 0 if not found)
-   - deposit_amount (number only, 0 if not found)
-   - notice_period_days (days before lease end to notify landlord, 0 if not found)
+   - rent_amount (number, 0 if not found)
+   - deposit_amount (number, 0 if not found)
+   - notice_period_days (integer, 0 if not found)
    - language_detected (en, th, or mixed)
 
-6. Write a summary paragraph about the overall lease quality`,
+6. Write a summary paragraph`,
       file_urls: fileUrls,
       response_json_schema: {
         type: "object",
@@ -97,22 +93,6 @@ INSTRUCTIONS:
     console.log('Analysis complete. Risk score:', scanResult.risk_score);
     console.log('Flags found:', scanResult.flags?.length || 0);
 
-    // Update lease with extracted information (convert empty strings to null)
-    if (leaseId) {
-      const updateData = {
-        status: 'scanned',
-        property_address: scanResult.property_address || null,
-        start_date: scanResult.start_date || null,
-        end_date: scanResult.end_date || null,
-        rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
-        deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
-        language_detected: scanResult.language_detected || 'en'
-      };
-      
-      await base44.entities.Lease.update(leaseId, updateData);
-      console.log('Updated lease:', leaseId);
-    }
-
     return Response.json({
       success: true,
       result: scanResult
@@ -121,7 +101,6 @@ INSTRUCTIONS:
   } catch (error) {
     console.error('Lease scan error:', error);
     
-    // Provide helpful error message
     let errorMessage = 'Failed to analyze lease';
     
     if (error.message?.includes('timeout')) {
