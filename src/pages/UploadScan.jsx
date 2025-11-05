@@ -284,9 +284,14 @@ export default function UploadScanPage() {
 
   const handleDeleteLease = (leaseId, e) => {
     e.stopPropagation(); // Prevent card onClick from firing
-    if (window.confirm(language === 'th'
-      ? 'คุณแน่ใจหรือไม่ว่าต้องการลบการสแกนนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้'
-      : 'Are you sure you want to delete this scan? This action cannot be undone.')) {
+    
+    const confirmMessage = language === 'th'
+      ? 'คุณแน่ใจหรือไม่ว่าต้องการลบการสแกนนี้?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้'
+      : 'Are you sure you want to delete this scan?\n\nThis action cannot be undone.';
+    
+    const userConfirmed = window.confirm(confirmMessage);
+    
+    if (userConfirmed) {
       deleteLeaseWithScanMutation.mutate(leaseId);
     }
   };
