@@ -1601,7 +1601,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                         color: '#F59E0B',
-                        border: '2px solid #F59E0B',
+                        border: '2px solid '#F59E0B',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -2311,7 +2311,7 @@ export default function Account() {
                     backgroundColor: plan.bgColor,
                     padding: plan.popular ? '48px 24px 24px 24px' : '32px 24px 24px 24px',
                     color: '#FFFFFF',
-                    minHeight: plan.popular ? '196px' : '180px', // Adjusted for popular badge space
+                    minHeight: '196px',
                     display: 'flex',
                     flexDirection: 'column'
                   }}>
