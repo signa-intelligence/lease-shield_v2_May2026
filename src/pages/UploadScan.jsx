@@ -146,22 +146,27 @@ export default function UploadScanPage() {
         setAnalyzing(true);
         setUploading(false);
 
-        // Analyze with retry logic
+        // Analyze with retry logic - Enhanced for Word documents
         let scanResult;
         let analysisRetry = 0;
         const maxAnalysisRetries = 2;
 
         while (analysisRetry <= maxAnalysisRetries) {
           try {
+            // Enhanced prompt with explicit instructions for Word documents
             scanResult = await base44.integrations.Core.InvokeLLM({
-              prompt: `Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant.
+              prompt: `Analyze this lease agreement and extract key information. The document may be in PDF, image, or Word (DOC/DOCX) format. 
+              
+              If this is a Word document, read the full text content and analyze it thoroughly. Identify any potential issues or unfair clauses that could harm the tenant.
 
               Provide:
               1. A risk score from 0-100 (0 = very safe, 100 = very risky)
               2. List of flags with severity (critical, high, medium, low), category, and description
               3. A summary of the overall lease quality
               4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)
-              5. IMPORTANT: Extract notice_period_days - the number of days before lease end that tenant must notify landlord about renewal/termination (common: 30, 45, 60, 90 days). Look for clauses like "notify landlord X days prior to end" or "แจ้งล่วงหน้า X วัน". If not found, return null.`,
+              5. IMPORTANT: Extract notice_period_days - the number of days before lease end that tenant must notify landlord about renewal/termination (common: 30, 45, 60, 90 days). Look for clauses like "notify landlord X days prior to end" or "แจ้งล่วงหน้า X วัน". If not found, return null.
+              
+              IMPORTANT: If you cannot read the document or it appears blank/corrupted, return a risk_score of 0 and include a flag indicating the document could not be properly analyzed.`,
               file_urls: fileUrls,
               response_json_schema: {
                 type: "object",
@@ -189,14 +194,36 @@ export default function UploadScanPage() {
                 }
               }
             });
+            
+            // Check if analysis indicates document couldn't be read
+            if (scanResult.risk_score === 0 && scanResult.summary && (scanResult.summary.toLowerCase().includes('could not') || scanResult.summary.toLowerCase().includes('unable to'))) {
+              throw new Error(language === 'th'
+                ? 'ไม่สามารถอ่านเอกสารได้ กรุณาลองใช้ไฟล์ PDF หรือรูปภาพแทน'
+                : 'Unable to read document. Please try using PDF or image format instead.');
+            }
+            
             setUploadProgress(80);
             break; // Success, exit retry loop
           } catch (analysisError) {
+            console.error(`Analysis attempt ${analysisRetry + 1} failed:`, analysisError);
             analysisRetry++;
+            
             if (analysisRetry > maxAnalysisRetries) {
+              // Check if it's a Word document specific error
+              const isWordDoc = selectedFiles.some(f => 
+                f.name.toLowerCase().endsWith('.doc') || 
+                f.name.toLowerCase().endsWith('.docx')
+              );
+              
+              if (isWordDoc) {
+                throw new Error(language === 'th'
+                  ? 'ไม่สามารถวิเคราะห์ไฟล์ Word ได้ กรุณาลองแปลงเป็น PDF หรือถ่ายภาพหน้าสัญญาแทน'
+                  : 'Unable to analyze Word document. Please try converting to PDF or take photos of the lease pages instead.');
+              }
+              
               throw new Error(language === 'th'
-                ? 'การวิเคราะห์ล้มเหลว กรุณาลองอีกครั้งภายหลัง'
-                : 'Analysis failed. Please try again later.');
+                ? 'การวิเคราะห์ล้มเหลว กรุณาตรวจสอบว่าไฟล์ไม่เสียหายและลองอีกครั้ง'
+                : 'Analysis failed. Please ensure the file is not corrupted and try again.');
             }
             // Wait before retry
             await new Promise(resolve => setTimeout(resolve, 1000 * analysisRetry));
@@ -234,6 +261,17 @@ export default function UploadScanPage() {
         setSelectedFiles([]);
 
       } catch (err) {
+        console.error('Upload/Analysis error:', err);
+        
+        // If this is already a formatted error message, use it directly
+        if (err.message && (err.message.includes('Word') || err.message.includes('PDF') || err.message.includes('วิเคราะห์') || err.message.includes('อ่าน'))) {
+          setError(err.message);
+          setUploading(false);
+          setAnalyzing(false);
+          setUploadProgress(0);
+          return;
+        }
+        
         currentRetry++;
         setRetryCount(currentRetry);
 
@@ -248,18 +286,12 @@ export default function UploadScanPage() {
           return attemptUpload();
         } else {
           // Max retries reached
-          console.error('Upload failed after retries:', err);
-
           let errorMessage = language === 'th'
-            ? 'ไม่สามารถอัปโหลดได้ กรุณาตรวจสอบ:\n• ไฟล์ไม่เสียหาย\n• ขนาดไฟล์ไม่เกิน 10MB\n• มีอินเทอร์เน็ตที่เสถียร'
-            : 'Upload failed. Please check:\n• File is not corrupted\n• File size is under 10MB\n• Stable internet connection';
+            ? 'ไม่สามารถอัปโหลดได้ กรุณาตรวจสอบ:\n• ไฟล์ไม่เสียหาย\n• ขนาดไฟล์ไม่เกิน 10MB\n• มีอินเทอร์เน็ตที่เสถียร\n\n💡 เคล็ดลับ: ลองแปลงเป็น PDF หรือถ่ายภาพหน้าสัญญาแทน'
+            : 'Upload failed. Please check:\n• File is not corrupted\n• File size is under 10MB\n• Stable internet connection\n\n💡 Tip: Try converting to PDF or take photos of the lease pages instead';
 
-          if (err.message.includes('Analysis failed')) {
+          if (err.message) {
             errorMessage = err.message;
-          } else if (err.message.includes('file')) {
-            errorMessage = language === 'th'
-              ? 'ไฟล์ไม่ถูกต้อง กรุณาใช้ไฟล์ PDF หรือรูปภาพเท่านั้น'
-              : 'Invalid file. Please use PDF or image files only.';
           }
 
           setError(errorMessage);
