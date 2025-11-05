@@ -182,29 +182,29 @@ export default function DocumentVault() {
   const strings = t[language];
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-3 sm:p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-ls-forest" />
-            <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+        <div className="mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-ls-forest" />
+            <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           </div>
-          <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+          <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
           {/* Upload Form - Left Side */}
           <Card className="border-none shadow-lg lg:col-span-1" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-6">
-              <h3 className="font-bold text-lg mb-4 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Upload className="w-5 h-5 text-ls-forest" />
+            <CardContent className="p-4 sm:p-6">
+              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-ls-forest" />
                 {strings.uploadFiles}
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.documentType}</Label>
+                  <Label className="text-sm" style={{ color: colors.textPrimary }}>{strings.documentType}</Label>
                   <Select value={uploadType} onValueChange={setUploadType}>
-                    <SelectTrigger style={{
+                    <SelectTrigger className="mt-1 h-10" style={{
                       backgroundColor: colors.inputBg,
                       color: colors.textPrimary,
                       borderColor: colors.borderColor
@@ -222,12 +222,13 @@ export default function DocumentVault() {
                   </Select>
                 </div>
                 <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.customLabel}</Label>
+                  <Label className="text-sm" style={{ color: colors.textPrimary }}>{strings.customLabel}</Label>
                   <input
                     type="text"
                     value={uploadLabel}
                     onChange={(e) => setUploadLabel(e.target.value)}
                     placeholder="e.g., Move-in photos"
+                    className="mt-1"
                     style={{
                       width: '100%',
                       padding: '8px 12px',
@@ -236,7 +237,8 @@ export default function DocumentVault() {
                       backgroundColor: colors.inputBg,
                       color: colors.textPrimary,
                       border: `1px solid ${colors.borderColor}`,
-                      outline: 'none'
+                      outline: 'none',
+                      height: '40px'
                     }}
                   />
                 </div>
@@ -248,7 +250,7 @@ export default function DocumentVault() {
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '24px',
+                      padding: '20px',
                       border: `2px dashed ${colors.borderColor}`,
                       borderRadius: '12px',
                       cursor: uploading ? 'not-allowed' : 'pointer',
@@ -262,11 +264,11 @@ export default function DocumentVault() {
                       if (!uploading) e.target.style.borderColor = colors.borderColor;
                     }}
                   >
-                    <Upload className="w-8 h-8 mb-2" style={{ color: colors.textSecondary }} />
-                    <span className="text-sm font-medium" style={{ color: colors.textPrimary }}>
+                    <Upload className="w-6 h-6 sm:w-8 sm:h-8 mb-2" style={{ color: colors.textSecondary }} />
+                    <span className="text-sm font-medium text-center" style={{ color: colors.textPrimary }}>
                       {uploading ? strings.uploading : strings.selectFiles}
                     </span>
-                    <span className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                    <span className="text-xs mt-1 text-center" style={{ color: colors.textSecondary }}>
                       PDF, Images, Videos
                     </span>
                     <input
@@ -282,7 +284,7 @@ export default function DocumentVault() {
               </div>
 
               {/* Templates Link */}
-              <div className="mt-6 p-4 rounded-xl border" style={{
+              <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl border" style={{
                 backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
                 borderColor: 'rgba(12, 59, 46, 0.2)'
               }}>
@@ -290,14 +292,14 @@ export default function DocumentVault() {
                   onClick={() => navigate(createPageUrl("Templates"))}
                   className="w-full flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-ls-forest" />
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-ls-forest flex-shrink-0" />
                     <div className="text-left">
-                      <p className="font-bold text-sm" style={{ color: colors.textPrimary }}>{strings.viewTemplates}</p>
+                      <p className="font-bold text-xs sm:text-sm" style={{ color: colors.textPrimary }}>{strings.viewTemplates}</p>
                       <p className="text-xs" style={{ color: colors.textSecondary }}>{strings.templatesDesc}</p>
                     </div>
                   </div>
-                  <ExternalLink className="w-4 h-4 text-ls-forest" />
+                  <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 text-ls-forest flex-shrink-0" />
                 </button>
               </div>
             </CardContent>
@@ -305,40 +307,41 @@ export default function DocumentVault() {
 
           {/* Recent Uploads - Right Side */}
           <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>{strings.recentUploads}</h3>
+            <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2 flex-wrap">
+              <h3 className="font-bold text-base sm:text-lg" style={{ color: colors.textPrimary }}>{strings.recentUploads}</h3>
               {documents.length > 0 && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                   {selectedDocs.length > 0 && (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+                      <span className="text-xs sm:text-sm font-medium" style={{ color: colors.textSecondary }}>
                         {selectedDocs.length} {strings.selected}
                       </span>
                       <Button
                         onClick={handleDeleteSelected}
                         variant="destructive"
                         size="sm"
-                        className="bg-red-600 hover:bg-red-700"
+                        className="bg-red-600 hover:bg-red-700 text-xs h-8"
                       >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        {strings.deleteSelected}
+                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">{strings.deleteSelected}</span>
+                        <span className="sm:hidden">Delete</span>
                       </Button>
                     </div>
                   )}
                   <button
                     onClick={handleSelectAll}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm"
                     style={{
                       backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
                       color: colors.textPrimary
                     }}
                   >
                     {selectedDocs.length === documents.length ? (
-                      <CheckSquare className="w-4 h-4 text-ls-forest" />
+                      <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4 text-ls-forest" />
                     ) : (
-                      <Square className="w-4 h-4" />
+                      <Square className="w-3 h-3 sm:w-4 sm:h-4" />
                     )}
-                    <span className="text-sm font-medium">{strings.selectAll}</span>
+                    <span className="font-medium">{strings.selectAll}</span>
                   </button>
                 </div>
               )}
@@ -346,12 +349,13 @@ export default function DocumentVault() {
 
             {documents.length === 0 ? (
               <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-                <CardContent className="p-12 text-center">
-                  <FileText className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
-                  <h4 className="text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.noDocuments}</h4>
-                  <p className="mb-6" style={{ color: colors.textSecondary }}>{strings.noDocsSub}</p>
+                <CardContent className="p-8 sm:p-12 text-center">
+                  <FileText className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
+                  <h4 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.noDocuments}</h4>
+                  <p className="mb-4 sm:mb-6 text-sm" style={{ color: colors.textSecondary }}>{strings.noDocsSub}</p>
                   <Button
                     onClick={() => document.getElementById('file-upload').click()}
+                    className="text-sm"
                     style={{
                       backgroundColor: '#0C3B2E',
                       color: '#FFFFFF'
@@ -363,7 +367,7 @@ export default function DocumentVault() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-3 sm:gap-4">
                 {documents.map((doc) => {
                   const typeConfig = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
                   const TypeIcon = typeConfig.icon;
@@ -373,22 +377,22 @@ export default function DocumentVault() {
                     <Card key={doc.id} className={`border-none shadow-md hover:shadow-lg transition-all duration-300 ${isSelected ? 'ring-2 ring-ls-forest' : ''}`} style={{
                       backgroundColor: colors.cardBg
                     }}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3 mb-3">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={() => handleToggleSelect(doc.id)}
-                            className="mt-1"
+                            className="mt-1 flex-shrink-0"
                           />
-                          <div className="flex items-start justify-between flex-1 min-w-0">
-                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className="flex items-start justify-between flex-1 min-w-0 gap-2">
+                            <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                               <div className="p-2 rounded-lg flex-shrink-0" style={{
                                 backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED'
                               }}>
-                                <TypeIcon className="w-5 h-5 text-ls-forest" />
+                                <TypeIcon className="w-4 h-4 sm:w-5 sm:h-5 text-ls-forest" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-bold text-sm truncate" style={{ color: colors.textPrimary }}>
+                                <p className="font-bold text-xs sm:text-sm truncate" style={{ color: colors.textPrimary }}>
                                   {doc.label}
                                 </p>
                                 <p className="text-xs" style={{ color: colors.textSecondary }}>
@@ -396,7 +400,7 @@ export default function DocumentVault() {
                                 </p>
                               </div>
                             </div>
-                            <Badge className={`${typeConfig.color} text-xs flex-shrink-0 ml-2`}>
+                            <Badge className={`${typeConfig.color} text-xs flex-shrink-0`}>
                               {typeConfig.label}
                             </Badge>
                           </div>
@@ -404,17 +408,17 @@ export default function DocumentVault() {
 
                         {/* Preview for images */}
                         {doc.type === 'photo' && doc.file_url && (
-                          <div className="mb-3 ml-9">
+                          <div className="mb-2 sm:mb-3 ml-7 sm:ml-9">
                             <img
                               src={doc.file_url}
                               alt={doc.label}
-                              className="w-full h-32 object-cover rounded-lg"
+                              className="w-full h-24 sm:h-32 object-cover rounded-lg"
                               style={{ border: `1px solid ${colors.borderColor}` }}
                             />
                           </div>
                         )}
 
-                        <div className="flex gap-2 ml-9">
+                        <div className="flex gap-2 ml-7 sm:ml-9">
                           <a
                             href={doc.file_url}
                             target="_blank"
@@ -429,7 +433,7 @@ export default function DocumentVault() {
                                 padding: '8px 12px',
                                 borderRadius: '8px',
                                 fontWeight: 'bold',
-                                fontSize: '13px',
+                                fontSize: '12px',
                                 border: 'none',
                                 cursor: 'pointer',
                                 display: 'inline-flex',
@@ -441,8 +445,9 @@ export default function DocumentVault() {
                               onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
                               onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                             >
-                              <ExternalLink style={{ width: '14px', height: '14px' }} />
-                              {strings.viewFile}
+                              <ExternalLink style={{ width: '12px', height: '12px' }} />
+                              <span className="hidden sm:inline">{strings.viewFile}</span>
+                              <span className="sm:hidden">View</span>
                             </button>
                           </a>
                           <button
@@ -457,10 +462,11 @@ export default function DocumentVault() {
                               padding: '8px 12px',
                               borderRadius: '8px',
                               fontWeight: 'bold',
-                              fontSize: '13px',
+                              fontSize: '12px',
                               border: '2px solid #EF4444',
                               cursor: 'pointer',
-                              transition: 'all 0.2s'
+                              transition: 'all 0.2s',
+                              flexShrink: 0
                             }}
                             onMouseEnter={(e) => {
                               e.target.style.backgroundColor = '#FEE2E2';
