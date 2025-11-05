@@ -146,27 +146,42 @@ export default function UploadScanPage() {
         setAnalyzing(true);
         setUploading(false);
 
-        // Analyze with retry logic - Enhanced for Word documents
+        // Analyze with retry logic - Enhanced for Word documents and detailed reporting
         let scanResult;
         let analysisRetry = 0;
         const maxAnalysisRetries = 2;
 
         while (analysisRetry <= maxAnalysisRetries) {
           try {
-            // Enhanced prompt with explicit instructions for Word documents
+            // Enhanced prompt with detailed flag structure for full reports
             scanResult = await base44.integrations.Core.InvokeLLM({
-              prompt: `Analyze this lease agreement and extract key information. The document may be in PDF, image, or Word (DOC/DOCX) format. 
-              
-              If this is a Word document, read the full text content and analyze it thoroughly. Identify any potential issues or unfair clauses that could harm the tenant.
+              prompt: `Analyze this lease agreement thoroughly and extract key information. The document may be in PDF, image, or Word (DOC/DOCX) format.
 
-              Provide:
-              1. A risk score from 0-100 (0 = very safe, 100 = very risky)
-              2. List of flags with severity (critical, high, medium, low), category, and description
-              3. A summary of the overall lease quality
-              4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)
-              5. IMPORTANT: Extract notice_period_days - the number of days before lease end that tenant must notify landlord about renewal/termination (common: 30, 45, 60, 90 days). Look for clauses like "notify landlord X days prior to end" or "แจ้งล่วงหน้า X วัน". If not found, return null.
-              
-              IMPORTANT: If you cannot read the document or it appears blank/corrupted, return a risk_score of 0 and include a flag indicating the document could not be properly analyzed.`,
+IMPORTANT INSTRUCTIONS:
+1. Provide a detailed risk score from 0-100 (0 = very safe, 100 = very risky)
+2. For EACH issue found, provide ALL of the following details:
+   - title: A clear, short title for the issue
+   - severity: critical, high, medium, or low
+   - category: The type of issue (e.g., "Deposit Terms", "Entry Rights", "Termination", "Maintenance")
+   - description: Brief summary (1 sentence)
+   - evidence: The EXACT text/clause from the lease that causes concern (quote the actual wording)
+   - explanation: Detailed explanation of WHY this is problematic (2-3 sentences)
+   - recommendation: Specific action the tenant should take (2-3 sentences)
+   - impact_0_10: Rate the potential financial/legal impact (0-10 scale)
+   - likelihood_0_10: Rate how likely this will cause problems (0-10 scale)
+
+3. Extract key lease information:
+   - property_address
+   - start_date (YYYY-MM-DD format)
+   - end_date (YYYY-MM-DD format)
+   - rent_amount (number only)
+   - deposit_amount (number only)
+   - language_detected (en, th, or mixed)
+   - notice_period_days (number of days tenant must notify landlord before lease end, commonly 30/45/60/90 days)
+
+4. Provide an overall summary of the lease quality
+
+CRITICAL: Make sure to fill in the evidence, explanation, and recommendation fields with actual detailed content, not empty strings!`,
               file_urls: fileUrls,
               response_json_schema: {
                 type: "object",
@@ -177,10 +192,17 @@ export default function UploadScanPage() {
                     items: {
                       type: "object",
                       properties: {
+                        title: { type: "string" },
                         severity: { type: "string", enum: ["low", "medium", "high", "critical"] },
                         category: { type: "string" },
-                        description: { type: "string" }
-                      }
+                        description: { type: "string" },
+                        evidence: { type: "string" },
+                        explanation: { type: "string" },
+                        recommendation: { type: "string" },
+                        impact_0_10: { type: "integer" },
+                        likelihood_0_10: { type: "integer" }
+                      },
+                      required: ["title", "severity", "category", "description", "evidence", "explanation", "recommendation"]
                     }
                   },
                   summary: { type: "string" },
