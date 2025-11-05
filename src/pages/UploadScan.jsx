@@ -55,7 +55,7 @@ export default function UploadScanPage() {
       title: "Scan Your Lease",
       subtitle: "Upload your lease agreement for automated analysis",
       uploadArea: "Drop your lease files here or click to browse",
-      supportedFormats: "PDF, PNG, JPG (Max 10MB each)",
+      supportedFormats: "PDF, Word (DOC/DOCX), PNG, JPG (Max 10MB each)",
       selectFiles: "Select Files",
       uploadAll: "Upload & Analyze",
       uploading: "Uploading...",
@@ -73,7 +73,7 @@ export default function UploadScanPage() {
       setReminder: "Set Reminder",
       riskLevels: {
         low: "Low Risk",
-        medium: "Medium Risk", 
+        medium: "Medium Risk",
         high: "High Risk",
         critical: "Critical Risk"
       }
@@ -82,7 +82,7 @@ export default function UploadScanPage() {
       title: "สแกนสัญญาเช่า",
       subtitle: "อัปโหลดสัญญาเช่าเพื่อวิเคราะห์อัตโนมัติ",
       uploadArea: "วางไฟล์สัญญาเช่าที่นี่ หรือคลิกเพื่อเลือกไฟล์",
-      supportedFormats: "รองรับ PDF, PNG, JPG (ไฟล์ละไม่เกิน 10MB)",
+      supportedFormats: "รองรับ PDF, Word (DOC/DOCX), PNG, JPG (ไฟล์ละไม่เกิน 10MB)",
       selectFiles: "เลือกไฟล์",
       uploadAll: "อัปโหลดและวิเคราะห์",
       uploading: "กำลังอัปโหลด...",
@@ -126,10 +126,10 @@ export default function UploadScanPage() {
       try {
         // Upload files
         setUploadProgress(10);
-        const uploadPromises = selectedFiles.map(file => 
+        const uploadPromises = selectedFiles.map(file =>
           base44.integrations.Core.UploadFile({ file })
         );
-        
+
         const uploadResults = await Promise.all(uploadPromises);
         const fileUrls = uploadResults.map(result => result.file_url);
         setUploadProgress(40);
@@ -144,7 +144,7 @@ export default function UploadScanPage() {
 
         setAnalyzing(true);
         setUploading(false);
-        
+
         // Analyze with retry logic
         let scanResult;
         let analysisRetry = 0;
@@ -153,8 +153,8 @@ export default function UploadScanPage() {
         while (analysisRetry <= maxAnalysisRetries) {
           try {
             scanResult = await base44.integrations.Core.InvokeLLM({
-              prompt: `Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant. 
-              
+              prompt: `Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant.
+
               Provide:
               1. A risk score from 0-100 (0 = very safe, 100 = very risky)
               2. List of flags with severity (critical, high, medium, low), category, and description
@@ -193,8 +193,8 @@ export default function UploadScanPage() {
           } catch (analysisError) {
             analysisRetry++;
             if (analysisRetry > maxAnalysisRetries) {
-              throw new Error(language === 'th' 
-                ? 'การวิเคราะห์ล้มเหลว กรุณาลองอีกครั้งภายหลัง' 
+              throw new Error(language === 'th'
+                ? 'การวิเคราะห์ล้มเหลว กรุณาลองอีกครั้งภายหลัง'
                 : 'Analysis failed. Please try again later.');
             }
             // Wait before retry
@@ -231,36 +231,36 @@ export default function UploadScanPage() {
         setPendingLeaseId(lease.id);
         setShowConfirmation(true);
         setSelectedFiles([]);
-        
+
       } catch (err) {
         currentRetry++;
         setRetryCount(currentRetry);
-        
+
         if (currentRetry <= maxRetries) {
           // Show retry message
-          setError(language === 'th' 
-            ? `เกิดข้อผิดพลาด กำลังลองใหม่... (${currentRetry}/${maxRetries})` 
+          setError(language === 'th'
+            ? `เกิดข้อผิดพลาด กำลังลองใหม่... (${currentRetry}/${maxRetries})`
             : `Error occurred. Retrying... (${currentRetry}/${maxRetries})`);
-          
+
           // Wait before retry with exponential backoff
           await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry)));
           return attemptUpload();
         } else {
           // Max retries reached
           console.error('Upload failed after retries:', err);
-          
-          let errorMessage = language === 'th' 
-            ? 'ไม่สามารถอัปโหลดได้ กรุณาตรวจสอบ:\n• ไฟล์ไม่เสียหาย\n• ขนาดไฟล์ไม่เกิน 10MB\n• มีอินเทอร์เน็ตที่เสถียร' 
+
+          let errorMessage = language === 'th'
+            ? 'ไม่สามารถอัปโหลดได้ กรุณาตรวจสอบ:\n• ไฟล์ไม่เสียหาย\n• ขนาดไฟล์ไม่เกิน 10MB\n• มีอินเทอร์เน็ตที่เสถียร'
             : 'Upload failed. Please check:\n• File is not corrupted\n• File size is under 10MB\n• Stable internet connection';
-          
+
           if (err.message.includes('Analysis failed')) {
             errorMessage = err.message;
           } else if (err.message.includes('file')) {
-            errorMessage = language === 'th' 
-              ? 'ไฟล์ไม่ถูกต้อง กรุณาใช้ไฟล์ PDF หรือรูปภาพเท่านั้น' 
+            errorMessage = language === 'th'
+              ? 'ไฟล์ไม่ถูกต้อง กรุณาใช้ไฟล์ PDF หรือรูปภาพเท่านั้น'
               : 'Invalid file. Please use PDF or image files only.';
           }
-          
+
           setError(errorMessage);
         }
       } finally {
@@ -311,7 +311,7 @@ export default function UploadScanPage() {
 
   const handleDeleteLease = (leaseId, e) => {
     e.stopPropagation(); // Prevent card onClick from firing
-    if (window.confirm(language === 'th' 
+    if (window.confirm(language === 'th'
       ? 'คุณแน่ใจหรือไม่ว่าต้องการลบการสแกนนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้'
       : 'Are you sure you want to delete this scan? This action cannot be undone.')) {
       deleteLeaseWithScanMutation.mutate(leaseId);
@@ -379,8 +379,8 @@ export default function UploadScanPage() {
                 <p className="text-red-600 text-sm whitespace-pre-line">{error}</p>
                 {retryCount > 0 && retryCount < 3 && (
                   <p className="text-red-500 text-xs mt-2">
-                    {language === 'th' 
-                      ? `🔄 กำลังลองอีกครั้ง... (ครั้งที่ ${retryCount}/3)` 
+                    {language === 'th'
+                      ? `🔄 กำลังลองอีกครั้ง... (ครั้งที่ ${retryCount}/3)`
                       : `🔄 Retrying... (Attempt ${retryCount}/3)`}
                   </p>
                 )}
@@ -451,12 +451,12 @@ export default function UploadScanPage() {
                 <p style={{ color: colors.textSecondary }}>
                   {analyzing ? strings.analyzingDesc : (language === 'th' ? 'กรุณารอสักครู่' : 'Please wait')}
                 </p>
-                
+
                 {/* Progress Bar */}
                 {uploadProgress > 0 && (
                   <div className="mt-6 max-w-md mx-auto">
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
+                      <div
                         className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
                         style={{ width: `${uploadProgress}%` }}
                       />
@@ -469,8 +469,8 @@ export default function UploadScanPage() {
 
                 {retryCount > 0 && (
                   <p className="text-sm mt-4 text-amber-600">
-                    {language === 'th' 
-                      ? `กำลังลองอีกครั้ง... (ครั้งที่ ${retryCount}/3)` 
+                    {language === 'th'
+                      ? `กำลังลองอีกครั้ง... (ครั้งที่ ${retryCount}/3)`
                       : `Retrying... (Attempt ${retryCount}/3)`}
                   </p>
                 )}
@@ -497,7 +497,7 @@ export default function UploadScanPage() {
                     <input
                       type="file"
                       multiple
-                      accept=".pdf,.png,.jpg,.jpeg"
+                      accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*"
                       onChange={handleFileSelect}
                       className="hidden"
                     />
@@ -572,8 +572,8 @@ export default function UploadScanPage() {
             </div>
             <div className="grid gap-4">
               {leases.slice(0, 3).map((lease) => (
-                <Card 
-                  key={lease.id} 
+                <Card
+                  key={lease.id}
                   className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
                   style={{ backgroundColor: colors.cardBg }}
                   onClick={() => handleViewDetails(lease.id)}

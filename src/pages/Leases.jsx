@@ -68,7 +68,7 @@ export default function Leases() {
       pages: "pages",
       uploaded: "Uploaded",
       viewDetails: "View Details",
-      uploadPDFImage: "Please upload a PDF or image file",
+      uploadPDFImage: "Please upload a PDF, image, or Word document",
       failedAnalyze: "Failed to analyze lease. Please try again.",
       scanNotFound: "Scan results not found for this lease."
     },
@@ -86,7 +86,7 @@ export default function Leases() {
       pages: "หน้า",
       uploaded: "อัปโหลดเมื่อ",
       viewDetails: "ดูรายละเอียด",
-      uploadPDFImage: "กรุณาอัปโหลดไฟล์ PDF หรือรูปภาพ",
+      uploadPDFImage: "กรุณาอัปโหลดไฟล์ PDF, รูปภาพ หรือเอกสาร Word",
       failedAnalyze: "ไม่สามารถวิเคราะห์สัญญาเช่าได้ กรุณาลองอีกครั้ง",
       scanNotFound: "ไม่พบผลการสแกนสำหรับสัญญาเช่านี้"
     }
@@ -129,7 +129,13 @@ export default function Leases() {
 
     const file = files[0];
     
-    if (!file.type.includes('pdf') && !file.type.includes('image')) {
+    // Updated validation to include Word documents
+    const isValidType = file.type.includes('pdf') || 
+                        file.type.includes('image') || 
+                        file.type.includes('msword') || // e.g., application/msword for .doc
+                        file.type.includes('wordprocessingml'); // e.g., application/vnd.openxmlformats-officedocument.wordprocessingml.document for .docx
+    
+    if (!isValidType) {
       setError(strings.uploadPDFImage);
       return;
     }

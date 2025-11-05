@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Upload, FileText, Camera } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -41,7 +42,7 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
       multiPage: "Multiple pages supported - upload all pages of your lease",
       browseFiles: "Browse Files",
       takePhotos: "Take Photos",
-      formats: "Supported formats: PDF, PNG, JPEG • Max size: 10MB per file • Multiple files allowed"
+      formats: "Supported formats: PDF, Word (DOC/DOCX), PNG, JPEG • Max size: 10MB per file • Multiple files allowed"
     },
     th: {
       title: "อัปโหลดสัญญาเช่าของคุณ",
@@ -49,7 +50,7 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
       multiPage: "รองรับหลายหน้า - อัปโหลดทุกหน้าของสัญญาเช่า",
       browseFiles: "เรียกดูไฟล์",
       takePhotos: "ถ่ายรูป",
-      formats: "รองรับรูปแบบ: PDF, PNG, JPEG • ขนาดสูงสุด: 10MB ต่อไฟล์ • อนุญาตหลายไฟล์"
+      formats: "รองรับรูปแบบ: PDF, Word (DOC/DOCX), PNG, JPEG • ขนาดสูงสุด: 10MB ต่อไฟล์ • อนุญาตหลายไฟล์"
     }
   };
 
@@ -121,7 +122,7 @@ export default function LeaseUploadZone({ onFileSelect, dragActive, onDrag }) {
             id="file-input"
             type="file"
             multiple
-            accept="image/*,.pdf"
+            accept="image/*,.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             onChange={onFileSelect}
             className="hidden"
           />
