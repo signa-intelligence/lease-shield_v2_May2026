@@ -139,6 +139,7 @@ export default function Layout({ children, currentPageName }) {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bg }}>
       {/* PWA Meta Tags */}
       <helmet>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content={isDarkMode ? '#1A1D1F' : '#0C3B2E'} />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -161,6 +162,14 @@ export default function Layout({ children, currentPageName }) {
           --accent-foreground: 0 0% 100%;
         }
         
+        html, body {
+          height: 100%;
+          width: 100%;
+          overflow-x: hidden;
+          position: fixed;
+          overscroll-behavior: none;
+        }
+
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           background-color: ${colors.bg};
@@ -172,15 +181,28 @@ export default function Layout({ children, currentPageName }) {
         
         /* Bottom tabs styling with safe area support */
         .bottom-tabs {
-          padding-bottom: env(safe-area-inset-bottom, 0px);
+          padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
         }
         
         /* Top bar safe area support for notches */
         .top-bar {
           padding-top: env(safe-area-inset-top, 0px);
+          height: auto;
+          min-height: 64px;
         }
         
+        /* Main content scrolling */
+        .main-content {
+          overflow-y: auto;
+          overflow-x: hidden;
+          -webkit-overflow-scrolling: touch;
+        }
+
         @media (min-width: 768px) {
+          html, body {
+            position: static;
+          }
+          
           .bottom-tabs {
             max-width: 600px;
             left: 50%;
@@ -258,29 +280,29 @@ export default function Layout({ children, currentPageName }) {
         backgroundColor: colors.topBarBg,
         borderBottomColor: colors.borderColor
       }}>
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
               alt="Lease Shield"
-              className="h-8 w-8"
+              className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0"
             />
-            <span className="font-bold text-ls-forest text-lg" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
+            <span className="font-bold text-ls-forest text-base sm:text-lg truncate" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
               {strings.appName}
             </span>
             {isAdmin && (
-              <span className="ml-2 px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded">
+              <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
                 ADMIN
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <LanguageToggle />
             <Link to={createPageUrl("Account")}>
               <button
                 style={{
-                  width: '40px',
-                  height: '40px',
+                  width: '36px',
+                  height: '36px',
                   borderRadius: '50%',
                   backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
                   border: 'none',
@@ -307,7 +329,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <User 
-                  className="w-5 h-5" 
+                  className="w-4 h-4 sm:w-5 sm:h-5" 
                   style={{ 
                     color: location.pathname === createPageUrl("Account") ? '#FFFFFF' : '#0C3B2E',
                     transition: 'color 0.2s'
@@ -319,20 +341,23 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      {/* Main Content - Added top padding to account for fixed header + safe area */}
-      <main className="flex-1 overflow-auto" style={{
-        paddingTop: 'calc(64px + env(safe-area-inset-top, 0px))',
-        paddingBottom: `calc(76px + env(safe-area-inset-bottom, 0px))`
+      {/* Main Content - Fixed height with proper spacing */}
+      <main className="main-content flex-1" style={{
+        marginTop: 'calc(64px + env(safe-area-inset-top, 0px))',
+        marginBottom: 'calc(68px + max(env(safe-area-inset-bottom, 0px), 12px))',
+        height: 'calc(100vh - 64px - 68px - env(safe-area-inset-top, 0px) - max(env(safe-area-inset-bottom, 0px), 12px))'
       }}>
         {children}
       </main>
 
-      {/* Bottom Navigation Tabs */}
+      {/* Bottom Navigation Tabs - Fixed with better mobile support */}
       <nav className="bottom-tabs fixed bottom-0 left-0 right-0 border-t shadow-2xl z-50" style={{
         backgroundColor: colors.bottomTabBg,
         borderTopColor: colors.borderColor
       }}>
-        <div className={`flex items-center justify-around px-2 py-2 ${isAdmin ? 'overflow-x-auto' : ''}`}>
+        <div className={`flex items-center justify-around px-1 py-2 ${isAdmin ? 'overflow-x-auto' : ''}`} style={{
+          minHeight: '56px'
+        }}>
           {navTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = isActiveTab(tab.route);
@@ -346,11 +371,12 @@ export default function Layout({ children, currentPageName }) {
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '8px 12px',
+                  padding: '6px 8px',
                   borderRadius: '12px',
                   transition: 'all 0.2s',
                   flex: 1,
-                  minWidth: '60px',
+                  minWidth: '56px',
+                  maxWidth: '80px',
                   backgroundColor: isActive ? '#0C3B2E' : 'transparent',
                   color: isActive ? '#FFFFFF' : colors.textPrimary,
                   textDecoration: 'none'
@@ -366,8 +392,8 @@ export default function Layout({ children, currentPageName }) {
                   }
                 }}
               >
-                <Icon className="w-5 h-5 mb-1" style={{ animation: isActive ? 'pulse 2s infinite' : 'none' }} />
-                <span style={{ fontSize: '12px', fontWeight: '500', whiteSpace: 'nowrap' }}>{tab.label}</span>
+                <Icon className="w-5 h-5 mb-0.5" style={{ animation: isActive ? 'pulse 2s infinite' : 'none' }} />
+                <span style={{ fontSize: '11px', fontWeight: '500', whiteSpace: 'nowrap' }}>{tab.label}</span>
               </Link>
             );
           })}
