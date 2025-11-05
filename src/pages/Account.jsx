@@ -1579,7 +1579,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: '#F59E0B',
                         color: '#FFFFFF',
-                        border: '2px solid #F59E0B',
+                        border: '2px solid '#F59E0B'',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -2284,7 +2284,7 @@ export default function Account() {
                   {plan.popular && (
                     <div style={{
                       position: 'absolute',
-                      top: '16px',
+                      top: '-12px',
                       left: '50%',
                       transform: 'translateX(-50%)',
                       backgroundColor: '#1A1D1F',
