@@ -129,15 +129,33 @@ export default function Leases() {
 
     const file = files[0];
     
+    // Check if it's a Word document
+    const isWordDoc = file.name.toLowerCase().endsWith('.doc') || 
+                      file.name.toLowerCase().endsWith('.docx') ||
+                      file.type.includes('msword') ||
+                      file.type.includes('wordprocessingml');
+    
     // Updated validation to include Word documents
     const isValidType = file.type.includes('pdf') || 
                         file.type.includes('image') || 
-                        file.type.includes('msword') || // e.g., application/msword for .doc
-                        file.type.includes('wordprocessingml'); // e.g., application/vnd.openxmlformats-officedocument.wordprocessingml.document for .docx
+                        isWordDoc;
     
     if (!isValidType) {
       setError(strings.uploadPDFImage);
       return;
+    }
+
+    // Show warning for Word documents
+    if (isWordDoc) {
+      const proceed = confirm(
+        language === 'th' 
+          ? 'ไฟล์ Word อาจมีปัญหาในการวิเคราะห์\n\nเราแนะนำให้:\n1. แปลงเป็น PDF ก่อน หรือ\n2. ถ่ายภาพหน้าสัญญาแทน\n\nต้องการดำเนินการต่อหรือไม่?'
+          : 'Word files may have analysis issues\n\nWe recommend:\n1. Convert to PDF first, or\n2. Take photos of lease pages\n\nProceed anyway?'
+      );
+      
+      if (!proceed) {
+        return;
+      }
     }
 
     setUploading(true);
@@ -151,15 +169,31 @@ export default function Leases() {
       });
 
       setAnalyzing(true);
+      setUploading(false); // Set uploading to false after upload, before analysis starts
       
-      const scanResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant. 
+      // Enhanced prompt for Word documents
+      const promptText = isWordDoc
+        ? `This is a Word document (.doc or .docx). Please read and extract the text content carefully. If you cannot read the document properly, indicate this clearly in your response.
+        
+        Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant.
         
         Provide:
         1. A risk score from 0-100 (0 = very safe, 100 = very risky)
         2. List of flags with severity (critical, high, medium, low), category, and description
         3. A summary of the overall lease quality
-        4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)`,
+        4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)
+        
+        IMPORTANT: If you cannot read the Word document content, set risk_score to -1 and include this in the summary.`
+        : `Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant.
+        
+        Provide:
+        1. A risk score from 0-100 (0 = very safe, 100 = very risky)
+        2. List of flags with severity (critical, high, medium, low), category, and description
+        3. A summary of the overall lease quality
+        4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)`;
+      
+      const scanResult = await base44.integrations.Core.InvokeLLM({
+        prompt: promptText,
         file_urls: [file_url],
         response_json_schema: {
           type: "object",
@@ -187,6 +221,15 @@ export default function Leases() {
         }
       });
 
+      // Check if Word document couldn't be read
+      if (scanResult.risk_score === -1 || (isWordDoc && scanResult.risk_score === 0 && !scanResult.summary)) {
+        throw new Error(
+          language === 'th'
+            ? 'ไม่สามารถอ่านไฟล์ Word ได้\n\nกรุณาลองวิธีใดวิธีหนึ่ง:\n• แปลงเป็น PDF ก่อนอัปโหลด\n• ถ่ายภาพหน้าสัญญาแทน\n• ใช้ Google Docs เปิดไฟล์ แล้ว Download เป็น PDF'
+            : 'Unable to read Word document\n\nPlease try:\n• Convert to PDF before uploading\n• Take photos of lease pages\n• Open in Google Docs and download as PDF'
+        );
+      }
+
       await base44.entities.Lease.update(lease.id, {
         status: 'scanned',
         property_address: scanResult.property_address,
@@ -210,8 +253,20 @@ export default function Leases() {
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       
     } catch (err) {
-      setError(strings.failedAnalyze);
-      console.error(err);
+      console.error('Lease analysis error:', err);
+      
+      // Show the specific error message if it's a formatted one from our custom throw
+      if (err.message && (err.message.includes('Word') || err.message.includes('PDF') || err.message.includes('ไฟล์'))) {
+        setError(err.message);
+      } else {
+        // Generic error with helpful suggestions, especially for Word documents
+        const errorMessage = isWordDoc
+          ? (language === 'th'
+              ? 'ไม่สามารถวิเคราะห์ไฟล์ Word ได้\n\n💡 ลองวิธีนี้:\n• แปลงเป็น PDF ก่อน\n• ถ่ายภาพหน้าสัญญา\n• เปิดด้วย Google Docs แล้วบันทึกเป็น PDF'
+              : 'Failed to analyze Word document\n\n💡 Try this:\n• Convert to PDF first\n• Take photos of pages\n• Open in Google Docs and save as PDF')
+          : strings.failedAnalyze;
+        setError(errorMessage);
+      }
     } finally {
       setUploading(false);
       setAnalyzing(false);
@@ -282,7 +337,7 @@ export default function Leases() {
         </div>
 
         {error && (
-          <Alert variant="destructive" className="mb-6">
+          <Alert variant="destructive" className="mb-6 whitespace-pre-wrap"> {/* Added whitespace-pre-wrap */}
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
