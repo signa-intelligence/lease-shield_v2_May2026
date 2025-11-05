@@ -1573,7 +1573,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: '#F59E0B',
                         color: '#FFFFFF',
-                        border: '2px solid '#F59E0B',
+                        border: '2px solid #F59E0B',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
