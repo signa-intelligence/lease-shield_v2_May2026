@@ -4,11 +4,19 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell, Scale } from "lucide-react";
+import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell, Scale, MoreVertical, ChevronDown, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils"; // Added createPageUrl import
+import { createPageUrl } from "@/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 export default function AdminConsole() {
   const [seeding, setSeeding] = useState(false);
@@ -196,6 +204,49 @@ export default function AdminConsole() {
     } finally {
       setTestingNotification(false);
     }
+  };
+
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userId, data }) => base44.asServiceRole.entities.User.update(userId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId) => base44.asServiceRole.entities.User.delete(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+    },
+  });
+
+  const handleUserAction = async (action, targetUser) => {
+    const confirmMessage = language === 'th'
+      ? `คุณแน่ใจหรือไม่ว่าต้องการ${action === 'delete' ? 'ลบ' : 'เปลี่ยนแปลง'}ผู้ใช้นี้?`
+      : `Are you sure you want to ${action} this user?`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    if (action === 'delete') {
+      deleteUserMutation.mutate(targetUser.id);
+      return;
+    }
+
+    if (action === 'make_admin') {
+      updateUserMutation.mutate({ userId: targetUser.id, data: { role: 'admin' } });
+    } else if (action === 'make_user') {
+      updateUserMutation.mutate({ userId: targetUser.id, data: { role: 'user' } });
+    } else if (action.startsWith('tier_')) {
+      const tier = action.replace('tier_', '');
+      updateUserMutation.mutate({ userId: targetUser.id, data: { plan_tier: tier } });
+    }
+  };
+
+  const handleViewLease = (lease) => {
+    // Navigate to lease details page
+    navigate(createPageUrl("LeaseDetails") + `?leaseId=${lease.id}`);
   };
 
   const activeSubscribers = allUsers.filter(u => u.subscription_status === 'active').length;
@@ -792,18 +843,77 @@ export default function AdminConsole() {
                         {format(new Date(u.created_date), 'MMM d, yyyy')}
                       </td>
                       <td className="py-3 px-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                            color: colors.textPrimary,
-                            borderColor: colors.borderColor
-                          }}
-                        >
-                          {strings.actions}
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              style={{
+                                backgroundColor: isDarkMode ? colors.tableRow : '#FFFFFF',
+                                color: colors.textPrimary,
+                                borderColor: colors.borderColor
+                              }}
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                            <DropdownMenuLabel style={{ color: colors.textPrimary }}>User Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
+
+                            <DropdownMenuItem
+                              onClick={() => handleUserAction(u.role === 'admin' ? 'make_user' : 'make_admin', u)}
+                              style={{ color: colors.textPrimary }}
+                            >
+                              <Crown className="w-4 h-4 mr-2" />
+                              {u.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
+                            <DropdownMenuLabel style={{ color: colors.textSecondary, fontSize: '11px' }}>Change Tier</DropdownMenuLabel>
+
+                            <DropdownMenuItem
+                              onClick={() => handleUserAction('tier_free', u)}
+                              disabled={u.plan_tier === 'free'}
+                              style={{ color: colors.textPrimary }}
+                            >
+                              Free
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleUserAction('tier_lite', u)}
+                              disabled={u.plan_tier === 'lite'}
+                              style={{ color: colors.textPrimary }}
+                            >
+                              Lite
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleUserAction('tier_protect', u)}
+                              disabled={u.plan_tier === 'protect'}
+                              style={{ color: colors.textPrimary }}
+                            >
+                              Protect
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleUserAction('tier_secure', u)}
+                              disabled={u.plan_tier === 'secure'}
+                              style={{ color: colors.textPrimary }}
+                            >
+                              Secure
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
+
+                            <DropdownMenuItem
+                              onClick={() => handleUserAction('delete', u)}
+                              className="text-red-600"
+                              disabled={u.id === user?.id}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete User
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
@@ -827,15 +937,29 @@ export default function AdminConsole() {
             ) : (
               <div className="space-y-3">
                 {allLeases.slice(0, 10).map((lease) => (
-                  <div key={lease.id} className="p-4 rounded-lg border" style={{
-                    backgroundColor: colors.leaseBg,
-                    borderColor: colors.borderColor
-                  }}>
+                  <div
+                    key={lease.id}
+                    className="p-4 rounded-lg border cursor-pointer hover:shadow-md transition-all duration-200"
+                    style={{
+                      backgroundColor: colors.leaseBg,
+                      borderColor: colors.borderColor
+                    }}
+                    onClick={() => handleViewLease(lease)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#0C3B2E';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = colors.borderColor;
+                    }}
+                  >
                     <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold" style={{ color: colors.textPrimary }}>
-                          {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
-                        </p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Eye className="w-4 h-4 text-ls-forest" />
+                          <p className="font-semibold" style={{ color: colors.textPrimary }}>
+                            {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
+                          </p>
+                        </div>
                         <p className="text-sm" style={{ color: colors.textSecondary }}>
                           {language === 'th' ? 'โดย' : 'by'} {lease.created_by}
                         </p>

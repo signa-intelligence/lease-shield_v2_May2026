@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,7 +28,7 @@ const FAQ_ITEMS = [
   },
   {
     question: "What's included in the lease scan?",
-    answer: "Our AI analyzes your lease for unfair clauses, excessive fees, unclear terms, and missing protections based on Thai rental standards.",
+    answer: "Our system analyzes your lease for unfair clauses, excessive fees, unclear terms, and missing protections based on Thai rental standards.",
     icon: FileText
   },
   {
