@@ -115,8 +115,7 @@ const PLAN_DETAILS = [
       'Priority Scanning', // Changed from 'Priority AI Scanning'
       '20GB Document Storage',
       'Advanced Reminders',
-      'Premium Support',
-      'Document Archive' // Changed from 'Legal Document Archive'
+      'Premium Support'
     ],
     bgColor: '#1A1D1F',
     icon: Crown
@@ -2245,7 +2244,7 @@ export default function Account() {
               const isCurrentPlan = currentPlanTier === plan.key;
               const isFreeplan = plan.key === 'free';
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
-              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.priceMonthly === 0 ? '' : plan.intervalMonthly); // Adjusted for free plan
+              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.priceMonthly === 0 ? '' : plan.intervalMonthly);
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
               
               return (
@@ -2259,7 +2258,9 @@ export default function Account() {
                     border: plan.popular ? '3px solid #C7A338' : `2px solid ${colors.borderColor}`,
                     backgroundColor: colors.cardBg,
                     transform: plan.popular ? 'scale(1.02)' : 'scale(1)',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    flexDirection: 'column'
                   }}
                 >
                   {plan.popular && (
@@ -2348,8 +2349,19 @@ export default function Account() {
                     )}
                   </div>
 
-                  <div style={{ padding: '24px' }}>
-                    <p style={{ fontSize: '14px', color: colors.textSecondary, marginBottom: '20px', minHeight: '40px', lineHeight: '1.5' }}>
+                  <div style={{ 
+                    padding: '24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1
+                  }}>
+                    <p style={{ 
+                      fontSize: '14px', 
+                      color: colors.textSecondary, 
+                      marginBottom: '20px', 
+                      minHeight: '42px', 
+                      lineHeight: '1.5' 
+                    }}>
                       {plan.description}
                     </p>
                     <ul style={{ 
@@ -2358,7 +2370,8 @@ export default function Account() {
                       margin: '0 0 24px 0',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '10px'
+                      gap: '10px',
+                      flex: 1
                     }}>
                       {plan.benefits.map((benefit, idx) => {
                         const isEverythingBenefit = benefit.startsWith('Everything in');
@@ -2407,7 +2420,8 @@ export default function Account() {
                           border: `2px solid ${colors.borderColor}`,
                           backgroundColor: colors.fieldBg,
                           color: colors.textSecondary,
-                          cursor: 'not-allowed'
+                          cursor: 'not-allowed',
+                          marginTop: 'auto'
                         }}
                       >
                         {strings.currentPlanBadge}
@@ -2424,7 +2438,8 @@ export default function Account() {
                           border: `2px solid ${colors.textSecondary}`,
                           backgroundColor: colors.cardBg,
                           color: colors.textSecondary,
-                          cursor: 'not-allowed'
+                          cursor: 'not-allowed',
+                          marginTop: 'auto'
                         }}
                       >
                         {strings.signupFree}
@@ -2445,7 +2460,8 @@ export default function Account() {
                           cursor: subscribing ? 'not-allowed' : 'pointer',
                           opacity: subscribing ? 0.7 : 1,
                           transition: 'all 0.2s',
-                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                          marginTop: 'auto'
                         }}
                         onMouseEnter={(e) => {
                           if (!subscribing) e.target.style.opacity = '0.9';
