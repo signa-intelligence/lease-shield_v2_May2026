@@ -60,7 +60,7 @@ const PLAN_DETAILS = [
     benefits: [
       'Everything in Free',
       '5 Lease Scans per month',
-      'Full Risk Reports', // Changed from 'Full AI Risk Reports'
+      'Full Risk Reports',
       'Email Notifications',
       '3 Basic Letter Templates',
       '1GB Document Storage',
@@ -84,7 +84,7 @@ const PLAN_DETAILS = [
     description: 'Everything you need for full protection',
     benefits: [
       'Everything in Lite',
-      'Unlimited Lease Scans',
+      '6 Lease Scans per month', // Changed from Unlimited
       'Deposit Shield Automation',
       'Rent Payment Alerts',
       '7 Letter Templates',
@@ -110,9 +110,10 @@ const PLAN_DETAILS = [
     description: 'Maximum prevention with priority support',
     benefits: [
       'Everything in Protect',
-      '10 Letter Templates',
+      'Unlimited Lease Scans', // Changed from 10
+      'Full Letter Templates', // Changed from 10
       'Priority Case Queue',
-      'Priority Scanning', // Changed from 'Priority AI Scanning'
+      'Priority Scanning',
       '20GB Document Storage',
       'Advanced Reminders',
       'Premium Support'
