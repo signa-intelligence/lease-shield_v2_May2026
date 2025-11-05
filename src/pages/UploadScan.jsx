@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2, ExternalLink, Shield, FileVideo, Mail, HelpCircle, CheckSquare, Square } from "lucide-react";
-import { format } from "date-fns";
+import { format }
+from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -493,25 +494,59 @@ export default function UploadScanPage() {
                     {strings.uploadArea}
                   </h3>
                   <p className="mb-4" style={{ color: colors.textSecondary }}>{strings.supportedFormats}</p>
-                  <label className="inline-block">
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <span
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-lg cursor-pointer"
-                      style={{
-                        backgroundColor: '#0C3B2E',
-                        color: '#FFFFFF'
-                      }}
-                    >
-                      <Camera className="w-5 h-5" />
-                      {strings.selectFiles}
-                    </span>
-                  </label>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                    {/* Document Browse Button */}
+                    <label className="inline-block">
+                      <input
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        id="document-upload"
+                      />
+                      <span
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-lg cursor-pointer"
+                        style={{
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        <FileText className="w-5 h-5" />
+                        {language === 'th' ? 'เลือกเอกสาร' : 'Browse Documents'}
+                      </span>
+                    </label>
+
+                    {/* Photo/Camera Button */}
+                    <label className="inline-block">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        id="photo-upload"
+                      />
+                      <span
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-lg cursor-pointer border-2"
+                        style={{
+                          backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
+                          color: '#0C3B2E',
+                          borderColor: '#0C3B2E'
+                        }}
+                      >
+                        <Camera className="w-5 h-5" />
+                        {language === 'th' ? 'ถ่ายรูป' : 'Take Photos'}
+                      </span>
+                    </label>
+                  </div>
+
+                  <p className="text-xs mt-4" style={{ color: colors.textSecondary }}>
+                    {language === 'th' 
+                      ? '💡 เคล็ดลับ: ใช้ "เลือกเอกสาร" สำหรับไฟล์ PDF/Word หรือ "ถ่ายรูป" สำหรับถ่ายภาพสัญญา'
+                      : '💡 Tip: Use "Browse Documents" for PDF/Word files or "Take Photos" to capture your lease'}
+                  </p>
                 </div>
 
                 {selectedFiles.length > 0 && (
