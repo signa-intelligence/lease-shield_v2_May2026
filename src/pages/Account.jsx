@@ -2311,7 +2311,7 @@ export default function Account() {
                     backgroundColor: plan.bgColor,
                     padding: plan.popular ? '48px 24px 24px 24px' : '32px 24px 24px 24px',
                     color: '#FFFFFF',
-                    minHeight: '180px',
+                    minHeight: plan.popular ? '196px' : '180px', // Adjusted for popular badge space
                     display: 'flex',
                     flexDirection: 'column'
                   }}>
@@ -2340,14 +2340,14 @@ export default function Account() {
                         </>
                       )}
                     </div>
-                    <div style={{ minHeight: '20px' }}>
+                    <div style={{ minHeight: '24px', display: 'flex', alignItems: 'center' }}>
                       {billingInterval === 'annual' && !isFreeplan && (
-                        <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px', margin: 0 }}>
+                        <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, margin: 0 }}>
                           ฿{effectiveMonthly}{strings.perMonth} • {strings.save} ฿{plan.savingsAnnual.toLocaleString()}
                         </p>
                       )}
                       {isFreeplan && (
-                        <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, marginTop: '4px', margin: 0 }}>
+                        <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, margin: 0 }}>
                           {strings.noCreditCard}
                         </p>
                       )}
@@ -2379,7 +2379,7 @@ export default function Account() {
                       flex: 1
                     }}>
                       {plan.benefits.map((benefit, idx) => {
-                        const isEverythingBenefit = benefit.startsWith('Everything in');
+                        const isEverythingBenefit = benefit.startsWith('Everything');
                         
                         return (
                           <li key={idx} style={{ 
