@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,9 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Image as ImageIcon, Trash2, ExternalLink, Shield, FileVideo, Mail, HelpCircle, CheckSquare, Square } from "lucide-react";
-import { format }
-from "date-fns";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Trash2 } from "lucide-react";
+import { format } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -24,6 +22,7 @@ export default function UploadScanPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [leaseDetails, setLeaseDetails] = useState(null);
   const [pendingLeaseId, setPendingLeaseId] = useState(null);
+  const [analysisStage, setAnalysisStage] = useState('');
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -59,9 +58,16 @@ export default function UploadScanPage() {
       supportedFormats: "PDF, Word (DOC/DOCX), PNG, JPG (Max 10MB each)",
       selectFiles: "Select Files",
       uploadAll: "Upload & Analyze",
-      uploading: "Uploading...",
+      uploading: "Uploading files...",
       analyzingTitle: "Analyzing Your Lease",
-      analyzingDesc: "Our system is reviewing your lease agreement. This may take up to 30 seconds...",
+      analyzingDesc: "Our AI is reviewing your lease agreement. This may take up to 30 seconds...",
+      analyzing: {
+        uploading: "Uploading files...",
+        creating: "Creating lease record...",
+        scanning: "AI analyzing document...",
+        extracting: "Extracting lease details...",
+        finalizing: "Finalizing analysis..."
+      },
       recentScans: "Recent Scans",
       viewAll: "View All Leases",
       noScans: "No recent scans",
@@ -86,9 +92,16 @@ export default function UploadScanPage() {
       supportedFormats: "รองรับ PDF, Word (DOC/DOCX), PNG, JPG (ไฟล์ละไม่เกิน 10MB)",
       selectFiles: "เลือกไฟล์",
       uploadAll: "อัปโหลดและวิเคราะห์",
-      uploading: "กำลังอัปโหลด...",
+      uploading: "กำลังอัปโหลดไฟล์...",
       analyzingTitle: "กำลังวิเคราะห์สัญญาเช่า",
-      analyzingDesc: "ระบบกำลังตรวจสอบสัญญาเช่าของคุณ อาจใช้เวลาประมาณ 30 วินาที...",
+      analyzingDesc: "AI กำลังตรวจสอบสัญญาเช่าของคุณ อาจใช้เวลาประมาณ 30 วินาที...",
+      analyzing: {
+        uploading: "กำลังอัปโหลดไฟล์...",
+        creating: "กำลังสร้างบันทึกสัญญาเช่า...",
+        scanning: "AI กำลังวิเคราะห์เอกสาร...",
+        extracting: "กำลังดึงข้อมูลสัญญาเช่า...",
+        finalizing: "กำลังสรุปการวิเคราะห์..."
+      },
       recentScans: "การสแกนล่าสุด",
       viewAll: "ดูสัญญาเช่าทั้งหมด",
       noScans: "ยังไม่มีการสแกน",
@@ -119,85 +132,103 @@ export default function UploadScanPage() {
     setError(null);
     setUploadProgress(0);
     setRetryCount(0);
+    setAnalysisStage('uploading');
 
     let currentRetry = 0;
     const maxRetries = 3;
+    let createdLeaseId = null; // Track the lease ID we create
 
     const attemptUpload = async () => {
       try {
-        // Upload files
+        // Step 1: Upload files
+        console.log('📤 Step 1: Uploading files...');
+        setAnalysisStage('uploading');
         setUploadProgress(10);
+        
         const uploadPromises = selectedFiles.map(file =>
           base44.integrations.Core.UploadFile({ file })
         );
 
         const uploadResults = await Promise.all(uploadPromises);
         const fileUrls = uploadResults.map(result => result.file_url);
-        setUploadProgress(40);
+        console.log('✅ Files uploaded:', fileUrls.length);
+        setUploadProgress(30);
 
-        // Create lease
+        // Step 2: Create lease record
+        console.log('📝 Step 2: Creating lease record...');
+        setAnalysisStage('creating');
+        setUploadProgress(40);
+        
         const lease = await base44.entities.Lease.create({
           file_url: fileUrls[0],
           file_urls: fileUrls,
           status: 'uploaded'
         });
+        createdLeaseId = lease.id; // Store the ID
+        console.log('✅ Lease created with ID:', createdLeaseId);
         setUploadProgress(50);
 
+        // Step 3: Start AI analysis
+        console.log('🤖 Step 3: Starting AI analysis...');
         setAnalyzing(true);
         setUploading(false);
+        setAnalysisStage('scanning');
+        setUploadProgress(60);
 
-        // Use backend function for scanning (more reliable)
-        try {
-          const { data: scanResponse } = await base44.functions.invoke('scanLease', {
-            fileUrls: fileUrls,
-            leaseId: lease.id
-          });
+        // Call backend function for scanning
+        const { data: scanResponse } = await base44.functions.invoke('scanLease', {
+          fileUrls: fileUrls,
+          leaseId: createdLeaseId // Use the stored ID
+        });
 
-          if (!scanResponse.success) {
-            throw new Error(scanResponse.error || 'Scan failed');
-          }
+        if (!scanResponse || !scanResponse.success) {
+          throw new Error(scanResponse?.error || 'Scan failed - no response from backend');
+        }
 
-          const scanResult = scanResponse.result;
-          setUploadProgress(90);
+        const scanResult = scanResponse.result;
+        console.log('✅ AI analysis complete. Risk score:', scanResult.risk_score);
+        setAnalysisStage('extracting');
+        setUploadProgress(80);
 
-          // Update lease with extracted data
-          await base44.entities.Lease.update(lease.id, {
-            status: 'scanned',
-            property_address: scanResult.property_address,
-            start_date: scanResult.start_date,
-            end_date: scanResult.end_date,
-            rent_amount: scanResult.rent_amount,
-            deposit_amount: scanResult.deposit_amount,
-            language_detected: scanResult.language_detected
-          });
+        // Step 4: Create scan record
+        console.log('💾 Step 4: Saving scan results...');
+        setAnalysisStage('finalizing');
+        
+        await base44.entities.LeaseScan.create({
+          lease_id: createdLeaseId, // Use the stored ID
+          risk_score: scanResult.risk_score,
+          flags: scanResult.flags || [],
+          summary: scanResult.summary,
+          scan_full: scanResult,
+          version: '1.0'
+        });
+        console.log('✅ Scan record created');
+        setUploadProgress(100);
 
-          // Create scan record
-          await base44.entities.LeaseScan.create({
-            lease_id: lease.id,
-            risk_score: scanResult.risk_score,
-            flags: scanResult.flags || [],
-            summary: scanResult.summary,
-            scan_full: scanResult,
-            version: '1.0'
-          });
-          setUploadProgress(100);
-
-          // Show confirmation modal
+        // Step 5: Show confirmation modal for notice period
+        if (scanResult.end_date) {
           setLeaseDetails({
             end_date: scanResult.end_date,
             notice_period_days: scanResult.notice_period_days || 30
           });
-          setPendingLeaseId(lease.id);
+          setPendingLeaseId(createdLeaseId);
           setShowConfirmation(true);
-          setSelectedFiles([]);
-
-        } catch (analysisError) {
-          console.error('Analysis error from backend function:', analysisError);
-          throw analysisError;
+        } else {
+          // No end date detected, go straight to results
+          navigate(createPageUrl("ScanPreview") + `?leaseId=${createdLeaseId}`);
         }
+        
+        setSelectedFiles([]);
+        queryClient.invalidateQueries({ queryKey: ['leases'] });
 
       } catch (err) {
-        console.error('Upload/Analysis error:', err);
+        console.error('❌ Upload/Analysis error:', err);
+        console.error('Error details:', {
+          message: err.message,
+          leaseId: createdLeaseId,
+          retry: currentRetry,
+          stage: analysisStage
+        });
         
         // Check if it's a Word document specific error
         const isWordDoc = selectedFiles.some(f => 
@@ -216,6 +247,18 @@ export default function UploadScanPage() {
 
           // Wait before retry with exponential backoff
           await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, currentRetry)));
+          
+          // If we created a lease but analysis failed, delete it before retrying
+          if (createdLeaseId && analysisStage !== 'uploading') {
+            try {
+              console.log('🗑️ Cleaning up failed lease:', createdLeaseId);
+              await base44.entities.Lease.delete(createdLeaseId);
+              createdLeaseId = null; // Reset
+            } catch (cleanupErr) {
+              console.error('Failed to cleanup lease:', cleanupErr);
+            }
+          }
+          
           return attemptUpload();
         } else {
           // Max retries reached - provide helpful error message
@@ -229,6 +272,10 @@ export default function UploadScanPage() {
             errorMessage = language === 'th'
               ? 'การวิเคราะห์ใช้เวลานานเกินไป\n\n💡 กรุณาลอง:\n• ใช้ไฟล์ที่เล็กกว่า\n• แยกอัปโหลดทีละหน้า\n• ถ่ายภาพที่ชัดเจนกว่า'
               : 'Analysis timed out\n\n💡 Please try:\n• Use smaller files\n• Upload pages separately\n• Take clearer photos';
+          } else if (err.message?.includes('not Found')) {
+            errorMessage = language === 'th'
+              ? 'เกิดข้อผิดพลาดในการบันทึกข้อมูล\n\n💡 กรุณา:\n• รีเฟรชหน้าเว็บ\n• ลองอัปโหลดอีกครั้ง\n• หากปัญหายังคงอยู่ ติดต่อฝ่ายสนับสนุน'
+              : 'Data saving error occurred\n\n💡 Please:\n• Refresh the page\n• Try uploading again\n• Contact support if issue persists';
           } else {
             errorMessage = language === 'th'
               ? 'ไม่สามารถวิเคราะห์ได้\n\n💡 กรุณาตรวจสอบ:\n• ไฟล์เป็นสัญญาเช่าที่อ่านได้\n• ขนาดไฟล์ไม่เกิน 10MB\n• ภาพชัดเจนและอ่านได้\n\nหรือลองแปลงเป็น PDF'
@@ -236,11 +283,22 @@ export default function UploadScanPage() {
           }
 
           setError(errorMessage);
+          
+          // Cleanup failed lease if it exists
+          if (createdLeaseId) {
+            try {
+              console.log('🗑️ Final cleanup of failed lease:', createdLeaseId);
+              await base44.entities.Lease.delete(createdLeaseId);
+            } catch (cleanupErr) {
+              console.error('Failed final cleanup:', cleanupErr);
+            }
+          }
         }
       } finally {
         setUploading(false);
         setAnalyzing(false);
         setUploadProgress(0);
+        setAnalysisStage('');
       }
     };
 
@@ -250,14 +308,20 @@ export default function UploadScanPage() {
   const handleConfirmLeaseDetails = async () => {
     if (!pendingLeaseId || !leaseDetails) return;
 
-    await base44.entities.Lease.update(pendingLeaseId, {
-      notice_period_days: leaseDetails.notice_period_days,
-      notice_alerts_enabled: true
-    });
+    try {
+      await base44.entities.Lease.update(pendingLeaseId, {
+        notice_period_days: leaseDetails.notice_period_days,
+        notice_alerts_enabled: true
+      });
 
-    queryClient.invalidateQueries({ queryKey: ['leases'] });
-    setShowConfirmation(false);
-    navigate(createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`);
+      queryClient.invalidateQueries({ queryKey: ['leases'] });
+      setShowConfirmation(false);
+      navigate(createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`);
+    } catch (err) {
+      console.error('Failed to update lease details:', err);
+      // Still navigate even if update fails
+      navigate(createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`);
+    }
   };
 
   const handleSkipConfirmation = () => {
@@ -269,12 +333,10 @@ export default function UploadScanPage() {
 
   const deleteLeaseWithScanMutation = useMutation({
     mutationFn: async (leaseId) => {
-      // First delete any associated scans
       const associatedScans = await base44.entities.LeaseScan.filter({ lease_id: leaseId });
       for (const scan of associatedScans) {
         await base44.entities.LeaseScan.delete(scan.id);
       }
-      // Then delete the lease
       await base44.entities.Lease.delete(leaseId);
     },
     onSuccess: () => {
@@ -283,7 +345,7 @@ export default function UploadScanPage() {
   });
 
   const handleDeleteLease = (leaseId, e) => {
-    e.stopPropagation(); // Prevent card onClick from firing
+    e.stopPropagation();
     
     const confirmMessage = language === 'th'
       ? 'คุณแน่ใจหรือไม่ว่าต้องการลบการสแกนนี้?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้'
@@ -301,9 +363,10 @@ export default function UploadScanPage() {
   };
 
   const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files || e.dataTransfer?.files || []);
     setSelectedFiles(prev => [...prev, ...files]);
     setError(null);
+    setDragActive(false);
   };
 
   const handleDrop = (e) => {
@@ -321,19 +384,9 @@ export default function UploadScanPage() {
   const handleRetry = () => {
     setError(null);
     setSelectedFiles([]);
-  };
-
-  const getRiskColor = (score) => {
-    if (score <= 30) return '#10B981';
-    if (score <= 60) return '#F59E0B';
-    return '#EF4444';
-  };
-
-  const getRiskLabel = (score) => {
-    if (score <= 30) return strings.riskLevels.low;
-    if (score <= 60) return strings.riskLevels.medium;
-    if (score <= 80) return strings.riskLevels.high;
-    return strings.riskLevels.critical;
+    setUploadProgress(0);
+    setRetryCount(0);
+    setAnalysisStage('');
   };
 
   return (
@@ -431,11 +484,18 @@ export default function UploadScanPage() {
               <div className="text-center py-12">
                 <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
                 <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                  {uploading ? strings.uploading : strings.analyzingTitle}
+                  {analyzing ? strings.analyzingTitle : strings.uploading}
                 </h3>
-                <p style={{ color: colors.textSecondary }}>
+                <p className="mb-4" style={{ color: colors.textSecondary }}>
                   {analyzing ? strings.analyzingDesc : (language === 'th' ? 'กรุณารอสักครู่' : 'Please wait')}
                 </p>
+                
+                {/* Current Stage Indicator */}
+                {analysisStage && (
+                  <p className="text-sm font-medium mb-4" style={{ color: '#3B82F6' }}>
+                    {strings.analyzing[analysisStage] || analysisStage}
+                  </p>
+                )}
 
                 {/* Progress Bar */}
                 {uploadProgress > 0 && (
@@ -480,7 +540,6 @@ export default function UploadScanPage() {
                   <p className="mb-4" style={{ color: colors.textSecondary }}>{strings.supportedFormats}</p>
                   
                   <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-                    {/* Document Browse Button */}
                     <label className="inline-block">
                       <input
                         type="file"
@@ -502,7 +561,6 @@ export default function UploadScanPage() {
                       </span>
                     </label>
 
-                    {/* Photo/Camera Button */}
                     <label className="inline-block">
                       <input
                         type="file"
