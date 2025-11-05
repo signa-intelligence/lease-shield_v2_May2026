@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Clock, CheckCircle2, HelpCircle, Upload, Shield, FileText, CreditCard, Wrench } from "lucide-react";
+import { MessageCircle, Clock, CheckCircle2, HelpCircle, Upload } from "lucide-react";
 import { format } from "date-fns";
 
 const STATUS_CONFIG = {
@@ -19,34 +18,6 @@ const STATUS_CONFIG = {
   resolved: { label: 'Resolved', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 },
   closed: { label: 'Closed', color: 'bg-slate-100 text-slate-800', icon: CheckCircle2 }
 };
-
-const FAQ_ITEMS = [
-  {
-    question: "How does the deposit protection work?",
-    answer: "Deposit Shield tracks your security deposit with automated reminders 30 and 7 days before return. We help you document everything properly.",
-    icon: Shield
-  },
-  {
-    question: "What's included in the lease scan?",
-    answer: "Our system analyzes your lease for unfair clauses, excessive fees, unclear terms, and missing protections based on Thai rental standards.",
-    icon: FileText
-  },
-  {
-    question: "How do I upgrade my plan?",
-    answer: "Go to Account → Choose Your Protection Level → Select a plan → Complete payment. Upgrade takes effect immediately.",
-    icon: CreditCard
-  },
-  {
-    question: "Can I cancel my subscription?",
-    answer: "Yes, you can cancel anytime from Account settings. You'll keep access until the end of your billing period.",
-    icon: HelpCircle
-  },
-  {
-    question: "How do maintenance requests work?",
-    answer: "Log each repair request with photos and dates. This creates a documented trail for any future disputes.",
-    icon: Wrench
-  }
-];
 
 export default function Support() {
   const [uploading, setUploading] = useState(false);
@@ -123,7 +94,6 @@ export default function Support() {
       myTickets: "My Support Tickets",
       noTickets: "No Support Tickets",
       noTicketsSub: "Need help? Submit a support request and we'll get back to you.",
-      faqTitle: "Frequently Asked Questions",
       recentTickets: "Recent Tickets"
     },
     th: {
@@ -139,7 +109,6 @@ export default function Support() {
       myTickets: "คำขอสนับสนุนของฉัน",
       noTickets: "ไม่มีคำขอสนับสนุน",
       noTicketsSub: "ต้องการความช่วยเหลือ? ส่งคำขอสนับสนุนและเราจะติดต่อกลับ",
-      faqTitle: "คำถามที่พบบ่อย",
       recentTickets: "คำขอล่าสุด"
     }
   };
@@ -160,7 +129,7 @@ export default function Support() {
         <div className="grid lg:grid-cols-5 gap-6">
           {/* Left Side - Submit Form (2/5) */}
           <div className="lg:col-span-2">
-            <Card className="border-none shadow-lg mb-6">
+            <Card className="border-none shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MessageCircle className="w-5 h-5 text-ls-forest" />
@@ -243,34 +212,6 @@ export default function Support() {
                     {createTicketMutation.isPending ? 'Submitting...' : strings.submitButton}
                   </Button>
                 </form>
-              </CardContent>
-            </Card>
-
-            {/* FAQ Section - Below form on left side */}
-            <Card className="border-none shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HelpCircle className="w-5 h-5 text-ls-forest" />
-                  {strings.faqTitle}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {FAQ_ITEMS.map((item, idx) => {
-                  const Icon = item.icon;
-                  return (
-                    <div key={idx} className="p-3 bg-ls-stone rounded-lg border border-ls-forest/10">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-white rounded-lg flex-shrink-0">
-                          <Icon className="w-4 h-4 text-ls-forest" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-sm text-ls-charcoal mb-1">{item.question}</p>
-                          <p className="text-xs text-slate-600 leading-relaxed">{item.answer}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
               </CardContent>
             </Card>
           </div>
