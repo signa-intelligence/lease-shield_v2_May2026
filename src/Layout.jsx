@@ -6,6 +6,7 @@ import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-r
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
+import { Helmet } from "react-helmet";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -33,15 +34,13 @@ export default function Layout({ children, currentPageName }) {
   // Register service worker for PWA
   React.useEffect(() => {
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then((registration) => {
-            console.log('SW registered:', registration.scope);
-          })
-          .catch((error) => {
-            console.log('SW registration failed:', error);
-          });
-      });
+      navigator.serviceWorker.register('/service-worker.js')
+        .then((registration) => {
+          console.log('✅ Service Worker registered:', registration.scope);
+        })
+        .catch((error) => {
+          console.error('❌ Service Worker registration failed:', error);
+        });
     }
   }, []);
 
@@ -150,15 +149,16 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bg }}>
       {/* PWA Meta Tags */}
-      <helmet>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+      <Helmet>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content={isDarkMode ? '#1A1D1F' : '#0C3B2E'} />
+        <meta name="theme-color" content="#0C3B2E" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="LeaseShield" />
         <link rel="apple-touch-icon" href="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" />
-      </helmet>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+      </Helmet>
 
       <style>{`
         :root {
