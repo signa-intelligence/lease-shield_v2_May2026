@@ -86,8 +86,6 @@ export default function Layout({ children, currentPageName }) {
       deposit: "Deposit",
       evidence: "Evidence",
       admin: "Admin",
-      disclaimer: "We are not a law firm and do not provide legal advice.",
-      privacyPolicy: "Privacy Policy"
     },
     th: {
       appName: "ลีสชีลด์",
@@ -97,8 +95,6 @@ export default function Layout({ children, currentPageName }) {
       deposit: "เงินมัดจำ",
       evidence: "หลักฐาน",
       admin: "แอดมิน",
-      disclaimer: "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย",
-      privacyPolicy: "นโยบายความเป็นส่วนตัว"
     }
   };
 
@@ -152,8 +148,6 @@ export default function Layout({ children, currentPageName }) {
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
-    bgGradientStart: '#0f1214',
-    bgGradientEnd: '#1A1D1F',
     cardBg: '#2A2D30',
     borderColor: '#3A3D40',
     textPrimary: '#ECEFED',
@@ -163,8 +157,6 @@ export default function Layout({ children, currentPageName }) {
     hoverBg: '#3A3D40'
   } : {
     bg: '#ECEFED',
-    bgGradientStart: '#ECEFED',
-    bgGradientEnd: '#ECEFED',
     cardBg: '#FFFFFF',
     borderColor: '#ECEFED',
     textPrimary: '#1A1D1F',
