@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -6,7 +5,6 @@ import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-r
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
-import { Helmet } from "react-helmet";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -17,12 +15,10 @@ export default function Layout({ children, currentPageName }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Scroll to top on route change
   React.useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Apply theme to body
   React.useEffect(() => {
     if (user?.theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -31,7 +27,6 @@ export default function Layout({ children, currentPageName }) {
     }
   }, [user?.theme]);
 
-  // Register service worker for PWA
   React.useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
@@ -41,6 +36,40 @@ export default function Layout({ children, currentPageName }) {
         .catch((error) => {
           console.error('❌ Service Worker registration failed:', error);
         });
+    }
+
+    const link = document.querySelector('link[rel="manifest"]');
+    if (!link) {
+      const manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = '/manifest.json';
+      document.head.appendChild(manifestLink);
+    }
+
+    const metaTags = [
+      { name: 'theme-color', content: '#0C3B2E' },
+      { name: 'mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+      { name: 'apple-mobile-web-app-title', content: 'LeaseShield' },
+    ];
+
+    metaTags.forEach(({ name, content }) => {
+      let meta = document.querySelector(`meta[name="${name}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = name;
+        document.head.appendChild(meta);
+      }
+      meta.content = content;
+    });
+
+    let appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+    if (!appleIcon) {
+      appleIcon = document.createElement('link');
+      appleIcon.rel = 'apple-touch-icon';
+      appleIcon.href = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png';
+      document.head.appendChild(appleIcon);
     }
   }, []);
 
@@ -121,7 +150,6 @@ export default function Layout({ children, currentPageName }) {
     return location.pathname === route;
   };
 
-  // Theme colors
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
     bgGradientStart: '#0f1214',
@@ -148,18 +176,6 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bg }}>
-      {/* PWA Meta Tags */}
-      <Helmet>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0C3B2E" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="LeaseShield" />
-        <link rel="apple-touch-icon" href="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
-      </Helmet>
-
       <style>{`
         :root {
           --ls-forest: #0C3B2E;
@@ -191,19 +207,16 @@ export default function Layout({ children, currentPageName }) {
           font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
         }
         
-        /* Bottom tabs styling with safe area support */
         .bottom-tabs {
           padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
         }
         
-        /* Top bar safe area support for notches */
         .top-bar {
           padding-top: env(safe-area-inset-top, 0px);
           height: auto;
           min-height: 64px;
         }
         
-        /* Main content scrolling */
         .main-content {
           overflow-y: auto;
           overflow-x: hidden;
@@ -225,7 +238,6 @@ export default function Layout({ children, currentPageName }) {
           }
         }
 
-        /* PWA Install prompt styling */
         @media (display-mode: standalone) {
           body {
             user-select: none;
@@ -234,7 +246,6 @@ export default function Layout({ children, currentPageName }) {
           }
         }
 
-        /* Pulse animation for Most Popular badge */
         @keyframes pulse {
           0%, 100% {
             box-shadow: 0 6px 12px rgba(199, 163, 56, 0.4), 0 0 0 4px rgba(199, 163, 56, 0.1);
@@ -244,7 +255,6 @@ export default function Layout({ children, currentPageName }) {
           }
         }
 
-        /* Shake animation for errors */
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
           10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
@@ -255,18 +265,15 @@ export default function Layout({ children, currentPageName }) {
           animation: shake 0.5s ease-in-out;
         }
 
-        /* Smooth transitions for theme switching */
         * {
           transition: background-color 0.2s ease, border-color 0.2s ease;
         }
 
-        /* Focus visible for accessibility */
         *:focus-visible {
           outline: 2px solid var(--ls-gold);
           outline-offset: 2px;
         }
 
-        /* Better scrollbar styling */
         ::-webkit-scrollbar {
           width: 8px;
           height: 8px;
@@ -287,7 +294,6 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Top Bar with Logo - FIXED TO TOP with safe area */}
       <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
         backgroundColor: colors.topBarBg,
         borderBottomColor: colors.borderColor
@@ -353,7 +359,6 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      {/* Main Content - Fixed height with proper spacing */}
       <main className="main-content flex-1" style={{
         marginTop: 'calc(64px + env(safe-area-inset-top, 0px))',
         marginBottom: 'calc(68px + max(env(safe-area-inset-bottom, 0px), 12px))',
@@ -362,7 +367,6 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </main>
 
-      {/* Bottom Navigation Tabs - Fixed with better mobile support */}
       <nav className="bottom-tabs fixed bottom-0 left-0 right-0 border-t shadow-2xl z-50" style={{
         backgroundColor: colors.bottomTabBg,
         borderTopColor: colors.borderColor
