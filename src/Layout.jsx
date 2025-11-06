@@ -2,7 +2,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-react"; // Removed Scale icon
+import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -30,6 +30,21 @@ export default function Layout({ children, currentPageName }) {
     }
   }, [user?.theme]);
 
+  // Register service worker for PWA
+  React.useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then((registration) => {
+            console.log('SW registered:', registration.scope);
+          })
+          .catch((error) => {
+            console.log('SW registration failed:', error);
+          });
+      });
+    }
+  }, []);
+
   const language = user?.language || 'en';
   const isAdmin = user?.role === 'admin';
   const isDarkMode = user?.theme === 'dark';
@@ -43,7 +58,6 @@ export default function Layout({ children, currentPageName }) {
       deposit: "Deposit",
       evidence: "Evidence",
       admin: "Admin",
-      // ops: "Ops", // Removed 'ops' from translations
       disclaimer: "We are not a law firm and do not provide legal advice.",
       privacyPolicy: "Privacy Policy"
     },
@@ -55,7 +69,6 @@ export default function Layout({ children, currentPageName }) {
       deposit: "เงินมัดจำ",
       evidence: "หลักฐาน",
       admin: "แอดมิน",
-      // ops: "ปฏิบัติการ", // Removed 'ops' from translations
       disclaimer: "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย",
       privacyPolicy: "นโยบายความเป็นส่วนตัว"
     }
@@ -97,7 +110,6 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   if (isAdmin) {
-    // Removed the 'ops' tab push
     navTabs.push({
       key: "admin",
       label: strings.admin,
@@ -314,14 +326,14 @@ export default function Layout({ children, currentPageName }) {
                   boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                 }}
                 onMouseEnter={(e) => {
-                  if (location.pathname !== createPageUrl("Account")) {
+                  if (!isActiveTab(createPageUrl("Account"))) {
                     e.currentTarget.style.backgroundColor = '#0C3B2E';
                     const icon = e.currentTarget.querySelector('svg');
                     if (icon) icon.style.color = '#FFFFFF';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (location.pathname !== createPageUrl("Account")) {
+                  if (!isActiveTab(createPageUrl("Account"))) {
                     e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
                     const icon = e.currentTarget.querySelector('svg');
                     if (icon) icon.style.color = '#0C3B2E';
@@ -331,7 +343,7 @@ export default function Layout({ children, currentPageName }) {
                 <User 
                   className="w-4 h-4 sm:w-5 sm:h-5" 
                   style={{ 
-                    color: location.pathname === createPageUrl("Account") ? '#FFFFFF' : '#0C3B2E',
+                    color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : '#0C3B2E',
                     transition: 'color 0.2s'
                   }}
                 />
