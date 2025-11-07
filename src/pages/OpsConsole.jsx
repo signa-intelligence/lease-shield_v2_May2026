@@ -21,7 +21,7 @@ import {
   Search,
   Filter,
   Loader2,
-  ArrowLeft // Added ArrowLeft import
+  ArrowLeft
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -48,9 +48,36 @@ export default function OpsConsole() {
   const [searchQuery, setSearchQuery] = useState('');
   const [generatingLetters, setGeneratingLetters] = useState(null);
 
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
+  });
+
+  // Check access: VA, Admin, or Super Admin
+  const accessLevel = user?.access_level || 'user';
+  const hasOpsAccess = ['va', 'admin', 'super_admin'].includes(accessLevel) || user?.role === 'admin';
+
+  // These hooks must be called BEFORE the access check return
+  const { data: cases = [] } = useQuery({
+    queryKey: ['allCases'],
+    queryFn: () => base44.entities.Case.list('-created_date'),
+    enabled: hasOpsAccess,
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: hasOpsAccess,
+  });
+
+  const updateCaseMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Case.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allCases'] });
+      setSelectedCase(null);
+      setActionMode(null);
+    },
   });
 
   const language = user?.language || 'en';
@@ -78,10 +105,7 @@ export default function OpsConsole() {
     inputBorder: '#E5E7EB'
   };
 
-  // Check access: VA, Admin, or Super Admin
-  const accessLevel = user?.access_level || 'user';
-  const hasOpsAccess = ['va', 'admin', 'super_admin'].includes(accessLevel) || user?.role === 'admin';
-
+  // NOW we can do the conditional return AFTER all hooks are called
   if (!hasOpsAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
@@ -101,28 +125,6 @@ export default function OpsConsole() {
       </div>
     );
   }
-
-  const { data: cases = [] } = useQuery({
-    queryKey: ['allCases'],
-    queryFn: () => base44.entities.Case.list('-created_date'),
-    enabled: hasOpsAccess, // Ensure cases are fetched only if user has access
-  });
-
-  const { data: users = [] } = useQuery({
-    queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list(),
-    enabled: hasOpsAccess, // Ensure users are fetched only if user has access
-  });
-
-  const updateCaseMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Case.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allCases'] });
-      setSelectedCase(null);
-      setActionMode(null);
-    },
-  });
-
 
   const filteredCases = cases.filter(c => {
     const matchesStatus = filterStatus === 'all' || c.status === filterStatus;
@@ -580,7 +582,7 @@ export default function OpsConsole() {
                         <SelectValue placeholder="Select team member" />
                       </SelectTrigger>
                       <SelectContent>
-                        {users.filter(u => u.access_level === 'va' || u.access_level === 'admin' || u.access_level === 'super_admin' || u.role === 'admin').map(u => ( // Filter users by new access levels or old role
+                        {users.filter(u => u.access_level === 'va' || u.access_level === 'admin' || u.access_level === 'super_admin' || u.role === 'admin').map(u => (
                           <SelectItem key={u.id} value={u.email}>
                             {u.full_name} ({u.email})
                           </SelectItem>
