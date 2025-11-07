@@ -18,7 +18,7 @@ import {
   CheckCircle2,
   Mail,
   DollarSign,
-  Shield,
+  Shield, // Shield import is not used in the final unauthorized message, removing it.
   Search,
   Filter,
   Loader2
@@ -78,16 +78,40 @@ export default function OpsConsole() {
     inputBorder: '#E5E7EB'
   };
 
+  // Check access: VA, Admin, or Super Admin
+  const accessLevel = user?.access_level || 'user';
+  const hasOpsAccess = ['va', 'admin', 'super_admin'].includes(accessLevel) || user?.role === 'admin';
+
+  if (!hasOpsAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
+        <Card className="max-w-md border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardContent className="p-8 text-center">
+            <Scale className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {language === 'th' ? 'ไม่ได้รับอนุญาต' : 'Unauthorized'}
+            </h2>
+            <p style={{ color: colors.textSecondary }}>
+              {language === 'th'
+                ? 'คุณต้องมีสิทธิ์ VA, Admin หรือ Super Admin เพื่อเข้าถึงหน้านี้'
+                : 'You need VA, Admin, or Super Admin access to view this page.'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const { data: cases = [] } = useQuery({
     queryKey: ['allCases'],
     queryFn: () => base44.entities.Case.list('-created_date'),
-    enabled: user?.role === 'admin',
+    enabled: hasOpsAccess, // Ensure cases are fetched only if user has access
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['allUsers'],
     queryFn: () => base44.entities.User.list(),
-    enabled: user?.role === 'admin',
+    enabled: hasOpsAccess, // Ensure users are fetched only if user has access
   });
 
   const updateCaseMutation = useMutation({
@@ -99,20 +123,6 @@ export default function OpsConsole() {
     },
   });
 
-  if (user?.role !== 'admin') {
-    return (
-      <div className="min-h-screen p-6 bg-slate-50" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-4xl mx-auto text-center py-20">
-          <Shield className="w-16 h-16 mx-auto mb-4 text-red-600" />
-          <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>Access Denied</h2>
-          <p className="mb-6" style={{ color: colors.textSecondary }}>You don't have permission to access the ops console.</p>
-          <Button onClick={() => navigate(createPageUrl("Dashboard"))}>
-            Go to Dashboard
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   const filteredCases = cases.filter(c => {
     const matchesStatus = filterStatus === 'all' || c.status === filterStatus;
@@ -556,7 +566,7 @@ export default function OpsConsole() {
                         <SelectValue placeholder="Select team member" />
                       </SelectTrigger>
                       <SelectContent>
-                        {users.filter(u => u.role === 'admin').map(u => (
+                        {users.filter(u => u.access_level === 'va' || u.access_level === 'admin' || u.access_level === 'super_admin' || u.role === 'admin').map(u => ( // Filter users by new access levels or old role
                           <SelectItem key={u.id} value={u.email}>
                             {u.full_name} ({u.email})
                           </SelectItem>

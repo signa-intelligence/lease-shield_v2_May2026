@@ -1,7 +1,8 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -74,7 +75,9 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const language = user?.language || 'en';
-  const isAdmin = user?.role === 'admin';
+  const accessLevel = user?.access_level || 'user';
+  const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
+  const isVAOrHigher = ['va', 'admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
 
   const t = {
@@ -86,6 +89,7 @@ export default function Layout({ children, currentPageName }) {
       deposit: "Deposit",
       evidence: "Evidence",
       admin: "Admin",
+      ops: "Ops",
     },
     th: {
       appName: "ลีสชีลด์",
@@ -95,6 +99,7 @@ export default function Layout({ children, currentPageName }) {
       deposit: "เงินมัดจำ",
       evidence: "หลักฐาน",
       admin: "แอดมิน",
+      ops: "ปฏิบัติการ",
     }
   };
 
@@ -133,6 +138,17 @@ export default function Layout({ children, currentPageName }) {
     },
   ];
 
+  // Add Ops Console for VA and higher
+  if (isVAOrHigher) {
+    navTabs.push({
+      key: "ops",
+      label: strings.ops,
+      route: createPageUrl("OpsConsole"),
+      icon: Scale,
+    });
+  }
+
+  // Add Admin Console for Admin and Super Admin only
   if (isAdmin) {
     navTabs.push({
       key: "admin",
@@ -300,9 +316,9 @@ export default function Layout({ children, currentPageName }) {
             <span className="font-bold text-ls-forest text-base sm:text-lg truncate" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
               {strings.appName}
             </span>
-            {isAdmin && (
+            {accessLevel !== 'user' && (
               <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
-                ADMIN
+                {accessLevel === 'super_admin' ? 'SUPER ADMIN' : accessLevel === 'admin' ? 'ADMIN' : 'VA'}
               </span>
             )}
           </div>
@@ -363,7 +379,7 @@ export default function Layout({ children, currentPageName }) {
         backgroundColor: colors.bottomTabBg,
         borderTopColor: colors.borderColor
       }}>
-        <div className={`flex items-center justify-around px-1 py-2 ${isAdmin ? 'overflow-x-auto' : ''}`} style={{
+        <div className={`flex items-center justify-around px-1 py-2 ${navTabs.length > 5 ? 'overflow-x-auto' : ''}`} style={{
           minHeight: '56px'
         }}>
           {navTabs.map((tab) => {

@@ -35,23 +35,29 @@ export default function AdminConsole() {
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
     queryFn: () => base44.entities.User.list(),
-    enabled: user?.role === 'admin',
+    // Only fetch if current user is an admin or super_admin
+    enabled: user?.access_level === 'admin' || user?.access_level === 'super_admin' || user?.role === 'admin',
   });
 
   const { data: allLeases = [] } = useQuery({
     queryKey: ['allLeases'],
     queryFn: () => base44.entities.Lease.list(),
-    enabled: user?.role === 'admin',
+    // Only fetch if current user is an admin or super_admin
+    enabled: user?.access_level === 'admin' || user?.access_level === 'super_admin' || user?.role === 'admin',
   });
 
   const { data: allDocuments = [] } = useQuery({
     queryKey: ['allDocuments'],
     queryFn: () => base44.entities.Document.list(),
-    enabled: user?.role === 'admin',
+    // Only fetch if current user is an admin or super_admin
+    enabled: user?.access_level === 'admin' || user?.access_level === 'super_admin' || user?.role === 'admin',
   });
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+  const accessLevel = user?.access_level || 'user';
+  const isSuperAdmin = accessLevel === 'super_admin';
+  const isAdmin = ['admin', 'super_admin'].includes(accessLevel) || user?.role === 'admin';
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -73,6 +79,25 @@ export default function AdminConsole() {
     leaseBg: '#F8FAFC'
   };
 
+  // Restrict access to admin and super_admin only
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
+        <Card className="max-w-md border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardContent className="p-8 text-center">
+            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {language === 'th' ? 'ไม่ได้รับอนุญาต' : 'Unauthorized'}
+            </h2>
+            <p style={{ color: colors.textSecondary }}>
+              {language === 'th' ? 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้' : 'You do not have permission to access this page.'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const t = {
     en: {
       title: "Admin Console",
@@ -91,6 +116,7 @@ export default function AdminConsole() {
       plan: "Plan",
       status: "Status",
       role: "Role",
+      accessLevel: "Access Level",
       joined: "Joined",
       actions: "Actions",
       admin: "Admin",
@@ -98,6 +124,7 @@ export default function AdminConsole() {
       secure: "Secure",
       recentLeases: "Recent Leases",
       noLeases: "No leases yet",
+      superAdminOnly: "Super Admin Only",
       // New LINE Notification strings
       testLineNotifications: "Test LINE Notifications",
       firstAddWelcome: "First Add Welcome",
@@ -138,6 +165,7 @@ export default function AdminConsole() {
       plan: "แผน",
       status: "สถานะ",
       role: "บทบาท",
+      accessLevel: "ระดับการเข้าถึง",
       joined: "เข้าร่วม",
       actions: "การดำเนินการ",
       admin: "แอดมิน",
@@ -145,6 +173,7 @@ export default function AdminConsole() {
       secure: "Secure",
       recentLeases: "สัญญาเช่าล่าสุด",
       noLeases: "ยังไม่มีสัญญาเช่า",
+      superAdminOnly: "สำหรับ Super Admin เท่านั้น",
       // New LINE Notification strings
       testLineNotifications: "ทดสอบการแจ้งเตือน LINE",
       firstAddWelcome: "ข้อความต้อนรับแรก",
@@ -230,14 +259,23 @@ export default function AdminConsole() {
     }
 
     if (action === 'delete') {
+      // Only super admin can delete users
+      if (!isSuperAdmin) {
+        alert(language === 'th' ? 'เฉพาะ Super Admin เท่านั้นที่สามารถลบผู้ใช้ได้' : 'Only Super Admin can delete users');
+        return;
+      }
       deleteUserMutation.mutate(targetUser.id);
       return;
     }
 
-    if (action === 'make_admin') {
-      updateUserMutation.mutate({ userId: targetUser.id, data: { role: 'admin' } });
-    } else if (action === 'make_user') {
-      updateUserMutation.mutate({ userId: targetUser.id, data: { role: 'user' } });
+    if (action.startsWith('access_')) {
+      const level = action.replace('access_', '');
+      // Only super admin can grant super_admin access
+      if (level === 'super_admin' && !isSuperAdmin) {
+        alert(language === 'th' ? 'เฉพาะ Super Admin เท่านั้นที่สามารถให้สิทธิ์ Super Admin ได้' : 'Only Super Admin can grant Super Admin access');
+        return;
+      }
+      updateUserMutation.mutate({ userId: targetUser.id, data: { access_level: level } });
     } else if (action.startsWith('tier_')) {
       const tier = action.replace('tier_', '');
       updateUserMutation.mutate({ userId: targetUser.id, data: { plan_tier: tier } });
@@ -258,6 +296,9 @@ export default function AdminConsole() {
           <div className="flex items-center gap-3 mb-2">
             <Shield className="w-8 h-8 text-ls-forest" />
             <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+            {isSuperAdmin && (
+              <Badge className="bg-purple-600 text-white">SUPER ADMIN</Badge>
+            )}
           </div>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
@@ -788,9 +829,9 @@ export default function AdminConsole() {
                   <tr style={{ borderBottom: `2px solid ${colors.borderColor}` }}>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.status}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.role}</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.joined}</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
                   </tr>
@@ -813,6 +854,19 @@ export default function AdminConsole() {
                       </td>
                       <td className="py-3 px-4">
                         <Badge className={
+                          u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                          u.access_level === 'admin' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                          u.access_level === 'va' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                          'bg-slate-100 text-slate-700 border-slate-200'
+                        }>
+                          {u.access_level === 'super_admin' ? 'Super Admin' :
+                           u.access_level === 'admin' ? 'Admin' :
+                           u.access_level === 'va' ? 'VA' :
+                           'User'}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge className={
                           u.plan_tier === 'secure' ? 'bg-purple-100 text-purple-700' :
                           u.plan_tier === 'protect' ? 'bg-blue-100 text-blue-700' :
                           u.plan_tier === 'lite' ? 'bg-emerald-100 text-emerald-700' :
@@ -828,14 +882,6 @@ export default function AdminConsole() {
                         {u.subscription_status === 'active' && (
                           <Badge className="bg-emerald-100 text-emerald-700">
                             {strings.active}
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        {u.role === 'admin' && (
-                          <Badge className="bg-ls-gold text-ls-charcoal">
-                            <Crown className="w-3 h-3 mr-1" />
-                            {strings.admin}
                           </Badge>
                         )}
                       </td>
@@ -862,16 +908,39 @@ export default function AdminConsole() {
                             <DropdownMenuLabel style={{ color: colors.textPrimary }}>User Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
 
+                            <DropdownMenuLabel style={{ color: colors.textSecondary, fontSize: '11px' }}>Access Level</DropdownMenuLabel>
                             <DropdownMenuItem
-                              onClick={() => handleUserAction(u.role === 'admin' ? 'make_user' : 'make_admin', u)}
+                              onClick={() => handleUserAction('access_user', u)}
+                              disabled={u.access_level === 'user'}
+                              style={{ color: colors.textPrimary }}
+                            >
+                              User
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleUserAction('access_va', u)}
+                              disabled={u.access_level === 'va'}
+                              style={{ color: colors.textPrimary }}
+                            >
+                              VA (Operations)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleUserAction('access_admin', u)}
+                              disabled={u.access_level === 'admin'}
+                              style={{ color: colors.textPrimary }}
+                            >
+                              Admin
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleUserAction('access_super_admin', u)}
+                              disabled={u.access_level === 'super_admin' || !isSuperAdmin}
                               style={{ color: colors.textPrimary }}
                             >
                               <Crown className="w-4 h-4 mr-2" />
-                              {u.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                              Super Admin {!isSuperAdmin && '🔒'}
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
-                            <DropdownMenuLabel style={{ color: colors.textSecondary, fontSize: '11px' }}>Change Tier</DropdownMenuLabel>
+                            <DropdownMenuLabel style={{ color: colors.textSecondary, fontSize: '11px' }}>Plan Tier</DropdownMenuLabel>
 
                             <DropdownMenuItem
                               onClick={() => handleUserAction('tier_free', u)}
@@ -907,10 +976,10 @@ export default function AdminConsole() {
                             <DropdownMenuItem
                               onClick={() => handleUserAction('delete', u)}
                               className="text-red-600"
-                              disabled={u.id === user?.id}
+                              disabled={u.id === user?.id || !isSuperAdmin}
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
-                              Delete User
+                              Delete User {!isSuperAdmin && '🔒'}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
