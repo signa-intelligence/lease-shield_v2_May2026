@@ -3,12 +3,30 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Camera, X, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { 
+  Upload, 
+  FileText, 
+  Loader2, 
+  CheckCircle2, 
+  AlertCircle, 
+  Camera, 
+  X, 
+  Trash2,
+  Home, // New Icon
+  DollarSign, // New Icon
+  Bell, // New Icon
+  Edit2, // New Icon
+  Save, // New Icon
+  Shield, // New Icon
+  Eye, // New Icon
+  ExternalLink // New Icon
+} from "lucide-react";
 import { format } from "date-fns";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function UploadScanPage() {
@@ -24,6 +42,12 @@ export default function UploadScanPage() {
   const [leaseDetails, setLeaseDetails] = useState(null);
   const [pendingLeaseId, setPendingLeaseId] = useState(null);
   const [analysisStage, setAnalysisStage] = useState('');
+  
+  // New state for viewing lease details
+  const [selectedLease, setSelectedLease] = useState(null);
+  const [editingNotice, setEditingNotice] = useState(false);
+  const [noticeSettings, setNoticeSettings] = useState({ notice_period_days: 30 });
+  
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -37,6 +61,12 @@ export default function UploadScanPage() {
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
     initialData: [],
+  });
+
+  const { data: allScans = [] } = useQuery({
+    queryKey: ['allScans'],
+    queryFn: () => base44.entities.LeaseScan.list(),
+    enabled: !!user,
   });
 
   const language = user?.language || 'en';
@@ -84,7 +114,31 @@ export default function UploadScanPage() {
         medium: "Medium Risk",
         high: "High Risk",
         critical: "Critical Risk"
-      }
+      },
+      leaseDetails: "Lease Details",
+      basicInfo: "Basic Information",
+      propertyAddress: "Property Address",
+      monthlyRent: "Monthly Rent",
+      securityDeposit: "Security Deposit",
+      leasePeriod: "Lease Period",
+      to: "to",
+      noticeSettings: "Notice Settings",
+      noticeAlertsEnabled: "Notice Alerts Enabled",
+      noticePeriod: "Notice Period (Days)",
+      noticeDeadline: "Notice Deadline",
+      edit: "Edit",
+      save: "Save",
+      cancel: "Cancel",
+      days: "days",
+      riskAnalysis: "Risk Analysis",
+      riskScore: "Risk Score",
+      viewFullReport: "View Full Report",
+      viewScanResults: "View Scan Results",
+      viewLease: "View Lease Document",
+      closeDetails: "Close Details",
+      enableAlertsHelp: "Receive reminders 30, 7, and 3 days before notice deadline",
+      deadlineCalculated: "Calculated based on lease end date and notice period",
+      allLeases: "All Leases"
     },
     th: {
       title: "สแกนสัญญาเช่า",
@@ -110,7 +164,7 @@ export default function UploadScanPage() {
       confirmNoticeTitle: "ตั้งการแจ้งเตือนระยะเวลาแจ้งล่วงหน้า",
       confirmNoticeDesc: "เราตรวจพบว่าสัญญาเช่าของคุณสิ้นสุดวันที่",
       noticePeriodLabel: "ระยะเวลาแจ้งล่วงหน้า (วัน)",
-      noticePeriodHelp: "จำนวนวันก่อนสัญญาหมดที่ต้องแจ้งเจ้าของบ้าน",
+      noticePeriodHelp: "จำนวนวันก่อนสัญญาหมดอายุที่ต้องแจ้งเจ้าของบ้าน",
       skipReminder: "ข้าม",
       setReminder: "ตั้งการแจ้งเตือน",
       riskLevels: {
@@ -118,9 +172,41 @@ export default function UploadScanPage() {
         medium: "ความเสี่ยงปานกลาง",
         high: "ความเสี่ยงสูง",
         critical: "ความเสี่ยงวิกฤต"
-      }
+      },
+      leaseDetails: "รายละเอียดสัญญาเช่า",
+      basicInfo: "ข้อมูลพื้นฐาน",
+      propertyAddress: "ที่อยู่ทรัพย์สิน",
+      monthlyRent: "ค่าเช่ารายเดือน",
+      securityDeposit: "เงินมัดจำ",
+      leasePeriod: "ระยะเวลาสัญญา",
+      to: "ถึง",
+      noticeSettings: "การตั้งค่าการแจ้งเตือน",
+      noticeAlertsEnabled: "เปิดการแจ้งเตือน",
+      noticePeriod: "ระยะเวลาแจ้งล่วงหน้า (วัน)",
+      noticeDeadline: "กำหนดแจ้ง",
+      edit: "แก้ไข",
+      save: "บันทึก",
+      cancel: "ยกเลิก",
+      days: "วัน",
+      riskAnalysis: "การวิเคราะห์ความเสี่ยง",
+      riskScore: "คะแนนความเสี่ยง",
+      viewFullReport: "ดูรายงานฉบับเต็ม",
+      viewScanResults: "ดูผลการสแกน",
+      viewLease: "ดูเอกสารสัญญาเช่า",
+      closeDetails: "ปิดรายละเอียด",
+      enableAlertsHelp: "รับการแจ้งเตือน 30, 7 และ 3 วันก่อนถึงกำหนดแจ้ง",
+      deadlineCalculated: "คำนวณจากวันสิ้นสุดสัญญาและระยะเวลาแจ้งล่วงหน้า",
+      allLeases: "สัญญาเช่าทั้งหมด"
     }
   }[language];
+
+  const updateLeaseMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Lease.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leases'] });
+      setEditingNotice(false);
+    }
+  });
 
   const handleUploadAll = async () => {
     if (selectedFiles.length === 0) {
@@ -141,7 +227,6 @@ export default function UploadScanPage() {
 
     const attemptUpload = async () => {
       try {
-        console.log('📤 Step 1: Uploading files...');
         setAnalysisStage('uploading');
         setUploadProgress(10);
         
@@ -151,10 +236,8 @@ export default function UploadScanPage() {
 
         const uploadResults = await Promise.all(uploadPromises);
         const fileUrls = uploadResults.map(result => result.file_url);
-        console.log('✅ Files uploaded:', fileUrls.length);
         setUploadProgress(30);
 
-        console.log('📝 Step 2: Creating lease record...');
         setAnalysisStage('creating');
         setUploadProgress(40);
         
@@ -164,10 +247,8 @@ export default function UploadScanPage() {
           status: 'uploaded'
         });
         createdLeaseId = lease.id;
-        console.log('✅ Lease created with ID:', createdLeaseId);
         setUploadProgress(50);
 
-        console.log('🤖 Step 3: Starting AI analysis...');
         setAnalyzing(true);
         setUploading(false);
         setAnalysisStage('scanning');
@@ -182,11 +263,9 @@ export default function UploadScanPage() {
         }
 
         const scanResult = scanResponse.result;
-        console.log('✅ AI analysis complete. Risk score:', scanResult.risk_score);
         setAnalysisStage('extracting');
         setUploadProgress(70);
 
-        console.log('💾 Step 4: Updating lease with extracted data...');
         await base44.entities.Lease.update(createdLeaseId, {
           status: 'scanned',
           property_address: scanResult.property_address || null,
@@ -196,10 +275,8 @@ export default function UploadScanPage() {
           deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
           language_detected: scanResult.language_detected || 'en'
         });
-        console.log('✅ Lease updated');
         setUploadProgress(80);
 
-        console.log('💾 Step 5: Saving scan results...');
         setAnalysisStage('finalizing');
         
         await base44.entities.LeaseScan.create({
@@ -210,7 +287,6 @@ export default function UploadScanPage() {
           scan_full: scanResult,
           version: '1.0'
         });
-        console.log('✅ Scan record created');
         setUploadProgress(100);
 
         if (scanResult.end_date) {
@@ -221,11 +297,15 @@ export default function UploadScanPage() {
           setPendingLeaseId(createdLeaseId);
           setShowConfirmation(true);
         } else {
-          navigate(createPageUrl("ScanPreview") + `?leaseId=${createdLeaseId}`);
+          // Open details modal instead of navigating
+          const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
+          const newLease = updatedLeases.find(l => l.id === createdLeaseId);
+          setSelectedLease(newLease);
         }
         
         setSelectedFiles([]);
         queryClient.invalidateQueries({ queryKey: ['leases'] });
+        queryClient.invalidateQueries({ queryKey: ['allScans'] });
 
       } catch (err) {
         console.error('❌ Upload/Analysis error:', err);
@@ -247,7 +327,6 @@ export default function UploadScanPage() {
           
           if (createdLeaseId && analysisStage !== 'uploading') {
             try {
-              console.log('🗑️ Cleaning up failed lease:', createdLeaseId);
               await base44.entities.Lease.delete(createdLeaseId);
               createdLeaseId = null;
             } catch (cleanupErr) {
@@ -277,7 +356,6 @@ export default function UploadScanPage() {
           
           if (createdLeaseId) {
             try {
-              console.log('🗑️ Final cleanup:', createdLeaseId);
               await base44.entities.Lease.delete(createdLeaseId);
             } catch (cleanupErr) {
               console.error('Failed final cleanup:', cleanupErr);
@@ -299,25 +377,38 @@ export default function UploadScanPage() {
     if (!pendingLeaseId || !leaseDetails) return;
 
     try {
+      const endDate = new Date(leaseDetails.end_date);
+      const deadline = new Date(endDate);
+      deadline.setDate(deadline.getDate() - leaseDetails.notice_period_days);
+
       await base44.entities.Lease.update(pendingLeaseId, {
         notice_period_days: leaseDetails.notice_period_days,
-        notice_alerts_enabled: true
+        notice_alerts_enabled: true,
+        notice_deadline: deadline.toISOString().split('T')[0]
       });
 
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       setShowConfirmation(false);
-      navigate(createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`);
+      
+      // Open in modal instead of navigate
+      const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
+      const updatedLease = updatedLeases.find(l => l.id === pendingLeaseId);
+      setSelectedLease(updatedLease);
     } catch (err) {
       console.error('Failed to update lease details:', err);
-      // Still navigate even if update fails
-      navigate(createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`);
+      // Still open the modal even if update fails
+      const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
+      const updatedLease = updatedLeases.find(l => l.id === pendingLeaseId);
+      setSelectedLease(updatedLease);
     }
   };
 
-  const handleSkipConfirmation = () => {
+  const handleSkipConfirmation = async () => {
     setShowConfirmation(false);
     if (pendingLeaseId) {
-      navigate(createPageUrl("ScanPreview") + `?leaseId=${pendingLeaseId}`);
+      const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
+      const skippedLease = updatedLeases.find(l => l.id === pendingLeaseId);
+      setSelectedLease(skippedLease);
     }
   };
 
@@ -331,6 +422,8 @@ export default function UploadScanPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leases'] });
+      queryClient.invalidateQueries({ queryKey: ['allScans'] });
+      setSelectedLease(null);
     },
   });
 
@@ -348,8 +441,8 @@ export default function UploadScanPage() {
     }
   };
 
-  const handleViewDetails = (leaseId) => {
-    navigate(createPageUrl("LeaseDetails") + `?leaseId=${leaseId}`);
+  const handleViewDetails = (lease) => {
+    setSelectedLease(lease);
   };
 
   const handleFileSelect = (e) => {
@@ -378,6 +471,50 @@ export default function UploadScanPage() {
     setRetryCount(0);
     setAnalysisStage('');
   };
+
+  const handleToggleAlerts = async (enabled) => {
+    await updateLeaseMutation.mutateAsync({
+      id: selectedLease.id,
+      data: { notice_alerts_enabled: enabled }
+    });
+    setSelectedLease({ ...selectedLease, notice_alerts_enabled: enabled });
+  };
+
+  const handleSaveNoticeSettings = async () => {
+    if (!selectedLease.end_date || !noticeSettings.notice_period_days) {
+      alert(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : 'Please fill in all fields');
+      return;
+    }
+
+    const endDate = new Date(selectedLease.end_date);
+    const deadline = new Date(endDate);
+    deadline.setDate(deadline.getDate() - noticeSettings.notice_period_days);
+
+    await updateLeaseMutation.mutateAsync({
+      id: selectedLease.id,
+      data: {
+        notice_period_days: noticeSettings.notice_period_days,
+        notice_deadline: deadline.toISOString().split('T')[0]
+      }
+    });
+    
+    setSelectedLease({
+      ...selectedLease,
+      notice_period_days: noticeSettings.notice_period_days,
+      notice_deadline: deadline.toISOString().split('T')[0]
+    });
+    setEditingNotice(false);
+  };
+
+  const getRiskColor = (score) => {
+    if (score >= 75) return '#EF4444'; // Red (Critical)
+    if (score >= 50) return '#F59E0B'; // Orange (High)
+    if (score >= 25) return '#EAB308'; // Yellow (Medium)
+    return '#10B981'; // Green (Low)
+  };
+
+  // Get scan for selected lease
+  const selectedScan = selectedLease ? allScans.find(s => s.lease_id === selectedLease.id) : null;
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
@@ -468,6 +605,230 @@ export default function UploadScanPage() {
           </Dialog>
         )}
 
+        {/* Lease Details Modal */}
+        {selectedLease && (
+          <Dialog open={!!selectedLease} onOpenChange={() => setSelectedLease(null)}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: colors.cardBg }}>
+              <DialogHeader className="sticky top-0 z-10 pb-4" style={{ 
+                backgroundColor: colors.cardBg,
+                borderBottom: `1px solid ${colors.borderColor}`
+              }}>
+                <div className="flex items-center justify-between">
+                  <DialogTitle style={{ color: colors.textPrimary }}>{strings.leaseDetails}</DialogTitle>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedLease(null)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </DialogHeader>
+              
+              <div className="space-y-4 mt-4">
+                {/* Basic Info */}
+                <Card className="border-none" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base" style={{ color: colors.textPrimary }}>
+                      <Home className="w-4 h-4 text-ls-forest" />
+                      {strings.basicInfo}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.propertyAddress}</p>
+                      <p style={{ color: colors.textPrimary }}>{selectedLease.property_address || 'N/A'}</p>
+                    </div>
+                    {selectedLease.rent_amount > 0 && (
+                      <div>
+                        <p className="font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.monthlyRent}</p>
+                        <p className="flex items-center" style={{ color: colors.textPrimary }}><DollarSign className="w-4 h-4 mr-1"/>{selectedLease.rent_amount.toLocaleString()}</p>
+                      </div>
+                    )}
+                    {selectedLease.deposit_amount > 0 && (
+                      <div>
+                        <p className="font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.securityDeposit}</p>
+                        <p className="flex items-center" style={{ color: colors.textPrimary }}><DollarSign className="w-4 h-4 mr-1"/>{selectedLease.deposit_amount.toLocaleString()}</p>
+                      </div>
+                    )}
+                    {(selectedLease.start_date || selectedLease.end_date) && (
+                      <div>
+                        <p className="font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.leasePeriod}</p>
+                        <p style={{ color: colors.textPrimary }}>
+                          {selectedLease.start_date ? format(new Date(selectedLease.start_date), 'MMM d, yyyy') : 'N/A'} {strings.to} {selectedLease.end_date ? format(new Date(selectedLease.end_date), 'MMM d, yyyy') : 'N/A'}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Notice Settings */}
+                <Card className="border-none" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base" style={{ color: colors.textPrimary }}>
+                      <Bell className="w-4 h-4 text-ls-forest" />
+                      {strings.noticeSettings}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: colors.cardBg }}>
+                      <div>
+                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{strings.noticeAlertsEnabled}</p>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>{strings.enableAlertsHelp}</p>
+                      </div>
+                      <Switch
+                        checked={selectedLease.notice_alerts_enabled !== false}
+                        onCheckedChange={handleToggleAlerts}
+                        disabled={!selectedLease.end_date} // Disable if no end date
+                      />
+                    </div>
+
+                    {!editingNotice ? (
+                      <div className="space-y-3">
+                        {selectedLease.end_date && (
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.noticePeriod}</p>
+                              <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+                                {selectedLease.notice_period_days || 30} {strings.days}
+                              </p>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={() => {
+                              setNoticeSettings({ notice_period_days: selectedLease.notice_period_days || 30 });
+                              setEditingNotice(true);
+                            }} disabled={!selectedLease.end_date}>
+                              <Edit2 className="w-4 h-4 mr-2" />
+                              {strings.edit}
+                            </Button>
+                          </div>
+                        )}
+                        {selectedLease.notice_deadline && (
+                          <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5' }}>
+                            <p className="text-sm font-semibold mb-1" style={{ color: colors.textPrimary }}>{strings.noticeDeadline}</p>
+                            <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+                              {format(new Date(selectedLease.notice_deadline), 'MMMM d, yyyy')}
+                            </p>
+                            <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                                {strings.deadlineCalculated}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                            {strings.noticePeriodLabel}
+                          </label>
+                          <input
+                            type="number"
+                            value={noticeSettings.notice_period_days}
+                            onChange={(e) => setNoticeSettings({ notice_period_days: parseInt(e.target.value) || 30 })}
+                            min="1"
+                            max="365"
+                            className="w-full p-3 border-2 rounded-lg"
+                            style={{
+                              backgroundColor: colors.inputBg,
+                              borderColor: colors.borderColor,
+                              color: colors.textPrimary
+                            }}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" onClick={() => setEditingNotice(false)} className="flex-1">
+                            <X className="w-4 h-4 mr-2" />
+                            {strings.cancel}
+                          </Button>
+                          <Button onClick={handleSaveNoticeSettings} className="flex-1 bg-ls-forest hover:bg-ls-forest/90">
+                            <Save className="w-4 h-4 mr-2" />
+                            {strings.save}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Risk Analysis */}
+                {selectedScan && (
+                  <Card className="border-none" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base" style={{ color: colors.textPrimary }}>
+                        <Shield className="w-4 h-4 text-ls-forest" />
+                        {strings.riskAnalysis}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.riskScore}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-3xl font-bold" style={{ color: getRiskColor(selectedScan.risk_score) }}>
+                              {selectedScan.risk_score}
+                            </span>
+                            <span className="text-lg" style={{ color: colors.textSecondary }}>/100</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedLease(null);
+                              navigate(createPageUrl("ScanPreview") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
+                            }}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            {strings.viewScanResults}
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-ls-forest hover:bg-ls-forest/90"
+                            onClick={() => {
+                              setSelectedLease(null);
+                              navigate(createPageUrl("ReportFull") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
+                            }}
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            {strings.viewFullReport}
+                          </Button>
+                        </div>
+                      </div>
+                      {selectedScan.summary && (
+                        <p className="text-sm p-3 rounded-lg" style={{
+                          backgroundColor: colors.cardBg,
+                          color: colors.textSecondary
+                        }}>
+                          {selectedScan.summary}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-4 border-t" style={{ borderColor: colors.borderColor }}>
+                  {selectedLease.file_url && (
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open(selectedLease.file_url, '_blank')}
+                      className="flex-1"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      {strings.viewLease}
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={(e) => handleDeleteLease(selectedLease.id, e)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {language === 'th' ? 'ลบ' : 'Delete'}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Upload Zone */}
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <div className="p-6 md:p-8">
             {uploading || analyzing ? (
@@ -537,7 +898,6 @@ export default function UploadScanPage() {
                         accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                         onChange={handleFileSelect}
                         className="hidden"
-                        id="document-upload"
                       />
                       <span
                         className="inline-flex items-center gap-2 px-6 py-3 rounded-lg cursor-pointer"
@@ -558,7 +918,6 @@ export default function UploadScanPage() {
                         accept="image/*"
                         onChange={handleFileSelect}
                         className="hidden"
-                        id="photo-upload"
                       />
                       <span
                         className="inline-flex items-center gap-2 px-6 py-3 rounded-lg cursor-pointer border-2"
@@ -573,12 +932,6 @@ export default function UploadScanPage() {
                       </span>
                     </label>
                   </div>
-
-                  <p className="text-xs mt-4" style={{ color: colors.textSecondary }}>
-                    {language === 'th' 
-                      ? '💡 เคล็ดลับ: ใช้ "เลือกเอกสาร" สำหรับไฟล์ PDF/Word หรือ "ถ่ายรูป" สำหรับถ่ายภาพสัญญา'
-                      : '💡 Tip: Use "Browse Documents" for PDF/Word files or "Take Photos" to capture your lease'}
-                  </p>
                 </div>
 
                 {selectedFiles.length > 0 && (
@@ -628,21 +981,19 @@ export default function UploadScanPage() {
           </div>
         </Card>
 
-        {/* All Scans - Show more than 3 */}
+        {/* All Leases List */}
         {leases.length > 0 && (
           <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'สัญญาเช่าทั้งหมด' : 'All Scans'} ({leases.length})
-              </h2>
-            </div>
+            <h2 className="text-2xl font-bold mb-4" style={{ color: colors.textPrimary }}>
+              {strings.allLeases} ({leases.length})
+            </h2>
             <div className="grid gap-4">
               {leases.map((lease) => (
                 <Card
                   key={lease.id}
                   className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
                   style={{ backgroundColor: colors.cardBg }}
-                  onClick={() => handleViewDetails(lease.id)}
+                  onClick={() => handleViewDetails(lease)}
                 >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-start justify-between gap-3">
