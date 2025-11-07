@@ -340,15 +340,24 @@ export default function AdminConsole() {
   };
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ userId, data }) => base44.asServiceRole.entities.User.update(userId, data),
-    onSuccess: (updatedUser, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+    mutationFn: async ({ userId, data }) => {
+      console.log('🔄 Mutation starting:', { userId, data });
+      const result = await base44.asServiceRole.entities.User.update(userId, data);
+      console.log('✅ Mutation result:', result);
+      return result;
+    },
+    onSuccess: async (updatedUser, variables) => {
+      console.log('✅ Mutation onSuccess called:', updatedUser);
+      
+      // Force immediate refetch of all users
+      await queryClient.refetchQueries({ queryKey: ['allUsers'] });
+      await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
       
       let actionType = 'user data';
       if (variables.data.access_level) actionType = 'access level';
       else if (variables.data.plan_tier) actionType = 'plan tier';
       else if (typeof variables.data.suspended === 'boolean') {
-        actionType = variables.data.suspended ? 'suspension status' : 'unsuspension status';
+        actionType = variables.data.suspended ? 'suspension' : 'unsuspension';
       }
       
       setUserActionResult({
@@ -361,7 +370,13 @@ export default function AdminConsole() {
       setTimeout(() => setUserActionResult(null), 5000);
     },
     onError: (error) => {
-      console.error('User update error:', error);
+      console.error('❌ Mutation onError called:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response
+      });
+      
       setUserActionResult({
         type: 'error',
         message: language === 'th'
@@ -374,8 +389,10 @@ export default function AdminConsole() {
 
   const deleteUserMutation = useMutation({
     mutationFn: (userId) => base44.asServiceRole.entities.User.delete(userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['allUsers'] });
+      await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      
       setUserActionResult({
         type: 'success',
         message: language === 'th' ? '✅ ลบผู้ใช้สำเร็จ' : '✅ User deleted successfully'
@@ -395,10 +412,14 @@ export default function AdminConsole() {
   });
 
   const handleUserAction = async (action, targetUser) => {
-    console.log('🔧 User action:', action, 'for user:', targetUser.email);
+    console.log('🎯 handleUserAction called:', { action, targetEmail: targetUser.email, targetId: targetUser.id });
+    console.log('📋 Target user current state:', {
+      access_level: targetUser.access_level,
+      plan_tier: targetUser.plan_tier,
+      suspended: targetUser.suspended
+    });
     
     if (action === 'suspend' || action === 'unsuspend') {
-      // Handle suspend/unsuspend with dialog
       if (action === 'suspend') {
         const reason = prompt(
           language === 'th' 
@@ -408,6 +429,7 @@ export default function AdminConsole() {
         );
         
         if (!reason || reason.trim() === '') {
+          console.log('❌ Suspend cancelled - no reason provided');
           return;
         }
 
@@ -426,6 +448,12 @@ export default function AdminConsole() {
           suspendedUntil = untilDate.toISOString();
         }
 
+        console.log('🔒 Calling suspend mutation:', {
+          userId: targetUser.id,
+          reason: reason.trim(),
+          until: suspendedUntil
+        });
+
         updateUserMutation.mutate({
           userId: targetUser.id,
           data: {
@@ -435,14 +463,16 @@ export default function AdminConsole() {
           }
         });
       } else {
-        // Unsuspend
         if (!window.confirm(
           language === 'th'
             ? `คุณแน่ใจหรือไม่ว่าต้องการยกเลิกการระงับ ${targetUser.full_name}?`
             : `Are you sure you want to unsuspend ${targetUser.full_name}?`
         )) {
+          console.log('❌ Unsuspend cancelled by user');
           return;
         }
+
+        console.log('🔓 Calling unsuspend mutation:', { userId: targetUser.id });
 
         updateUserMutation.mutate({
           userId: targetUser.id,
@@ -456,27 +486,44 @@ export default function AdminConsole() {
       return;
     }
     
-    const confirmMessage = language === 'th'
-      ? `คุณแน่ใจหรือไม่ว่าต้องการ${action === 'delete' ? 'ลบ' : 'เปลี่ยนแปลง'}ผู้ใช้นี้?`
-      : `Are you sure you want to ${action === 'delete' ? 'delete' : 'update'} this user?`;
-
-    if (!window.confirm(confirmMessage)) {
-      return;
-    }
-
     if (action === 'delete') {
+      const confirmMessage = language === 'th'
+        ? `คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้ ${targetUser.full_name}? การดำเนินการนี้ไม่สามารถย้อนกลับได้!`
+        : `Are you sure you want to delete ${targetUser.full_name}? This action cannot be undone!`;
+
+      if (!window.confirm(confirmMessage)) {
+        console.log('❌ Delete cancelled by user');
+        return;
+      }
+
       // Only super admin can delete users
       if (!isSuperAdmin) {
         alert(language === 'th' ? 'เฉพาะ Super Admin เท่านั้นที่สามารถลบผู้ใช้ได้' : 'Only Super Admin can delete users');
         return;
       }
+      
+      console.log('🗑️ Calling delete mutation:', { userId: targetUser.id });
       deleteUserMutation.mutate(targetUser.id);
+      return;
+    }
+
+    // For access_* and tier_* actions, show confirm dialog
+    const confirmMessage = language === 'th'
+      ? `คุณแน่ใจหรือไม่ว่าต้องการเปลี่ยนแปลงผู้ใช้ ${targetUser.full_name}?`
+      : `Are you sure you want to update ${targetUser.full_name}?`;
+
+    if (!window.confirm(confirmMessage)) {
+      console.log('❌ Update cancelled by user');
       return;
     }
 
     if (action.startsWith('access_')) {
       const level = action.replace('access_', '');
-      console.log('🔐 Updating access level to:', level);
+      console.log('🔐 Preparing to update access level:', {
+        from: targetUser.access_level,
+        to: level,
+        userId: targetUser.id
+      });
       
       // Only super admin can grant super_admin access
       if (level === 'super_admin' && !isSuperAdmin) {
@@ -484,14 +531,20 @@ export default function AdminConsole() {
         return;
       }
       
+      console.log('🔄 Calling mutation for access_level update');
       updateUserMutation.mutate({ 
         userId: targetUser.id, 
         data: { access_level: level } 
       });
     } else if (action.startsWith('tier_')) {
       const tier = action.replace('tier_', '');
-      console.log('💳 Updating plan tier to:', tier);
+      console.log('💳 Preparing to update plan tier:', {
+        from: targetUser.plan_tier,
+        to: tier,
+        userId: targetUser.id
+      });
       
+      console.log('🔄 Calling mutation for plan_tier update');
       updateUserMutation.mutate({ 
         userId: targetUser.id, 
         data: { plan_tier: tier } 
