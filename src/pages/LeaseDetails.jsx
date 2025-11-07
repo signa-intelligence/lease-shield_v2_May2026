@@ -240,8 +240,14 @@ export default function LeaseDetails() {
                 ? 'ไม่พบสัญญาเช่าที่คุณกำลังมองหา หรืออาจถูกลบไปแล้ว' 
                 : 'The lease you\'re looking for doesn\'t exist or may have been deleted.'}
             </p>
-            <Button onClick={() => navigate(createPageUrl("UploadScan"))} className="bg-ls-forest hover:bg-ls-forest/90">
-              {language === 'th' ? 'กลับไปที่สัญญาเช่า' : 'Go to Leases'}
+            <Button 
+              onClick={() => navigate(createPageUrl("UploadScan"))} 
+              className="bg-ls-forest hover:bg-ls-forest/90"
+              style={{ color: '#FFFFFF' }}
+            >
+              <span style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                {language === 'th' ? 'กลับไปที่สัญญาเช่า' : 'Go to Leases'}
+              </span>
             </Button>
           </div>
         </div>
@@ -575,13 +581,13 @@ export default function LeaseDetails() {
                   <div className="font-semibold">{strings.generateLetter}</div>
                   <div className="text-xs" style={{ color: colors.textSecondary }}>
                     {language === 'th' ? 'สร้างจดหมายอย่างเป็นทางการ' : 'Create formal letters'}
+                    </div>
                   </div>
-                </div>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
