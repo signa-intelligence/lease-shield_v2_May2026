@@ -1,7 +1,8 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), {
+const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2023-10-16',
 });
 
@@ -14,12 +15,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { priceId, mode, successUrl, cancelUrl, metadata } = await req.json();
+    const { priceId, mode, amount, currency, description, successUrl, cancelUrl, metadata } = await req.json();
+
+    console.log('Creating checkout with:', { priceId, mode, amount, currency, user: user.email });
 
     // Get or create Stripe customer
     let customerId = user.stripe_customer_id;
     
     if (!customerId) {
+      console.log('Creating new Stripe customer for:', user.email);
       const customer = await stripe.customers.create({
         email: user.email,
         name: user.full_name,
@@ -28,27 +32,76 @@ Deno.serve(async (req) => {
         }
       });
       customerId = customer.id;
+      console.log('Created customer:', customerId);
       
       await base44.auth.updateMe({ stripe_customer_id: customerId });
     }
 
-    const session = await stripe.checkout.sessions.create({
+    // Get origin from request for fallback URLs
+    const origin = new URL(req.url).origin.replace('/api/functions/createCheckout', '');
+    const defaultSuccessUrl = `${origin}/account?success=true`;
+    const defaultCancelUrl = `${origin}/account?canceled=true`;
+
+    // Build session config based on mode
+    const sessionConfig = {
       customer: customerId,
       mode: mode || 'subscription',
-      line_items: [
+      success_url: successUrl || defaultSuccessUrl,
+      cancel_url: cancelUrl || defaultCancelUrl,
+      metadata: metadata || {},
+    };
+
+    // Handle subscription vs one-time payment
+    if (mode === 'payment' && amount) {
+      console.log('Creating one-time payment session for amount:', amount);
+      // One-time payment (for cases)
+      sessionConfig.line_items = [
+        {
+          price_data: {
+            currency: currency || 'thb',
+            unit_amount: Math.round(amount * 100), // Convert to smallest currency unit
+            product_data: {
+              name: description || 'Lease Shield Resolve Service',
+              description: description || 'Professional dispute resolution service',
+            },
+          },
+          quantity: 1,
+        },
+      ];
+    } else if (priceId) {
+      console.log('Creating subscription session for price:', priceId);
+      // Subscription payment
+      sessionConfig.line_items = [
         {
           price: priceId,
           quantity: 1,
         },
-      ],
-      success_url: successUrl || `${Deno.env.get('BASE44_APP_URL')}/account?success=true`,
-      cancel_url: cancelUrl || `${Deno.env.get('BASE44_APP_URL')}/account?canceled=true`,
-      metadata: metadata || {},
-    });
+      ];
+    } else {
+      console.error('Missing priceId or amount');
+      return Response.json({ error: 'Missing priceId or amount' }, { status: 400 });
+    }
+
+    console.log('Session config:', JSON.stringify(sessionConfig, null, 2));
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+
+    console.log('Checkout session created:', session.id, 'URL:', session.url);
 
     return Response.json({ url: session.url });
   } catch (error) {
     console.error('Checkout creation error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Error details:', {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      param: error.param
+    });
+    return Response.json({ 
+      error: error.message,
+      details: error.raw?.message || error.message,
+      type: error.type || 'unknown',
+      code: error.code || 'unknown'
+    }, { status: 500 });
   }
 });
