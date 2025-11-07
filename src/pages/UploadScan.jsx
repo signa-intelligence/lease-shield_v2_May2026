@@ -650,7 +650,11 @@ export default function UploadScanPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
                           <FileText className="w-5 h-5 text-ls-forest flex-shrink-0" />
-                          <h3 className="font-bold truncate" style={{ color: colors.textPrimary }}>
+                          <h3 className="font-bold text-sm break-words line-clamp-2" style={{ 
+                            color: colors.textPrimary,
+                            overflowWrap: 'break-word',
+                            wordBreak: 'break-word'
+                          }}>
                             {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
                           </h3>
                         </div>
@@ -658,7 +662,7 @@ export default function UploadScanPage() {
                           {strings.scanDate}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         {lease.status === 'scanned' && (
                           <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
                             <CheckCircle2 className="w-3 h-3 mr-1" />
