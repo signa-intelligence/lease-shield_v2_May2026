@@ -149,17 +149,35 @@ export default function ReportFull() {
     setGenerationResult(null);
 
     try {
-      // Determine which letters to generate based on scan flags
       const lettersToGenerate = [];
       const fullFlags = scan.scan_full?.flags || [];
 
-      // Check for deposit-related issues
+      // NEW: Generate pre-signing negotiation letter if there are any flags
+      if (fullFlags.length > 0) {
+        // Build concerns list from flags
+        const concerns = fullFlags
+          .slice(0, 5) // Take top 5 issues
+          .map((flag, idx) => {
+            const num = idx + 1;
+            return `${num}. ${flag.title || flag.category}: ${flag.explanation || flag.description || ''}`;
+          })
+          .join('\n');
+
+        lettersToGenerate.push({
+          subject: 'lease_negotiation',
+          params: {
+            concerns_list: concerns
+          }
+        });
+      }
+
+      // Check for deposit-related issues (post-signing)
       const hasDepositIssues = fullFlags.some(f => 
         f.category?.toLowerCase().includes('deposit') || 
         f.title?.toLowerCase().includes('deposit')
       );
       if (hasDepositIssues) {
-        lettersToGenerate.push('deposit');
+        lettersToGenerate.push({ subject: 'deposit', params: {} });
       }
 
       // Check for damage/deduction issues
@@ -169,7 +187,7 @@ export default function ReportFull() {
         f.title?.toLowerCase().includes('damage')
       );
       if (hasDamageIssues) {
-        lettersToGenerate.push('deductions');
+        lettersToGenerate.push({ subject: 'deductions', params: {} });
       }
 
       // Check for termination issues
@@ -179,22 +197,7 @@ export default function ReportFull() {
         f.title?.toLowerCase().includes('termination')
       );
       if (hasTerminationIssues) {
-        lettersToGenerate.push('early_termination');
-      }
-
-      // Check for condition disputes
-      const hasConditionIssues = fullFlags.some(f => 
-        f.category?.toLowerCase().includes('condition') ||
-        f.category?.toLowerCase().includes('wear') ||
-        f.title?.toLowerCase().includes('condition')
-      );
-      if (hasConditionIssues) {
-        lettersToGenerate.push('condition_dispute');
-      }
-
-      // If no specific issues found but there are flags, generate a general deposit letter
-      if (lettersToGenerate.length === 0 && fullFlags.length > 0) {
-        lettersToGenerate.push('deposit');
+        lettersToGenerate.push({ subject: 'early_termination', params: {} });
       }
 
       // Create a case if one doesn't exist
@@ -225,31 +228,32 @@ export default function ReportFull() {
 
       // Generate each recommended letter
       const results = [];
-      for (const subject of lettersToGenerate) {
+      for (const letterConfig of lettersToGenerate) {
         try {
           const response = await base44.functions.invoke('generatePhase1Letter', {
             caseId: caseId,
-            subject: subject,
+            subject: letterConfig.subject,
             tenant_name: user.full_name,
             landlord_name: user.landlord_name || 'Landlord',
             property_address: lease.property_address || '',
             deposit_amount: lease.deposit_amount || 0,
             contract_ref: lease.start_date 
               ? `Lease dated ${new Date(lease.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` 
-              : 'Lease Agreement'
+              : 'Lease Agreement',
+            ...letterConfig.params
           });
 
           if (response.data?.ok) {
             results.push({
-              subject,
+              subject: letterConfig.subject,
               success: true,
               urls: response.data.urls
             });
           }
         } catch (error) {
-          console.error(`Failed to generate ${subject} letter:`, error);
+          console.error(`Failed to generate ${letterConfig.subject} letter:`, error);
           results.push({
-            subject,
+            subject: letterConfig.subject,
             success: false,
             error: error.message
           });

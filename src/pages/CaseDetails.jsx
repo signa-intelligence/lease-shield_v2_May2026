@@ -449,7 +449,7 @@ export default function CaseDetails() {
         </Card>
 
         {/* Letters Section */}
-        {caseItem.letters && (caseItem.letters.v1_url || caseItem.letters.v2_url || caseItem.letters.v3_url || caseItem.letter_pack_url || caseItem.letters.deposit_url || caseItem.letters.damages_url || caseItem.letters.early_termination_url) && (
+        {caseItem.letters && (caseItem.letters.v1_url || caseItem.letters.v2_url || caseItem.letters.v3_url || caseItem.letter_pack_url || caseItem.letters.deposit_url || caseItem.letters.damages_url || caseItem.letters.early_termination_url || caseItem.letters.lease_negotiation_url) && (
           <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
               <div className="flex items-center justify-between">
@@ -511,6 +511,67 @@ export default function CaseDetails() {
 
               {/* Individual Letters - Phase 1 (Subject-based) */}
               <div className="space-y-3">
+                {/* Lease Negotiation Letter - PRE-SIGNING */}
+                {caseItem.letters.lease_negotiation_url && (
+                  <div className="flex items-center justify-between p-3 rounded-lg border-2" style={{
+                    backgroundColor: isDarkMode ? '#1F2937' : '#FEF3C7',
+                    borderColor: '#F59E0B',
+                    border: `2px solid ${isDarkMode ? '#F59E0B' : '#FCD34D'}`
+                  }}>
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <Badge className="bg-amber-100 text-amber-800 border-amber-200 mb-1 text-xs">
+                          ⭐ PRE-SIGNING
+                        </Badge>
+                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                          {language === 'th' ? 'จดหมายขอทบทวนสัญญาเช่า' : 'Lease Negotiation Request'}
+                        </p>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {language === 'th' ? 'สำหรับเจรจาก่อนลงนาม - ส่งหาเจ้าของบ้าน' : 'For negotiation before signing - Send to landlord'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handlePreviewHtml('lease_negotiation')}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+                        style={{
+                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                          color: colors.textPrimary,
+                          border: `1px solid ${colors.borderColor}`
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#FEF3C7';
+                          e.target.style.borderColor = '#F59E0B';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                          e.target.style.borderColor = colors.borderColor;
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                        {strings.preview}
+                      </button>
+                      <button
+                        onClick={() => handleDownloadWord('lease_negotiation')}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+                        style={{
+                          backgroundColor: '#F59E0B',
+                          color: '#FFFFFF'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#D97706'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#F59E0B'}
+                      >
+                        <Download className="w-4 h-4" />
+                        Word
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Deposit Letter */}
                 {caseItem.letters.deposit_url && (
                   <div className="flex items-center justify-between p-3 rounded-lg" style={{

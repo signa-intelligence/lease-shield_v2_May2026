@@ -10,6 +10,20 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
 const TEMPLATES = [
+  // PRE-SIGNING LETTER (NEW - Top of list)
+  {
+    id: 'lease_negotiation',
+    letterKey: 'N1',
+    name_en: 'Pre-Signing Lease Negotiation',
+    name_th: 'จดหมายทบทวนสัญญาก่อนลงนาม',
+    description_en: 'Request clarification of concerning lease terms before signing',
+    description_th: 'ขอชี้แจงข้อกำหนดที่น่ากังวลก่อนการลงนามสัญญา',
+    icon: FileText,
+    tier: 'lite', // This template is accessible from the 'lite' tier.
+    color: 'from-amber-400 to-orange-600',
+    preSigning: true
+  },
+  
   // LITE TIER (L1-L3)
   {
     id: 'deposit',
@@ -159,6 +173,7 @@ export default function Templates() {
       protectTier: "PROTECT",
       secureTier: "SECURE",
       upgradeRequired: "Upgrade to access",
+      preSigningSection: "⭐ Pre-Signing - Lease Negotiation (1 Letter)", // NEW STRING
       tierSection: {
         lite: "Lite Tier - Friendly Approach (3 Letters)",
         protect: "Protect Tier - Professional Escalation (4 Letters)",
@@ -172,6 +187,7 @@ export default function Templates() {
       protectTier: "โปรเทค",
       secureTier: "ซีเคียว",
       upgradeRequired: "อัปเกรดเพื่อเข้าถึง",
+      preSigningSection: "⭐ ก่อนลงนาม - เจรจาสัญญา (1 จดหมาย)", // NEW STRING
       tierSection: {
         lite: "ไลท์ เทียร์ - แนวทางเป็นมิตร (3 จดหมาย)",
         protect: "โปรเทค เทียร์ - การยกระดับอย่างมืออาชีพ (4 จดหมาย)",
@@ -184,16 +200,17 @@ export default function Templates() {
 
   // Progressive tier access
   const tierLetters = {
-    lite: ["deposit", "deductions", "reminder"],
-    protect: ["deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence"],
-    secure: ["deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence", "final_opportunity", "non_compliance", "settlement"]
+    lite: ["lease_negotiation", "deposit", "deductions", "reminder"], // Added 'lease_negotiation'
+    protect: ["lease_negotiation", "deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence"], // 'lease_negotiation' is implicitly included as it's in 'lite'
+    secure: ["lease_negotiation", "deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence", "final_opportunity", "non_compliance", "settlement"] // 'lease_negotiation' is implicitly included
   };
 
   const userLetters = tierLetters[userTier] || [];
   const hasAccessToLetter = (letterId) => userLetters.includes(letterId);
 
   // Group templates by display tiers
-  const liteTemplates = TEMPLATES.filter(t => t.tier === 'lite');
+  const preSigningTemplates = TEMPLATES.filter(t => t.preSigning); // NEW
+  const liteTemplates = TEMPLATES.filter(t => t.tier === 'lite' && !t.preSigning); // Modified to exclude preSigning letters
   const protectTemplates = TEMPLATES.filter(t => t.tier === 'protect');
   const secureTemplates = TEMPLATES.filter(t => t.tier === 'secure');
 
@@ -234,6 +251,83 @@ export default function Templates() {
           </div>
         </div>
 
+        {/* PRE-SIGNING SECTION (NEW) */}
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-1 flex-1 bg-gradient-to-r from-amber-400 to-orange-600 rounded"></div>
+            <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+              {strings.preSigningSection}
+            </h2>
+            <div className="h-1 flex-1 bg-gradient-to-l from-amber-400 to-orange-600 rounded"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {preSigningTemplates.map((template) => {
+              const Icon = template.icon;
+              const hasAccess = hasAccessToLetter(template.id);
+
+              return (
+                <Card
+                  key={template.id}
+                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasAccess ? 'cursor-pointer' : 'opacity-75'}`}
+                  style={{ backgroundColor: colors.cardBg }}
+                  onClick={() => hasAccess && navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`)}
+                >
+                  <div className={`h-2 bg-gradient-to-r ${template.color} rounded-t-xl`} />
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start justify-between mb-3 sm:mb-4">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center`}>
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge
+                          variant="outline"
+                          className="text-xs"
+                          style={{
+                            backgroundColor: hasAccess ? '#FEF3C7' : '#FEE2E2',
+                            color: hasAccess ? '#D97706' : '#DC2626',
+                            borderColor: hasAccess ? '#FDE68A' : '#FECACA'
+                          }}
+                        >
+                          {template.letterKey}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className="text-xs"
+                          style={{
+                            backgroundColor: hasAccess ? '#DBEAFE' : '#FEE2E2',
+                            color: hasAccess ? '#1D4ED8' : '#DC2626',
+                            borderColor: hasAccess ? '#BFDBFE' : '#FECACA'
+                          }}
+                        >
+                          {strings.liteTier}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? template.name_th : template.name_en}
+                    </h3>
+
+                    <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
+                      {language === 'th' ? template.description_th : template.description_en}
+                    </p>
+
+                    {!hasAccess && (
+                      <div className="text-xs text-center p-2 rounded-lg" style={{
+                        backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                        color: '#DC2626'
+                      }}>
+                        {strings.upgradeRequired}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
         {/* LITE TIER SECTION (L1-L3) */}
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
@@ -245,7 +339,7 @@ export default function Templates() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {liteTemplates.map((template) => {
+            {liteTemplates.map((template) => { // Now liteTemplates is already filtered
               const Icon = template.icon;
               const hasAccess = hasAccessToLetter(template.id);
 
