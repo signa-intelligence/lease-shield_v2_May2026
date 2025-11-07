@@ -20,7 +20,8 @@ import {
   DollarSign,
   Search,
   Filter,
-  Loader2
+  Loader2,
+  ArrowLeft // Added ArrowLeft import
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -214,8 +215,22 @@ export default function OpsConsole() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {/* Header with Back Button */}
         <div className="mb-6">
+          <Button
+            variant="outline"
+            onClick={() => navigate(createPageUrl("AdminConsole"))}
+            className="mb-4"
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor,
+              color: colors.textPrimary
+            }}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {language === 'th' ? 'กลับไปแอดมิน' : 'Back to Admin'}
+          </Button>
+          
           <div className="flex items-center gap-3 mb-2">
             <Scale className="w-8 h-8 text-ls-forest" />
             <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>Ops Console</h1>

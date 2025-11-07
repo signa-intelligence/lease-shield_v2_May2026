@@ -77,7 +77,7 @@ export default function Layout({ children, currentPageName }) {
   const language = user?.language || 'en';
   const accessLevel = user?.access_level || 'user';
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
-  const isVAOrHigher = ['va', 'admin', 'super_admin'].includes(accessLevel);
+  const isVAOrHigher = ['va', 'admin', 'super_admin'].includes(accessLevel); // This variable is no longer used for navTabs, but kept for other potential uses.
   const isDarkMode = user?.theme === 'dark';
 
   const t = {
@@ -138,17 +138,7 @@ export default function Layout({ children, currentPageName }) {
     },
   ];
 
-  // Add Ops Console for VA and higher
-  if (isVAOrHigher) {
-    navTabs.push({
-      key: "ops",
-      label: strings.ops,
-      route: createPageUrl("OpsConsole"),
-      icon: Scale,
-    });
-  }
-
-  // Add Admin Console for Admin and Super Admin only
+  // Only add Admin Console for Admin and Super Admin (Ops is accessible from within Admin)
   if (isAdmin) {
     navTabs.push({
       key: "admin",
@@ -417,7 +407,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <Icon className="w-5 h-5 mb-0.5" style={{ animation: isActive ? 'pulse 2s infinite' : 'none' }} />
-                <span style={{ fontSize: '11px', fontWeight: '500', whiteSpace: 'nowrap' }}>{tab.label}</span>
+                <span style={{ fontSize: '11px', fontWeight: '500', whiteWhiteSpace: 'nowrap' }}>{tab.label}</span>
               </Link>
             );
           })}
