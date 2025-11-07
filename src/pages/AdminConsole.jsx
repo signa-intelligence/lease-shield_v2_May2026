@@ -36,6 +36,9 @@ export default function AdminConsole() {
   const [sendingTestToUser, setSendingTestToUser] = useState(false);
   const [testToUserResult, setTestToUserResult] = useState(null);
 
+  // New state for user action feedback
+  const [userActionResult, setUserActionResult] = useState(null);
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -338,8 +341,30 @@ export default function AdminConsole() {
 
   const updateUserMutation = useMutation({
     mutationFn: ({ userId, data }) => base44.asServiceRole.entities.User.update(userId, data),
-    onSuccess: () => {
+    onSuccess: (updatedUser, variables) => {
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      
+      const actionType = variables.data.access_level ? 'access level' : 
+                        variables.data.plan_tier ? 'plan tier' : 'user data';
+      
+      setUserActionResult({
+        type: 'success',
+        message: language === 'th' 
+          ? `✅ อัปเดต ${actionType} สำเร็จ` 
+          : `✅ Successfully updated ${actionType}`
+      });
+      
+      setTimeout(() => setUserActionResult(null), 5000);
+    },
+    onError: (error) => {
+      console.error('User update error:', error);
+      setUserActionResult({
+        type: 'error',
+        message: language === 'th'
+          ? `❌ อัปเดตล้มเหลว: ${error.message}`
+          : `❌ Update failed: ${error.message}`
+      });
+      setTimeout(() => setUserActionResult(null), 5000);
     },
   });
 
@@ -347,13 +372,30 @@ export default function AdminConsole() {
     mutationFn: (userId) => base44.asServiceRole.entities.User.delete(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      setUserActionResult({
+        type: 'success',
+        message: language === 'th' ? '✅ ลบผู้ใช้สำเร็จ' : '✅ User deleted successfully'
+      });
+      setTimeout(() => setUserActionResult(null), 5000);
+    },
+    onError: (error) => {
+      console.error('User delete error:', error);
+      setUserActionResult({
+        type: 'error',
+        message: language === 'th'
+          ? `❌ ลบล้มเหลว: ${error.message}`
+          : `❌ Delete failed: ${error.message}`
+      });
+      setTimeout(() => setUserActionResult(null), 5000);
     },
   });
 
   const handleUserAction = async (action, targetUser) => {
+    console.log('🔧 User action:', action, 'for user:', targetUser.email);
+    
     const confirmMessage = language === 'th'
       ? `คุณแน่ใจหรือไม่ว่าต้องการ${action === 'delete' ? 'ลบ' : 'เปลี่ยนแปลง'}ผู้ใช้นี้?`
-      : `Are you sure you want to ${action} this user?`;
+      : `Are you sure you want to ${action === 'delete' ? 'delete' : 'update'} this user?`;
 
     if (!window.confirm(confirmMessage)) {
       return;
@@ -371,15 +413,26 @@ export default function AdminConsole() {
 
     if (action.startsWith('access_')) {
       const level = action.replace('access_', '');
+      console.log('🔐 Updating access level to:', level);
+      
       // Only super admin can grant super_admin access
       if (level === 'super_admin' && !isSuperAdmin) {
         alert(language === 'th' ? 'เฉพาะ Super Admin เท่านั้นที่สามารถให้สิทธิ์ Super Admin ได้' : 'Only Super Admin can grant Super Admin access');
         return;
       }
-      updateUserMutation.mutate({ userId: targetUser.id, data: { access_level: level } });
+      
+      updateUserMutation.mutate({ 
+        userId: targetUser.id, 
+        data: { access_level: level } 
+      });
     } else if (action.startsWith('tier_')) {
       const tier = action.replace('tier_', '');
-      updateUserMutation.mutate({ userId: targetUser.id, data: { plan_tier: tier } });
+      console.log('💳 Updating plan tier to:', tier);
+      
+      updateUserMutation.mutate({ 
+        userId: targetUser.id, 
+        data: { plan_tier: tier } 
+      });
     }
   };
 
@@ -461,6 +514,17 @@ export default function AdminConsole() {
               : 'bg-red-100 border border-red-200 text-red-800'
           }`}>
             {testToUserResult.message}
+          </div>
+        )}
+
+        {/* User Action Result Alert - NEW */}
+        {userActionResult && (
+          <div className={`mb-6 p-4 rounded-lg ${
+            userActionResult.type === 'success'
+              ? 'bg-emerald-100 border border-emerald-200 text-emerald-800'
+              : 'bg-red-100 border border-red-200 text-red-800'
+          }`}>
+            {userActionResult.message}
           </div>
         )}
 
@@ -1064,13 +1128,18 @@ export default function AdminConsole() {
                               variant="outline"
                               size="sm"
                               className="text-xs"
+                              disabled={updateUserMutation.isPending || deleteUserMutation.isPending}
                               style={{
                                 backgroundColor: isDarkMode ? colors.tableRow : '#FFFFFF',
                                 color: colors.textPrimary,
                                 borderColor: colors.borderColor
                               }}
                             >
-                              <MoreVertical className="w-4 h-4" />
+                              {(updateUserMutation.isPending || deleteUserMutation.isPending) ? (
+                                <span className="animate-spin">⏳</span>
+                              ) : (
+                                <MoreVertical className="w-4 h-4" />
+                              )}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
@@ -1093,32 +1162,32 @@ export default function AdminConsole() {
                             <DropdownMenuLabel style={{ color: colors.textSecondary, fontSize: '11px' }}>Access Level</DropdownMenuLabel>
                             <DropdownMenuItem
                               onClick={() => handleUserAction('access_user', u)}
-                              disabled={u.access_level === 'user'}
+                              disabled={u.access_level === 'user' || updateUserMutation.isPending}
                               style={{ color: colors.textPrimary }}
                             >
-                              User
+                              {u.access_level === 'user' && '✓ '}User
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleUserAction('access_va', u)}
-                              disabled={u.access_level === 'va'}
+                              disabled={u.access_level === 'va' || updateUserMutation.isPending}
                               style={{ color: colors.textPrimary }}
                             >
-                              VA (Operations)
+                              {u.access_level === 'va' && '✓ '}VA (Operations)
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleUserAction('access_admin', u)}
-                              disabled={u.access_level === 'admin'}
+                              disabled={u.access_level === 'admin' || updateUserMutation.isPending}
                               style={{ color: colors.textPrimary }}
                             >
-                              Admin
+                              {u.access_level === 'admin' && '✓ '}Admin
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleUserAction('access_super_admin', u)}
-                              disabled={u.access_level === 'super_admin' || !isSuperAdmin}
+                              disabled={u.access_level === 'super_admin' || !isSuperAdmin || updateUserMutation.isPending}
                               style={{ color: colors.textPrimary }}
                             >
                               <Crown className="w-4 h-4 mr-2" />
-                              Super Admin {!isSuperAdmin && '🔒'}
+                              {u.access_level === 'super_admin' && '✓ '}Super Admin {!isSuperAdmin && '🔒'}
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
@@ -1126,31 +1195,31 @@ export default function AdminConsole() {
 
                             <DropdownMenuItem
                               onClick={() => handleUserAction('tier_free', u)}
-                              disabled={u.plan_tier === 'free'}
+                              disabled={u.plan_tier === 'free' || updateUserMutation.isPending}
                               style={{ color: colors.textPrimary }}
                             >
-                              Free
+                              {u.plan_tier === 'free' && '✓ '}Free
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleUserAction('tier_lite', u)}
-                              disabled={u.plan_tier === 'lite'}
+                              disabled={u.plan_tier === 'lite' || updateUserMutation.isPending}
                               style={{ color: colors.textPrimary }}
                             >
-                              Lite
+                              {u.plan_tier === 'lite' && '✓ '}Lite
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleUserAction('tier_protect', u)}
-                              disabled={u.plan_tier === 'protect'}
+                              disabled={u.plan_tier === 'protect' || updateUserMutation.isPending}
                               style={{ color: colors.textPrimary }}
                             >
-                              Protect
+                              {u.plan_tier === 'protect' && '✓ '}Protect
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleUserAction('tier_secure', u)}
-                              disabled={u.plan_tier === 'secure'}
+                              disabled={u.plan_tier === 'secure' || updateUserMutation.isPending}
                               style={{ color: colors.textPrimary }}
                             >
-                              Secure
+                              {u.plan_tier === 'secure' && '✓ '}Secure
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
@@ -1158,7 +1227,7 @@ export default function AdminConsole() {
                             <DropdownMenuItem
                               onClick={() => handleUserAction('delete', u)}
                               className="text-red-600"
-                              disabled={u.id === user?.id || !isSuperAdmin}
+                              disabled={u.id === user?.id || !isSuperAdmin || deleteUserMutation.isPending}
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Delete User {!isSuperAdmin && '🔒'}
