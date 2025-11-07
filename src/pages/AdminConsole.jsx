@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell, Scale, MoreVertical, ChevronDown, Eye } from "lucide-react";
+import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell, Scale, MoreVertical, ChevronDown, Eye, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -344,8 +344,12 @@ export default function AdminConsole() {
     onSuccess: (updatedUser, variables) => {
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });
       
-      const actionType = variables.data.access_level ? 'access level' : 
-                        variables.data.plan_tier ? 'plan tier' : 'user data';
+      let actionType = 'user data';
+      if (variables.data.access_level) actionType = 'access level';
+      else if (variables.data.plan_tier) actionType = 'plan tier';
+      else if (typeof variables.data.suspended === 'boolean') {
+        actionType = variables.data.suspended ? 'suspension status' : 'unsuspension status';
+      }
       
       setUserActionResult({
         type: 'success',
@@ -392,6 +396,65 @@ export default function AdminConsole() {
 
   const handleUserAction = async (action, targetUser) => {
     console.log('🔧 User action:', action, 'for user:', targetUser.email);
+    
+    if (action === 'suspend' || action === 'unsuspend') {
+      // Handle suspend/unsuspend with dialog
+      if (action === 'suspend') {
+        const reason = prompt(
+          language === 'th' 
+            ? `ระบุเหตุผลในการระงับผู้ใช้ ${targetUser.full_name}:` 
+            : `Reason for suspending ${targetUser.full_name}:`,
+          language === 'th' ? 'การละเมิดข้อกำหนดการใช้งาน' : 'Terms of service violation'
+        );
+        
+        if (!reason || reason.trim() === '') {
+          return;
+        }
+
+        const duration = prompt(
+          language === 'th'
+            ? 'ระยะเวลาระงับ (วัน) - เว้นว่างสำหรับถาวร:'
+            : 'Suspension duration (days) - leave empty for indefinite:',
+          '30'
+        );
+
+        let suspendedUntil = null;
+        if (duration && !isNaN(parseInt(duration))) {
+          const days = parseInt(duration);
+          const untilDate = new Date();
+          untilDate.setDate(untilDate.getDate() + days);
+          suspendedUntil = untilDate.toISOString();
+        }
+
+        updateUserMutation.mutate({
+          userId: targetUser.id,
+          data: {
+            suspended: true,
+            suspended_reason: reason.trim(),
+            suspended_until: suspendedUntil
+          }
+        });
+      } else {
+        // Unsuspend
+        if (!window.confirm(
+          language === 'th'
+            ? `คุณแน่ใจหรือไม่ว่าต้องการยกเลิกการระงับ ${targetUser.full_name}?`
+            : `Are you sure you want to unsuspend ${targetUser.full_name}?`
+        )) {
+          return;
+        }
+
+        updateUserMutation.mutate({
+          userId: targetUser.id,
+          data: {
+            suspended: false,
+            suspended_reason: null,
+            suspended_until: null
+          }
+        });
+      }
+      return;
+    }
     
     const confirmMessage = language === 'th'
       ? `คุณแน่ใจหรือไม่ว่าต้องการ${action === 'delete' ? 'ลบ' : 'เปลี่ยนแปลง'}ผู้ใช้นี้?`
@@ -1067,7 +1130,16 @@ export default function AdminConsole() {
                         backgroundColor: index % 2 === 0 ? colors.tableBg : colors.tableRow
                       }}
                     >
-                      <td className="py-3 px-4 text-sm font-medium" style={{ color: colors.textPrimary }}>{u.full_name}</td>
+                      <td className="py-3 px-4 text-sm font-medium" style={{ color: colors.textPrimary }}>
+                        <div className="flex items-center gap-2">
+                          {u.full_name}
+                          {u.suspended && (
+                            <Badge className="bg-red-100 text-red-700 text-xs">
+                              {language === 'th' ? 'ระงับ' : 'Suspended'}
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-3 px-4 text-sm" style={{ color: colors.textSecondary }}>
                         <div className="flex items-center gap-2">
                           <Mail className="w-4 h-4" />
@@ -1146,7 +1218,30 @@ export default function AdminConsole() {
                             <DropdownMenuLabel style={{ color: colors.textPrimary }}>User Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
 
-                            {/* NEW: Send LINE Message option */}
+                            {/* NEW: Suspend/Unsuspend option */}
+                            {u.suspended ? (
+                              <DropdownMenuItem
+                                onClick={() => handleUserAction('unsuspend', u)}
+                                disabled={u.id === user?.id || updateUserMutation.isPending}
+                                className="text-emerald-600"
+                              >
+                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                                {language === 'th' ? 'ยกเลิกการระงับ' : 'Unsuspend User'}
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => handleUserAction('suspend', u)}
+                                disabled={u.id === user?.id || updateUserMutation.isPending}
+                                className="text-orange-600"
+                              >
+                                <AlertCircle className="w-4 h-4 mr-2" />
+                                {language === 'th' ? 'ระงับผู้ใช้' : 'Suspend User'}
+                              </DropdownMenuItem>
+                            )}
+
+                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
+
+                            {/* Send LINE Message option */}
                             <DropdownMenuItem
                               onClick={() => handleSendLineToUser(u)}
                               disabled={!u.line_messaging_token || sendingLineMessage}
