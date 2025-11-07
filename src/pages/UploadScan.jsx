@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -515,6 +515,21 @@ export default function UploadScanPage() {
 
   // Get scan for selected lease
   const selectedScan = selectedLease ? allScans.find(s => s.lease_id === selectedLease.id) : null;
+
+  // Check URL params and open lease modal if leaseId is provided
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const leaseIdFromUrl = urlParams.get('leaseId');
+    
+    if (leaseIdFromUrl && leases.length > 0) {
+      const leaseToOpen = leases.find(l => l.id === leaseIdFromUrl);
+      if (leaseToOpen) {
+        setSelectedLease(leaseToOpen);
+        // Clear the URL param
+        window.history.replaceState({}, '', createPageUrl("UploadScan"));
+      }
+    }
+  }, [leases]);
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>

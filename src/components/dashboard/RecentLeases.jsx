@@ -50,7 +50,8 @@ export default function RecentLeases({ leases, language }) {
   const strings = t[language] || t.en;
 
   const handleLeaseClick = (leaseId) => {
-    navigate(createPageUrl("LeaseDetails") + `?leaseId=${leaseId}`);
+    // Navigate to UploadScan with leaseId param so it opens the modal
+    navigate(createPageUrl("UploadScan") + `?leaseId=${leaseId}`);
   };
 
   return (
