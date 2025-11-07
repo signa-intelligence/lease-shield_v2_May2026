@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, QrCode, Share2 } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, QrCode, Share2, Coins } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
-import { createPageUrl } from "@/utils";
+import { createPageUrl }utils";
 import { Link } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -123,6 +123,49 @@ const PLAN_DETAILS = [
   }
 ];
 
+// Credit packages
+const CREDIT_PACKAGES = [
+  {
+    id: 'credits_1',
+    credits: 1,
+    price: 99,
+    priceId: null, // Will use one-time payment
+    savings: 0
+  },
+  {
+    id: 'credits_3',
+    credits: 3,
+    price: 249,
+    priceId: null,
+    savings: 16,
+    popular: false
+  },
+  {
+    id: 'credits_5',
+    credits: 5,
+    price: 399,
+    priceId: null,
+    savings: 20,
+    popular: true
+  },
+  {
+    id: 'credits_10',
+    credits: 10,
+    price: 699,
+    priceId: null,
+    savings: 30,
+    popular: false
+  },
+  {
+    id: 'credits_20',
+    credits: 20,
+    price: 1199,
+    priceId: null,
+    savings: 40,
+    popular: false
+  }
+];
+
 export default function Account() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
@@ -137,6 +180,7 @@ export default function Account() {
   const [showQR, setShowQR] = useState({ landlord: false, juristic: false });
   const [promoCode, setPromoCode] = useState('');
   const [promoError, setPromoError] = useState('');
+  const [buying, setBuying] = useState(false); // New state for credit purchase
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -242,6 +286,36 @@ export default function Account() {
       }
     } finally {
       setSubscribing(false);
+    }
+  };
+
+  const handleBuyCredits = async (pkg) => {
+    setBuying(true);
+    try {
+      const response = await base44.functions.invoke('createCheckout', {
+        mode: 'payment',
+        amount: pkg.price,
+        currency: 'thb',
+        description: `${pkg.credits} Letter Credits - Lease Shield`,
+        successUrl: window.location.origin + '/account?credits_success=true',
+        cancelUrl: window.location.origin + '/account?credits_canceled=true',
+        metadata: {
+          type: 'credits',
+          credits: pkg.credits,
+          package_id: pkg.id
+        }
+      });
+
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (error) {
+      console.error('Credit purchase failed:', error);
+      alert(language === 'th' 
+        ? 'การซื้อเครดิตล้มเหลว กรุณาลองอีกครั้ง' 
+        : 'Credit purchase failed. Please try again.');
+    } finally {
+      setBuying(false);
     }
   };
 
@@ -500,6 +574,21 @@ export default function Account() {
       promoCodeOptional: "(Optional)",
       applyPromo: "Apply",
       promoApplied: "Promo code will be applied at checkout",
+      buyCredits: "Buy Letter Credits",
+      creditBalance: "Credit Balance",
+      credits: "Credits",
+      perCredit: "per credit",
+      save: "Save",
+      buyNow: "Buy Now",
+      mostPopular: "Most Popular",
+      bestValue: "Best Value",
+      creditPacks: "Credit Packs",
+      oneLetterPerCredit: "1 letter = 1 credit",
+      allTemplatesAvailable: "Access all 11 letter templates",
+      bilingual: "Bilingual (EN/TH)",
+      instantGeneration: "Instant AI generation",
+      creditsNeverExpire: "Credits never expire",
+      purchaseCredits: "Purchase Credits"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -621,6 +710,21 @@ export default function Account() {
       promoCodeOptional: "(ไม่บังคับ)",
       applyPromo: "ใช้งาน",
       promoApplied: "รหัสโปรโมชันจะถูกใช้เมื่อชำระเงิน",
+      buyCredits: "ซื้อเครดิตจดหมาย",
+      creditBalance: "เครดิตคงเหลือ",
+      credits: "เครดิต",
+      perCredit: "ต่อเครดิต",
+      save: "ประหยัด",
+      buyNow: "ซื้อเลย",
+      mostPopular: "ยอดนิยม",
+      bestValue: "คุ้มที่สุด",
+      creditPacks: "แพ็กเกจเครดิต",
+      oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
+      allTemplatesAvailable: "เข้าถึงเทมเพลตจดหมายทั้ง 11 แบบ",
+      bilingual: "สองภาษา (EN/TH)",
+      instantGeneration: "สร้างด้วย AI ทันที",
+      creditsNeverExpire: "เครดิตไม่หมดอายุ",
+      purchaseCredits: "ซื้อเครดิต"
     }
   };
 
@@ -1253,6 +1357,127 @@ export default function Account() {
           </Card>
         </div>
 
+        {/* Letter Credits Section - NEW */}
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                  <Coins className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                    {strings.buyCredits}
+                  </h2>
+                  <p className="text-sm font-normal" style={{ color: colors.textSecondary }}>
+                    {strings.oneLetterPerCredit}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right flex items-center gap-2">
+                <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                  {strings.creditBalance}
+                </p>
+                <p className="text-3xl font-bold" style={{ color: '#C7A338' }}>
+                  {user?.letter_credits || 0}
+                </p>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {/* Benefits */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.allTemplatesAvailable}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.bilingual}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.instantGeneration}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.creditsNeverExpire}</span>
+              </div>
+            </div>
+
+            {/* Credit Packages */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {CREDIT_PACKAGES.map((pkg) => {
+                const pricePerCredit = Math.round(pkg.price / pkg.credits);
+                return (
+                  <div
+                    key={pkg.id}
+                    className={`relative p-4 rounded-xl border-2 transition-all duration-200 ${
+                      pkg.popular ? 'border-amber-400 shadow-lg' : ''
+                    }`}
+                    style={{
+                      backgroundColor: pkg.popular 
+                        ? (isDarkMode ? '#2D2520' : '#FFFBEB')
+                        : colors.cardBg,
+                      borderColor: pkg.popular ? '#C7A338' : colors.borderColor
+                    }}
+                  >
+                    {pkg.popular && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-amber-500 text-white text-xs font-bold">
+                          ⭐ {strings.mostPopular}
+                        </Badge>
+                      </div>
+                    )}
+                    {pkg.savings >= 30 && !pkg.popular && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-emerald-500 text-white text-xs font-bold">
+                          💰 {strings.bestValue}
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    <div className="text-center mb-3">
+                      <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
+                        {pkg.credits}
+                      </div>
+                      <div className="text-xs" style={{ color: colors.textSecondary }}>
+                        {strings.credits}
+                      </div>
+                    </div>
+
+                    <div className="text-center mb-3">
+                      <div className="text-2xl font-bold" style={{ color: '#C7A338' }}>
+                        ฿{pkg.price}
+                      </div>
+                      <div className="text-xs" style={{ color: colors.textSecondary }}>
+                        ฿{pricePerCredit} {strings.perCredit}
+                      </div>
+                      {pkg.savings > 0 && (
+                        <Badge className="mt-1 bg-emerald-100 text-emerald-700 text-xs">
+                          {strings.save} {pkg.savings}%
+                        </Badge>
+                      )}
+                    </div>
+
+                    <Button
+                      onClick={() => handleBuyCredits(pkg)}
+                      disabled={buying}
+                      className="w-full text-sm"
+                      style={{
+                        backgroundColor: pkg.popular ? '#C7A338' : '#0C3B2E',
+                        color: '#FFFFFF'
+                      }}
+                    >
+                      {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : strings.buyNow}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Landlord Information Card */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b pb-4" style={{
@@ -1749,6 +1974,14 @@ export default function Account() {
           </CardContent>
         </Card>
 
+        <div className="mb-6">
+          <NotificationSettings 
+            user={user} 
+            onUpdate={handleNotificationUpdate}
+            colors={colors}
+          />
+        </div>
+
         {/* Help & Support Section */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
@@ -2020,14 +2253,6 @@ export default function Account() {
             </div>
           </CardContent>
         </Card>
-
-        <div className="mb-6">
-          <NotificationSettings 
-            user={user} 
-            onUpdate={handleNotificationUpdate}
-            colors={colors}
-          />
-        </div>
 
         {/* Cancel Subscription Dialog */}
         <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>

@@ -70,12 +70,97 @@ Deno.serve(async (req) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         console.log('=== CHECKOUT SESSION COMPLETED ===');
-        const session = event.data.object as Stripe.Checkout.Session; // Add type assertion
+        const session = event.data.object as Stripe.Checkout.Session;
         const customerId = session.customer;
         const metadata = session.metadata || {};
         
         console.log('Customer ID:', customerId);
         console.log('Metadata:', JSON.stringify(metadata, null, 2));
+        
+        // Handle credit purchase
+        if (metadata.type === 'credits') {
+          console.log('Processing CREDITS purchase');
+          
+          const users = await base44.asServiceRole.entities.User.list();
+          const user = users.find(u => u.stripe_customer_id === customerId);
+          
+          if (!user) {
+            console.error('❌ User not found for customer:', customerId);
+            break;
+          }
+
+          const creditsToAdd = parseInt(metadata.credits as string); // Cast to string for parseInt
+          const currentCredits = user.letter_credits || 0;
+          const totalPurchased = user.total_credits_purchased || 0;
+
+          await base44.asServiceRole.entities.User.update(user.id, {
+            letter_credits: currentCredits + creditsToAdd,
+            total_credits_purchased: totalPurchased + creditsToAdd
+          });
+
+          console.log('✅ Credits added:', {
+            user: user.email,
+            added: creditsToAdd,
+            newBalance: currentCredits + creditsToAdd
+          });
+
+          // Create payment record
+          await base44.asServiceRole.entities.Payment.create({
+            type: 'addon',
+            amount: parseFloat((session.amount_total! / 100).toFixed(2)), // Convert from cents and fix to 2 decimal places
+            currency: 'THB',
+            provider: 'stripe',
+            status: 'paid',
+            external_id: session.id
+          });
+
+          // Send confirmation email
+          const lang = user.language || 'en';
+          const appBaseUrl = Deno.env.get('APP_BASE_URL') || 'https://app.leaseshield.asia';
+          const subject = lang === 'th' 
+            ? `ซื้อเครดิต ${creditsToAdd} เครดิตสำเร็จ` 
+            : `${creditsToAdd} Credits Purchased Successfully`;
+          
+          const body = lang === 'th'
+            ? `สวัสดี ${user.full_name},
+
+เครดิตของคุณเพิ่มแล้ว! 🎉
+
+• เครดิตที่ซื้อ: ${creditsToAdd}
+• ยอดคงเหลือใหม่: ${currentCredits + creditsToAdd}
+• จำนวนเงิน: ฿${(session.amount_total! / 100).toLocaleString()}
+
+ใช้เครดิตของคุณเพื่อสร้างจดหมายทางกฎหมายมืออาชีพได้ทันที
+เข้าถึงเทมเพลตทั้ง 11 แบบ ทั้งภาษาอังกฤษและไทย
+
+เริ่มสร้างจดหมาย: ${appBaseUrl}/templates
+
+— ทีม Lease Shield`
+            : `Hi ${user.full_name},
+
+Your credits have been added! 🎉
+
+• Credits Purchased: ${creditsToAdd}
+• New Balance: ${currentCredits + creditsToAdd}
+• Amount Paid: ฿${(session.amount_total! / 100).toLocaleString()}
+
+Use your credits to generate professional legal letters instantly.
+Access all 11 templates in both English and Thai.
+
+Start generating: ${appBaseUrl}/templates
+
+— The Lease Shield Team`;
+
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            to: user.email,
+            subject,
+            body
+          });
+          console.log('✅ Confirmation email sent');
+          
+          console.log('=== CREDITS PROCESSING COMPLETE ===');
+          break;
+        }
         
         // Handle case payment (Resolve service)
         if (metadata.type === 'case') {
@@ -108,7 +193,7 @@ Deno.serve(async (req) => {
           // Create the case record with proper workflow initialization
           const caseData = {
             user_email: user.email,
-            dispute_amount: parseFloat(metadata.dispute_amount),
+            dispute_amount: parseFloat(metadata.dispute_amount as string),
             summary: metadata.summary,
             lease_id: metadata.lease_id || null,
             fast_track: metadata.fast_track === 'true',
@@ -141,7 +226,7 @@ Deno.serve(async (req) => {
           // Create payment record
           await base44.asServiceRole.entities.Payment.create({
             type: 'case',
-            amount: parseFloat(metadata.total_paid),
+            amount: parseFloat(metadata.total_paid as string),
             currency: 'THB',
             provider: 'stripe',
             status: 'paid',
@@ -201,8 +286,8 @@ View in Ops Console: ${appBaseUrl}/ops-console
           console.log('✅ Ops email sent');
           
           console.log('=== CASE PROCESSING COMPLETE ===');
-        } else {
-          console.log('Not a case payment, metadata.type:', metadata.type);
+        } else if (metadata.type !== 'credits') { // Only log if it's not a known type (case or credits)
+          console.log('Not a case or credits payment, metadata.type:', metadata.type);
         }
         break;
       }
@@ -232,6 +317,27 @@ View in Ops Console: ${appBaseUrl}/ops-console
                 plan_renews_at: renewsAt
               };
               
+              // Grant initial credits based on tier (only on first payment or upgrade)
+              const isNewSubscription = user.plan_tier === 'free' || !user.plan_tier;
+              let creditsGranted = 0;
+              if (isNewSubscription) {
+                const tierCredits: Record<string, number> = {
+                  lite: 3,
+                  protect: 5,
+                  secure: 15
+                };
+                creditsGranted = tierCredits[planInfo.tier] || 0;
+                
+                if (creditsGranted > 0) {
+                  updateData.letter_credits = (user.letter_credits || 0) + creditsGranted;
+                  console.log('✅ Granting initial credits:', {
+                    tier: planInfo.tier,
+                    credits: creditsGranted,
+                    newBalance: updateData.letter_credits
+                  });
+                }
+              }
+              
               if (planInfo.tier === 'lite') {
                 updateData.scans_this_month = 0;
                 const resetDate = new Date(subscription.current_period_end * 1000);
@@ -246,9 +352,19 @@ View in Ops Console: ${appBaseUrl}/ops-console
                 (language === 'th' ? 'รายเดือน' : 'Monthly');
               
               const subject = language === 'th' ? 'แพ็กเกจ Lease Shield ของคุณเปิดใช้งานแล้ว' : 'Your Lease Shield Plan is Active';
-              const body = language === 'th' ? 
-                `สวัสดี ${user.full_name},\n\nแพ็กเกจ ${planInfo.tier.toUpperCase()} (${billingText}) ของคุณเปิดใช้งานแล้ว\nเข้าดูรายงาน AI และ Deposit Shield ได้ตลอดเวลา\n\n— ทีม Lease Shield` :
-                `Hi ${user.full_name},\n\nYour Lease Shield ${planInfo.tier.toUpperCase()} plan (${billingText}) is now active.\nYou can view your AI report and Deposit Shield dashboard anytime.\n\n— The Lease Shield Team`;
+              
+              let body = language === 'th' ? 
+                `สวัสดี ${user.full_name},\n\nแพ็กเกจ ${planInfo.tier.toUpperCase()} (${billingText}) ของคุณเปิดใช้งานแล้ว\nเข้าดูรายงาน AI และ Deposit Shield ได้ตลอดเวลา\n\n` :
+                `Hi ${user.full_name},\n\nYour Lease Shield ${planInfo.tier.toUpperCase()} plan (${billingText}) is now active.\nYou can view your AI report and Deposit Shield dashboard anytime.\n\n`;
+              
+              // Add credits info if granted
+              if (isNewSubscription && creditsGranted > 0) {
+                body += language === 'th'
+                  ? `🎁 โบนัส: ${creditsGranted} เครดิตจดหมายฟรี!\nใช้สร้างจดหมายทางกฎหมายมืออาชีพได้ทันที\n\n`
+                  : `🎁 Bonus: ${creditsGranted} letter credits included!\nGenerate professional legal letters instantly.\n\n`;
+              }
+              
+              body += language === 'th' ? '— ทีม Lease Shield' : '— The Lease Shield Team';
 
               await base44.asServiceRole.integrations.Core.SendEmail({
                 to: user.email,
@@ -262,11 +378,11 @@ View in Ops Console: ${appBaseUrl}/ops-console
       }
 
       case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription; // Add type assertion
+        const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer;
         const priceId = subscription.items.data[0]?.price?.id;
         
-        const planInfo = planMap[priceId as keyof typeof planMap]; // Add type assertion
+        const planInfo = planMap[priceId as keyof typeof planMap];
         
         if (planInfo) {
           const users = await base44.asServiceRole.entities.User.list();
@@ -274,12 +390,18 @@ View in Ops Console: ${appBaseUrl}/ops-console
           
           if (user) {
             const renewsAt = new Date(subscription.current_period_end * 1000).toISOString();
-            const status = subscription.status === 'active' ? 'active' : subscription.status === 'canceled' ? 'cancelled' : 'none';
             
-            const updateData: Record<string, any> = { // Use Record<string, any> for dynamic keys
+            // Check if subscription is being cancelled
+            const isCancelled = subscription.cancel_at_period_end || subscription.status === 'canceled';
+            
+            const status = subscription.status === 'active' && !isCancelled ? 'active' 
+                        : subscription.status === 'canceled' || isCancelled ? 'cancelled' 
+                        : 'none';
+            
+            const updateData: Record<string, any> = {
               subscription_status: status,
-              plan_tier: status === 'active' ? planInfo.tier : 'free',
-              billing_interval: status === 'active' ? planInfo.interval : null,
+              plan_tier: status === 'active' ? planInfo.tier : user.plan_tier, // Keep tier until cancellation takes effect
+              billing_interval: status === 'active' ? planInfo.interval : user.billing_interval,
               plan_renews_at: renewsAt
             };
             
@@ -290,7 +412,77 @@ View in Ops Console: ${appBaseUrl}/ops-console
             }
             
             await base44.asServiceRole.entities.User.update(user.id, updateData);
+            
+            console.log('Subscription updated:', {
+              user: user.email,
+              status,
+              cancel_at_period_end: subscription.cancel_at_period_end,
+              plan_tier: updateData.plan_tier,
+              billing_interval: updateData.billing_interval
+            });
           }
+        }
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        // This fires when cancellation actually takes effect (period ends)
+        console.log('=== CUSTOMER SUBSCRIPTION DELETED ===');
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer;
+        
+        const users = await base44.asServiceRole.entities.User.list();
+        const user = users.find(u => u.stripe_customer_id === customerId);
+        
+        if (user) {
+          // Downgrade user to free plan
+          await base44.asServiceRole.entities.User.update(user.id, {
+            subscription_status: 'none',
+            plan_tier: 'free',
+            billing_interval: null,
+            plan_renews_at: null
+          });
+
+          console.log('Subscription deleted - user downgraded to free:', user.email);
+
+          // Send email notification
+          const language = user.language || 'en';
+          const subject = language === 'th' 
+            ? 'บัญชีของคุณถูกเปลี่ยนเป็นแผนฟรี' 
+            : 'Your Account Has Been Moved to Free Plan';
+          
+          const body = language === 'th'
+            ? `สวัสดี ${user.full_name},
+
+การสมัครสมาชิก ${user.plan_tier?.toUpperCase()} ของคุณสิ้นสุดลงแล้ว
+
+บัญชีของคุณได้ถูกเปลี่ยนเป็นแผนฟรีแล้ว คุณยังคงสามารถ:
+• สแกนสัญญาเช่า 1 ครั้ง (ตลอดชีพ)
+• เข้าถึงหลักฐานที่มีอยู่
+• ใช้เครื่องมือติดตามเงินมัดจำแบบพื้นฐาน
+
+พร้อมที่จะกลับมาอีกครั้ง? คุณสามารถอัปเกรดได้ทุกเมื่อจากหน้าบัญชีของคุณ
+
+— ทีม Lease Shield`
+            : `Hi ${user.full_name},
+
+Your ${user.plan_tier?.toUpperCase()} subscription has ended.
+
+Your account has been moved to the Free plan. You can still:
+• Scan 1 lease (lifetime)
+• Access existing evidence
+• Use basic deposit tracker
+
+Ready to come back? You can upgrade anytime from your Account page.
+
+— The Lease Shield Team`;
+
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            to: user.email,
+            subject,
+            body
+          });
+          console.log('✅ User email sent about downgrade');
         }
         break;
       }
