@@ -26,6 +26,7 @@ import {
   Eye // Added Eye icon for Preview
 } from "lucide-react";
 import { format } from "date-fns";
+import LetterPreview from "../components/shared/LetterPreview";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -43,6 +44,7 @@ export default function CaseDetails() {
   const queryClient = useQueryClient();
 
   const [compilingPack, setCompilingPack] = useState(false);
+  const [previewLetter, setPreviewLetter] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -124,17 +126,34 @@ export default function CaseDetails() {
     const htmlKey = `${subject}_html_url`;
     const docKey = `${subject}_url`;
     
-    // Try HTML first, fallback to doc URL
-    const url = caseItem?.letters?.[htmlKey] || caseItem?.letters?.[docKey];
+    const htmlUrl = caseItem?.letters?.[htmlKey];
+    const docUrl = caseItem?.letters?.[docKey];
     
-    if (!url) {
+    if (!htmlUrl && !docUrl) {
       alert(language === 'th' 
         ? `ไม่พบไฟล์สำหรับ ${subject}` 
         : `No file found for ${subject}`);
       return;
     }
     
-    window.open(url, "_blank", "noopener,noreferrer");
+    setPreviewLetter({
+      htmlUrl: htmlUrl,
+      docUrl: docUrl,
+      subject: subject
+    });
+  };
+
+  const getLetterTitle = (subject) => {
+    const titles = {
+      lease_negotiation: language === 'th' ? 'จดหมายขอทบทวนสัญญาเช่า' : 'Lease Negotiation Request',
+      deposit: language === 'th' ? 'จดหมายขอคืนเงินมัดจำ' : 'Deposit Return Request',
+      damages: language === 'th' ? 'จดหมายโต้แย้งค่าเสียหาย' : 'Damage Claim Response',
+      early_termination: language === 'th' ? 'จดหมายแจ้งยกเลิกก่อนกำหนด' : 'Early Termination Notice',
+      v1: strings.initialNotice,
+      v2: strings.followupLetter,
+      v3: strings.finalSettlementOffer
+    };
+    return titles[subject] || subject;
   };
 
   const t = {
@@ -275,6 +294,17 @@ export default function CaseDetails() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
+        {/* Letter Preview Modal */}
+        {previewLetter && (
+          <LetterPreview
+            open={!!previewLetter}
+            onOpenChange={() => setPreviewLetter(null)}
+            htmlUrl={previewLetter.htmlUrl}
+            docUrl={previewLetter.docUrl}
+            title={getLetterTitle(previewLetter.subject)}
+          />
+        )}
+
         <Button
           variant="outline"
           onClick={() => navigate(createPageUrl("Cases"))}

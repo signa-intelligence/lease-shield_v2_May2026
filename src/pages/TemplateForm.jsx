@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ArrowLeft, Loader2, FileText, Send, CheckCircle2, Download, Eye } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import LetterPreview from "../components/shared/LetterPreview";
 
 export default function TemplateForm() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function TemplateForm() {
   const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [generatedUrls, setGeneratedUrls] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
   
   // Get subject from URL parameter
   const urlParams = new URLSearchParams(window.location.search);
@@ -220,9 +222,8 @@ export default function TemplateForm() {
   };
 
   const handlePreviewHtml = () => {
-    if (generatedUrls?.html) {
-      window.open(generatedUrls.html, '_blank', 'noopener,noreferrer');
-    }
+    setShowSuccess(false); // Close success dialog
+    setShowPreview(true); // Open preview dialog
   };
 
   const handleDownloadWord = () => {
@@ -265,6 +266,15 @@ export default function TemplateForm() {
           <ArrowLeft className="w-4 h-4" />
           {strings.cancel}
         </button>
+
+        {/* Letter Preview Dialog */}
+        <LetterPreview
+          open={showPreview}
+          onOpenChange={setShowPreview}
+          htmlUrl={generatedUrls?.html}
+          docUrl={generatedUrls?.doc}
+          title={letterTypeLabels[formData.subject]}
+        />
 
         {/* Success Dialog */}
         <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
