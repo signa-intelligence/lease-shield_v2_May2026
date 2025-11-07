@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Plus, Clock, CheckCircle2, AlertTriangle, Home, Zap, Droplet, Hammer, Thermometer, Bug, Package, Loader2, Camera, X, Image as ImageIcon, Pencil, Trash2 } from "lucide-react"; // Added Pencil, Trash2
+import { Wrench, Plus, Clock, CheckCircle2, AlertTriangle, Home, Zap, Droplet, Hammer, Thermometer, Bug, Package, Loader2, Camera, X, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import {
@@ -274,6 +274,7 @@ export default function MaintenanceTracker() {
       noRequestsSub: "Track repair requests and communications",
       reported: "Reported",
       completed: "Mark Completed",
+      inProgress: "Mark In Progress",
       estCost: "Est. Cost",
       filters: {
         all: "All",
@@ -336,6 +337,7 @@ export default function MaintenanceTracker() {
       noRequestsSub: "ติดตามคำขอซ่อมและการติดต่อสื่อสาร",
       reported: "รายงานแล้ว",
       completed: "ทำเครื่องหมายเสร็จสิ้น",
+      inProgress: "ทำเครื่องหมายกำลังดำเนินการ",
       estCost: "ต้นทุนโดยประมาณ",
       filters: {
         all: "ทั้งหมด",
@@ -475,7 +477,7 @@ export default function MaintenanceTracker() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    boxShadow: '0 4px 6px rgba(0,0=0,0.1)',
                     transition: 'all 0.2s'
                   }}
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
@@ -888,7 +890,12 @@ export default function MaintenanceTracker() {
               </CardContent>
             </Card>
           ) : (
-            filteredRequests.map((request) => (
+            filteredRequests.map((request) => {
+              const showInProgressButton = request.status === 'reported';
+              const showCompletedButton = request.status === 'reported' || request.status === 'in_progress';
+              const showDeleteIconOnly = showInProgressButton || showCompletedButton;
+
+              return (
               <Card key={request.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300" style={{
                 backgroundColor: colors.cardBg
               }}>
@@ -984,7 +991,39 @@ export default function MaintenanceTracker() {
                       {language === 'th' ? 'แก้ไข' : 'Edit'}
                     </button>
 
-                    {request.status === 'reported' && (
+                    {/* Show "In Progress" button only when status is "reported" */}
+                    {showInProgressButton && (
+                      <button
+                        onClick={() => updateRequestMutation.mutate({ 
+                          id: request.id, 
+                          data: { status: 'in_progress' } 
+                        })}
+                        style={{
+                          flex: 1,
+                          backgroundColor: '#3B82F6',
+                          color: '#FFFFFF',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '13px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
+                      >
+                        <Clock style={{ width: '14px', height: '14px' }} />
+                        {strings.inProgress}
+                      </button>
+                    )}
+
+                    {/* Show "Mark Completed" button when status is "reported" or "in_progress" */}
+                    {showCompletedButton && (
                       <button
                         onClick={() => updateRequestMutation.mutate({ 
                           id: request.id, 
@@ -1017,8 +1056,8 @@ export default function MaintenanceTracker() {
                     <button
                       onClick={() => setDeletingRequest(request)}
                       style={{
-                        flex: request.status === 'reported' ? 0 : 1,
-                        minWidth: request.status === 'reported' ? '44px' : 'auto',
+                        flex: showDeleteIconOnly ? 0 : 1,
+                        minWidth: showDeleteIconOnly ? '44px' : 'auto',
                         backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
                         color: '#EF4444',
                         padding: '8px 12px',
@@ -1045,12 +1084,12 @@ export default function MaintenanceTracker() {
                       }}
                     >
                       <Trash2 style={{ width: '14px', height: '14px' }} />
-                      {request.status === 'reported' ? '' : (language === 'th' ? 'ลบ' : 'Delete')}
+                      {showDeleteIconOnly ? '' : (language === 'th' ? 'ลบ' : 'Delete')}
                     </button>
                   </div>
                 </CardContent>
               </Card>
-            ))
+            )})
           )}
         </div>
 
