@@ -491,13 +491,21 @@ export default function AdminConsole() {
                 <option value="">
                   {language === 'th' ? '-- เลือกผู้ใช้ --' : '-- Select User --'}
                 </option>
-                {usersWithLine.map(u => (
-                  <option key={u.email} value={u.email}>
-                    {u.full_name} ({u.email})
+                {/* Add "Send to Myself" option at the top */}
+                {user?.line_messaging_token && (
+                  <option value={user.email}>
+                    {language === 'th' ? '🔹 ตัวฉันเอง' : '🔹 Myself'} ({user.full_name})
                   </option>
-                ))}
+                )}
+                {usersWithLine
+                  .filter(u => u.email !== user?.email) // Don't show current user twice
+                  .map(u => (
+                    <option key={u.email} value={u.email}>
+                      {u.full_name} ({u.email})
+                    </option>
+                  ))}
               </select>
-              {usersWithLine.length === 0 && (
+              {usersWithLine.length === 0 && !user?.line_messaging_token && (
                 <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
                   {language === 'th' 
                     ? 'ไม่มีผู้ใช้ที่เชื่อมต่อ LINE' 
