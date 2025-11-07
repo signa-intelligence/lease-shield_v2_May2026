@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -15,9 +14,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { priceId, mode, amount, currency, description, successUrl, cancelUrl, metadata } = await req.json();
+    const { priceId, mode, amount, currency, description, successUrl, cancelUrl, metadata, promoCode } = await req.json();
 
-    console.log('Creating checkout with:', { priceId, mode, amount, currency, user: user.email });
+    console.log('Creating checkout with:', { priceId, mode, amount, currency, promoCode, user: user.email });
 
     // Get or create Stripe customer
     let customerId = user.stripe_customer_id;
@@ -49,7 +48,39 @@ Deno.serve(async (req) => {
       success_url: successUrl || defaultSuccessUrl,
       cancel_url: cancelUrl || defaultCancelUrl,
       metadata: metadata || {},
+      allow_promotion_codes: !promoCode, // Enable promo code field if no code provided
     };
+
+    // If a promo code is provided, look it up and apply it
+    if (promoCode) {
+      try {
+        console.log('Looking up promo code:', promoCode);
+        const promoCodes = await stripe.promotionCodes.list({
+          code: promoCode,
+          active: true,
+          limit: 1
+        });
+
+        if (promoCodes.data.length > 0) {
+          console.log('Valid promo code found:', promoCodes.data[0].id);
+          sessionConfig.discounts = [{
+            promotion_code: promoCodes.data[0].id
+          }];
+        } else {
+          console.log('Invalid or expired promo code:', promoCode);
+          return Response.json({ 
+            error: 'Invalid or expired promo code',
+            code: 'invalid_promo_code'
+          }, { status: 400 });
+        }
+      } catch (error) {
+        console.error('Error validating promo code:', error);
+        return Response.json({ 
+          error: 'Failed to validate promo code',
+          code: 'promo_validation_error'
+        }, { status: 400 });
+      }
+    }
 
     // Handle subscription vs one-time payment
     if (mode === 'payment' && amount) {

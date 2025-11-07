@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Scale, Shield, Clock, Mail, CheckCircle2, Zap, FileText, Users, MessageCircle, ArrowRight } from "lucide-react";
+import { Scale, Shield, Clock, Mail, CheckCircle2, Zap, FileText, Users, MessageCircle, ArrowRight, Gift, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
@@ -61,6 +61,8 @@ const PROCESS_STEPS = [
 export default function ResolveCase() {
   const navigate = useNavigate();
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false); // New state for payment submission loading
+  const [promoCode, setPromoCode] = useState('');
+  const [promoError, setPromoError] = useState('');
 
   // Get URL parameters for pre-filling
   const urlParams = new URLSearchParams(window.location.search);
@@ -165,7 +167,11 @@ export default function ResolveCase() {
       submitCase: "Submit Case",
       submitting: "Submitting...",
       memberPricingNote: "All-inclusive case support fee. Includes full review, documentation, and negotiation support.",
-      publicPricingNote: "All-inclusive case support fee. Includes full review, documentation, and negotiation support."
+      publicPricingNote: "All-inclusive case support fee. Includes full review, documentation, and negotiation support.",
+      promoCode: "Promo Code",
+      promoCodePlaceholder: "Enter promo code",
+      promoCodeOptional: "(Optional)",
+      promoApplied: "Promo code will be applied at checkout",
     },
     th: {
       title: "เปิดคดีข้อพิพาท",
@@ -201,7 +207,11 @@ export default function ResolveCase() {
       submitCase: "ส่งคดี",
       submitting: "กำลังส่ง...",
       memberPricingNote: "ค่าธรรมเนียมการสนับสนุนคดีรวมทั้งหมด รวมการตรวจสอบ เอกสาร และการเจรจาต่อรอง",
-      publicPricingNote: "ค่าธรรมเนียมการสนับสนุนคดีรวมทั้งหมด รวมการตรวจสอบ เอกสาร และการเจรจาต่อรอง"
+      publicPricingNote: "ค่าธรรมเนียมการสนับสนุนคดีรวมทั้งหมด รวมการตรวจสอบ เอกสาร และการเจรจาต่อรอง",
+      promoCode: "รหัสโปรโมชัน",
+      promoCodePlaceholder: "ใส่รหัสโปรโมชัน",
+      promoCodeOptional: "(ไม่บังคับ)",
+      promoApplied: "รหัสโปรโมชันจะถูกใช้เมื่อชำระเงิน",
     }
   };
 
@@ -210,6 +220,7 @@ export default function ResolveCase() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmittingPayment(true); // Set loading true at start
+    setPromoError(''); // Clear any previous promo code error
     
     // Calculate total amount
     const basePrice = isMember ? baseMemberPrice : basePublicPrice;
@@ -239,20 +250,27 @@ export default function ResolveCase() {
         description: `Resolve Case - Dispute Amount: ฿${formData.dispute_amount}`,
         successUrl: `${window.location.origin}${createPageUrl("Cases")}?payment=success`,
         cancelUrl: `${window.location.origin}${createPageUrl("ResolveCase")}?payment=cancelled`,
-        metadata: caseMetadata
+        metadata: caseMetadata,
+        promoCode: promoCode || undefined // Pass promoCode if available
       });
 
       if (response.data?.url) {
         window.location.href = response.data.url;
+      } else if (response.data?.code === 'invalid_promo_code') {
+        setPromoError(language === 'th' ? 'รหัสโปรโมชันไม่ถูกต้องหรือหมดอายุ' : 'Invalid or expired promo code');
+        setIsSubmittingPayment(false); // Stop loading on promo code error
       } else {
         throw new Error('No checkout URL returned');
       }
     } catch (error) {
       console.error('Checkout creation failed:', error);
-      alert(language === 'th' 
-        ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' 
-        : 'Failed to create checkout. Please try again.');
-    } finally {
+      if (error.response?.data?.code === 'invalid_promo_code') {
+        setPromoError(language === 'th' ? 'รหัสโปรโมชันไม่ถูกต้องหรือหมดอายุ' : 'Invalid or expired promo code');
+      } else {
+        alert(language === 'th' 
+          ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' 
+          : 'Failed to create checkout. Please try again.');
+      }
       setIsSubmittingPayment(false); // Resetting pending state
     }
   };
@@ -902,6 +920,42 @@ export default function ResolveCase() {
                       <span className="text-2xl font-bold text-ls-forest">฿{totalAddons.toLocaleString()}</span>
                     </div>
                   </div>
+                )}
+              </div>
+
+              {/* Promo Code Input - NEW SECTION */}
+              <div className="pt-4 border-t" style={{ borderTopColor: colors.borderColor }}>
+                <Label htmlFor="promoCode" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <Gift className="w-4 h-4 text-ls-gold" />
+                  {strings.promoCode} <span style={{ color: colors.textSecondary, fontWeight: 'normal' }}>{strings.promoCodeOptional}</span>
+                </Label>
+                <Input
+                  id="promoCode"
+                  value={promoCode}
+                  onChange={(e) => {
+                    setPromoCode(e.target.value.toUpperCase());
+                    setPromoError('');
+                  }}
+                  placeholder={strings.promoCodePlaceholder}
+                  className="mt-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: promoError ? '#EF4444' : colors.borderColor,
+                    color: colors.textPrimary,
+                    borderWidth: '2px'
+                  }}
+                />
+                {promoError && (
+                  <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {promoError}
+                  </p>
+                )}
+                {promoCode && !promoError && (
+                  <p className="text-sm text-emerald-600 mt-2 flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    {strings.promoApplied}
+                  </p>
                 )}
               </div>
 
