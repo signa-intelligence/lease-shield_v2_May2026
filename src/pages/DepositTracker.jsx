@@ -121,9 +121,11 @@ export default function DepositTracker() {
       expectedReturn: "Expected Return Date",
       propertyAddress: "Property Address",
       rentAmount: "Monthly Rent (฿)",
-      rentDueDay: "Rent Due Day",
+      rentDueDay: "Day of Month Rent is Due",
+      rentDueDayPlaceholder: "e.g., 1, 5, 15, 30",
+      rentDueDayHelper: "Enter the day of the month (1-31)",
       rentAlerts: "Rent Alerts",
-      alertDaysBefore: "Days Before",
+      alertDaysBefore: "Alert Me (Days Before)",
       notes: "Notes",
       status: "Status",
       tracking: "Tracking",
@@ -138,7 +140,7 @@ export default function DepositTracker() {
       paidOn: "Paid on",
       returnsOn: "Returns on",
       rentDue: "Rent Due",
-      dayOfMonth: "of the month",
+      dayOfMonth: "of every month",
       alertEnabled: "Alert enabled",
       daysBeforeDue: "days before due",
       protectedBadge: "Protected",
@@ -149,7 +151,7 @@ export default function DepositTracker() {
       lineNotifyDisabled: "LINE Notify Disabled",
       delete: "Delete",
       confirmDelete: "Are you sure you want to delete this deposit? This action cannot be undone.",
-      saving: "Saving...", // Added for loading state
+      saving: "Saving...",
       back: "Back",
       openDisputeCase: "Open Dispute Case",
       openDisputeCaseDesc: "When you mark a deposit as disputed, you should open a formal case to get help resolving it.",
@@ -169,9 +171,11 @@ export default function DepositTracker() {
       expectedReturn: "วันที่คาดว่าจะได้รับคืน",
       propertyAddress: "ที่อยู่ทรัพย์สิน",
       rentAmount: "ค่าเช่ารายเดือน (฿)",
-      rentDueDay: "วันที่ครบกำหนดค่าเช่า",
+      rentDueDay: "วันที่ของเดือนที่ต้องจ่ายค่าเช่า",
+      rentDueDayPlaceholder: "เช่น 1, 5, 15, 30",
+      rentDueDayHelper: "ใส่วันที่ของเดือน (1-31)",
       rentAlerts: "การแจ้งเตือนค่าเช่า",
-      alertDaysBefore: "วันก่อนครบกำหนด",
+      alertDaysBefore: "แจ้งเตือนก่อน (วัน)",
       notes: "หมายเหตุ",
       status: "สถานะ",
       tracking: "กำลังติดตาม",
@@ -186,7 +190,7 @@ export default function DepositTracker() {
       paidOn: "จ่ายเมื่อ",
       returnsOn: "คืนเมื่อ",
       rentDue: "ค่าเช่าครบกำหนด",
-      dayOfMonth: "ของเดือน",
+      dayOfMonth: "ของทุกเดือน",
       alertEnabled: "การแจ้งเตือนเปิดอยู่",
       daysBeforeDue: "วันก่อนครบกำหนด",
       protectedBadge: "ได้รับการป้องกัน",
@@ -197,7 +201,7 @@ export default function DepositTracker() {
       lineNotifyDisabled: "ปิดการแจ้งเตือน LINE",
       delete: "ลบ",
       confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบเงินมัดจำนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้",
-      saving: "กำลังบันทึก...", // Added for loading state
+      saving: "กำลังบันทึก...",
       back: "กลับ",
       openDisputeCase: "เปิดคดีพิพาท",
       openDisputeCaseDesc: "เมื่อคุณทำเครื่องหมายเงินมัดจำว่าเป็นข้อพิพาท คุณควรเปิดคดีอย่างเป็นทางการเพื่อรับความช่วยเหลือในการแก้ปัญหา",
@@ -519,17 +523,23 @@ export default function DepositTracker() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="rent_due_day" style={{ color: colors.textPrimary }}>{strings.rentDueDay}</Label>
+                        <Label htmlFor="rent_due_day" style={{ color: colors.textPrimary }}>
+                          {strings.rentDueDay}
+                        </Label>
                         <Input
                           id="rent_due_day"
                           type="number"
                           min="1"
                           max="31"
+                          placeholder={strings.rentDueDayPlaceholder}
                           value={formData.rent_due_day}
                           onChange={(e) => setFormData({...formData, rent_due_day: e.target.value})}
                           className="mt-2"
                           style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
                         />
+                        <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                          {strings.rentDueDayHelper}
+                        </p>
                       </div>
                       <div>
                         <Label htmlFor="rent_alert_days_before" style={{ color: colors.textPrimary }}>{strings.alertDaysBefore}</Label>
@@ -726,7 +736,7 @@ export default function DepositTracker() {
                             <Bell className="w-5 h-5 text-blue-600 flex-shrink-0" />
                             <div>
                               <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                                {strings.rentDue}: {deposit.rent_due_day} {strings.dayOfMonth}
+                                {strings.rentDue}: {language === 'th' ? 'วันที่ ' : 'Day '}{deposit.rent_due_day} {strings.dayOfMonth}
                               </p>
                               <p className="text-xs sm:text-sm" style={{ color: colors.textSecondary }}>
                                 ฿{deposit.rent_amount.toLocaleString()}/month
