@@ -273,18 +273,20 @@ export default function MaintenanceTracker() {
       noRequests: "No Maintenance Requests",
       noRequestsSub: "Track repair requests and communications",
       reported: "Reported",
+      acknowledged: "Acknowledged",
       completed: "Mark Completed",
       inProgress: "Mark In Progress",
       estCost: "Est. Cost",
       filters: {
         all: "All",
         reported: "Reported",
+        acknowledged: "Acknowledged",
         in_progress: "In Progress",
         completed: "Completed"
       },
       status: {
         reported: "Reported",
-        landlord_notified: "Landlord Notified",
+        acknowledged: "Acknowledged",
         in_progress: "In Progress",
         completed: "Completed",
         rejected: "Rejected"
@@ -336,18 +338,20 @@ export default function MaintenanceTracker() {
       noRequests: "ไม่มีคำขอซ่อมบำรุง",
       noRequestsSub: "ติดตามคำขอซ่อมและการติดต่อสื่อสาร",
       reported: "รายงานแล้ว",
+      acknowledged: "รับทราบแล้ว",
       completed: "ทำเครื่องหมายเสร็จสิ้น",
       inProgress: "ทำเครื่องหมายกำลังดำเนินการ",
       estCost: "ต้นทุนโดยประมาณ",
       filters: {
         all: "ทั้งหมด",
         reported: "แจ้งแล้ว",
+        acknowledged: "รับทราบแล้ว",
         in_progress: "กำลังดำเนินการ",
         completed: "เสร็จสิ้น"
       },
       status: {
         reported: "แจ้งแล้ว",
-        landlord_notified: "แจ้งเจ้าของบ้าน",
+        acknowledged: "รับทราบแล้ว",
         in_progress: "กำลังดำเนินการ",
         completed: "เสร็จสิ้น",
         rejected: "ถูกปฏิเสธ"
@@ -389,8 +393,8 @@ export default function MaintenanceTracker() {
   const getStatusColor = (status) => {
     const colors = {
       reported: "bg-blue-100 text-blue-800 border-blue-200",
-      landlord_notified: "bg-amber-100 text-amber-800 border-amber-200",
-      in_progress: "bg-purple-100 text-purple-800 border-purple-200",
+      acknowledged: "bg-purple-100 text-purple-800 border-purple-200",
+      in_progress: "bg-amber-100 text-amber-800 border-amber-200",
       completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
       rejected: "bg-red-100 text-red-800 border-red-200"
     };
@@ -830,7 +834,7 @@ export default function MaintenanceTracker() {
         {maintenanceRequests.length > 0 && (
           <div className="mb-6 overflow-x-auto">
             <div className="flex gap-2 min-w-max pb-2">
-              {['all', 'reported', 'in_progress', 'completed'].map((status) => (
+              {['all', 'reported', 'acknowledged', 'in_progress', 'completed'].map((status) => (
                 <button
                   key={status}
                   onClick={() => setFilter(status)}
@@ -891,8 +895,8 @@ export default function MaintenanceTracker() {
             </Card>
           ) : (
             filteredRequests.map((request) => {
-              const showInProgressButton = request.status === 'reported';
-              const showCompletedButton = request.status === 'reported' || request.status === 'in_progress';
+              const showInProgressButton = request.status === 'acknowledged';
+              const showCompletedButton = request.status === 'acknowledged' || request.status === 'in_progress';
               const showDeleteIconOnly = showInProgressButton || showCompletedButton;
 
               return (
@@ -957,6 +961,7 @@ export default function MaintenanceTracker() {
                       <span>{strings.estCost}: ฿{request.estimated_cost.toLocaleString()}</span>
                     )}
                   </div>
+
                   <div className="flex flex-col sm:flex-row gap-2 mt-4">
                     <button
                       onClick={() => handleEdit(request)}
@@ -991,7 +996,7 @@ export default function MaintenanceTracker() {
                       {language === 'th' ? 'แก้ไข' : 'Edit'}
                     </button>
 
-                    {/* Show "In Progress" button only when status is "reported" */}
+                    {/* Show "In Progress" button only when status is "acknowledged" */}
                     {showInProgressButton && (
                       <button
                         onClick={() => updateRequestMutation.mutate({ 
@@ -1022,7 +1027,7 @@ export default function MaintenanceTracker() {
                       </button>
                     )}
 
-                    {/* Show "Mark Completed" button when status is "reported" or "in_progress" */}
+                    {/* Show "Mark Completed" button when status is "acknowledged" or "in_progress" */}
                     {showCompletedButton && (
                       <button
                         onClick={() => updateRequestMutation.mutate({ 

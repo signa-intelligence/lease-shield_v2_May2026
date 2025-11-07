@@ -19,6 +19,7 @@ import Support from './pages/Support';
 import LeaseDetails from './pages/LeaseDetails';
 import CaseDetails from './pages/CaseDetails';
 import OpsConsole from './pages/OpsConsole';
+import AcknowledgeMaintenance from './pages/AcknowledgeMaintenance';
 import Layout from './Layout.jsx';
 
 
@@ -44,6 +45,7 @@ export const PAGES = {
     "LeaseDetails": LeaseDetails,
     "CaseDetails": CaseDetails,
     "OpsConsole": OpsConsole,
+    "AcknowledgeMaintenance": AcknowledgeMaintenance,
 }
 
 export const pagesConfig = {
