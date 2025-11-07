@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge"; // Import Badge component
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ArrowLeft, Loader2, FileText, Send, CheckCircle2, Download, Eye } from "lucide-react";
@@ -19,11 +20,11 @@ export default function TemplateForm() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [generatedUrls, setGeneratedUrls] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
-  
+
   // Get subject from URL parameter
   const urlParams = new URLSearchParams(window.location.search);
   const subjectFromUrl = urlParams.get('subject') || 'deposit';
-  
+
   const [formData, setFormData] = useState({
     tenant_name: '',
     landlord_name: '',
@@ -46,6 +47,7 @@ export default function TemplateForm() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+  const userCredits = user?.letter_credits || 0;
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -103,6 +105,11 @@ export default function TemplateForm() {
       settlementAmount: "Settlement Amount (THB)",
       settlementAmountPlaceholder: "18000",
       settlementDate: "Settlement Date",
+      insufficientCreditsError: "Insufficient credits. Please purchase credits from Account page.",
+      insufficientCreditsWarningTitle: "⚠️ Insufficient Credits",
+      insufficientCreditsWarningDesc: "You need 1 credit to generate a letter. Please purchase credits from the Account page.",
+      goToAccount: "Go to Account",
+      creditsLabel: "Credits",
     },
     th: {
       generateLetter: "สร้างจดหมาย",
@@ -143,6 +150,11 @@ export default function TemplateForm() {
       settlementAmount: "จำนวนเงินชำระ (บาท)",
       settlementAmountPlaceholder: "18000",
       settlementDate: "วันที่ชำระเงิน",
+      insufficientCreditsError: "เครดิตไม่เพียงพอ กรุณาซื้อเครดิตเพิ่มจากหน้าบัญชี",
+      insufficientCreditsWarningTitle: "⚠️ เครดิตไม่เพียงพอ",
+      insufficientCreditsWarningDesc: "คุณต้องการ 1 เครดิตเพื่อสร้างจดหมาย กรุณาซื้อเครดิตเพิ่มจากหน้าบัญชี",
+      goToAccount: "ไปที่หน้าบัญชี",
+      creditsLabel: "เครดิต",
     }
   };
 
@@ -166,6 +178,12 @@ export default function TemplateForm() {
 
     if (!formData.tenant_name || !formData.landlord_name) {
       setError(strings.errorFillRequired);
+      return;
+    }
+
+    // Check credits before proceeding
+    if (userCredits < 1) {
+      setError(strings.insufficientCreditsError);
       return;
     }
 
@@ -296,7 +314,7 @@ export default function TemplateForm() {
               <p style={{ color: colors.textSecondary }}>
                 {strings.successDesc}
               </p>
-              
+
               <div className="space-y-3">
                 {/* Preview HTML Button */}
                 <button
@@ -358,16 +376,43 @@ export default function TemplateForm() {
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
               <FileText className="w-6 h-6 text-purple-600" />
-              <div>
+              <div className="flex-1">
                 <div className="text-xl font-bold">{strings.generateLetter}</div>
                 <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
                   {strings.formDesc}
                 </p>
               </div>
+              {/* Credit Display */}
+              <Badge className={`${userCredits > 0 ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-red-100 text-red-700 border-red-200'} text-base px-3 py-1`}>
+                {userCredits} {strings.creditsLabel}
+              </Badge>
             </CardTitle>
           </CardHeader>
 
           <CardContent className="p-6">
+            {/* Credit Warning */}
+            {userCredits < 1 && (
+              <div className="mb-6 p-4 rounded-lg border-2" style={{
+                backgroundColor: isDarkMode ? 'rgb(58, 38, 38)' : '#FEE2E2',
+                borderColor: isDarkMode ? 'rgb(80, 40, 40)' : '#FECACA',
+                color: '#DC2626'
+              }}>
+                <p className="font-semibold mb-2">
+                  {strings.insufficientCreditsWarningTitle}
+                </p>
+                <p className="text-sm">
+                  {strings.insufficientCreditsWarningDesc}
+                </p>
+                <Button
+                  onClick={() => navigate(createPageUrl("Account"))}
+                  className="mt-3 bg-amber-600 hover:bg-amber-700 text-white"
+                  size="sm"
+                >
+                  {strings.goToAccount}
+                </Button>
+              </div>
+            )}
+
             {error && (
               <div className="mb-6 p-4 rounded-lg border-2" style={{
                 backgroundColor: isDarkMode ? 'rgb(58, 38, 38)' : '#FEE2E2',
@@ -618,7 +663,7 @@ export default function TemplateForm() {
                 <Button
                   type="submit"
                   className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
-                  disabled={generating}
+                  disabled={generating || userCredits < 1}
                 >
                   <Send className="w-4 h-4 mr-2" />
                   {strings.generateButton}

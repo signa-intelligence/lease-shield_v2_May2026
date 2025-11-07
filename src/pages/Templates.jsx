@@ -1,16 +1,14 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { FileText, Shield, AlertCircle, FileX, Scale, Camera, Mail, AlertTriangle, Gavel, CheckCircle, ArrowLeft } from "lucide-react";
+import { FileText, Shield, AlertCircle, FileX, Scale, Camera, Mail, AlertTriangle, Gavel, CheckCircle, ArrowLeft, Coins } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
 const TEMPLATES = [
-  // PRE-SIGNING LETTER (NEW - Top of list)
   {
     id: 'lease_negotiation',
     letterKey: 'N1',
@@ -19,12 +17,10 @@ const TEMPLATES = [
     description_en: 'Request clarification of concerning lease terms before signing',
     description_th: 'ขอชี้แจงข้อกำหนดที่น่ากังวลก่อนการลงนามสัญญา',
     icon: FileText,
-    tier: 'lite', // This template is accessible from the 'lite' tier.
     color: 'from-amber-400 to-orange-600',
-    preSigning: true
+    preSigning: true,
+    creditCost: 1
   },
-  
-  // LITE TIER (L1-L3)
   {
     id: 'deposit',
     letterKey: 'L1',
@@ -33,8 +29,8 @@ const TEMPLATES = [
     description_en: 'Friendly formal request for security deposit return',
     description_th: 'จดหมายทางการสุภาพขอคืนเงินประกัน',
     icon: Shield,
-    tier: 'lite',
-    color: 'from-blue-400 to-blue-600'
+    color: 'from-blue-400 to-blue-600',
+    creditCost: 1
   },
   {
     id: 'deductions',
@@ -44,8 +40,8 @@ const TEMPLATES = [
     description_en: 'Request breakdown of damage charges and deductions',
     description_th: 'ขอรายละเอียดค่าเสียหายและการหักเงินแบบแยกรายการ',
     icon: FileText,
-    tier: 'lite',
-    color: 'from-amber-400 to-amber-600'
+    color: 'from-amber-400 to-amber-600',
+    creditCost: 1
   },
   {
     id: 'reminder',
@@ -55,11 +51,9 @@ const TEMPLATES = [
     description_en: 'Gentle follow-up on pending deposit return',
     description_th: 'จดหมายติดตามความคืบหน้าอย่างสุภาพ',
     icon: Mail,
-    tier: 'lite',
-    color: 'from-purple-400 to-purple-600'
+    color: 'from-purple-400 to-purple-600',
+    creditCost: 1
   },
-  
-  // PROTECT TIER (P1-P4)
   {
     id: 'dispute',
     letterKey: 'P1',
@@ -68,8 +62,8 @@ const TEMPLATES = [
     description_en: 'Formal dispute of unfair deposit withholding',
     description_th: 'จดหมายคัดค้านการระงับเงินประกันอย่างเป็นทางการ',
     icon: Scale,
-    tier: 'protect',
-    color: 'from-emerald-500 to-emerald-700'
+    color: 'from-emerald-500 to-emerald-700',
+    creditCost: 1
   },
   {
     id: 'early_termination',
@@ -79,8 +73,8 @@ const TEMPLATES = [
     description_en: 'Coordinate early lease termination details',
     description_th: 'ประสานรายละเอียดการยุติสัญญาก่อนกำหนด',
     icon: FileX,
-    tier: 'protect',
-    color: 'from-teal-500 to-teal-700'
+    color: 'from-teal-500 to-teal-700',
+    creditCost: 1
   },
   {
     id: 'condition_dispute',
@@ -90,8 +84,8 @@ const TEMPLATES = [
     description_en: 'Dispute claimed property damages',
     description_th: 'โต้แย้งการเรียกร้องค่าเสียหายทรัพย์สิน',
     icon: Camera,
-    tier: 'protect',
-    color: 'from-cyan-500 to-cyan-700'
+    color: 'from-cyan-500 to-cyan-700',
+    creditCost: 1
   },
   {
     id: 'evidence',
@@ -101,11 +95,9 @@ const TEMPLATES = [
     description_en: 'Request supporting documents for claimed damages',
     description_th: 'ขอเอกสารหลักฐานสำหรับค่าเสียหายที่อ้าง',
     icon: FileText,
-    tier: 'protect',
-    color: 'from-sky-500 to-sky-700'
+    color: 'from-sky-500 to-sky-700',
+    creditCost: 1
   },
-  
-  // SECURE TIER (S1-S3)
   {
     id: 'final_opportunity',
     letterKey: 'S1',
@@ -114,8 +106,8 @@ const TEMPLATES = [
     description_en: 'Last chance before formal escalation',
     description_th: 'โอกาสสุดท้ายก่อนดำเนินการทางกฎหมาย',
     icon: AlertTriangle,
-    tier: 'secure',
-    color: 'from-orange-600 to-red-600'
+    color: 'from-orange-600 to-red-600',
+    creditCost: 1
   },
   {
     id: 'non_compliance',
@@ -125,8 +117,8 @@ const TEMPLATES = [
     description_en: 'Official notice of contract breach',
     description_th: 'แจ้งการฝ่าฝืนสัญญาอย่างเป็นทางการ',
     icon: Gavel,
-    tier: 'secure',
-    color: 'from-red-600 to-red-800'
+    color: 'from-red-600 to-red-800',
+    creditCost: 1
   },
   {
     id: 'settlement',
@@ -136,8 +128,8 @@ const TEMPLATES = [
     description_en: 'Confirm successful deposit transfer',
     description_th: 'ยืนยันการคืนเงินประกันสำเร็จ',
     icon: CheckCircle,
-    tier: 'secure',
-    color: 'from-emerald-600 to-green-700'
+    color: 'from-emerald-600 to-green-700',
+    creditCost: 1
   }
 ];
 
@@ -152,6 +144,7 @@ export default function Templates() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
+  const userCredits = user?.letter_credits || 0;
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -168,51 +161,58 @@ export default function Templates() {
   const t = {
     en: {
       title: "Legal Letter Templates",
-      subtitle: "Professional bilingual escalation ladder - from friendly to formal",
-      liteTier: "LITE",
-      protectTier: "PROTECT",
-      secureTier: "SECURE",
-      upgradeRequired: "Upgrade to access",
-      preSigningSection: "⭐ Pre-Signing - Lease Negotiation (1 Letter)", // NEW STRING
-      tierSection: {
-        lite: "Lite Tier - Friendly Approach (3 Letters)",
-        protect: "Protect Tier - Professional Escalation (4 Letters)",
-        secure: "Secure Tier - Final Measures (3 Letters)"
-      }
+      subtitle: "Professional bilingual escalation ladder - all templates available",
+      availableCredits: "Available Credits",
+      creditCost: "1 Credit per Letter",
+      buyCredits: "Buy Credits",
+      allLetters: "All Letters (11 Templates)",
+      insufficientCredits: "Insufficient credits",
+      tierCredits: {
+        free: "Free: 0 credits",
+        lite: "Lite: 3 credits included",
+        protect: "Protect: 5 credits included",
+        secure: "Secure: 15 credits included"
+      },
+      upgradeForCredits: "Upgrade for more credits",
+      preSigningSection: "⭐ Pre-Signing Negotiation",
+      friendlyApproach: "Friendly Approach (3 Letters)",
+      professionalEscalation: "Professional Escalation (4 Letters)",
+      finalMeasures: "Final Measures (3 Letters)"
     },
     th: {
       title: "เทมเพลตจดหมายทางกฎหมาย",
-      subtitle: "บันไดการยกระดับมืออาชีพสองภาษา - จากเป็นมิตรไปเป็นทางการ",
-      liteTier: "ไลท์",
-      protectTier: "โปรเทค",
-      secureTier: "ซีเคียว",
-      upgradeRequired: "อัปเกรดเพื่อเข้าถึง",
-      preSigningSection: "⭐ ก่อนลงนาม - เจรจาสัญญา (1 จดหมาย)", // NEW STRING
-      tierSection: {
-        lite: "ไลท์ เทียร์ - แนวทางเป็นมิตร (3 จดหมาย)",
-        protect: "โปรเทค เทียร์ - การยกระดับอย่างมืออาชีพ (4 จดหมาย)",
-        secure: "ซีเคียว เทียร์ - มาตรการสุดท้าย (3 จดหมาย)"
-      }
+      subtitle: "บันไดการยกระดับมืออาชีพสองภาษา - ทุกเทมเพลตพร้อมใช้งาน",
+      availableCredits: "เครดิตที่มี",
+      creditCost: "1 เครดิตต่อจดหมาย",
+      buyCredits: "ซื้อเครดิต",
+      allLetters: "จดหมายทั้งหมด (11 เทมเพลต)",
+      insufficientCredits: "เครดิตไม่เพียงพอ",
+      tierCredits: {
+        free: "ฟรี: 0 เครดิต",
+        lite: "ไลท์: 3 เครดิตรวมอยู่",
+        protect: "โปรเทค: 5 เครดิตรวมอยู่",
+        secure: "ซีเคียว: 15 เครดิตรวมอยู่"
+      },
+      upgradeForCredits: "อัปเกรดเพื่อรับเครดิตเพิ่ม",
+      preSigningSection: "⭐ เจรจาก่อนลงนาม",
+      friendlyApproach: "แนวทางเป็นมิตร (3 จดหมาย)",
+      professionalEscalation: "การยกระดับอย่างมืออาชีพ (4 จดหมาย)",
+      finalMeasures: "มาตรการสุดท้าย (3 จดหมาย)"
     }
   };
 
   const strings = t[language];
 
-  // Progressive tier access
-  const tierLetters = {
-    lite: ["lease_negotiation", "deposit", "deductions", "reminder"], // Added 'lease_negotiation'
-    protect: ["lease_negotiation", "deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence"], // 'lease_negotiation' is implicitly included as it's in 'lite'
-    secure: ["lease_negotiation", "deposit", "deductions", "reminder", "dispute", "early_termination", "condition_dispute", "evidence", "final_opportunity", "non_compliance", "settlement"] // 'lease_negotiation' is implicitly included
+  const preSigningTemplates = TEMPLATES.filter(t => t.preSigning);
+  const liteTemplates = TEMPLATES.filter(t => ['deposit', 'deductions', 'reminder'].includes(t.id));
+  const protectTemplates = TEMPLATES.filter(t => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(t.id));
+  const secureTemplates = TEMPLATES.filter(t => ['final_opportunity', 'non_compliance', 'settlement'].includes(t.id));
+
+  const handleTemplateClick = (template) => {
+    if (userCredits >= template.creditCost) {
+      navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`);
+    }
   };
-
-  const userLetters = tierLetters[userTier] || [];
-  const hasAccessToLetter = (letterId) => userLetters.includes(letterId);
-
-  // Group templates by display tiers
-  const preSigningTemplates = TEMPLATES.filter(t => t.preSigning); // NEW
-  const liteTemplates = TEMPLATES.filter(t => t.tier === 'lite' && !t.preSigning); // Modified to exclude preSigning letters
-  const protectTemplates = TEMPLATES.filter(t => t.tier === 'protect');
-  const secureTemplates = TEMPLATES.filter(t => t.tier === 'secure');
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
@@ -233,29 +233,69 @@ export default function Templates() {
           </div>
           <p className="text-sm sm:text-base mb-4" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
           
-          {/* Tier indicator */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge className={`${['lite', 'protect', 'secure'].includes(userTier) ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-gray-100 text-gray-500'}`}>
-              {strings.liteTier} (3)
-            </Badge>
-            <Badge className={`${['protect', 'secure'].includes(userTier) ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500'}`}>
-              {strings.protectTier} (7)
-            </Badge>
-            <Badge className={`${userTier === 'secure' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-gray-100 text-gray-500'}`}>
-              {strings.secureTier} (10)
-            </Badge>
-            <span className="text-xs ml-2" style={{ color: colors.textSecondary }}>
-              {language === 'th' ? 'แผนปัจจุบัน: ' : 'Current plan: '} 
-              <span className="font-semibold" style={{ color: colors.textPrimary }}>{userTier.toUpperCase()}</span>
-            </span>
+          {/* Credit Balance & Info */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            {/* Credit Display */}
+            <Card className="border-2" style={{ 
+              backgroundColor: colors.cardBg, 
+              borderColor: userCredits > 0 ? '#C7A338' : colors.borderColor 
+            }}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                    <Coins className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                      {strings.availableCredits}
+                    </p>
+                    <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                      {userCredits}
+                    </p>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>
+                      {strings.creditCost}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tier Info */}
+            <Card className="border flex-1" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+              <CardContent className="p-4">
+                <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                  {language === 'th' ? 'เครดิตตามแผน:' : 'Credits by Plan:'}
+                </p>
+                <div className="space-y-1 text-xs" style={{ color: colors.textPrimary }}>
+                  <p>• {strings.tierCredits.free}</p>
+                  <p>• {strings.tierCredits.lite}</p>
+                  <p>• {strings.tierCredits.protect}</p>
+                  <p>• {strings.tierCredits.secure}</p>
+                </div>
+                <Button
+                  onClick={() => navigate(createPageUrl("Account"))}
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 w-full text-xs"
+                  style={{ borderColor: '#C7A338', color: '#C7A338' }}
+                >
+                  {userTier === 'free' ? strings.upgradeForCredits : strings.buyCredits}
+                </Button>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* Total Letters Badge */}
+          <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs sm:text-sm">
+            {strings.allLetters}
+          </Badge>
         </div>
 
-        {/* PRE-SIGNING SECTION (NEW) */}
+        {/* PRE-SIGNING SECTION */}
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-amber-400 to-orange-600 rounded"></div>
-            <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+            <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
               {strings.preSigningSection}
             </h2>
             <div className="h-1 flex-1 bg-gradient-to-l from-amber-400 to-orange-600 rounded"></div>
@@ -264,14 +304,14 @@ export default function Templates() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {preSigningTemplates.map((template) => {
               const Icon = template.icon;
-              const hasAccess = hasAccessToLetter(template.id);
+              const hasEnoughCredits = userCredits >= template.creditCost;
 
               return (
                 <Card
                   key={template.id}
-                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasAccess ? 'cursor-pointer' : 'opacity-75'}`}
+                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
                   style={{ backgroundColor: colors.cardBg }}
-                  onClick={() => hasAccess && navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`)}
+                  onClick={() => handleTemplateClick(template)}
                 >
                   <div className={`h-2 bg-gradient-to-r ${template.color} rounded-t-xl`} />
                   <CardContent className="p-4 sm:p-6">
@@ -280,27 +320,12 @@ export default function Templates() {
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: hasAccess ? '#FEF3C7' : '#FEE2E2',
-                            color: hasAccess ? '#D97706' : '#DC2626',
-                            borderColor: hasAccess ? '#FDE68A' : '#FECACA'
-                          }}
-                        >
+                        <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 border-amber-200">
                           {template.letterKey}
                         </Badge>
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: hasAccess ? '#DBEAFE' : '#FEE2E2',
-                            color: hasAccess ? '#1D4ED8' : '#DC2626',
-                            borderColor: hasAccess ? '#BFDBFE' : '#FECACA'
-                          }}
-                        >
-                          {strings.liteTier}
+                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
+                          <Coins className="w-3 h-3" />
+                          {template.creditCost}
                         </Badge>
                       </div>
                     </div>
@@ -313,12 +338,12 @@ export default function Templates() {
                       {language === 'th' ? template.description_th : template.description_en}
                     </p>
 
-                    {!hasAccess && (
+                    {!hasEnoughCredits && (
                       <div className="text-xs text-center p-2 rounded-lg" style={{
                         backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
                         color: '#DC2626'
                       }}>
-                        {strings.upgradeRequired}
+                        {strings.insufficientCredits}
                       </div>
                     )}
                   </CardContent>
@@ -328,27 +353,27 @@ export default function Templates() {
           </div>
         </div>
 
-        {/* LITE TIER SECTION (L1-L3) */}
+        {/* FRIENDLY APPROACH SECTION */}
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-1 flex-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded"></div>
-            <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-              {strings.tierSection.lite}
+            <div className="h-1 flex-1 bg-gradient-to-r from-blue-400 to-purple-600 rounded"></div>
+            <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
+              {strings.friendlyApproach}
             </h2>
-            <div className="h-1 flex-1 bg-gradient-to-l from-blue-400 to-blue-600 rounded"></div>
+            <div className="h-1 flex-1 bg-gradient-to-l from-blue-400 to-purple-600 rounded"></div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {liteTemplates.map((template) => { // Now liteTemplates is already filtered
+            {liteTemplates.map((template) => {
               const Icon = template.icon;
-              const hasAccess = hasAccessToLetter(template.id);
+              const hasEnoughCredits = userCredits >= template.creditCost;
 
               return (
                 <Card
                   key={template.id}
-                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasAccess ? 'cursor-pointer' : 'opacity-75'}`}
+                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
                   style={{ backgroundColor: colors.cardBg }}
-                  onClick={() => hasAccess && navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`)}
+                  onClick={() => handleTemplateClick(template)}
                 >
                   <div className={`h-2 bg-gradient-to-r ${template.color} rounded-t-xl`} />
                   <CardContent className="p-4 sm:p-6">
@@ -357,27 +382,12 @@ export default function Templates() {
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: hasAccess ? '#DBEAFE' : '#FEE2E2',
-                            color: hasAccess ? '#1D4ED8' : '#DC2626',
-                            borderColor: hasAccess ? '#BFDBFE' : '#FECACA'
-                          }}
-                        >
+                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
                           {template.letterKey}
                         </Badge>
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: hasAccess ? '#DBEAFE' : '#FEE2E2',
-                            color: hasAccess ? '#1D4ED8' : '#DC2626',
-                            borderColor: hasAccess ? '#BFDBFE' : '#FECACA'
-                          }}
-                        >
-                          {strings.liteTier}
+                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
+                          <Coins className="w-3 h-3" />
+                          {template.creditCost}
                         </Badge>
                       </div>
                     </div>
@@ -390,12 +400,12 @@ export default function Templates() {
                       {language === 'th' ? template.description_th : template.description_en}
                     </p>
 
-                    {!hasAccess && (
+                    {!hasEnoughCredits && (
                       <div className="text-xs text-center p-2 rounded-lg" style={{
                         backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
                         color: '#DC2626'
                       }}>
-                        {strings.upgradeRequired}
+                        {strings.insufficientCredits}
                       </div>
                     )}
                   </CardContent>
@@ -405,12 +415,12 @@ export default function Templates() {
           </div>
         </div>
 
-        {/* PROTECT TIER SECTION (P1-P4) */}
+        {/* PROFESSIONAL ESCALATION SECTION */}
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-emerald-500 to-cyan-600 rounded"></div>
-            <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-              {strings.tierSection.protect}
+            <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
+              {strings.professionalEscalation}
             </h2>
             <div className="h-1 flex-1 bg-gradient-to-l from-emerald-500 to-cyan-600 rounded"></div>
           </div>
@@ -418,14 +428,14 @@ export default function Templates() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {protectTemplates.map((template) => {
               const Icon = template.icon;
-              const hasAccess = hasAccessToLetter(template.id);
+              const hasEnoughCredits = userCredits >= template.creditCost;
 
               return (
                 <Card
                   key={template.id}
-                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasAccess ? 'cursor-pointer' : 'opacity-75'}`}
+                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
                   style={{ backgroundColor: colors.cardBg }}
-                  onClick={() => hasAccess && navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`)}
+                  onClick={() => handleTemplateClick(template)}
                 >
                   <div className={`h-2 bg-gradient-to-r ${template.color} rounded-t-xl`} />
                   <CardContent className="p-4 sm:p-6">
@@ -434,27 +444,12 @@ export default function Templates() {
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: hasAccess ? '#D1FAE5' : '#FEE2E2',
-                            color: hasAccess ? '#059669' : '#DC2626',
-                            borderColor: hasAccess ? '#A7F3D0' : '#FECACA'
-                          }}
-                        >
+                        <Badge variant="outline" className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200">
                           {template.letterKey}
                         </Badge>
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: hasAccess ? '#D1FAE5' : '#FEE2E2',
-                            color: hasAccess ? '#059669' : '#DC2626',
-                            borderColor: hasAccess ? '#A7F3D0' : '#FECACA'
-                          }}
-                        >
-                          {strings.protectTier}
+                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
+                          <Coins className="w-3 h-3" />
+                          {template.creditCost}
                         </Badge>
                       </div>
                     </div>
@@ -467,12 +462,12 @@ export default function Templates() {
                       {language === 'th' ? template.description_th : template.description_en}
                     </p>
 
-                    {!hasAccess && (
+                    {!hasEnoughCredits && (
                       <div className="text-xs text-center p-2 rounded-lg" style={{
                         backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
                         color: '#DC2626'
                       }}>
-                        {strings.upgradeRequired}
+                        {strings.insufficientCredits}
                       </div>
                     )}
                   </CardContent>
@@ -482,12 +477,12 @@ export default function Templates() {
           </div>
         </div>
 
-        {/* SECURE TIER SECTION (S1-S3) */}
+        {/* FINAL MEASURES SECTION */}
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-orange-600 to-red-700 rounded"></div>
-            <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-              {strings.tierSection.secure}
+            <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
+              {strings.finalMeasures}
             </h2>
             <div className="h-1 flex-1 bg-gradient-to-l from-orange-600 to-red-700 rounded"></div>
           </div>
@@ -495,14 +490,14 @@ export default function Templates() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {secureTemplates.map((template) => {
               const Icon = template.icon;
-              const hasAccess = hasAccessToLetter(template.id);
+              const hasEnoughCredits = userCredits >= template.creditCost;
 
               return (
                 <Card
                   key={template.id}
-                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasAccess ? 'cursor-pointer' : 'opacity-75'}`}
+                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
                   style={{ backgroundColor: colors.cardBg }}
-                  onClick={() => hasAccess && navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`)}
+                  onClick={() => handleTemplateClick(template)}
                 >
                   <div className={`h-2 bg-gradient-to-r ${template.color} rounded-t-xl`} />
                   <CardContent className="p-4 sm:p-6">
@@ -511,27 +506,12 @@ export default function Templates() {
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: hasAccess ? '#FEF3C7' : '#FEE2E2',
-                            color: hasAccess ? '#D97706' : '#DC2626',
-                            borderColor: hasAccess ? '#FDE68A' : '#FECACA'
-                          }}
-                        >
+                        <Badge variant="outline" className="text-xs bg-red-100 text-red-700 border-red-200">
                           {template.letterKey}
                         </Badge>
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: hasAccess ? '#FEF3C7' : '#FEE2E2',
-                            color: hasAccess ? '#D97706' : '#DC2626',
-                            borderColor: hasAccess ? '#FDE68A' : '#FECACA'
-                          }}
-                        >
-                          {strings.secureTier}
+                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
+                          <Coins className="w-3 h-3" />
+                          {template.creditCost}
                         </Badge>
                       </div>
                     </div>
@@ -544,12 +524,12 @@ export default function Templates() {
                       {language === 'th' ? template.description_th : template.description_en}
                     </p>
 
-                    {!hasAccess && (
+                    {!hasEnoughCredits && (
                       <div className="text-xs text-center p-2 rounded-lg" style={{
                         backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
                         color: '#DC2626'
                       }}>
-                        {strings.upgradeRequired}
+                        {strings.insufficientCredits}
                       </div>
                     )}
                   </CardContent>
