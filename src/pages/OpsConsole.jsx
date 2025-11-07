@@ -18,7 +18,6 @@ import {
   CheckCircle2,
   Mail,
   DollarSign,
-  Shield, // Shield import is not used in the final unauthorized message, removing it.
   Search,
   Filter,
   Loader2
