@@ -26,6 +26,10 @@ export default function AdminConsole() {
   // New state for LINE notification testing
   const [testingNotification, setTestingNotification] = useState(false);
   const [testResult, setTestResult] = useState(null);
+  
+  // New state for sending LINE messages to users
+  const [sendingLineMessage, setSendingLineMessage] = useState(false);
+  const [lineMessageResult, setLineMessageResult] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -235,6 +239,60 @@ export default function AdminConsole() {
     }
   };
 
+  // New function to send LINE message to a specific user
+  const handleSendLineToUser = async (targetUser) => {
+    const message = prompt(
+      language === 'th' 
+        ? `ส่งข้อความไปยัง ${targetUser.full_name} (${targetUser.email}):\n\nพิมพ์ข้อความของคุณ:` 
+        : `Send message to ${targetUser.full_name} (${targetUser.email}):\n\nType your message:`,
+      language === 'th'
+        ? '🔔 ข้อความทดสอบจากแอดมิน Lease Shield\n\nนี่คือข้อความทดสอบเพื่อยืนยันว่าระบบการแจ้งเตือน LINE ทำงานได้ดี'
+        : '🔔 Test message from Lease Shield Admin\n\nThis is a test message to confirm your LINE notifications are working properly'
+    );
+
+    if (!message || message.trim() === '') {
+      return;
+    }
+
+    if (!targetUser.line_messaging_token) {
+      alert(
+        language === 'th'
+          ? 'ผู้ใช้นี้ยังไม่ได้เชื่อมต่อ LINE'
+          : 'This user has not connected LINE yet'
+      );
+      return;
+    }
+
+    setSendingLineMessage(true);
+    setLineMessageResult(null);
+
+    try {
+      await base44.functions.invoke('sendLineMessage', {
+        userId: targetUser.line_messaging_token,
+        message: message.trim()
+      });
+
+      setLineMessageResult({ 
+        type: 'success', 
+        message: language === 'th' 
+          ? `✅ ส่งข้อความถึง ${targetUser.full_name} สำเร็จ!` 
+          : `✅ Message sent to ${targetUser.full_name} successfully!`
+      });
+      setTimeout(() => setLineMessageResult(null), 5000);
+    } catch (error) {
+      console.error('Failed to send LINE message:', error);
+      setLineMessageResult({ 
+        type: 'error', 
+        message: language === 'th' 
+          ? `❌ ส่งข้อความล้มเหลว: ${error.message}` 
+          : `❌ Failed to send: ${error.message}`
+      });
+      setTimeout(() => setLineMessageResult(null), 5000);
+    } finally {
+      setSendingLineMessage(false);
+    }
+  };
+
   const updateUserMutation = useMutation({
     mutationFn: ({ userId, data }) => base44.asServiceRole.entities.User.update(userId, data),
     onSuccess: () => {
@@ -337,6 +395,17 @@ export default function AdminConsole() {
             </div>
           </CardContent>
         </Card>
+
+        {/* LINE Message Result Alert */}
+        {lineMessageResult && (
+          <div className={`mb-6 p-4 rounded-lg ${
+            lineMessageResult.type === 'success'
+              ? 'bg-emerald-100 border border-emerald-200 text-emerald-800'
+              : 'bg-red-100 border border-red-200 text-red-800'
+          }`}>
+            {lineMessageResult.message}
+          </div>
+        )}
 
         {/* Add new LINE Testing section before existing cards */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
@@ -832,6 +901,7 @@ export default function AdminConsole() {
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.status}</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.joined}</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
                   </tr>
@@ -885,6 +955,17 @@ export default function AdminConsole() {
                           </Badge>
                         )}
                       </td>
+                      <td className="py-3 px-4">
+                        {u.line_messaging_token ? (
+                          <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+                            <span className="text-emerald-600">●</span> Connected
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-slate-500">
+                            Not Connected
+                          </Badge>
+                        )}
+                      </td>
                       <td className="py-3 px-4 text-sm" style={{ color: colors.textSecondary }}>
                         {format(new Date(u.created_date), 'MMM d, yyyy')}
                       </td>
@@ -906,6 +987,19 @@ export default function AdminConsole() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
                             <DropdownMenuLabel style={{ color: colors.textPrimary }}>User Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
+
+                            {/* NEW: Send LINE Message option */}
+                            <DropdownMenuItem
+                              onClick={() => handleSendLineToUser(u)}
+                              disabled={!u.line_messaging_token || sendingLineMessage}
+                              style={{ color: colors.textPrimary }}
+                            >
+                              <Bell className="w-4 h-4 mr-2 text-emerald-600" />
+                              {language === 'th' ? 'ส่งข้อความ LINE' : 'Send LINE Message'}
+                              {!u.line_messaging_token && ' 🔒'}
+                            </DropdownMenuItem>
+
                             <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
 
                             <DropdownMenuLabel style={{ color: colors.textSecondary, fontSize: '11px' }}>Access Level</DropdownMenuLabel>
