@@ -479,18 +479,32 @@ export default function LeaseDetails() {
                     onClick={() => navigate(createPageUrl("ScanPreview") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
                     size="sm"
                     className="w-full sm:w-auto"
+                    style={{
+                      backgroundColor: isDarkMode ? colors.cardBg : '#FFFFFF',
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
                   >
                     <Eye className="w-4 h-4 mr-2" />
                     <span className="text-xs md:text-sm">{strings.viewScanResults}</span>
                   </Button>
                   <Button
                     onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
-                    className="bg-ls-forest hover:bg-ls-forest/90 w-full sm:w-auto"
+                    className="w-full sm:w-auto bg-ls-forest hover:bg-ls-forest/90 text-white font-semibold"
                     size="sm"
-                    style={{ color: '#FFFFFF' }}
+                    style={{
+                      backgroundColor: '#0C3B2E',
+                      color: '#FFFFFF'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#0a2f25';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#0C3B2E';
+                    }}
                   >
                     <FileText className="w-4 h-4 mr-2" style={{ color: '#FFFFFF' }} />
-                    <span className="text-xs md:text-sm">{strings.viewFullReport}</span>
+                    <span className="text-xs md:text-sm font-bold" style={{ color: '#FFFFFF' }}>{strings.viewFullReport}</span>
                   </Button>
                 </div>
               </div>
