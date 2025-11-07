@@ -481,8 +481,9 @@ export default function LeaseDetails() {
                     onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
                     className="bg-ls-forest hover:bg-ls-forest/90 w-full sm:w-auto"
                     size="sm"
+                    style={{ color: '#FFFFFF' }}
                   >
-                    <FileText className="w-4 h-4 mr-2" />
+                    <FileText className="w-4 h-4 mr-2" style={{ color: '#FFFFFF' }} />
                     <span className="text-xs md:text-sm">{strings.viewFullReport}</span>
                   </Button>
                 </div>
