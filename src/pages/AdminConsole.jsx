@@ -31,6 +31,11 @@ export default function AdminConsole() {
   const [sendingLineMessage, setSendingLineMessage] = useState(false);
   const [lineMessageResult, setLineMessageResult] = useState(null);
 
+  // New state for sending test notifications to users
+  const [selectedUserForTest, setSelectedUserForTest] = useState('');
+  const [sendingTestToUser, setSendingTestToUser] = useState(false);
+  const [testToUserResult, setTestToUserResult] = useState(null);
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -293,6 +298,44 @@ export default function AdminConsole() {
     }
   };
 
+  // New function to send test notification to selected user
+  const handleSendTestToUser = async (notificationType) => {
+    if (!selectedUserForTest) {
+      alert(language === 'th' ? 'กรุณาเลือกผู้ใช้' : 'Please select a user');
+      return;
+    }
+
+    setSendingTestToUser(true);
+    setTestToUserResult(null);
+
+    try {
+      await base44.functions.invoke('testLineNotifications', {
+        notificationType: notificationType,
+        targetUserEmail: selectedUserForTest
+      });
+
+      const targetUser = allUsers.find(u => u.email === selectedUserForTest);
+      setTestToUserResult({
+        type: 'success',
+        message: language === 'th'
+          ? `✅ ส่งข้อความ "${notificationType}" ถึง ${targetUser?.full_name} สำเร็จ!`
+          : `✅ Sent "${notificationType}" to ${targetUser?.full_name} successfully!`
+      });
+      setTimeout(() => setTestToUserResult(null), 5000);
+    } catch (error) {
+      console.error('Test to user failed:', error);
+      setTestToUserResult({
+        type: 'error',
+        message: language === 'th'
+          ? `❌ ส่งไม่สำเร็จ: ${error.message}`
+          : `❌ Failed: ${error.message}`
+      });
+      setTimeout(() => setTestToUserResult(null), 5000);
+    } finally {
+      setSendingTestToUser(false);
+    }
+  };
+
   const updateUserMutation = useMutation({
     mutationFn: ({ userId, data }) => base44.asServiceRole.entities.User.update(userId, data),
     onSuccess: () => {
@@ -346,6 +389,9 @@ export default function AdminConsole() {
   };
 
   const activeSubscribers = allUsers.filter(u => u.subscription_status === 'active').length;
+
+  // Get users with LINE connected for the dropdown
+  const usersWithLine = allUsers.filter(u => u.line_messaging_token);
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
@@ -406,6 +452,433 @@ export default function AdminConsole() {
             {lineMessageResult.message}
           </div>
         )}
+
+        {/* Test to User Result Alert */}
+        {testToUserResult && (
+          <div className={`mb-6 p-4 rounded-lg ${
+            testToUserResult.type === 'success'
+              ? 'bg-emerald-100 border border-emerald-200 text-emerald-800'
+              : 'bg-red-100 border border-red-200 text-red-800'
+          }`}>
+            {testToUserResult.message}
+          </div>
+        )}
+
+        {/* Send Test Notifications to Users */}
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <Users className="w-5 h-5 text-blue-600" />
+              {language === 'th' ? 'ส่งการแจ้งเตือนทดสอบไปยังผู้ใช้' : 'Send Test Notifications to Users'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'เลือกผู้ใช้:' : 'Select User:'}
+              </label>
+              <select
+                value={selectedUserForTest}
+                onChange={(e) => setSelectedUserForTest(e.target.value)}
+                className="w-full p-3 rounded-lg border"
+                style={{
+                  backgroundColor: colors.cardBg,
+                  borderColor: colors.borderColor,
+                  color: colors.textPrimary
+                }}
+                disabled={sendingTestToUser}
+              >
+                <option value="">
+                  {language === 'th' ? '-- เลือกผู้ใช้ --' : '-- Select User --'}
+                </option>
+                {usersWithLine.map(u => (
+                  <option key={u.email} value={u.email}>
+                    {u.full_name} ({u.email})
+                  </option>
+                ))}
+              </select>
+              {usersWithLine.length === 0 && (
+                <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
+                  {language === 'th' 
+                    ? 'ไม่มีผู้ใช้ที่เชื่อมต่อ LINE' 
+                    : 'No users with LINE connected'}
+                </p>
+              )}
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <button
+                onClick={() => handleSendTestToUser('first_add')}
+                disabled={!selectedUserForTest || sendingTestToUser}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
+                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = '#8B5CF6';
+                    e.target.style.backgroundColor = isDarkMode ? '#2D1B4E' : '#F5F3FF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🆕</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.firstAddWelcome}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.whenUserAddsBot}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleSendTestToUser('30day')}
+                disabled={!selectedUserForTest || sendingTestToUser}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
+                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = '#10B981';
+                    e.target.style.backgroundColor = isDarkMode ? '#1E4435' : '#ECFDF5';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🔔</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.day30Reminder}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.depositDue30Days}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleSendTestToUser('7day')}
+                disabled={!selectedUserForTest || sendingTestToUser}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
+                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = '#F59E0B';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2D1C' : '#FFF7ED';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>⚠️</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.day7Warning}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.finalWarningDeadline}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleSendTestToUser('overdue')}
+                disabled={!selectedUserForTest || sendingTestToUser}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
+                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = '#EF4444';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🚨</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.overdueAlert}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.depositNotReturned}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleSendTestToUser('rent')}
+                disabled={!selectedUserForTest || sendingTestToUser}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
+                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = '#3B82F6';
+                    e.target.style.backgroundColor = isDarkMode ? '#1E3A5F' : '#EFF6FF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>💰</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.rentReminder}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.rentDue3Days}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleSendTestToUser('welcome')}
+                disabled={!selectedUserForTest || sendingTestToUser}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
+                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = '#8B5CF6';
+                    e.target.style.backgroundColor = isDarkMode ? '#2D1B4E' : '#F5F3FF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🎉</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.welcomeMessage}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.welcomeAfterConnecting}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleSendTestToUser('notice_30d')}
+                disabled={!selectedUserForTest || sendingTestToUser}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
+                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = '#06B6D4';
+                    e.target.style.backgroundColor = isDarkMode ? '#164E63' : '#ECFEFF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>📅</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.leaseNotice30d}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.days30ToNotifyLandlord}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleSendTestToUser('notice_7d')}
+                disabled={!selectedUserForTest || sendingTestToUser}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
+                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = '#F59E0B';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2D1C' : '#FFF7ED';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>⚠️</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.leaseNotice7d}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.days7LeftToNotify}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleSendTestToUser('notice_3d')}
+                disabled={!selectedUserForTest || sendingTestToUser}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
+                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = '#EF4444';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🚨</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.leaseNotice3d}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.days3FinalWarning}
+                </p>
+              </button>
+
+              <button
+                onClick={() => handleSendTestToUser('notice_today')}
+                disabled={!selectedUserForTest || sendingTestToUser}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `2px solid ${colors.borderColor}`,
+                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
+                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = '#DC2626';
+                    e.target.style.backgroundColor = isDarkMode ? '#3A1A1A' : '#FEE2E2';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedUserForTest && !sendingTestToUser) {
+                    e.target.style.borderColor = colors.borderColor;
+                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '24px' }}>🔴</span>
+                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
+                    {strings.todayNotifyNow}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
+                  {strings.noticeDeadlineToday}
+                </p>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Add new LINE Testing section before existing cards */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>

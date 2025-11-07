@@ -9,10 +9,31 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { notificationType } = await req.json();
+    const { notificationType, targetUserEmail } = await req.json();
     const channelAccessToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
 
-    if (!user.line_messaging_token) {
+    // If targetUserEmail is provided, send to that user (admin only)
+    let targetUser = user;
+    if (targetUserEmail && targetUserEmail !== user.email) {
+      // Check if current user is admin
+      if (!['admin', 'super_admin'].includes(user.access_level)) {
+        return Response.json({ 
+          error: 'Only admins can send notifications to other users' 
+        }, { status: 403 });
+      }
+
+      // Get the target user
+      const allUsers = await base44.asServiceRole.entities.User.list();
+      targetUser = allUsers.find(u => u.email === targetUserEmail);
+      
+      if (!targetUser) {
+        return Response.json({ 
+          error: 'Target user not found' 
+        }, { status: 404 });
+      }
+    }
+
+    if (!targetUser.line_messaging_token) {
       return Response.json({ 
         error: 'LINE not connected. Please connect LINE first.' 
       }, { status: 400 });
@@ -378,8 +399,8 @@ SEND THE NOTICE NOW!`,
       }
     };
 
-    // Get the appropriate message based on user's language
-    const userLanguage = user.language || 'en';
+    // Get the appropriate message based on target user's language
+    const userLanguage = targetUser.language || 'en';
     const messageTemplate = templates[notificationType];
     
     if (!messageTemplate) {
@@ -398,7 +419,7 @@ SEND THE NOTICE NOW!`,
         'Authorization': `Bearer ${channelAccessToken}`
       },
       body: JSON.stringify({
-        to: user.line_messaging_token,
+        to: targetUser.line_messaging_token,
         messages: [{
           type: 'text',
           text: message
@@ -415,7 +436,7 @@ SEND THE NOTICE NOW!`,
     return Response.json({ 
       success: true,
       type: notificationType,
-      sentTo: user.email
+      sentTo: targetUser.email
     });
 
   } catch (error) {
