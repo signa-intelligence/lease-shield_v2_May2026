@@ -1,15 +1,16 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText } from "lucide-react";
 import { format } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
 export default function RecentLeases({ leases, language }) {
+  const navigate = useNavigate();
+  
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -47,6 +48,10 @@ export default function RecentLeases({ leases, language }) {
   };
 
   const strings = t[language] || t.en;
+
+  const handleLeaseClick = (leaseId) => {
+    navigate(createPageUrl("LeaseDetails") + `?leaseId=${leaseId}`);
+  };
 
   return (
     <Card className="border-none shadow-lg h-full flex flex-col" style={{ backgroundColor: colors.cardBg }}>
@@ -93,16 +98,19 @@ export default function RecentLeases({ leases, language }) {
             {leases.slice(0, 3).map((lease) => (
               <div
                 key={lease.id}
-                className="p-4 rounded-xl border transition-all duration-200"
+                className="p-4 rounded-xl border transition-all duration-200 cursor-pointer"
                 style={{
                   backgroundColor: colors.itemBg,
                   borderColor: colors.borderColor
                 }}
+                onClick={() => handleLeaseClick(lease.id)}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = '#0C3B2E';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = colors.borderColor;
+                  e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
                 <div className="flex items-start justify-between gap-3">
