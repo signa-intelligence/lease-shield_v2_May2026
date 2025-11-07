@@ -628,17 +628,16 @@ export default function UploadScanPage() {
           </div>
         </Card>
 
-        {/* Recent Scans */}
+        {/* All Scans - Show more than 3 */}
         {leases.length > 0 && (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{strings.recentScans}</h2>
-              <Link to={createPageUrl("Leases")}>
-                <Button variant="outline">{strings.viewAll}</Button>
-              </Link>
+              <h2 className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'สัญญาเช่าทั้งหมด' : 'All Scans'} ({leases.length})
+              </h2>
             </div>
             <div className="grid gap-4">
-              {leases.slice(0, 3).map((lease) => (
+              {leases.map((lease) => (
                 <Card
                   key={lease.id}
                   className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"

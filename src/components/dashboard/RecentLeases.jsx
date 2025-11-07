@@ -60,7 +60,7 @@ export default function RecentLeases({ leases, language }) {
           <FileText className="w-5 h-5 text-ls-forest" />
           {strings.recentLeases}
         </CardTitle>
-        <Link to={createPageUrl("Leases")}>
+        <Link to={createPageUrl("UploadScan")}>
           <button
             style={{
               padding: '6px 16px',
