@@ -72,12 +72,12 @@ Deno.serve(async (req) => {
               ? `ซื้อเครดิต ${creditsToAdd} เครดิตสำเร็จ` 
               : `${creditsToAdd} Credits Purchased`;
             
-            const body = `Credits: ${creditsToAdd}\nNew Balance: ${currentCredits + creditsToAdd}`;
+            const emailBody = `Credits: ${creditsToAdd}\nNew Balance: ${currentCredits + creditsToAdd}`;
 
             await base44.integrations.Core.SendEmail({
               to: user.email,
               subject,
-              body
+              body: emailBody
             });
           }
         }
