@@ -159,7 +159,7 @@ const CREDIT_PACKAGES = [
 export default function Account() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [subscribing, setSubscribing] = useState({}); // ✅ Changed to object to track each plan
+  const [subscribing, setSubscribing] = useState({}); // Changed to object to track each plan
   const [exporting, setExporting] = useState(false);
   const [billingInterval, setBillingInterval] = useState('monthly');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -352,7 +352,7 @@ export default function Account() {
     } catch (error) {
       console.error('❌ Subscription error:', error);
       console.error('Error details:', error.response?.data || error);
-      const language = user?.language || 'en';
+      const language = user?.language || 'en'; // Declared here to ensure it's available for the alert
       
       // Show detailed error to user
       const errorMsg = error.response?.data?.details || error.response?.data?.error || error.message;
@@ -388,7 +388,7 @@ export default function Account() {
       }
     } catch (error) {
       console.error('Failed to create checkout:', error);
-      const language = user?.language || 'en';
+      const language = user?.language || 'en'; // Declared here to ensure it's available for the alert
       alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
     } finally {
       setBuyingCredits(prev => ({ ...prev, [pkg.id]: false }));
@@ -418,7 +418,7 @@ export default function Account() {
   };
 
   const handleCancelSubscription = async () => {
-    const language = user?.language || 'en';
+    const language = user?.language || 'en'; // Declared here to ensure it's available for the alert
     if (!cancelReason) {
       alert(language === 'th' ? 'กรุณาเลือกเหตุผลในการยกเลิก' : 'Please select a reason for cancellation');
       return;
@@ -479,7 +479,7 @@ export default function Account() {
   };
 
   const handleShareLink = async (role) => {
-    const language = user?.language || 'en';
+    const language = user?.language || 'en'; // Declared here to ensure it's available for the alert
     const link = generateLineOALink(role);
     const title = role === 'landlord' 
       ? (language === 'th' ? 'เชื่อมต่อกับ Lease Shield' : 'Connect to Lease Shield')
@@ -779,7 +779,6 @@ export default function Account() {
       credits: "เครดิต",
       perCredit: "ต่อเครดิต",
       buyNow: "ซื้อเลย",
-      mostPopular: "ยอดนิยม",
       bestValue: "คุ้มที่สุด",
       creditPacks: "แพ็กเกจเครดิต",
       oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
@@ -792,32 +791,6 @@ export default function Account() {
   };
 
   const strings = t[language];
-  const currentPlanTier = user?.plan_tier || 'free';
-  const isFree = currentPlanTier === 'free';
-  const language = user?.language || 'en';
-  const currentTheme = user?.theme || 'dark'; // Default to 'dark' if user?.theme is undefined
-  const isDarkMode = currentTheme === 'dark';
-
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D',
-    fieldBg: '#353A3D',
-    hoverBg: '#3A3D40'
-  } : {
-    bg: '#ECEFED',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    inputBg: '#FFFFFF',
-    fieldBg: '#ECEFED',
-    hoverBg: '#F8FAFC'
-  };
-
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
@@ -2447,7 +2420,7 @@ export default function Account() {
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
               const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly);
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
-              const isSubscribing = subscribing[plan.key]; // ✅ Only check THIS plan's state
+              const isSubscribing = subscribing[plan.key]; // Only check THIS plan's state
               
               return (
                 <div
@@ -2590,7 +2563,7 @@ export default function Account() {
                     ) : (
                       <Button
                         onClick={() => handleSubscribe(plan.key, billingInterval)}
-                        disabled={isSubscribing} // ✅ Only check THIS plan's state
+                        disabled={isSubscribing} // Only check THIS plan's state
                         className="w-full h-10"
                         style={{
                           backgroundColor: isSubscribing ? '#9CA3AF' : (isSecureTier ? '#0C3B2E' : isLiteTier ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E'),
@@ -2795,4 +2768,3 @@ export default function Account() {
     </div>
   );
 }
-
