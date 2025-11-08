@@ -172,8 +172,7 @@ export default function Account() {
   const [cancelFeedback, setCancelFeedback] = useState('');
   const [copiedLink, setCopiedLink] = useState(null);
   const [showQR, setShowQR] = useState({ landlord: false, juristic: false });
-  const [buyingCredits, setBuyingCredits] = useState(false); // NEW STATE
-  // Removed promoCode and promoError state
+  const [buyingCredits, setBuyingCredits] = useState({}); // ✅ FIXED: Object to track each package separately
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -277,12 +276,14 @@ export default function Account() {
   };
 
   const handleBuyCredits = async (pkg) => {
-    setBuyingCredits(true);
+    setBuyingCredits(prev => ({ ...prev, [pkg.id]: true })); // ✅ FIXED: Set loading for THIS package only
     try {
+      console.log('🔍 Sending to createCheckout:', { amount: pkg.price, packageId: pkg.id });
+      
       const response = await base44.functions.invoke('createCheckout', {
         priceId: null, // Not used for payment mode, custom amount is used
         mode: 'payment',
-        amount: pkg.price, // ✅ FIXED: Don't multiply by 100 - createCheckout will do it
+        amount: pkg.price, // ✅ Correct - no multiplication
         currency: 'thb',
         description: `${pkg.credits} Letter Credits`,
         metadata: {
@@ -300,7 +301,7 @@ export default function Account() {
       const language = user?.language || 'en'; // Define language here for alert
       alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
     } finally {
-      setBuyingCredits(false);
+      setBuyingCredits(prev => ({ ...prev, [pkg.id]: false })); // ✅ Reset on error
     }
   };
 
@@ -2607,36 +2608,36 @@ export default function Account() {
                     <div className="mt-auto">
                       <button
                         onClick={() => handleBuyCredits(pkg)}
-                        disabled={buyingCredits}
+                        disabled={buyingCredits[pkg.id]} // ✅ FIXED: Check THIS package's loading state
                         style={{
                           display: 'block',
                           width: '100%',
                           padding: '10px 16px',
                           textAlign: 'center',
-                          backgroundColor: buyingCredits ? '#9CA3AF' : (pkg.popular ? '#C7A338' : '#0C3B2E'),
+                          backgroundColor: buyingCredits[pkg.id] ? '#9CA3AF' : (pkg.popular ? '#C7A338' : '#0C3B2E'),
                           color: '#FFFFFF',
                           borderRadius: '6px',
                           fontSize: '14px',
                           fontWeight: '600',
                           border: 'none',
-                          cursor: buyingCredits ? 'not-allowed' : 'pointer',
+                          cursor: buyingCredits[pkg.id] ? 'not-allowed' : 'pointer',
                           transition: 'all 0.2s',
-                          opacity: buyingCredits ? 0.7 : 1
+                          opacity: buyingCredits[pkg.id] ? 0.7 : 1
                         }}
                         onMouseEnter={(e) => {
-                          if (!buyingCredits) {
+                          if (!buyingCredits[pkg.id]) {
                             e.target.style.backgroundColor = pkg.popular ? '#B89330' : '#0a2f25';
                             e.target.style.transform = 'translateY(-1px)';
                           }
                         }}
                         onMouseLeave={(e) => {
-                          if (!buyingCredits) {
+                          if (!buyingCredits[pkg.id]) {
                             e.target.style.backgroundColor = pkg.popular ? '#C7A338' : '#0C3B2E';
                             e.target.style.transform = 'translateY(0)';
                           }
                         }}
                       >
-                        {buyingCredits ? (language === 'th' ? 'กำลังดำเนินการ...' : 'Processing...') : strings.buyNow}
+                        {buyingCredits[pkg.id] ? (language === 'th' ? 'กำลังดำเนินการ...' : 'Processing...') : strings.buyNow}
                       </button>
                     </div>
                   </div>
