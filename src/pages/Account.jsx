@@ -1313,7 +1313,7 @@ export default function Account() {
                     </p>
                   </div>
                   {(currentPlanTier === 'protect' || currentPlanTier === 'secure') && (
-                    <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '44px solid #C7A338' }}>
+                    <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
                       <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
                         <Bell className="w-3 h-3 text-ls-gold" />
                         {strings.lineEnabled}
@@ -1357,169 +1357,120 @@ export default function Account() {
           </Card>
         </div>
 
-        {/* Letter Credits Section - REDESIGNED */}
-        <Card className="mb-6 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ 
-            borderBottom: `1px solid ${colors.borderColor}`,
-            background: isDarkMode 
-              ? 'linear-gradient(135deg, #2D2520 0%, #3A2D1F 100%)' 
-              : 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)'
-          }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
-                  <Coins className="w-7 h-7 text-white" />
+        {/* Letter Credits Section - NEW */}
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                  <Coins className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold mb-1" style={{ color: colors.textPrimary }}>
+                  <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
                     {strings.buyCredits}
                   </h2>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  <p className="text-sm font-normal" style={{ color: colors.textSecondary }}>
                     {strings.oneLetterPerCredit}
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
+              <div className="text-right flex items-center gap-2">
+                <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
                   {strings.creditBalance}
                 </p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-5xl font-bold" style={{ color: '#C7A338' }}>
-                    {user?.letter_credits || 0}
-                  </p>
-                  <p className="text-lg" style={{ color: colors.textSecondary }}>
-                    {strings.credits}
-                  </p>
-                </div>
+                <p className="text-3xl font-bold" style={{ color: '#C7A338' }}>
+                  {user?.letter_credits || 0}
+                </p>
               </div>
-            </div>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="p-8">
-            {/* Benefits Bar */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 p-5 rounded-xl" style={{ 
-              backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED',
-              border: `2px solid ${isDarkMode ? '#374151' : '#FED7AA'}`
-            }}>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.allTemplatesAvailable}</span>
+          <CardContent className="p-6">
+            {/* Benefits */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.allTemplatesAvailable}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.bilingual}</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.bilingual}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.instantGeneration}</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.instantGeneration}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{strings.creditsNeverExpire}</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.creditsNeverExpire}</span>
               </div>
             </div>
 
-            {/* Credit Packages Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {/* Credit Packages */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {CREDIT_PACKAGES.map((pkg) => {
                 const pricePerCredit = Math.round(pkg.price / pkg.credits);
-                const isBestValue = pkg.savings >= 30;
-                
                 return (
                   <div
                     key={pkg.id}
-                    className="relative group"
+                    className={`relative p-4 rounded-xl border-2 transition-all duration-200 ${
+                      pkg.popular ? 'border-amber-400 shadow-lg' : ''
+                    }`}
+                    style={{
+                      backgroundColor: pkg.popular 
+                        ? (isDarkMode ? '#2D2520' : '#FFFBEB')
+                        : colors.cardBg,
+                      borderColor: pkg.popular ? '#C7A338' : colors.borderColor
+                    }}
                   >
-                    {/* Popular Badge */}
                     {pkg.popular && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                        <Badge className="bg-amber-500 text-white text-xs font-bold px-3 py-1 shadow-lg">
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-amber-500 text-white text-xs font-bold">
                           ⭐ {strings.mostPopular}
                         </Badge>
                       </div>
                     )}
-                    
-                    {/* Best Value Badge */}
-                    {isBestValue && !pkg.popular && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                        <Badge className="bg-emerald-500 text-white text-xs font-bold px-3 py-1 shadow-lg">
+                    {pkg.savings >= 30 && !pkg.popular && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-emerald-500 text-white text-xs font-bold">
                           💰 {strings.bestValue}
                         </Badge>
                       </div>
                     )}
                     
-                    <div
-                      className={`h-full p-5 rounded-2xl border-2 transition-all duration-300 ${
-                        pkg.popular ? 'shadow-xl' : 'shadow-md'
-                      }`}
+                    <div className="text-center mb-3">
+                      <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
+                        {pkg.credits}
+                      </div>
+                      <div className="text-xs" style={{ color: colors.textSecondary }}>
+                        {strings.credits}
+                      </div>
+                    </div>
+
+                    <div className="text-center mb-3">
+                      <div className="text-2xl font-bold" style={{ color: '#C7A338' }}>
+                        ฿{pkg.price}
+                      </div>
+                      <div className="text-xs" style={{ color: colors.textSecondary }}>
+                        ฿{pricePerCredit} {strings.perCredit}
+                      </div>
+                      {pkg.savings > 0 && (
+                        <Badge className="mt-1 bg-emerald-100 text-emerald-700 text-xs">
+                          {strings.save} {pkg.savings}%
+                        </Badge>
+                      )}
+                    </div>
+
+                    <Button
+                      onClick={() => handleBuyCredits(pkg)}
+                      disabled={buying}
+                      className="w-full text-sm"
                       style={{
-                        backgroundColor: pkg.popular 
-                          ? (isDarkMode ? '#2D2520' : '#FFFBEB')
-                          : colors.cardBg,
-                        borderColor: pkg.popular ? '#C7A338' : colors.borderColor,
-                        transform: pkg.popular ? 'scale(1.05)' : 'scale(1)'
+                        backgroundColor: pkg.popular ? '#C7A338' : '#0C3B2E',
+                        color: '#FFFFFF'
                       }}
                     >
-                      {/* Credits Display */}
-                      <div className="text-center mb-4 pt-2">
-                        <div className="text-4xl font-black mb-1" style={{ color: '#C7A338' }}>
-                          {pkg.credits}
-                        </div>
-                        <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: colors.textSecondary }}>
-                          {strings.credits}
-                        </div>
-                      </div>
-
-                      {/* Divider */}
-                      <div className="h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent mb-4"></div>
-
-                      {/* Price Display */}
-                      <div className="text-center mb-4">
-                        <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
-                          ฿{pkg.price}
-                        </div>
-                        <div className="text-xs font-medium" style={{ color: colors.textSecondary }}>
-                          ฿{pricePerCredit} {strings.perCredit}
-                        </div>
-                      </div>
-
-                      {/* Savings Badge */}
-                      <div className="flex justify-center mb-4" style={{ minHeight: '24px' }}>
-                        {pkg.savings > 0 && (
-                          <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-300 text-xs font-bold">
-                            {strings.save} {pkg.savings}%
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* Buy Button */}
-                      <Button
-                        onClick={() => handleBuyCredits(pkg)}
-                        disabled={buying}
-                        className="w-full font-bold text-sm h-11 shadow-md"
-                        style={{
-                          backgroundColor: pkg.popular ? '#C7A338' : '#0C3B2E',
-                          color: '#FFFFFF',
-                          borderRadius: '10px'
-                        }}
-                      >
-                        {buying ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Coins className="w-4 h-4 mr-2" />
-                            {strings.buyNow}
-                          </>
-                        )}
-                      </Button>
-                    </div>
+                      {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : strings.buyNow}
+                    </Button>
                   </div>
                 );
               })}
@@ -2675,7 +2626,7 @@ export default function Account() {
                           <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
                             ฿{displayPrice.toLocaleString()}
                           </span>
-                          <span style={{ fontSize: '16px', color: '#FFFFFF', opacity: 0.9 }>
+                          <span style={{ fontSize: '16px', color: '#FFFFFF', opacity: 0.9 }}>
                             {displayInterval}
                           </span>
                         </>
