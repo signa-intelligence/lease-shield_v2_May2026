@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -40,9 +41,9 @@ Deno.serve(async (req) => {
       await base44.auth.updateMe({ stripe_customer_id: customerId });
     }
 
-    // Use provided URLs or fallback to safe defaults
-    const finalSuccessUrl = successUrl || 'https://app.leaseshield.asia/account?payment=success';
-    const finalCancelUrl = cancelUrl || 'https://app.leaseshield.asia/account?payment=cancelled';
+    // ✅ FIXED: Add default URLs for subscriptions
+    const finalSuccessUrl = successUrl || `https://app.leaseshield.asia${mode === 'subscription' ? '/account?subscription=success' : '/account?payment=success'}`;
+    const finalCancelUrl = cancelUrl || `https://app.leaseshield.asia${mode === 'subscription' ? '/account?subscription=cancelled' : '/account?payment=cancelled'}`;
     
     console.log('✅ Using URLs:', { finalSuccessUrl, finalCancelUrl });
 
