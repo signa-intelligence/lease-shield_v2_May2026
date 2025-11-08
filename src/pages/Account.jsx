@@ -189,6 +189,24 @@ export default function Account() {
     return () => window.removeEventListener('focus', handleFocus);
   }, [queryClient]);
 
+  // ✅ HANDLE PAYMENT SUCCESS - Refetch data and show notification
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment_success') === 'true') {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      
+      // Clean URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      
+      // Show success notification
+      const language = user?.language || 'en';
+      alert(language === 'th' 
+        ? '✅ การชำระเงินสำเร็จ! เครดิตของคุณถูกเพิ่มแล้ว' 
+        : '✅ Payment successful! Your credits have been added.');
+    }
+  }, [queryClient, user?.language]);
+
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
     phone: user?.phone || '',
@@ -304,12 +322,14 @@ export default function Account() {
       });
       
       if (response.data?.url) {
-        window.open(response.data.url, '_blank'); // ✅ FIXED: Open in new window
+        // ✅ FIXED: Redirect in SAME TAB, not new window
+        window.location.href = response.data.url;
       }
     } catch (error) {
       console.error('Failed to create checkout:', error);
       const language = user?.language || 'en';
       alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
+      setBuyingCredits(prev => ({ ...prev, [pkg.id]: false }));
     } finally {
       setBuyingCredits(prev => ({ ...prev, [pkg.id]: false }));
     }

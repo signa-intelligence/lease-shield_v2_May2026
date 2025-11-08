@@ -1,7 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
-// === FINAL FIX - DECEMBER 2024 - INDIVIDUAL BUTTON STATES ===
 const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2023-10-16',
 });
@@ -21,12 +20,7 @@ Deno.serve(async (req) => {
 
     const { priceId, mode, amount, currency, description, successUrl, cancelUrl, metadata } = await req.json();
 
-    // ===== CRITICAL DEBUG LOGGING =====
     console.log('🔍 RAW PAYLOAD:', { priceId, mode, amount, currency, metadata });
-    console.log('🔍 AMOUNT RECEIVED:', amount, 'TYPE:', typeof amount);
-    console.log('🔍 WILL MULTIPLY:', amount, '* 100 =', Math.round(amount * 100));
-    // ===== END DEBUG =====
-
     console.log('Creating checkout with:', { priceId, mode, amount, currency, user: user.email });
 
     let customerId = user.stripe_customer_id;
@@ -45,11 +39,9 @@ Deno.serve(async (req) => {
 
     const origin = new URL(req.url).origin.replace('/api/functions/createCheckout', '');
     
-    // ✅ FIX: Use dedicated success page for credit purchases
-    const defaultSuccessUrl = metadata?.type === 'credits' 
-      ? `${origin}/payment-success`  // Simple page that closes window
-      : `${origin}/account?success=true`;
-    const defaultCancelUrl = `${origin}/account?canceled=true`;
+    // ✅ FIXED: Always redirect back to account page with payment_success parameter
+    const defaultSuccessUrl = `${origin}/account?payment_success=true`;
+    const defaultCancelUrl = `${origin}/account?payment_canceled=true`;
 
     const sessionConfig = {
       customer: customerId,
