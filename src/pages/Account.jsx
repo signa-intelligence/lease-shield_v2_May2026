@@ -328,23 +328,23 @@ export default function Account() {
 
     const priceId = interval === 'annual' ? plan.priceIdAnnual : plan.priceIdMonthly;
 
-    setSubscribing(prev => ({ ...prev, [planKey]: true })); // ✅ Track this specific plan
+    setSubscribing(prev => ({ ...prev, [planKey]: true }));
     try {
       const response = await base44.functions.invoke('createCheckout', {
         priceId: priceId,
         mode: 'subscription',
-        // Removed promoCode parameter - Stripe will handle it natively at checkout
       });
       
       if (response.data?.url) {
         window.location.href = response.data.url;
+      } else {
+        throw new Error('No checkout URL returned');
       }
     } catch (error) {
       console.error('Subscription error:', error);
-      const language = user?.language || 'en'; // Define language here for alert
+      const language = user?.language || 'en';
       alert(language === 'th' ? 'ไม่สามารถสร้างการสมัครได้ กรุณาลองอีกครั้ง' : 'Failed to start subscription. Please try again.');
-    } finally {
-      setSubscribing(prev => ({ ...prev, [planKey]: false })); // ✅ Reset only this plan
+      setSubscribing(prev => ({ ...prev, [planKey]: false }));
     }
   };
 
