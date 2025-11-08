@@ -570,15 +570,12 @@ export default function Account() {
       creditBalance: "Credit Balance",
       credits: "Credits",
       perCredit: "per credit",
-      save: "Save",
       buyNow: "Buy Now",
-      mostPopular: "Most Popular",
       bestValue: "Best Value",
       creditPacks: "Credit Packs",
       oneLetterPerCredit: "1 letter = 1 credit",
-      allTemplatesAvailable: "Access template library",
-      bilingual: "Bilingual (EN/TH)",
-      instantGeneration: "Human and AI generation",
+      accessTemplateLibrary: "Access template library",
+      humanAndAiGeneration: "Human and AI generation",
       creditsNeverExpire: "Credits never expire",
       purchaseCredits: "Purchase Credits"
     },
@@ -706,15 +703,13 @@ export default function Account() {
       creditBalance: "เครดิตคงเหลือ",
       credits: "เครดิต",
       perCredit: "ต่อเครดิต",
-      save: "ประหยัด",
       buyNow: "ซื้อเลย",
       mostPopular: "ยอดนิยม",
       bestValue: "คุ้มที่สุด",
       creditPacks: "แพ็กเกจเครดิต",
       oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
-      allTemplatesAvailable: "เข้าถึงคลังเทมเพลต",
-      bilingual: "สองภาษา (EN/TH)",
-      instantGeneration: "สร้างโดยมนุษย์และ AI",
+      accessTemplateLibrary: "เข้าถึงคลังเทมเพลต",
+      humanAndAiGeneration: "สร้างโดยมนุษย์และ AI",
       creditsNeverExpire: "เครดิตไม่หมดอายุ",
       purchaseCredits: "ซื้อเครดิต"
     }
@@ -1348,137 +1343,6 @@ export default function Account() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Letter Credits Section - NEW */}
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-                  <Coins className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-                    {strings.buyCredits}
-                  </h2>
-                  <p className="text-sm font-normal" style={{ color: colors.textSecondary }}>
-                    {strings.oneLetterPerCredit}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right flex items-center gap-2">
-                <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                  {strings.creditBalance}
-                </p>
-                <p className="text-3xl font-bold" style={{ color: '#C7A338' }}>
-                  {user?.letter_credits || 0}
-                </p>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {/* Benefits - UPDATED ALIGNMENT */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.allTemplatesAvailable}</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.bilingual}</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.instantGeneration}</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.creditsNeverExpire}</span>
-              </div>
-            </div>
-
-            {/* Credit Packages - ALIGNED LAYOUT */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {CREDIT_PACKAGES.map((pkg) => {
-                const pricePerCredit = Math.round(pkg.price / pkg.credits);
-                
-                return (
-                  <div
-                    key={pkg.id}
-                    className={`relative border-2 transition-all duration-200 flex flex-col ${
-                      pkg.popular ? 'border-amber-400 shadow-lg' : ''
-                    }`}
-                    style={{
-                      backgroundColor: pkg.popular 
-                        ? (isDarkMode ? '#2D2520' : '#FFFBEB')
-                        : colors.cardBg,
-                      borderColor: pkg.popular ? '#C7A338' : colors.borderColor,
-                      borderRadius: '12px',
-                      padding: '16px',
-                      minHeight: '240px'
-                    }}
-                  >
-                    {/* Badge Area - Fixed Height */}
-                    <div style={{ height: '24px', marginBottom: '8px' }}>
-                      {pkg.popular && (
-                        <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          ⭐ {strings.mostPopular}
-                        </Badge>
-                      )}
-                      {pkg.savings >= 30 && !pkg.popular && (
-                        <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          💰 {strings.bestValue}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {/* Credit Number - Fixed Height */}
-                    <div className="text-center" style={{ height: '60px', marginBottom: '12px' }}>
-                      <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
-                        {pkg.credits}
-                      </div>
-                      <div className="text-xs" style={{ color: colors.textSecondary }}>
-                        {strings.credits}
-                      </div>
-                    </div>
-
-                    {/* Price Section - Fixed Height */}
-                    <div className="text-center" style={{ height: '80px', marginBottom: '12px' }}>
-                      <div className="text-2xl font-bold mb-1" style={{ color: '#C7A338' }}>
-                        ฿{pkg.price}
-                      </div>
-                      <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                        ฿{pricePerCredit} {strings.perCredit}
-                      </div>
-                      <div style={{ height: '22px' }}>
-                        {pkg.savings > 0 && (
-                          <Badge className="bg-emerald-100 text-emerald-700 text-xs">
-                            {strings.save} {pkg.savings}%
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Button - Fixed at Bottom */}
-                    <div className="mt-auto">
-                      <Button
-                        onClick={() => handleBuyCredits(pkg)}
-                        disabled={buying}
-                        className="w-full text-sm h-10"
-                        style={{
-                          backgroundColor: pkg.popular ? '#C7A338' : '#0C3B2E',
-                          color: '#FFFFFF'
-                        }}
-                      >
-                        {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : strings.buyNow}
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Landlord Information Card */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
@@ -2431,7 +2295,7 @@ export default function Account() {
           </div>
         </div>
 
-        {/* Promo Code Input - NEW SECTION */}
+        {/* Promo Code Input */}
         <div className="mb-6">
           <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-6">
@@ -2778,6 +2642,137 @@ export default function Account() {
             })}
           </div>
         </div>
+
+        {/* Letter Credits Section */}
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                  <Coins className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                    {strings.buyCredits}
+                  </h2>
+                  <p className="text-sm font-normal" style={{ color: colors.textSecondary }}>
+                    {strings.oneLetterPerCredit}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right flex items-center gap-2">
+                <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                  {strings.creditBalance}
+                </p>
+                <p className="text-3xl font-bold" style={{ color: '#C7A338' }}>
+                  {user?.letter_credits || 0}
+                </p>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {/* Benefits - UPDATED ALIGNMENT */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
+              <div className="flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.accessTemplateLibrary}</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.bilingual}</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.humanAndAiGeneration}</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.creditsNeverExpire}</span>
+              </div>
+            </div>
+
+            {/* Credit Packages - ALIGNED LAYOUT */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {CREDIT_PACKAGES.map((pkg) => {
+                const pricePerCredit = Math.round(pkg.price / pkg.credits);
+                
+                return (
+                  <div
+                    key={pkg.id}
+                    className={`relative border-2 transition-all duration-200 flex flex-col ${
+                      pkg.popular ? 'border-amber-400 shadow-lg' : ''
+                    }`}
+                    style={{
+                      backgroundColor: pkg.popular 
+                        ? (isDarkMode ? '#2D2520' : '#FFFBEB')
+                        : colors.cardBg,
+                      borderColor: pkg.popular ? '#C7A338' : colors.borderColor,
+                      borderRadius: '12px',
+                      padding: '16px',
+                      minHeight: '240px'
+                    }}
+                  >
+                    {/* Badge Area - Fixed Height */}
+                    <div style={{ height: '24px', marginBottom: '8px' }}>
+                      {pkg.popular && (
+                        <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                          ⭐ {strings.mostPopular}
+                        </Badge>
+                      )}
+                      {pkg.savings >= 30 && !pkg.popular && (
+                        <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                          💰 {strings.bestValue}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {/* Credit Number - Fixed Height */}
+                    <div className="text-center" style={{ height: '60px', marginBottom: '12px' }}>
+                      <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
+                        {pkg.credits}
+                      </div>
+                      <div className="text-xs" style={{ color: colors.textSecondary }}>
+                        {strings.credits}
+                      </div>
+                    </div>
+
+                    {/* Price Section - Fixed Height */}
+                    <div className="text-center" style={{ height: '80px', marginBottom: '12px' }}>
+                      <div className="text-2xl font-bold mb-1" style={{ color: '#C7A338' }}>
+                        ฿{pkg.price}
+                      </div>
+                      <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                        ฿{pricePerCredit} {strings.perCredit}
+                      </div>
+                      <div style={{ height: '22px' }}>
+                        {pkg.savings > 0 && (
+                          <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                            {strings.save} {pkg.savings}%
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Button - Fixed at Bottom */}
+                    <div className="mt-auto">
+                      <Button
+                        onClick={() => handleBuyCredits(pkg)}
+                        disabled={buying}
+                        className="w-full text-sm h-10"
+                        style={{
+                          backgroundColor: pkg.popular ? '#C7A338' : '#0C3B2E',
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : strings.buyNow}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Logout Button */}
         <div className="mt-8 mb-4">
