@@ -1,14 +1,40 @@
-import { createClient } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
 const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2023-10-16',
 });
 
-const base44 = createClient({
-  appId: Deno.env.get('BASE44_APP_ID'),
-  useServiceRole: true,
-});
+// Direct API call helper (bypasses SDK auth issues)
+async function makeDirectApiCall(method, path, body = null) {
+  const appId = Deno.env.get('BASE44_APP_ID');
+  const baseUrl = 'https://api.base44.com';
+  
+  const options = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-Id': appId,
+      'X-Use-Service-Role': 'true', // Force service role
+    },
+  };
+  
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
+  
+  const url = `${baseUrl}${path}`;
+  console.log(`📞 API ${method} ${url}`);
+  
+  const response = await fetch(url, options);
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`❌ API Error (${response.status}):`, errorText);
+    throw new Error(`API call failed: ${response.status} ${errorText}`);
+  }
+  
+  return await response.json();
+}
 
 Deno.serve(async (req) => {
   console.log('=== STRIPE WEBHOOK RECEIVED ===');
@@ -37,7 +63,10 @@ Deno.serve(async (req) => {
       if (metadata.type === 'credits') {
         console.log('🪙 Processing CREDITS purchase');
         
-        const users = await base44.entities.User.list();
+        // Fetch all users via direct API
+        const usersResponse = await makeDirectApiCall('GET', '/entities/User');
+        const users = usersResponse.items || [];
+        
         let user = users.find(u => 
           u.stripe_customer_id === customerId || u.email === email
         );
@@ -51,7 +80,8 @@ Deno.serve(async (req) => {
         const currentCredits = user.letter_credits || 0;
         const totalPurchased = user.total_credits_purchased || 0;
 
-        await base44.entities.User.update(user.id, {
+        // Update user via direct API
+        await makeDirectApiCall('PATCH', `/entities/User/${user.id}`, {
           letter_credits: currentCredits + creditsToAdd,
           total_credits_purchased: totalPurchased + creditsToAdd
         });
@@ -62,15 +92,18 @@ Deno.serve(async (req) => {
         console.log('Added credits:', creditsToAdd);
         console.log('New balance:', currentCredits + creditsToAdd);
 
-        await base44.entities.Payment.create({
+        // Create payment record via direct API
+        await makeDirectApiCall('POST', '/entities/Payment', {
           type: 'addon',
           amount: parseFloat((session.amount_total / 100).toFixed(2)),
           currency: 'THB',
           provider: 'stripe',
           status: 'paid',
-          external_id: session.id
+          external_id: session.id,
+          created_by: user.email
         });
 
+        // Send confirmation email via direct API
         const lang = user.language || 'en';
         const subject = lang === 'th' 
           ? `ซื้อเครดิต ${creditsToAdd} เครดิตสำเร็จ` 
@@ -100,7 +133,7 @@ Use your credits to generate professional legal letters instantly.
 
 — The Lease Shield Team`;
 
-        await base44.integrations.Core.SendEmail({
+        await makeDirectApiCall('POST', '/integrations/Core/SendEmail', {
           to: user.email,
           subject,
           body: emailBody
@@ -114,14 +147,15 @@ Use your credits to generate professional legal letters instantly.
       if (session.mode === 'subscription') {
         console.log('💳 Processing SUBSCRIPTION');
         
-        const users = await base44.entities.User.list();
+        const usersResponse = await makeDirectApiCall('GET', '/entities/User');
+        const users = usersResponse.items || [];
+        
         let user = users.find(u => 
           u.stripe_customer_id === customerId || u.email === email
         );
 
         if (user) {
           console.log('✅ Subscription processed for:', user.email);
-          // Add subscription handling logic here if needed
           return Response.json({ ok: true }, { status: 200 });
         } else {
           console.error('❌ User not found');
