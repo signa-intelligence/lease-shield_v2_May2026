@@ -1,18 +1,23 @@
 import React from "react";
-import { CheckCircle2 } from "lucide-react";
 
 export default function PaymentSuccess() {
   React.useEffect(() => {
-    // Close this window and refresh parent
-    if (window.opener) {
-      window.opener.location.reload();
-      window.close();
-    } else {
-      // If no opener, redirect to account page
-      setTimeout(() => {
+    // Wait 1.5 seconds, then close window and refresh parent
+    const timer = setTimeout(() => {
+      if (window.opener) {
+        try {
+          window.opener.location.reload();
+        } catch (e) {
+          console.log('Could not refresh parent window');
+        }
+        window.close();
+      } else {
+        // If no opener (opened directly), redirect to account
         window.location.href = '/account';
-      }, 2000);
-    }
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -22,11 +27,11 @@ export default function PaymentSuccess() {
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: '#F0FDF4',
-      fontFamily: 'Inter, sans-serif'
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
     }}>
       <div style={{
         textAlign: 'center',
-        padding: '32px',
+        padding: '48px',
         maxWidth: '400px'
       }}>
         <div style={{
@@ -39,11 +44,23 @@ export default function PaymentSuccess() {
           justifyContent: 'center',
           margin: '0 auto 24px'
         }}>
-          <CheckCircle2 className="w-12 h-12 text-white" />
+          <svg 
+            width="48" 
+            height="48" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="white" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
         </div>
         <h1 style={{
-          fontSize: '24px',
-          fontWeight: 'bold',
+          fontSize: '28px',
+          fontWeight: '700',
           color: '#064E3B',
           marginBottom: '12px'
         }}>
@@ -54,15 +71,35 @@ export default function PaymentSuccess() {
           color: '#065F46',
           marginBottom: '24px'
         }}>
-          Your credits have been added.
+          Your credits have been added to your account.
         </p>
-        <p style={{
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '12px 24px',
+          backgroundColor: '#D1FAE5',
+          borderRadius: '8px',
           fontSize: '14px',
-          color: '#10B981'
+          color: '#065F46',
+          fontWeight: '500'
         }}>
-          This window will close automatically...
-        </p>
+          <div style={{
+            width: '16px',
+            height: '16px',
+            border: '2px solid #10B981',
+            borderTopColor: 'transparent',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+          Closing window...
+        </div>
       </div>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
