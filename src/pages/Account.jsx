@@ -123,7 +123,7 @@ const PLAN_DETAILS = [
   }
 ];
 
-// Credit packages - REMOVED 20 credits option
+// Credit packages
 const CREDIT_PACKAGES = [
   {
     id: 'credits_1',
@@ -154,6 +154,14 @@ const CREDIT_PACKAGES = [
     price: 699,
     priceId: null,
     savings: 30,
+    popular: false
+  },
+  {
+    id: 'credits_20',
+    credits: 20,
+    price: 1199,
+    priceId: null,
+    savings: 40,
     popular: false
   }
 ];
@@ -334,9 +342,9 @@ export default function Account() {
   };
 
   const handleCancelSubscription = async () => {
-    const lang = user?.language || 'en';
+    const language = user?.language || 'en';
     if (!cancelReason) {
-      alert(lang === 'th' ? 'กรุณาเลือกเหตุผลในการยกเลิก' : 'Please select a reason for cancellation');
+      alert(language === 'th' ? 'กรุณาเลือกเหตุผลในการยกเลิก' : 'Please select a reason for cancellation');
       return;
     }
 
@@ -352,13 +360,13 @@ export default function Account() {
         setShowCancelDialog(false);
         setCancelReason('');
         setCancelFeedback('');
-        alert(lang === 'th' 
+        alert(language === 'th' 
           ? 'การยกเลิกสำเร็จ คุณจะยังคงสามารถเข้าถึงฟีเจอร์ได้จนถึงวันที่ต่ออายุ' 
           : 'Cancellation successful. You\'ll keep access until your renewal date.');
       }
     } catch (error) {
       console.error('Cancellation error:', error);
-      alert(lang === 'th' 
+      alert(language === 'th' 
         ? 'ไม่สามารถยกเลิกได้ กรุณาลองอีกครั้งหรือติดต่อฝ่ายสนับสนุน' 
         : 'Failed to cancel. Please try again or contact support.');
     } finally {
@@ -395,17 +403,17 @@ export default function Account() {
   };
 
   const handleShareLink = async (role) => {
-    const lang = user?.language || 'en';
+    const language = user?.language || 'en';
     const link = generateLineOALink(role);
     const title = role === 'landlord' 
-      ? (lang === 'th' ? 'เชื่อมต่อกับ Lease Shield' : 'Connect to Lease Shield')
-      : (lang === 'th' ? 'เชื่อมต่อนิติบุคคลกับ Lease Shield' : 'Connect Juristic to Lease Shield');
+      ? (language === 'th' ? 'เชื่อมต่อกับ Lease Shield' : 'Connect to Lease Shield')
+      : (language === 'th' ? 'เชื่อมต่อนิติบุคคลกับ Lease Shield' : 'Connect Juristic to Lease Shield');
     
     if (navigator.share) {
       try {
         await navigator.share({
           title: title,
-          text: lang === 'th' 
+          text: language === 'th' 
             ? 'คลิกเพื่อเพิ่มเพื่อน Lease Shield LINE Official Account' 
             : 'Click to add Lease Shield LINE Official Account',
           url: link
@@ -420,6 +428,7 @@ export default function Account() {
   };
 
   const currentPlanTier = user?.plan_tier || 'free';
+  const isFree = currentPlanTier === 'free';
   const language = user?.language || 'en';
   const currentTheme = user?.theme || 'light';
   const isDarkMode = currentTheme === 'dark';
@@ -571,13 +580,15 @@ export default function Account() {
       perCredit: "per credit",
       save: "Save",
       buyNow: "Buy Now",
-      bestValue: "Best Value",
       mostPopular: "Most Popular",
+      bestValue: "Best Value",
+      creditPacks: "Credit Packs",
       oneLetterPerCredit: "1 letter = 1 credit",
-      accessTemplateLibrary: "Access template library",
+      allTemplatesAvailable: "Access template library",
       bilingual: "Bilingual (EN/TH)",
-      humanAndAiGeneration: "Human and AI generation",
+      instantGeneration: "Human and AI generation",
       creditsNeverExpire: "Credits never expire",
+      purchaseCredits: "Purchase Credits"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -707,16 +718,17 @@ export default function Account() {
       buyNow: "ซื้อเลย",
       mostPopular: "ยอดนิยม",
       bestValue: "คุ้มที่สุด",
+      creditPacks: "แพ็กเกจเครดิต",
       oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
-      accessTemplateLibrary: "เข้าถึงคลังเทมเพลต",
+      allTemplatesAvailable: "เข้าถึงคลังเทมเพลต",
       bilingual: "สองภาษา (EN/TH)",
-      humanAndAiGeneration: "สร้างโดยมนุษย์และ AI",
+      instantGeneration: "สร้างโดยมนุษย์และ AI",
       creditsNeverExpire: "เครดิตไม่หมดอายุ",
+      purchaseCredits: "ซื้อเครดิต"
     }
   };
 
   const strings = t[language];
-  const isFree = currentPlanTier === 'free';
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
@@ -1345,7 +1357,7 @@ export default function Account() {
           </Card>
         </div>
 
-        {/* Letter Credits Section */}
+        {/* Letter Credits Section - NEW */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
@@ -1373,11 +1385,11 @@ export default function Account() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {/* Benefits */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
+            {/* Benefits - UPDATED ALIGNMENT */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.accessTemplateLibrary}</span>
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.allTemplatesAvailable}</span>
               </div>
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -1385,7 +1397,7 @@ export default function Account() {
               </div>
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.humanAndAiGeneration}</span>
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.instantGeneration}</span>
               </div>
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -1394,7 +1406,7 @@ export default function Account() {
             </div>
 
             {/* Credit Packages */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {CREDIT_PACKAGES.map((pkg) => {
                 const pricePerCredit = Math.round(pkg.price / pkg.credits);
                 return (
@@ -1409,9 +1421,11 @@ export default function Account() {
                         : colors.cardBg,
                       borderColor: pkg.popular ? '#C7A338' : colors.borderColor,
                       borderRadius: '12px',
-                      padding: '16px',
                       paddingTop: pkg.popular || pkg.savings >= 30 ? '36px' : '16px',
-                      minHeight: '220px'
+                      paddingLeft: '16px',
+                      paddingRight: '16px',
+                      paddingBottom: '16px',
+                      minHeight: pkg.popular || pkg.savings >= 30 ? '220px' : '184px'
                     }}
                   >
                     {pkg.popular && (
@@ -1429,7 +1443,7 @@ export default function Account() {
                       </div>
                     )}
                     
-                    <div className="text-center flex-shrink-0" style={{ height: '52px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div className="text-center mb-3 flex-shrink-0">
                       <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
                         {pkg.credits}
                       </div>
@@ -1438,23 +1452,21 @@ export default function Account() {
                       </div>
                     </div>
 
-                    <div className="text-center flex-shrink-0" style={{ height: '76px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                    <div className="text-center mb-auto flex-shrink-0">
                       <div className="text-2xl font-bold" style={{ color: '#C7A338' }}>
                         ฿{pkg.price}
                       </div>
                       <div className="text-xs" style={{ color: colors.textSecondary }}>
                         ฿{pricePerCredit} {strings.perCredit}
                       </div>
-                      <div style={{ minHeight: '24px', marginTop: '4px' }}>
-                        {pkg.savings > 0 && (
-                          <Badge className="bg-emerald-100 text-emerald-700 text-xs">
-                            {strings.save} {pkg.savings}%
-                          </Badge>
-                        )}
-                      </div>
+                      {pkg.savings > 0 && (
+                        <Badge className="mt-1 bg-emerald-100 text-emerald-700 text-xs">
+                          {strings.save} {pkg.savings}%
+                        </Badge>
+                      )}
                     </div>
 
-                    <div className="mt-auto flex-shrink-0">
+                    <div className="mt-4 flex-shrink-0">
                       <Button
                         onClick={() => handleBuyCredits(pkg)}
                         disabled={buying}
@@ -2448,8 +2460,8 @@ export default function Account() {
                       style={{
                         backgroundColor: colors.inputBg,
                         borderColor: promoError ? '#EF4444' : colors.borderColor,
-                        borderWidth: '2px',
-                        color: colors.textPrimary
+                        color: colors.textPrimary,
+                        borderWidth: '2px'
                       }}
                     />
                   </div>
