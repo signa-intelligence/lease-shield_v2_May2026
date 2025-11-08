@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -23,7 +22,9 @@ Deno.serve(async (req) => {
 
     console.log('🔍 RAW PAYLOAD:', { priceId, mode, amount, currency, successUrl, cancelUrl, metadata });
     console.log('🔍 AMOUNT RECEIVED:', amount, 'TYPE:', typeof amount);
-    console.log('🔍 WILL MULTIPLY:', amount, '* 100 =', Math.round(amount * 100));
+    if (amount) {
+      console.log('🔍 WILL MULTIPLY:', amount, '* 100 =', Math.round(amount * 100));
+    }
 
     console.log('Creating checkout with:', { priceId, mode, amount, currency, user: user.email });
 
@@ -41,9 +42,9 @@ Deno.serve(async (req) => {
       await base44.auth.updateMe({ stripe_customer_id: customerId });
     }
 
-    // ✅ FIXED: Add default URLs for subscriptions
-    const finalSuccessUrl = successUrl || `https://app.leaseshield.asia${mode === 'subscription' ? '/account?subscription=success' : '/account?payment=success'}`;
-    const finalCancelUrl = cancelUrl || `https://app.leaseshield.asia${mode === 'subscription' ? '/account?subscription=cancelled' : '/account?payment=cancelled'}`;
+    // ✅ FIXED: Add default URLs for subscriptions and credits
+    const finalSuccessUrl = successUrl || `https://app.leaseshield.asia/account?${mode === 'subscription' ? 'subscription=success' : 'payment=success'}`;
+    const finalCancelUrl = cancelUrl || `https://app.leaseshield.asia/account?${mode === 'subscription' ? 'subscription=cancelled' : 'payment=cancelled'}`;
     
     console.log('✅ Using URLs:', { finalSuccessUrl, finalCancelUrl });
 
@@ -84,6 +85,7 @@ Deno.serve(async (req) => {
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
     console.log('✅ Checkout session created:', session.id);
+    console.log('✅ Checkout URL:', session.url);
 
     return Response.json({ url: session.url });
   } catch (error) {
