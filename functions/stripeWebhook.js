@@ -2,22 +2,19 @@ import { createClient } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 import { format } from 'npm:date-fns@2.30.0';
 
-// === WEBHOOK FIX - USE SERVICE ROLE CLIENT ===
 const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2023-10-16',
 });
 
-// Initialize Base44 client for webhooks (no request headers needed)
 const base44 = createClient({
   appId: Deno.env.get('BASE44_APP_ID'),
-  useServiceRole: true, // Service role for server-to-server operations
+  useServiceRole: true,
 });
 
 Deno.serve(async (req) => {
   console.log('=== WEBHOOK RECEIVED ===');
   console.log('Method:', req.method);
   console.log('URL:', req.url);
-  console.log('Timestamp:', new Date().toISOString());
   
   const key = Deno.env.get('SK_TEST_secret_key');
   console.log('🔑 Using Stripe key:', key?.substring(0, 15));
@@ -44,8 +41,6 @@ Deno.serve(async (req) => {
       const payload = JSON.parse(body);
       event = payload;
       console.log('✅ Event received:', event.type);
-      console.log('Event ID:', event.id);
-      console.log('Event created:', new Date(event.created * 1000).toISOString());
     } catch (err) {
       console.error('❌ Event parsing failed:', err.message);
       return Response.json({ error: `Webhook processing failed: ${err.message}` }, { status: 400 });
@@ -53,7 +48,6 @@ Deno.serve(async (req) => {
 
     console.log('Base44 client created');
 
-    // Map price IDs to plan tiers
     const planMap = {
       'price_1SM6qtQwoI6NhlUxgDDy2LuJ': { tier: 'lite', interval: 'monthly' },
       'price_1SM6rhQwoI6NhlUxZIN3WekE': { tier: 'protect', interval: 'monthly' },
@@ -75,7 +69,6 @@ Deno.serve(async (req) => {
         console.log('Customer ID:', customerId);
         console.log('Metadata:', JSON.stringify(metadata, null, 2));
         
-        // Handle credit purchase
         if (metadata.type === 'credits') {
           console.log('🪙 Processing CREDITS purchase');
           
@@ -85,7 +78,6 @@ Deno.serve(async (req) => {
           if (!user) {
             console.error('❌ USER NOT FOUND for customer:', customerId);
             
-            // Try to find by email as fallback
             if (session.customer_details?.email) {
               console.log('🔍 Trying to find user by email:', session.customer_details.email);
               const userByEmail = users.find(u => u.email === session.customer_details.email);
@@ -187,11 +179,6 @@ Start generating: ${appBaseUrl}/templates
           });
 
           console.log('✅✅✅ CREDITS SUCCESSFULLY UPDATED! ✅✅✅');
-          console.log('Updated user:', {
-            email: user.email,
-            creditsAdded: creditsToAdd,
-            newBalance: currentCredits + creditsToAdd
-          });
 
           await base44.entities.Payment.create({
             type: 'addon',
@@ -248,10 +235,8 @@ Start generating: ${appBaseUrl}/templates
           break;
         }
         
-        // Handle case payment (Resolve service)
         if (metadata.type === 'case') {
           console.log('Processing CASE payment');
-          console.log('Not a case payment, metadata.type:', metadata.type);
           
           const users = await base44.entities.User.list();
           const user = users.find(u => u.stripe_customer_id === customerId);
@@ -335,8 +320,6 @@ View in Ops Console: ${appBaseUrl}/ops-console`;
           });
           
           console.log('=== CASE PROCESSING COMPLETE ===');
-        } else {
-          console.log('Not a case payment, metadata.type:', metadata.type);
         }
         break;
       }
