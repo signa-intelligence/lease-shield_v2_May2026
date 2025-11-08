@@ -575,6 +575,7 @@ export default function Account() {
       creditPacks: "Credit Packs",
       oneLetterPerCredit: "1 letter = 1 credit",
       accessTemplateLibrary: "Access template library",
+      bilingual: "Bilingual Templates",
       humanAndAiGeneration: "Human and AI generation",
       creditsNeverExpire: "Credits never expire",
       purchaseCredits: "Purchase Credits"
@@ -709,6 +710,7 @@ export default function Account() {
       creditPacks: "แพ็กเกจเครดิต",
       oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
       accessTemplateLibrary: "เข้าถึงคลังเทมเพลต",
+      bilingual: "เทมเพลตสองภาษา",
       humanAndAiGeneration: "สร้างโดยมนุษย์และ AI",
       creditsNeverExpire: "เครดิตไม่หมดอายุ",
       purchaseCredits: "ซื้อเครดิต"
@@ -2396,245 +2398,150 @@ export default function Account() {
           <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
           <p className="mb-6 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
           
-          <div className="grid md:grid-cols-2 gap-6">
+          {/* Plans Grid - NEW LAYOUT */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
               const isCurrentPlan = currentPlanTier === plan.key;
               const isFreeplan = plan.key === 'free';
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
-              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.priceMonthly === 0 ? '' : plan.intervalMonthly);
+              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly);
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
               
               return (
-                <div 
+                <div
                   key={plan.key}
+                  className={`relative border-2 transition-all duration-200 ${
+                    plan.popular ? 'border-amber-400 shadow-lg' : ''
+                  }`}
                   style={{
-                    position: 'relative',
-                    borderRadius: '16px',
-                    overflow: 'visible',
-                    boxShadow: plan.popular ? '0 20px 25px -5px rgba(199, 163, 56, 0.3), 0 10px 10px -5px rgba(199, 163, 56, 0.15)' : '0 10px 15px -3px rgba(0,0,0,0.1)',
-                    border: plan.popular ? '3px solid #C7A338' : `2px solid ${colors.borderColor}`,
-                    backgroundColor: colors.cardBg,
-                    transform: plan.popular ? 'scale(1.02)' : 'scale(1)',
-                    transition: 'all 0.3s ease',
+                    backgroundColor: plan.popular 
+                      ? (isDarkMode ? '#2D2520' : '#FFFBEB')
+                      : colors.cardBg,
+                    borderColor: plan.popular ? '#C7A338' : colors.borderColor,
+                    borderRadius: '12px',
+                    padding: '16px',
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    minHeight: '520px'
                   }}
                 >
-                  {plan.popular && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '-16px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      backgroundColor: '#C7A338',
-                      color: '#0C3B2E',
-                      fontSize: '13px',
-                      fontWeight: 'bold',
-                      padding: '10px 24px',
-                      borderRadius: '20px',
-                      border: '2px solid #0C3B2E',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      zIndex: 10,
-                      letterSpacing: '0.5px',
-                      boxShadow: '0 4px 12px rgba(199, 163, 56, 0.4)'
-                    }}>
-                      <Star style={{ width: '16px', height: '16px', fill: '#0C3B2E', color: '#0C3B2E' }} />
-                      <span>{strings.mostPopular}</span>
-                      <Star style={{ width: '16px', height: '16px', fill: '#0C3B2E', color: '#0C3B2E' }} />
-                    </div>
-                  )}
+                  {/* Badge Area - Fixed Height */}
+                  <div style={{ height: '24px', marginBottom: '12px' }}>
+                    {plan.popular && (
+                      <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                        ⭐ {strings.mostPopular}
+                      </Badge>
+                    )}
+                    {billingInterval === 'annual' && !isFreeplan && !plan.popular && (
+                      <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                        🏷️ {strings.monthsFree}
+                      </Badge>
+                    )}
+                  </div>
 
-                  {billingInterval === 'annual' && !isFreeplan && (
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      backgroundColor: '#10B981',
-                      color: '#FFFFFF',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      padding: '6px 12px',
-                      borderBottomRightRadius: '8px',
-                      zIndex: 10
-                    }}>
-                      🏷️ {strings.monthsFree}
-                    </div>
-                  )}
-                  
-                  <div style={{
-                    backgroundColor: plan.bgColor,
-                    padding: plan.popular ? '48px 24px 24px 24px' : '32px 24px 24px 24px',
-                    color: '#FFFFFF',
-                    minHeight: '196px',
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <Icon style={{ width: '28px', height: '28px', color: '#FFFFFF' }} />
-                      <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#FFFFFF', margin: 0 }}>
+                  {/* Plan Name & Icon - Fixed Height */}
+                  <div className="text-center" style={{ height: '80px', marginBottom: '12px' }}>
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Icon className="w-6 h-6" style={{ color: plan.bgColor }} />
+                      <h3 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
                         {plan.label}
                       </h3>
                     </div>
-                    <p style={{ fontSize: '14px', color: '#FFFFFF', opacity: 0.95, marginBottom: '16px', minHeight: '20px' }}>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>
                       {plan.tagline}
                     </p>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px', marginTop: 'auto' }}>
-                      {isFreeplan ? (
-                        <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
-                          {strings.freePlanName}
-                        </span>
-                      ) : (
-                        <>
-                          <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
-                            ฿{displayPrice.toLocaleString()}
-                          </span>
-                          <span style={{ fontSize: '16px', color: '#FFFFFF', opacity: 0.9 }}>
-                            {displayInterval}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <div style={{ minHeight: '24px', display: 'flex', alignItems: 'center' }}>
+                  </div>
+
+                  {/* Price Section - Fixed Height */}
+                  <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
+                    {isFreeplan ? (
+                      <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
+                        {strings.freePlanName}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-3xl font-bold mb-1" style={{ color: '#C7A338' }}>
+                          ฿{displayPrice.toLocaleString()}
+                        </div>
+                        <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                          {displayInterval}
+                        </div>
+                      </>
+                    )}
+                    <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {billingInterval === 'annual' && !isFreeplan && (
-                        <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, margin: 0 }}>
-                          ฿{effectiveMonthly}{strings.perMonth} • {strings.save} ฿{plan.savingsAnnual.toLocaleString()}
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          ฿{effectiveMonthly}{strings.perMonth}
                         </p>
                       )}
                       {isFreeplan && (
-                        <p style={{ fontSize: '13px', color: '#FFFFFF', opacity: 0.85, margin: 0 }}>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
                           {strings.noCreditCard}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div style={{ 
-                    padding: '24px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    flex: 1
-                  }}>
-                    <p style={{ 
-                      fontSize: '14px', 
-                      color: colors.textSecondary, 
-                      marginBottom: '20px', 
-                      minHeight: '42px', 
-                      lineHeight: '1.5' 
-                    }}>
-                      {plan.description}
-                    </p>
-                    <ul style={{ 
-                      listStyle: 'none', 
-                      padding: 0, 
-                      margin: '0 0 24px 0',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '10px',
-                      flex: 1
-                    }}>
-                      {plan.benefits.map((benefit, idx) => {
-                        const isEverythingBenefit = benefit.startsWith('Everything');
-                        
-                        return (
-                          <li key={idx} style={{ 
-                            display: 'flex', 
-                            alignItems: 'flex-start', 
-                            gap: '10px',
-                            fontSize: '14px',
-                            color: colors.textPrimary,
-                            lineHeight: '1.4'
-                          }}>
-                            {isEverythingBenefit ? (
-                              <span style={{ fontWeight: 'bold', width: '100%' }}>
-                                {benefit}
-                              </span>
-                            ) : (
-                              <>
-                                <CheckCircle2 style={{ 
-                                  width: '18px', 
-                                  height: '18px', 
-                                  color: '#0C3B2E',
-                                  flexShrink: 0,
-                                  marginTop: '1px'
-                                }} />
-                                <span>
-                                  {benefit}
-                                </span>
-                              </>
-                            )}
-                          </li>
-                        );
-                      })}
+                  {/* Benefits List - Flexible Height */}
+                  <div style={{ flex: 1, marginBottom: '12px' }}>
+                    <ul className="space-y-2">
+                      {plan.benefits.slice(0, 5).map((benefit, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
+                          <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: '#0C3B2E' }} />
+                          <span>{benefit}</span>
+                        </li>
+                      ))}
+                      {plan.benefits.length > 5 && (
+                        <li className="text-xs font-semibold text-center" style={{ color: colors.textSecondary }}>
+                          +{plan.benefits.length - 5} more
+                        </li>
+                      )}
                     </ul>
-                    
+                  </div>
+
+                  {/* Button - Fixed at Bottom */}
+                  <div className="mt-auto">
                     {isCurrentPlan ? (
-                      <button
+                      <Button
                         disabled
+                        className="w-full h-10 text-sm"
                         style={{
-                          width: '100%',
-                          padding: '14px 20px',
-                          borderRadius: '10px',
-                          fontWeight: 'bold',
-                          fontSize: '16px',
-                          border: `2px solid ${colors.borderColor}`,
                           backgroundColor: colors.fieldBg,
                           color: colors.textSecondary,
                           cursor: 'not-allowed',
-                          marginTop: 'auto'
+                          border: `2px solid ${colors.borderColor}`
                         }}
                       >
                         {strings.currentPlanBadge}
-                      </button>
+                      </Button>
                     ) : isFreeplan ? (
-                      <button
+                      <Button
                         disabled
+                        className="w-full h-10 text-sm"
                         style={{
-                          width: '100%',
-                          padding: '14px 20px',
-                          borderRadius: '10px',
-                          fontWeight: 'bold',
-                          fontSize: '16px',
-                          border: `2px solid ${colors.textSecondary}`,
                           backgroundColor: colors.cardBg,
                           color: colors.textSecondary,
                           cursor: 'not-allowed',
-                          marginTop: 'auto'
+                          border: `2px solid ${colors.textSecondary}`
                         }}
                       >
                         {strings.signupFree}
-                      </button>
+                      </Button>
                     ) : (
-                      <button
+                      <Button
                         onClick={() => handleSubscribe(plan.key, billingInterval)}
                         disabled={subscribing}
+                        className="w-full text-sm h-10"
                         style={{
-                          width: '100%',
-                          padding: '14px 20px',
-                          borderRadius: '10px',
-                          fontWeight: 'bold',
-                          fontSize: '16px',
-                          border: 'none',
-                          backgroundColor: plan.bgColor,
+                          backgroundColor: plan.popular ? '#C7A338' : '#0C3B2E',
                           color: '#FFFFFF',
                           cursor: subscribing ? 'not-allowed' : 'pointer',
-                          opacity: subscribing ? 0.7 : 1,
-                          transition: 'all 0.2s',
-                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                          marginTop: 'auto'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!subscribing) e.target.style.opacity = '0.9';
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!subscribing) e.target.style.opacity = '1';
+                          opacity: subscribing ? 0.7 : 1
                         }}
                       >
                         {subscribing ? strings.processing : `${strings.startPlan} ${plan.label}`}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
