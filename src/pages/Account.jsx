@@ -1486,7 +1486,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                         color: '#10B981',
-                        border: '2px solid #10B981', /* FIX: Added closing quote here */
+                        border: '2px solid #10B981',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -1742,7 +1742,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                         color: '#F59E0B',
-                        border: '2px solid #F59E0B', /* FIX: Added closing quote here */
+                        border: '2px solid #F59E0B',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
