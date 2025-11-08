@@ -155,14 +155,6 @@ const CREDIT_PACKAGES = [
     priceId: null,
     savings: 30,
     popular: false
-  },
-  {
-    id: 'credits_20',
-    credits: 20,
-    price: 1199,
-    priceId: null,
-    savings: 40,
-    popular: false
   }
 ];
 
