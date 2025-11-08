@@ -863,7 +863,7 @@ export default function Account() {
                     padding: '16px',
                     backgroundColor: colors.fieldBg,
                     borderRadius: '12px',
-                    borderLeft: '4px solid '#1A1D1F''
+                    borderLeft: '4px solid #1A1D1F'
                   }}>
                     <div className="flex items-center gap-3">
                       <div style={{
