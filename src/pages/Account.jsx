@@ -175,14 +175,50 @@ export default function Account() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Refresh data when window regains focus (after payment in new tab)
+  // Auto-refresh credits every 5 seconds after window regains focus
   React.useEffect(() => {
+    let intervalId;
+    
     const handleFocus = () => {
+      // Immediate refresh
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      
+      // Clear any existing interval to prevent multiple intervals
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null; // Important: null out the ID after clearing
+      }
+
+      // Then refresh every 5 seconds for 30 seconds
+      let count = 0;
+      intervalId = setInterval(() => {
+        count++;
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        
+        if (count >= 6) { // Stop after 30 seconds (6 * 5s)
+          clearInterval(intervalId);
+          intervalId = null; // Important: null out the ID after clearing
+        }
+      }, 5000);
+    };
+    
+    const handleBlur = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null; // Important: null out the ID after clearing
+      }
     };
     
     window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+      if (intervalId) { // Ensure interval is cleared on component unmount
+        clearInterval(intervalId);
+      }
+    };
   }, [queryClient]);
 
   const [formData, setFormData] = useState({
@@ -300,7 +336,8 @@ export default function Account() {
       });
       
       if (response.data?.url) {
-        window.open(response.data.url, '_blank'); // Open in new window
+        // Open in SAME window - when they come back, credits will auto-refresh
+        window.location.href = response.data.url; 
       }
     } catch (error) {
       console.error('Failed to create checkout:', error);
@@ -1421,7 +1458,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: '#10B981',
                         color: '#FFFFFF',
-                        border: '2px solid #10B981',
+                        border: '2px solid '#10B981',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -1449,7 +1486,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                         color: '#10B981',
-                        border: '2px solid #10B981',
+                        border: '2px solid '#10B981',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -1677,7 +1714,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: '#F59E0B',
                         color: '#FFFFFF',
-                        border: '2px solid #F59E0B',
+                        border: '2px solid '#F59E0B',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -1705,7 +1742,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                         color: '#F59E0B',
-                        border: '2px solid #F59E0B',
+                        border: '2px solid '#F59E0B',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',

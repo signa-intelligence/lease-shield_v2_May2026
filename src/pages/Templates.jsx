@@ -291,6 +291,7 @@ export default function Templates() {
       });
       
       if (response.data?.url) {
+        // ✅ Open in SAME window - when they come back, credits will auto-refresh
         window.location.href = response.data.url;
       }
     } catch (error) {

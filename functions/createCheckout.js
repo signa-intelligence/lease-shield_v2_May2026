@@ -42,11 +42,10 @@ Deno.serve(async (req) => {
 
     const origin = new URL(req.url).origin.replace('/api/functions/createCheckout', '');
     
-    // ✅ USE STATIC HTML PAGE FOR CREDITS
-    const defaultSuccessUrl = metadata?.type === 'credits' 
-      ? `${origin}/payment-success.html`
-      : `${origin}/account?success=true`;
-    const defaultCancelUrl = `${origin}/account?canceled=true`;
+    // ✅ FOR CREDITS: Let Stripe show their success page, OR redirect to account
+    // Webhook handles credit addition, redirect is just for UX
+    const defaultSuccessUrl = `${origin}/account`;
+    const defaultCancelUrl = `${origin}/account`;
 
     const sessionConfig = {
       customer: customerId,
