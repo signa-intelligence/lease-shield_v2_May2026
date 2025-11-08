@@ -207,7 +207,7 @@ export default function Templates() {
         free: "Free: 0 credits",
         lite: "Lite: 3 credits included",
         protect: "Protect: 5 credits included",
-        secure: "Secure: 15 credits included"
+        secure: "Secure: 10 credits included"
       },
       upgradeForCredits: "Upgrade for more credits",
       preSigningSection: "⭐ Pre-Signing Negotiation",
@@ -239,7 +239,7 @@ export default function Templates() {
         free: "ฟรี: 0 เครดิต",
         lite: "ไลท์: 3 เครดิตรวมอยู่",
         protect: "โปรเทค: 5 เครดิตรวมอยู่",
-        secure: "ซีเคียว: 15 เครดิตรวมอยู่"
+        secure: "ซีเคียว: 10 เครดิตรวมอยู่"
       },
       upgradeForCredits: "อัปเกรดเพื่อรับเครดิตเพิ่ม",
       preSigningSection: "⭐ เจรจาก่อนลงนาม",

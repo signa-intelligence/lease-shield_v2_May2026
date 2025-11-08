@@ -59,13 +59,13 @@ const PLAN_DETAILS = [
     description: 'Core prevention tools for individuals',
     benefits: [
       'Everything in Free',
-      '5 Lease Scans per month',
-      'Full Risk Reports',
+      '6 Lease Scans per annum',
+      '5 Risks Reported',
       'Email Notifications',
-      '3 Basic Letter Templates',
+      '3 Letter Credits',
       '1GB Document Storage',
-      'Deposit Tracker',
-      'Maintenance Tracker'
+      'Maintenance Tracker',
+      'Deposit Tracker'
     ],
     bgColor: '#0C3B2E',
     icon: Zap
@@ -84,13 +84,14 @@ const PLAN_DETAILS = [
     description: 'Everything you need for full protection',
     benefits: [
       'Everything in Lite',
-      '6 Lease Scans per month', // Changed from Unlimited
-      'Deposit Shield Automation',
-      'Rent Payment Alerts',
-      '7 Letter Templates',
-      '5GB Document Storage',
+      '12 Lease Scans per annum',
+      'Full Risk Reports',
       'LINE Notifications',
-      'Automated Reminders'
+      '5 Letter Credits',
+      '5GB Document Storage',
+      'Rent Payment Alerts',
+      'Automated Reminders',
+      'Deposit Shield Automation'
     ],
     bgColor: '#C7A338',
     icon: Shield,
@@ -110,12 +111,13 @@ const PLAN_DETAILS = [
     description: 'Maximum prevention with priority support',
     benefits: [
       'Everything in Protect',
-      'Unlimited Lease Scans', // Changed from 10
-      'Full Letter Templates', // Changed from 10
+      'Unlimited Lease Scans',
+      'Advanced Reminders',
+      '10 Letter Credits',
+      '20GB Document Storage',
+      'Deposit Tracker',
       'Priority Case Queue',
       'Priority Scanning',
-      '20GB Document Storage',
-      'Advanced Reminders',
       'Premium Support'
     ],
     bgColor: '#1A1D1F',

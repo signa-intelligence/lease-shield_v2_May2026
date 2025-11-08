@@ -317,16 +317,26 @@ View in Ops Console: ${appBaseUrl}/ops-console
                 plan_renews_at: renewsAt
               };
               
-              // Grant initial credits based on tier (only on first payment or upgrade)
+              // Grant initial credits and storage based on tier (only on first payment or upgrade)
               const isNewSubscription = user.plan_tier === 'free' || !user.plan_tier;
               let creditsGranted = 0;
+              let storageAllocated = 0;
+              
               if (isNewSubscription) {
                 const tierCredits: Record<string, number> = {
                   lite: 3,
                   protect: 5,
-                  secure: 15
+                  secure: 10
                 };
+                
+                const tierStorage: Record<string, number> = {
+                  lite: 1024, // 1GB in MB
+                  protect: 5120, // 5GB in MB
+                  secure: 20480 // 20GB in MB
+                };
+                
                 creditsGranted = tierCredits[planInfo.tier] || 0;
+                storageAllocated = tierStorage[planInfo.tier] || 0;
                 
                 if (creditsGranted > 0) {
                   updateData.letter_credits = (user.letter_credits || 0) + creditsGranted;
@@ -334,6 +344,15 @@ View in Ops Console: ${appBaseUrl}/ops-console
                     tier: planInfo.tier,
                     credits: creditsGranted,
                     newBalance: updateData.letter_credits
+                  });
+                }
+                
+                if (storageAllocated > 0) {
+                  updateData.storage_quota_mb = storageAllocated;
+                  console.log('✅ Allocating storage:', {
+                    tier: planInfo.tier,
+                    storage_mb: storageAllocated,
+                    storage_gb: storageAllocated / 1024
                   });
                 }
               }
@@ -362,6 +381,14 @@ View in Ops Console: ${appBaseUrl}/ops-console
                 body += language === 'th'
                   ? `🎁 โบนัส: ${creditsGranted} เครดิตจดหมายฟรี!\nใช้สร้างจดหมายทางกฎหมายมืออาชีพได้ทันที\n\n`
                   : `🎁 Bonus: ${creditsGranted} letter credits included!\nGenerate professional legal letters instantly.\n\n`;
+              }
+              
+              // Add storage info if allocated
+              if (isNewSubscription && storageAllocated > 0) {
+                const storageGB = storageAllocated / 1024;
+                body += language === 'th'
+                  ? `📦 พื้นที่จัดเก็บ: ${storageGB}GB\nอัปโหลดเอกสารและหลักฐานของคุณ\n\n`
+                  : `📦 Storage: ${storageGB}GB allocated\nUpload your documents and evidence.\n\n`;
               }
               
               body += language === 'th' ? '— ทีม Lease Shield' : '— The Lease Shield Team';
