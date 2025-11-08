@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell, Scale, MoreVertical, ChevronDown, Eye, AlertCircle } from "lucide-react";
+import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell, Scale, MoreVertical, ChevronDown, Eye, AlertCircle, Coins } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +26,7 @@ export default function AdminConsole() {
   // New state for LINE notification testing
   const [testingNotification, setTestingNotification] = useState(false);
   const [testResult, setTestResult] = useState(null);
-  
+
   // New state for sending LINE messages to users
   const [sendingLineMessage, setSendingLineMessage] = useState(false);
   const [lineMessageResult, setLineMessageResult] = useState(null);
@@ -250,8 +250,8 @@ export default function AdminConsole() {
   // New function to send LINE message to a specific user
   const handleSendLineToUser = async (targetUser) => {
     const message = prompt(
-      language === 'th' 
-        ? `ส่งข้อความไปยัง ${targetUser.full_name} (${targetUser.email}):\n\nพิมพ์ข้อความของคุณ:` 
+      language === 'th'
+        ? `ส่งข้อความไปยัง ${targetUser.full_name} (${targetUser.email}):\n\nพิมพ์ข้อความของคุณ:`
         : `Send message to ${targetUser.full_name} (${targetUser.email}):\n\nType your message:`,
       language === 'th'
         ? '🔔 ข้อความทดสอบจากแอดมิน Lease Shield\n\nนี่คือข้อความทดสอบเพื่อยืนยันว่าระบบการแจ้งเตือน LINE ทำงานได้ดี'
@@ -280,19 +280,19 @@ export default function AdminConsole() {
         message: message.trim()
       });
 
-      setLineMessageResult({ 
-        type: 'success', 
-        message: language === 'th' 
-          ? `✅ ส่งข้อความถึง ${targetUser.full_name} สำเร็จ!` 
+      setLineMessageResult({
+        type: 'success',
+        message: language === 'th'
+          ? `✅ ส่งข้อความถึง ${targetUser.full_name} สำเร็จ!`
           : `✅ Message sent to ${targetUser.full_name} successfully!`
       });
       setTimeout(() => setLineMessageResult(null), 5000);
     } catch (error) {
       console.error('Failed to send LINE message:', error);
-      setLineMessageResult({ 
-        type: 'error', 
-        message: language === 'th' 
-          ? `❌ ส่งข้อความล้มเหลว: ${error.message}` 
+      setLineMessageResult({
+        type: 'error',
+        message: language === 'th'
+          ? `❌ ส่งข้อความล้มเหลว: ${error.message}`
           : `❌ Failed to send: ${error.message}`
       });
       setTimeout(() => setLineMessageResult(null), 5000);
@@ -348,25 +348,28 @@ export default function AdminConsole() {
     },
     onSuccess: async (updatedUser, variables) => {
       console.log('✅ Mutation onSuccess called:', updatedUser);
-      
+
       // Force immediate refetch of all users
       await queryClient.refetchQueries({ queryKey: ['allUsers'] });
       await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      
+
       let actionType = 'user data';
       if (variables.data.access_level) actionType = 'access level';
       else if (variables.data.plan_tier) actionType = 'plan tier';
       else if (typeof variables.data.suspended === 'boolean') {
         actionType = variables.data.suspended ? 'suspension' : 'unsuspension';
       }
-      
+      else if (typeof variables.data.letter_credits === 'number') {
+        actionType = 'letter credits';
+      }
+
       setUserActionResult({
         type: 'success',
-        message: language === 'th' 
-          ? `✅ อัปเดต ${actionType} สำเร็จ` 
+        message: language === 'th'
+          ? `✅ อัปเดต ${actionType} สำเร็จ`
           : `✅ Successfully updated ${actionType}`
       });
-      
+
       setTimeout(() => setUserActionResult(null), 5000);
     },
     onError: (error) => {
@@ -376,7 +379,7 @@ export default function AdminConsole() {
         stack: error.stack,
         response: error.response
       });
-      
+
       setUserActionResult({
         type: 'error',
         message: language === 'th'
@@ -392,7 +395,7 @@ export default function AdminConsole() {
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['allUsers'] });
       await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      
+
       setUserActionResult({
         type: 'success',
         message: language === 'th' ? '✅ ลบผู้ใช้สำเร็จ' : '✅ User deleted successfully'
@@ -418,16 +421,49 @@ export default function AdminConsole() {
       plan_tier: targetUser.plan_tier,
       suspended: targetUser.suspended
     });
-    
+
+    if (action === 'set_credits') {
+      const currentCredits = targetUser.letter_credits || 0;
+      const newCredits = prompt(
+        language === 'th'
+          ? `ตั้งเครดิตสำหรับ ${targetUser.full_name}\n\nเครดิตปัจจุบัน: ${currentCredits}\n\nใส่จำนวนเครดิตใหม่:`
+          : `Set credits for ${targetUser.full_name}\n\nCurrent credits: ${currentCredits}\n\nEnter new credit amount:`,
+        currentCredits.toString()
+      );
+
+      if (newCredits === null || newCredits.trim() === '') {
+        console.log('❌ Set credits cancelled');
+        return;
+      }
+
+      const creditsNum = parseInt(newCredits);
+      if (isNaN(creditsNum) || creditsNum < 0) {
+        alert(language === 'th' ? 'กรุณาใส่ตัวเลขที่ถูกต้อง' : 'Please enter a valid number');
+        return;
+      }
+
+      console.log('💳 Calling mutation to set credits:', {
+        userId: targetUser.id,
+        oldCredits: currentCredits,
+        newCredits: creditsNum
+      });
+
+      updateUserMutation.mutate({
+        userId: targetUser.id,
+        data: { letter_credits: creditsNum }
+      });
+      return;
+    }
+
     if (action === 'suspend' || action === 'unsuspend') {
       if (action === 'suspend') {
         const reason = prompt(
-          language === 'th' 
-            ? `ระบุเหตุผลในการระงับผู้ใช้ ${targetUser.full_name}:` 
+          language === 'th'
+            ? `ระบุเหตุผลในการระงับผู้ใช้ ${targetUser.full_name}:`
             : `Reason for suspending ${targetUser.full_name}:`,
           language === 'th' ? 'การละเมิดข้อกำหนดการใช้งาน' : 'Terms of service violation'
         );
-        
+
         if (!reason || reason.trim() === '') {
           console.log('❌ Suspend cancelled - no reason provided');
           return;
@@ -485,7 +521,7 @@ export default function AdminConsole() {
       }
       return;
     }
-    
+
     if (action === 'delete') {
       const confirmMessage = language === 'th'
         ? `คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้ ${targetUser.full_name}? การดำเนินการนี้ไม่สามารถย้อนกลับได้!`
@@ -501,7 +537,7 @@ export default function AdminConsole() {
         alert(language === 'th' ? 'เฉพาะ Super Admin เท่านั้นที่สามารถลบผู้ใช้ได้' : 'Only Super Admin can delete users');
         return;
       }
-      
+
       console.log('🗑️ Calling delete mutation:', { userId: targetUser.id });
       deleteUserMutation.mutate(targetUser.id);
       return;
@@ -524,17 +560,17 @@ export default function AdminConsole() {
         to: level,
         userId: targetUser.id
       });
-      
+
       // Only super admin can grant super_admin access
       if (level === 'super_admin' && !isSuperAdmin) {
         alert(language === 'th' ? 'เฉพาะ Super Admin เท่านั้นที่สามารถให้สิทธิ์ Super Admin ได้' : 'Only Super Admin can grant Super Admin access');
         return;
       }
-      
+
       console.log('🔄 Calling mutation for access_level update');
-      updateUserMutation.mutate({ 
-        userId: targetUser.id, 
-        data: { access_level: level } 
+      updateUserMutation.mutate({
+        userId: targetUser.id,
+        data: { access_level: level }
       });
     } else if (action.startsWith('tier_')) {
       const tier = action.replace('tier_', '');
@@ -543,11 +579,11 @@ export default function AdminConsole() {
         to: tier,
         userId: targetUser.id
       });
-      
+
       console.log('🔄 Calling mutation for plan_tier update');
-      updateUserMutation.mutate({ 
-        userId: targetUser.id, 
-        data: { plan_tier: tier } 
+      updateUserMutation.mutate({
+        userId: targetUser.id,
+        data: { plan_tier: tier }
       });
     }
   };
@@ -687,8 +723,8 @@ export default function AdminConsole() {
               </select>
               {usersWithLine.length === 0 && !user?.line_messaging_token && (
                 <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
-                  {language === 'th' 
-                    ? 'ไม่มีผู้ใช้ที่เชื่อมต่อ LINE' 
+                  {language === 'th'
+                    ? 'ไม่มีผู้ใช้ที่เชื่อมต่อ LINE'
                     : 'No users with LINE connected'}
                 </p>
               )}
@@ -1269,6 +1305,21 @@ export default function AdminConsole() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
                             <DropdownMenuLabel style={{ color: colors.textPrimary }}>User Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
+
+                            {/* NEW: Set Letter Credits */}
+                            <DropdownMenuItem
+                              onClick={() => handleUserAction('set_credits', u)}
+                              disabled={updateUserMutation.isPending}
+                              style={{ color: colors.textPrimary }}
+                            >
+                              <Coins className="w-4 h-4 mr-2 text-amber-600" />
+                              {language === 'th' ? 'ตั้งเครดิตจดหมาย' : 'Set Letter Credits'}
+                              <span className="ml-2 text-xs" style={{ color: colors.textSecondary }}>
+                                ({u.letter_credits || 0})
+                              </span>
+                            </DropdownMenuItem>
+
                             <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
 
                             {/* NEW: Suspend/Unsuspend option */}
