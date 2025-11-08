@@ -6,10 +6,16 @@ const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2023-10-16',
 });
 
+// Initialize Base44 client with service role ONCE at the top level
+const appId = Deno.env.get('BASE44_APP_ID');
+console.log('🔑 App ID:', appId ? 'FOUND' : 'MISSING');
+
 const base44 = createClient({
-  appId: Deno.env.get('BASE44_APP_ID'),
+  appId: appId,
   useServiceRole: true,
 });
+
+console.log('✅ Base44 client initialized with service role');
 
 Deno.serve(async (req) => {
   console.log('=== WEBHOOK RECEIVED ===');
@@ -36,7 +42,10 @@ Deno.serve(async (req) => {
         if (metadata.type === 'credits') {
           console.log('🪙 Processing CREDITS purchase');
           
+          console.log('📞 Calling base44.entities.User.list()...');
           const users = await base44.entities.User.list();
+          console.log('✅ Got users:', users.length);
+          
           let user = users.find(u => u.stripe_customer_id === customerId);
           
           if (!user && session.customer_details?.email) {
@@ -79,6 +88,8 @@ Deno.serve(async (req) => {
               subject,
               body: emailBody
             });
+          } else {
+            console.error('❌ User not found');
           }
         }
         break;
@@ -88,6 +99,12 @@ Deno.serve(async (req) => {
     return Response.json({ received: true });
   } catch (error) {
     console.error('❌ WEBHOOK ERROR:', error);
+    console.error('Error name:', error.name);
+    console.error('Error status:', error.status);
+    console.error('Error code:', error.code);
+    if (error.data) {
+      console.error('Error data:', JSON.stringify(error.data, null, 2));
+    }
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
