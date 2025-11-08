@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
-// === FORCED REDEPLOY - DECEMBER 2024 - USING TEST KEY ===
+// === FORCED REDEPLOY #4 - DECEMBER 2024 - DEBUGGING AMOUNT ===
 const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2023-10-16',
 });
@@ -21,6 +21,11 @@ Deno.serve(async (req) => {
     }
 
     const { priceId, mode, amount, currency, description, successUrl, cancelUrl, metadata } = await req.json();
+
+    // ===== CRITICAL DEBUG LOGGING =====
+    console.log('🔍 RAW AMOUNT RECEIVED:', amount, 'TYPE:', typeof amount);
+    console.log('🔍 WILL CALCULATE:', amount, '* 100 =', Math.round(amount * 100));
+    // ===== END DEBUG =====
 
     console.log('Creating checkout with:', { priceId, mode, amount, currency, user: user.email });
 
