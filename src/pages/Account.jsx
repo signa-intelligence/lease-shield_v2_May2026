@@ -129,14 +129,14 @@ const CREDIT_PACKAGES = [
     id: 'credits_1',
     credits: 1,
     price: 99,
-    priceId: null, // Will use one-time payment
+    stripeUrl: 'https://buy.stripe.com/aFa9AV1C41xZcDy7qwdEs09',
     savings: 0
   },
   {
     id: 'credits_3',
     credits: 3,
     price: 249,
-    priceId: null,
+    stripeUrl: 'https://buy.stripe.com/14AaEZa8A5Of472fX2dEs0a',
     savings: 16,
     popular: false
   },
@@ -144,7 +144,7 @@ const CREDIT_PACKAGES = [
     id: 'credits_5',
     credits: 5,
     price: 399,
-    priceId: null,
+    stripeUrl: 'https://buy.stripe.com/bJe3cx80s1xZ8ni3agdEs0b',
     savings: 20,
     popular: true
   },
@@ -152,7 +152,7 @@ const CREDIT_PACKAGES = [
     id: 'credits_10',
     credits: 10,
     price: 699,
-    priceId: null,
+    stripeUrl: 'https://buy.stripe.com/3cIfZjdkM5Of8ni3agdEs0c',
     savings: 30,
     popular: false
   }
@@ -172,7 +172,7 @@ export default function Account() {
   const [showQR, setShowQR] = useState({ landlord: false, juristic: false });
   const [promoCode, setPromoCode] = useState('');
   const [promoError, setPromoError] = useState('');
-  const [buying, setBuying] = useState(false); // New state for credit purchase
+  // Removed buying state as direct Stripe links are used
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -281,35 +281,7 @@ export default function Account() {
     }
   };
 
-  const handleBuyCredits = async (pkg) => {
-    setBuying(true);
-    try {
-      const response = await base44.functions.invoke('createCheckout', {
-        mode: 'payment',
-        amount: pkg.price,
-        currency: 'thb',
-        description: `${pkg.credits} Letter Credits - Lease Shield`,
-        successUrl: window.location.origin + '/account?credits_success=true',
-        cancelUrl: window.location.origin + '/account?credits_canceled=true',
-        metadata: {
-          type: 'credits',
-          credits: pkg.credits,
-          package_id: pkg.id
-        }
-      });
-
-      if (response.data?.url) {
-        window.location.href = response.data.url;
-      }
-    } catch (error) {
-      console.error('Credit purchase failed:', error);
-      alert(language === 'th' 
-        ? 'การซื้อเครดิตล้มเหลว กรุณาลองอีกครั้ง' 
-        : 'Credit purchase failed. Please try again.');
-    } finally {
-      setBuying(false);
-    }
-  };
+  // handleBuyCredits removed as direct Stripe links are used
 
   const handleExportData = async () => {
     setExporting(true);
@@ -2032,6 +2004,57 @@ export default function Account() {
 
               <div style={{
                 padding: '16px',
+                backgroundColor: colors.fieldBg, // Changed to fieldBg for consistency with theme
+                borderRadius: '12px',
+                borderLeft: '4px solid #C7A338' // Changed to gold color
+              }}>
+                <div className="flex items-start gap-3 justify-between flex-wrap">
+                  <div className="flex items-start gap-3">
+                    <Download className="w-5 h-5 flex-shrink-0 mt-0.5 text-ls-gold" />
+                    <div>
+                      <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.exportData}</p>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.exportDesc}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleExportData}
+                    disabled={exporting}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '2px solid #C7A338',
+                      backgroundColor: exporting ? colors.fieldBg : colors.cardBg,
+                      color: exporting ? colors.textSecondary : '#C7A338',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      cursor: exporting ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      opacity: exporting ? 0.7 : 1
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!exporting) {
+                        e.target.style.backgroundColor = '#C7A338';
+                        e.target.style.color = '#FFFFFF';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!exporting) {
+                        e.target.style.backgroundColor = colors.cardBg;
+                        e.target.style.color = '#C7A338';
+                      }
+                    }}
+                  >
+                    {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    {exporting ? strings.exporting : strings.export}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{
+                padding: '16px',
                 backgroundColor: '#FEE2E2',
                 borderRadius: '12px',
                 borderLeft: '4px solid #DC2626'
@@ -2551,7 +2574,7 @@ export default function Account() {
               </div>
             </div>
 
-            {/* Credit Packages - ALIGNED LAYOUT */}
+            {/* Credit Packages - ALIGNED LAYOUT WITH DIRECT STRIPE LINKS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {CREDIT_PACKAGES.map((pkg) => {
                 const pricePerCredit = Math.round(pkg.price / pkg.credits);
@@ -2613,19 +2636,37 @@ export default function Account() {
                       </div>
                     </div>
 
-                    {/* Button - Fixed at Bottom */}
+                    {/* Button - Fixed at Bottom - DIRECT STRIPE LINK */}
                     <div className="mt-auto">
-                      <Button
-                        onClick={() => handleBuyCredits(pkg)}
-                        disabled={buying}
-                        className="w-full text-sm h-10"
+                      <a
+                        href={pkg.stripeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         style={{
+                          display: 'block',
+                          width: '100%',
+                          padding: '10px 16px',
+                          textAlign: 'center',
                           backgroundColor: pkg.popular ? '#C7A338' : '#0C3B2E',
-                          color: '#FFFFFF'
+                          color: '#FFFFFF',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          textDecoration: 'none',
+                          transition: 'all 0.2s',
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = pkg.popular ? '#B89330' : '#0a2f25';
+                          e.target.style.transform = 'translateY(-1px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = pkg.popular ? '#C7A338' : '#0C3B2E';
+                          e.target.style.transform = 'translateY(0)';
                         }}
                       >
-                        {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : strings.buyNow}
-                      </Button>
+                        {strings.buyNow}
+                      </a>
                     </div>
                   </div>
                 );
