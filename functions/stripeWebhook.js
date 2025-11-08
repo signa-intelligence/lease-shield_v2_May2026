@@ -1,16 +1,15 @@
-
 import { createClient } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 import { format } from 'npm:date-fns@2.30.0';
 
 // === WEBHOOK FIX - USE SERVICE ROLE CLIENT ===
-const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key')!, {
+const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2023-10-16',
 });
 
 // Initialize Base44 client for webhooks (no request headers needed)
 const base44 = createClient({
-  appId: Deno.env.get('BASE44_APP_ID')!,
+  appId: Deno.env.get('BASE44_APP_ID'),
   useServiceRole: true, // Service role for server-to-server operations
 });
 
@@ -30,6 +29,7 @@ Deno.serve(async (req) => {
     
     console.log('Has signature:', !!signature);
     console.log('Has webhook secret:', !!webhookSecret);
+    console.log('Webhook secret (first 10 chars):', webhookSecret?.substring(0, 10));
     
     if (!signature || !webhookSecret) {
       console.error('MISSING:', { signature: !!signature, webhookSecret: !!webhookSecret });
@@ -39,19 +39,19 @@ Deno.serve(async (req) => {
     const body = await req.text();
     console.log('Body length:', body.length);
     
-    let event: Stripe.Event;
+    let event;
     try {
       const payload = JSON.parse(body);
       event = payload;
       console.log('✅ Event received:', event.type);
       console.log('Event ID:', event.id);
       console.log('Event created:', new Date(event.created * 1000).toISOString());
-    } catch (err: any) {
+    } catch (err) {
       console.error('❌ Event parsing failed:', err.message);
       return Response.json({ error: `Webhook processing failed: ${err.message}` }, { status: 400 });
     }
 
-    console.log('Base44 client initialized with service role');
+    console.log('Base44 client created');
 
     // Map price IDs to plan tiers
     const planMap = {
@@ -68,48 +68,34 @@ Deno.serve(async (req) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         console.log('=== CHECKOUT SESSION COMPLETED ===');
-        const session = event.data.object as Stripe.Checkout.Session;
+        const session = event.data.object;
         const customerId = session.customer;
         const metadata = session.metadata || {};
         
-        console.log('💳 Session ID:', session.id);
-        console.log('👤 Customer ID:', customerId);
-        console.log('📦 Metadata:', JSON.stringify(metadata, null, 2));
-        console.log('💰 Amount paid:', session.amount_total);
-        console.log('💵 Currency:', session.currency);
-        console.log('✅ Payment status:', session.payment_status);
+        console.log('Customer ID:', customerId);
+        console.log('Metadata:', JSON.stringify(metadata, null, 2));
         
         // Handle credit purchase
         if (metadata.type === 'credits') {
           console.log('🪙 Processing CREDITS purchase');
-          console.log('Credits to add:', metadata.credits);
-          console.log('Package ID:', metadata.packageId);
           
-          console.log('📋 Fetching all users to find matching customer...');
           const users = await base44.entities.User.list();
-          console.log(`Found ${users.length} total users`);
-          
           const user = users.find(u => u.stripe_customer_id === customerId);
           
           if (!user) {
             console.error('❌ USER NOT FOUND for customer:', customerId);
-            console.log('Checking all users stripe_customer_ids:');
-            users.forEach(u => {
-              console.log(`  - ${u.email}: ${u.stripe_customer_id || 'NOT SET'}`);
-            });
             
-            // Try to find by metadata if available
+            // Try to find by email as fallback
             if (session.customer_details?.email) {
               console.log('🔍 Trying to find user by email:', session.customer_details.email);
               const userByEmail = users.find(u => u.email === session.customer_details.email);
               if (userByEmail) {
                 console.log('✅ Found user by email! Updating stripe_customer_id...');
                 await base44.entities.User.update(userByEmail.id, {
-                  stripe_customer_id: customerId as string
+                  stripe_customer_id: customerId
                 });
-                console.log('Updated user with customer ID');
-                // Continue processing with this user
-                const creditsToAdd = parseInt(metadata.credits as string);
+                
+                const creditsToAdd = parseInt(metadata.credits);
                 const currentCredits = userByEmail.letter_credits || 0;
                 const totalPurchased = userByEmail.total_credits_purchased || 0;
 
@@ -124,17 +110,15 @@ Deno.serve(async (req) => {
 
                 console.log('✅✅✅ CREDITS SUCCESSFULLY UPDATED! ✅✅✅');
                 
-                // Create payment record
                 await base44.entities.Payment.create({
                   type: 'addon',
-                  amount: parseFloat((session.amount_total! / 100).toFixed(2)),
+                  amount: parseFloat((session.amount_total / 100).toFixed(2)),
                   currency: 'THB',
                   provider: 'stripe',
                   status: 'paid',
                   external_id: session.id
                 });
 
-                // Send confirmation email
                 const lang = userByEmail.language || 'en';
                 const appBaseUrl = Deno.env.get('APP_BASE_URL') || 'https://app.leaseshield.asia';
                 const subject = lang === 'th' 
@@ -148,7 +132,7 @@ Deno.serve(async (req) => {
 
 • เครดิตที่ซื้อ: ${creditsToAdd}
 • ยอดคงเหลือใหม่: ${currentCredits + creditsToAdd}
-• จำนวนเงิน: ฿${(session.amount_total! / 100).toLocaleString()}
+• จำนวนเงิน: ฿${(session.amount_total / 100).toLocaleString()}
 
 ใช้เครดิตของคุณเพื่อสร้างจดหมายทางกฎหมายมืออาชีพได้ทันที
 เข้าถึงเทมเพลตทั้ง 11 แบบ ทั้งภาษาอังกฤษและไทย
@@ -162,7 +146,7 @@ Your credits have been added! 🎉
 
 • Credits Purchased: ${creditsToAdd}
 • New Balance: ${currentCredits + creditsToAdd}
-• Amount Paid: ฿${(session.amount_total! / 100).toLocaleString()}
+• Amount Paid: ฿${(session.amount_total / 100).toLocaleString()}
 
 Use your credits to generate professional legal letters instantly.
 Access all 11 templates in both English and Thai.
@@ -188,7 +172,7 @@ Start generating: ${appBaseUrl}/templates
             break;
           }
 
-          const creditsToAdd = parseInt(metadata.credits as string);
+          const creditsToAdd = parseInt(metadata.credits);
           const currentCredits = user.letter_credits || 0;
           const totalPurchased = user.total_credits_purchased || 0;
 
@@ -211,7 +195,7 @@ Start generating: ${appBaseUrl}/templates
 
           await base44.entities.Payment.create({
             type: 'addon',
-            amount: parseFloat((session.amount_total! / 100).toFixed(2)),
+            amount: parseFloat((session.amount_total / 100).toFixed(2)),
             currency: 'THB',
             provider: 'stripe',
             status: 'paid',
@@ -231,7 +215,7 @@ Start generating: ${appBaseUrl}/templates
 
 • เครดิตที่ซื้อ: ${creditsToAdd}
 • ยอดคงเหลือใหม่: ${currentCredits + creditsToAdd}
-• จำนวนเงิน: ฿${(session.amount_total! / 100).toLocaleString()}
+• จำนวนเงิน: ฿${(session.amount_total / 100).toLocaleString()}
 
 ใช้เครดิตของคุณเพื่อสร้างจดหมายทางกฎหมายมืออาชีพได้ทันที
 เข้าถึงเทมเพลตทั้ง 11 แบบ ทั้งภาษาอังกฤษและไทย
@@ -245,7 +229,7 @@ Your credits have been added! 🎉
 
 • Credits Purchased: ${creditsToAdd}
 • New Balance: ${currentCredits + creditsToAdd}
-• Amount Paid: ฿${(session.amount_total! / 100).toLocaleString()}
+• Amount Paid: ฿${(session.amount_total / 100).toLocaleString()}
 
 Use your credits to generate professional legal letters instantly.
 Access all 11 templates in both English and Thai.
@@ -267,6 +251,7 @@ Start generating: ${appBaseUrl}/templates
         // Handle case payment (Resolve service)
         if (metadata.type === 'case') {
           console.log('Processing CASE payment');
+          console.log('Not a case payment, metadata.type:', metadata.type);
           
           const users = await base44.entities.User.list();
           const user = users.find(u => u.stripe_customer_id === customerId);
@@ -281,7 +266,7 @@ Start generating: ${appBaseUrl}/templates
           
           const caseData = {
             user_email: user.email,
-            dispute_amount: parseFloat(metadata.dispute_amount as string),
+            dispute_amount: parseFloat(metadata.dispute_amount),
             summary: metadata.summary,
             lease_id: metadata.lease_id || null,
             fast_track: metadata.fast_track === 'true',
@@ -313,7 +298,7 @@ Start generating: ${appBaseUrl}/templates
 
           await base44.entities.Payment.create({
             type: 'case',
-            amount: parseFloat(metadata.total_paid as string),
+            amount: parseFloat(metadata.total_paid),
             currency: 'THB',
             provider: 'stripe',
             status: 'paid',
@@ -350,20 +335,22 @@ View in Ops Console: ${appBaseUrl}/ops-console`;
           });
           
           console.log('=== CASE PROCESSING COMPLETE ===');
+        } else {
+          console.log('Not a case payment, metadata.type:', metadata.type);
         }
         break;
       }
 
       case 'invoice.payment_succeeded': {
-        const invoice = event.data.object as Stripe.Invoice;
+        const invoice = event.data.object;
         const customerId = invoice.customer;
         const subscriptionId = invoice.subscription;
         
         if (subscriptionId) {
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId as string);
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
           const priceId = subscription.items.data[0]?.price?.id;
           
-          const planInfo = planMap[priceId as keyof typeof planMap];
+          const planInfo = planMap[priceId];
           
           if (planInfo) {
             const users = await base44.entities.User.list();
@@ -372,7 +359,7 @@ View in Ops Console: ${appBaseUrl}/ops-console`;
             if (user) {
               const renewsAt = new Date(subscription.current_period_end * 1000).toISOString();
               
-              const updateData: Record<string, any> = {
+              const updateData = {
                 subscription_status: 'active',
                 plan_tier: planInfo.tier,
                 billing_interval: planInfo.interval,
@@ -382,13 +369,13 @@ View in Ops Console: ${appBaseUrl}/ops-console`;
               const isNewSubscription = user.plan_tier === 'free' || !user.plan_tier;
               
               if (isNewSubscription) {
-                const tierCredits: Record<string, number> = {
+                const tierCredits = {
                   lite: 3,
                   protect: 5,
                   secure: 10
                 };
                 
-                const tierStorage: Record<string, number> = {
+                const tierStorage = {
                   lite: 1024,
                   protect: 5120,
                   secure: 20480
@@ -429,11 +416,11 @@ View in Ops Console: ${appBaseUrl}/ops-console`;
       }
 
       case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object;
         const customerId = subscription.customer;
         const priceId = subscription.items.data[0]?.price?.id;
         
-        const planInfo = planMap[priceId as keyof typeof planMap];
+        const planInfo = planMap[priceId];
         
         if (planInfo) {
           const users = await base44.entities.User.list();
@@ -458,7 +445,7 @@ View in Ops Console: ${appBaseUrl}/ops-console`;
       }
 
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object;
         const customerId = subscription.customer;
         
         const users = await base44.entities.User.list();
@@ -485,7 +472,7 @@ View in Ops Console: ${appBaseUrl}/ops-console`;
       }
 
       case 'invoice.payment_failed': {
-        const invoice = event.data.object as Stripe.Invoice;
+        const invoice = event.data.object;
         const customerId = invoice.customer;
         
         const users = await base44.entities.User.list();
@@ -507,7 +494,7 @@ View in Ops Console: ${appBaseUrl}/ops-console`;
 
     console.log('=== WEBHOOK COMPLETE ===');
     return Response.json({ received: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ WEBHOOK ERROR:', error);
     console.error('Error stack:', error.stack);
     return Response.json({ error: error.message }, { status: 500 });
