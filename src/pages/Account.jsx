@@ -159,7 +159,7 @@ const CREDIT_PACKAGES = [
 export default function Account() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [subscribing, setSubscribing] = useState(false);
+  const [subscribing, setSubscribing] = useState({}); // ✅ Changed to object to track each plan
   const [exporting, setExporting] = useState(false);
   const [billingInterval, setBillingInterval] = useState('monthly');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -328,7 +328,7 @@ export default function Account() {
 
     const priceId = interval === 'annual' ? plan.priceIdAnnual : plan.priceIdMonthly;
 
-    setSubscribing(true);
+    setSubscribing(prev => ({ ...prev, [planKey]: true })); // ✅ Track this specific plan
     try {
       const response = await base44.functions.invoke('createCheckout', {
         priceId: priceId,
@@ -344,7 +344,7 @@ export default function Account() {
       const language = user?.language || 'en'; // Define language here for alert
       alert(language === 'th' ? 'ไม่สามารถสร้างการสมัครได้ กรุณาลองอีกครั้ง' : 'Failed to start subscription. Please try again.');
     } finally {
-      setSubscribing(false);
+      setSubscribing(prev => ({ ...prev, [planKey]: false })); // ✅ Reset only this plan
     }
   };
 
@@ -2407,6 +2407,7 @@ export default function Account() {
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
               const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly);
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
+              const isSubscribing = subscribing[plan.key]; // ✅ Check if THIS plan is subscribing
               
               return (
                 <div
@@ -2549,18 +2550,18 @@ export default function Account() {
                     ) : (
                       <Button
                         onClick={() => handleSubscribe(plan.key, billingInterval)}
-                        disabled={subscribing}
+                        disabled={isSubscribing} // ✅ Only check THIS plan's state
                         className="w-full h-10"
                         style={{
-                          backgroundColor: isSecureTier ? '#0C3B2E' : isLiteTier ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E',
+                          backgroundColor: isSubscribing ? '#9CA3AF' : (isSecureTier ? '#0C3B2E' : isLiteTier ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E'),
                           color: '#FFFFFF',
-                          cursor: subscribing ? 'not-allowed' : 'pointer',
-                          opacity: subscribing ? 0.7 : 1,
+                          cursor: isSubscribing ? 'not-allowed' : 'pointer',
+                          opacity: isSubscribing ? 0.7 : 1,
                           fontSize: isSecureTier ? '15px' : '14px',
                           fontWeight: isSecureTier ? '700' : '600'
                         }}
                       >
-                        {subscribing ? strings.processing : `${strings.startPlan} ${plan.label}`}
+                        {isSubscribing ? strings.processing : `${strings.startPlan} ${plan.label}`}
                       </Button>
                     )}
                   </div>
