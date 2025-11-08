@@ -1,3 +1,4 @@
+
 import { createClient } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 import { format } from 'npm:date-fns@2.30.0';
@@ -17,6 +18,7 @@ Deno.serve(async (req) => {
   console.log('=== WEBHOOK RECEIVED ===');
   console.log('Method:', req.method);
   console.log('URL:', req.url);
+  console.log('Timestamp:', new Date().toISOString());
   
   const key = Deno.env.get('SK_TEST_secret_key');
   console.log('🔑 Using Stripe key:', key?.substring(0, 15));
@@ -42,6 +44,8 @@ Deno.serve(async (req) => {
       const payload = JSON.parse(body);
       event = payload;
       console.log('✅ Event received:', event.type);
+      console.log('Event ID:', event.id);
+      console.log('Event created:', new Date(event.created * 1000).toISOString());
     } catch (err: any) {
       console.error('❌ Event parsing failed:', err.message);
       return Response.json({ error: `Webhook processing failed: ${err.message}` }, { status: 400 });
@@ -68,18 +72,119 @@ Deno.serve(async (req) => {
         const customerId = session.customer;
         const metadata = session.metadata || {};
         
-        console.log('Customer ID:', customerId);
-        console.log('Metadata:', JSON.stringify(metadata, null, 2));
+        console.log('💳 Session ID:', session.id);
+        console.log('👤 Customer ID:', customerId);
+        console.log('📦 Metadata:', JSON.stringify(metadata, null, 2));
+        console.log('💰 Amount paid:', session.amount_total);
+        console.log('💵 Currency:', session.currency);
+        console.log('✅ Payment status:', session.payment_status);
         
         // Handle credit purchase
         if (metadata.type === 'credits') {
-          console.log('Processing CREDITS purchase');
+          console.log('🪙 Processing CREDITS purchase');
+          console.log('Credits to add:', metadata.credits);
+          console.log('Package ID:', metadata.packageId);
           
+          console.log('📋 Fetching all users to find matching customer...');
           const users = await base44.entities.User.list();
+          console.log(`Found ${users.length} total users`);
+          
           const user = users.find(u => u.stripe_customer_id === customerId);
           
           if (!user) {
-            console.error('❌ User not found for customer:', customerId);
+            console.error('❌ USER NOT FOUND for customer:', customerId);
+            console.log('Checking all users stripe_customer_ids:');
+            users.forEach(u => {
+              console.log(`  - ${u.email}: ${u.stripe_customer_id || 'NOT SET'}`);
+            });
+            
+            // Try to find by metadata if available
+            if (session.customer_details?.email) {
+              console.log('🔍 Trying to find user by email:', session.customer_details.email);
+              const userByEmail = users.find(u => u.email === session.customer_details.email);
+              if (userByEmail) {
+                console.log('✅ Found user by email! Updating stripe_customer_id...');
+                await base44.entities.User.update(userByEmail.id, {
+                  stripe_customer_id: customerId as string
+                });
+                console.log('Updated user with customer ID');
+                // Continue processing with this user
+                const creditsToAdd = parseInt(metadata.credits as string);
+                const currentCredits = userByEmail.letter_credits || 0;
+                const totalPurchased = userByEmail.total_credits_purchased || 0;
+
+                console.log(`Current credits: ${currentCredits}`);
+                console.log(`Adding: ${creditsToAdd}`);
+                console.log(`New balance will be: ${currentCredits + creditsToAdd}`);
+
+                await base44.entities.User.update(userByEmail.id, {
+                  letter_credits: currentCredits + creditsToAdd,
+                  total_credits_purchased: totalPurchased + creditsToAdd
+                });
+
+                console.log('✅✅✅ CREDITS SUCCESSFULLY UPDATED! ✅✅✅');
+                
+                // Create payment record
+                await base44.entities.Payment.create({
+                  type: 'addon',
+                  amount: parseFloat((session.amount_total! / 100).toFixed(2)),
+                  currency: 'THB',
+                  provider: 'stripe',
+                  status: 'paid',
+                  external_id: session.id
+                });
+
+                // Send confirmation email
+                const lang = userByEmail.language || 'en';
+                const appBaseUrl = Deno.env.get('APP_BASE_URL') || 'https://app.leaseshield.asia';
+                const subject = lang === 'th' 
+                  ? `ซื้อเครดิต ${creditsToAdd} เครดิตสำเร็จ` 
+                  : `${creditsToAdd} Credits Purchased Successfully`;
+                
+                const body = lang === 'th'
+                  ? `สวัสดี ${userByEmail.full_name},
+
+เครดิตของคุณเพิ่มแล้ว! 🎉
+
+• เครดิตที่ซื้อ: ${creditsToAdd}
+• ยอดคงเหลือใหม่: ${currentCredits + creditsToAdd}
+• จำนวนเงิน: ฿${(session.amount_total! / 100).toLocaleString()}
+
+ใช้เครดิตของคุณเพื่อสร้างจดหมายทางกฎหมายมืออาชีพได้ทันที
+เข้าถึงเทมเพลตทั้ง 11 แบบ ทั้งภาษาอังกฤษและไทย
+
+เริ่มสร้างจดหมาย: ${appBaseUrl}/templates
+
+— ทีม Lease Shield`
+                  : `Hi ${userByEmail.full_name},
+
+Your credits have been added! 🎉
+
+• Credits Purchased: ${creditsToAdd}
+• New Balance: ${currentCredits + creditsToAdd}
+• Amount Paid: ฿${(session.amount_total! / 100).toLocaleString()}
+
+Use your credits to generate professional legal letters instantly.
+Access all 11 templates in both English and Thai.
+
+Start generating: ${appBaseUrl}/templates
+
+— The Lease Shield Team`;
+
+                await base44.integrations.Core.SendEmail({
+                  to: userByEmail.email,
+                  subject,
+                  body
+                });
+                console.log('✅ Confirmation email sent');
+                console.log('=== CREDITS PROCESSING COMPLETE (via email lookup) ===');
+                break;
+              } else {
+                console.error('❌ User not found by email either!');
+              }
+            }
+            
+            console.error('❌ CANNOT PROCESS - User not found');
             break;
           }
 
@@ -87,14 +192,20 @@ Deno.serve(async (req) => {
           const currentCredits = user.letter_credits || 0;
           const totalPurchased = user.total_credits_purchased || 0;
 
+          console.log(`✅ Found user: ${user.email}`);
+          console.log(`Current credits: ${currentCredits}`);
+          console.log(`Adding: ${creditsToAdd}`);
+          console.log(`New balance will be: ${currentCredits + creditsToAdd}`);
+
           await base44.entities.User.update(user.id, {
             letter_credits: currentCredits + creditsToAdd,
             total_credits_purchased: totalPurchased + creditsToAdd
           });
 
-          console.log('✅ Credits added:', {
-            user: user.email,
-            added: creditsToAdd,
+          console.log('✅✅✅ CREDITS SUCCESSFULLY UPDATED! ✅✅✅');
+          console.log('Updated user:', {
+            email: user.email,
+            creditsAdded: creditsToAdd,
             newBalance: currentCredits + creditsToAdd
           });
 
