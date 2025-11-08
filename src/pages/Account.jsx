@@ -179,6 +179,32 @@ export default function Account() {
     queryFn: () => base44.auth.me(),
   });
 
+  // ✅ HANDLE PAYMENT SUCCESS IN NEW TAB
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = urlParams.get('payment_success');
+    const paymentType = urlParams.get('type');
+    
+    if (paymentSuccess === 'true' && paymentType === 'credits') {
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      
+      // Show success message briefly, then close window
+      const timer = setTimeout(() => {
+        if (window.opener) {
+          try {
+            window.opener.location.reload();
+          } catch (e) {
+            console.log('Could not refresh parent');
+          }
+          window.close();
+        }
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [queryClient]);
+
   // ✅ UPDATED: Refresh data when window regains focus (after payment in new tab)
   React.useEffect(() => {
     const handleFocus = () => {
@@ -717,6 +743,82 @@ export default function Account() {
 
   // Updated LINE QR Code URL
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46470_M_gainfriends_2dbarcodes_GW.png";
+
+  // ✅ SHOW SUCCESS MESSAGE IF IN NEW TAB AFTER PAYMENT
+  const urlParams = new URLSearchParams(window.location.search);
+  const paymentSuccess = urlParams.get('payment_success');
+  const paymentType = urlParams.get('type');
+  
+  if (paymentSuccess === 'true' && paymentType === 'credits') {
+    const successPageColors = isDarkMode ? {
+      bg: '#1A1D1F',
+      cardBg: '#2A2D30',
+      textPrimary: '#ECEFED',
+    } : {
+      bg: '#F8FAFC',
+      cardBg: '#FFFFFF',
+      textPrimary: '#1A1D1F',
+    };
+    
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F0FDF4',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+      }}>
+        <div style={{
+          textAlign: 'center',
+          padding: '48px',
+          maxWidth: '400px'
+        }}>
+          <div style={{
+            width: '80px',
+            height: '80px',
+            backgroundColor: '#10B981',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 24px'
+          }}>
+            <CheckCircle2 className="w-12 h-12 text-white" />
+          </div>
+          <h1 style={{
+            fontSize: '28px',
+            fontWeight: '700',
+            color: '#064E3B',
+            marginBottom: '12px'
+          }}>
+            {language === 'th' ? 'ชำระเงินสำเร็จ!' : 'Payment Successful!'}
+          </h1>
+          <p style={{
+            fontSize: '16px',
+            color: '#065F46',
+            marginBottom: '24px'
+          }}>
+            {language === 'th' ? 'เครดิตของคุณถูกเพิ่มแล้ว' : 'Your credits have been added.'}
+          </p>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 24px',
+            backgroundColor: '#D1FAE5',
+            borderRadius: '8px',
+            fontSize: '14px',
+            color: '#065F46',
+            fontWeight: '500'
+          }}>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            {language === 'th' ? 'กำลังปิดหน้าต่าง...' : 'Closing window...'}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
