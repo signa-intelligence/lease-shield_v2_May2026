@@ -1397,10 +1397,11 @@ export default function Account() {
               </div>
             </div>
 
-            {/* Credit Packages */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Credit Packages - ALIGNED LAYOUT */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {CREDIT_PACKAGES.map((pkg) => {
                 const pricePerCredit = Math.round(pkg.price / pkg.credits);
+                
                 return (
                   <div
                     key={pkg.id}
@@ -1413,29 +1414,26 @@ export default function Account() {
                         : colors.cardBg,
                       borderColor: pkg.popular ? '#C7A338' : colors.borderColor,
                       borderRadius: '12px',
-                      paddingTop: pkg.popular || pkg.savings >= 30 ? '36px' : '16px',
-                      paddingLeft: '16px',
-                      paddingRight: '16px',
-                      paddingBottom: '16px',
-                      minHeight: pkg.popular || pkg.savings >= 30 ? '220px' : '184px'
+                      padding: '16px',
+                      minHeight: '240px'
                     }}
                   >
-                    {pkg.popular && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2" style={{ width: 'calc(100% - 16px)' }}>
+                    {/* Badge Area - Fixed Height */}
+                    <div style={{ height: '24px', marginBottom: '8px' }}>
+                      {pkg.popular && (
                         <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
                           ⭐ {strings.mostPopular}
                         </Badge>
-                      </div>
-                    )}
-                    {pkg.savings >= 30 && !pkg.popular && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2" style={{ width: 'calc(100% - 16px)' }}>
+                      )}
+                      {pkg.savings >= 30 && !pkg.popular && (
                         <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
                           💰 {strings.bestValue}
                         </Badge>
-                      </div>
-                    )}
+                      )}
+                    </div>
                     
-                    <div className="text-center mb-3 flex-shrink-0">
+                    {/* Credit Number - Fixed Height */}
+                    <div className="text-center" style={{ height: '60px', marginBottom: '12px' }}>
                       <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
                         {pkg.credits}
                       </div>
@@ -1444,21 +1442,25 @@ export default function Account() {
                       </div>
                     </div>
 
-                    <div className="text-center mb-auto flex-shrink-0">
-                      <div className="text-2xl font-bold" style={{ color: '#C7A338' }}>
+                    {/* Price Section - Fixed Height */}
+                    <div className="text-center" style={{ height: '80px', marginBottom: '12px' }}>
+                      <div className="text-2xl font-bold mb-1" style={{ color: '#C7A338' }}>
                         ฿{pkg.price}
                       </div>
-                      <div className="text-xs" style={{ color: colors.textSecondary }}>
+                      <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
                         ฿{pricePerCredit} {strings.perCredit}
                       </div>
-                      {pkg.savings > 0 && (
-                        <Badge className="mt-1 bg-emerald-100 text-emerald-700 text-xs">
-                          {strings.save} {pkg.savings}%
-                        </Badge>
-                      )}
+                      <div style={{ height: '22px' }}>
+                        {pkg.savings > 0 && (
+                          <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                            {strings.save} {pkg.savings}%
+                          </Badge>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="mt-4 flex-shrink-0">
+                    {/* Button - Fixed at Bottom */}
+                    <div className="mt-auto">
                       <Button
                         onClick={() => handleBuyCredits(pkg)}
                         disabled={buying}
