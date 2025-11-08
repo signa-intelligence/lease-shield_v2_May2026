@@ -282,7 +282,7 @@ export default function Account() {
       const response = await base44.functions.invoke('createCheckout', {
         priceId: null, // Not used for payment mode, custom amount is used
         mode: 'payment',
-        amount: pkg.price, // FIXED: Don't multiply by 100 - createCheckout does that
+        amount: pkg.price * 100, // Convert to satang (Thai Baht in minor units)
         currency: 'thb',
         description: `${pkg.credits} Letter Credits`,
         metadata: {
