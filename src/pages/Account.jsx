@@ -179,9 +179,10 @@ export default function Account() {
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment');
+    const subscriptionStatus = urlParams.get('subscription');
     
-    if (paymentStatus === 'success') {
-      console.log('💳 Payment success detected - starting credit refresh...');
+    if (paymentStatus === 'success' || subscriptionStatus === 'success') {
+      console.log('💳 Payment success detected - starting credit/subscription refresh...');
       
       // Clean URL immediately
       window.history.replaceState({}, '', window.location.pathname);
@@ -192,12 +193,12 @@ export default function Account() {
       
       const pollInterval = setInterval(() => {
         pollCount++;
-        console.log(`🔄 Polling for credits update (${pollCount}/${maxPolls})...`);
+        console.log(`🔄 Polling for credits/subscription update (${pollCount}/${maxPolls})...`);
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         
         if (pollCount >= maxPolls) {
           clearInterval(pollInterval);
-          console.log('✅ Credit refresh polling complete');
+          console.log('✅ Credit/subscription refresh polling complete');
         }
       }, 5000); // Every 5 seconds
       
@@ -328,22 +329,35 @@ export default function Account() {
 
     const priceId = interval === 'annual' ? plan.priceIdAnnual : plan.priceIdMonthly;
 
+    console.log('🔍 SUBSCRIPTION REQUEST:', { planKey, interval, priceId });
+
     setSubscribing(prev => ({ ...prev, [planKey]: true }));
     try {
       const response = await base44.functions.invoke('createCheckout', {
         priceId: priceId,
         mode: 'subscription',
+        successUrl: `${window.location.origin}/account?subscription=success`,
+        cancelUrl: `${window.location.origin}/account?subscription=cancelled`
       });
       
+      console.log('🔍 CHECKOUT RESPONSE:', response);
+      
       if (response.data?.url) {
+        console.log('✅ Redirecting to:', response.data.url);
         window.location.href = response.data.url;
       } else {
-        throw new Error('No checkout URL returned');
+        console.error('❌ No URL in response:', response);
+        throw new Error('No checkout URL returned from server');
       }
     } catch (error) {
-      console.error('Subscription error:', error);
+      console.error('❌ Subscription error:', error);
+      console.error('Error details:', error.response?.data || error);
       const language = user?.language || 'en';
-      alert(language === 'th' ? 'ไม่สามารถสร้างการสมัครได้ กรุณาลองอีกครั้ง' : 'Failed to start subscription. Please try again.');
+      
+      // Show detailed error to user
+      const errorMsg = error.response?.data?.details || error.response?.data?.error || error.message;
+      alert(`${language === 'th' ? 'ไม่สามารถสร้างการสมัครได้' : 'Failed to start subscription'}\n\n${errorMsg}`);
+      
       setSubscribing(prev => ({ ...prev, [planKey]: false }));
     }
   };
@@ -778,6 +792,32 @@ export default function Account() {
   };
 
   const strings = t[language];
+  const currentPlanTier = user?.plan_tier || 'free';
+  const isFree = currentPlanTier === 'free';
+  const language = user?.language || 'en';
+  const currentTheme = user?.theme || 'dark'; // Default to 'dark' if user?.theme is undefined
+  const isDarkMode = currentTheme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    inputBg: '#353A3D',
+    fieldBg: '#353A3D',
+    hoverBg: '#3A3D40'
+  } : {
+    bg: '#ECEFED',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+    inputBg: '#FFFFFF',
+    fieldBg: '#ECEFED',
+    hoverBg: '#F8FAFC'
+  };
+
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
@@ -2407,7 +2447,7 @@ export default function Account() {
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
               const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly);
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
-              const isSubscribing = subscribing[plan.key]; // ✅ Check if THIS plan is subscribing
+              const isSubscribing = subscribing[plan.key]; // ✅ Only check THIS plan's state
               
               return (
                 <div
@@ -2755,3 +2795,4 @@ export default function Account() {
     </div>
   );
 }
+
