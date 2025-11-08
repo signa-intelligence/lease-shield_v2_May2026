@@ -1289,7 +1289,7 @@ export default function Account() {
                       padding: '12px 16px',
                       backgroundColor: '#C7A338',
                       color: '#FFFFFF',
-                      borderRadius: '8px',
+                      borderRadius: '88px',
                       fontWeight: 'bold',
                       fontSize: '14px',
                       border: 'none',
@@ -1405,39 +1405,45 @@ export default function Account() {
               </div>
             </div>
 
-            {/* Credit Packages */}
+            {/* Credit Packages - FIXED ALIGNMENT */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {CREDIT_PACKAGES.map((pkg) => {
                 const pricePerCredit = Math.round(pkg.price / pkg.credits);
                 return (
                   <div
                     key={pkg.id}
-                    className={`relative p-4 rounded-xl border-2 transition-all duration-200 ${
+                    className={`relative border-2 transition-all duration-200 flex flex-col ${
                       pkg.popular ? 'border-amber-400 shadow-lg' : ''
                     }`}
                     style={{
                       backgroundColor: pkg.popular 
                         ? (isDarkMode ? '#2D2520' : '#FFFBEB')
                         : colors.cardBg,
-                      borderColor: pkg.popular ? '#C7A338' : colors.borderColor
+                      borderColor: pkg.popular ? '#C7A338' : colors.borderColor,
+                      borderRadius: '12px',
+                      paddingTop: pkg.popular || pkg.savings >= 30 ? '36px' : '16px',
+                      paddingLeft: '16px',
+                      paddingRight: '16px',
+                      paddingBottom: '16px',
+                      minHeight: pkg.popular || pkg.savings >= 30 ? '220px' : '184px'
                     }}
                   >
                     {pkg.popular && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <Badge className="bg-amber-500 text-white text-xs font-bold">
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2" style={{ width: 'calc(100% - 16px)' }}>
+                        <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
                           ⭐ {strings.mostPopular}
                         </Badge>
                       </div>
                     )}
                     {pkg.savings >= 30 && !pkg.popular && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <Badge className="bg-emerald-500 text-white text-xs font-bold">
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2" style={{ width: 'calc(100% - 16px)' }}>
+                        <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
                           💰 {strings.bestValue}
                         </Badge>
                       </div>
                     )}
                     
-                    <div className="text-center mb-3">
+                    <div className="text-center mb-3 flex-shrink-0">
                       <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
                         {pkg.credits}
                       </div>
@@ -1446,7 +1452,7 @@ export default function Account() {
                       </div>
                     </div>
 
-                    <div className="text-center mb-3">
+                    <div className="text-center mb-auto flex-shrink-0">
                       <div className="text-2xl font-bold" style={{ color: '#C7A338' }}>
                         ฿{pkg.price}
                       </div>
@@ -1460,17 +1466,19 @@ export default function Account() {
                       )}
                     </div>
 
-                    <Button
-                      onClick={() => handleBuyCredits(pkg)}
-                      disabled={buying}
-                      className="w-full text-sm"
-                      style={{
-                        backgroundColor: pkg.popular ? '#C7A338' : '#0C3B2E',
-                        color: '#FFFFFF'
-                      }}
-                    >
-                      {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : strings.buyNow}
-                    </Button>
+                    <div className="mt-4 flex-shrink-0">
+                      <Button
+                        onClick={() => handleBuyCredits(pkg)}
+                        disabled={buying}
+                        className="w-full text-sm h-10"
+                        style={{
+                          backgroundColor: pkg.popular ? '#C7A338' : '#0C3B2E',
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : strings.buyNow}
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
