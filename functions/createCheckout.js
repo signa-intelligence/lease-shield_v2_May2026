@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
 
     const { priceId, mode, amount, currency, description, successUrl, cancelUrl, metadata } = await req.json();
 
-    console.log('🔍 RAW PAYLOAD:', { priceId, mode, amount, currency, metadata });
+    console.log('🔍 RAW PAYLOAD:', { priceId, mode, amount, currency, successUrl, cancelUrl, metadata });
     console.log('🔍 AMOUNT RECEIVED:', amount, 'TYPE:', typeof amount);
     console.log('🔍 WILL MULTIPLY:', amount, '* 100 =', Math.round(amount * 100));
 
@@ -40,18 +40,17 @@ Deno.serve(async (req) => {
       await base44.auth.updateMe({ stripe_customer_id: customerId });
     }
 
-    const origin = new URL(req.url).origin.replace('/api/functions/createCheckout', '');
+    // Use provided URLs or fallback to safe defaults
+    const finalSuccessUrl = successUrl || 'https://app.leaseshield.asia/account?payment=success';
+    const finalCancelUrl = cancelUrl || 'https://app.leaseshield.asia/account?payment=cancelled';
     
-    // ✅ FOR CREDITS: Let Stripe show their success page, OR redirect to account
-    // Webhook handles credit addition, redirect is just for UX
-    const defaultSuccessUrl = `${origin}/account`;
-    const defaultCancelUrl = `${origin}/account`;
+    console.log('✅ Using URLs:', { finalSuccessUrl, finalCancelUrl });
 
     const sessionConfig = {
       customer: customerId,
       mode: mode || 'subscription',
-      success_url: successUrl || defaultSuccessUrl,
-      cancel_url: cancelUrl || defaultCancelUrl,
+      success_url: finalSuccessUrl,
+      cancel_url: finalCancelUrl,
       metadata: metadata || {},
       allow_promotion_codes: true,
     };

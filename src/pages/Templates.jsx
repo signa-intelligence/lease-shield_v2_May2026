@@ -283,6 +283,8 @@ export default function Templates() {
         amount: pkg.price, // ✅ Correct - no multiplication
         currency: 'thb',
         description: `${pkg.credits} Letter Credits`,
+        successUrl: `${window.location.origin}${createPageUrl('Templates')}?payment=success`,
+        cancelUrl: `${window.location.origin}${createPageUrl('Templates')}?payment=cancelled`,
         metadata: {
           type: 'credits',
           credits: pkg.credits.toString(),

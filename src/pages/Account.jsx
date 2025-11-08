@@ -328,6 +328,8 @@ export default function Account() {
         amount: pkg.price,
         currency: 'thb',
         description: `${pkg.credits} Letter Credits`,
+        successUrl: `${window.location.origin}${createPageUrl('Account')}?payment=success`,
+        cancelUrl: `${window.location.origin}${createPageUrl('Account')}?payment=cancelled`,
         metadata: {
           type: 'credits',
           credits: pkg.credits.toString(),
