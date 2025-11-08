@@ -62,7 +62,7 @@ const PLAN_DETAILS = [
       '5 Lease Scans per month',
       'Full Risk Reports',
       'Email Notifications',
-      '3 Basic Letter Templates',
+      '3 Letter Credits', // Changed from 3 Basic Letter Templates
       '1GB Document Storage',
       'Deposit Tracker',
       'Maintenance Tracker'
@@ -87,7 +87,7 @@ const PLAN_DETAILS = [
       '6 Lease Scans per month', // Changed from Unlimited
       'Deposit Shield Automation',
       'Rent Payment Alerts',
-      '7 Letter Templates',
+      '5 Letter Credits', // Changed from 7 Letter Templates
       '5GB Document Storage',
       'LINE Notifications',
       'Automated Reminders'
@@ -111,7 +111,7 @@ const PLAN_DETAILS = [
     benefits: [
       'Everything in Protect',
       'Unlimited Lease Scans', // Changed from 10
-      'Full Letter Templates', // Changed from 10
+      '15 Letter Credits', // Changed from Full Letter Templates (10)
       'Priority Case Queue',
       'Priority Scanning',
       '20GB Document Storage',
@@ -123,13 +123,13 @@ const PLAN_DETAILS = [
   }
 ];
 
-// Credit packages - REMOVED 20 CREDITS
+// Credit packages
 const CREDIT_PACKAGES = [
   {
     id: 'credits_1',
     credits: 1,
     price: 99,
-    priceId: null,
+    priceId: null, // Will use one-time payment
     savings: 0
   },
   {
@@ -154,6 +154,14 @@ const CREDIT_PACKAGES = [
     price: 699,
     priceId: null,
     savings: 30,
+    popular: false
+  },
+  {
+    id: 'credits_20',
+    credits: 20,
+    price: 1199,
+    priceId: null,
+    savings: 40,
     popular: false
   }
 ];
@@ -424,6 +432,7 @@ export default function Account() {
   const language = user?.language || 'en';
   const currentTheme = user?.theme || 'light';
   const isDarkMode = currentTheme === 'dark';
+  const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -570,14 +579,14 @@ export default function Account() {
       creditBalance: "Credit Balance",
       credits: "Credits",
       perCredit: "per credit",
-      save: "Save",
       buyNow: "Buy Now",
+      mostPopular: "Most Popular",
       bestValue: "Best Value",
       creditPacks: "Credit Packs",
       oneLetterPerCredit: "1 letter = 1 credit",
-      accessTemplateLibrary: "Access template library", // Updated key
+      accessTemplateLibrary: "Access template library",
       bilingual: "Bilingual (EN/TH)",
-      humanAndAiGeneration: "Human and AI generation", // Updated key
+      humanAndAiGeneration: "Human and AI generation",
       creditsNeverExpire: "Credits never expire",
       purchaseCredits: "Purchase Credits"
     },
@@ -707,48 +716,19 @@ export default function Account() {
       perCredit: "ต่อเครดิต",
       save: "ประหยัด",
       buyNow: "ซื้อเลย",
+      mostPopular: "ยอดนิยม",
       bestValue: "คุ้มที่สุด",
       creditPacks: "แพ็กเกจเครดิต",
       oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
-      accessTemplateLibrary: "เข้าถึงคลังเทมเพลต", // Updated key
+      accessTemplateLibrary: "เข้าถึงคลังเทมเพลต",
       bilingual: "สองภาษา (EN/TH)",
-      humanAndAiGeneration: "สร้างโดยมนุษย์และ AI", // Updated key
-      creditsNeverExpire: "เครดิตไม่หมดอายุ",
-      purchaseCredits: "ซื้อเครดิต"
+      humanAndAiGeneration: "สร้างด้วยคนและ AI",
+      creditsNeverExpire: "เครดิตไม่หมดอายุ"
     }
   };
 
   const strings = t[language];
-  const currentPlanTier = user?.plan_tier || 'free';
-  const isFree = currentPlanTier === 'free';
-  const language = user?.language || 'en';
-  const currentTheme = user?.theme || 'light';
-  const isDarkMode = currentTheme === 'dark';
-
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D',
-    fieldBg: '#353A3D',
-    hoverBg: '#3A3D40'
-  } : {
-    bg: '#ECEFED',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    inputBg: '#FFFFFF',
-    fieldBg: '#ECEFED',
-    hoverBg: '#F8FAFC'
-  };
-
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
-  const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
-
-  // Updated LINE QR Code URL
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46470_M_gainfriends_2dbarcodes_GW.png";
 
   return (
@@ -1403,32 +1383,32 @@ export default function Account() {
           <CardContent className="p-6">
             {/* Benefits - UPDATED */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
-              <div className="flex items-center gap-2 justify-start">
+              <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                 <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.accessTemplateLibrary}</span>
               </div>
-              <div className="flex items-center gap-2 justify-start">
+              <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                 <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.bilingual}</span>
               </div>
-              <div className="flex items-center gap-2 justify-start">
+              <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                 <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.humanAndAiGeneration}</span>
               </div>
-              <div className="flex items-center gap-2 justify-start">
+              <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                 <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.creditsNeverExpire}</span>
               </div>
             </div>
 
-            {/* Credit Packages - ALIGNED & 4 PACKAGES */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Credit Packages - FIXED ALIGNMENT */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {CREDIT_PACKAGES.map((pkg) => {
                 const pricePerCredit = Math.round(pkg.price / pkg.credits);
                 return (
                   <div
                     key={pkg.id}
-                    className={`relative border-2 transition-all duration-200 ${
+                    className={`relative border-2 transition-all duration-200 flex flex-col ${
                       pkg.popular ? 'border-amber-400 shadow-lg' : ''
                     }`}
                     style={{
@@ -1437,10 +1417,11 @@ export default function Account() {
                         : colors.cardBg,
                       borderColor: pkg.popular ? '#C7A338' : colors.borderColor,
                       borderRadius: '12px',
-                      padding: '16px',
                       paddingTop: pkg.popular || pkg.savings >= 30 ? '36px' : '16px',
-                      display: 'flex',
-                      flexDirection: 'column'
+                      paddingLeft: '16px',
+                      paddingRight: '16px',
+                      paddingBottom: '16px',
+                      minHeight: pkg.popular || pkg.savings >= 30 ? '220px' : '184px'
                     }}
                   >
                     {pkg.popular && (
@@ -1458,8 +1439,7 @@ export default function Account() {
                       </div>
                     )}
                     
-                    {/* Credits Number - ALIGNED */}
-                    <div className="text-center mb-3" style={{ height: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div className="text-center mb-3 flex-shrink-0">
                       <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
                         {pkg.credits}
                       </div>
@@ -1468,41 +1448,28 @@ export default function Account() {
                       </div>
                     </div>
 
-                    {/* Price - ALIGNED */}
-                    <div className="text-center mb-2" style={{ height: '36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div className="text-center mb-auto flex-shrink-0">
                       <div className="text-2xl font-bold" style={{ color: '#C7A338' }}>
                         ฿{pkg.price}
                       </div>
-                    </div>
-
-                    {/* Per Credit - ALIGNED */}
-                    <div className="text-center mb-2" style={{ height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <div className="text-xs" style={{ color: colors.textSecondary }}>
                         ฿{pricePerCredit} {strings.perCredit}
                       </div>
-                    </div>
-
-                    {/* Savings Badge - ALIGNED */}
-                    <div className="text-center mb-4" style={{ height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {pkg.savings > 0 ? (
-                        <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                      {pkg.savings > 0 && (
+                        <Badge className="mt-1 bg-emerald-100 text-emerald-700 text-xs">
                           {strings.save} {pkg.savings}%
                         </Badge>
-                      ) : (
-                        <div style={{ height: '24px' }}></div>
                       )}
                     </div>
 
-                    {/* Buy Button - ALIGNED */}
-                    <div style={{ marginTop: 'auto' }}>
+                    <div className="mt-4 flex-shrink-0">
                       <Button
                         onClick={() => handleBuyCredits(pkg)}
                         disabled={buying}
-                        className="w-full text-sm"
+                        className="w-full text-sm h-10"
                         style={{
                           backgroundColor: pkg.popular ? '#C7A338' : '#0C3B2E',
-                          color: '#FFFFFF',
-                          height: '40px'
+                          color: '#FFFFFF'
                         }}
                       >
                         {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : strings.buyNow}
@@ -1856,7 +1823,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: '#F59E0B',
                         color: '#FFFFFF',
-                        border: '2px solid '#F59E0B',
+                        border: '2px solid #F59E0B',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -1884,7 +1851,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                         color: '#F59E0B',
-                        border: '2px solid '#F59E0B',
+                        border: '2px solid #F59E0B',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
