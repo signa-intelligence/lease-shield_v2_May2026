@@ -729,8 +729,6 @@ export default function Account() {
   };
 
   const strings = t[language];
-  const currentPlanTier = user?.plan_tier || 'free';
-  const isFree = currentPlanTier === 'free';
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
@@ -2677,7 +2675,7 @@ export default function Account() {
                           <span style={{ fontSize: '40px', fontWeight: 'bold', color: '#FFFFFF', lineHeight: '1' }}>
                             ฿{displayPrice.toLocaleString()}
                           </span>
-                          <span style={{ fontSize: '16px', color: '#FFFFFF', opacity: 0.9 }}>
+                          <span style={{ fontSize: '16px', color: '#FFFFFF', opacity: 0.9 }>
                             {displayInterval}
                           </span>
                         </>
