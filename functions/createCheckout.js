@@ -41,11 +41,11 @@ Deno.serve(async (req) => {
     }
 
     const origin = new URL(req.url).origin.replace('/api/functions/createCheckout', '');
+    const userLang = user.language || 'en';
     
-    // ✅ FINAL FIX: For credit purchases, redirect to account with payment_success flag
-    // This opens in the same new tab, shows success briefly, then auto-closes
+    // ✅ USE STATIC HTML PAGE - NO BASE44 SDK REQUIRED
     const defaultSuccessUrl = metadata?.type === 'credits' 
-      ? `${origin}/account?payment_success=true&type=credits`
+      ? `${origin}/payment-success.html?lang=${userLang}`
       : `${origin}/account?success=true`;
     const defaultCancelUrl = `${origin}/account?canceled=true`;
 

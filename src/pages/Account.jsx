@@ -157,48 +157,32 @@ const CREDIT_PACKAGES = [
 ];
 
 export default function Account() {
-  // ✅ CHECK FOR PAYMENT SUCCESS IMMEDIATELY - BEFORE ANY API CALLS
-  const [paymentHandled, setPaymentHandled] = useState(false);
-  
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const paymentSuccess = params.get("payment_success");
-    const type = params.get("type");
-
-    if (paymentSuccess === "true" && type === "credits" && !paymentHandled) {
-      setPaymentHandled(true);
-      
-      // Show success message briefly, then close window or redirect
-      const timer = setTimeout(() => {
-        alert(
-          (user?.language === 'th' ? "ชำระเงินสำเร็จ! เครดิตจดหมาย Lease Shield ของคุณจะได้รับการอัปเดตโดยอัตโนมัติ ตอนนี้คุณสามารถสร้างจดหมายได้แล้ว" : "Payment received! Your Lease Shield letter credits will be updated automatically. You can now generate letters.")
-        );
-        
-        // Clean URL
-        const cleanUrl = window.location.origin + window.location.pathname;
-        window.history.replaceState({}, document.title, cleanUrl);
-        
-        // Close window and refresh parent if opened in a new tab
-        if (window.opener) {
-          try {
-            window.opener.location.reload();
-            window.close();
-          } catch (e) {
-            console.log('Could not refresh parent window or close current window:', e);
-            // Fallback if closing/refreshing opener fails
-            window.location.href = '/account';
-          }
-        } else {
-          // If not opened in a new tab, just navigate to account page
-          window.location.href = '/account';
-        }
-      }, 500); // Small delay to ensure alert is shown
-      
-      return () => clearTimeout(timer);
-    }
-  }, [paymentHandled]); // Removed `user?.language` from dependencies as `user` might not be loaded yet, defaulting to 'en' for alert is acceptable.
-
   const queryClient = useQueryClient();
+  
+  // Listen for payment success message from popup
+  React.useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data?.type === 'PAYMENT_SUCCESS' && event.data?.credits) {
+        console.log('Payment success message received from popup');
+        // Refresh user data to show updated credits
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [queryClient]);
+  
+  // Refresh data when window regains focus (after payment in new tab)
+  React.useEffect(() => {
+    const handleFocus = () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [queryClient]);
+
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -214,18 +198,7 @@ export default function Account() {
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    enabled: !paymentHandled, // ✅ Don't fetch user if handling payment
   });
-
-  // ✅ Refresh data when window regains focus (after payment in new tab)
-  React.useEffect(() => {
-    const handleFocus = () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [queryClient]);
 
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
@@ -342,7 +315,11 @@ export default function Account() {
       });
       
       if (response.data?.url) {
-        window.open(response.data.url, '_blank'); // Open in new window
+        // Open in new window/tab and listen for messages back
+        const newWindow = window.open(response.data.url, '_blank'); 
+        // Optional: you can add a listener for `newWindow.onbeforeunload` or `newWindow.closed`
+        // if you need to do something when the popup is closed, but it's often unreliable.
+        // The message listener handles the success case.
       }
     } catch (error) {
       console.error('Failed to create checkout:', error);
@@ -755,26 +732,6 @@ export default function Account() {
 
   // Updated LINE QR Code URL
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46470_M_gainfriends_2dbarcodes_GW.png";
-
-  // ✅ Show loading screen while handling payment
-  if (paymentHandled) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: isDarkMode ? '#1A1D1F' : '#F0FDF4'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <Loader2 className="w-16 h-16 animate-spin text-emerald-600 mx-auto mb-4" />
-          <p style={{ fontSize: '18px', color: isDarkMode ? '#ECEFED' : '#065F46', fontWeight: '600' }}>
-            {language === 'th' ? 'กำลังดำเนินการชำระเงิน...' : 'Processing payment...'}
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
