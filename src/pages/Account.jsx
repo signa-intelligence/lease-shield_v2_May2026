@@ -131,14 +131,12 @@ const CREDIT_PACKAGES = [
     id: 'credits_1',
     credits: 1,
     price: 99,
-    stripeUrl: 'https://buy.stripe.com/aFa9AV1C41xZcDy7qwdEs09',
     savings: 0
   },
   {
     id: 'credits_3',
     credits: 3,
     price: 249,
-    stripeUrl: 'https://buy.stripe.com/14AaEZa8A5Of472fX2dEs0a',
     savings: 16,
     popular: false
   },
@@ -146,7 +144,6 @@ const CREDIT_PACKAGES = [
     id: 'credits_5',
     credits: 5,
     price: 399,
-    stripeUrl: 'https://buy.stripe.com/bJe3cx80s1xZ8ni3agdEs0b',
     savings: 20,
     popular: true
   },
@@ -154,13 +151,53 @@ const CREDIT_PACKAGES = [
     id: 'credits_10',
     credits: 10,
     price: 699,
-    stripeUrl: 'https://buy.stripe.com/3cIfZjdkM5Of8ni3agdEs0c',
     savings: 30,
     popular: false
   }
 ];
 
 export default function Account() {
+  // ✅ CHECK FOR PAYMENT SUCCESS IMMEDIATELY - BEFORE ANY API CALLS
+  const [paymentHandled, setPaymentHandled] = useState(false);
+  
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentSuccess = params.get("payment_success");
+    const type = params.get("type");
+
+    if (paymentSuccess === "true" && type === "credits" && !paymentHandled) {
+      setPaymentHandled(true);
+      
+      // Show success message briefly, then close window or redirect
+      const timer = setTimeout(() => {
+        alert(
+          (user?.language === 'th' ? "ชำระเงินสำเร็จ! เครดิตจดหมาย Lease Shield ของคุณจะได้รับการอัปเดตโดยอัตโนมัติ ตอนนี้คุณสามารถสร้างจดหมายได้แล้ว" : "Payment received! Your Lease Shield letter credits will be updated automatically. You can now generate letters.")
+        );
+        
+        // Clean URL
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        
+        // Close window and refresh parent if opened in a new tab
+        if (window.opener) {
+          try {
+            window.opener.location.reload();
+            window.close();
+          } catch (e) {
+            console.log('Could not refresh parent window or close current window:', e);
+            // Fallback if closing/refreshing opener fails
+            window.location.href = '/account';
+          }
+        } else {
+          // If not opened in a new tab, just navigate to account page
+          window.location.href = '/account';
+        }
+      }, 500); // Small delay to ensure alert is shown
+      
+      return () => clearTimeout(timer);
+    }
+  }, [paymentHandled]); // Removed `user?.language` from dependencies as `user` might not be loaded yet, defaulting to 'en' for alert is acceptable.
+
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
@@ -172,40 +209,15 @@ export default function Account() {
   const [cancelFeedback, setCancelFeedback] = useState('');
   const [copiedLink, setCopiedLink] = useState(null);
   const [showQR, setShowQR] = useState({ landlord: false, juristic: false });
-  const [buyingCredits, setBuyingCredits] = useState({}); // ✅ FIXED: Object to track each package separately
+  const [buyingCredits, setBuyingCredits] = useState({}); // Object to track each package separately
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
+    enabled: !paymentHandled, // ✅ Don't fetch user if handling payment
   });
 
-  // ✅ HANDLE PAYMENT SUCCESS IN NEW TAB
-  React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentSuccess = urlParams.get('payment_success');
-    const paymentType = urlParams.get('type');
-    
-    if (paymentSuccess === 'true' && paymentType === 'credits') {
-      // Refresh data
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      
-      // Show success message briefly, then close window
-      const timer = setTimeout(() => {
-        if (window.opener) {
-          try {
-            window.opener.location.reload();
-          } catch (e) {
-            console.log('Could not refresh parent');
-          }
-          window.close();
-        }
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [queryClient]);
-
-  // ✅ UPDATED: Refresh data when window regains focus (after payment in new tab)
+  // ✅ Refresh data when window regains focus (after payment in new tab)
   React.useEffect(() => {
     const handleFocus = () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
@@ -330,7 +342,7 @@ export default function Account() {
       });
       
       if (response.data?.url) {
-        window.open(response.data.url, '_blank'); // ✅ FIXED: Open in new window
+        window.open(response.data.url, '_blank'); // Open in new window
       }
     } catch (error) {
       console.error('Failed to create checkout:', error);
@@ -744,77 +756,21 @@ export default function Account() {
   // Updated LINE QR Code URL
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46470_M_gainfriends_2dbarcodes_GW.png";
 
-  // ✅ SHOW SUCCESS MESSAGE IF IN NEW TAB AFTER PAYMENT
-  const urlParams = new URLSearchParams(window.location.search);
-  const paymentSuccess = urlParams.get('payment_success');
-  const paymentType = urlParams.get('type');
-  
-  if (paymentSuccess === 'true' && paymentType === 'credits') {
-    const successPageColors = isDarkMode ? {
-      bg: '#1A1D1F',
-      cardBg: '#2A2D30',
-      textPrimary: '#ECEFED',
-    } : {
-      bg: '#F8FAFC',
-      cardBg: '#FFFFFF',
-      textPrimary: '#1A1D1F',
-    };
-    
+  // ✅ Show loading screen while handling payment
+  if (paymentHandled) {
     return (
       <div style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#F0FDF4',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+        backgroundColor: isDarkMode ? '#1A1D1F' : '#F0FDF4'
       }}>
-        <div style={{
-          textAlign: 'center',
-          padding: '48px',
-          maxWidth: '400px'
-        }}>
-          <div style={{
-            width: '80px',
-            height: '80px',
-            backgroundColor: '#10B981',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px'
-          }}>
-            <CheckCircle2 className="w-12 h-12 text-white" />
-          </div>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#064E3B',
-            marginBottom: '12px'
-          }}>
-            {language === 'th' ? 'ชำระเงินสำเร็จ!' : 'Payment Successful!'}
-          </h1>
-          <p style={{
-            fontSize: '16px',
-            color: '#065F46',
-            marginBottom: '24px'
-          }}>
-            {language === 'th' ? 'เครดิตของคุณถูกเพิ่มแล้ว' : 'Your credits have been added.'}
+        <div style={{ textAlign: 'center' }}>
+          <Loader2 className="w-16 h-16 animate-spin text-emerald-600 mx-auto mb-4" />
+          <p style={{ fontSize: '18px', color: isDarkMode ? '#ECEFED' : '#065F46', fontWeight: '600' }}>
+            {language === 'th' ? 'กำลังดำเนินการชำระเงิน...' : 'Processing payment...'}
           </p>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '12px 24px',
-            backgroundColor: '#D1FAE5',
-            borderRadius: '8px',
-            fontSize: '14px',
-            color: '#065F46',
-            fontWeight: '500'
-          }}>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            {language === 'th' ? 'กำลังปิดหน้าต่าง...' : 'Closing window...'}
-          </div>
         </div>
       </div>
     );
@@ -1049,7 +1005,7 @@ export default function Account() {
                             borderRadius: '6px',
                             border: 'none',
                             backgroundColor: currentTheme === 'light' ? '#0C3B2E' : 'transparent',
-                            color: currentTheme === 'light' ? '#FFFFFF' : colors.textSecondary,
+                            color: currentTheme === 'light' ? '#FFFFFF' : colors.textPrimary,
                             fontWeight: currentTheme === 'light' ? 'bold' : 'normal',
                             fontSize: '13px',
                             cursor: 'pointer',
@@ -1079,7 +1035,7 @@ export default function Account() {
                             borderRadius: '6px',
                             border: 'none',
                             backgroundColor: currentTheme === 'dark' ? '#0C3B2E' : 'transparent',
-                            color: currentTheme === 'dark' ? '#FFFFFF' : colors.textSecondary,
+                            color: currentTheme === 'dark' ? '#FFFFFF' : colors.textPrimary,
                             fontWeight: currentTheme === 'dark' ? 'bold' : 'normal',
                             fontSize: '13px',
                             cursor: 'pointer',
@@ -2720,7 +2676,7 @@ export default function Account() {
                     <div className="mt-auto">
                       <button
                         onClick={() => handleBuyCredits(pkg)}
-                        disabled={buyingCredits[pkg.id]} // ✅ FIXED: Check THIS package's loading state
+                        disabled={buyingCredits[pkg.id]} // Check THIS package's loading state
                         style={{
                           display: 'block',
                           width: '100%',
