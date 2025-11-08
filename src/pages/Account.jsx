@@ -1715,7 +1715,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                         color: '#F59E0B',
-                        border: '2px solid #F59E0B',
+                        border: '2px solid '#F59E0B'',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -2336,6 +2336,7 @@ export default function Account() {
               const isCurrentPlan = currentPlanTier === plan.key;
               const isFreeplan = plan.key === 'free';
               const isSecureTier = plan.key === 'secure';
+              const isLiteTier = plan.key === 'lite';
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
               const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly);
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
@@ -2349,10 +2350,12 @@ export default function Account() {
                   style={{
                     backgroundColor: isSecureTier 
                       ? (isDarkMode ? '#1A2E27' : '#F0FDF4')
-                      : plan.popular 
-                        ? (isDarkMode ? '#2D2520' : '#FFFBEB')
-                        : colors.cardBg,
-                    borderColor: isSecureTier ? '#0C3B2E' : plan.popular ? '#C7A338' : colors.borderColor,
+                      : isLiteTier
+                        ? (isDarkMode ? '#1C2D28' : '#F0FDF9')
+                        : plan.popular 
+                          ? (isDarkMode ? '#2D2520' : '#FFFBEB')
+                          : colors.cardBg,
+                    borderColor: isSecureTier ? '#0C3B2E' : isLiteTier ? '#047857' : plan.popular ? '#C7A338' : colors.borderColor,
                     borderWidth: isSecureTier ? '3px' : '2px',
                     borderRadius: '12px',
                     padding: '16px',
@@ -2387,12 +2390,12 @@ export default function Account() {
                         width: '32px',
                         height: '32px',
                         borderRadius: '8px',
-                        backgroundColor: isSecureTier ? '#0C3B2E' : 'transparent',
+                        backgroundColor: isSecureTier ? '#0C3B2E' : isLiteTier ? '#047857' : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}>
-                        <Icon className="w-6 h-6" style={{ color: isSecureTier ? '#FFFFFF' : plan.bgColor }} />
+                        <Icon className="w-6 h-6" style={{ color: (isSecureTier || isLiteTier) ? '#FFFFFF' : plan.bgColor }} />
                       </div>
                       <h3 className="text-xl font-bold" style={{ color: isSecureTier ? '#0C3B2E' : colors.textPrimary }}>
                         {plan.label}
@@ -2484,7 +2487,7 @@ export default function Account() {
                         disabled={subscribing}
                         className="w-full text-sm h-10"
                         style={{
-                          backgroundColor: isSecureTier ? '#0C3B2E' : plan.popular ? '#C7A338' : '#0C3B2E',
+                          backgroundColor: isSecureTier ? '#0C3B2E' : isLiteTier ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E',
                           color: '#FFFFFF',
                           cursor: subscribing ? 'not-allowed' : 'pointer',
                           opacity: subscribing ? 0.7 : 1
@@ -2524,8 +2527,7 @@ export default function Account() {
                 <p className="text-3xl font-bold" style={{ color: '#C7A338' }}>
                   {user?.letter_credits || 0}
                 </p>
-              </div>
-            </CardTitle>
+              </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             {/* Benefits - UPDATED ALIGNMENT */}
