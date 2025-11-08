@@ -1,12 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
-// Force redeploy - updated secrets
 import Stripe from 'npm:stripe@14.10.0';
 
+// === FORCED REDEPLOY - DECEMBER 2024 - USING TEST KEY ===
 const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2023-10-16',
 });
 
 Deno.serve(async (req) => {
+  // Log the key being used (first 15 chars for debugging)
+  const key = Deno.env.get('SK_TEST_secret_key');
+  console.log('🔑 Using Stripe key:', key?.substring(0, 15));
+  console.log('🔑 Key type:', key?.startsWith('sk_test_') ? 'TEST ✅' : 'LIVE ❌');
+  
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -49,18 +54,17 @@ Deno.serve(async (req) => {
       success_url: successUrl || defaultSuccessUrl,
       cancel_url: cancelUrl || defaultCancelUrl,
       metadata: metadata || {},
-      allow_promotion_codes: true, // Always enable Stripe's native promo code field at checkout
+      allow_promotion_codes: true,
     };
 
     // Handle subscription vs one-time payment
     if (mode === 'payment' && amount) {
       console.log('Creating one-time payment session for amount:', amount);
-      // One-time payment (for cases)
       sessionConfig.line_items = [
         {
           price_data: {
             currency: currency || 'thb',
-            unit_amount: Math.round(amount * 100), // Convert to smallest currency unit
+            unit_amount: Math.round(amount * 100),
             product_data: {
               name: description || 'Lease Shield Resolve Service',
               description: description || 'Professional dispute resolution service',
@@ -71,7 +75,6 @@ Deno.serve(async (req) => {
       ];
     } else if (priceId) {
       console.log('Creating subscription session for price:', priceId);
-      // Subscription payment
       sessionConfig.line_items = [
         {
           price: priceId,

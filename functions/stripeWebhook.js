@@ -3,6 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 import { format } from 'npm:date-fns@2.30.0'; // Import date-fns for date formatting
 
+// === FORCED REDEPLOY - DECEMBER 2024 - USING TEST KEY ===
 const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key')!, { // Added '!' for non-null assertion as per Deno.env.get usage
   apiVersion: '2023-10-16',
 });
@@ -11,6 +12,11 @@ Deno.serve(async (req) => {
   console.log('=== WEBHOOK RECEIVED ===');
   console.log('Method:', req.method);
   console.log('URL:', req.url);
+  
+  // Log the key being used
+  const key = Deno.env.get('SK_TEST_secret_key');
+  console.log('🔑 Using Stripe key:', key?.substring(0, 15));
+  console.log('🔑 Key type:', key?.startsWith('sk_test_') ? 'TEST ✅' : 'LIVE ❌');
   
   try {
     const signature = req.headers.get('stripe-signature');
