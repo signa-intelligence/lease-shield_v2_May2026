@@ -175,6 +175,37 @@ export default function Account() {
     queryFn: () => base44.auth.me(),
   });
 
+  // Detect payment success on page load and trigger aggressive refresh
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    
+    if (paymentStatus === 'success') {
+      console.log('💳 Payment success detected - starting credit refresh...');
+      
+      // Clean URL immediately
+      window.history.replaceState({}, '', window.location.pathname);
+      
+      // Aggressive polling for 60 seconds to catch webhook update
+      let pollCount = 0;
+      const maxPolls = 12; // 60 seconds total (5s intervals)
+      
+      const pollInterval = setInterval(() => {
+        pollCount++;
+        console.log(`🔄 Polling for credits update (${pollCount}/${maxPolls})...`);
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval);
+          console.log('✅ Credit refresh polling complete');
+        }
+      }, 5000); // Every 5 seconds
+      
+      // Cleanup on unmount
+      return () => clearInterval(pollInterval);
+    }
+  }, [queryClient]);
+
   // Auto-refresh credits every 5 seconds after window regains focus
   React.useEffect(() => {
     let intervalId;
