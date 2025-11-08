@@ -1715,7 +1715,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                         color: '#F59E0B',
-                        border: '2px solid '#F59E0B'',
+                        border: '2px solid #F59E0B',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -2527,7 +2527,8 @@ export default function Account() {
                 <p className="text-3xl font-bold" style={{ color: '#C7A338' }}>
                   {user?.letter_credits || 0}
                 </p>
-              </CardTitle>
+              </div>
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             {/* Benefits - UPDATED ALIGNMENT */}
