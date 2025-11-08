@@ -62,7 +62,7 @@ const PLAN_DETAILS = [
       '5 Lease Scans per month',
       'Full Risk Reports',
       'Email Notifications',
-      '3 Letter Credits', // Changed from 3 Basic Letter Templates
+      '3 Basic Letter Templates',
       '1GB Document Storage',
       'Deposit Tracker',
       'Maintenance Tracker'
@@ -87,7 +87,7 @@ const PLAN_DETAILS = [
       '6 Lease Scans per month', // Changed from Unlimited
       'Deposit Shield Automation',
       'Rent Payment Alerts',
-      '5 Letter Credits', // Changed from 7 Letter Templates
+      '7 Letter Templates',
       '5GB Document Storage',
       'LINE Notifications',
       'Automated Reminders'
@@ -111,7 +111,7 @@ const PLAN_DETAILS = [
     benefits: [
       'Everything in Protect',
       'Unlimited Lease Scans', // Changed from 10
-      '15 Letter Credits', // Changed from Full Letter Templates (10)
+      'Full Letter Templates', // Changed from 10
       'Priority Case Queue',
       'Priority Scanning',
       '20GB Document Storage',
@@ -432,7 +432,6 @@ export default function Account() {
   const language = user?.language || 'en';
   const currentTheme = user?.theme || 'light';
   const isDarkMode = currentTheme === 'dark';
-  const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -579,14 +578,15 @@ export default function Account() {
       creditBalance: "Credit Balance",
       credits: "Credits",
       perCredit: "per credit",
+      save: "Save",
       buyNow: "Buy Now",
       mostPopular: "Most Popular",
       bestValue: "Best Value",
       creditPacks: "Credit Packs",
       oneLetterPerCredit: "1 letter = 1 credit",
-      accessTemplateLibrary: "Access template library",
+      allTemplatesAvailable: "Access template library",
       bilingual: "Bilingual (EN/TH)",
-      humanAndAiGeneration: "Human and AI generation",
+      instantGeneration: "Human and AI generation",
       creditsNeverExpire: "Credits never expire",
       purchaseCredits: "Purchase Credits"
     },
@@ -720,15 +720,19 @@ export default function Account() {
       bestValue: "คุ้มที่สุด",
       creditPacks: "แพ็กเกจเครดิต",
       oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
-      accessTemplateLibrary: "เข้าถึงคลังเทมเพลต",
+      allTemplatesAvailable: "เข้าถึงคลังเทมเพลต",
       bilingual: "สองภาษา (EN/TH)",
-      humanAndAiGeneration: "สร้างด้วยคนและ AI",
-      creditsNeverExpire: "เครดิตไม่หมดอายุ"
+      instantGeneration: "สร้างโดยมนุษย์และ AI",
+      creditsNeverExpire: "เครดิตไม่หมดอายุ",
+      purchaseCredits: "ซื้อเครดิต"
     }
   };
 
   const strings = t[language];
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
+  const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
+
+  // Updated LINE QR Code URL
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46470_M_gainfriends_2dbarcodes_GW.png";
 
   return (
@@ -1353,7 +1357,7 @@ export default function Account() {
           </Card>
         </div>
 
-        {/* Letter Credits Section */}
+        {/* Letter Credits Section - NEW */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
@@ -1381,27 +1385,27 @@ export default function Account() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {/* Benefits - UPDATED */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
-              <div className="flex items-center gap-2">
+            {/* Benefits - UPDATED ALIGNMENT */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
+              <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.accessTemplateLibrary}</span>
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.allTemplatesAvailable}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.bilingual}</span>
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.bilingual}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.humanAndAiGeneration}</span>
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.instantGeneration}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.creditsNeverExpire}</span>
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.creditsNeverExpire}</span>
               </div>
             </div>
 
-            {/* Credit Packages - FIXED ALIGNMENT */}
+            {/* Credit Packages */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {CREDIT_PACKAGES.map((pkg) => {
                 const pricePerCredit = Math.round(pkg.price / pkg.credits);
