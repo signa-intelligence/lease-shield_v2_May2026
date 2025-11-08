@@ -172,9 +172,7 @@ export default function Account() {
   const [cancelFeedback, setCancelFeedback] = useState('');
   const [copiedLink, setCopiedLink] = useState(null);
   const [showQR, setShowQR] = useState({ landlord: false, juristic: false });
-  const [promoCode, setPromoCode] = useState('');
-  const [promoError, setPromoError] = useState('');
-  // Removed buying state as direct Stripe links are used
+  // Removed promoCode and promoError state
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -258,26 +256,20 @@ export default function Account() {
     const priceId = interval === 'annual' ? plan.priceIdAnnual : plan.priceIdMonthly;
 
     setSubscribing(true);
-    setPromoError(''); // Clear previous promo error
     try {
       const response = await base44.functions.invoke('createCheckout', {
         priceId: priceId,
         mode: 'subscription',
-        promoCode: promoCode || undefined // Pass promoCode if available
+        // Removed promoCode parameter - Stripe will handle it natively at checkout
       });
       
       if (response.data?.url) {
         window.location.href = response.data.url;
-      } else if (response.data?.code === 'invalid_promo_code') {
-        setPromoError(language === 'th' ? 'รหัสโปรโมชันไม่ถูกต้องหรือหมดอายุ' : 'Invalid or expired promo code');
       }
     } catch (error) {
       console.error('Subscription error:', error);
-      if (error.response?.data?.code === 'invalid_promo_code') {
-        setPromoError(language === 'th' ? 'รหัสโปรโมชันไม่ถูกต้องหรือหมดอายุ' : 'Invalid or expired promo code');
-      } else {
-        alert(language === 'th' ? 'ไม่สามารถสร้างการสมัครได้ กรุณาลองอีกครั้ง' : 'Failed to start subscription. Please try again.');
-      }
+      const language = user?.language || 'en'; // Define language here for alert
+      alert(language === 'th' ? 'ไม่สามารถสร้างการสมัครได้ กรุณาลองอีกครั้ง' : 'Failed to start subscription. Please try again.');
     } finally {
       setSubscribing(false);
     }
@@ -535,11 +527,6 @@ export default function Account() {
       showQR: "Show QR Code",
       hideQR: "Hide QR Code",
       scanQR: "Scan this QR code with LINE app",
-      promoCode: "Promo Code",
-      promoCodePlaceholder: "Enter promo code",
-      promoCodeOptional: "(Optional)",
-      applyPromo: "Apply",
-      promoApplied: "Promo code will be applied at checkout",
       buyCredits: "Buy Letter Credits",
       creditBalance: "Credit Balance",
       credits: "Credits",
@@ -669,11 +656,6 @@ export default function Account() {
       showQR: "แสดง QR Code",
       hideQR: "ซ่อน QR Code",
       scanQR: "สแกน QR Code นี้ด้วยแอป LINE",
-      promoCode: "รหัสโปรโมชัน",
-      promoCodePlaceholder: "ใส่รหัสโปรโมชัน",
-      promoCodeOptional: "(ไม่บังคับ)",
-      applyPromo: "ใช้งาน",
-      promoApplied: "รหัสโปรโมชันจะถูกใช้เมื่อชำระเงิน",
       buyCredits: "ซื้อเครดิตจดหมาย",
       creditBalance: "เครดิตคงเหลือ",
       credits: "เครดิต",
@@ -2253,51 +2235,7 @@ export default function Account() {
           </div>
         </div>
 
-        {/* Promo Code Input */}
-        <div className="mb-6">
-          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row items-start md:items-end gap-4">
-                <div className="flex-1 w-full">
-                  <Label htmlFor="promoCode" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                    <Gift className="w-4 h-4 text-ls-gold" />
-                    {strings.promoCode} <span style={{ color: colors.textSecondary, fontWeight: 'normal' }}>{strings.promoCodeOptional}</span>
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="promoCode"
-                      value={promoCode}
-                      onChange={(e) => {
-                        setPromoCode(e.target.value.toUpperCase());
-                        setPromoError('');
-                      }}
-                      placeholder={strings.promoCodePlaceholder}
-                      className="flex-1"
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: promoError ? '#EF4444' : colors.borderColor,
-                        color: colors.textPrimary,
-                        borderWidth: '2px'
-                      }}
-                    />
-                  </div>
-                  {promoError && (
-                    <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
-                      <AlertCircle className="w-4 h-4" />
-                      {promoError}
-                    </p>
-                  )}
-                  {promoCode && !promoError && (
-                    <p className="text-sm text-emerald-600 mt-2 flex items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4" />
-                      {strings.promoApplied}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Removed Promo Code Input Section */}
 
         {/* Billing Toggle */}
         <div id="plans-section" className="mb-6">
