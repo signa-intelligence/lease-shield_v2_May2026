@@ -7,14 +7,14 @@ const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
 // Direct API call helper (bypasses SDK auth issues)
 async function makeDirectApiCall(method, path, body = null) {
   const appId = Deno.env.get('BASE44_APP_ID');
-  const baseUrl = 'https://api.base44.com';
+  const baseUrl = 'https://api.base44.app'; // FIXED: .app not .com!
   
   const options = {
     method,
     headers: {
       'Content-Type': 'application/json',
       'X-App-Id': appId,
-      'X-Use-Service-Role': 'true', // Force service role
+      'X-Use-Service-Role': 'true',
     },
   };
   
@@ -22,7 +22,7 @@ async function makeDirectApiCall(method, path, body = null) {
     options.body = JSON.stringify(body);
   }
   
-  const url = `${baseUrl}${path}`;
+  const url = `${baseUrl}/v1/apps/${appId}${path}`; // FIXED: proper path structure
   console.log(`📞 API ${method} ${url}`);
   
   const response = await fetch(url, options);
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
         
         // Fetch all users via direct API
         const usersResponse = await makeDirectApiCall('GET', '/entities/User');
-        const users = usersResponse.items || [];
+        const users = usersResponse.items || usersResponse || [];
         
         let user = users.find(u => 
           u.stripe_customer_id === customerId || u.email === email
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
           created_by: user.email
         });
 
-        // Send confirmation email via direct API
+        // Send confirmation email
         const lang = user.language || 'en';
         const subject = lang === 'th' 
           ? `ซื้อเครดิต ${creditsToAdd} เครดิตสำเร็จ` 
@@ -140,6 +140,39 @@ Use your credits to generate professional legal letters instantly.
         });
 
         console.log('✅ Email sent to:', user.email);
+
+        // 🆕 SEND LINE NOTIFICATION IF USER HAS TOKEN
+        if (user.line_messaging_token && user.line_notifications) {
+          console.log('📱 Sending LINE notification...');
+          
+          const lineMessage = lang === 'th'
+            ? `🎉 เครดิตเพิ่มแล้ว!\n\nคุณซื้อ ${creditsToAdd} เครดิต\nยอดคงเหลือ: ${currentCredits + creditsToAdd} เครดิต\n\nใช้สร้างจดหมายได้ทันที 📝`
+            : `🎉 Credits Added!\n\nYou purchased ${creditsToAdd} credits\nNew Balance: ${currentCredits + creditsToAdd} credits\n\nStart generating letters now 📝`;
+
+          try {
+            const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN')}`
+              },
+              body: JSON.stringify({
+                to: user.line_messaging_token,
+                messages: [{ type: 'text', text: lineMessage }]
+              })
+            });
+
+            if (lineResponse.ok) {
+              console.log('✅ LINE notification sent!');
+            } else {
+              const errorText = await lineResponse.text();
+              console.error('⚠️ LINE notification failed:', errorText);
+            }
+          } catch (lineError) {
+            console.error('⚠️ LINE notification error:', lineError.message);
+          }
+        }
+
         return Response.json({ ok: true, credited: creditsToAdd }, { status: 200 });
       }
       
@@ -148,7 +181,7 @@ Use your credits to generate professional legal letters instantly.
         console.log('💳 Processing SUBSCRIPTION');
         
         const usersResponse = await makeDirectApiCall('GET', '/entities/User');
-        const users = usersResponse.items || [];
+        const users = usersResponse.items || usersResponse || [];
         
         let user = users.find(u => 
           u.stripe_customer_id === customerId || u.email === email
