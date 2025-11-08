@@ -276,32 +276,32 @@ export default function Account() {
   };
 
   const handleBuyCredits = async (pkg) => {
-    setBuyingCredits(prev => ({ ...prev, [pkg.id]: true })); // ✅ FIXED: Set loading for THIS package only
+    setBuyingCredits(prev => ({ ...prev, [pkg.id]: true }));
     try {
       console.log('🔍 Sending to createCheckout:', { amount: pkg.price, packageId: pkg.id });
       
       const response = await base44.functions.invoke('createCheckout', {
-        priceId: null, // Not used for payment mode, custom amount is used
+        priceId: null,
         mode: 'payment',
-        amount: pkg.price, // ✅ Correct - no multiplication
+        amount: pkg.price,
         currency: 'thb',
         description: `${pkg.credits} Letter Credits`,
         metadata: {
           type: 'credits',
           credits: pkg.credits.toString(),
-          packageId: pkg.id // Add package ID for tracking if needed
+          packageId: pkg.id
         }
       });
       
       if (response.data?.url) {
-        window.location.href = response.data.url;
+        window.open(response.data.url, '_blank'); // ✅ FIXED: Open in new window
       }
     } catch (error) {
       console.error('Failed to create checkout:', error);
-      const language = user?.language || 'en'; // Define language here for alert
+      const language = user?.language || 'en';
       alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
     } finally {
-      setBuyingCredits(prev => ({ ...prev, [pkg.id]: false })); // ✅ Reset on error
+      setBuyingCredits(prev => ({ ...prev, [pkg.id]: false }));
     }
   };
 
@@ -416,7 +416,7 @@ export default function Account() {
   const currentPlanTier = user?.plan_tier || 'free';
   const isFree = currentPlanTier === 'free';
   const language = user?.language || 'en';
-  const currentTheme = user?.theme || 'light';
+  const currentTheme = user?.theme || 'dark'; // Default to 'dark' if user?.theme is undefined
   const isDarkMode = currentTheme === 'dark';
 
   const colors = isDarkMode ? {
@@ -863,7 +863,7 @@ export default function Account() {
                     padding: '16px',
                     backgroundColor: colors.fieldBg,
                     borderRadius: '12px',
-                    borderLeft: '4px solid #1A1D1F'
+                    borderLeft: '4px solid '#1A1D1F''
                   }}>
                     <div className="flex items-center gap-3">
                       <div style={{
