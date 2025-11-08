@@ -2436,20 +2436,18 @@ export default function Account() {
                     </div>
                   </div>
 
-                  {/* Benefits List - Flexible Height */}
+                  {/* Benefits List - Flexible Height - SHOW ALL */}
                   <div style={{ flex: 1, marginBottom: '12px' }}>
                     <ul className="space-y-2">
-                      {plan.benefits.slice(0, 5).map((benefit, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
-                          <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: isSecureTier ? '#0C3B2E' : '#0C3B2E' }} />
-                          <span>{benefit}</span>
-                        </li>
-                      ))}
-                      {plan.benefits.length > 5 && (
-                        <li className="text-xs font-semibold text-center" style={{ color: colors.textSecondary }}>
-                          +{plan.benefits.length - 5} more
-                        </li>
-                      )}
+                      {plan.benefits.map((benefit, idx) => {
+                        const isBold = benefit.startsWith('Everything in');
+                        return (
+                          <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
+                            <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: isSecureTier ? '#0C3B2E' : '#0C3B2E' }} />
+                            <span style={{ fontWeight: isBold ? 'bold' : 'normal' }}>{benefit}</span>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
 
@@ -2485,12 +2483,14 @@ export default function Account() {
                       <Button
                         onClick={() => handleSubscribe(plan.key, billingInterval)}
                         disabled={subscribing}
-                        className="w-full text-sm h-10"
+                        className="w-full h-10"
                         style={{
                           backgroundColor: isSecureTier ? '#0C3B2E' : isLiteTier ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E',
                           color: '#FFFFFF',
                           cursor: subscribing ? 'not-allowed' : 'pointer',
-                          opacity: subscribing ? 0.7 : 1
+                          opacity: subscribing ? 0.7 : 1,
+                          fontSize: isSecureTier ? '15px' : '14px',
+                          fontWeight: isSecureTier ? '700' : '600'
                         }}
                       >
                         {subscribing ? strings.processing : `${strings.startPlan} ${plan.label}`}
