@@ -573,6 +573,12 @@ export default function AdminConsole() {
                       {strings.plan}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                      LINE
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
                       {strings.letterCredits}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
@@ -581,93 +587,121 @@ export default function AdminConsole() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedUsers.map((u, idx) => (
-                    <tr
-                      key={u.id}
-                      style={{
-                        borderBottom: `1px solid ${colors.borderColor}`,
-                        backgroundColor: idx % 2 === 0 ? colors.cardBg : (isDarkMode ? '#2A2D30' : '#F8FAFC')
-                      }}
-                    >
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                          {u.full_name}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-xs" style={{ color: colors.textSecondary }}>{u.email}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge className={
-                          u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-                          u.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
-                          u.access_level === 'va' ? 'bg-amber-100 text-amber-800' :
-                          'bg-slate-100 text-slate-800'
-                        }>
-                          {u.access_level || 'user'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge className={
-                          u.plan_tier === 'secure' ? 'bg-purple-100 text-purple-800' :
-                          u.plan_tier === 'protect' ? 'bg-emerald-100 text-emerald-800' :
-                          u.plan_tier === 'lite' ? 'bg-blue-100 text-blue-800' :
-                          'bg-slate-100 text-slate-800'
-                        }>
-                          {u.plan_tier || 'free'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => handleOpenCreditsDialog(u)}
-                          className="flex items-center gap-1 px-2 py-1 rounded hover:bg-amber-100 transition-colors"
-                        >
-                          <Coins className="w-4 h-4 text-amber-600" />
-                          <span className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                            {u.letter_credits || 0}
-                          </span>
-                        </button>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2">
-                          <Select
-                            value={u.access_level || 'user'}
-                            onValueChange={(val) => updateUserMutation.mutate({
-                              userId: u.id,
-                              data: { access_level: val }
-                            })}
+                  {sortedUsers.map((u, idx) => {
+                    // Check if user is "online" - updated in last 5 minutes
+                    const lastUpdate = new Date(u.updated_date || u.created_date);
+                    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                    const isOnline = lastUpdate > fiveMinutesAgo;
+                    
+                    return (
+                      <tr
+                        key={u.id}
+                        style={{
+                          borderBottom: `1px solid ${colors.borderColor}`,
+                          backgroundColor: idx % 2 === 0 ? colors.cardBg : (isDarkMode ? '#2A2D30' : '#F8FAFC')
+                        }}
+                      >
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                            {u.full_name}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-xs" style={{ color: colors.textSecondary }}>{u.email}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={
+                            u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+                            u.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
+                            u.access_level === 'va' ? 'bg-amber-100 text-amber-800' :
+                            'bg-slate-100 text-slate-800'
+                          }>
+                            {u.access_level || 'user'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={
+                            u.plan_tier === 'secure' ? 'bg-purple-100 text-purple-800' :
+                            u.plan_tier === 'protect' ? 'bg-emerald-100 text-emerald-800' :
+                            u.plan_tier === 'lite' ? 'bg-blue-100 text-blue-800' :
+                            'bg-slate-100 text-slate-800'
+                          }>
+                            {u.plan_tier || 'free'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                            <span className="text-xs" style={{ color: colors.textSecondary }}>
+                              {isOnline ? 'Online' : 'Offline'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {u.line_messaging_token ? (
+                            <Badge className="bg-emerald-100 text-emerald-700 flex items-center gap-1 w-fit">
+                              <CheckCircle className="w-3 h-3" />
+                              Connected
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-slate-500 flex items-center gap-1 w-fit">
+                              <Ban className="w-3 h-3" />
+                              Not Connected
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => handleOpenCreditsDialog(u)}
+                            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-amber-100 transition-colors"
                           >
-                            <SelectTrigger className="w-32 h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="user">User</SelectItem>
-                              <SelectItem value="va">VA</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="super_admin">Super Admin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Select
-                            value={u.plan_tier || 'free'}
-                            onValueChange={(val) => updateUserMutation.mutate({
-                              userId: u.id,
-                              data: { plan_tier: val }
-                            })}
-                          >
-                            <SelectTrigger className="w-24 h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="free">Free</SelectItem>
-                              <SelectItem value="lite">Lite</SelectItem>
-                              <SelectItem value="protect">Protect</SelectItem>
-                              <SelectItem value="secure">Secure</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            <Coins className="w-4 h-4 text-amber-600" />
+                            <span className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                              {u.letter_credits || 0}
+                            </span>
+                          </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-2">
+                            <Select
+                              value={u.access_level || 'user'}
+                              onValueChange={(val) => updateUserMutation.mutate({
+                                userId: u.id,
+                                data: { access_level: val }
+                              })}
+                            >
+                              <SelectTrigger className="w-32 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="va">VA</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="super_admin">Super Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={u.plan_tier || 'free'}
+                              onValueChange={(val) => updateUserMutation.mutate({
+                                userId: u.id,
+                                data: { plan_tier: val }
+                              })}
+                            >
+                              <SelectTrigger className="w-24 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="free">Free</SelectItem>
+                                <SelectItem value="lite">Lite</SelectItem>
+                                <SelectItem value="protect">Protect</SelectItem>
+                                <SelectItem value="secure">Secure</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
