@@ -584,9 +584,9 @@ export default function Account() {
       bestValue: "Best Value",
       creditPacks: "Credit Packs",
       oneLetterPerCredit: "1 letter = 1 credit",
-      accessTemplateLibrary: "Access template library",
+      allTemplatesAvailable: "Access all 11 letter templates",
       bilingual: "Bilingual (EN/TH)",
-      humanAndAiGeneration: "Human and AI generation",
+      instantGeneration: "Instant AI generation",
       creditsNeverExpire: "Credits never expire",
       purchaseCredits: "Purchase Credits"
     },
@@ -720,39 +720,19 @@ export default function Account() {
       bestValue: "คุ้มที่สุด",
       creditPacks: "แพ็กเกจเครดิต",
       oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
-      accessTemplateLibrary: "เข้าถึงคลังเทมเพลต",
+      allTemplatesAvailable: "เข้าถึงเทมเพลตจดหมายทั้ง 11 แบบ",
       bilingual: "สองภาษา (EN/TH)",
-      humanAndAiGeneration: "สร้างด้วยคนและ AI",
-      creditsNeverExpire: "เครดิตไม่หมดอายุ"
+      instantGeneration: "สร้างด้วย AI ทันที",
+      creditsNeverExpire: "เครดิตไม่หมดอายุ",
+      purchaseCredits: "ซื้อเครดิต"
     }
   };
 
   const strings = t[language];
-  const currentPlanTier = user?.plan_tier || 'free';
-  const isFree = currentPlanTier === 'free';
-  const currentTheme = user?.theme || 'light';
-  const isDarkMode = currentTheme === 'dark';
+  const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
+  const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D',
-    fieldBg: '#353A3D',
-    hoverBg: '#3A3D40'
-  } : {
-    bg: '#ECEFED',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    inputBg: '#FFFFFF',
-    fieldBg: '#ECEFED',
-    hoverBg: '#F8FAFC'
-  };
-
+  // Updated LINE QR Code URL
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46470_M_gainfriends_2dbarcodes_GW.png";
 
   return (
@@ -1377,7 +1357,7 @@ export default function Account() {
           </Card>
         </div>
 
-        {/* Letter Credits Section */}
+        {/* Letter Credits Section - NEW */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
@@ -1405,11 +1385,11 @@ export default function Account() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {/* Benefits - UPDATED */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
+            {/* Benefits */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.accessTemplateLibrary}</span>
+                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.allTemplatesAvailable}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -1417,7 +1397,7 @@ export default function Account() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.humanAndAiGeneration}</span>
+                <span className="text-xs" style={{ color: colors.textPrimary }}>{strings.instantGeneration}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
