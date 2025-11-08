@@ -172,6 +172,7 @@ export default function Account() {
   const [cancelFeedback, setCancelFeedback] = useState('');
   const [copiedLink, setCopiedLink] = useState(null);
   const [showQR, setShowQR] = useState({ landlord: false, juristic: false });
+  const [buyingCredits, setBuyingCredits] = useState(false); // NEW STATE
   // Removed promoCode and promoError state
 
   const { data: user } = useQuery({
@@ -275,7 +276,33 @@ export default function Account() {
     }
   };
 
-  // handleBuyCredits removed as direct Stripe links are used
+  const handleBuyCredits = async (pkg) => {
+    setBuyingCredits(true);
+    try {
+      const response = await base44.functions.invoke('createCheckout', {
+        priceId: null, // Not used for payment mode, custom amount is used
+        mode: 'payment',
+        amount: pkg.price * 100, // Convert to satang (Thai Baht in minor units)
+        currency: 'thb',
+        description: `${pkg.credits} Letter Credits`,
+        metadata: {
+          type: 'credits',
+          credits: pkg.credits.toString(),
+          packageId: pkg.id // Add package ID for tracking if needed
+        }
+      });
+      
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (error) {
+      console.error('Failed to create checkout:', error);
+      const language = user?.language || 'en'; // Define language here for alert
+      alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
+    } finally {
+      setBuyingCredits(false);
+    }
+  };
 
   const handleExportData = async () => {
     setExporting(true);
@@ -2576,37 +2603,41 @@ export default function Account() {
                       </div>
                     </div>
 
-                    {/* Button - Fixed at Bottom - DIRECT STRIPE LINK */}
+                    {/* Button - Fixed at Bottom - UPDATED */}
                     <div className="mt-auto">
-                      <a
-                        href={pkg.stripeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => handleBuyCredits(pkg)}
+                        disabled={buyingCredits}
                         style={{
                           display: 'block',
                           width: '100%',
                           padding: '10px 16px',
                           textAlign: 'center',
-                          backgroundColor: pkg.popular ? '#C7A338' : '#0C3B2E',
+                          backgroundColor: buyingCredits ? '#9CA3AF' : (pkg.popular ? '#C7A338' : '#0C3B2E'),
                           color: '#FFFFFF',
                           borderRadius: '6px',
                           fontSize: '14px',
                           fontWeight: '600',
-                          textDecoration: 'none',
+                          border: 'none',
+                          cursor: buyingCredits ? 'not-allowed' : 'pointer',
                           transition: 'all 0.2s',
-                          cursor: 'pointer'
+                          opacity: buyingCredits ? 0.7 : 1
                         }}
                         onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = pkg.popular ? '#B89330' : '#0a2f25';
-                          e.target.style.transform = 'translateY(-1px)';
+                          if (!buyingCredits) {
+                            e.target.style.backgroundColor = pkg.popular ? '#B89330' : '#0a2f25';
+                            e.target.style.transform = 'translateY(-1px)';
+                          }
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = pkg.popular ? '#C7A338' : '#0C3B2E';
-                          e.target.style.transform = 'translateY(0)';
+                          if (!buyingCredits) {
+                            e.target.style.backgroundColor = pkg.popular ? '#C7A338' : '#0C3B2E';
+                            e.target.style.transform = 'translateY(0)';
+                          }
                         }}
                       >
-                        {strings.buyNow}
-                      </a>
+                        {buyingCredits ? (language === 'th' ? 'กำลังดำเนินการ...' : 'Processing...') : strings.buyNow}
+                      </button>
                     </div>
                   </div>
                 );
