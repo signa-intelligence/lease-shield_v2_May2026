@@ -1,75 +1,76 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, CheckCircle2, FileText, Database, Shield, Mail, Trash2, Crown, Bell, Scale, MoreVertical, ChevronDown, Eye, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins } from "lucide-react";
 import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
+import { Link } from "react-router-dom";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function AdminConsole() {
-  const [seeding, setSeeding] = useState(false);
+  const [seedingDemo, setSeedingDemo] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+  const [selectedUserForTest, setSelectedUserForTest] = useState(null);
+  const [testNotificationType, setTestNotificationType] = useState('deposit_30day');
+  const [sortField, setSortField] = useState('created_date');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [editCreditsDialog, setEditCreditsDialog] = useState(false);
+  const [selectedUserForCredits, setSelectedUserForCredits] = useState(null);
+  const [newCreditAmount, setNewCreditAmount] = useState('');
+
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
-
-  // New state for LINE notification testing
-  const [testingNotification, setTestingNotification] = useState(false);
-  const [testResult, setTestResult] = useState(null);
-  
-  // New state for sending LINE messages to users
-  const [sendingLineMessage, setSendingLineMessage] = useState(false);
-  const [lineMessageResult, setLineMessageResult] = useState(null);
-
-  // New state for sending test notifications to users
-  const [selectedUserForTest, setSelectedUserForTest] = useState('');
-  const [sendingTestToUser, setSendingTestToUser] = useState(false);
-  const [testToUserResult, setTestToUserResult] = useState(null);
-
-  // New state for user action feedback
-  const [userActionResult, setUserActionResult] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: allUsers = [] } = useQuery({
+  const { data: users = [] } = useQuery({
     queryKey: ['allUsers'],
     queryFn: () => base44.entities.User.list(),
-    // Only fetch if current user is an admin or super_admin
-    enabled: user?.access_level === 'admin' || user?.access_level === 'super_admin' || user?.role === 'admin',
+    enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
   });
 
-  const { data: allLeases = [] } = useQuery({
+  const { data: leases = [] } = useQuery({
     queryKey: ['allLeases'],
-    queryFn: () => base44.entities.Lease.list(),
-    // Only fetch if current user is an admin or super_admin
-    enabled: user?.access_level === 'admin' || user?.access_level === 'super_admin' || user?.role === 'admin',
+    queryFn: () => base44.entities.Lease.list('-created_date', 10),
+    enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
   });
 
-  const { data: allDocuments = [] } = useQuery({
+  const { data: documents = [] } = useQuery({
     queryKey: ['allDocuments'],
     queryFn: () => base44.entities.Document.list(),
-    // Only fetch if current user is an admin or super_admin
-    enabled: user?.access_level === 'admin' || user?.access_level === 'super_admin' || user?.role === 'admin',
+    enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId) => base44.entities.User.delete(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+    },
   });
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
-  const accessLevel = user?.access_level || 'user';
-  const isSuperAdmin = accessLevel === 'super_admin';
-  const isAdmin = ['admin', 'super_admin'].includes(accessLevel) || user?.role === 'admin';
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -77,1311 +78,547 @@ export default function AdminConsole() {
     textPrimary: '#ECEFED',
     textSecondary: '#A8ABAD',
     borderColor: '#3A3D40',
-    tableBg: '#2A2D30',
-    tableRow: '#353A3D',
-    leaseBg: '#353A3D'
   } : {
-    bg: '#ECEFED',
+    bg: '#F8FAFC',
     cardBg: '#FFFFFF',
     textPrimary: '#1A1D1F',
     textSecondary: '#64748b',
     borderColor: '#E5E7EB',
-    tableBg: '#FFFFFF',
-    tableRow: '#F8FAFC',
-    leaseBg: '#F8FAFC'
   };
 
-  // Restrict access to admin and super_admin only
-  if (!isAdmin) {
+  const t = {
+    en: {
+      adminConsole: "Admin Console",
+      systemOverview: "System Overview & Management",
+      totalUsers: "Total Users",
+      activeSubscribers: "Active Subscribers",
+      totalLeases: "Total Leases",
+      totalDocuments: "Total Documents",
+      demoDataSeeder: "Demo Data Seeder",
+      demoDataDesc: "Generate sample data for testing",
+      seedDemo: "Seed Demo Data",
+      seeding: "Seeding...",
+      userManagement: "User Management",
+      user: "User",
+      email: "Email",
+      plan: "Plan",
+      accessLevel: "Access Level",
+      status: "Status",
+      actions: "Actions",
+      active: "Active",
+      suspended: "Suspended",
+      suspend: "Suspend",
+      unsuspend: "Unsuspend",
+      delete: "Delete",
+      changeRole: "Change Role",
+      changeTier: "Change Tier",
+      recentLeases: "Recent Leases",
+      property: "Property",
+      uploadedBy: "Uploaded By",
+      uploadedOn: "Uploaded On",
+      opsConsole: "Operations Console",
+      opsConsoleDesc: "Manage cases and operations",
+      goToOps: "Go to Ops Console",
+      testNotifications: "Test LINE Notifications",
+      selectUser: "Select User",
+      notificationType: "Notification Type",
+      sendTest: "Send Test",
+      sending: "Sending...",
+      lineNotConnected: "LINE Not Connected",
+      testSent: "Test notification sent!",
+      editCredits: "Edit Credits",
+      letterCredits: "Letter Credits",
+      currentBalance: "Current Balance",
+      newBalance: "New Balance",
+      updateCredits: "Update Credits",
+      cancel: "Cancel",
+      updating: "Updating...",
+    },
+    th: {
+      adminConsole: "คอนโซลผู้ดูแล",
+      systemOverview: "ภาพรวมระบบและการจัดการ",
+      totalUsers: "ผู้ใช้ทั้งหมด",
+      activeSubscribers: "สมาชิกที่ใช้งาน",
+      totalLeases: "สัญญาเช่าทั้งหมด",
+      totalDocuments: "เอกสารทั้งหมด",
+      demoDataSeeder: "สร้างข้อมูลทดสอบ",
+      demoDataDesc: "สร้างข้อมูลตัวอย่างสำหรับการทดสอบ",
+      seedDemo: "สร้างข้อมูลทดสอบ",
+      seeding: "กำลังสร้าง...",
+      userManagement: "การจัดการผู้ใช้",
+      user: "ผู้ใช้",
+      email: "อีเมล",
+      plan: "แผน",
+      accessLevel: "ระดับการเข้าถึง",
+      status: "สถานะ",
+      actions: "การดำเนินการ",
+      active: "ใช้งาน",
+      suspended: "ระงับ",
+      suspend: "ระงับ",
+      unsuspend: "ยกเลิกการระงับ",
+      delete: "ลบ",
+      changeRole: "เปลี่ยนบทบาท",
+      changeTier: "เปลี่ยนแผน",
+      recentLeases: "สัญญาเช่าล่าสุด",
+      property: "ทรัพย์สิน",
+      uploadedBy: "อัปโหลดโดย",
+      uploadedOn: "อัปโหลดเมื่อ",
+      opsConsole: "คอนโซลปฏิบัติการ",
+      opsConsoleDesc: "จัดการคดีและการดำเนินงาน",
+      goToOps: "ไปที่คอนโซลปฏิบัติการ",
+      testNotifications: "ทดสอบการแจ้งเตือน LINE",
+      selectUser: "เลือกผู้ใช้",
+      notificationType: "ประเภทการแจ้งเตือน",
+      sendTest: "ส่งทดสอบ",
+      sending: "กำลังส่ง...",
+      lineNotConnected: "ไม่ได้เชื่อมต่อ LINE",
+      testSent: "ส่งการแจ้งเตือนทดสอบแล้ว!",
+      editCredits: "แก้ไขเครดิต",
+      letterCredits: "เครดิตจดหมาย",
+      currentBalance: "ยอดคงเหลือปัจจุบัน",
+      newBalance: "ยอดคงเหลือใหม่",
+      updateCredits: "อัปเดตเครดิต",
+      cancel: "ยกเลิก",
+      updating: "กำลังอัปเดต...",
+    }
+  };
+
+  const strings = t[language];
+
+  if (!user || !['admin', 'super_admin'].includes(user.access_level)) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
-        <Card className="max-w-md border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardContent className="p-8 text-center">
-            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {language === 'th' ? 'ไม่ได้รับอนุญาต' : 'Unauthorized'}
-            </h2>
-            <p style={{ color: colors.textSecondary }}>
-              {language === 'th' ? 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้' : 'You do not have permission to access this page.'}
-            </p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
+        <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardContent className="p-12 text-center">
+            <Shield className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
+            <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>Access Denied</h2>
+            <p style={{ color: colors.textSecondary }}>Admin access required</p>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  const t = {
-    en: {
-      title: "Admin Console",
-      subtitle: "System management and demo data tools",
-      totalUsers: "Total Users",
-      activeSubscribers: "Active Subscribers",
-      leaseScans: "Lease Scans",
-      documents: "Documents",
-      demoDataSeeder: "Demo Data Seeder",
-      demoDataDesc: "Create demo leases, deposit trackers, and cases for testing.",
-      seedDemoData: "Seed Demo Data",
-      seeding: "Seeding...",
-      userManagement: "User Management",
-      user: "User",
-      email: "Email",
-      plan: "Plan",
-      status: "Status",
-      role: "Role",
-      accessLevel: "Access Level",
-      joined: "Joined",
-      actions: "Actions",
-      admin: "Admin",
-      active: "Active",
-      secure: "Secure",
-      recentLeases: "Recent Leases",
-      noLeases: "No leases yet",
-      superAdminOnly: "Super Admin Only",
-      // New LINE Notification strings
-      testLineNotifications: "Test LINE Notifications",
-      firstAddWelcome: "First Add Welcome",
-      whenUserAddsBot: "When user first adds bot",
-      day30Reminder: "30-Day Reminder",
-      depositDue30Days: "Deposit due in 30 days",
-      day7Warning: "7-Day Warning",
-      finalWarningDeadline: "Final warning before deadline",
-      overdueAlert: "Overdue Alert",
-      depositNotReturned: "Deposit not returned",
-      rentReminder: "Rent Reminder",
-      rentDue3Days: "Rent due in 3 days",
-      welcomeMessage: "Welcome Message",
-      welcomeAfterConnecting: "Welcome after connecting",
-      leaseNotice30d: "Lease Notice 30d",
-      days30ToNotifyLandlord: "30 days to notify landlord",
-      leaseNotice7d: "Lease Notice 7d",
-      days7LeftToNotify: "7 days left to notify",
-      leaseNotice3d: "Lease Notice 3d",
-      days3FinalWarning: "3 days! Final warning",
-      todayNotifyNow: "TODAY! Notify Now",
-      noticeDeadlineToday: "Notice deadline today",
-    },
-    th: {
-      title: "คอนโซลแอดมิน",
-      subtitle: "เครื่องมือจัดการระบบและข้อมูลทดสอบ",
-      totalUsers: "ผู้ใช้ทั้งหมด",
-      activeSubscribers: "สมาชิกที่ใช้งาน",
-      leaseScans: "การสแกนสัญญาเช่า",
-      documents: "เอกสาร",
-      demoDataSeeder: "สร้างข้อมูลทดสอบ",
-      demoDataDesc: "สร้างสัญญาเช่า ตัวติดตามเงินมัดจำ และคดีสำหรับทดสอบ",
-      seedDemoData: "สร้างข้อมูลทดสอบ",
-      seeding: "กำลังสร้าง...",
-      userManagement: "จัดการผู้ใช้",
-      user: "ผู้ใช้",
-      email: "อีเมล",
-      plan: "แผน",
-      status: "สถานะ",
-      role: "บทบาท",
-      accessLevel: "ระดับการเข้าถึง",
-      joined: "เข้าร่วม",
-      actions: "การดำเนินการ",
-      admin: "แอดมิน",
-      active: "ใช้งาน",
-      secure: "Secure",
-      recentLeases: "สัญญาเช่าล่าสุด",
-      noLeases: "ยังไม่มีสัญญาเช่า",
-      superAdminOnly: "สำหรับ Super Admin เท่านั้น",
-      // New LINE Notification strings
-      testLineNotifications: "ทดสอบการแจ้งเตือน LINE",
-      firstAddWelcome: "ข้อความต้อนรับแรก",
-      whenUserAddsBot: "เมื่อผู้ใช้เพิ่มบอทครั้งแรก",
-      day30Reminder: "เตือน 30 วัน",
-      depositDue30Days: "เงินมัดจำครบกำหนดใน 30 วัน",
-      day7Warning: "เตือน 7 วัน",
-      finalWarningDeadline: "คำเตือนสุดท้ายก่อนครบกำหนด",
-      overdueAlert: "แจ้งเตือนเกินกำหนด",
-      depositNotReturned: "ยังไม่ได้รับเงินมัดจำคืน",
-      rentReminder: "เตือนค่าเช่า",
-      rentDue3Days: "ค่าเช่าครบกำหนดในอีก 3 วัน",
-      welcomeMessage: "ข้อความต้อนรับ",
-      welcomeAfterConnecting: "ข้อความต้อนรับหลังเชื่อมต่อ",
-      leaseNotice30d: "เตือนสัญญา 30 วัน",
-      days30ToNotifyLandlord: "อีก 30 วันถึงกำหนดแจ้งต่อ/ยกเลิก",
-      leaseNotice7d: "เตือนสัญญา 7 วัน",
-      days7LeftToNotify: "เหลือ 7 วันต้องแจ้ง",
-      leaseNotice3d: "เตือนสัญญา 3 วัน",
-      days3FinalWarning: "เหลือ 3 วัน! คำเตือนสุดท้าย",
-      todayNotifyNow: "วันนี้! แจ้งด่วน",
-      noticeDeadlineToday: "กำหนดแจ้งวันนี้",
-    }
-  };
-
-  const strings = t[language];
-
-  const handleSeedDemoData = async () => {
-    setSeeding(true);
+  const handleSeedDemo = async () => {
+    setSeedingDemo(true);
     try {
       await base44.functions.invoke('seedDemoData', {});
       queryClient.invalidateQueries();
-      alert(language === 'th' ? 'สร้างข้อมูลทดสอบสำเร็จ!' : 'Demo data seeded successfully!');
+      alert('Demo data seeded successfully!');
     } catch (error) {
-      console.error('Seeding failed:', error);
-      alert(language === 'th' ? 'การสร้างข้อมูลล้มเหลว' : 'Seeding failed');
+      console.error('Seed failed:', error);
+      alert('Failed to seed demo data');
     } finally {
-      setSeeding(false);
+      setSeedingDemo(false);
     }
   };
 
-  // New function to test LINE notifications
-  const handleTestNotification = async (type) => {
-    setTestingNotification(true);
-    setTestResult(null);
+  const handleSendTestNotification = async () => {
+    if (!selectedUserForTest) {
+      alert('Please select a user');
+      return;
+    }
 
+    setSendingTest(true);
     try {
       await base44.functions.invoke('testLineNotifications', {
-        notificationType: type
+        targetUserId: selectedUserForTest.id,
+        notificationType: testNotificationType
       });
-      setTestResult({ type: 'success', message: `${type} notification sent! Check your LINE` });
-      setTimeout(() => setTestResult(null), 5000);
+      alert(strings.testSent);
     } catch (error) {
       console.error('Test notification failed:', error);
-      setTestResult({ type: 'error', message: 'Failed to send notification' });
-      setTimeout(() => setTestResult(null), 5000);
+      alert('Failed to send test notification');
     } finally {
-      setTestingNotification(false);
+      setSendingTest(false);
     }
   };
 
-  // New function to send LINE message to a specific user
-  const handleSendLineToUser = async (targetUser) => {
-    const message = prompt(
-      language === 'th' 
-        ? `ส่งข้อความไปยัง ${targetUser.full_name} (${targetUser.email}):\n\nพิมพ์ข้อความของคุณ:` 
-        : `Send message to ${targetUser.full_name} (${targetUser.email}):\n\nType your message:`,
-      language === 'th'
-        ? '🔔 ข้อความทดสอบจากแอดมิน Lease Shield\n\nนี่คือข้อความทดสอบเพื่อยืนยันว่าระบบการแจ้งเตือน LINE ทำงานได้ดี'
-        : '🔔 Test message from Lease Shield Admin\n\nThis is a test message to confirm your LINE notifications are working properly'
-    );
-
-    if (!message || message.trim() === '') {
-      return;
-    }
-
-    if (!targetUser.line_messaging_token) {
-      alert(
-        language === 'th'
-          ? 'ผู้ใช้นี้ยังไม่ได้เชื่อมต่อ LINE'
-          : 'This user has not connected LINE yet'
-      );
-      return;
-    }
-
-    setSendingLineMessage(true);
-    setLineMessageResult(null);
+  const handleUpdateCredits = async () => {
+    if (!selectedUserForCredits || newCreditAmount === '') return;
 
     try {
-      await base44.functions.invoke('sendLineMessage', {
-        userId: targetUser.line_messaging_token,
-        message: message.trim()
+      await updateUserMutation.mutateAsync({
+        userId: selectedUserForCredits.id,
+        data: { letter_credits: parseInt(newCreditAmount) }
       });
-
-      setLineMessageResult({ 
-        type: 'success', 
-        message: language === 'th' 
-          ? `✅ ส่งข้อความถึง ${targetUser.full_name} สำเร็จ!` 
-          : `✅ Message sent to ${targetUser.full_name} successfully!`
-      });
-      setTimeout(() => setLineMessageResult(null), 5000);
+      setEditCreditsDialog(false);
+      setSelectedUserForCredits(null);
+      setNewCreditAmount('');
+      alert(language === 'th' ? 'อัปเดตเครดิตสำเร็จ' : 'Credits updated successfully');
     } catch (error) {
-      console.error('Failed to send LINE message:', error);
-      setLineMessageResult({ 
-        type: 'error', 
-        message: language === 'th' 
-          ? `❌ ส่งข้อความล้มเหลว: ${error.message}` 
-          : `❌ Failed to send: ${error.message}`
-      });
-      setTimeout(() => setLineMessageResult(null), 5000);
-    } finally {
-      setSendingLineMessage(false);
+      console.error('Failed to update credits:', error);
+      alert(language === 'th' ? 'ไม่สามารถอัปเดตเครดิตได้' : 'Failed to update credits');
     }
   };
 
-  // New function to send test notification to selected user
-  const handleSendTestToUser = async (notificationType) => {
-    if (!selectedUserForTest) {
-      alert(language === 'th' ? 'กรุณาเลือกผู้ใช้' : 'Please select a user');
-      return;
-    }
-
-    setSendingTestToUser(true);
-    setTestToUserResult(null);
-
-    try {
-      await base44.functions.invoke('testLineNotifications', {
-        notificationType: notificationType,
-        targetUserEmail: selectedUserForTest
-      });
-
-      const targetUser = allUsers.find(u => u.email === selectedUserForTest);
-      setTestToUserResult({
-        type: 'success',
-        message: language === 'th'
-          ? `✅ ส่งข้อความ "${notificationType}" ถึง ${targetUser?.full_name} สำเร็จ!`
-          : `✅ Sent "${notificationType}" to ${targetUser?.full_name} successfully!`
-      });
-      setTimeout(() => setTestToUserResult(null), 5000);
-    } catch (error) {
-      console.error('Test to user failed:', error);
-      setTestToUserResult({
-        type: 'error',
-        message: language === 'th'
-          ? `❌ ส่งไม่สำเร็จ: ${error.message}`
-          : `❌ Failed: ${error.message}`
-      });
-      setTimeout(() => setTestToUserResult(null), 5000);
-    } finally {
-      setSendingTestToUser(false);
-    }
+  const handleOpenCreditsDialog = (targetUser) => {
+    setSelectedUserForCredits(targetUser);
+    setNewCreditAmount(targetUser.letter_credits?.toString() || '0');
+    setEditCreditsDialog(true);
   };
 
-  const updateUserMutation = useMutation({
-    mutationFn: async ({ userId, data }) => {
-      console.log('🔄 Mutation starting:', { userId, data });
-      const result = await base44.asServiceRole.entities.User.update(userId, data);
-      console.log('✅ Mutation result:', result);
-      return result;
-    },
-    onSuccess: async (updatedUser, variables) => {
-      console.log('✅ Mutation onSuccess called:', updatedUser);
-      
-      // Force immediate refetch of all users
-      await queryClient.refetchQueries({ queryKey: ['allUsers'] });
-      await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      
-      let actionType = 'user data';
-      if (variables.data.access_level) actionType = 'access level';
-      else if (variables.data.plan_tier) actionType = 'plan tier';
-      else if (typeof variables.data.suspended === 'boolean') {
-        actionType = variables.data.suspended ? 'suspension' : 'unsuspension';
-      }
-      
-      setUserActionResult({
-        type: 'success',
-        message: language === 'th' 
-          ? `✅ อัปเดต ${actionType} สำเร็จ` 
-          : `✅ Successfully updated ${actionType}`
-      });
-      
-      setTimeout(() => setUserActionResult(null), 5000);
-    },
-    onError: (error) => {
-      console.error('❌ Mutation onError called:', error);
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack,
-        response: error.response
-      });
-      
-      setUserActionResult({
-        type: 'error',
-        message: language === 'th'
-          ? `❌ อัปเดตล้มเหลว: ${error.message}`
-          : `❌ Update failed: ${error.message}`
-      });
-      setTimeout(() => setUserActionResult(null), 5000);
-    },
+  const activeSubscribers = users.filter(u => 
+    u.subscription_status === 'active' && u.plan_tier && u.plan_tier !== 'free'
+  ).length;
+
+  const sortedUsers = [...users].sort((a, b) => {
+    const aVal = a[sortField];
+    const bVal = b[sortField];
+    if (sortOrder === 'asc') {
+      return aVal > bVal ? 1 : -1;
+    }
+    return aVal < bVal ? 1 : -1;
   });
-
-  const deleteUserMutation = useMutation({
-    mutationFn: (userId) => base44.asServiceRole.entities.User.delete(userId),
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ['allUsers'] });
-      await queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      
-      setUserActionResult({
-        type: 'success',
-        message: language === 'th' ? '✅ ลบผู้ใช้สำเร็จ' : '✅ User deleted successfully'
-      });
-      setTimeout(() => setUserActionResult(null), 5000);
-    },
-    onError: (error) => {
-      console.error('User delete error:', error);
-      setUserActionResult({
-        type: 'error',
-        message: language === 'th'
-          ? `❌ ลบล้มเหลว: ${error.message}`
-          : `❌ Delete failed: ${error.message}`
-      });
-      setTimeout(() => setUserActionResult(null), 5000);
-    },
-  });
-
-  const handleUserAction = async (action, targetUser) => {
-    console.log('🎯 handleUserAction called:', { action, targetEmail: targetUser.email, targetId: targetUser.id });
-    console.log('📋 Target user current state:', {
-      access_level: targetUser.access_level,
-      plan_tier: targetUser.plan_tier,
-      suspended: targetUser.suspended
-    });
-    
-    if (action === 'suspend' || action === 'unsuspend') {
-      if (action === 'suspend') {
-        const reason = prompt(
-          language === 'th' 
-            ? `ระบุเหตุผลในการระงับผู้ใช้ ${targetUser.full_name}:` 
-            : `Reason for suspending ${targetUser.full_name}:`,
-          language === 'th' ? 'การละเมิดข้อกำหนดการใช้งาน' : 'Terms of service violation'
-        );
-        
-        if (!reason || reason.trim() === '') {
-          console.log('❌ Suspend cancelled - no reason provided');
-          return;
-        }
-
-        const duration = prompt(
-          language === 'th'
-            ? 'ระยะเวลาระงับ (วัน) - เว้นว่างสำหรับถาวร:'
-            : 'Suspension duration (days) - leave empty for indefinite:',
-          '30'
-        );
-
-        let suspendedUntil = null;
-        if (duration && !isNaN(parseInt(duration))) {
-          const days = parseInt(duration);
-          const untilDate = new Date();
-          untilDate.setDate(untilDate.getDate() + days);
-          suspendedUntil = untilDate.toISOString();
-        }
-
-        console.log('🔒 Calling suspend mutation:', {
-          userId: targetUser.id,
-          reason: reason.trim(),
-          until: suspendedUntil
-        });
-
-        updateUserMutation.mutate({
-          userId: targetUser.id,
-          data: {
-            suspended: true,
-            suspended_reason: reason.trim(),
-            suspended_until: suspendedUntil
-          }
-        });
-      } else {
-        if (!window.confirm(
-          language === 'th'
-            ? `คุณแน่ใจหรือไม่ว่าต้องการยกเลิกการระงับ ${targetUser.full_name}?`
-            : `Are you sure you want to unsuspend ${targetUser.full_name}?`
-        )) {
-          console.log('❌ Unsuspend cancelled by user');
-          return;
-        }
-
-        console.log('🔓 Calling unsuspend mutation:', { userId: targetUser.id });
-
-        updateUserMutation.mutate({
-          userId: targetUser.id,
-          data: {
-            suspended: false,
-            suspended_reason: null,
-            suspended_until: null
-          }
-        });
-      }
-      return;
-    }
-    
-    if (action === 'delete') {
-      const confirmMessage = language === 'th'
-        ? `คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้ ${targetUser.full_name}? การดำเนินการนี้ไม่สามารถย้อนกลับได้!`
-        : `Are you sure you want to delete ${targetUser.full_name}? This action cannot be undone!`;
-
-      if (!window.confirm(confirmMessage)) {
-        console.log('❌ Delete cancelled by user');
-        return;
-      }
-
-      // Only super admin can delete users
-      if (!isSuperAdmin) {
-        alert(language === 'th' ? 'เฉพาะ Super Admin เท่านั้นที่สามารถลบผู้ใช้ได้' : 'Only Super Admin can delete users');
-        return;
-      }
-      
-      console.log('🗑️ Calling delete mutation:', { userId: targetUser.id });
-      deleteUserMutation.mutate(targetUser.id);
-      return;
-    }
-
-    // For access_* and tier_* actions, show confirm dialog
-    const confirmMessage = language === 'th'
-      ? `คุณแน่ใจหรือไม่ว่าต้องการเปลี่ยนแปลงผู้ใช้ ${targetUser.full_name}?`
-      : `Are you sure you want to update ${targetUser.full_name}?`;
-
-    if (!window.confirm(confirmMessage)) {
-      console.log('❌ Update cancelled by user');
-      return;
-    }
-
-    if (action.startsWith('access_')) {
-      const level = action.replace('access_', '');
-      console.log('🔐 Preparing to update access level:', {
-        from: targetUser.access_level,
-        to: level,
-        userId: targetUser.id
-      });
-      
-      // Only super admin can grant super_admin access
-      if (level === 'super_admin' && !isSuperAdmin) {
-        alert(language === 'th' ? 'เฉพาะ Super Admin เท่านั้นที่สามารถให้สิทธิ์ Super Admin ได้' : 'Only Super Admin can grant Super Admin access');
-        return;
-      }
-      
-      console.log('🔄 Calling mutation for access_level update');
-      updateUserMutation.mutate({ 
-        userId: targetUser.id, 
-        data: { access_level: level } 
-      });
-    } else if (action.startsWith('tier_')) {
-      const tier = action.replace('tier_', '');
-      console.log('💳 Preparing to update plan tier:', {
-        from: targetUser.plan_tier,
-        to: tier,
-        userId: targetUser.id
-      });
-      
-      console.log('🔄 Calling mutation for plan_tier update');
-      updateUserMutation.mutate({ 
-        userId: targetUser.id, 
-        data: { plan_tier: tier } 
-      });
-    }
-  };
-
-  const handleViewLease = (lease) => {
-    // Navigate to lease details page
-    navigate(createPageUrl("LeaseDetails") + `?leaseId=${lease.id}`);
-  };
-
-  const activeSubscribers = allUsers.filter(u => u.subscription_status === 'active').length;
-
-  // Get users with LINE connected for the dropdown
-  const usersWithLine = allUsers.filter(u => u.line_messaging_token);
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-ls-forest" />
-            <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
-            {isSuperAdmin && (
-              <Badge className="bg-purple-600 text-white">SUPER ADMIN</Badge>
-            )}
-          </div>
-          <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+            {strings.adminConsole}
+          </h1>
+          <p style={{ color: colors.textSecondary }}>{strings.systemOverview}</p>
         </div>
 
-        {/* Ops Console Quick Access Card */}
-        <Card className="mb-6 border-none shadow-xl" style={{
-          backgroundColor: colors.cardBg,
-          background: isDarkMode
-            ? 'linear-gradient(135deg, #1e3a5f 0%, #2a4a6f 100%)'
-            : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
-        }}>
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <Scale className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    {language === 'th' ? 'คอนโซลปฏิบัติการ' : 'Operations Console'}
-                  </h3>
-                  <p className="text-white/80 text-sm mb-4">
-                    {language === 'th'
-                      ? 'จัดการคดีพิพาท มอบหมายงาน และติดตามความคืบหน้า'
-                      : 'Manage dispute cases, assign work, and track resolution progress'}
-                  </p>
-                  <Button
-                    onClick={() => navigate(createPageUrl("OpsConsole"))}
-                    className="bg-white text-blue-600 hover:bg-blue-50"
-                  >
-                    <Scale className="w-4 h-4 mr-2" />
-                    {language === 'th' ? 'เปิดคอนโซล Ops' : 'Open Ops Console'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* LINE Message Result Alert */}
-        {lineMessageResult && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            lineMessageResult.type === 'success'
-              ? 'bg-emerald-100 border border-emerald-200 text-emerald-800'
-              : 'bg-red-100 border border-red-200 text-red-800'
-          }`}>
-            {lineMessageResult.message}
-          </div>
-        )}
-
-        {/* Test to User Result Alert */}
-        {testToUserResult && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            testToUserResult.type === 'success'
-              ? 'bg-emerald-100 border border-emerald-200 text-emerald-800'
-              : 'bg-red-100 border border-red-200 text-red-800'
-          }`}>
-            {testToUserResult.message}
-          </div>
-        )}
-
-        {/* User Action Result Alert - NEW */}
-        {userActionResult && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            userActionResult.type === 'success'
-              ? 'bg-emerald-100 border border-emerald-200 text-emerald-800'
-              : 'bg-red-100 border border-red-200 text-red-800'
-          }`}>
-            {userActionResult.message}
-          </div>
-        )}
-
-        {/* Send Test Notifications to Users */}
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <Users className="w-5 h-5 text-blue-600" />
-              {language === 'th' ? 'ส่งการแจ้งเตือนทดสอบไปยังผู้ใช้' : 'Send Test Notifications to Users'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="mb-4">
-              <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'เลือกผู้ใช้:' : 'Select User:'}
-              </label>
-              <select
-                value={selectedUserForTest}
-                onChange={(e) => setSelectedUserForTest(e.target.value)}
-                className="w-full p-3 rounded-lg border"
-                style={{
-                  backgroundColor: colors.cardBg,
-                  borderColor: colors.borderColor,
-                  color: colors.textPrimary
-                }}
-                disabled={sendingTestToUser}
-              >
-                <option value="">
-                  {language === 'th' ? '-- เลือกผู้ใช้ --' : '-- Select User --'}
-                </option>
-                {/* Add "Send to Myself" option at the top */}
-                {user?.line_messaging_token && (
-                  <option value={user.email}>
-                    {language === 'th' ? '🔹 ตัวฉันเอง' : '🔹 Myself'} ({user.full_name})
-                  </option>
-                )}
-                {usersWithLine
-                  .filter(u => u.email !== user?.email) // Don't show current user twice
-                  .map(u => (
-                    <option key={u.email} value={u.email}>
-                      {u.full_name} ({u.email})
-                    </option>
-                  ))}
-              </select>
-              {usersWithLine.length === 0 && !user?.line_messaging_token && (
-                <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
-                  {language === 'th' 
-                    ? 'ไม่มีผู้ใช้ที่เชื่อมต่อ LINE' 
-                    : 'No users with LINE connected'}
-                </p>
-              )}
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-              <button
-                onClick={() => handleSendTestToUser('first_add')}
-                disabled={!selectedUserForTest || sendingTestToUser}
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  border: `2px solid ${colors.borderColor}`,
-                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
-                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = '#8B5CF6';
-                    e.target.style.backgroundColor = isDarkMode ? '#2D1B4E' : '#F5F3FF';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = colors.borderColor;
-                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
-                  }
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ fontSize: '24px' }}>🆕</span>
-                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {strings.firstAddWelcome}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {strings.whenUserAddsBot}
-                </p>
-              </button>
-
-              <button
-                onClick={() => handleSendTestToUser('30day')}
-                disabled={!selectedUserForTest || sendingTestToUser}
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  border: `2px solid ${colors.borderColor}`,
-                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
-                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = '#10B981';
-                    e.target.style.backgroundColor = isDarkMode ? '#1E4435' : '#ECFDF5';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = colors.borderColor;
-                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
-                  }
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ fontSize: '24px' }}>🔔</span>
-                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {strings.day30Reminder}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {strings.depositDue30Days}
-                </p>
-              </button>
-
-              <button
-                onClick={() => handleSendTestToUser('7day')}
-                disabled={!selectedUserForTest || sendingTestToUser}
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  border: `2px solid ${colors.borderColor}`,
-                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
-                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = '#F59E0B';
-                    e.target.style.backgroundColor = isDarkMode ? '#3A2D1C' : '#FFF7ED';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = colors.borderColor;
-                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
-                  }
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ fontSize: '24px' }}>⚠️</span>
-                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {strings.day7Warning}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {strings.finalWarningDeadline}
-                </p>
-              </button>
-
-              <button
-                onClick={() => handleSendTestToUser('overdue')}
-                disabled={!selectedUserForTest || sendingTestToUser}
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  border: `2px solid ${colors.borderColor}`,
-                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
-                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = '#EF4444';
-                    e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = colors.borderColor;
-                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
-                  }
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ fontSize: '24px' }}>🚨</span>
-                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {strings.overdueAlert}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {strings.depositNotReturned}
-                </p>
-              </button>
-
-              <button
-                onClick={() => handleSendTestToUser('rent')}
-                disabled={!selectedUserForTest || sendingTestToUser}
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  border: `2px solid ${colors.borderColor}`,
-                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
-                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = '#3B82F6';
-                    e.target.style.backgroundColor = isDarkMode ? '#1E3A5F' : '#EFF6FF';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = colors.borderColor;
-                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
-                  }
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ fontSize: '24px' }}>💰</span>
-                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {strings.rentReminder}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {strings.rentDue3Days}
-                </p>
-              </button>
-
-              <button
-                onClick={() => handleSendTestToUser('welcome')}
-                disabled={!selectedUserForTest || sendingTestToUser}
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  border: `2px solid ${colors.borderColor}`,
-                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
-                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = '#8B5CF6';
-                    e.target.style.backgroundColor = isDarkMode ? '#2D1B4E' : '#F5F3FF';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = colors.borderColor;
-                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
-                  }
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ fontSize: '24px' }}>🎉</span>
-                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {strings.welcomeMessage}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {strings.welcomeAfterConnecting}
-                </p>
-              </button>
-
-              <button
-                onClick={() => handleSendTestToUser('notice_30d')}
-                disabled={!selectedUserForTest || sendingTestToUser}
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  border: `2px solid ${colors.borderColor}`,
-                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
-                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = '#06B6D4';
-                    e.target.style.backgroundColor = isDarkMode ? '#164E63' : '#ECFEFF';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = colors.borderColor;
-                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
-                  }
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ fontSize: '24px' }}>📅</span>
-                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {strings.leaseNotice30d}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {strings.days30ToNotifyLandlord}
-                </p>
-              </button>
-
-              <button
-                onClick={() => handleSendTestToUser('notice_7d')}
-                disabled={!selectedUserForTest || sendingTestToUser}
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  border: `2px solid ${colors.borderColor}`,
-                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
-                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = '#F59E0B';
-                    e.target.style.backgroundColor = isDarkMode ? '#3A2D1C' : '#FFF7ED';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = colors.borderColor;
-                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
-                  }
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ fontSize: '24px' }}>⚠️</span>
-                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {strings.leaseNotice7d}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {strings.days7LeftToNotify}
-                </p>
-              </button>
-
-              <button
-                onClick={() => handleSendTestToUser('notice_3d')}
-                disabled={!selectedUserForTest || sendingTestToUser}
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  border: `2px solid ${colors.borderColor}`,
-                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
-                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = '#EF4444';
-                    e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = colors.borderColor;
-                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
-                  }
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ fontSize: '24px' }}>🚨</span>
-                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {strings.leaseNotice3d}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {strings.days3FinalWarning}
-                </p>
-              </button>
-
-              <button
-                onClick={() => handleSendTestToUser('notice_today')}
-                disabled={!selectedUserForTest || sendingTestToUser}
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  border: `2px solid ${colors.borderColor}`,
-                  cursor: (!selectedUserForTest || sendingTestToUser) ? 'not-allowed' : 'pointer',
-                  opacity: (!selectedUserForTest || sendingTestToUser) ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = '#DC2626';
-                    e.target.style.backgroundColor = isDarkMode ? '#3A1A1A' : '#FEE2E2';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedUserForTest && !sendingTestToUser) {
-                    e.target.style.borderColor = colors.borderColor;
-                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F8FAFC';
-                  }
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ fontSize: '24px' }}>🔴</span>
-                  <span style={{ fontWeight: 'bold', color: colors.textPrimary }}>
-                    {strings.todayNotifyNow}
-                  </span>
-                </div>
-                <p style={{ fontSize: '12px', color: colors.textSecondary }}>
-                  {strings.noticeDeadlineToday}
-                </p>
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Stats Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-blue-600" />
-                </div>
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.totalUsers}</p>
-                  <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{allUsers.length}</p>
+                  <p className="text-3xl font-bold mt-1" style={{ color: colors.textPrimary }}>{users.length}</p>
                 </div>
+                <Users className="w-12 h-12 text-blue-600" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                </div>
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.activeSubscribers}</p>
-                  <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{activeSubscribers}</p>
+                  <p className="text-3xl font-bold mt-1" style={{ color: colors.textPrimary }}>{activeSubscribers}</p>
                 </div>
+                <Crown className="w-12 h-12 text-amber-600" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-purple-600" />
-                </div>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.leaseScans}</p>
-                  <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{allLeases.length}</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.totalLeases}</p>
+                  <p className="text-3xl font-bold mt-1" style={{ color: colors.textPrimary }}>{leases.length}</p>
                 </div>
+                <FileText className="w-12 h-12 text-emerald-600" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-amber-600" />
-                </div>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.documents}</p>
-                  <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{allDocuments.length}</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.totalDocuments}</p>
+                  <p className="text-3xl font-bold mt-1" style={{ color: colors.textPrimary }}>{documents.length}</p>
                 </div>
+                <Database className="w-12 h-12 text-purple-600" />
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Demo Data Seeder */}
-        <Card className="border-none shadow-lg mb-8" style={{ backgroundColor: colors.cardBg }}>
+        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <Database className="w-5 h-5 text-ls-forest" />
+              <TestTube className="w-5 h-5 text-blue-600" />
               {strings.demoDataSeeder}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <p className="mb-4" style={{ color: colors.textSecondary }}>{strings.demoDataDesc}</p>
             <Button
-              onClick={handleSeedDemoData}
-              disabled={seeding}
-              style={{
-                backgroundColor: seeding ? '#9CA3AF' : '#0C3B2E',
-                color: '#FFFFFF'
-              }}
+              onClick={handleSeedDemo}
+              disabled={seedingDemo}
+              className="bg-blue-600 hover:bg-blue-700"
             >
-              <Database className="w-4 h-4 mr-2" />
-              {seeding ? strings.seeding : strings.seedDemoData}
+              {seedingDemo ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {strings.seeding}
+                </>
+              ) : (
+                <>
+                  <Database className="w-4 h-4 mr-2" />
+                  {strings.seedDemo}
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
 
-        {/* User Management */}
-        <Card className="border-none shadow-lg mb-8" style={{ backgroundColor: colors.cardBg }}>
+        {/* Test LINE Notifications */}
+        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <Users className="w-5 h-5 text-ls-forest" />
-              {strings.userManagement}
+              <Send className="w-5 h-5 text-emerald-600" />
+              {strings.testNotifications}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="overflow-x-auto" style={{ backgroundColor: colors.tableBg }}>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <Label style={{ color: colors.textPrimary }}>{strings.selectUser}</Label>
+                <Select
+                  value={selectedUserForTest?.id}
+                  onValueChange={(userId) => setSelectedUserForTest(users.find(u => u.id === userId))}
+                >
+                  <SelectTrigger style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                    <SelectValue placeholder={strings.selectUser} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.filter(u => u.line_messaging_token).map(u => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.full_name} ({u.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label style={{ color: colors.textPrimary }}>{strings.notificationType}</Label>
+                <Select value={testNotificationType} onValueChange={setTestNotificationType}>
+                  <SelectTrigger style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="deposit_30day">Deposit 30 Day</SelectItem>
+                    <SelectItem value="deposit_7day">Deposit 7 Day</SelectItem>
+                    <SelectItem value="deposit_overdue">Deposit Overdue</SelectItem>
+                    <SelectItem value="rent_reminder">Rent Reminder</SelectItem>
+                    <SelectItem value="lease_notice_30day">Lease Notice 30 Day</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button
+                  onClick={handleSendTestNotification}
+                  disabled={sendingTest || !selectedUserForTest}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700"
+                >
+                  {sendingTest ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {strings.sending}
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      {strings.sendTest}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Edit Credits Dialog */}
+        <Dialog open={editCreditsDialog} onOpenChange={setEditCreditsDialog}>
+          <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <Coins className="w-5 h-5 text-amber-600" />
+                {strings.editCredits}
+              </DialogTitle>
+            </DialogHeader>
+            {selectedUserForCredits && (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                    {selectedUserForCredits.full_name}
+                  </p>
+                  <p className="text-xs" style={{ color: colors.textSecondary }}>
+                    {selectedUserForCredits.email}
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg" style={{ 
+                  backgroundColor: isDarkMode ? '#353A3D' : '#FFF7ED',
+                  border: `1px solid ${colors.borderColor}`
+                }}>
+                  <p className="text-xs mb-1" style={{ color: colors.textSecondary }}>
+                    {strings.currentBalance}
+                  </p>
+                  <p className="text-2xl font-bold" style={{ color: '#C7A338' }}>
+                    {selectedUserForCredits.letter_credits || 0}
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="newCredits" style={{ color: colors.textPrimary }}>
+                    {strings.newBalance}
+                  </Label>
+                  <Input
+                    id="newCredits"
+                    type="number"
+                    min="0"
+                    value={newCreditAmount}
+                    onChange={(e) => setNewCreditAmount(e.target.value)}
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.cardBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setEditCreditsDialog(false)}
+                style={{ borderColor: colors.borderColor }}
+              >
+                {strings.cancel}
+              </Button>
+              <Button
+                onClick={handleUpdateCredits}
+                disabled={updateUserMutation.isPending}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                {updateUserMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {strings.updating}
+                  </>
+                ) : (
+                  strings.updateCredits
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* User Management Table */}
+        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle style={{ color: colors.textPrimary }}>{strings.userManagement}</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
               <table className="w-full">
-                <thead>
-                  <tr style={{ borderBottom: `2px solid ${colors.borderColor}` }}>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.status}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.joined}</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
+                <thead style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                      {strings.user}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                      {strings.email}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                      {strings.accessLevel}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                      {strings.plan}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                      {strings.letterCredits}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                      {strings.actions}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {allUsers.map((u, index) => (
+                  {sortedUsers.map((u, idx) => (
                     <tr
                       key={u.id}
                       style={{
                         borderBottom: `1px solid ${colors.borderColor}`,
-                        backgroundColor: index % 2 === 0 ? colors.tableBg : colors.tableRow
+                        backgroundColor: idx % 2 === 0 ? colors.cardBg : (isDarkMode ? '#2A2D30' : '#F8FAFC')
                       }}
                     >
-                      <td className="py-3 px-4 text-sm font-medium" style={{ color: colors.textPrimary }}>
-                        <div className="flex items-center gap-2">
+                      <td className="px-4 py-3">
+                        <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
                           {u.full_name}
-                          {u.suspended && (
-                            <Badge className="bg-red-100 text-red-700 text-xs">
-                              {language === 'th' ? 'ระงับ' : 'Suspended'}
-                            </Badge>
-                          )}
-                        </div>
+                        </p>
                       </td>
-                      <td className="py-3 px-4 text-sm" style={{ color: colors.textSecondary }}>
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4" />
-                          {u.email}
-                        </div>
+                      <td className="px-4 py-3">
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>{u.email}</p>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="px-4 py-3">
                         <Badge className={
-                          u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                          u.access_level === 'admin' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                          u.access_level === 'va' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                          'bg-slate-100 text-slate-700 border-slate-200'
+                          u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+                          u.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
+                          u.access_level === 'va' ? 'bg-amber-100 text-amber-800' :
+                          'bg-slate-100 text-slate-800'
                         }>
-                          {u.access_level === 'super_admin' ? 'Super Admin' :
-                           u.access_level === 'admin' ? 'Admin' :
-                           u.access_level === 'va' ? 'VA' :
-                           'User'}
+                          {u.access_level || 'user'}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="px-4 py-3">
                         <Badge className={
-                          u.plan_tier === 'secure' ? 'bg-purple-100 text-purple-700' :
-                          u.plan_tier === 'protect' ? 'bg-blue-100 text-blue-700' :
-                          u.plan_tier === 'lite' ? 'bg-emerald-100 text-emerald-700' :
-                          'bg-slate-100 text-slate-700'
+                          u.plan_tier === 'secure' ? 'bg-purple-100 text-purple-800' :
+                          u.plan_tier === 'protect' ? 'bg-emerald-100 text-emerald-800' :
+                          u.plan_tier === 'lite' ? 'bg-blue-100 text-blue-800' :
+                          'bg-slate-100 text-slate-800'
                         }>
-                          {u.plan_tier === 'secure' ? strings.secure :
-                           u.plan_tier === 'protect' ? 'Protect' :
-                           u.plan_tier === 'lite' ? 'Lite' :
-                           'Free'}
+                          {u.plan_tier || 'free'}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4">
-                        {u.subscription_status === 'active' && (
-                          <Badge className="bg-emerald-100 text-emerald-700">
-                            {strings.active}
-                          </Badge>
-                        )}
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => handleOpenCreditsDialog(u)}
+                          className="flex items-center gap-1 px-2 py-1 rounded hover:bg-amber-100 transition-colors"
+                        >
+                          <Coins className="w-4 h-4 text-amber-600" />
+                          <span className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                            {u.letter_credits || 0}
+                          </span>
+                        </button>
                       </td>
-                      <td className="py-3 px-4">
-                        {u.line_messaging_token ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
-                            <span className="text-emerald-600">●</span> Connected
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-slate-500">
-                            Not Connected
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-sm" style={{ color: colors.textSecondary }}>
-                        {format(new Date(u.created_date), 'MMM d, yyyy')}
-                      </td>
-                      <td className="py-3 px-4">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs"
-                              disabled={updateUserMutation.isPending || deleteUserMutation.isPending}
-                              style={{
-                                backgroundColor: isDarkMode ? colors.tableRow : '#FFFFFF',
-                                color: colors.textPrimary,
-                                borderColor: colors.borderColor
-                              }}
-                            >
-                              {(updateUserMutation.isPending || deleteUserMutation.isPending) ? (
-                                <span className="animate-spin">⏳</span>
-                              ) : (
-                                <MoreVertical className="w-4 h-4" />
-                              )}
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-                            <DropdownMenuLabel style={{ color: colors.textPrimary }}>User Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
-
-                            {/* NEW: Suspend/Unsuspend option */}
-                            {u.suspended ? (
-                              <DropdownMenuItem
-                                onClick={() => handleUserAction('unsuspend', u)}
-                                disabled={u.id === user?.id || updateUserMutation.isPending}
-                                className="text-emerald-600"
-                              >
-                                <CheckCircle2 className="w-4 h-4 mr-2" />
-                                {language === 'th' ? 'ยกเลิกการระงับ' : 'Unsuspend User'}
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onClick={() => handleUserAction('suspend', u)}
-                                disabled={u.id === user?.id || updateUserMutation.isPending}
-                                className="text-orange-600"
-                              >
-                                <AlertCircle className="w-4 h-4 mr-2" />
-                                {language === 'th' ? 'ระงับผู้ใช้' : 'Suspend User'}
-                              </DropdownMenuItem>
-                            )}
-
-                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
-
-                            {/* Send LINE Message option */}
-                            <DropdownMenuItem
-                              onClick={() => handleSendLineToUser(u)}
-                              disabled={!u.line_messaging_token || sendingLineMessage}
-                              style={{ color: colors.textPrimary }}
-                            >
-                              <Bell className="w-4 h-4 mr-2 text-emerald-600" />
-                              {language === 'th' ? 'ส่งข้อความ LINE' : 'Send LINE Message'}
-                              {!u.line_messaging_token && ' 🔒'}
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
-
-                            <DropdownMenuLabel style={{ color: colors.textSecondary, fontSize: '11px' }}>Access Level</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => handleUserAction('access_user', u)}
-                              disabled={u.access_level === 'user' || updateUserMutation.isPending}
-                              style={{ color: colors.textPrimary }}
-                            >
-                              {u.access_level === 'user' && '✓ '}User
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleUserAction('access_va', u)}
-                              disabled={u.access_level === 'va' || updateUserMutation.isPending}
-                              style={{ color: colors.textPrimary }}
-                            >
-                              {u.access_level === 'va' && '✓ '}VA (Operations)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleUserAction('access_admin', u)}
-                              disabled={u.access_level === 'admin' || updateUserMutation.isPending}
-                              style={{ color: colors.textPrimary }}
-                            >
-                              {u.access_level === 'admin' && '✓ '}Admin
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleUserAction('access_super_admin', u)}
-                              disabled={u.access_level === 'super_admin' || !isSuperAdmin || updateUserMutation.isPending}
-                              style={{ color: colors.textPrimary }}
-                            >
-                              <Crown className="w-4 h-4 mr-2" />
-                              {u.access_level === 'super_admin' && '✓ '}Super Admin {!isSuperAdmin && '🔒'}
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
-                            <DropdownMenuLabel style={{ color: colors.textSecondary, fontSize: '11px' }}>Plan Tier</DropdownMenuLabel>
-
-                            <DropdownMenuItem
-                              onClick={() => handleUserAction('tier_free', u)}
-                              disabled={u.plan_tier === 'free' || updateUserMutation.isPending}
-                              style={{ color: colors.textPrimary }}
-                            >
-                              {u.plan_tier === 'free' && '✓ '}Free
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleUserAction('tier_lite', u)}
-                              disabled={u.plan_tier === 'lite' || updateUserMutation.isPending}
-                              style={{ color: colors.textPrimary }}
-                            >
-                              {u.plan_tier === 'lite' && '✓ '}Lite
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleUserAction('tier_protect', u)}
-                              disabled={u.plan_tier === 'protect' || updateUserMutation.isPending}
-                              style={{ color: colors.textPrimary }}
-                            >
-                              {u.plan_tier === 'protect' && '✓ '}Protect
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleUserAction('tier_secure', u)}
-                              disabled={u.plan_tier === 'secure' || updateUserMutation.isPending}
-                              style={{ color: colors.textPrimary }}
-                            >
-                              {u.plan_tier === 'secure' && '✓ '}Secure
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator style={{ backgroundColor: colors.borderColor }} />
-
-                            <DropdownMenuItem
-                              onClick={() => handleUserAction('delete', u)}
-                              className="text-red-600"
-                              disabled={u.id === user?.id || !isSuperAdmin || deleteUserMutation.isPending}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete User {!isSuperAdmin && '🔒'}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <Select
+                            value={u.access_level || 'user'}
+                            onValueChange={(val) => updateUserMutation.mutate({
+                              userId: u.id,
+                              data: { access_level: val }
+                            })}
+                          >
+                            <SelectTrigger className="w-32 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="user">User</SelectItem>
+                              <SelectItem value="va">VA</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="super_admin">Super Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={u.plan_tier || 'free'}
+                            onValueChange={(val) => updateUserMutation.mutate({
+                              userId: u.id,
+                              data: { plan_tier: val }
+                            })}
+                          >
+                            <SelectTrigger className="w-24 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="free">Free</SelectItem>
+                              <SelectItem value="lite">Lite</SelectItem>
+                              <SelectItem value="protect">Protect</SelectItem>
+                              <SelectItem value="secure">Secure</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1392,61 +629,56 @@ export default function AdminConsole() {
         </Card>
 
         {/* Recent Leases */}
-        <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <FileText className="w-5 h-5 text-ls-forest" />
-              {strings.recentLeases} ({allLeases.length})
-            </CardTitle>
+            <CardTitle style={{ color: colors.textPrimary }}>{strings.recentLeases}</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {allLeases.length === 0 ? (
-              <p className="text-center py-8" style={{ color: colors.textSecondary }}>{strings.noLeases}</p>
-            ) : (
-              <div className="space-y-3">
-                {allLeases.slice(0, 10).map((lease) => (
-                  <div
-                    key={lease.id}
-                    className="p-4 rounded-lg border cursor-pointer hover:shadow-md transition-all duration-200"
-                    style={{
-                      backgroundColor: colors.leaseBg,
-                      borderColor: colors.borderColor
-                    }}
-                    onClick={() => handleViewLease(lease)}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#0C3B2E';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = colors.borderColor;
-                    }}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Eye className="w-4 h-4 text-ls-forest" />
-                          <p className="font-semibold" style={{ color: colors.textPrimary }}>
-                            {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
-                          </p>
-                        </div>
-                        <p className="text-sm" style={{ color: colors.textSecondary }}>
-                          {language === 'th' ? 'โดย' : 'by'} {lease.created_by}
-                        </p>
-                        <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                          {format(new Date(lease.created_date), 'MMM d, yyyy HH:mm')}
-                        </p>
-                      </div>
-                      <Badge className={
-                        lease.status === 'scanned' ? 'bg-blue-100 text-blue-800' :
-                        lease.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
-                        'bg-amber-100 text-amber-800'
-                      }>
-                        {lease.status}
-                      </Badge>
-                    </div>
+            <div className="space-y-3">
+              {leases.slice(0, 5).map((lease) => (
+                <div
+                  key={lease.id}
+                  className="flex justify-between items-center p-3 rounded-lg"
+                  style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}
+                >
+                  <div>
+                    <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                      {lease.property_address || 'No address'}
+                    </p>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>
+                      {strings.uploadedBy}: {lease.created_by}
+                    </p>
                   </div>
-                ))}
+                  <p className="text-xs" style={{ color: colors.textSecondary }}>
+                    {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Operations Console Quick Access */}
+        <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Settings className="w-8 h-8 text-blue-600" />
+                <div>
+                  <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                    {strings.opsConsole}
+                  </h3>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {strings.opsConsoleDesc}
+                  </p>
+                </div>
               </div>
-            )}
+              <Link to={createPageUrl("OpsConsole")}>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  {strings.goToOps}
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
