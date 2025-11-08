@@ -1,40 +1,9 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
 const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2023-10-16',
 });
-
-// Direct API call helper (bypasses SDK auth issues)
-async function makeDirectApiCall(method, path, body = null) {
-  const appId = Deno.env.get('BASE44_APP_ID');
-  const baseUrl = 'https://api.base44.app'; // FIXED: .app not .com!
-  
-  const options = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-App-Id': appId,
-      'X-Use-Service-Role': 'true',
-    },
-  };
-  
-  if (body) {
-    options.body = JSON.stringify(body);
-  }
-  
-  const url = `${baseUrl}/v1/apps/${appId}${path}`; // FIXED: proper path structure
-  console.log(`📞 API ${method} ${url}`);
-  
-  const response = await fetch(url, options);
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`❌ API Error (${response.status}):`, errorText);
-    throw new Error(`API call failed: ${response.status} ${errorText}`);
-  }
-  
-  return await response.json();
-}
 
 Deno.serve(async (req) => {
   console.log('=== STRIPE WEBHOOK RECEIVED ===');
@@ -59,13 +28,15 @@ Deno.serve(async (req) => {
       const customerId = session.customer;
       const email = session.customer_details?.email;
       
+      // Initialize Base44 SDK with service role access
+      const base44 = createClientFromRequest(req);
+      
       // HANDLE CREDITS PURCHASE
       if (metadata.type === 'credits') {
         console.log('🪙 Processing CREDITS purchase');
         
-        // Fetch all users via direct API
-        const usersResponse = await makeDirectApiCall('GET', '/entities/User');
-        const users = usersResponse.items || usersResponse || [];
+        // Fetch all users using service role (admin access, no user login required)
+        const users = await base44.asServiceRole.entities.User.list();
         
         let user = users.find(u => 
           u.stripe_customer_id === customerId || u.email === email
@@ -80,8 +51,8 @@ Deno.serve(async (req) => {
         const currentCredits = user.letter_credits || 0;
         const totalPurchased = user.total_credits_purchased || 0;
 
-        // Update user via direct API
-        await makeDirectApiCall('PATCH', `/entities/User/${user.id}`, {
+        // Update user using service role
+        await base44.asServiceRole.entities.User.update(user.id, {
           letter_credits: currentCredits + creditsToAdd,
           total_credits_purchased: totalPurchased + creditsToAdd
         });
@@ -92,8 +63,8 @@ Deno.serve(async (req) => {
         console.log('Added credits:', creditsToAdd);
         console.log('New balance:', currentCredits + creditsToAdd);
 
-        // Create payment record via direct API
-        await makeDirectApiCall('POST', '/entities/Payment', {
+        // Create payment record using service role
+        await base44.asServiceRole.entities.Payment.create({
           type: 'addon',
           amount: parseFloat((session.amount_total / 100).toFixed(2)),
           currency: 'THB',
@@ -133,7 +104,7 @@ Use your credits to generate professional legal letters instantly.
 
 — The Lease Shield Team`;
 
-        await makeDirectApiCall('POST', '/integrations/Core/SendEmail', {
+        await base44.asServiceRole.integrations.Core.SendEmail({
           to: user.email,
           subject,
           body: emailBody
@@ -180,8 +151,7 @@ Use your credits to generate professional legal letters instantly.
       if (session.mode === 'subscription') {
         console.log('💳 Processing SUBSCRIPTION');
         
-        const usersResponse = await makeDirectApiCall('GET', '/entities/User');
-        const users = usersResponse.items || usersResponse || [];
+        const users = await base44.asServiceRole.entities.User.list();
         
         let user = users.find(u => 
           u.stripe_customer_id === customerId || u.email === email
