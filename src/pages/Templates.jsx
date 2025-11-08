@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -136,6 +136,7 @@ const TEMPLATES = [
 
 export default function Templates() {
   const navigate = useNavigate();
+  const [buyingCredits, setBuyingCredits] = useState({}); // ✅ Track individual package loading states
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -147,20 +148,18 @@ export default function Templates() {
   const userTier = user?.plan_tier || 'free';
   const userCredits = user?.letter_credits || 0;
 
-  // Credit packages - SAME AS ACCOUNT PAGE
+  // Credit packages - SAME AS ACCOUNT PAGE BUT WITHOUT STRIPE URLS
   const CREDIT_PACKAGES = [
     {
       id: 'credits_1',
       credits: 1,
       price: 99,
-      stripeUrl: 'https://buy.stripe.com/aFa9AV1C41xZcDy7qwdEs09',
       savings: 0
     },
     {
       id: 'credits_3',
       credits: 3,
       price: 249,
-      stripeUrl: 'https://buy.stripe.com/14AaEZa8A5Of472fX2dEs0a',
       savings: 16,
       popular: false
     },
@@ -168,7 +167,6 @@ export default function Templates() {
       id: 'credits_5',
       credits: 5,
       price: 399,
-      stripeUrl: 'https://buy.stripe.com/bJe3cx80s1xZ8ni3agdEs0b',
       savings: 20,
       popular: true
     },
@@ -176,7 +174,6 @@ export default function Templates() {
       id: 'credits_10',
       credits: 10,
       price: 699,
-      stripeUrl: 'https://buy.stripe.com/3cIfZjdkM5Of8ni3agdEs0c',
       savings: 30,
       popular: false
     }
@@ -271,6 +268,35 @@ export default function Templates() {
   const handleTemplateClick = (template) => {
     if (userCredits >= template.creditCost) {
       navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`);
+    }
+  };
+
+  // ✅ ADD: Same credit purchase handler as Account page
+  const handleBuyCredits = async (pkg) => {
+    setBuyingCredits(prev => ({ ...prev, [pkg.id]: true }));
+    try {
+      console.log('🔍 Templates page - Sending to createCheckout:', { amount: pkg.price, packageId: pkg.id });
+      
+      const response = await base44.functions.invoke('createCheckout', {
+        priceId: null,
+        mode: 'payment',
+        amount: pkg.price, // ✅ Correct - no multiplication
+        currency: 'thb',
+        description: `${pkg.credits} Letter Credits`,
+        metadata: {
+          type: 'credits',
+          credits: pkg.credits.toString(),
+          packageId: pkg.id
+        }
+      });
+      
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (error) {
+      console.error('Failed to create checkout:', error);
+      alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
+      setBuyingCredits(prev => ({ ...prev, [pkg.id]: false }));
     }
   };
 
@@ -409,37 +435,41 @@ export default function Templates() {
                       </div>
                     </div>
 
-                    {/* Button - Fixed at Bottom */}
+                    {/* Button - Fixed at Bottom - REPLACED <a> WITH <button> */}
                     <div className="mt-auto">
-                      <a
-                        href={pkg.stripeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => handleBuyCredits(pkg)}
+                        disabled={buyingCredits[pkg.id]}
                         style={{
                           display: 'block',
                           width: '100%',
                           padding: '10px 16px',
                           textAlign: 'center',
-                          backgroundColor: pkg.popular ? '#C7A338' : '#0C3B2E',
+                          backgroundColor: buyingCredits[pkg.id] ? '#9CA3AF' : (pkg.popular ? '#C7A338' : '#0C3B2E'),
                           color: '#FFFFFF',
                           borderRadius: '6px',
                           fontSize: '14px',
                           fontWeight: '600',
-                          textDecoration: 'none',
+                          border: 'none',
+                          cursor: buyingCredits[pkg.id] ? 'not-allowed' : 'pointer',
                           transition: 'all 0.2s',
-                          cursor: 'pointer'
+                          opacity: buyingCredits[pkg.id] ? 0.7 : 1
                         }}
                         onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = pkg.popular ? '#B89330' : '#0a2f25';
-                          e.target.style.transform = 'translateY(-1px)';
+                          if (!buyingCredits[pkg.id]) {
+                            e.target.style.backgroundColor = pkg.popular ? '#B89330' : '#0a2f25';
+                            e.target.style.transform = 'translateY(-1px)';
+                          }
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = pkg.popular ? '#C7A338' : '#0C3B2E';
-                          e.target.style.transform = 'translateY(0)';
+                          if (!buyingCredits[pkg.id]) {
+                            e.target.style.backgroundColor = pkg.popular ? '#C7A338' : '#0C3B2E';
+                            e.target.style.transform = 'translateY(0)';
+                          }
                         }}
                       >
-                        {strings.buyNow}
-                      </a>
+                        {buyingCredits[pkg.id] ? (language === 'th' ? 'กำลังดำเนินการ...' : 'Processing...') : strings.buyNow}
+                      </button>
                     </div>
                   </div>
                 );
