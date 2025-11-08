@@ -179,6 +179,19 @@ export default function Account() {
     queryFn: () => base44.auth.me(),
   });
 
+  // ✅ NEW: Handle payment success redirect
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+      // Refetch user data after successful payment
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      
+      // Clean URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [queryClient]);
+
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
     phone: user?.phone || '',
