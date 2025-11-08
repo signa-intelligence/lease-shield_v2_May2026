@@ -2032,75 +2032,6 @@ export default function Account() {
 
               <div style={{
                 padding: '16px',
-                backgroundColor: colors.fieldBg,
-                borderRadius: '12px',
-                borderLeft: '4px solid #C7A338'
-              }}>
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div className="flex items-center gap-3">
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#C7A338',
-                      borderRadius: '10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <Download className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.exportData}</p>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.exportDesc}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleExportData}
-                    disabled={exporting}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: '2px solid #C7A338',
-                      backgroundColor: exporting ? colors.fieldBg : colors.cardBg,
-                      color: exporting ? colors.textSecondary : '#C7A338',
-                      fontWeight: 'bold',
-                      fontSize: '14px',
-                      cursor: exporting ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!exporting) {
-                        e.target.style.backgroundColor = '#C7A338';
-                        e.target.style.color = '#FFFFFF';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!exporting) {
-                        e.target.style.backgroundColor = colors.cardBg;
-                        e.target.style.color = '#C7A338';
-                      }
-                    }}
-                  >
-                    {exporting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        {strings.exporting}
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-4 h-4" />
-                        {strings.export}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div style={{
-                padding: '16px',
                 backgroundColor: '#FEE2E2',
                 borderRadius: '12px',
                 borderLeft: '4px solid #DC2626'
@@ -2404,6 +2335,7 @@ export default function Account() {
               const Icon = plan.icon;
               const isCurrentPlan = currentPlanTier === plan.key;
               const isFreeplan = plan.key === 'free';
+              const isSecureTier = plan.key === 'secure';
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
               const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly);
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
@@ -2413,12 +2345,15 @@ export default function Account() {
                   key={plan.key}
                   className={`relative border-2 transition-all duration-200 ${
                     plan.popular ? 'border-amber-400 shadow-lg' : ''
-                  }`}
+                  } ${isSecureTier ? 'shadow-xl' : ''}`}
                   style={{
-                    backgroundColor: plan.popular 
-                      ? (isDarkMode ? '#2D2520' : '#FFFBEB')
-                      : colors.cardBg,
-                    borderColor: plan.popular ? '#C7A338' : colors.borderColor,
+                    backgroundColor: isSecureTier 
+                      ? (isDarkMode ? '#1A2E27' : '#F0FDF4')
+                      : plan.popular 
+                        ? (isDarkMode ? '#2D2520' : '#FFFBEB')
+                        : colors.cardBg,
+                    borderColor: isSecureTier ? '#0C3B2E' : plan.popular ? '#C7A338' : colors.borderColor,
+                    borderWidth: isSecureTier ? '3px' : '2px',
                     borderRadius: '12px',
                     padding: '16px',
                     display: 'flex',
@@ -2433,9 +2368,14 @@ export default function Account() {
                         ⭐ {strings.mostPopular}
                       </Badge>
                     )}
-                    {billingInterval === 'annual' && !isFreeplan && !plan.popular && (
+                    {billingInterval === 'annual' && !isFreeplan && !plan.popular && !isSecureTier && (
                       <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
                         🏷️ {strings.monthsFree}
+                      </Badge>
+                    )}
+                    {isSecureTier && (
+                      <Badge className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                        👑 {language === 'th' ? 'พรีเมียม' : 'PREMIUM'}
                       </Badge>
                     )}
                   </div>
@@ -2443,8 +2383,18 @@ export default function Account() {
                   {/* Plan Name & Icon - Fixed Height */}
                   <div className="text-center" style={{ height: '80px', marginBottom: '12px' }}>
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      <Icon className="w-6 h-6" style={{ color: plan.bgColor }} />
-                      <h3 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        backgroundColor: isSecureTier ? '#0C3B2E' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Icon className="w-6 h-6" style={{ color: isSecureTier ? '#FFFFFF' : plan.bgColor }} />
+                      </div>
+                      <h3 className="text-xl font-bold" style={{ color: isSecureTier ? '#0C3B2E' : colors.textPrimary }}>
                         {plan.label}
                       </h3>
                     </div>
@@ -2461,7 +2411,7 @@ export default function Account() {
                       </div>
                     ) : (
                       <>
-                        <div className="text-3xl font-bold mb-1" style={{ color: '#C7A338' }}>
+                        <div className="text-3xl font-bold mb-1" style={{ color: isSecureTier ? '#0C3B2E' : '#C7A338' }}>
                           ฿{displayPrice.toLocaleString()}
                         </div>
                         <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
@@ -2488,7 +2438,7 @@ export default function Account() {
                     <ul className="space-y-2">
                       {plan.benefits.slice(0, 5).map((benefit, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
-                          <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: '#0C3B2E' }} />
+                          <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: isSecureTier ? '#0C3B2E' : '#0C3B2E' }} />
                           <span>{benefit}</span>
                         </li>
                       ))}
@@ -2534,7 +2484,7 @@ export default function Account() {
                         disabled={subscribing}
                         className="w-full text-sm h-10"
                         style={{
-                          backgroundColor: plan.popular ? '#C7A338' : '#0C3B2E',
+                          backgroundColor: isSecureTier ? '#0C3B2E' : plan.popular ? '#C7A338' : '#0C3B2E',
                           color: '#FFFFFF',
                           cursor: subscribing ? 'not-allowed' : 'pointer',
                           opacity: subscribing ? 0.7 : 1
