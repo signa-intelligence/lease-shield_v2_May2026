@@ -44,7 +44,11 @@ Deno.serve(async (req) => {
     }
 
     const origin = new URL(req.url).origin.replace('/api/functions/createCheckout', '');
-    const defaultSuccessUrl = `${origin}/account?success=true`;
+    
+    // ✅ FIX: Use dedicated success page for credit purchases
+    const defaultSuccessUrl = metadata?.type === 'credits' 
+      ? `${origin}/payment-success`  // Simple page that closes window
+      : `${origin}/account?success=true`;
     const defaultCancelUrl = `${origin}/account?canceled=true`;
 
     const sessionConfig = {

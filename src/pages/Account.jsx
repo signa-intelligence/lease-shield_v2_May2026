@@ -179,17 +179,14 @@ export default function Account() {
     queryFn: () => base44.auth.me(),
   });
 
-  // ✅ NEW: Handle payment success redirect
+  // ✅ UPDATED: Refresh data when window regains focus (after payment in new tab)
   React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success') === 'true') {
-      // Refetch user data after successful payment
+    const handleFocus = () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      
-      // Clean URL
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
-    }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [queryClient]);
 
   const [formData, setFormData] = useState({
