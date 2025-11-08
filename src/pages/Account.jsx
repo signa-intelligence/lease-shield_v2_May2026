@@ -123,7 +123,7 @@ const PLAN_DETAILS = [
   }
 ];
 
-// Credit packages
+// Credit packages - REMOVED 20 credits option
 const CREDIT_PACKAGES = [
   {
     id: 'credits_1',
@@ -154,14 +154,6 @@ const CREDIT_PACKAGES = [
     price: 699,
     priceId: null,
     savings: 30,
-    popular: false
-  },
-  {
-    id: 'credits_20',
-    credits: 20,
-    price: 1199,
-    priceId: null,
-    savings: 40,
     popular: false
   }
 ];
@@ -580,13 +572,313 @@ export default function Account() {
       perCredit: "per credit",
       save: "Save",
       buyNow: "Buy Now",
+      bestValue: "Best Value",
+      creditPacks: "Credit Packs",
+      oneLetterPerCredit: "1 letter = 1 credit",
+      accessTemplateLibrary: "Access template library", // Updated from allTemplatesAvailable
+      bilingual: "Bilingual (EN/TH)",
+      humanAndAiGeneration: "Human and AI generation", // Updated from instantGeneration
+      creditsNeverExpire: "Credits never expire",
+      purchaseCredits: "Purchase Credits"
+    },
+    th: {
+      pageTitle: "บัญชีของฉัน",
+      pageSubtitle: "จัดการโปรไฟล์และการสมัครสมาชิก",
+      personalInfo: "ข้อมูลส่วนตัว",
+      editProfile: "แก้ไขโปรไฟล์",
+      fullName: "ชื่อ-นามสกุล",
+      email: "อีเมล",
+      cannotChange: "ไม่สามารถเปลี่ยนแปลงได้",
+      phone: "เบอร์โทรศัพท์",
+      phonePlaceholder: "+66 XX XXX XXXX",
+      country: "ประเทศ",
+      countryPlaceholder: "ประเทศไทย",
+      language: "ภาษา",
+      theme: "ธีม",
+      lightMode: "โหมดสว่าง",
+      darkMode: "โหมดมืด",
+      saveChanges: "บันทึกการเปลี่ยนแปลง",
+      cancel: "ยกเลิก",
+      currentPlan: "แผนปัจจุบัน",
+      billedMonthly: "เรียกเก็บรายเดือน",
+      billedAnnually: "เรียกเก็บรายปี",
+      renews: "ต่ออายุ",
+      freePlanName: "ฟรี",
+      freeIncludes: "แผนฟรีประกอบด้วย:",
+      freeBenefit1: "สแกนสัญญาเช่า 1 ครั้ง (ตลอดชีพ)",
+      freeBenefit2: "แสดงตัวอย่างคะแนนความเสี่ยงพื้นฐาน",
+      freeBenefit3: "3 ไฟล์ (พื้นที่เก็บข้อมูล 100MB)",
+      freeBenefit4: "เครื่องมือติดตามเงินมัดจำแบบอ่านอย่างเดียว",
+      upgradeNow: "อัปเกรดเลย",
+      allActive: "ฟีเจอร์ทั้งหมดใช้งานได้",
+      lineEnabled: "การแจ้งเตือน LINE เปิดใช้งาน",
+      helpSupport: "ช่วยเหลือและการสนับสนุน",
+      helpDesc: "ต้องการความช่วยเหลือ? ส่งคำขอและเราจะตอบกลับทางอีเมล",
+      submitRequest: "ส่งคำขอช่วยเหลือ",
+      submitDesc: "รายงานปัญหา ถามคำถาม หรือขอความช่วยเหลือ",
+      directEmail: "อีเมลโดยตรง",
+      responseTime: "ตอบกลับภายใน 24-48 ชั่วโมง",
+      dataPrivacy: "ความเป็นส่วนตัวของข้อมูลและสิทธิ์ของคุณ",
+      privacyPolicy: "นโยบายความเป็นส่วนตัว",
+      privacyDesc: "เรียนรู้วิธีที่เราปกป้องข้อมูลของคุณ",
+      viewPolicy: "ดูนโยบาย",
+      exportData: "ส่งออกข้อมูลของฉัน",
+      exportDesc: "ดาวน์โหลดข้อมูลส่วนบุคคลทั้งหมด (ตาม พ.ร.บ. PDPA)",
+      export: "ส่งออก",
+      exporting: "กำลังส่งออก...",
+      deleteAccount: "ต้องการลบบัญชี?",
+      deleteDesc: "หากต้องการใช้สิทธิ์ลบข้อมูลตาม พ.ร.บ. PDPA กรุณาติดต่อเราที่",
+      deleteNote: "เราจะลบข้อมูลทั้งหมดของคุณอย่างปลอดภัยภายใน 30 วัน",
+      preventionBannerTitle: "การป้องกันเป็นอันดับแรก",
+      preventionBannerSubtitle: "การป้องกันแบบสมัครสมาชิกสำหรับสัญญาเช่า เงินมัดจำ และเอกสารของคุณ",
+      preventionBannerText: "Lease Shield ช่วยให้คุณรักษาความสัมพันธ์ในการเช่าที่ชัดเจน ถูกกฎหมาย และมีหลักฐาน ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้นด้วยการแจ้งเตือนอัตโนมัติ การวิเคราะห์ความเสี่ยง และเทมเพลตมืออาชีพ",
+      monthly: "รายเดือน",
+      annual: "รายปี",
+      save17: "ประหยัด 17%",
+      choosePlan: "เลือกระดับการป้องกันของคุณ",
+      planDesc: "แผนทั้งหมดมุ่งเน้นการป้องกันและรักษาบันทึกที่ชัดเจน",
+      mostPopular: "ได้รับความนิยมมากที่สุด",
+      monthsFree: "ฟรี 2 เดือน",
+      noCreditCard: "ไม่ต้องใช้บัตรเครดิต",
+      perMonth: "/เดือน",
+      save: "ประหยัด",
+      currentPlanBadge: "แผนปัจจุบัน",
+      signupFree: "สมัครเพื่อรับฟรี",
+      startPlan: "เริ่มต้น",
+      processing: "กำลังดำเนินการ...",
+      logout: "ออกจากระบบ",
+      notProvided: "ไม่ได้ระบุ",
+      manageSubscription: "จัดการการสมัครสมาชิก",
+      renewsOn: "ต่ออายุเมื่อ",
+      cancelPlan: "เปลี่ยนแปลงหรือยกเลิกแผน",
+      cancelDialogTitle: "ยกเลิกการสมัครสมาชิก?",
+      cancelDialogDesc: "เราเสียใจที่เห็นคุณจากไป ช่วยบอกเราว่าทำไมคุณถึงออกไป",
+      cancelReason: "เหตุผลในการยกเลิก",
+      selectReason: "เลือกเหตุผล",
+      reasonTooExpensive: "แพงเกินไป",
+      reasonNotUsingEnough: "ไม่ได้ใช้บ่อยพอ",
+      reasonFoundAlternative: "พบทางเลือกที่ดีกว่า",
+      reasonMissingFeatures: "ขาดฟีเจอร์ที่ต้องการ",
+      reasonTechnicalIssues: "มีปัญหาทางเทคนิค",
+      reasonOther: "อื่นๆ",
+      additionalFeedback: "ข้อเสนอแนะเพิ่มเติม (ไม่บังคับ)",
+      feedbackPlaceholder: "ช่วยบอกเราว่าเราสามารถทำอะไรได้ดีขึ้น...",
+      keepSubscription: "เก็บการสมัครสมาชิกของฉันไว้",
+      confirmCancel: "ยืนยันการยกเลิก",
+      cancelling: "กำลังดำเนินการ...",
+      whatYoullLose: "สิ่งที่คุณจะเสีย",
+      downgradeNote: "การสมัครสมาชิกของคุณจะยังคงใช้งานได้จนถึง {date} หลังจากนั้นคุณจะถูกเปลี่ยนเป็นแผนฟรี",
+      scheduledCancellation: "กำหนดการยกเลิกแล้ว",
+      cancelScheduledFor: "จะยกเลิกเมื่อ",
+      reactivate: "เปิดใช้งานการสมัครสมาชิกอีกครั้ง",
+      landlordInfo: "ข้อมูลเจ้าของบ้าน",
+      landlordInfoDesc: "เก็บข้อมูลติดต่อเจ้าของบ้านเพื่อการแจ้งเตือนอย่างรวดเร็ว",
+      landlordName: "ชื่อเจ้าของบ้าน",
+      landlordEmail: "อีเมลเจ้าของบ้าน",
+      landlordPhone: "โทรศัพท์เจ้าของบ้าน (WhatsApp)",
+      landlordLine: "LINE ID เจ้าของบ้าน",
+      landlordAddress: "ที่อยู่เจ้าของบ้าน",
+      juristicInfo: "ข้อมูลนิติบุคคล",
+      juristicInfoDesc: "เก็บข้อมูลนิติบุคคลเพื่อการแจ้งเตือนการซ่อมบำรุง",
+      juristicName: "ชื่อผู้ติดต่อ",
+      juristicEmail: "อีเมล",
+      juristicPhone: "โทรศัพท์ (WhatsApp)",
+      juristicLine: "LINE ID",
+      saveContactInfo: "บันทึกข้อมูลติดต่อ",
+      connectLineOA: "เชื่อมต่อกับ LINE OA",
+      connectLineOADesc: "แชร์ลิงก์นี้เพื่อเพิ่มพวกเขาในการแจ้งเตือน Lease Shield",
+      copyLink: "คัดลอกลิงก์",
+      shareLink: "แชร์ลิงก์",
+      linkCopied: "คัดลอกลิงก์แล้ว!",
+      orManualEntry: "หรือใส่ LINE ID ด้วยตนเอง",
+      landlordLineConnect: "เชื่อมต่อเจ้าของบ้านกับ LINE",
+      juristicLineConnect: "เชื่อมต่อนิติบุคคลกับ LINE",
+      showQR: "แสดง QR Code",
+      hideQR: "ซ่อน QR Code",
+      scanQR: "สแกน QR Code นี้ด้วยแอป LINE",
+      promoCode: "รหัสโปรโมชัน",
+      promoCodePlaceholder: "ใส่รหัสโปรโมชัน",
+      promoCodeOptional: "(ไม่บังคับ)",
+      applyPromo: "ใช้งาน",
+      promoApplied: "รหัสโปรโมชันจะถูกใช้เมื่อชำระเงิน",
+      buyCredits: "ซื้อเครดิตจดหมาย",
+      creditBalance: "เครดิตคงเหลือ",
+      credits: "เครดิต",
+      perCredit: "ต่อเครดิต",
+      save: "ประหยัด",
+      buyNow: "ซื้อเลย",
+      bestValue: "คุ้มที่สุด",
+      creditPacks: "แพ็กเกจเครดิต",
+      oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
+      accessTemplateLibrary: "เข้าถึงคลังเทมเพลต", // Updated from allTemplatesAvailable
+      bilingual: "สองภาษา (EN/TH)",
+      humanAndAiGeneration: "สร้างโดยมนุษย์และ AI", // Updated from instantGeneration
+      creditsNeverExpire: "เครดิตไม่หมดอายุ",
+      purchaseCredits: "ซื้อเครดิต"
+    }
+  };
+
+  const strings = t[language];
+  const currentPlanTier = user?.plan_tier || 'free';
+  const isFree = currentPlanTier === 'free';
+  const language = user?.language || 'en';
+  const currentTheme = user?.theme || 'light';
+  const isDarkMode = currentTheme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    inputBg: '#353A3D',
+    fieldBg: '#353A3D',
+    hoverBg: '#3A3D40'
+  } : {
+    bg: '#ECEFED',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+    inputBg: '#FFFFFF',
+    fieldBg: '#ECEFED',
+    hoverBg: '#F8FAFC'
+  };
+
+  const t = {
+    en: {
+      pageTitle: "My Account",
+      pageSubtitle: "Manage your profile and subscription",
+      personalInfo: "Personal Information",
+      editProfile: "Edit Profile",
+      fullName: "Full Name",
+      email: "Email",
+      cannotChange: "Cannot be changed",
+      phone: "Phone Number",
+      phonePlaceholder: "+66 XX XXX XXXX",
+      country: "Country",
+      countryPlaceholder: "Thailand",
+      language: "Language",
+      theme: "Theme",
+      lightMode: "Light Mode",
+      darkMode: "Dark Mode",
+      saveChanges: "Save Changes",
+      cancel: "Cancel",
+      currentPlan: "Current Plan",
+      billedMonthly: "Billed monthly",
+      billedAnnually: "Billed annually",
+      renews: "Renews",
+      freePlanName: "Free",
+      freeIncludes: "Free Plan Includes:",
+      freeBenefit1: "1 Lease Scan (lifetime)",
+      freeBenefit2: "Basic Risk Score Preview",
+      freeBenefit3: "3 Files (100MB storage)",
+      freeBenefit4: "Read-only Deposit Tracker",
+      upgradeNow: "Upgrade Now",
+      allActive: "All features active",
+      lineEnabled: "LINE reminders enabled",
+      helpSupport: "Help & Support",
+      helpDesc: "Need assistance? Submit a request and we'll respond via email",
+      submitRequest: "Submit Support Request",
+      submitDesc: "Report issues, ask questions, or get help",
+      directEmail: "Direct Email",
+      responseTime: "Response within 24-48 hours",
+      dataPrivacy: "Data Privacy & Your Rights",
+      privacyPolicy: "Privacy Policy",
+      privacyDesc: "Learn how we protect your data",
+      viewPolicy: "View Policy",
+      exportData: "Export My Data",
+      exportDesc: "Download all your personal data (PDPA compliant)",
+      export: "Export",
+      exporting: "Exporting...",
+      deleteAccount: "Need to Delete Your Account?",
+      deleteDesc: "To exercise your right to erasure under PDPA, please contact us at",
+      deleteNote: "We will securely delete all your data within 30 days.",
+      preventionBannerTitle: "Prevention-First Protection",
+      preventionBannerSubtitle: "Subscription-based protection for your lease, deposit, and documentation",
+      preventionBannerText: "Lease Shield helps you maintain clear, legal, and evidence-based leasing relationships. Prevent rental problems before they happen with automated alerts, risk analysis, and professional templates.",
+      monthly: "Monthly",
+      annual: "Annual",
+      save17: "Save 17%",
+      choosePlan: "Choose Your Protection Level",
+      planDesc: "All plans focus on prevention and maintaining clear records",
+      mostPopular: "MOST POPULAR",
+      monthsFree: "2 MONTHS FREE",
+      noCreditCard: "No credit card required",
+      perMonth: "/month",
+      save: "Save",
+      currentPlanBadge: "Current Plan",
+      signupFree: "Sign Up to Get Free",
+      startPlan: "Start",
+      processing: "Processing...",
+      logout: "Logout",
+      notProvided: "Not provided",
+      manageSubscription: "Manage Subscription",
+      renewsOn: "Renews on",
+      cancelPlan: "Change or Cancel Plan",
+      cancelDialogTitle: "Cancel Your Subscription?",
+      cancelDialogDesc: "We're sorry to see you go. Help us improve by telling us why you're leaving.",
+      cancelReason: "Reason for Cancellation",
+      selectReason: "Select a reason",
+      reasonTooExpensive: "Too expensive",
+      reasonNotUsingEnough: "Not using it enough",
+      reasonFoundAlternative: "Found a better alternative",
+      reasonMissingFeatures: "Missing features I need",
+      reasonTechnicalIssues: "Technical issues",
+      reasonOther: "Other",
+      additionalFeedback: "Additional Feedback (Optional)",
+      feedbackPlaceholder: "Help us understand what we could do better...",
+      keepSubscription: "Keep My Subscription",
+      confirmCancel: "Confirm Cancellation",
+      cancelling: "Processing...",
+      whatYoullLose: "What you'll lose",
+      downgradeNote: "Your subscription will remain active until {date}. After that, you'll be downgraded to the Free plan.",
+      scheduledCancellation: "Scheduled for Cancellation",
+      cancelScheduledFor: "Cancels on",
+      reactivate: "Reactivate Subscription",
+      landlordInfo: "Landlord Information",
+      landlordInfoDesc: "Store your landlord's contact details for quick notifications",
+      landlordName: "Landlord Name",
+      landlordEmail: "Landlord Email",
+      landlordPhone: "Landlord Phone (WhatsApp)",
+      landlordLine: "Landlord LINE ID",
+      landlordAddress: "Landlord Address",
+      juristicInfo: "Juristic Office Contact",
+      juristicInfoDesc: "Store juristic office details for maintenance notifications",
+      juristicName: "Contact Name",
+      juristicEmail: "Email",
+      juristicPhone: "Phone (WhatsApp)",
+      juristicLine: "LINE ID",
+      saveContactInfo: "Save Contact Info",
+      connectLineOA: "Connect to LINE OA",
+      connectLineOADesc: "Share this link to add them to Lease Shield notifications",
+      copyLink: "Copy Link",
+      shareLink: "Share Link",
+      linkCopied: "Link Copied!",
+      orManualEntry: "Or enter LINE ID manually",
+      landlordLineConnect: "Connect Landlord to LINE",
+      juristicLineConnect: "Connect Juristic to LINE",
+      showQR: "Show QR Code",
+      hideQR: "Hide QR Code",
+      scanQR: "Scan this QR code with LINE app",
+      promoCode: "Promo Code",
+      promoCodePlaceholder: "Enter promo code",
+      promoCodeOptional: "(Optional)",
+      applyPromo: "Apply",
+      promoApplied: "Promo code will be applied at checkout",
+      buyCredits: "Buy Letter Credits",
+      creditBalance: "Credit Balance",
+      credits: "Credits",
+      perCredit: "per credit",
+      save: "Save",
+      buyNow: "Buy Now",
       mostPopular: "Most Popular",
       bestValue: "Best Value",
       creditPacks: "Credit Packs",
       oneLetterPerCredit: "1 letter = 1 credit",
-      allTemplatesAvailable: "Access template library",
+      accessTemplateLibrary: "Access template library",
       bilingual: "Bilingual (EN/TH)",
-      instantGeneration: "Human and AI generation",
+      humanAndAiGeneration: "Human and AI generation",
       creditsNeverExpire: "Credits never expire",
       purchaseCredits: "Purchase Credits"
     },
@@ -720,15 +1012,17 @@ export default function Account() {
       bestValue: "คุ้มที่สุด",
       creditPacks: "แพ็กเกจเครดิต",
       oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
-      allTemplatesAvailable: "เข้าถึงคลังเทมเพลต",
+      accessTemplateLibrary: "เข้าถึงคลังเทมเพลต",
       bilingual: "สองภาษา (EN/TH)",
-      instantGeneration: "สร้างโดยมนุษย์และ AI",
+      humanAndAiGeneration: "สร้างโดยมนุษย์และ AI",
       creditsNeverExpire: "เครดิตไม่หมดอายุ",
       purchaseCredits: "ซื้อเครดิต"
     }
   };
 
   const strings = t[language];
+  const currentPlanTier = user?.plan_tier || 'free';
+  const isFree = currentPlanTier === 'free';
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
@@ -1357,7 +1651,7 @@ export default function Account() {
           </Card>
         </div>
 
-        {/* Letter Credits Section - NEW */}
+        {/* Letter Credits Section */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
@@ -1385,11 +1679,11 @@ export default function Account() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {/* Benefits - UPDATED ALIGNMENT */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
+            {/* Benefits */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.allTemplatesAvailable}</span>
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.accessTemplateLibrary}</span>
               </div>
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -1397,7 +1691,7 @@ export default function Account() {
               </div>
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.instantGeneration}</span>
+                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.humanAndAiGeneration}</span>
               </div>
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -1406,7 +1700,7 @@ export default function Account() {
             </div>
 
             {/* Credit Packages */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {CREDIT_PACKAGES.map((pkg) => {
                 const pricePerCredit = Math.round(pkg.price / pkg.credits);
                 return (
@@ -1421,11 +1715,9 @@ export default function Account() {
                         : colors.cardBg,
                       borderColor: pkg.popular ? '#C7A338' : colors.borderColor,
                       borderRadius: '12px',
+                      padding: '16px',
                       paddingTop: pkg.popular || pkg.savings >= 30 ? '36px' : '16px',
-                      paddingLeft: '16px',
-                      paddingRight: '16px',
-                      paddingBottom: '16px',
-                      minHeight: pkg.popular || pkg.savings >= 30 ? '220px' : '184px'
+                      minHeight: '220px'
                     }}
                   >
                     {pkg.popular && (
@@ -1443,7 +1735,7 @@ export default function Account() {
                       </div>
                     )}
                     
-                    <div className="text-center mb-3 flex-shrink-0">
+                    <div className="text-center flex-shrink-0" style={{ height: '52px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                       <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
                         {pkg.credits}
                       </div>
@@ -1452,21 +1744,23 @@ export default function Account() {
                       </div>
                     </div>
 
-                    <div className="text-center mb-auto flex-shrink-0">
+                    <div className="text-center flex-shrink-0" style={{ height: '76px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
                       <div className="text-2xl font-bold" style={{ color: '#C7A338' }}>
                         ฿{pkg.price}
                       </div>
                       <div className="text-xs" style={{ color: colors.textSecondary }}>
                         ฿{pricePerCredit} {strings.perCredit}
                       </div>
-                      {pkg.savings > 0 && (
-                        <Badge className="mt-1 bg-emerald-100 text-emerald-700 text-xs">
-                          {strings.save} {pkg.savings}%
-                        </Badge>
-                      )}
+                      <div style={{ minHeight: '24px', marginTop: '4px' }}>
+                        {pkg.savings > 0 && (
+                          <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                            {strings.save} {pkg.savings}%
+                          </Badge>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="mt-4 flex-shrink-0">
+                    <div className="mt-auto flex-shrink-0">
                       <Button
                         onClick={() => handleBuyCredits(pkg)}
                         disabled={buying}
