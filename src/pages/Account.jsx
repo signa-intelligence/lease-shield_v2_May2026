@@ -158,31 +158,6 @@ const CREDIT_PACKAGES = [
 
 export default function Account() {
   const queryClient = useQueryClient();
-  
-  // Listen for payment success message from popup
-  React.useEffect(() => {
-    const handleMessage = (event) => {
-      if (event.data?.type === 'PAYMENT_SUCCESS' && event.data?.credits) {
-        console.log('Payment success message received from popup');
-        // Refresh user data to show updated credits
-        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      }
-    };
-    
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [queryClient]);
-  
-  // Refresh data when window regains focus (after payment in new tab)
-  React.useEffect(() => {
-    const handleFocus = () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [queryClient]);
-
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -199,6 +174,16 @@ export default function Account() {
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
+
+  // Refresh data when window regains focus (after payment in new tab)
+  React.useEffect(() => {
+    const handleFocus = () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [queryClient]);
 
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
@@ -315,11 +300,7 @@ export default function Account() {
       });
       
       if (response.data?.url) {
-        // Open in new window/tab and listen for messages back
-        const newWindow = window.open(response.data.url, '_blank'); 
-        // Optional: you can add a listener for `newWindow.onbeforeunload` or `newWindow.closed`
-        // if you need to do something when the popup is closed, but it's often unreliable.
-        // The message listener handles the success case.
+        window.open(response.data.url, '_blank'); // Open in new window
       }
     } catch (error) {
       console.error('Failed to create checkout:', error);

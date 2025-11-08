@@ -41,11 +41,10 @@ Deno.serve(async (req) => {
     }
 
     const origin = new URL(req.url).origin.replace('/api/functions/createCheckout', '');
-    const userLang = user.language || 'en';
     
-    // ✅ USE STATIC HTML PAGE - NO BASE44 SDK REQUIRED
+    // ✅ USE STATIC HTML PAGE FOR CREDITS
     const defaultSuccessUrl = metadata?.type === 'credits' 
-      ? `${origin}/payment-success.html?lang=${userLang}`
+      ? `${origin}/payment-success.html`
       : `${origin}/account?success=true`;
     const defaultCancelUrl = `${origin}/account?canceled=true`;
 
