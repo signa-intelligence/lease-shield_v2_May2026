@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { FileText, Shield, AlertCircle, FileX, Scale, Camera, Mail, AlertTriangle, Gavel, CheckCircle, ArrowLeft, Coins, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useQuery, useQueryClient } from "@tanstack/react-query"; // ✅ ADDED useQueryClient
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
@@ -136,129 +135,16 @@ const TEMPLATES = [
 
 export default function Templates() {
   const navigate = useNavigate();
-  const [buyingCredits, setBuyingCredits] = useState({}); // ✅ Track individual package loading states
-
-  // ✅ ADD: React Query client for refetching
-  const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  // ✅ ADD: Auto-refresh after successful payment/subscription
-  React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentStatus = urlParams.get('payment');
-    const subscriptionStatus = urlParams.get('subscription');
-    
-    if (paymentStatus === 'success' || subscriptionStatus === 'success') {
-      console.log('💳 Payment/Subscription success detected - starting refresh...');
-      
-      // Clean URL immediately
-      window.history.replaceState({}, '', window.location.pathname);
-      
-      // Aggressive polling for 60 seconds to catch webhook update
-      let pollCount = 0;
-      const maxPolls = 12; // 60 seconds total (5s intervals)
-      
-      const pollInterval = setInterval(() => {
-        pollCount++;
-        console.log(`🔄 Polling for user data update (${pollCount}/${maxPolls})...`);
-        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-        
-        if (pollCount >= maxPolls) {
-          clearInterval(pollInterval);
-          console.log('✅ User data refresh polling complete');
-        }
-      }, 5000); // Every 5 seconds
-      
-      // Cleanup on unmount
-      return () => clearInterval(pollInterval);
-    }
-  }, [queryClient]);
-
-  // ✅ ADD: Auto-refresh when window regains focus
-  React.useEffect(() => {
-    let intervalId;
-    
-    const handleFocus = () => {
-      // Immediate refresh
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      
-      // Clear any existing interval
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-
-      // Then refresh every 5 seconds for 30 seconds
-      let count = 0;
-      intervalId = setInterval(() => {
-        count++;
-        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-        
-        if (count >= 6) { // Stop after 30 seconds (6 * 5s)
-          clearInterval(intervalId);
-          intervalId = null;
-        }
-      }, 5000);
-    };
-    
-    const handleBlur = () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('blur', handleBlur);
-    
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('blur', handleBlur);
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [queryClient]);
-
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
   const userCredits = user?.letter_credits || 0;
-
-  // Credit packages - SAME AS ACCOUNT PAGE BUT WITHOUT STRIPE URLS
-  const CREDIT_PACKAGES = [
-    {
-      id: 'credits_1',
-      credits: 1,
-      price: 99,
-      savings: 0
-    },
-    {
-      id: 'credits_3',
-      credits: 3,
-      price: 249,
-      savings: 16,
-      popular: false
-    },
-    {
-      id: 'credits_5',
-      credits: 5,
-      price: 399,
-      savings: 20,
-      popular: true
-    },
-    {
-      id: 'credits_10',
-      credits: 10,
-      price: 699,
-      savings: 30,
-      popular: false
-    }
-  ];
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -276,66 +162,38 @@ export default function Templates() {
     en: {
       title: "Legal Letter Templates",
       subtitle: "Professional bilingual escalation ladder - all templates available",
-      availableCredits: "Available Credits",
-      creditCost: "1 Credit per Letter",
-      buyCredits: "Buy Credits",
+      creditBalance: "Credit Balance",
+      credits: "Credits",
       allLetters: "All Letters (11 Templates)",
       insufficientCredits: "Insufficient credits",
-      tierCredits: {
-        free: "Free: 0 credits",
-        lite: "Lite: 3 credits included",
-        protect: "Protect: 5 credits included",
-        secure: "Secure: 10 credits included"
-      },
       upgradeForCredits: "Upgrade for more credits",
       preSigningSection: "⭐ Pre-Signing Negotiation",
       friendlyApproach: "Friendly Approach (3 Letters)",
       professionalEscalation: "Professional Escalation (4 Letters)",
       finalMeasures: "Final Measures (3 Letters)",
-      creditBalance: "Credit Balance",
-      credits: "Credits",
-      perCredit: "per credit",
-      buyNow: "Buy Now",
-      bestValue: "Best Value",
-      mostPopular: "MOST POPULAR",
       oneLetterPerCredit: "1 letter = 1 credit",
       accessTemplateLibrary: "Access template library",
       bilingual: "Bilingual Templates",
-      humanAndAiGeneration: "Human and AI generation",
       creditsNeverExpire: "Credits never expire",
-      save: "Save"
+      purchaseCredits: "Purchase Credits"
     },
     th: {
       title: "เทมเพลตจดหมายทางกฎหมาย",
       subtitle: "บันไดการยกระดับมืออาชีพสองภาษา - ทุกเทมเพลตพร้อมใช้งาน",
-      availableCredits: "เครดิตที่มี",
-      creditCost: "1 เครดิตต่อจดหมาย",
-      buyCredits: "ซื้อเครดิต",
+      creditBalance: "เครดิตคงเหลือ",
+      credits: "เครดิต",
       allLetters: "จดหมายทั้งหมด (11 เทมเพลต)",
       insufficientCredits: "เครดิตไม่เพียงพอ",
-      tierCredits: {
-        free: "ฟรี: 0 เครดิต",
-        lite: "ไลท์: 3 เครดิตรวมอยู่",
-        protect: "โปรเทค: 5 เครดิตรวมอยู่",
-        secure: "ซีเคียว: 10 เครดิตรวมอยู่"
-      },
       upgradeForCredits: "อัปเกรดเพื่อรับเครดิตเพิ่ม",
       preSigningSection: "⭐ เจรจาก่อนลงนาม",
       friendlyApproach: "แนวทางเป็นมิตร (3 จดหมาย)",
       professionalEscalation: "การยกระดับอย่างมืออาชีพ (4 จดหมาย)",
       finalMeasures: "มาตรการสุดท้าย (3 จดหมาย)",
-      creditBalance: "เครดิตคงเหลือ",
-      credits: "เครดิต",
-      perCredit: "ต่อเครดิต",
-      buyNow: "ซื้อเลย",
-      bestValue: "คุ้มที่สุด",
-      mostPopular: "ยอดนิยม",
       oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
       accessTemplateLibrary: "เข้าถึงคลังเทมเพลต",
       bilingual: "เทมเพลตสองภาษา",
-      humanAndAiGeneration: "สร้างโดยมนุษย์และ AI",
       creditsNeverExpire: "เครดิตไม่หมดอายุ",
-      save: "ประหยัด"
+      purchaseCredits: "ซื้อเครดิต"
     }
   };
 
@@ -349,38 +207,6 @@ export default function Templates() {
   const handleTemplateClick = (template) => {
     if (userCredits >= template.creditCost) {
       navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`);
-    }
-  };
-
-  // ✅ ADD: Same credit purchase handler as Account page
-  const handleBuyCredits = async (pkg) => {
-    setBuyingCredits(prev => ({ ...prev, [pkg.id]: true }));
-    try {
-      console.log('🔍 Templates page - Sending to createCheckout:', { amount: pkg.price, packageId: pkg.id });
-      
-      const response = await base44.functions.invoke('createCheckout', {
-        priceId: null,
-        mode: 'payment',
-        amount: pkg.price, // ✅ Correct - no multiplication
-        currency: 'thb',
-        description: `${pkg.credits} Letter Credits`,
-        successUrl: `${window.location.origin}${createPageUrl('Templates')}?payment=success`,
-        cancelUrl: `${window.location.origin}${createPageUrl('Templates')}?payment=cancelled`,
-        metadata: {
-          type: 'credits',
-          credits: pkg.credits.toString(),
-          packageId: pkg.id
-        }
-      });
-      
-      if (response.data?.url) {
-        // ✅ Open in SAME window - when they come back, credits will auto-refresh
-        window.location.href = response.data.url;
-      }
-    } catch (error) {
-      console.error('Failed to create checkout:', error);
-      alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
-      setBuyingCredits(prev => ({ ...prev, [pkg.id]: false }));
     }
   };
 
@@ -409,155 +235,52 @@ export default function Templates() {
           </Badge>
         </div>
 
-        {/* LETTER CREDITS SECTION - COPIED FROM ACCOUNT PAGE */}
+        {/* SIMPLIFIED CREDIT BALANCE SECTION */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${isDarkMode ? '#3A3D40' : '#E5E7EB'}` }}>
-            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-                  <Coins className="w-6 h-6 text-white" />
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              {/* Credit Balance Display */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                  <Coins className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-                    {strings.buyCredits}
-                  </h2>
-                  <p className="text-sm font-normal" style={{ color: colors.textSecondary }}>
+                  <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                    {strings.creditBalance}
+                  </p>
+                  <p className="text-4xl font-bold" style={{ color: '#C7A338' }}>
+                    {userCredits}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
                     {strings.oneLetterPerCredit}
                   </p>
                 </div>
               </div>
-              <div className="text-right flex items-center gap-2">
-                <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                  {strings.creditBalance}
-                </p>
-                <p className="text-3xl font-bold" style={{ color: '#C7A338' }}>
-                  {userCredits}
-                </p>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {/* Benefits */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.accessTemplateLibrary}</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.bilingual}</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.humanAndAiGeneration}</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.creditsNeverExpire}</span>
-              </div>
-            </div>
 
-            {/* Credit Packages */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {CREDIT_PACKAGES.map((pkg) => {
-                const pricePerCredit = Math.round(pkg.price / pkg.credits);
-                
-                return (
-                  <div
-                    key={pkg.id}
-                    className={`relative border-2 transition-all duration-200 flex flex-col ${
-                      pkg.popular ? 'border-amber-400 shadow-lg' : ''
-                    }`}
-                    style={{
-                      backgroundColor: pkg.popular 
-                        ? (isDarkMode ? '#2D2520' : '#FFFBEB')
-                        : colors.cardBg,
-                      borderColor: pkg.popular ? '#C7A338' : (isDarkMode ? '#3A3D40' : '#E5E7EB'),
-                      borderRadius: '12px',
-                      padding: '16px',
-                      minHeight: '240px'
-                    }}
-                  >
-                    {/* Badge Area - Fixed Height */}
-                    <div style={{ height: '24px', marginBottom: '8px' }}>
-                      {pkg.popular && (
-                        <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          ⭐ {strings.mostPopular}
-                        </Badge>
-                      )}
-                      {pkg.savings >= 30 && !pkg.popular && (
-                        <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          💰 {strings.bestValue}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {/* Credit Number - Fixed Height */}
-                    <div className="text-center" style={{ height: '60px', marginBottom: '12px' }}>
-                      <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
-                        {pkg.credits}
-                      </div>
-                      <div className="text-xs" style={{ color: colors.textSecondary }}>
-                        {strings.credits}
-                      </div>
-                    </div>
-
-                    {/* Price Section - Fixed Height */}
-                    <div className="text-center" style={{ height: '80px', marginBottom: '12px' }}>
-                      <div className="text-2xl font-bold mb-1" style={{ color: '#C7A338' }}>
-                        ฿{pkg.price}
-                      </div>
-                      <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                        ฿{pricePerCredit} {strings.perCredit}
-                      </div>
-                      <div style={{ height: '22px' }}>
-                        {pkg.savings > 0 && (
-                          <Badge className="bg-emerald-100 text-emerald-700 text-xs">
-                            {strings.save} {pkg.savings}%
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Button - Fixed at Bottom - REPLACED <a> WITH <button> */}
-                    <div className="mt-auto">
-                      <button
-                        onClick={() => handleBuyCredits(pkg)}
-                        disabled={buyingCredits[pkg.id]}
-                        style={{
-                          display: 'block',
-                          width: '100%',
-                          padding: '10px 16px',
-                          textAlign: 'center',
-                          backgroundColor: buyingCredits[pkg.id] ? '#9CA3AF' : (pkg.popular ? '#C7A338' : '#0C3B2E'),
-                          color: '#FFFFFF',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          border: 'none',
-                          cursor: buyingCredits[pkg.id] ? 'not-allowed' : 'pointer',
-                          transition: 'all 0.2s',
-                          opacity: buyingCredits[pkg.id] ? 0.7 : 1
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!buyingCredits[pkg.id]) {
-                            e.target.style.backgroundColor = pkg.popular ? '#B89330' : '#0a2f25';
-                            e.target.style.transform = 'translateY(-1px)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!buyingCredits[pkg.id]) {
-                            e.target.style.backgroundColor = pkg.popular ? '#C7A338' : '#0C3B2E';
-                            e.target.style.transform = 'translateY(0)';
-                          }
-                        }}
-                      >
-                        {buyingCredits[pkg.id] ? (language === 'th' ? 'กำลังดำเนินการ...' : 'Processing...') : strings.buyNow}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+              {/* Benefits & CTA */}
+              <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+                <div className="flex flex-wrap gap-2 justify-center md:justify-end">
+                  <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    {strings.accessTemplateLibrary}
+                  </Badge>
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    {strings.bilingual}
+                  </Badge>
+                  <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    {strings.creditsNeverExpire}
+                  </Badge>
+                </div>
+                <Button
+                  onClick={() => navigate(createPageUrl("Account"))}
+                  className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 w-full md:w-auto"
+                >
+                  <Coins className="w-4 h-4 mr-2" />
+                  {strings.purchaseCredits}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
