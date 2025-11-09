@@ -5,34 +5,65 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, Crown, Zap, Shield } from "lucide-react";
 
+// ✅ COMPREHENSIVE FEATURE GATES - ALIGNED WITH MARKETING COPY
 const FEATURE_GATES = {
-  // Free tier
+  // ============================================
+  // FREE TIER (Trial/Discovery)
+  // ============================================
   scan_preview: ['free', 'lite', 'protect', 'secure'],
   basic_document_vault: ['free', 'lite', 'protect', 'secure'],
+  maintenance_tracker_basic: ['free', 'lite', 'protect', 'secure'],
+  deposit_tracker_readonly: ['free', 'lite', 'protect', 'secure'],
   storage_100mb: ['free'],
   max_3_files: ['free'],
+  scan_limit_1_lifetime: ['free'],
   
-  // Lite tier
+  // ============================================
+  // LITE TIER (Essential Protection)
+  // ============================================
   full_report: ['lite', 'protect', 'secure'],
-  templates_lite: ['lite', 'protect', 'secure'],
   email_notifications: ['lite', 'protect', 'secure'],
-  scan_limit_5: ['lite'],
+  scan_limit_6_per_year: ['lite'],
+  risk_flags_5_max: ['lite'],
+  letter_credits_3: ['lite', 'protect', 'secure'], // Templates available to all paid tiers
   storage_1gb: ['lite'],
+  maintenance_tracker_full: ['lite', 'protect', 'secure'],
+  deposit_tracker_full: ['lite', 'protect', 'secure'],
   
-  // Protect tier
+  // ============================================
+  // PROTECT TIER (Complete Prevention Suite)
+  // ============================================
+  scan_limit_12_per_year: ['protect'],
+  full_risk_reports: ['protect', 'secure'],
+  line_notifications: ['protect', 'secure'],
+  letter_credits_5: ['protect', 'secure'],
+  storage_5gb: ['protect'],
+  rent_payment_alerts: ['protect', 'secure'],
+  automated_reminders: ['protect', 'secure'],
+  deposit_shield_automation: ['protect', 'secure'],
+  
+  // ============================================
+  // SECURE TIER (Premium Protection)
+  // ============================================
+  unlimited_scans: ['secure'],
+  advanced_reminders: ['secure'],
+  letter_credits_10: ['secure'],
+  storage_20gb: ['secure'],
+  priority_case_queue: ['secure'],
+  priority_scanning: ['secure'],
+  premium_support: ['secure'],
+  ai_letter_generation: ['secure'],
+  
+  // ============================================
+  // LEGACY/COMPATIBILITY GATES
+  // ============================================
   deposit_shield: ['protect', 'secure'],
   rent_alerts_auto: ['protect', 'secure'],
+  templates_lite: ['lite', 'protect', 'secure'],
   templates_full: ['protect', 'secure'],
   line_notify_enabled: ['protect', 'secure'],
-  unlimited_scans: ['protect', 'secure'],
-  storage_5gb: ['protect'],
-  
-  // Secure tier
   priority_queue: ['secure'],
-  storage_20gb: ['secure'],
   priority_support: ['secure'],
-  
-  // Legacy support
   resolve_member_price: ['lite', 'protect', 'secure']
 };
 
