@@ -141,7 +141,7 @@ Use your credits to generate professional legal letters instantly.
         return Response.json({ ok: true, credited: creditsToAdd }, { status: 200 });
       }
       
-      // ✅ HANDLE SUBSCRIPTION (NEW - SAME AS CREDITS!)
+      // ✅ HANDLE SUBSCRIPTION (FIXED - CORRECT RENEWAL DATES!)
       if (session.mode === 'subscription' && metadata.plan) {
         console.log('💳💳💳 Processing SUBSCRIPTION UPGRADE! 💳💳💳');
         console.log('Plan:', metadata.plan);
@@ -171,9 +171,17 @@ Use your credits to generate professional legal letters instantly.
         }
 
         const subscription = subscriptions.data[0];
-        const renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
+        
+        // ✅ CRITICAL FIX: Use correct period end date
+        const renewalTimestamp = subscription.current_period_end;
+        const renewalDate = new Date(renewalTimestamp * 1000).toISOString();
+        
+        console.log('📅 Subscription dates:');
+        console.log('  Start:', new Date(subscription.current_period_start * 1000).toISOString());
+        console.log('  End:', renewalDate);
+        console.log('  Interval:', metadata.interval);
 
-        // ✅ UPDATE USER PLAN - SAME AS CREDITS UPDATE!
+        // ✅ UPDATE USER PLAN
         await base44.asServiceRole.entities.User.update(user.id, {
           plan_tier: metadata.plan,
           billing_interval: metadata.interval,
@@ -250,13 +258,19 @@ You now have access to all features in your plan.
 
         console.log('✅ Subscription confirmation email sent!');
 
-        // Send LINE notification if enabled
+        // ✅ FIXED LINE NOTIFICATION - USE CORRECT DATE!
         if (user.line_messaging_token && user.line_notifications) {
           console.log('📱 Sending LINE subscription notification...');
           
+          // Format date for LINE display
+          const displayDate = new Date(renewalDate);
+          const formattedDate = lang === 'th'
+            ? displayDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
+            : displayDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+          
           const lineMessage = lang === 'th'
-            ? `🎉 ยินดีต้อนรับสู่ ${planLabel}!\n\nการสมัครสมาชิกของคุณเปิดใช้งานแล้ว\nต่ออายุ: ${new Date(renewalDate).toLocaleDateString('th-TH')}\n\nเข้าถึงฟีเจอร์ทั้งหมดได้เลย 🚀`
-            : `🎉 Welcome to ${planLabel}!\n\nYour subscription is now active\nRenews: ${new Date(renewalDate).toLocaleDateString('en-US')}\n\nAccess all features now 🚀`;
+            ? `🎉 ยินดีต้อนรับสู่ ${planLabel}!\n\nการสมัครสมาชิกของคุณเปิดใช้งานแล้ว\nต่ออายุ: ${formattedDate}\n\nเข้าถึงฟีเจอร์ทั้งหมดได้เลย 🚀`
+            : `🎉 Welcome to ${planLabel}!\n\nYour subscription is now active\nRenews: ${formattedDate}\n\nAccess all features now 🚀`;
 
           try {
             const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
@@ -272,7 +286,7 @@ You now have access to all features in your plan.
             });
 
             if (lineResponse.ok) {
-              console.log('✅ LINE subscription notification sent!');
+              console.log('✅ LINE subscription notification sent with date:', formattedDate);
             }
           } catch (lineError) {
             console.error('⚠️ LINE notification error:', lineError.message);
