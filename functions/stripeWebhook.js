@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -141,7 +142,7 @@ Use your credits to generate professional legal letters instantly.
         return Response.json({ ok: true, credited: creditsToAdd }, { status: 200 });
       }
       
-      // ✅ HANDLE SUBSCRIPTION (FIXED - CORRECT RENEWAL DATES!)
+      // ✅ HANDLE SUBSCRIPTION WITH INCLUDED CREDITS!
       if (session.mode === 'subscription' && metadata.plan) {
         console.log('💳💳💳 Processing SUBSCRIPTION UPGRADE! 💳💳💳');
         console.log('Plan:', metadata.plan);
@@ -181,20 +182,37 @@ Use your credits to generate professional legal letters instantly.
         console.log('  End:', renewalDate);
         console.log('  Interval:', metadata.interval);
 
-        // ✅ UPDATE USER PLAN
+        // ✅ CALCULATE INCLUDED LETTER CREDITS
+        const includedCredits = {
+          'lite': 3,
+          'protect': 5,
+          'secure': 10
+        };
+        const creditsToAdd = includedCredits[metadata.plan] || 0;
+        const currentCredits = user.letter_credits || 0;
+        
+        console.log('💳 Adding included credits:');
+        console.log('  Plan:', metadata.plan);
+        console.log('  Current credits:', currentCredits);
+        console.log('  Credits to add:', creditsToAdd);
+        console.log('  New balance:', currentCredits + creditsToAdd);
+
+        // ✅ UPDATE USER PLAN + ADD CREDITS
         await base44.asServiceRole.entities.User.update(user.id, {
           plan_tier: metadata.plan,
           billing_interval: metadata.interval,
           plan_renews_at: renewalDate,
           stripe_subscription_id: subscription.id,
-          subscription_status: 'active'
+          subscription_status: 'active',
+          letter_credits: currentCredits + creditsToAdd // ✅ ADD INCLUDED CREDITS!
         });
 
-        console.log('✅✅✅ SUBSCRIPTION SUCCESSFULLY UPDATED! ✅✅✅');
+        console.log('✅✅✅ SUBSCRIPTION + CREDITS SUCCESSFULLY UPDATED! ✅✅✅');
         console.log('User:', user.email);
         console.log('New plan:', metadata.plan);
         console.log('Billing:', metadata.interval);
         console.log('Renews:', renewalDate);
+        console.log('Letter credits:', currentCredits + creditsToAdd);
 
         // Create payment record
         await base44.asServiceRole.entities.Payment.create({
@@ -233,6 +251,7 @@ Use your credits to generate professional legal letters instantly.
 • การเรียกเก็บเงิน: ${intervalLabel}
 • ต่ออายุเมื่อ: ${new Date(renewalDate).toLocaleDateString('th-TH')}
 • จำนวนเงิน: ฿${(session.amount_total / 100).toLocaleString()}
+• เครดิตจดหมาย: ${currentCredits + creditsToAdd}
 
 คุณสามารถเข้าถึงฟีเจอร์ทั้งหมดในแผนของคุณได้แล้ว
 
@@ -245,6 +264,7 @@ Welcome to ${planLabel} plan! 🎉
 • Billing: ${intervalLabel}
 • Renews: ${new Date(renewalDate).toLocaleDateString('en-US')}
 • Amount: ฿${(session.amount_total / 100).toLocaleString()}
+• Letter Credits: ${currentCredits + creditsToAdd}
 
 You now have access to all features in your plan.
 
@@ -269,8 +289,8 @@ You now have access to all features in your plan.
             : displayDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
           
           const lineMessage = lang === 'th'
-            ? `🎉 ยินดีต้อนรับสู่ ${planLabel}!\n\nการสมัครสมาชิกของคุณเปิดใช้งานแล้ว\nต่ออายุ: ${formattedDate}\n\nเข้าถึงฟีเจอร์ทั้งหมดได้เลย 🚀`
-            : `🎉 Welcome to ${planLabel}!\n\nYour subscription is now active\nRenews: ${formattedDate}\n\nAccess all features now 🚀`;
+            ? `🎉 ยินดีต้อนรับสู่ ${planLabel}!\n\nการสมัครสมาชิกของคุณเปิดใช้งานแล้ว\nต่ออายุ: ${formattedDate}\nเครดิตจดหมาย: ${currentCredits + creditsToAdd}\n\nเข้าถึงฟีเจอร์ทั้งหมดได้เลย 🚀`
+            : `🎉 Welcome to ${planLabel}!\n\nYour subscription is now active\nRenews: ${formattedDate}\nLetter Credits: ${currentCredits + creditsToAdd}\n\nAccess all features now 🚀`;
 
           try {
             const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
