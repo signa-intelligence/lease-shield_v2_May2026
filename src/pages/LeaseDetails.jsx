@@ -282,11 +282,16 @@ export default function LeaseDetails() {
           </CardHeader>
           <CardContent className="p-4 md:p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-              <div>
+              <div className="sm:col-span-2">
                 <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
                   {strings.propertyAddress}
                 </p>
-                <p className="font-medium" style={{ color: colors.textPrimary }}>
+                <p className="font-medium" style={{ 
+                  color: colors.textPrimary,
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  lineHeight: '1.5'
+                }}>
                   {lease.property_address || 'N/A'}
                 </p>
               </div>
@@ -318,7 +323,11 @@ export default function LeaseDetails() {
                   <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
                     {strings.leasePeriod}
                   </p>
-                  <p className="font-medium" style={{ color: colors.textPrimary }}>
+                  <p className="font-medium" style={{ 
+                    color: colors.textPrimary,
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word'
+                  }}>
                     {format(new Date(lease.start_date), 'MMM d, yyyy')} {strings.to} {format(new Date(lease.end_date), 'MMM d, yyyy')}
                   </p>
                 </div>
