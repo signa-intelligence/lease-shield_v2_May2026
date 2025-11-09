@@ -590,15 +590,10 @@ export default function Templates() {
                       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center`}>
                         <Icon className="w-6 h-6 text-white" />
                       </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 border-amber-200">
-                          {template.letterKey}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
-                          <Coins className="w-3 h-3" />
-                          {template.creditCost}
-                        </Badge>
-                      </div>
+                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
+                        <Coins className="w-3 h-3" />
+                        {template.creditCost}
+                      </Badge>
                     </div>
 
                     <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
@@ -652,15 +647,10 @@ export default function Templates() {
                       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center`}>
                         <Icon className="w-6 h-6 text-white" />
                       </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
-                          {template.letterKey}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
-                          <Coins className="w-3 h-3" />
-                          {template.creditCost}
-                        </Badge>
-                      </div>
+                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
+                        <Coins className="w-3 h-3" />
+                        {template.creditCost}
+                      </Badge>
                     </div>
 
                     <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
@@ -714,15 +704,10 @@ export default function Templates() {
                       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center`}>
                         <Icon className="w-6 h-6 text-white" />
                       </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge variant="outline" className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200">
-                          {template.letterKey}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
-                          <Coins className="w-3 h-3" />
-                          {template.creditCost}
-                        </Badge>
-                      </div>
+                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
+                        <Coins className="w-3 h-3" />
+                        {template.creditCost}
+                      </Badge>
                     </div>
 
                     <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
@@ -776,15 +761,10 @@ export default function Templates() {
                       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center`}>
                         <Icon className="w-6 h-6 text-white" />
                       </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge variant="outline" className="text-xs bg-red-100 text-red-700 border-red-200">
-                          {template.letterKey}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
-                          <Coins className="w-3 h-3" />
-                          {template.creditCost}
-                        </Badge>
-                      </div>
+                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
+                        <Coins className="w-3 h-3" />
+                        {template.creditCost}
+                      </Badge>
                     </div>
 
                     <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
