@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
-const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
+const stripe = new Stripe(Deno.env.get('secret_key'), {
   apiVersion: '2023-10-16',
 });
 
