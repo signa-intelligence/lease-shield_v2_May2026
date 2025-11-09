@@ -67,12 +67,12 @@ Deno.serve(async (req) => {
         quantity: 1,
       }];
     } 
-    // ✅ SUBSCRIPTIONS: FINAL FIX - Trial period approach
+    // ✅ SUBSCRIPTIONS: FINAL SIMPLE APPROACH - Let Stripe handle dates naturally
     else if (mode === 'subscription' && amount) {
       const finalAmount = Math.round(amount * 100);
       const interval = metadata?.interval || 'month'; // 'month' or 'year'
       
-      console.log('✅ SUBSCRIPTION - Creating with proper billing period:', finalAmount, 'satang', interval);
+      console.log('✅ SUBSCRIPTION - Creating with natural Stripe billing:', finalAmount, 'satang', interval);
       
       sessionConfig.line_items = [{
         price_data: {
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
           unit_amount: finalAmount,
           recurring: {
             interval: interval,
-            interval_count: 1 // ✅ Explicitly set to 1 period
+            interval_count: 1
           },
           product_data: {
             name: description || 'Lease Shield Subscription',
@@ -90,31 +90,13 @@ Deno.serve(async (req) => {
         quantity: 1,
       }];
 
-      // ✅ CRITICAL: Use trial_end to force proper billing period
-      // Calculate the proper end date based on interval
-      const now = Math.floor(Date.now() / 1000);
-      let trialEndTimestamp;
-      
-      if (interval === 'year') {
-        // Annual: 365 days from now
-        trialEndTimestamp = now + (365 * 24 * 60 * 60);
-      } else {
-        // Monthly: 30 days from now
-        trialEndTimestamp = now + (30 * 24 * 60 * 60);
-      }
-
+      // ✅ MINIMAL subscription_data - let Stripe handle the billing cycle
       sessionConfig.subscription_data = {
-        metadata: metadata || {},
-        trial_end: trialEndTimestamp,
-        trial_settings: {
-          end_behavior: {
-            missing_payment_method: 'cancel'
-          }
-        }
+        metadata: metadata || {}
+        // NO trial_end, NO billing_cycle_anchor - completely natural
       };
 
-      console.log('✅ Subscription trial ends:', new Date(trialEndTimestamp * 1000).toISOString());
-      console.log('✅ This ensures proper', interval, 'billing cycle');
+      console.log('✅ Subscription will use Stripe default billing cycle for', interval);
     } 
     // ❌ OLD WAY: Pre-created price IDs (deprecated)
     else if (priceId) {
