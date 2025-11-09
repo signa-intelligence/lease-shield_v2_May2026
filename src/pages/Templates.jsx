@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { FileText, Shield, AlertCircle, FileX, Scale, Camera, Mail, AlertTriangle, Gavel, CheckCircle, ArrowLeft, Coins, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query"; // ✅ ADDED useQueryClient
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
@@ -138,10 +138,91 @@ export default function Templates() {
   const navigate = useNavigate();
   const [buyingCredits, setBuyingCredits] = useState({}); // ✅ Track individual package loading states
 
+  // ✅ ADD: React Query client for refetching
+  const queryClient = useQueryClient();
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
+
+  // ✅ ADD: Auto-refresh after successful payment/subscription
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const subscriptionStatus = urlParams.get('subscription');
+    
+    if (paymentStatus === 'success' || subscriptionStatus === 'success') {
+      console.log('💳 Payment/Subscription success detected - starting refresh...');
+      
+      // Clean URL immediately
+      window.history.replaceState({}, '', window.location.pathname);
+      
+      // Aggressive polling for 60 seconds to catch webhook update
+      let pollCount = 0;
+      const maxPolls = 12; // 60 seconds total (5s intervals)
+      
+      const pollInterval = setInterval(() => {
+        pollCount++;
+        console.log(`🔄 Polling for user data update (${pollCount}/${maxPolls})...`);
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval);
+          console.log('✅ User data refresh polling complete');
+        }
+      }, 5000); // Every 5 seconds
+      
+      // Cleanup on unmount
+      return () => clearInterval(pollInterval);
+    }
+  }, [queryClient]);
+
+  // ✅ ADD: Auto-refresh when window regains focus
+  React.useEffect(() => {
+    let intervalId;
+    
+    const handleFocus = () => {
+      // Immediate refresh
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      
+      // Clear any existing interval
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+
+      // Then refresh every 5 seconds for 30 seconds
+      let count = 0;
+      intervalId = setInterval(() => {
+        count++;
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        
+        if (count >= 6) { // Stop after 30 seconds (6 * 5s)
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }, 5000);
+    };
+    
+    const handleBlur = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [queryClient]);
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
