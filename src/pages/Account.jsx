@@ -327,17 +327,24 @@ export default function Account() {
     const plan = PLAN_DETAILS.find(p => p.key === planKey);
     if (!plan) return;
 
-    const priceId = interval === 'annual' ? plan.priceIdAnnual : plan.priceIdMonthly;
+    const amount = interval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
+    const intervalType = interval === 'annual' ? 'year' : 'month';
 
-    console.log('🔍 SUBSCRIPTION REQUEST:', { planKey, interval, priceId });
+    console.log('🔍 SUBSCRIPTION REQUEST (Dynamic):', { planKey, interval, amount, intervalType });
 
     setSubscribing(prev => ({ ...prev, [planKey]: true }));
     try {
       const response = await base44.functions.invoke('createCheckout', {
-        priceId: priceId,
         mode: 'subscription',
+        amount: amount,
+        currency: 'thb',
+        description: `Lease Shield ${plan.label} - ${interval === 'annual' ? 'Annual' : 'Monthly'}`,
         successUrl: `${window.location.origin}/account?subscription=success`,
-        cancelUrl: `${window.location.origin}/account?subscription=cancelled`
+        cancelUrl: `${window.location.origin}/account?subscription=cancelled`,
+        metadata: {
+          plan: planKey,
+          interval: intervalType
+        }
       });
       
       console.log('🔍 CHECKOUT RESPONSE:', response);
@@ -352,9 +359,8 @@ export default function Account() {
     } catch (error) {
       console.error('❌ Subscription error:', error);
       console.error('Error details:', error.response?.data || error);
-      const language = user?.language || 'en'; // Declared here to ensure it's available for the alert
+      const language = user?.language || 'en';
       
-      // Show detailed error to user
       const errorMsg = error.response?.data?.details || error.response?.data?.error || error.message;
       alert(`${language === 'th' ? 'ไม่สามารถสร้างการสมัครได้' : 'Failed to start subscription'}\n\n${errorMsg}`);
       

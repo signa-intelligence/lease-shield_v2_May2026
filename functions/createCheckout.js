@@ -1,14 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
-const stripe = new Stripe(Deno.env.get('secret_key'), {
+const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2023-10-16',
 });
 
 Deno.serve(async (req) => {
-  const key = Deno.env.get('secret_key');
+  const key = Deno.env.get('SK_TEST_secret_key');
   console.log('🔑 Using Stripe key:', key?.substring(0, 15));
-  console.log('🔑 Key type:', key?.startsWith('sk_live_') ? 'LIVE ✅' : 'TEST ❌');
+  console.log('🔑 Key type:', key?.startsWith('sk_test_') ? 'TEST ✅' : 'LIVE ❌');
   
   try {
     const base44 = createClientFromRequest(req);
@@ -21,12 +21,6 @@ Deno.serve(async (req) => {
     const { priceId, mode, amount, currency, description, successUrl, cancelUrl, metadata } = await req.json();
 
     console.log('🔍 RAW PAYLOAD:', { priceId, mode, amount, currency, successUrl, cancelUrl, metadata });
-    console.log('🔍 AMOUNT RECEIVED:', amount, 'TYPE:', typeof amount);
-    if (amount) {
-      console.log('🔍 WILL MULTIPLY:', amount, '* 100 =', Math.round(amount * 100));
-    }
-
-    console.log('Creating checkout with:', { priceId, mode, amount, currency, user: user.email });
 
     let customerId = user.stripe_customer_id;
     
@@ -42,7 +36,6 @@ Deno.serve(async (req) => {
       await base44.auth.updateMe({ stripe_customer_id: customerId });
     }
 
-    // ✅ FIXED: Add default URLs for subscriptions and credits
     const finalSuccessUrl = successUrl || `https://app.leaseshield.asia/account?${mode === 'subscription' ? 'subscription=success' : 'payment=success'}`;
     const finalCancelUrl = cancelUrl || `https://app.leaseshield.asia/account?${mode === 'subscription' ? 'subscription=cancelled' : 'payment=cancelled'}`;
     
@@ -57,9 +50,10 @@ Deno.serve(async (req) => {
       allow_promotion_codes: true,
     };
 
+    // ✅ CREDITS: Dynamic one-time payment (already working)
     if (mode === 'payment' && amount) {
       const finalAmount = Math.round(amount * 100);
-      console.log('✅ FINAL AMOUNT TO STRIPE:', finalAmount, 'satang');
+      console.log('✅ CREDITS - Creating dynamic one-time payment:', finalAmount, 'satang');
       
       sessionConfig.line_items = [{
         price_data: {
@@ -72,11 +66,36 @@ Deno.serve(async (req) => {
         },
         quantity: 1,
       }];
-    } else if (priceId) {
-      console.log('Creating subscription session for price:', priceId);
+    } 
+    // ✅ SUBSCRIPTIONS: Dynamic recurring price (NEW - same as credits!)
+    else if (mode === 'subscription' && amount) {
+      const finalAmount = Math.round(amount * 100);
+      const interval = metadata?.interval || 'month'; // 'month' or 'year'
+      
+      console.log('✅ SUBSCRIPTION - Creating dynamic recurring price:', finalAmount, 'satang', interval);
+      
+      sessionConfig.line_items = [{
+        price_data: {
+          currency: currency || 'thb',
+          unit_amount: finalAmount,
+          recurring: {
+            interval: interval // 'month' or 'year'
+          },
+          product_data: {
+            name: description || 'Lease Shield Subscription',
+            description: description || 'Professional subscription service',
+          },
+        },
+        quantity: 1,
+      }];
+    } 
+    // ❌ OLD WAY: Pre-created price IDs (deprecated)
+    else if (priceId) {
+      console.log('⚠️ Using legacy priceId:', priceId);
       sessionConfig.line_items = [{ price: priceId, quantity: 1 }];
-    } else {
-      console.error('Missing priceId or amount');
+    } 
+    else {
+      console.error('❌ Missing required parameters');
       return Response.json({ error: 'Missing priceId or amount' }, { status: 400 });
     }
 
