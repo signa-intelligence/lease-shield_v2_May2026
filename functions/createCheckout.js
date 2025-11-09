@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
         quantity: 1,
       }];
     } 
-    // ✅ SUBSCRIPTIONS: Dynamic recurring price (NEW - same as credits!)
+    // ✅ SUBSCRIPTIONS: Dynamic recurring price with proper billing cycle
     else if (mode === 'subscription' && amount) {
       const finalAmount = Math.round(amount * 100);
       const interval = metadata?.interval || 'month'; // 'month' or 'year'
@@ -88,6 +88,20 @@ Deno.serve(async (req) => {
         },
         quantity: 1,
       }];
+
+      // ✅ CRITICAL FIX: Set proper billing cycle anchor
+      // This ensures the subscription period is calculated correctly
+      const now = Math.floor(Date.now() / 1000);
+      
+      sessionConfig.subscription_data = {
+        metadata: metadata || {},
+        // Start the subscription immediately
+        billing_cycle_anchor: now,
+        // Ensure proration is disabled for cleaner billing
+        proration_behavior: 'none'
+      };
+
+      console.log('✅ Subscription will start NOW with proper', interval, 'billing cycle');
     } 
     // ❌ OLD WAY: Pre-created price IDs (deprecated)
     else if (priceId) {
