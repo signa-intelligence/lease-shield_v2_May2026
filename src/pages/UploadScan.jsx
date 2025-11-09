@@ -717,23 +717,26 @@ export default function UploadScanPage() {
           </Dialog>
         )}
 
-        {/* Lease Details Modal */}
+        {/* Lease Details Modal - FIXED FOR MOBILE */}
         {selectedLease && (
           <Dialog open={!!selectedLease} onOpenChange={() => setSelectedLease(null)}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: colors.cardBg }}>
-              <DialogHeader className="sticky top-0 z-10 pb-4" style={{
+            <DialogContent
+              className="max-w-4xl w-[95vw] h-[90vh] max-h-[90vh] flex flex-col p-0"
+              style={{ backgroundColor: colors.cardBg }}
+            >
+              <DialogHeader className="px-4 py-4 border-b flex-shrink-0" style={{
                 backgroundColor: colors.cardBg,
                 borderBottom: `1px solid ${colors.borderColor}`
               }}>
                 <div className="flex items-center justify-between">
-                  <DialogTitle style={{ color: colors.textPrimary }}>{strings.leaseDetails}</DialogTitle>
+                  <DialogTitle className="text-lg" style={{ color: colors.textPrimary }}>{strings.leaseDetails}</DialogTitle>
                   <Button variant="ghost" size="sm" onClick={() => setSelectedLease(null)}>
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
               </DialogHeader>
 
-              <div className="space-y-4 mt-4">
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
                 {/* Basic Info */}
                 <Card className="border-none" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
                   <CardHeader className="pb-3">
@@ -742,27 +745,31 @@ export default function UploadScanPage() {
                       {strings.basicInfo}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <CardContent className="grid grid-cols-1 gap-4 text-sm">
                     <div>
-                      <p className="font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.propertyAddress}</p>
-                      <p style={{ color: colors.textPrimary }}>{selectedLease.property_address || 'N/A'}</p>
+                      <p className="font-semibold mb-1 text-xs" style={{ color: colors.textSecondary }}>{strings.propertyAddress}</p>
+                      <p className="break-words" style={{ color: colors.textPrimary }}>{selectedLease.property_address || 'N/A'}</p>
                     </div>
                     {selectedLease.rent_amount > 0 && (
                       <div>
-                        <p className="font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.monthlyRent}</p>
-                        <p className="flex items-center" style={{ color: colors.textPrimary }}><DollarSign className="w-4 h-4 mr-1"/>{selectedLease.rent_amount.toLocaleString()}</p>
+                        <p className="font-semibold mb-1 text-xs" style={{ color: colors.textSecondary }}>{strings.monthlyRent}</p>
+                        <p className="flex items-center" style={{ color: colors.textPrimary }}>
+                          <DollarSign className="w-4 h-4 mr-1"/>฿{selectedLease.rent_amount.toLocaleString()}
+                        </p>
                       </div>
                     )}
                     {selectedLease.deposit_amount > 0 && (
                       <div>
-                        <p className="font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.securityDeposit}</p>
-                        <p className="flex items-center" style={{ color: colors.textPrimary }}><DollarSign className="w-4 h-4 mr-1"/>{selectedLease.deposit_amount.toLocaleString()}</p>
+                        <p className="font-semibold mb-1 text-xs" style={{ color: colors.textSecondary }}>{strings.securityDeposit}</p>
+                        <p className="flex items-center" style={{ color: colors.textPrimary }}>
+                          <DollarSign className="w-4 h-4 mr-1"/>฿{selectedLease.deposit_amount.toLocaleString()}
+                        </p>
                       </div>
                     )}
                     {(selectedLease.start_date || selectedLease.end_date) && (
                       <div>
-                        <p className="font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.leasePeriod}</p>
-                        <p style={{ color: colors.textPrimary }}>
+                        <p className="font-semibold mb-1 text-xs" style={{ color: colors.textSecondary }}>{strings.leasePeriod}</p>
+                        <p className="break-words" style={{ color: colors.textPrimary }}>
                           {selectedLease.start_date ? format(new Date(selectedLease.start_date), 'MMM d, yyyy') : 'N/A'} {strings.to} {selectedLease.end_date ? format(new Date(selectedLease.end_date), 'MMM d, yyyy') : 'N/A'}
                         </p>
                       </div>
@@ -780,22 +787,22 @@ export default function UploadScanPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: colors.cardBg }}>
-                      <div>
+                      <div className="flex-1 pr-3">
                         <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{strings.noticeAlertsEnabled}</p>
-                        <p className="text-xs" style={{ color: colors.textSecondary }}>{strings.enableAlertsHelp}</p>
+                        <p className="text-xs break-words" style={{ color: colors.textSecondary }}>{strings.enableAlertsHelp}</p>
                       </div>
                       <Switch
                         checked={selectedLease.notice_alerts_enabled !== false}
                         onCheckedChange={handleToggleAlerts}
-                        disabled={!selectedLease.end_date} // Disable if no end date
+                        disabled={!selectedLease.end_date}
                       />
                     </div>
 
                     {!editingNotice ? (
                       <div className="space-y-3">
                         {selectedLease.end_date && (
-                          <div className="flex items-center justify-between">
-                            <div>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1">
                               <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.noticePeriod}</p>
                               <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
                                 {selectedLease.notice_period_days || 30} {strings.days}
@@ -813,11 +820,11 @@ export default function UploadScanPage() {
                         {selectedLease.notice_deadline && (
                           <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5' }}>
                             <p className="text-sm font-semibold mb-1" style={{ color: colors.textPrimary }}>{strings.noticeDeadline}</p>
-                            <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+                            <p className="text-lg font-bold break-words" style={{ color: colors.textPrimary }}>
                               {format(new Date(selectedLease.notice_deadline), 'MMMM d, yyyy')}
                             </p>
-                            <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                                {strings.deadlineCalculated}
+                            <p className="text-xs mt-1 break-words" style={{ color: colors.textSecondary }}>
+                              {strings.deadlineCalculated}
                             </p>
                           </div>
                         )}
@@ -867,7 +874,7 @@ export default function UploadScanPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-4">
                         <div>
                           <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.riskScore}</p>
                           <div className="flex items-center gap-2">
@@ -877,7 +884,7 @@ export default function UploadScanPage() {
                             <span className="text-lg" style={{ color: colors.textSecondary }}>/100</span>
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <Button
                             variant="outline"
                             size="sm"
@@ -885,25 +892,26 @@ export default function UploadScanPage() {
                               setSelectedLease(null);
                               navigate(createPageUrl("ScanPreview") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
                             }}
+                            className="w-full sm:w-auto text-xs"
                           >
-                            <Eye className="w-4 h-4 mr-2" />
+                            <Eye className="w-3 h-3 mr-1" />
                             {strings.viewScanResults}
                           </Button>
                           <Button
                             size="sm"
-                            className="bg-ls-forest hover:bg-ls-forest/90"
+                            className="bg-ls-forest hover:bg-ls-forest/90 w-full sm:w-auto text-xs"
                             onClick={() => {
                               setSelectedLease(null);
                               navigate(createPageUrl("ReportFull") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
                             }}
                           >
-                            <FileText className="w-4 h-4 mr-2" />
+                            <FileText className="w-3 h-3 mr-1" />
                             {strings.viewFullReport}
                           </Button>
                         </div>
                       </div>
                       {selectedScan.summary && (
-                        <p className="text-sm p-3 rounded-lg" style={{
+                        <p className="text-sm p-3 rounded-lg break-words" style={{
                           backgroundColor: colors.cardBg,
                           color: colors.textSecondary
                         }}>
@@ -915,12 +923,12 @@ export default function UploadScanPage() {
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-4 border-t" style={{ borderColor: colors.borderColor }}>
+                <div className="flex flex-col gap-2 pt-4 border-t" style={{ borderColor: colors.borderColor }}>
                   {selectedLease.file_url && (
                     <Button
                       variant="outline"
                       onClick={() => window.open(selectedLease.file_url, '_blank')}
-                      className="flex-1"
+                      className="w-full justify-start"
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       {strings.viewLease}
@@ -929,7 +937,7 @@ export default function UploadScanPage() {
                   <Button
                     variant="outline"
                     onClick={(e) => handleDeleteLease(selectedLease.id, e)}
-                    className="text-red-600 hover:text-red-700"
+                    className="w-full justify-start text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     {language === 'th' ? 'ลบ' : 'Delete'}
