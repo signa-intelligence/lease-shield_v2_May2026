@@ -41,6 +41,47 @@ export default function DocumentVault() {
     enabled: !!user,
   });
 
+  const getStorageLimits = () => {
+    const tier = user?.plan_tier || 'free';
+    switch(tier) {
+      case 'free': return { limit: 100 * 1024 * 1024, limitMB: 100, fileLimit: 3 }; // 100MB, 3 files
+      case 'lite': return { limit: 1024 * 1024 * 1024, limitMB: 1024, fileLimit: 999 }; // 1GB
+      case 'protect': return { limit: 5 * 1024 * 1024 * 1024, limitMB: 5120, fileLimit: 999 }; // 5GB
+      case 'secure': return { limit: 20 * 1024 * 1024 * 1024, limitMB: 20480, fileLimit: 999 }; // 20GB
+      default: return { limit: 100 * 1024 * 1024, limitMB: 100, fileLimit: 3 };
+    }
+  };
+
+  // Calculate total storage used (estimate based on document count since we don't store file sizes)
+  // For now, estimate 2MB per document average
+  const estimateTotalStorage = () => {
+    return documents.length * 2 * 1024 * 1024; // Rough estimate: 2MB per file
+  };
+
+  const canUploadFiles = (fileCount) => {
+    const limits = getStorageLimits();
+    const currentFileCount = documents.length;
+    const estimatedUsage = estimateTotalStorage();
+    
+    // Check file count limit (Free tier only)
+    if (user?.plan_tier === 'free' && currentFileCount + fileCount > limits.fileLimit) {
+      return {
+        allowed: false,
+        reason: 'file_limit',
+        current: currentFileCount,
+        limit: limits.fileLimit
+      };
+    }
+    
+    // For storage, we'll do a rough check
+    // Since we don't have exact file sizes in DB, we'll be permissive
+    return {
+      allowed: true,
+      usedMB: Math.round(estimatedUsage / 1024 / 1024),
+      limitMB: limits.limitMB
+    };
+  };
+
   const createDocumentMutation = useMutation({
     mutationFn: (data) => base44.entities.Document.create(data),
     onSuccess: () => {
@@ -69,6 +110,19 @@ export default function DocumentVault() {
   const handleFileUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+
+    // CHECK STORAGE/FILE LIMITS
+    const uploadCheck = canUploadFiles(files.length);
+    if (!uploadCheck.allowed) {
+      if (uploadCheck.reason === 'file_limit') {
+        alert(
+          language === 'th'
+            ? `ถึงขีดจำกัดไฟล์แล้ว (${uploadCheck.current}/${uploadCheck.limit} ไฟล์)\n\nอัปเกรดเพื่อจัดเก็บไฟล์เพิ่มเติม`
+            : `File limit reached (${uploadCheck.current}/${uploadCheck.limit} files)\n\nUpgrade for more storage`
+        );
+        return;
+      }
+    }
 
     setUploading(true);
     try {
@@ -117,6 +171,9 @@ export default function DocumentVault() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+  const userTier = user?.plan_tier || 'free';
+  const storageLimits = getStorageLimits();
+  const storageCheck = canUploadFiles(0);
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -155,7 +212,9 @@ export default function DocumentVault() {
       viewFile: "View File",
       selectAll: "Select All",
       deleteSelected: "Delete Selected",
-      selected: "selected"
+      selected: "selected",
+      storageUsed: "Storage: ~{used}MB / {limit}MB",
+      filesUsed: "{count} / {limit} files"
     },
     th: {
       title: "คลังหลักฐาน",
@@ -175,7 +234,9 @@ export default function DocumentVault() {
       viewFile: "ดูไฟล์",
       selectAll: "เลือกทั้งหมด",
       deleteSelected: "ลบที่เลือก",
-      selected: "เลือกแล้ว"
+      selected: "เลือกแล้ว",
+      storageUsed: "พื้นที่: ~{used}MB / {limit}MB",
+      filesUsed: "{count} / {limit} ไฟล์"
     }
   };
 
@@ -190,6 +251,22 @@ export default function DocumentVault() {
             <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           </div>
           <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+          
+          {/* STORAGE USAGE INDICATOR */}
+          <div className="mt-3 flex gap-2">
+            <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+              {strings.storageUsed
+                .replace('{used}', storageCheck.usedMB)
+                .replace('{limit}', storageLimits.limitMB)}
+            </Badge>
+            {userTier === 'free' && (
+              <Badge className={documents.length >= storageLimits.fileLimit ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}>
+                {strings.filesUsed
+                  .replace('{count}', documents.length)
+                  .replace('{limit}', storageLimits.fileLimit)}
+              </Badge>
+            )}
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">

@@ -45,6 +45,7 @@ export default function ReportFull() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const isSecureTier = user?.plan_tier === 'secure';
+  const userTier = user?.plan_tier || 'free';
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -308,7 +309,27 @@ export default function ReportFull() {
     return colors[severity] || "text-slate-600 bg-slate-50 border-slate-200";
   };
 
-  const fullFlags = scan.scan_full?.flags || [];
+  // LIMIT FLAGS BASED ON TIER (consistent with ScanPreview)
+  const getFullDisplayFlags = () => {
+    const allFlags = scan.scan_full?.flags || [];
+    
+    // Lite tier: Show max 5 flags
+    if (userTier === 'lite') {
+      return allFlags.slice(0, 5);
+    }
+    
+    // Free tier shouldn't access this page, but if they do, show 4
+    if (userTier === 'free') {
+      return allFlags.slice(0, 4);
+    }
+    
+    // Protect and Secure: Show all flags
+    return allFlags;
+  };
+
+  const fullFlags = getFullDisplayFlags();
+  const totalFlags = scan.scan_full?.flags?.length || 0;
+  const hiddenFlagsCount = totalFlags - fullFlags.length;
   const missingItems = scan.scan_full?.missing_items || [];
   const keyTerms = scan.scan_full?.key_terms || {};
 
@@ -411,7 +432,7 @@ export default function ReportFull() {
               <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
                 <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  {strings.detailedIssues} ({fullFlags.length})
+                  {strings.detailedIssues} ({fullFlags.length}{hiddenFlagsCount > 0 ? ` / ${totalFlags}` : ''})
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
@@ -469,6 +490,38 @@ export default function ReportFull() {
                       </div>
                     );
                   })}
+                  
+                  {/* SHOW UPGRADE CTA IF FLAGS ARE HIDDEN */}
+                  {hiddenFlagsCount > 0 && (
+                    <div className="p-6 rounded-xl border-2 border-dashed" style={{
+                      backgroundColor: isDarkMode ? '#2A2D30' : '#FEF9C3',
+                      borderColor: isDarkMode ? '#C7A338' : '#EAB308'
+                    }}>
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+                          <AlertTriangle className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
+                            {language === 'th' 
+                              ? `เหลืออีก ${hiddenFlagsCount} ปัญหาโดยละเอียด` 
+                              : `${hiddenFlagsCount} More Detailed Issue${hiddenFlagsCount > 1 ? 's' : ''}`}
+                          </h4>
+                          <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
+                            {language === 'th' 
+                              ? 'อัปเกรดเป็น Protect หรือ Secure เพื่อดูการวิเคราะห์ทั้งหมดพร้อมคำแนะนำโดยละเอียด'
+                              : 'Upgrade to Protect or Secure to view complete analysis with detailed recommendations'}
+                          </p>
+                          <Button
+                            onClick={() => navigate(createPageUrl("Account"))}
+                            className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800"
+                          >
+                            {language === 'th' ? 'อัปเกรดเพื่อปลดล็อค' : 'Upgrade to Unlock'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

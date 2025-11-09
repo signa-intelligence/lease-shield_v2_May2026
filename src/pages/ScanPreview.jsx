@@ -58,6 +58,7 @@ export default function ScanPreview() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+  const userTier = user?.plan_tier || 'free';
 
   const t = {
     en: {
@@ -122,6 +123,29 @@ export default function ScanPreview() {
     textSecondary: '#64748b'
   };
 
+  // ✅ LIMIT FLAGS BASED ON TIER
+  const getDisplayFlags = () => {
+    const allFlags = scan?.flags || [];
+    
+    // Lite tier: Show max 5 flags
+    if (userTier === 'lite') {
+      return allFlags.slice(0, 5);
+    }
+    
+    // Free tier: Show max 4 flags (original preview behavior)
+    if (userTier === 'free') {
+      return allFlags.slice(0, 4);
+    }
+    
+    // Protect and Secure: Show all flags
+    return allFlags;
+  };
+
+  const displayFlags = getDisplayFlags();
+  const totalFlags = scan?.flags?.length || 0;
+  const hasMoreIssues = displayFlags.length < totalFlags;
+  const hiddenCount = totalFlags - displayFlags.length;
+
   // Loading state
   if (userLoading || leasesLoading || scansLoading) {
     return (
@@ -166,13 +190,6 @@ export default function ScanPreview() {
   const riskColor = getRiskColor(scan.risk_score);
   const riskLabel = getRiskLabel(scan.risk_score);
 
-  // Show preview (4 issues) or all issues based on plan
-  const displayFlags = hasFullReportAccess 
-    ? (scan.flags || [])
-    : (scan.flags || []).slice(0, 4);
-  
-  const hasMoreIssues = !hasFullReportAccess && scan.flags && scan.flags.length > 4;
-
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '180px' }}>
       <div className="max-w-4xl mx-auto">
@@ -205,7 +222,11 @@ export default function ScanPreview() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="w-6 h-6 text-orange-600" />
-              {hasFullReportAccess ? strings.allIssues : strings.topIssues} ({displayFlags.length})
+              {userTier === 'lite' 
+                ? `${language === 'th' ? 'ปัญหาสำคัญ 5 อันดับแรก' : 'Top 5 Issues'} (${Math.min(5, totalFlags)})`
+                : (hasFullReportAccess 
+                    ? `${strings.allIssues} (${displayFlags.length})`
+                    : `${strings.topIssues} (${displayFlags.length})`)}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -237,53 +258,61 @@ export default function ScanPreview() {
                 backgroundColor: isDarkMode ? '#2A2D30' : '#FEF9C3',
                 borderColor: isDarkMode ? '#C7A338' : '#EAB308'
               }}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-ls-gold rounded-full flex items-center justify-center">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-ls-gold rounded-full flex items-center justify-center flex-shrink-0">
                     <AlertTriangle className="w-5 h-5 text-white" />
                   </div>
-                  <div>
-                    <h4 className="font-bold" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? `เหลืออีก ${scan.flags.length - 4} ปัญหา` : `${scan.flags.length - 4} More Issues Found`}
+                  <div className="flex-1">
+                    <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
+                      {language === 'th' 
+                        ? `เหลืออีก ${hiddenCount} ปัญหา${userTier === 'lite' ? ' (อัปเกรดเป็น Protect/Secure เพื่อดูทั้งหมด)' : ''}` 
+                        : `${hiddenCount} More Issue${hiddenCount > 1 ? 's' : ''} Found${userTier === 'lite' ? ' (Upgrade to Protect/Secure)' : ''}`}
                     </h4>
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>
-                      {language === 'th' ? 'อัปเกรดเพื่อดูรายงานฉบับเต็มพร้อมคำแนะนำโดยละเอียด' : 'Upgrade to view full report with detailed recommendations'}
+                    <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
+                      {userTier === 'lite'
+                        ? (language === 'th' 
+                            ? 'อัปเกรดเป็น Protect หรือ Secure เพื่อดูปัญหาทั้งหมดพร้อมคำแนะนำโดยละเอียด'
+                            : 'Upgrade to Protect or Secure to view all issues with detailed recommendations')
+                        : (language === 'th' 
+                            ? 'อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อดูรายงานฉบับเต็มพร้อมคำแนะนำโดยละเอียด'
+                            : 'Upgrade to Lite, Protect, or Secure to view full report with detailed recommendations')}
                     </p>
+                    <button
+                      onClick={() => navigate(createPageUrl("Account"))}
+                      style={{
+                        width: '100%',
+                        backgroundColor: '#0C3B2E',
+                        color: '#FFFFFF',
+                        padding: '14px 24px',
+                        borderRadius: '10px',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#0a2f25';
+                        e.target.style.transform = 'translateY(-2px)';
+                        e.target.style.boxShadow = '0 6px 10px rgba(12, 59, 46, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
+                      }}
+                    >
+                      <span style={{ fontWeight: 'bold', fontSize: '16px' }}>
+                        {language === 'th' ? 'อัปเกรดเพื่อปลดล็อค' : 'Upgrade to Unlock'}
+                      </span>
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => navigate(createPageUrl("Account"))}
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#0C3B2E',
-                    color: '#FFFFFF',
-                    padding: '14px 24px',
-                    borderRadius: '10px',
-                    fontSize: '16px',
-                    fontWeight: 'bold',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#0a2f25';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 10px rgba(12, 59, 46, 0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#0C3B2E';
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
-                  }}
-                >
-                  <span style={{ fontWeight: 'bold', fontSize: '16px' }}>
-                    {language === 'th' ? 'อัปเกรดเพื่อปลดล็อค' : 'Upgrade to Unlock'}
-                  </span>
-                </button>
               </div>
             )}
           </CardContent>

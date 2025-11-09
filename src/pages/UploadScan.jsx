@@ -7,14 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { 
-  Upload, 
-  FileText, 
-  Loader2, 
-  CheckCircle2, 
-  AlertCircle, 
-  Camera, 
-  X, 
+import {
+  Upload,
+  FileText,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Camera,
+  X,
   Trash2,
   Home, // New Icon
   DollarSign, // New Icon
@@ -42,12 +42,12 @@ export default function UploadScanPage() {
   const [leaseDetails, setLeaseDetails] = useState(null);
   const [pendingLeaseId, setPendingLeaseId] = useState(null);
   const [analysisStage, setAnalysisStage] = useState('');
-  
+
   // New state for viewing lease details
   const [selectedLease, setSelectedLease] = useState(null);
   const [editingNotice, setEditingNotice] = useState(false);
   const [noticeSettings, setNoticeSettings] = useState({ notice_period_days: 30 });
-  
+
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -71,6 +71,45 @@ export default function UploadScanPage() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+  const userTier = user?.plan_tier || 'free';
+
+  // ✅ SCAN LIMIT ENFORCEMENT
+  const getScanLimits = () => {
+    switch(userTier) {
+      case 'free': return { limit: 1, period: 'lifetime', unlimited: false };
+      case 'lite': return { limit: 6, period: 'year', unlimited: false };
+      case 'protect': return { limit: 12, period: 'year', unlimited: false };
+      case 'secure': return { limit: 999, period: 'year', unlimited: true };
+      default: return { limit: 1, period: 'lifetime', unlimited: false };
+    }
+  };
+
+  const canUploadLease = () => {
+    const limits = getScanLimits();
+    if (limits.unlimited) return { allowed: true, remaining: 999, used: 0, limit: 999, period: limits.period };
+
+    let scannedCount = 0;
+    if (limits.period === 'lifetime') {
+      scannedCount = leases.filter(l => l.status === 'scanned' || l.status === 'paid').length;
+    } else if (limits.period === 'year') {
+      const thisYear = new Date().getFullYear();
+      scannedCount = leases.filter(l => {
+        if (!l.created_date) return false; // Handle cases where created_date might be missing
+        const leaseYear = new Date(l.created_date).getFullYear();
+        return leaseYear === thisYear && (l.status === 'scanned' || l.status === 'paid');
+      }).length;
+    }
+
+    return {
+      allowed: scannedCount < limits.limit,
+      remaining: Math.max(0, limits.limit - scannedCount),
+      used: scannedCount,
+      limit: limits.limit,
+      period: limits.period
+    };
+  };
+
+  const scanStatus = canUploadLease();
 
   const colors = {
     bg: isDarkMode ? '#1A1D1F' : '#F9FAFB',
@@ -138,7 +177,12 @@ export default function UploadScanPage() {
       closeDetails: "Close Details",
       enableAlertsHelp: "Receive reminders 30, 7, and 3 days before notice deadline",
       deadlineCalculated: "Calculated based on lease end date and notice period",
-      allLeases: "All Leases"
+      allLeases: "All Leases",
+      scanLimitReached: "Scan Limit Reached",
+      scanLimitMsg: "You've used {used} of {limit} scans {periodText}",
+      upgradeForMore: "Upgrade for More Scans",
+      scansRemaining: "{remaining} scan(s) remaining {periodText}",
+      unlimitedScans: "Unlimited Scans"
     },
     th: {
       title: "สแกนสัญญาเช่า",
@@ -196,7 +240,12 @@ export default function UploadScanPage() {
       closeDetails: "ปิดรายละเอียด",
       enableAlertsHelp: "รับการแจ้งเตือน 30, 7 และ 3 วันก่อนถึงกำหนดแจ้ง",
       deadlineCalculated: "คำนวณจากวันสิ้นสุดสัญญาและระยะเวลาแจ้งล่วงหน้า",
-      allLeases: "สัญญาเช่าทั้งหมด"
+      allLeases: "สัญญาเช่าทั้งหมด",
+      scanLimitReached: "ถึงขีดจำกัดการสแกนแล้ว",
+      scanLimitMsg: "คุณใช้ไป {used} จาก {limit} การสแกน{periodText}",
+      upgradeForMore: "อัปเกรดเพื่อเพิ่มการสแกน",
+      scansRemaining: "เหลืออีก {remaining} การสแกน{periodText}",
+      unlimitedScans: "สแกนได้ไม่จำกัด"
     }
   }[language];
 
@@ -209,6 +258,20 @@ export default function UploadScanPage() {
   });
 
   const handleUploadAll = async () => {
+    // ✅ CHECK SCAN LIMIT BEFORE UPLOAD
+    if (!scanStatus.allowed) {
+      const periodText = scanStatus.period === 'year'
+        ? (language === 'th' ? 'ปีนี้' : 'this year')
+        : (language === 'th' ? 'ตลอดชีพ' : 'lifetime');
+
+      alert(
+        language === 'th'
+          ? `คุณใช้ครบโควต้าการสแกนแล้ว (${scanStatus.used}/${scanStatus.limit} ${periodText})\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
+          : `You've reached your scan limit (${scanStatus.used}/${scanStatus.limit} ${periodText})\n\nUpgrade your plan for more scans`
+      );
+      return;
+    }
+
     if (selectedFiles.length === 0) {
       setError(language === 'th' ? 'กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์' : 'Please select at least one file');
       setTimeout(() => setError(null), 3000);
@@ -229,7 +292,7 @@ export default function UploadScanPage() {
       try {
         setAnalysisStage('uploading');
         setUploadProgress(10);
-        
+
         const uploadPromises = selectedFiles.map(file =>
           base44.integrations.Core.UploadFile({ file })
         );
@@ -240,7 +303,7 @@ export default function UploadScanPage() {
 
         setAnalysisStage('creating');
         setUploadProgress(40);
-        
+
         const lease = await base44.entities.Lease.create({
           file_url: fileUrls[0],
           file_urls: fileUrls,
@@ -278,7 +341,7 @@ export default function UploadScanPage() {
         setUploadProgress(80);
 
         setAnalysisStage('finalizing');
-        
+
         await base44.entities.LeaseScan.create({
           lease_id: createdLeaseId,
           risk_score: scanResult.risk_score,
@@ -302,19 +365,19 @@ export default function UploadScanPage() {
           const newLease = updatedLeases.find(l => l.id === createdLeaseId);
           setSelectedLease(newLease);
         }
-        
+
         setSelectedFiles([]);
         queryClient.invalidateQueries({ queryKey: ['leases'] });
         queryClient.invalidateQueries({ queryKey: ['allScans'] });
 
       } catch (err) {
         console.error('❌ Upload/Analysis error:', err);
-        
-        const isWordDoc = selectedFiles.some(f => 
-          f.name.toLowerCase().endsWith('.doc') || 
+
+        const isWordDoc = selectedFiles.some(f =>
+          f.name.toLowerCase().endsWith('.doc') ||
           f.name.toLowerCase().endsWith('.docx')
         );
-        
+
         currentRetry++;
         setRetryCount(currentRetry);
 
@@ -324,7 +387,7 @@ export default function UploadScanPage() {
             : `Error occurred. Retrying... (${currentRetry}/${maxRetries})`);
 
           await new Promise(resolve => setTimeout(resolve, 2000 * currentRetry));
-          
+
           if (createdLeaseId && analysisStage !== 'uploading') {
             try {
               await base44.entities.Lease.delete(createdLeaseId);
@@ -333,11 +396,11 @@ export default function UploadScanPage() {
               console.error('Failed to cleanup lease:', cleanupErr);
             }
           }
-          
+
           return attemptUpload();
         } else {
           let errorMessage;
-          
+
           if (isWordDoc) {
             errorMessage = language === 'th'
               ? 'ไม่สามารถวิเคราะห์ไฟล์ Word ได้\n\n💡 กรุณาลอง:\n• แปลงเป็น PDF ก่อนอัปโหลด\n• ถ่ายภาพหน้าสัญญาแทน\n• เปิดด้วย Google Docs แล้ว Download เป็น PDF'
@@ -353,7 +416,7 @@ export default function UploadScanPage() {
           }
 
           setError(errorMessage);
-          
+
           if (createdLeaseId) {
             try {
               await base44.entities.Lease.delete(createdLeaseId);
@@ -389,7 +452,7 @@ export default function UploadScanPage() {
 
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       setShowConfirmation(false);
-      
+
       // Open in modal instead of navigate
       const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
       const updatedLease = updatedLeases.find(l => l.id === pendingLeaseId);
@@ -429,13 +492,13 @@ export default function UploadScanPage() {
 
   const handleDeleteLease = (leaseId, e) => {
     e.stopPropagation();
-    
+
     const confirmMessage = language === 'th'
       ? 'คุณแน่ใจหรือไม่ว่าต้องการลบการสแกนนี้?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้'
       : 'Are you sure you want to delete this scan?\n\nThis action cannot be undone.';
-    
+
     const userConfirmed = window.confirm(confirmMessage);
-    
+
     if (userConfirmed) {
       deleteLeaseWithScanMutation.mutate(leaseId);
     }
@@ -446,6 +509,8 @@ export default function UploadScanPage() {
   };
 
   const handleFileSelect = (e) => {
+    // Only allow file selection if upload is allowed
+    if (!scanStatus.allowed) return;
     const files = Array.from(e.target.files || e.dataTransfer?.files || []);
     setSelectedFiles(prev => [...prev, ...files]);
     setError(null);
@@ -453,6 +518,8 @@ export default function UploadScanPage() {
   };
 
   const handleDrop = (e) => {
+    // Only allow drop if upload is allowed
+    if (!scanStatus.allowed) return;
     e.preventDefault();
     setDragActive(false);
     const files = Array.from(e.dataTransfer.files);
@@ -497,7 +564,7 @@ export default function UploadScanPage() {
         notice_deadline: deadline.toISOString().split('T')[0]
       }
     });
-    
+
     setSelectedLease({
       ...selectedLease,
       notice_period_days: noticeSettings.notice_period_days,
@@ -520,7 +587,7 @@ export default function UploadScanPage() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const leaseIdFromUrl = urlParams.get('leaseId');
-    
+
     if (leaseIdFromUrl && leases.length > 0) {
       const leaseToOpen = leases.find(l => l.id === leaseIdFromUrl);
       if (leaseToOpen) {
@@ -531,12 +598,42 @@ export default function UploadScanPage() {
     }
   }, [leases]);
 
+  const getPeriodText = (period) => {
+    if (period === 'year') {
+      return language === 'th' ? 'ปีนี้' : 'this year';
+    } else if (period === 'lifetime') {
+      return language === 'th' ? 'ตลอดชีพ' : 'lifetime';
+    }
+    return '';
+  };
+
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+
+          {/* ✅ SCAN LIMIT INDICATOR */}
+          <div className="mt-3">
+            {getScanLimits().unlimited ? (
+              <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                ✨ {strings.unlimitedScans}
+              </Badge>
+            ) : (
+              <Badge className={scanStatus.allowed ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}>
+                {scanStatus.allowed
+                  ? strings.scansRemaining
+                      .replace('{remaining}', scanStatus.remaining)
+                      .replace('{periodText}', getPeriodText(scanStatus.period))
+                  : strings.scanLimitMsg
+                      .replace('{used}', scanStatus.used)
+                      .replace('{limit}', scanStatus.limit)
+                      .replace('{periodText}', getPeriodText(scanStatus.period))
+                }
+              </Badge>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -600,8 +697,8 @@ export default function UploadScanPage() {
                     {strings.noticePeriodHelp}
                   </p>
                 </div>
-                <Button 
-                  onClick={handleConfirmLeaseDetails} 
+                <Button
+                  onClick={handleConfirmLeaseDetails}
                   className="w-full bg-ls-forest hover:bg-ls-forest/90 py-6 text-base font-bold"
                 >
                   {strings.setReminder}
@@ -624,7 +721,7 @@ export default function UploadScanPage() {
         {selectedLease && (
           <Dialog open={!!selectedLease} onOpenChange={() => setSelectedLease(null)}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: colors.cardBg }}>
-              <DialogHeader className="sticky top-0 z-10 pb-4" style={{ 
+              <DialogHeader className="sticky top-0 z-10 pb-4" style={{
                 backgroundColor: colors.cardBg,
                 borderBottom: `1px solid ${colors.borderColor}`
               }}>
@@ -635,7 +732,7 @@ export default function UploadScanPage() {
                   </Button>
                 </div>
               </DialogHeader>
-              
+
               <div className="space-y-4 mt-4">
                 {/* Basic Info */}
                 <Card className="border-none" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
@@ -855,7 +952,7 @@ export default function UploadScanPage() {
                 <p className="mb-4" style={{ color: colors.textSecondary }}>
                   {analyzing ? strings.analyzingDesc : (language === 'th' ? 'กรุณารอสักครู่' : 'Please wait')}
                 </p>
-                
+
                 {/* Current Stage Indicator */}
                 {analysisStage && (
                   <p className="text-sm font-medium mb-4" style={{ color: '#3B82F6' }}>
@@ -888,13 +985,45 @@ export default function UploadScanPage() {
               </div>
             ) : (
               <>
+                {/* ✅ SHOW UPGRADE BANNER IF LIMIT REACHED */}
+                {!scanStatus.allowed && (
+                  <div className="mb-6 p-6 rounded-xl border-2" style={{
+                    backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2',
+                    borderColor: '#EF4444'
+                  }}>
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <AlertCircle className="w-6 h-6 text-red-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg mb-2" style={{ color: colors.textPrimary }}>
+                          {strings.scanLimitReached}
+                        </h3>
+                        <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                          {strings.scanLimitMsg
+                            .replace('{used}', scanStatus.used)
+                            .replace('{limit}', scanStatus.limit)
+                            .replace('{periodText}', getPeriodText(scanStatus.period))}
+                        </p>
+                        <Button
+                          onClick={() => navigate(createPageUrl("Account"))}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          {strings.upgradeForMore}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div
-                  className={`border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all ${dragActive ? 'border-blue-500 bg-blue-50' : ''}`}
+                  className={`border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all ${dragActive ? 'border-blue-500 bg-blue-50' : ''} ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
                   style={{
                     borderColor: dragActive ? '#3B82F6' : colors.borderColor,
-                    backgroundColor: dragActive ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') : 'transparent'
+                    backgroundColor: dragActive ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') : 'transparent',
+                    pointerEvents: scanStatus.allowed ? 'auto' : 'none'
                   }}
-                  onDragEnter={() => setDragActive(true)}
+                  onDragEnter={() => scanStatus.allowed && setDragActive(true)}
                   onDragLeave={() => setDragActive(false)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleDrop}
@@ -904,7 +1033,7 @@ export default function UploadScanPage() {
                     {strings.uploadArea}
                   </h3>
                   <p className="mb-4" style={{ color: colors.textSecondary }}>{strings.supportedFormats}</p>
-                  
+
                   <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
                     <label className="inline-block">
                       <input
@@ -913,9 +1042,10 @@ export default function UploadScanPage() {
                         accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                         onChange={handleFileSelect}
                         className="hidden"
+                        disabled={!scanStatus.allowed}
                       />
                       <span
-                        className="inline-flex items-center gap-2 px-6 py-3 rounded-lg cursor-pointer"
+                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg cursor-pointer ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
                         style={{
                           backgroundColor: '#0C3B2E',
                           color: '#FFFFFF'
@@ -933,9 +1063,10 @@ export default function UploadScanPage() {
                         accept="image/*"
                         onChange={handleFileSelect}
                         className="hidden"
+                        disabled={!scanStatus.allowed}
                       />
                       <span
-                        className="inline-flex items-center gap-2 px-6 py-3 rounded-lg cursor-pointer border-2"
+                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg cursor-pointer border-2 ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
                         style={{
                           backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                           color: '#0C3B2E',
@@ -979,8 +1110,8 @@ export default function UploadScanPage() {
                     </div>
                     <button
                       onClick={handleUploadAll}
-                      disabled={uploading}
-                      className="w-full mt-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2"
+                      disabled={uploading || !scanStatus.allowed}
+                      className={`w-full mt-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
                       style={{
                         backgroundColor: '#0C3B2E',
                         color: '#FFFFFF'
@@ -1015,7 +1146,7 @@ export default function UploadScanPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
                           <FileText className="w-5 h-5 text-ls-forest flex-shrink-0" />
-                          <h3 className="font-bold text-sm break-words line-clamp-2" style={{ 
+                          <h3 className="font-bold text-sm break-words line-clamp-2" style={{
                             color: colors.textPrimary,
                             overflowWrap: 'break-word',
                             wordBreak: 'break-word'
