@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
         quantity: 1,
       }];
     } 
-    // ✅ SUBSCRIPTIONS: Dynamic recurring price with proper billing cycle
+    // ✅ SUBSCRIPTIONS: Dynamic recurring price - FIXED!
     else if (mode === 'subscription' && amount) {
       const finalAmount = Math.round(amount * 100);
       const interval = metadata?.interval || 'month'; // 'month' or 'year'
@@ -89,19 +89,16 @@ Deno.serve(async (req) => {
         quantity: 1,
       }];
 
-      // ✅ CRITICAL FIX: Set proper billing cycle anchor
-      // This ensures the subscription period is calculated correctly
-      const now = Math.floor(Date.now() / 1000);
-      
+      // ✅ CRITICAL FIX: Remove billing_cycle_anchor!
+      // Let Stripe handle the billing cycle naturally based on the interval
+      // The subscription will start immediately and renew based on interval
       sessionConfig.subscription_data = {
-        metadata: metadata || {},
-        // Start the subscription immediately
-        billing_cycle_anchor: now,
-        // Ensure proration is disabled for cleaner billing
-        proration_behavior: 'none'
+        metadata: metadata || {}
+        // NO billing_cycle_anchor or proration_behavior
+        // Stripe will automatically set current_period_end based on interval
       };
 
-      console.log('✅ Subscription will start NOW with proper', interval, 'billing cycle');
+      console.log('✅ Subscription will start now and auto-calculate', interval, 'billing cycle');
     } 
     // ❌ OLD WAY: Pre-created price IDs (deprecated)
     else if (priceId) {
