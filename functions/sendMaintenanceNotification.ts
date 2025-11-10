@@ -90,10 +90,12 @@ Deno.serve(async (req) => {
     });
     console.log('🔑 Acknowledgment token generated and saved');
 
-    // Create acknowledgment link
+    // Create acknowledgment links with role parameter
     const appDomain = Deno.env.get('APP_DOMAIN') || 'app.leaseshield.asia';
-    const acknowledgmentLink = `https://${appDomain}/acknowledge?token=${acknowledgmentToken}`;
-    console.log('🔗 Acknowledgment link:', acknowledgmentLink);
+    const landlordAcknowledgmentLink = `https://${appDomain}/acknowledge?token=${acknowledgmentToken}&role=landlord`;
+    const juristicAcknowledgmentLink = `https://${appDomain}/acknowledge?token=${acknowledgmentToken}&role=juristic`;
+    console.log('🔗 Landlord acknowledgment link:', landlordAcknowledgmentLink);
+    console.log('🔗 Juristic acknowledgment link:', juristicAcknowledgmentLink);
 
     // Prepare message content
     const subject = language === 'th'
@@ -108,7 +110,7 @@ Deno.serve(async (req) => {
       user.tenant_zip
     ].filter(Boolean).join(', ') || (language === 'th' ? 'ไม่ได้ระบุ' : 'Not provided');
 
-    // HTML body for landlord/juristic with acknowledgment button
+    // HTML body for landlord with acknowledgment button
     const landlordHtmlBody = language === 'th'
       ? `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -131,7 +133,7 @@ Deno.serve(async (req) => {
           <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>ที่อยู่ผู้เช่า:</strong> ${tenantAddress}</p>
           
           <div style="margin: 30px 0; text-align: center;">
-            <a href="${acknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+            <a href="${landlordAcknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
               ✓ รับทราบและอัปเดตสถานะ
             </a>
             <p style="margin-top: 10px; font-size: 12px; color: #666;">คลิกเพื่อยืนยันว่าคุณได้รับทราบคำขอซ่อมนี้แล้ว และอัปเดตสถานะ</p>
@@ -163,7 +165,7 @@ Deno.serve(async (req) => {
           <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>Tenant Address:</strong> ${tenantAddress}</p>
           
           <div style="margin: 30px 0; text-align: center;">
-            <a href="${acknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+            <a href="${landlordAcknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
               ✓ Acknowledge & Update Status
             </a>
             <p style="margin-top: 10px; font-size: 12px; color: #666;">Click to confirm you've received this request and update its status</p>
@@ -174,6 +176,9 @@ Deno.serve(async (req) => {
         </div>
       </div>
       `;
+
+    // HTML body for juristic with acknowledgment button
+    const juristicHtmlBody = landlordHtmlBody.replace(landlordAcknowledgmentLink, juristicAcknowledgmentLink);
 
     // HTML body for tenant (confirmation copy - no acknowledgment button)
     const tenantHtmlBody = language === 'th'
@@ -290,7 +295,7 @@ Deno.serve(async (req) => {
         const result = await sendViaResend(
           user.juristic_email.trim(),
           subject,
-          landlordHtmlBody,
+          juristicHtmlBody,
           user.full_name || 'Lease Shield Tenant'
         );
         console.log('✅ Juristic email sent successfully via Resend. Message ID:', result.id);
@@ -311,7 +316,10 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       notifications: notifications,
-      acknowledgmentLink: acknowledgmentLink,
+      acknowledgmentLinks: {
+        landlord: landlordAcknowledgmentLink,
+        juristic: juristicAcknowledgmentLink
+      },
       debug: {
         userEmail: user.email,
         landlordEmail: user.landlord_email || 'not_set',

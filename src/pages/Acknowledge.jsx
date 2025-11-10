@@ -32,10 +32,13 @@ export default function AcknowledgeMaintenance() {
   const [completionPhotos, setCompletionPhotos] = useState([]);
   const [billPhotos, setBillPhotos] = useState([]);
   const [submitted, setSubmitted] = useState(false);
-  const [senderName, setSenderName] = useState('');
 
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
+  const role = urlParams.get('role'); // 'landlord' or 'juristic'
+
+  // Determine sender name based on role
+  const senderName = role === 'landlord' ? 'Landlord' : role === 'juristic' ? 'Juristic' : 'Landlord/Juristic';
 
   const { data: maintenanceRequests = [], isLoading } = useQuery({
     queryKey: ['maintenanceByToken', token],
@@ -124,13 +127,13 @@ export default function AcknowledgeMaintenance() {
         updateData.bill_photo_urls = [...(request.bill_photo_urls || []), ...billPhotos];
       }
 
-      // Add message to communication log instead of overwriting landlord_response
+      // Add message to communication log
       if (landlordResponse.trim()) {
-        const communicationLog = request.communication_log ? [...request.communication_log] : [];
+        const communicationLog = request.communication_log || [];
         communicationLog.push({
           date: new Date().toISOString(),
           message: landlordResponse.trim(),
-          sender: senderName.trim() || 'Landlord/Juristic'
+          sender: senderName
         });
         updateData.communication_log = communicationLog;
       }
@@ -221,6 +224,15 @@ export default function AcknowledgeMaintenance() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Maintenance Request</h1>
           <p className="text-gray-600">Review and update the status</p>
+          {role && (
+            <div className="mt-3 inline-block">
+              <Badge className={`${
+                role === 'landlord' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+              } text-sm font-semibold px-4 py-1`}>
+                Responding as: {senderName}
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Request Details Card */}
@@ -311,20 +323,6 @@ export default function AcknowledgeMaintenance() {
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Sender Name Input */}
-              <div>
-                <Label htmlFor="senderName">Your Name</Label>
-                <input
-                  id="senderName"
-                  type="text"
-                  value={senderName}
-                  onChange={(e) => setSenderName(e.target.value)}
-                  placeholder="e.g., Landlord, Juristic Office, Property Manager..."
-                  className="mt-2 w-full p-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none"
-                />
-                <p className="text-xs text-gray-500 mt-1">This will identify you in the communication history</p>
-              </div>
-
               {/* Status Selection */}
               <div>
                 <Label className="text-sm font-semibold mb-3 block">Select Status</Label>
@@ -402,7 +400,7 @@ export default function AcknowledgeMaintenance() {
                   rows={4}
                   className="mt-2"
                 />
-                <p className="text-xs text-gray-500 mt-1">This message will be added to the communication log</p>
+                <p className="text-xs text-gray-500 mt-1">This message will be added to the communication log as <strong>{senderName}</strong></p>
               </div>
 
               {/* Cost Estimates */}

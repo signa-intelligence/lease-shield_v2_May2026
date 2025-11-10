@@ -23,6 +23,9 @@ export default function MaintenanceTracker() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingRequest, setEditingRequest] = useState(null);
   const [deletingRequest, setDeletingRequest] = useState(null);
+  const [addingMessageToRequest, setAddingMessageToRequest] = useState(null);
+  const [tenantMessage, setTenantMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
   const [formData, setFormData] = useState({
     issue_title: '',
     description: '',
@@ -297,6 +300,36 @@ export default function MaintenanceTracker() {
     }
   };
 
+  const handleAddMessage = async (request) => {
+    if (!tenantMessage.trim()) {
+      alert(language === 'th' ? 'กรุณาใส่ข้อความ' : 'Please enter a message');
+      return;
+    }
+
+    setSendingMessage(true);
+    try {
+      const communicationLog = request.communication_log ? [...request.communication_log] : [];
+      communicationLog.push({
+        date: new Date().toISOString(),
+        message: tenantMessage.trim(),
+        sender: 'Tenant'
+      });
+
+      await updateRequestMutation.mutateAsync({
+        id: request.id,
+        data: { communication_log: communicationLog }
+      });
+
+      setAddingMessageToRequest(null);
+      setTenantMessage('');
+    } catch (error) {
+      console.error('Failed to add message:', error);
+      alert(language === 'th' ? 'ไม่สามารถส่งข้อความได้ กรุณาลองอีกครั้ง' : 'Failed to send message. Please try again.');
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   const t = {
     en: {
       title: "Maintenance Tracker",
@@ -366,7 +399,14 @@ export default function MaintenanceTracker() {
       completionPhotos: "Completion Photos:",
       billsReceipts: "Bills/Receipts:",
       landlordResponse: "Landlord Response:",
-      cost: "Cost:"
+      cost: "Cost:",
+      messages: "Messages",
+      reply: "Reply",
+      yourMessage: "Your Message",
+      typeMessage: "Type your message...",
+      sendMessage: "Send Message",
+      sending: "Sending...",
+      cancel: "Cancel",
     },
     th: {
       title: "ติดตามการซ่อมบำรุง",
@@ -436,7 +476,14 @@ export default function MaintenanceTracker() {
       completionPhotos: "รูปงานเสร็จ:",
       billsReceipts: "ใบเสร็จ/บิล:",
       landlordResponse: "ข้อความจากเจ้าของบ้าน:",
-      cost: "ค่าใช้จ่าย:"
+      cost: "ค่าใช้จ่าย:",
+      messages: "ข้อความ",
+      reply: "ตอบกลับ",
+      yourMessage: "ข้อความของคุณ",
+      typeMessage: "พิมพ์ข้อความ...",
+      sendMessage: "ส่งข้อความ",
+      sending: "กำลังส่ง...",
+      cancel: "ยกเลิก",
     }
   };
 
@@ -1014,31 +1061,139 @@ export default function MaintenanceTracker() {
                   {/* Communication Log Display */}
                   {request.communication_log && request.communication_log.length > 0 && (
                     <div className="mb-3">
-                      <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: colors.textSecondary }}>
-                        <MessageCircle className="w-3 h-3" />
-                        {language === 'th' ? 'ข้อความ' : 'Messages'}
-                      </p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold flex items-center gap-1" style={{ color: colors.textSecondary }}>
+                          <MessageCircle className="w-3 h-3" />
+                          {strings.messages}
+                        </p>
+                        <button
+                          onClick={() => setAddingMessageToRequest(request)}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            border: `1px solid ${colors.borderColor}`,
+                            backgroundColor: colors.inputBg,
+                            color: colors.textPrimary,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.borderColor = '#3B82F6';
+                            e.target.style.color = '#3B82F6';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.borderColor = colors.borderColor;
+                            e.target.style.color = colors.textPrimary;
+                          }}
+                        >
+                          + {strings.reply}
+                        </button>
+                      </div>
                       <div className="space-y-2">
-                        {request.communication_log.map((msg, index) => (
-                          <div 
-                            key={index} 
-                            className="p-2 rounded-lg border-l-4"
-                            style={{
-                              backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                              borderLeftColor: '#3B82F6'
-                            }}
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="text-xs font-semibold" style={{ color: colors.textPrimary }}>
-                                {msg.sender}
-                              </p>
-                              <p className="text-xs" style={{ color: colors.textSecondary }}>
-                                {format(new Date(msg.date), 'MMM d, h:mm a')}
-                              </p>
+                        {request.communication_log.map((msg, index) => {
+                          const isLandlord = msg.sender === 'Landlord';
+                          const isJuristic = msg.sender === 'Juristic';
+                          const isTenant = msg.sender === 'Tenant';
+                          
+                          return (
+                            <div 
+                              key={index} 
+                              className="p-2 rounded-lg border-l-4"
+                              style={{
+                                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                                borderLeftColor: isLandlord ? '#3B82F6' : isJuristic ? '#8B5CF6' : (isTenant ? '#10B981' : '#A8ABAD')
+                              }}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-xs font-semibold flex items-center gap-1" style={{ color: colors.textPrimary }}>
+                                  {isLandlord && '🏠'} {isJuristic && '🏢'} {isTenant && '👤'} {msg.sender}
+                                </p>
+                                <p className="text-xs" style={{ color: colors.textSecondary }}>
+                                  {format(new Date(msg.date), 'MMM d, h:mm a')}
+                                </p>
+                              </div>
+                              <p className="text-sm" style={{ color: colors.textPrimary }}>{msg.message}</p>
                             </div>
-                            <p className="text-sm" style={{ color: colors.textPrimary }}>{msg.message}</p>
-                          </div>
-                        ))}
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Add Message Dialog */}
+                  {addingMessageToRequest?.id === request.id && (
+                    <div className="mb-3 p-3 rounded-lg" style={{
+                      backgroundColor: isDarkMode ? '#2A2D30' : '#F0FDF4',
+                      border: `2px solid #10B981`
+                    }}>
+                      <Label className="text-xs font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
+                        {strings.yourMessage}
+                      </Label>
+                      <Textarea
+                        value={tenantMessage}
+                        onChange={(e) => setTenantMessage(e.target.value)}
+                        placeholder={strings.typeMessage}
+                        rows={3}
+                        className="mb-2"
+                        style={{
+                          backgroundColor: colors.inputBg,
+                          borderColor: colors.borderColor,
+                          color: colors.textPrimary,
+                          fontSize: '13px'
+                        }}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleAddMessage(request)}
+                          disabled={sendingMessage}
+                          style={{
+                            flex: 1,
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            border: 'none',
+                            backgroundColor: sendingMessage ? '#9CA3AF' : '#10B981',
+                            color: '#FFFFFF',
+                            cursor: sendingMessage ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {sendingMessage ? (
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              {strings.sending}
+                            </>
+                          ) : (
+                            <>
+                              <MessageCircle className="w-3 h-3" />
+                              {strings.sendMessage}
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setAddingMessageToRequest(null);
+                            setTenantMessage('');
+                          }}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            border: `1px solid ${colors.borderColor}`,
+                            backgroundColor: colors.cardBg,
+                            color: colors.textPrimary,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {strings.cancel}
+                        </button>
                       </div>
                     </div>
                   )}
