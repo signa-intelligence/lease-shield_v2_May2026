@@ -265,63 +265,50 @@ export default function DocumentVault() {
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(doc.html_content, 'text/html');
       
-      // Remove all headers, footers, styles, scripts
-      htmlDoc.querySelectorAll('style, script, .header, .footer').forEach(el => el.remove());
+      // The HTML structure from saveReviewedLetter has TWO .section divs:
+      // First section = Thai version
+      // Second section = English version
+      const sections = htmlDoc.querySelectorAll('.section');
       
-      // Get the body element's text content (this gets everything)
-      const bodyElement = htmlDoc.querySelector('body');
-      if (!bodyElement) {
-        body = '[Letter content not available]';
-      } else {
-        // Get all text content, split by lines
-        const allText = bodyElement.textContent || bodyElement.innerText || '';
-        const lines = allText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        
-        // Separate into Thai and English arrays
-        const thaiLines = [];
-        const englishLines = [];
-        
-        for (const line of lines) {
-          // Skip very short lines
-          if (line.length < 10) continue;
-          
-          // Skip obvious junk
-          if (line.startsWith('[') && line.endsWith(']')) continue;
-          if (line.match(/^(Dear|เรียน)\s+(Mr\.|Mrs\.|คุณ)/i)) continue;
-          if (line.match(/^(Sincerely|Kind regards|Best regards|ขอแสดงความนับถือ)/i)) continue;
-          if (line.includes('Section Title') || line.includes('Version')) continue;
-          
-          // Detect language by Thai characters
-          const hasThai = /[\u0E00-\u0E7F]/.test(line);
-          
-          if (hasThai) {
-            thaiLines.push(line);
-          } else if (/[a-zA-Z]/.test(line)) {
-            // Only add if has English letters
-            englishLines.push(line);
-          }
+      let thaiText = '';
+      let englishText = '';
+      
+      if (sections.length >= 2) {
+        // Extract Thai content from first section
+        const thaiSection = sections[0];
+        const thaiContent = thaiSection.querySelector('.content');
+        if (thaiContent) {
+          const paragraphs = Array.from(thaiContent.querySelectorAll('p'))
+            .map(p => (p.textContent || '').trim())
+            .filter(text => text.length > 0);
+          thaiText = paragraphs.join('\n\n');
         }
         
-        // Join with spacing
-        const thaiContent = thaiLines.join('\n\n');
-        const englishContent = englishLines.join('\n\n');
-        
-        // Get landlord and tenant names
-        const landlordName = user?.landlord_name || '[Landlord Name]';
-        const tenantName = user?.full_name || '[Your Name]';
-        
-        // Format email body
-        body = '==== English language below ===\n\n' +
-               `Dear ${landlordName},\n\n` +
-               (thaiContent || '[Thai version not available]') + 
-               '\n\n' +
-               (englishContent || '[English version not available]') +
-               '\n\n' +
-               `Kind Regards,\n${tenantName}` +
-               '\n\n---\n\n' +
-               'Created by Lease Shield - https://www.leaseshield.asia\n' +
-               'สร้างโดย Lease Shield - https://www.leaseshield.asia';
+        // Extract English content from second section
+        const englishSection = sections[1];
+        const englishContent = englishSection.querySelector('.content');
+        if (englishContent) {
+          const paragraphs = Array.from(englishContent.querySelectorAll('p'))
+            .map(p => (p.textContent || '').trim())
+            .filter(text => text.length > 0);
+          englishText = paragraphs.join('\n\n');
+        }
       }
+      
+      // Get landlord and tenant names
+      const landlordName = user?.landlord_name || '[Landlord Name]';
+      const tenantName = user?.full_name || '[Your Name]';
+      
+      // Format email body - Thai first, then separator, then English
+      body = `Dear ${landlordName},\n\n` +
+             (thaiText || '[Thai version not available]') + 
+             '\n\n==== English language below ====\n\n' +
+             (englishText || '[English version not available]') +
+             '\n\n' +
+             `Kind Regards,\n${tenantName}` +
+             '\n\n---\n\n' +
+             'Created by Lease Shield - https://www.leaseshield.asia\n' +
+             'สร้างโดย Lease Shield - https://www.leaseshield.asia';
     } else {
       // For other document types, keep existing format
       body = language === 'th'
