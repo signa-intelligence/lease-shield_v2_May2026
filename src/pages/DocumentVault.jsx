@@ -268,106 +268,77 @@ export default function DocumentVault() {
       const htmlDoc = parser.parseFromString(doc.html_content, 'text/html');
       
       // Remove headers, footers, and style/script tags
-      htmlDoc.querySelectorAll('style, script, .header, .footer').forEach(el => el.remove());
+      htmlDoc.querySelectorAll('style, script, .header, .footer, .section-title').forEach(el => el.remove());
       
-      // Get all content sections
-      const sections = htmlDoc.querySelectorAll('.section');
+      // Get ALL text content from body
+      const fullText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
       
-      let thaiContent = '';
-      let englishContent = '';
+      // Split into lines
+      const lines = fullText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
       
-      // Extract both Thai and English versions
-      for (const section of sections) {
-        const contentEl = section.querySelector('.content');
-        if (!contentEl) continue;
+      let thaiLetter = '';
+      let englishLetter = '';
+      
+      // Process lines to extract clean letter content
+      let currentLetter = [];
+      let inLetter = false;
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
         
-        // Get all paragraphs from content
-        const paragraphs = contentEl.querySelectorAll('p');
-        let cleanParagraphs = [];
-        let foundSalutation = false; // Track when we hit the actual letter start
-        let afterClosing = false; // Track when we hit the closing
-        
-        for (const p of paragraphs) {
-          const text = (p.textContent || p.innerText || '').trim();
-          
-          // Skip empty or very short lines
-          if (!text || text.length < 3) continue;
-          
-          // Check if this is a salutation (start of actual letter)
-          if (text.startsWith('Dear ') || text.startsWith('เรียน')) {
-            foundSalutation = true;
-            afterClosing = false; // Reset if we hit another salutation
-          }
-          
-          // Check if this is a closing line
-          if (text.match(/^(Warm regards|Best regards|Sincerely|Yours truly|ขอแสดงความนับถือ|ด้วยความเคารพ),?\s*$/i)) {
-            afterClosing = true;
-            cleanParagraphs.push(text); // Include the closing itself
-            continue;
-          }
-          
-          // Skip everything before salutation
-          if (!foundSalutation) {
-            // Skip patterns that look like letter headers
-            if (text.startsWith('[') && text.endsWith(']')) continue;
-            if (text.match(/^\d+\s+[A-Za-z]/)) continue; // Street addresses like "63 Main Street"
-            if (text.match(/^[A-Z][a-z]+,\s*[A-Z]/)) continue; // City, Country like "Bangkok, Thailand"
-            if (text.split(' ').length <= 4 && text[0] === text[0].toUpperCase()) continue; // Short capitalized lines (likely names)
-            continue; // Skip everything before salutation
-          }
-          
-          // Skip everything after closing (sender name, address)
-          if (afterClosing) {
-            continue;
-          }
-          
-          // Now we're in the actual letter body
-          cleanParagraphs.push(text);
+        // Detect start of letter (salutation)
+        if (line.startsWith('Dear ') || line.startsWith('เรียน')) {
+          inLetter = true;
+          currentLetter = [line];
+          continue;
         }
         
-        const content = cleanParagraphs.join('\n\n');
-        if (!content.trim()) continue;
-        
-        // Determine if this is Thai or English content
-        // Thai Unicode range is U+0E00 to U+0E7F
-        const isThaiContent = /[\u0E00-\u0E7F]/.test(content);
-        
-        if (isThaiContent) {
-          thaiContent = content;
-        } else {
-          englishContent = content;
+        // If we're in a letter, collect lines
+        if (inLetter) {
+          // Detect end of letter (closing)
+          if (line.match(/^(Warm regards|Best regards|Sincerely|Yours truly|ขอแสดงความนับถือ|ด้วยความเคารพ),?\s*$/i)) {
+            currentLetter.push(line);
+            
+            // Save this letter and determine language
+            const letterText = currentLetter.join('\n\n');
+            const isThai = /[\u0E00-\u0E7F]/.test(letterText);
+            
+            if (isThai) {
+              thaiLetter = letterText;
+            } else {
+              englishLetter = letterText;
+            }
+            
+            // Reset for next letter
+            currentLetter = [];
+            inLetter = false;
+            continue;
+          }
+          
+          // Add line to current letter
+          currentLetter.push(line);
         }
       }
       
       // Build email body: THAI FIRST, then English
-      // Header in Thai: "ภาษาไทยด้านล่าง" (Thai language below)
       let letterContent = 'ภาษาไทยด้านล่าง\n\n';
       
       // Add Thai content FIRST
-      if (thaiContent) {
-        letterContent += thaiContent;
+      if (thaiLetter) {
+        letterContent += thaiLetter;
       }
       
       // Add separator and English content SECOND
-      if (englishContent) {
-        if (thaiContent) {
+      if (englishLetter) {
+        if (thaiLetter) {
           letterContent += '\n\n---\n\n';
         }
-        letterContent += englishContent;
+        letterContent += englishLetter;
       }
       
-      // If still no content extracted, fallback to extracting all body text
-      if (!thaiContent && !englishContent) {
-        htmlDoc.querySelectorAll('.header, .footer, .section-title').forEach(el => el.remove());
-        
-        const bodyText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
-        const lines = bodyText.split('\n').map(line => line.trim()).filter(line => {
-          if (!line || line.length < 10) return false;
-          if (line.startsWith('[') && line.endsWith(']')) return false;
-          return true;
-        });
-        
-        letterContent = 'ภาษาไทยด้านล่าง\n\n' + lines.join('\n\n');
+      // If no content extracted, show error
+      if (!thaiLetter && !englishLetter) {
+        letterContent = 'ภาษาไทยด้านล่าง\n\n[Letter content could not be extracted]';
       }
       
       // Format final email with Lease Shield footer only
