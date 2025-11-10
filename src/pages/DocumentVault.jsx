@@ -261,81 +261,67 @@ export default function DocumentVault() {
     
     // For letters, extract and format as proper email
     if (doc.type === 'letter' && doc.html_content) {
-      // Parse HTML properly using DOMParser
+      // Parse HTML
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(doc.html_content, 'text/html');
       
-      // First, find the sections BEFORE removing anything
-      const sections = htmlDoc.querySelectorAll('.section');
+      // Remove all headers, footers, styles, scripts
+      htmlDoc.querySelectorAll('style, script, .header, .footer').forEach(el => el.remove());
       
-      let thaiText = '';
-      let englishText = '';
-      
-      // Process each section to extract content
-      for (const section of sections) {
-        // Get the section title to determine language
-        const sectionTitle = section.querySelector('.section-title')?.textContent || '';
+      // Get the body element's text content (this gets everything)
+      const bodyElement = htmlDoc.querySelector('body');
+      if (!bodyElement) {
+        body = '[Letter content not available]';
+      } else {
+        // Get all text content, split by lines
+        const allText = bodyElement.textContent || bodyElement.innerText || '';
+        const lines = allText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
         
-        // Get the content div within this section
-        const contentDiv = section.querySelector('.content');
+        // Separate into Thai and English arrays
+        const thaiLines = [];
+        const englishLines = [];
         
-        if (!contentDiv) continue;
-        
-        // Determine if this is Thai or English section
-        const isThaiSection = sectionTitle.includes('ไทย') || sectionTitle.includes('Thai Version');
-        const isEnglishSection = sectionTitle.includes('English Version');
-        
-        if (!isThaiSection && !isEnglishSection) continue;
-        
-        // Extract all paragraph text from this section
-        const paragraphs = contentDiv.querySelectorAll('p');
-        const contentLines = [];
-        
-        for (const p of paragraphs) {
-          const text = (p.textContent || p.innerText || '').trim();
+        for (const line of lines) {
+          // Skip very short lines
+          if (line.length < 10) continue;
           
-          // Skip empty lines
-          if (!text || text.length < 5) continue;
+          // Skip obvious junk
+          if (line.startsWith('[') && line.endsWith(']')) continue;
+          if (line.match(/^(Dear|เรียน)\s+(Mr\.|Mrs\.|คุณ)/i)) continue;
+          if (line.match(/^(Sincerely|Kind regards|Best regards|ขอแสดงความนับถือ)/i)) continue;
+          if (line.includes('Section Title') || line.includes('Version')) continue;
           
-          // Skip placeholder text
-          if (text.startsWith('[') && text.endsWith(']')) continue;
+          // Detect language by Thai characters
+          const hasThai = /[\u0E00-\u0E7F]/.test(line);
           
-          // Skip salutations (we add our own)
-          if (text.match(/^(Dear|เรียน)\s/i)) continue;
-          
-          // Skip signature lines (we add our own)
-          if (text.match(/^(Sincerely|Best regards|Kind regards|Warm regards|ขอแสดงความนับถือ|ด้วยความเคารพ)/i)) continue;
-          
-          // Add this line to content
-          contentLines.push(text);
+          if (hasThai) {
+            thaiLines.push(line);
+          } else if (/[a-zA-Z]/.test(line)) {
+            // Only add if has English letters
+            englishLines.push(line);
+          }
         }
         
-        // Join the content lines
-        const sectionContent = contentLines.join('\n\n');
+        // Join with spacing
+        const thaiContent = thaiLines.join('\n\n');
+        const englishContent = englishLines.join('\n\n');
         
-        // Assign to appropriate variable
-        if (isThaiSection) {
-          thaiText = sectionContent;
-        } else if (isEnglishSection) {
-          englishText = sectionContent;
-        }
+        // Get landlord and tenant names
+        const landlordName = user?.landlord_name || '[Landlord Name]';
+        const tenantName = user?.full_name || '[Your Name]';
+        
+        // Format email body
+        body = '==== English language below ===\n\n' +
+               `Dear ${landlordName},\n\n` +
+               (thaiContent || '[Thai version not available]') + 
+               '\n\n' +
+               (englishContent || '[English version not available]') +
+               '\n\n' +
+               `Kind Regards,\n${tenantName}` +
+               '\n\n---\n\n' +
+               'Created by Lease Shield - https://www.leaseshield.asia\n' +
+               'สร้างโดย Lease Shield - https://www.leaseshield.asia';
       }
-      
-      // Get landlord and tenant names
-      const landlordName = user?.landlord_name || '[Landlord Name]';
-      const tenantName = user?.full_name || '[Your Name]';
-      
-      // Format as bilingual email - Thai first, then English
-      body = '==== English language below ===\n\n' +
-             `Dear ${landlordName},\n\n` +
-             (thaiText || '[Thai version not available]') + 
-             '\n\n' +
-             (englishText || '[English version not available]') +
-             '\n\n' +
-             `Kind Regards,\n${tenantName}` +
-             '\n\n---\n\n' +
-             'Created by Lease Shield - https://www.leaseshield.asia\n' +
-             'สร้างโดย Lease Shield - https://www.leaseshield.asia';
     } else {
       // For other document types, keep existing format
       body = language === 'th'
