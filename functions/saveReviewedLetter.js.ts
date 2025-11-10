@@ -1,9 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * Lease Shield – Save Reviewed Letter (STEP 2: Save & Deduct Credits)
- * This function saves the user-reviewed/edited letter and deducts credits
- * Called after user reviews and confirms the letter content
+ * Lease Shield – Save Reviewed Letter (STEP 2: Save Only - NO Credit Deduction)
+ * This function saves the user-reviewed/edited letter
+ * Credits were already deducted during generation
  */
 
 Deno.serve(async (req) => {
@@ -31,15 +31,6 @@ Deno.serve(async (req) => {
     // Validate required fields
     if (!subject || !letter_en || !letter_th) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    // Check credits one more time before deducting
-    const userCredits = user.letter_credits || 0;
-    if (userCredits < 1) {
-      return Response.json({
-        error: 'Insufficient credits',
-        code: 'insufficient_credits'
-      }, { status: 402 });
     }
 
     const SUBJECT_NAMES = {
@@ -124,12 +115,7 @@ Deno.serve(async (req) => {
       html_content: htmlContent
     });
 
-    // NOW deduct 1 credit after successful save
-    await base44.auth.updateMe({
-      letter_credits: Math.max(0, userCredits - 1)
-    });
-
-    console.log(`✅ Reviewed letter saved successfully. Credits remaining: ${userCredits - 1}`);
+    console.log(`✅ Reviewed letter saved successfully. No credit deduction (already done).`);
 
     // Update case if provided
     if (caseId) {
@@ -145,7 +131,7 @@ Deno.serve(async (req) => {
           const updatedTimeline = existingCase.timeline || [];
           updatedTimeline.push({
             timestamp: new Date().toISOString(),
-            event: `letter_generated_${subject}`,
+            event: `letter_saved_${subject}`,
             actor: user.email,
             meta: { html_url: htmlUrl, doc_url: docUrl, document_id: docEntry.id, reviewed: true }
           });
@@ -165,7 +151,6 @@ Deno.serve(async (req) => {
       ok: true,
       urls: { html: htmlUrl, doc: docUrl },
       docId: docEntry.id,
-      credits_remaining: userCredits - 1,
       case: caseId ? {
         id: caseId,
         status: 'ready_for_review'

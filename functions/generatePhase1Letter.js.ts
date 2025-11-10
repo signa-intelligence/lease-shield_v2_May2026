@@ -1,9 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * Lease Shield – LLM-powered Letters (STEP 1: Generate Only)
- * This function now only GENERATES the letter content without saving or deducting credits
- * Saving and credit deduction happens in saveReviewedLetter function after user review
+ * Lease Shield – LLM-powered Letters (STEP 1: Generate & Deduct Credits)
+ * This function generates the letter content AND deducts credits immediately
+ * User will review/edit before final save
  */
 
 Deno.serve(async (req) => {
@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
 
     const args = await req.json();
 
-    // Check user credits BEFORE generating (but don't deduct yet)
+    // Check user credits BEFORE generating
     const userCredits = user.letter_credits || 0;
     if (userCredits < 1) {
       return Response.json({
@@ -148,7 +148,14 @@ Deno.serve(async (req) => {
       throw new Error('Failed to generate letter content from LLM. Please try again.');
     }
 
-    // Return the generated content WITHOUT saving or deducting credits
+    // DEDUCT CREDIT IMMEDIATELY after successful generation
+    await base44.auth.updateMe({
+      letter_credits: Math.max(0, userCredits - 1)
+    });
+
+    console.log(`✅ Letter generated successfully. Credit deducted. Credits remaining: ${userCredits - 1}`);
+
+    // Return the generated content for user review
     return Response.json({
       ok: true,
       letter_content: {
@@ -160,8 +167,8 @@ Deno.serve(async (req) => {
         name_en: letterConfig.name_en,
         name_th: letterConfig.name_th
       },
-      current_credits: userCredits,
-      message: 'Letter generated. Review and save to complete.'
+      credits_remaining: userCredits - 1,
+      message: 'Letter generated and credit deducted. Review and save to complete.'
     });
 
   } catch (error) {

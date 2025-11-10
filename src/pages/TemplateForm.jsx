@@ -5,52 +5,50 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea"; // Added Textarea component
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Added Select components
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Loader2, FileText, Send, AlertCircle, Edit2, Save } from "lucide-react"; // Removed CheckCircle2, Download, Eye, added AlertCircle, Edit2, Save
+import { ArrowLeft, Loader2, FileText, Send, AlertCircle, Edit2, Save } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-// Removed LetterPreview import
 
 export default function TemplateForm() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient(); // Added useQueryClient
+  const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
-  const [saving, setSaving] = useState(false); // New state for saving reviewed letter
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  // Removed showSuccess, generatedUrls, showPreview
-  const [generatedLetter, setGeneratedLetter] = useState(null); // New state for generated letter content
-  const [reviewMode, setReviewMode] = useState(false); // New state for review mode
-  const [editedContent, setEditedContent] = useState({ letter_en: '', letter_th: '' }); // New state for editable content
+  const [generatedLetter, setGeneratedLetter] = useState(null);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [editedContent, setEditedContent] = useState({ letter_en: '', letter_th: '' });
 
   // Get subject from URL parameter
   const urlParams = new URLSearchParams(window.location.search);
-  const preSelectedSubject = urlParams.get('subject'); // Renamed subjectFromUrl for clarity
+  const preSelectedSubject = urlParams.get('subject');
 
   const [formData, setFormData] = useState({
-    subject: '', // Changed to empty string, will be set by preSelectedSubject or user selection
+    subject: '',
     tenant_name: '',
     landlord_name: '',
     property_address: '',
     contract_ref: '',
-    deposit_amount: '', // Changed from deposit_amount_thb
+    deposit_amount: '',
     example_item_1: '',
     example_item_2: '',
     example_item_3: '',
     breach_summary: '',
     settlement_amount: '',
     settlement_date: '',
-    concerns_list: '' // New field
+    concerns_list: ''
   });
 
   // Effect to set initial subject from URL, runs once on mount
   useEffect(() => {
-    if (preSelectedSubject) { // Only set if a preSelectedSubject exists
+    if (preSelectedSubject) {
       setFormData(prev => ({ ...prev, subject: preSelectedSubject }));
     }
-  }, [preSelectedSubject]); // Dependency array includes preSelectedSubject
+  }, [preSelectedSubject]);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -93,19 +91,19 @@ export default function TemplateForm() {
       depositAmount: "Deposit Amount (optional)",
       letterType: "Letter Type",
       depositReturn: "Deposit Return Request",
-      damageDispute: "Damage Claim Response", // No longer used for subject, but can be for display
-      earlyTermination: "Early Termination Notice", // No longer used for subject, but can be for display
+      damageDispute: "Damage Claim Response",
+      earlyTermination: "Early Termination Notice",
       generateButton: "Generate Letter",
       generating: "Generating...",
-      cancel: "Back", // Renamed for main form button
+      cancel: "Back",
       required: "Required",
       errorFillRequired: 'Please fill in your name and landlord name.',
       errorGenerationFailed: 'Failed to generate letter. Please try again.',
-      successTitle: "Letter Generated Successfully!", // No longer used for dialog
-      successDesc: "Your bilingual letter has been created and saved to your Document Vault.", // No longer used for dialog
-      previewHtml: "Preview in Browser", // No longer used
-      downloadWord: "Download Word", // No longer used
-      goToVault: "Go to Document Vault", // No longer used
+      successTitle: "Letter Generated Successfully!",
+      successDesc: "Your bilingual letter has been created and saved to your Document Vault.",
+      previewHtml: "Preview in Browser",
+      downloadWord: "Download Word",
+      goToVault: "Go to Document Vault",
       exampleItem1: "Example Item 1 (optional)",
       exampleItem1Placeholder: "e.g., Wall scuff marks",
       exampleItem2: "Example Item 2 (optional)",
@@ -122,8 +120,7 @@ export default function TemplateForm() {
       insufficientCreditsWarningDesc: "You need 1 credit to generate a letter. Please purchase credits from the Account page.",
       goToAccount: "Go to Account",
       creditsLabel: "Credits",
-      // New strings for review mode and general concerns
-      back: "Back", // New string for review mode back button
+      back: "Back",
       reviewEditLetter: "Review & Edit Letter",
       reviewEditLetterDesc: "Review the content and make edits before saving. You can edit the text directly.",
       editContent: "Edit Content",
@@ -131,12 +128,12 @@ export default function TemplateForm() {
       thaiLetter: "Thai Letter",
       saveLetter: "Save Letter",
       saving: "Saving...",
-      saveLetterSuccess: "Letter saved successfully!\nCredits remaining: ",
+      saveLetterSuccess: "Letter saved successfully!",
       saveLetterCreditDeduction: "⚡ On save, 1 credit will be deducted and the letter will be saved to Document Vault.",
       cancelReviewConfirm: "Cancel letter generation? Changes will not be saved.",
       selectLetterType: "Select Letter Type",
       selectLetterTypePlaceholder: "Choose a letter type",
-      concernsList: "List of Concerns (Optional)", // New field
+      concernsList: "List of Concerns (Optional)",
       concernsListPlaceholder: "e.g., Unpaid rent, Noise complaints, Unauthorized pet",
       creditsDeductedMessage: "1 credit will be deducted upon saving this letter."
     },
@@ -159,15 +156,15 @@ export default function TemplateForm() {
       earlyTermination: "แจ้งยกเลิกก่อนกำหนด",
       generateButton: "สร้างจดหมาย",
       generating: "กำลังสร้าง...",
-      cancel: "กลับ", // Renamed for main form button
+      cancel: "กลับ",
       required: "จำเป็น",
       errorFillRequired: 'กรุณากรอกชื่อของคุณและชื่อเจ้าของบ้าน',
       errorGenerationFailed: 'ไม่สามารถสร้างจดหมายได้ กรุณาลองอีกครั้ง',
-      successTitle: "สร้างจดหมายสำเร็จ!", // No longer used
-      successDesc: "จดหมายสองภาษาของคุณถูกสร้างและบันทึกไว้ใน Document Vault แล้ว", // No longer used
-      previewHtml: "ดูตัวอย่างในเบราว์เซอร์", // No longer used
-      downloadWord: "ดาวน์โหลด Word", // No longer used
-      goToVault: "ไปที่ Document Vault", // No longer used
+      successTitle: "สร้างจดหมายสำเร็จ!",
+      successDesc: "จดหมายสองภาษาของคุณถูกสร้างและบันทึกไว้ใน Document Vault แล้ว",
+      previewHtml: "ดูตัวอย่างในเบราว์เซอร์",
+      downloadWord: "ดาวน์โหลด Word",
+      goToVault: "ไปที่ Document Vault",
       exampleItem1: "ตัวอย่างรายการ 1 (ไม่บังคับ)",
       exampleItem1Placeholder: "เช่น รอยขีดข่วนกำแพง",
       exampleItem2: "ตัวอย่างรายการ 2 (ไม่บังคับ)",
@@ -184,8 +181,7 @@ export default function TemplateForm() {
       insufficientCreditsWarningDesc: "คุณต้องการ 1 เครดิตเพื่อสร้างจดหมาย กรุณาซื้อเครดิตเพิ่มจากหน้าบัญชี",
       goToAccount: "ไปที่หน้าบัญชี",
       creditsLabel: "เครดิต",
-      // New strings for review mode and general concerns
-      back: "กลับ", // New string for review mode back button
+      back: "กลับ",
       reviewEditLetter: "ตรวจสอบและแก้ไขจดหมาย",
       reviewEditLetterDesc: "ตรวจสอบเนื้อหาและแก้ไขก่อนบันทึก คุณสามารถแก้ไขข้อความได้โดยตรง",
       editContent: "แก้ไขเนื้อหา",
@@ -193,12 +189,12 @@ export default function TemplateForm() {
       thaiLetter: "จดหมายภาษาไทย",
       saveLetter: "บันทึกจดหมาย",
       saving: "กำลังบันทึก...",
-      saveLetterSuccess: "บันทึกจดหมายสำเร็จ!\nเครดิตคงเหลือ: ",
+      saveLetterSuccess: "บันทึกจดหมายสำเร็จ!",
       saveLetterCreditDeduction: "⚡ เมื่อบันทึก เครดิต 1 จะถูกหัก และจดหมายจะถูกบันทึกในคลังเอกสาร.",
       cancelReviewConfirm: "ยกเลิกการสร้างจดหมาย? การเปลี่ยนแปลงจะไม่ถูกบันทึก",
       selectLetterType: "เลือกประเภทจดหมาย",
       selectLetterTypePlaceholder: "เลือกประเภทจดหมาย",
-      concernsList: "รายการข้อกังวล (ไม่บังคับ)", // New field
+      concernsList: "รายการข้อกังวล (ไม่บังคับ)",
       concernsListPlaceholder: "เช่น ค่าเช่าที่ค้างชำระ, ข้อร้องเรียนเรื่องเสียงดัง, สัตว์เลี้ยงไม่ได้รับอนุญาต",
       creditsDeductedMessage: "จะถูกหัก 1 เครดิตเมื่อบันทึกจดหมายนี้"
     }
@@ -217,15 +213,15 @@ export default function TemplateForm() {
     final_opportunity: language === 'th' ? 'โอกาสสุดท้าย' : 'Final Opportunity',
     non_compliance: language === 'th' ? 'แจ้งไม่ปฏิบัติตามสัญญา' : 'Notice of Non-Compliance',
     settlement: language === 'th' ? 'ยืนยันการตกลงชำระเงิน' : 'Settlement Confirmation',
-    general_concerns: language === 'th' ? 'ข้อกังวลทั่วไป' : 'General Concerns/Issues' // New letter type
+    general_concerns: language === 'th' ? 'ข้อกังวลทั่วไป' : 'General Concerns/Issues'
   };
 
-  const handleInputChange = (field, value) => { // Renamed from handleChange
+  const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setError(null);
   };
 
-  const handleGenerate = async (e) => { // Renamed from handleSubmit
+  const handleGenerate = async (e) => {
     e.preventDefault();
     setError(null);
 
@@ -235,7 +231,7 @@ export default function TemplateForm() {
       return;
     }
     if (!formData.tenant_name || !formData.landlord_name) {
-      setError(strings.errorFillRequired); // Reusing existing error string
+      setError(strings.errorFillRequired);
       return;
     }
 
@@ -250,9 +246,14 @@ export default function TemplateForm() {
     setGenerating(true);
     try {
       // The backend `generatePhase1Letter` expects the full formData and handles specific fields based on subject
+      // Call the backend function to generate the letter (credit is deducted here)
       const response = await base44.functions.invoke('generatePhase1Letter', formData);
 
       if (response.data?.ok) {
+        // Refresh user credits immediately
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+
+        // Store the generated content for review
         setGeneratedLetter(response.data);
         setEditedContent({
           letter_en: response.data.letter_content?.letter_en || '',
@@ -264,7 +265,9 @@ export default function TemplateForm() {
       }
     } catch (err) {
       console.error('Generation error:', err);
-      setError(err.message || strings.errorGenerationFailed);
+      setError(err.message || (language === 'th'
+        ? 'ไม่สามารถสร้างจดหมายได้ กรุณาลองอีกครั้ง'
+        : 'Failed to generate letter. Please try again.'));
     } finally {
       setGenerating(false);
     }
@@ -280,6 +283,7 @@ export default function TemplateForm() {
     setError(null); // Clear any previous error
 
     try {
+      // Save the reviewed content (no credit deduction - already done)
       const response = await base44.functions.invoke('saveReviewedLetter', {
         ...formData, // Send all form data again
         letter_id: generatedLetter.letter_id, // Pass the letter_id from the initial generation response
@@ -288,10 +292,13 @@ export default function TemplateForm() {
       });
 
       if (response.data?.ok) {
-        queryClient.invalidateQueries({ queryKey: ['documents'] }); // Invalidate documents cache
-        queryClient.invalidateQueries({ queryKey: ['currentUser'] }); // Invalidate user credits cache
+        queryClient.invalidateQueries({ queryKey: ['documents'] });
 
-        alert(strings.saveLetterSuccess + (response.data.credits_remaining ?? (userCredits - 1))); // Display credits remaining
+        // Show success and navigate
+        alert(language === 'th'
+          ? 'บันทึกจดหมายสำเร็จ!'
+          : 'Letter saved successfully!');
+
         navigate(createPageUrl("DocumentVault"));
       } else {
         throw new Error(response.data?.error || 'Save failed');
@@ -307,11 +314,14 @@ export default function TemplateForm() {
   };
 
   const handleCancelReview = () => {
-    if (window.confirm(strings.cancelReviewConfirm)) { // Use window.confirm for browser native dialog
+    if (window.confirm(language === 'th'
+      ? 'ยกเลิกการแก้ไข? เครดิตถูกหักไปแล้ว หากยกเลิกจะไม่มีการบันทึกจดหมาย'
+      : 'Cancel editing? Credit was already deducted. If you cancel, the letter will not be saved.')) {
       setReviewMode(false);
       setGeneratedLetter(null);
       setEditedContent({ letter_en: '', letter_th: '' });
       setError(null); // Clear any error
+      navigate(createPageUrl("Templates"));
     }
   };
 
@@ -320,50 +330,58 @@ export default function TemplateForm() {
     return (
       <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-5xl mx-auto">
-          <button
+          <Button
+            variant="ghost"
             onClick={handleCancelReview}
-            className="flex items-center gap-2 mb-6 text-sm font-medium hover:opacity-70 transition-opacity"
+            className="mb-4 text-sm font-medium hover:opacity-70 transition-opacity"
             style={{ color: colors.textSecondary }}
             disabled={saving}
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 mr-2" />
             {strings.back}
-          </button>
+          </Button>
 
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {strings.reviewEditLetter}
+              {language === 'th' ? 'ตรวจสอบและแก้ไขจดหมาย' : 'Review & Edit Letter'}
             </h1>
             <p style={{ color: colors.textSecondary }}>
-              {strings.reviewEditLetterDesc}
+              {language === 'th'
+                ? 'ตรวจสอบเนื้อหาและแก้ไขตามต้องการ จากนั้นบันทึกไปยังคลังหลักฐาน'
+                : 'Review the content and make any edits needed, then save to Evidence Vault.'}
             </p>
+            <div className="mt-2">
+              <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                {language === 'th'
+                  ? `✅ เครดิตถูกหักแล้ว - เหลือ ${generatedLetter.credits_remaining || 0}`
+                  : `✅ Credit deducted - ${generatedLetter.credits_remaining || 0} remaining`}
+              </Badge>
+            </div>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 rounded-lg border-2" style={{
-              backgroundColor: isDarkMode ? 'rgb(58, 38, 38)' : '#FEE2E2',
-              borderColor: isDarkMode ? 'rgb(80, 40, 40)' : '#FECACA',
-              color: '#DC2626'
-            }}>
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                <p className="text-red-600">{error}</p>
-              </div>
-            </div>
+            <Card className="mb-4 border-2 border-red-500" style={{ backgroundColor: colors.cardBg }}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                  <p className="text-red-600">{error}</p>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
               <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Edit2 className="w-5 h-5 text-purple-600" />
-                {strings.editContent}
+                <Edit2 className="w-5 h-5 text-purple-600" /> {/* Kept original purple as ls-forest is not in colors */}
+                {language === 'th' ? 'แก้ไขเนื้อหา' : 'Edit Content'}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               {/* English Version */}
               <div>
                 <Label htmlFor="letter_en" className="text-base font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
-                  {strings.englishLetter}
+                  {language === 'th' ? 'จดหมายภาษาอังกฤษ' : 'English Letter'}
                 </Label>
                 <Textarea
                   id="letter_en"
@@ -375,7 +393,7 @@ export default function TemplateForm() {
                     backgroundColor: colors.inputBg,
                     borderColor: colors.borderColor,
                     color: colors.textPrimary,
-                    whiteSpace: 'pre-wrap' // Ensure newlines are rendered
+                    whiteSpace: 'pre-wrap'
                   }}
                 />
               </div>
@@ -383,7 +401,7 @@ export default function TemplateForm() {
               {/* Thai Version */}
               <div>
                 <Label htmlFor="letter_th" className="text-base font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
-                  {strings.thaiLetter}
+                  {language === 'th' ? 'จดหมายภาษาไทย' : 'Thai Letter'}
                 </Label>
                 <Textarea
                   id="letter_th"
@@ -395,7 +413,7 @@ export default function TemplateForm() {
                     backgroundColor: colors.inputBg,
                     borderColor: colors.borderColor,
                     color: colors.textPrimary,
-                    whiteSpace: 'pre-wrap' // Ensure newlines are rendered
+                    whiteSpace: 'pre-wrap'
                   }}
                 />
               </div>
@@ -403,7 +421,7 @@ export default function TemplateForm() {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Button
-                  type="button" // Important for buttons not to submit forms
+                  type="button"
                   variant="outline"
                   onClick={handleCancelReview}
                   disabled={saving}
@@ -419,24 +437,26 @@ export default function TemplateForm() {
                 <Button
                   onClick={handleSaveAfterReview}
                   disabled={saving || !editedContent.letter_en || !editedContent.letter_th}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" // Using purple as ls-forest is not in colors
                 >
                   {saving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {strings.saving}
+                      {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
                     </>
                   ) : (
                     <>
                       <Save className="w-4 h-4 mr-2" />
-                      {strings.saveLetter}
+                      {language === 'th' ? 'บันทึกจดหมาย' : 'Save Letter'}
                     </>
                   )}
                 </Button>
               </div>
 
               <div className="text-xs text-center pt-2" style={{ color: colors.textSecondary }}>
-                {strings.saveLetterCreditDeduction}
+                {language === 'th'
+                  ? '💾 เมื่อบันทึก จดหมายจะถูกเก็บในคลังหลักฐาน (เครดิตถูกหักไปแล้ว)'
+                  : '💾 On save, the letter will be stored in Evidence Vault (credit already deducted)'}
               </div>
             </CardContent>
           </Card>
