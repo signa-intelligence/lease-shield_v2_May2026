@@ -60,11 +60,9 @@ const PROCESS_STEPS = [
 
 export default function ResolveCase() {
   const navigate = useNavigate();
-  const [submitting, setSubmitting] = useState(false); // Replaced isSubmittingPayment
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false); // New state for payment submission loading
   const [promoCode, setPromoCode] = useState('');
-  const [promoError, setPromoError] = useState(''); // Specific error for promo codes
-  const [generalError, setGeneralError] = useState(null); // New state for other submission errors
-  const [uploadedEvidence, setUploadedEvidence] = useState([]); // Added for new case creation structure
+  const [promoError, setPromoError] = useState('');
 
   // Get URL parameters for pre-filling
   const urlParams = new URLSearchParams(window.location.search);
@@ -76,10 +74,7 @@ export default function ResolveCase() {
     dispute_amount: prefilledAmount,
     summary: '',
     fast_track: false,
-    letter_pack: false,
-    type: prefilledType, // Added for case creation
-    landlord_name: '', // Added for case creation
-    landlord_email: '' // Added for case creation
+    letter_pack: false
   });
   const [selectedLease, setSelectedLease] = useState(null);
 
@@ -97,7 +92,13 @@ export default function ResolveCase() {
     enabled: !!user,
   });
 
-  // createCaseMutation is removed as per outline, as case creation is now handled directly within handleSubmit
+  const createCaseMutation = useMutation({
+    mutationFn: (data) => base44.entities.Case.create(data), // This mutation is no longer directly used for submission, but could be for post-payment actions
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cases'] });
+      navigate(createPageUrl("Cases"));
+    },
+  });
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
@@ -105,6 +106,7 @@ export default function ResolveCase() {
   // Pricing based on membership - ALL-INCLUSIVE
   const baseMemberPrice = 2490;
   const basePublicPrice = 3990;
+  // memberSuccessFee and publicSuccessFee removed as per all-inclusive pricing
   const fastTrackPrice = isMember ? 300 : 500;
   const letterPackPrice = isMember ? 900 : 1500;
   const totalAddons = (formData.fast_track ? fastTrackPrice : 0) + (formData.letter_pack ? letterPackPrice : 0);
@@ -217,106 +219,59 @@ export default function ResolveCase() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
+    setIsSubmittingPayment(true); // Set loading true at start
     setPromoError(''); // Clear any previous promo code error
-    setGeneralError(null); // Clear any previous general errors
     
+    // Calculate total amount
+    const basePrice = isMember ? baseMemberPrice : basePublicPrice;
+    const totalAmount = basePrice + totalAddons;
+    
+    // Prepare case metadata for Stripe
+    const caseMetadata = {
+      type: 'case',
+      dispute_amount: formData.dispute_amount, // Ensure string for metadata
+      summary: formData.summary,
+      lease_id: selectedLease || '',
+      fast_track: formData.fast_track.toString(),
+      letter_pack: formData.letter_pack.toString(),
+      is_member_at_creation: isMember.toString(),
+      // success_fee_rate removed as per all-inclusive pricing
+      total_paid: totalAmount.toString()
+    };
+
+    // Create Stripe checkout session
     try {
-      // Step 1: Determine user's tier and member status
-      const userTier = user?.plan_tier || 'free';
-      const tierMap = {
-        'lite': 'L',
-        'protect': 'P',
-        'secure': 'S',
-        'free': 'F'
-      };
-      const tierLevel = tierMap[userTier];
-
-      console.log('📋 Creating case with:', {
-        isMember,
-        fastTrack: formData.fast_track,
-        tierLevel,
-        userTier
+      
+      const response = await base44.functions.invoke('createCheckout', {
+        priceId: null, // Not using price ID for one-time payments
+        mode: 'payment',
+        amount: totalAmount, // amount should be in the smallest currency unit (satang for THB)
+        currency: 'thb',
+        description: `Resolve Case - Dispute Amount: ฿${formData.dispute_amount}`,
+        successUrl: `${window.location.origin}${createPageUrl("Cases")}?payment=success`,
+        cancelUrl: `${window.location.origin}${createPageUrl("ResolveCase")}?payment=cancelled`,
+        metadata: caseMetadata,
+        promoCode: promoCode || undefined // Pass promoCode if available
       });
 
-      // Step 2: Generate case number
-      const caseNumberResponse = await base44.functions.invoke('generateCaseNumber', {
-        isMember,
-        fastTrack: formData.fast_track || false,
-        tierLevel
-      });
-
-      if (!caseNumberResponse.data?.success) {
-        throw new Error(language === 'th' ? 'ไม่สามารถสร้างหมายเลขคดีได้' : 'Failed to generate case number');
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      } else if (response.data?.code === 'invalid_promo_code') {
+        setPromoError(language === 'th' ? 'รหัสโปรโมชันไม่ถูกต้องหรือหมดอายุ' : 'Invalid or expired promo code');
+        setIsSubmittingPayment(false); // Stop loading on promo code error
+      } else {
+        throw new Error('No checkout URL returned');
       }
-
-      const caseNumber = caseNumberResponse.data.caseNumber;
-      console.log('✅ Generated case number:', caseNumber);
-
-      // Step 3: Create case with generated number
-      const caseData = {
-        case_number: caseNumber,
-        user_email: user.email,
-        type: formData.type,
-        dispute_amount: parseFloat(formData.dispute_amount),
-        summary: formData.summary,
-        lease_id: selectedLease || undefined,
-        landlord_name: formData.landlord_name || undefined,
-        landlord_email: formData.landlord_email || undefined,
-        status: 'intake',
-        is_member_at_creation: isMember,
-        fast_track: formData.fast_track || false,
-        letter_pack: formData.letter_pack || false,
-        evidence: uploadedEvidence.length > 0 ? uploadedEvidence : undefined,
-        timeline: [
-          {
-            timestamp: new Date().toISOString(),
-            event: `Case ${caseNumber} opened`,
-            actor: user.email
-          }
-        ]
-      };
-
-      const createdCase = await base44.entities.Case.create(caseData);
-      console.log('✅ Case created:', createdCase.id, 'Number:', caseNumber);
-
-      // Step 4: Handle payment if needed
-      if (!isMember) {
-        const response = await base44.functions.invoke('createCheckout', {
-          mode: 'case',
-          caseId: createdCase.id,
-          fastTrack: formData.fast_track || false,
-          letterPack: formData.letter_pack || false,
-          promoCode: promoCode || undefined
-        });
-
-        if (response.data?.url) {
-          window.location.href = response.data.url;
-          return;
-        } else if (response.data?.code === 'invalid_promo_code') {
-          setPromoError(language === 'th' ? 'รหัสโปรโมชันไม่ถูกต้องหรือหมดอายุ' : 'Invalid or expired promo code');
-          setSubmitting(false); // Stop loading on promo code error
-          return;
-        } else {
-          throw new Error('No checkout URL returned');
-        }
-      }
-
-      // Step 5: Navigate to cases page
-      queryClient.invalidateQueries({ queryKey: ['cases'] });
-      navigate(createPageUrl("Cases"));
-
     } catch (error) {
-      console.error('❌ Case submission failed:', error);
+      console.error('Checkout creation failed:', error);
       if (error.response?.data?.code === 'invalid_promo_code') {
         setPromoError(language === 'th' ? 'รหัสโปรโมชันไม่ถูกต้องหรือหมดอายุ' : 'Invalid or expired promo code');
       } else {
-        setGeneralError(language === 'th' 
-          ? 'ไม่สามารถส่งคำร้องได้ กรุณาลองอีกครั้ง' 
-          : 'Failed to submit case. Please try again.');
+        alert(language === 'th' 
+          ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' 
+          : 'Failed to create checkout. Please try again.');
       }
-    } finally {
-      setSubmitting(false); // Always reset loading state
+      setIsSubmittingPayment(false); // Resetting pending state
     }
   };
 
@@ -968,7 +923,7 @@ export default function ResolveCase() {
                 )}
               </div>
 
-              {/* Promo Code Input */}
+              {/* Promo Code Input - NEW SECTION */}
               <div className="pt-4 border-t" style={{ borderTopColor: colors.borderColor }}>
                 <Label htmlFor="promoCode" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <Gift className="w-4 h-4 text-ls-gold" />
@@ -979,13 +934,13 @@ export default function ResolveCase() {
                   value={promoCode}
                   onChange={(e) => {
                     setPromoCode(e.target.value.toUpperCase());
-                    setPromoError(''); // Clear specific promo error when typing
+                    setPromoError('');
                   }}
                   placeholder={strings.promoCodePlaceholder}
                   className="mt-2"
                   style={{
                     backgroundColor: colors.inputBg,
-                    borderColor: promoError ? '#EF4444' : colors.borderColor, // Use promoError for border
+                    borderColor: promoError ? '#EF4444' : colors.borderColor,
                     color: colors.textPrimary,
                     borderWidth: '2px'
                   }}
@@ -996,7 +951,7 @@ export default function ResolveCase() {
                     {promoError}
                   </p>
                 )}
-                {promoCode && !promoError && ( // Show promo applied text only if promoCode is present and no promoError
+                {promoCode && !promoError && (
                   <p className="text-sm text-emerald-600 mt-2 flex items-center gap-1">
                     <CheckCircle2 className="w-4 h-4" />
                     {strings.promoApplied}
@@ -1004,29 +959,21 @@ export default function ResolveCase() {
                 )}
               </div>
 
-              {/* General Error Display */}
-              {generalError && (
-                <div className="text-sm text-red-600 mt-4 p-3 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5" />
-                  <span>{generalError}</span>
-                </div>
-              )}
-
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={isSubmittingPayment}
                 style={{
                   width: '100%',
-                  backgroundColor: submitting ? '#9CA3AF' : '#0C3B2E',
+                  backgroundColor: isSubmittingPayment ? '#9CA3AF' : '#0C3B2E',
                   color: '#FFFFFF',
                   padding: '16px',
                   borderRadius: '10px',
                   fontWeight: 'bold',
                   fontSize: '16px',
                   border: 'none',
-                  cursor: submitting ? 'not-allowed' : 'pointer',
-                  opacity: submitting ? 0.6 : 1,
+                  cursor: isSubmittingPayment ? 'not-allowed' : 'pointer',
+                  opacity: isSubmittingPayment ? 0.6 : 1,
                   transition: 'all 0.2s',
                   display: 'flex',
                   alignItems: 'center',
@@ -1034,18 +981,18 @@ export default function ResolveCase() {
                   gap: '10px'
                 }}
                 onMouseEnter={(e) => {
-                  if (!submitting) {
+                  if (!isSubmittingPayment) {
                     e.target.style.backgroundColor = '#0a2f25';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (!submitting) {
+                  if (!isSubmittingPayment) {
                     e.target.style.backgroundColor = '#0C3B2E';
                   }
                 }}
               >
                 <Scale className="w-5 h-5" />
-                {submitting ? strings.submitting : strings.submitCase}
+                {isSubmittingPayment ? strings.submitting : strings.submitCase}
               </button>
             </form>
           </CardContent>
