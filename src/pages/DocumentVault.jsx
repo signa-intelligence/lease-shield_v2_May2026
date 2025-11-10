@@ -284,23 +284,30 @@ export default function DocumentVault() {
         // Get all paragraphs from content
         const paragraphs = contentEl.querySelectorAll('p');
         let cleanParagraphs = [];
+        let foundSalutation = false; // Track when we hit the actual letter start
         
         for (const p of paragraphs) {
           const text = (p.textContent || p.innerText || '').trim();
           
-          // Skip only placeholder bracketed text, keep real salutations
-          if (text.startsWith('[Your Name]') || 
-              text.startsWith('[Your Address]') ||
-              text.startsWith('[City, State') ||
-              text.startsWith('[Email Address]') ||
-              text.startsWith('[Phone Number]') ||
-              text.startsWith('[Date]') ||
-              text.startsWith('[Landlord\'s Name]') ||
-              text.startsWith('[Landlord\'s Address]') ||
-              /^\[.*\]$/.test(text)) {
-            continue;
+          // Skip empty or very short lines
+          if (!text || text.length < 3) continue;
+          
+          // Check if this is a salutation (start of actual letter)
+          if (text.startsWith('Dear ') || text.startsWith('เรียน')) {
+            foundSalutation = true;
           }
           
+          // Skip header information (name, address, date) that appears BEFORE salutation
+          if (!foundSalutation) {
+            // Skip patterns that look like letter headers
+            if (text.startsWith('[') && text.endsWith(']')) continue;
+            if (text.match(/^\d+\s+[A-Za-z]/)) continue; // Street addresses like "63 Main Street"
+            if (text.match(/^[A-Z][a-z]+,\s*[A-Z]/)) continue; // City, Country like "Bangkok, Thailand"
+            if (text.split(' ').length <= 4 && text[0] === text[0].toUpperCase()) continue; // Short capitalized lines (likely names)
+            continue; // Skip everything before salutation
+          }
+          
+          // Now we're in the actual letter body
           cleanParagraphs.push(text);
         }
         
