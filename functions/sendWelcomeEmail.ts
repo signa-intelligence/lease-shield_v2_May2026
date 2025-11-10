@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 Deno.serve(async (req) => {
@@ -13,6 +12,11 @@ Deno.serve(async (req) => {
     // Check if welcome email already sent
     if (user.welcome_email_sent) {
       return Response.json({ message: 'Welcome email already sent' });
+    }
+
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+    if (!RESEND_API_KEY) {
+      return Response.json({ error: 'RESEND_API_KEY not configured' }, { status: 500 });
     }
 
     const language = user.language || 'en';
@@ -356,9 +360,9 @@ Deno.serve(async (req) => {
         
         <div class="footer">
             <p><strong>LEASE SHIELD</strong></p>
-            <p>ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น</p>
+            <p>Prevent rental problems before they happen</p>
             <p style="margin-top: 16px; font-size: 12px;">
-                © 2025 Lease Shield สงวนลิขสิทธิ์
+                © 2025 Lease Shield. All rights reserved.
             </p>
         </div>
     </div>
@@ -370,20 +374,37 @@ Deno.serve(async (req) => {
 
     const content = emailContent[language] || emailContent.en;
 
-    // Send welcome email with custom from_name
-    await base44.integrations.Core.SendEmail({
-      from_name: "Lease Shield",
-      to: user.email,
-      subject: content.subject,
-      body: content.html
+    // Send via Resend with no-reply@leaseshield.asia
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Lease Shield <no-reply@leaseshield.asia>',
+        to: [user.email],
+        subject: content.subject,
+        html: content.html,
+      }),
     });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('❌ Resend API error:', data);
+      throw new Error(data.message || 'Failed to send welcome email');
+    }
+
+    console.log('✅ Welcome email sent via Resend. Message ID:', data.id);
 
     // Mark as sent
     await base44.auth.updateMe({ welcome_email_sent: true });
 
     return Response.json({ 
       success: true,
-      message: 'Welcome email sent successfully'
+      message: 'Welcome email sent successfully',
+      messageId: data.id
     });
 
   } catch (error) {
