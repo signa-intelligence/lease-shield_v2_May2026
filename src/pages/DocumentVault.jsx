@@ -255,60 +255,101 @@ export default function DocumentVault() {
     const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
     const docLabel = doc.label || (language === 'th' ? config.label_th : config.label_en);
     
-    const subject = docLabel;
+    const subject = language === 'th' 
+      ? `${docLabel}` 
+      : `${docLabel}`;
     
     let body = '';
     
     // For letters, extract and format as proper email
     if (doc.type === 'letter' && doc.html_content) {
-      // Parse HTML
+      // Parse HTML properly using DOMParser
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(doc.html_content, 'text/html');
       
-      let thaiText = '';
-      let englishText = '';
+      // Remove headers, footers, and style/script tags
+      htmlDoc.querySelectorAll('style, script, .header, .footer').forEach(el => el.remove());
       
-      // Extract from the two .section divs
+      // Get all content sections
       const sections = htmlDoc.querySelectorAll('.section');
       
-      if (sections.length >= 2) {
-        // First section = Thai
-        const thaiContent = sections[0].querySelector('.content');
-        if (thaiContent) {
-          // Get text content and split by line breaks
-          const text = thaiContent.textContent || thaiContent.innerText || '';
-          const lines = text.split('\n')
-            .map(l => l.trim())
-            .filter(l => l.length > 0);
-          thaiText = lines.join('\n\n');
+      let letterContent = '';
+      
+      // Try to find the section matching user's language
+      for (const section of sections) {
+        const sectionTitle = section.querySelector('.section-title')?.textContent || '';
+        const contentEl = section.querySelector('.content');
+        
+        if (!contentEl) continue;
+        
+        // Get all paragraphs from content
+        const paragraphs = contentEl.querySelectorAll('p');
+        let cleanParagraphs = [];
+        
+        for (const p of paragraphs) {
+          const text = (p.textContent || p.innerText || '').trim();
+          
+          // Skip paragraphs that look like letter header information
+          if (text.startsWith('[Your Name]') || 
+              text.startsWith('[Your Address]') ||
+              text.startsWith('[City, State') ||
+              text.startsWith('[Email Address]') ||
+              text.startsWith('[Phone Number]') ||
+              text.startsWith('[Date]') ||
+              text.startsWith('[Landlord\'s Name]') ||
+              text.startsWith('[Landlord\'s Address]') ||
+              (text.includes('Mr.') && text.length < 50) ||
+              (text.includes('Dear ') && text.length < 50) ||
+              /^\[.*\]$/.test(text)) {
+            continue;
+          }
+          
+          cleanParagraphs.push(text);
         }
         
-        // Second section = English
-        const englishContent = sections[1].querySelector('.content');
-        if (englishContent) {
-          // Get text content and split by line breaks
-          const text = englishContent.textContent || englishContent.innerText || '';
-          const lines = text.split('\n')
-            .map(l => l.trim())
-            .filter(l => l.length > 0);
-          englishText = lines.join('\n\n');
+        const content = cleanParagraphs.join('\n\n');
+        
+        // Match based on user's language preference
+        if (language === 'th') {
+          // For Thai users, look for Thai section
+          if (sectionTitle.includes('ไทย') || sectionTitle.includes('Thai') || /[\u0E00-\u0E7F]/.test(content)) {
+            letterContent = content;
+            break;
+          }
+        } else {
+          // For English users, look for English section
+          if (sectionTitle.toLowerCase().includes('english') || 
+              (!sectionTitle.includes('ไทย') && !sectionTitle.includes('Thai') && !/[\u0E00-\u0E7F]/.test(sectionTitle))) {
+            // Verify content is actually English
+            if (!/[\u0E00-\u0E7F]/.test(content.substring(0, 100))) {
+              letterContent = content;
+              break;
+            }
+          }
         }
       }
       
-      // Get landlord and tenant names
-      const landlordName = user?.landlord_name || '[Landlord Name]';
-      const tenantName = user?.full_name || '[Your Name]';
+      // If no match found, try getting body text without header elements
+      if (!letterContent) {
+        // Remove all potential header elements
+        htmlDoc.querySelectorAll('.header, .footer, .section-title').forEach(el => el.remove());
+        
+        const bodyText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
+        const lines = bodyText.split('\n').map(line => line.trim()).filter(line => {
+          // Skip empty lines and header-like content
+          if (!line || line.length < 10) return false;
+          if (line.startsWith('[') && line.endsWith(']')) return false;
+          if (line.startsWith('Mr.') || line.startsWith('Dear')) return false;
+          return true;
+        });
+        
+        letterContent = lines.join('\n\n');
+      }
       
-      // Format email body
-      body = `Dear ${landlordName},\n\n` +
-             (thaiText || '[Thai version not available]') + 
-             '\n\n==== English language below ====\n\n' +
-             (englishText || '[English version not available]') +
-             '\n\n' +
-             `Kind Regards,\n${tenantName}` +
-             '\n\n---\n\n' +
-             'Created by Lease Shield - https://www.leaseshield.asia\n' +
-             'สร้างโดย Lease Shield - https://www.leaseshield.asia';
+      // Format as email with Lease Shield footer only
+      body = language === 'th'
+        ? `${letterContent}\n\n---\n\nสร้างโดย Lease Shield - https://www.leaseshield.asia`
+        : `${letterContent}\n\n---\n\nCreated by Lease Shield - https://www.leaseshield.asia`;
     } else {
       // For other document types, keep existing format
       body = language === 'th'
@@ -806,7 +847,7 @@ export default function DocumentVault() {
                                 src={doc.file_url}
                                 alt={doc.label}
                                 className="w-full h-32 object-cover rounded-lg"
-                                style={{ border: `1px ${colors.borderColor}` }}
+                                style={{ border: `1px solid ${colors.borderColor}` }}
                               />
                             </div>
                           )}
