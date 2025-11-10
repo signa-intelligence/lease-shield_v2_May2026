@@ -268,25 +268,30 @@ export default function DocumentVault() {
       // The HTML structure from saveReviewedLetter has TWO .section divs:
       // First section = Thai version
       // Second section = English version
-      // IMPORTANT: Content is NOT in <p> tags - it's just text with <br> tags!
       const sections = htmlDoc.querySelectorAll('.section');
       
       let thaiText = '';
       let englishText = '';
       
       if (sections.length >= 2) {
-        // Extract Thai content from first section's .content div
-        const thaiContentDiv = sections[0].querySelector('.content');
-        if (thaiContentDiv) {
-          // Get text content (automatically strips HTML tags like <br>)
-          thaiText = thaiContentDiv.textContent.trim();
+        // Extract Thai content from first section
+        const thaiSection = sections[0];
+        const thaiContent = thaiSection.querySelector('.content');
+        if (thaiContent) {
+          const paragraphs = Array.from(thaiContent.querySelectorAll('p'))
+            .map(p => (p.textContent || '').trim())
+            .filter(text => text.length > 0);
+          thaiText = paragraphs.join('\n\n');
         }
         
-        // Extract English content from second section's .content div
-        const englishContentDiv = sections[1].querySelector('.content');
-        if (englishContentDiv) {
-          // Get text content (automatically strips HTML tags like <br>)
-          englishText = englishContentDiv.textContent.trim();
+        // Extract English content from second section
+        const englishSection = sections[1];
+        const englishContent = englishSection.querySelector('.content');
+        if (englishContent) {
+          const paragraphs = Array.from(englishContent.querySelectorAll('p'))
+            .map(p => (p.textContent || '').trim())
+            .filter(text => text.length > 0);
+          englishText = paragraphs.join('\n\n');
         }
       }
       
