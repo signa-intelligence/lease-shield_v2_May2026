@@ -259,13 +259,20 @@ export default function DocumentVault() {
       ? `${docLabel}` 
       : `${docLabel}`;
     
-    // Simplified email body with clean formatting
     let body = '';
-    if (doc.type === 'letter') {
+    
+    // For letters, extract and paste the full content
+    if (doc.type === 'letter' && doc.html_content) {
+      // Strip HTML tags to get plain text
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = doc.html_content;
+      const plainText = tempDiv.textContent || tempDiv.innerText || '';
+      
       body = language === 'th'
-        ? `เรียน ท่านผู้รับ\n\nกรุณาดูเอกสาร: ${docLabel}\n\nวันที่: ${format(new Date(doc.created_date), 'dd/MM/yyyy')}\n\nดาวน์โหลด: ${doc.file_url}\n\nขอแสดงความนับถือ`
-        : `Dear Recipient\n\nPlease find attached: ${docLabel}\n\nDate: ${format(new Date(doc.created_date), 'MMM d, yyyy')}\n\nDownload: ${doc.file_url}\n\nKind regards`;
+        ? `${plainText}\n\n---\n\nดาวน์โหลด: ${doc.file_url}`
+        : `${plainText}\n\n---\n\nDownload: ${doc.file_url}`;
     } else {
+      // For other document types, keep existing format
       body = language === 'th'
         ? `เอกสาร: ${docLabel}\nวันที่: ${format(new Date(doc.created_date), 'dd/MM/yyyy')}\n\n${doc.file_url}`
         : `Document: ${docLabel}\nDate: ${format(new Date(doc.created_date), 'MMM d, yyyy')}\n\n${doc.file_url}`;
