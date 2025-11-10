@@ -288,7 +288,7 @@ export default function DocumentVault() {
         for (const p of paragraphs) {
           const text = (p.textContent || p.innerText || '').trim();
           
-          // Skip paragraphs that look like letter header information
+          // Skip only placeholder bracketed text, keep real salutations
           if (text.startsWith('[Your Name]') || 
               text.startsWith('[Your Address]') ||
               text.startsWith('[City, State') ||
@@ -297,8 +297,6 @@ export default function DocumentVault() {
               text.startsWith('[Date]') ||
               text.startsWith('[Landlord\'s Name]') ||
               text.startsWith('[Landlord\'s Address]') ||
-              (text.includes('Mr.') && text.length < 50) ||
-              (text.includes('Dear ') && text.length < 50) ||
               /^\[.*\]$/.test(text)) {
             continue;
           }
@@ -311,7 +309,6 @@ export default function DocumentVault() {
         
         // Determine if this is Thai or English content
         // Thai Unicode range is U+0E00 to U+0E7F
-        // Check if content has ANY Thai characters
         const isThaiContent = /[\u0E00-\u0E7F]/.test(content);
         
         if (isThaiContent) {
@@ -321,9 +318,9 @@ export default function DocumentVault() {
         }
       }
       
-      // Build email body: THAI FIRST, then English (Cultural awareness in Thailand)
-      // Header always says "English version below" because Thai comes first
-      let letterContent = '--English version below--\n\n';
+      // Build email body: THAI FIRST, then English
+      // Header in Thai: "ภาษาไทยด้านล่าง" (Thai language below)
+      let letterContent = 'ภาษาไทยด้านล่าง\n\n';
       
       // Add Thai content FIRST
       if (thaiContent) {
@@ -346,11 +343,10 @@ export default function DocumentVault() {
         const lines = bodyText.split('\n').map(line => line.trim()).filter(line => {
           if (!line || line.length < 10) return false;
           if (line.startsWith('[') && line.endsWith(']')) return false;
-          if (line.startsWith('Mr.') || line.startsWith('Dear')) return false;
           return true;
         });
         
-        letterContent = '--English version below--\n\n' + lines.join('\n\n');
+        letterContent = 'ภาษาไทยด้านล่าง\n\n' + lines.join('\n\n');
       }
       
       // Format final email with Lease Shield footer only
