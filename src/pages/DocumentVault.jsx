@@ -362,13 +362,12 @@ export default function DocumentVault() {
       const landlordName = user?.landlord_name || '[Landlord Name]';
       const tenantName = user?.full_name || '[Your Name]';
       
-      // Format as bilingual email with salutation and signature
-      body = `Dear ${landlordName},\n\n` + 
-             '=== ENGLISH VERSION ===\n\n' + 
-             (englishContent || '[English version not available]') + 
+      // Format as bilingual email - THAI FIRST (cultural respect), then English
+      body = '==== English language below ===\n\n' +
+             `เรียน ${landlordName},\n\n` + // Salutation in Thai
+             (thaiContent || '[Thai version not available]') + 
              '\n\n' +
-             '=== เวอร์ชันภาษาไทย (THAI VERSION) ===\n\n' +
-             (thaiContent || '[Thai version not available]') +
+             (englishContent || '[English version not available]') +
              '\n\n' +
              `Kind Regards,\n${tenantName}` +
              '\n\n---\n\n' +
@@ -871,7 +870,7 @@ export default function DocumentVault() {
                                 src={doc.file_url}
                                 alt={doc.label}
                                 className="w-full h-32 object-cover rounded-lg"
-                                style={{ border: `1px solid ${colors.borderColor}` }}
+                                style={{ border: `1px ${colors.borderColor}` }}
                               />
                             </div>
                           )}
