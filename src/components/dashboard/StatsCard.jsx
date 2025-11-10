@@ -44,7 +44,8 @@ export default function StatsCard({
         backgroundColor: bgGradient ? 'transparent' : colors.cardBg,
         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
         borderRadius: '16px',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        opacity: 1 // FIXED: Force full opacity
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
@@ -55,7 +56,7 @@ export default function StatsCard({
         e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
-      <CardContent className="p-6" style={{ position: 'relative' }}>
+      <CardContent className="p-6" style={{ position: 'relative', opacity: 1 }}>
         {/* Background Circle Effect */}
         {!bgGradient && (
           <div style={{
@@ -66,7 +67,8 @@ export default function StatsCard({
             height: '100px',
             borderRadius: '50%',
             background: scoreColor ? `radial-gradient(circle, ${scoreColor}20 0%, transparent 70%)` : 'radial-gradient(circle, rgba(12, 59, 46, 0.1) 0%, transparent 70%)',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            opacity: 1 // FIXED: Force full opacity
           }} />
         )}
 
@@ -76,13 +78,15 @@ export default function StatsCard({
             <p className="text-sm font-semibold mb-2" style={{ 
               color: bgGradient ? 'rgba(255, 255, 255, 0.9)' : colors.textSecondary,
               letterSpacing: '0.02em',
-              textTransform: 'uppercase'
+              textTransform: 'uppercase',
+              opacity: 1 // FIXED: Force full opacity
             }}>
               {title}
             </p>
             <p className="text-3xl font-bold" style={{ 
               color: bgGradient ? '#FFFFFF' : (scoreColor || colors.textPrimary),
-              letterSpacing: '-0.02em'
+              letterSpacing: '-0.02em',
+              opacity: 1 // FIXED: Force full opacity
             }}>
               {value}
             </p>
@@ -99,17 +103,19 @@ export default function StatsCard({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+            opacity: 1 // FIXED: Force full opacity
           }}>
             <Icon className="w-7 h-7" style={{ 
-              color: bgGradient ? '#FFFFFF' : (scoreColor || '#0C3B2E')
+              color: bgGradient ? '#FFFFFF' : (scoreColor || '#0C3B2E'),
+              opacity: 1 // FIXED: Force full opacity
             }} />
           </div>
         </div>
 
         {/* Trend Badge */}
         {trend && (
-          <Badge className={`${trend > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'} text-xs font-semibold`}>
+          <Badge className={`${trend > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'} text-xs font-semibold`} style={{ opacity: 1 }}>
             {trend > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
             {Math.abs(trend)}%
           </Badge>
@@ -117,10 +123,10 @@ export default function StatsCard({
 
         {/* Protection Score Gauge */}
         {showGauge && (
-          <div className="mt-4">
+          <div className="mt-4" style={{ opacity: 1 }}>
             <ProtectionScoreGauge score={scoreValue} />
             {scoreStatus && (
-              <Badge className="mt-3 w-full justify-center bg-white/90 border-none text-xs font-bold" style={{ color: scoreColor }}>
+              <Badge className="mt-3 w-full justify-center bg-white/90 border-none text-xs font-bold" style={{ color: scoreColor, opacity: 1 }}>
                 {scoreStatus}
               </Badge>
             )}
@@ -129,19 +135,22 @@ export default function StatsCard({
 
         {/* Mini Stats */}
         {miniStats && miniStats.length > 0 && (
-          <div className="grid grid-cols-2 gap-2 mt-4">
+          <div className="grid grid-cols-2 gap-2 mt-4" style={{ opacity: 1 }}>
             {miniStats.map((stat, idx) => (
               <div key={idx} className="p-3 rounded-xl" style={{ 
                 backgroundColor: bgGradient ? 'rgba(255, 255, 255, 0.15)' : colors.miniStatBg,
-                backdropFilter: bgGradient ? 'blur(10px)' : 'none'
+                backdropFilter: bgGradient ? 'blur(10px)' : 'none',
+                opacity: 1 // FIXED: Force full opacity
               }}>
                 <p className="text-xs font-semibold mb-1" style={{ 
-                  color: bgGradient ? 'rgba(255, 255, 255, 0.8)' : colors.textSecondary 
+                  color: bgGradient ? 'rgba(255, 255, 255, 0.8)' : colors.textSecondary,
+                  opacity: 1 // FIXED: Force full opacity
                 }}>
                   {stat.label}
                 </p>
                 <p className="text-lg font-bold" style={{ 
-                  color: bgGradient ? '#FFFFFF' : colors.textPrimary 
+                  color: bgGradient ? '#FFFFFF' : colors.textPrimary,
+                  opacity: 1 // FIXED: Force full opacity
                 }}>
                   {stat.value}
                 </p>
@@ -166,7 +175,8 @@ export default function StatsCard({
               border: 'none',
               cursor: 'pointer',
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              opacity: 1 // FIXED: Force full opacity
             }}
             onMouseEnter={(e) => {
               e.target.style.transform = 'translateY(-2px)';
@@ -196,7 +206,8 @@ export default function StatsCard({
                 border: bgGradient ? '1px solid rgba(255, 255, 255, 0.3)' : '2px solid #0C3B2E',
                 cursor: 'pointer',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                backdropFilter: bgGradient ? 'blur(10px)' : 'none'
+                backdropFilter: bgGradient ? 'blur(10px)' : 'none',
+                opacity: 1 // FIXED: Force full opacity
               }}
               onMouseEnter={(e) => {
                 if (bgGradient) {

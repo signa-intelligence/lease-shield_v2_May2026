@@ -83,7 +83,7 @@ export default function Layout({ children, currentPageName }) {
   const language = user?.language || 'en';
   const accessLevel = user?.access_level || 'user';
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
-  const isVAOrHigher = ['va', 'admin', 'super_admin'].includes(accessLevel); // This variable is no longer used for navTabs, but kept for other potential uses.
+  // Removed isVAOrHigher as per instructions
   const isDarkMode = user?.theme === 'dark';
 
   const t = {
@@ -105,7 +105,7 @@ export default function Layout({ children, currentPageName }) {
       deposit: "เงินมัดจำ",
       evidence: "หลักฐาน",
       admin: "แอดมิน",
-      ops: "ปฏิบัติการ",
+      // Removed ops translation
     }
   };
 
@@ -170,12 +170,12 @@ export default function Layout({ children, currentPageName }) {
   } : {
     bg: '#ECEFED',
     cardBg: '#FFFFFF',
-    borderColor: '#ECEFED',
+    borderColor: '#E5E7EB', // Changed from '#ECEFED'
     textPrimary: '#1A1D1F',
     textSecondary: '#64748b',
     topBarBg: '#FFFFFF',
     bottomTabBg: '#FFFFFF',
-    hoverBg: '#ECEFED'
+    hoverBg: '#F3F4F6' // Changed from '#ECEFED'
   };
 
   return (
@@ -372,18 +372,20 @@ export default function Layout({ children, currentPageName }) {
 
       <main ref={mainContentRef} className="main-content flex-1" style={{
         marginTop: 'calc(64px + env(safe-area-inset-top, 0px))',
-        marginBottom: 'calc(68px + max(env(safe-area-inset-bottom, 0px), 12px))',
-        height: 'calc(100vh - 64px - 68px - env(safe-area-inset-top, 0px) - max(env(safe-area-inset-bottom, 0px), 12px))'
+        marginBottom: 'calc(72px + max(env(safe-area-inset-bottom, 0px), 12px))', // Changed from 68px to 72px
+        height: 'calc(100vh - 64px - 72px - env(safe-area-inset-top, 0px) - max(env(safe-area-inset-bottom, 0px), 12px))' // Changed from 68px to 72px
       }}>
         {children}
       </main>
 
-      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 border-t shadow-2xl z-50" style={{
+      {/* FIXED: Ensure navigation is always visible with higher z-index and proper styling */}
+      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 border-t shadow-2xl" style={{
         backgroundColor: colors.bottomTabBg,
-        borderTopColor: colors.borderColor
+        borderTopColor: colors.borderColor,
+        zIndex: 9999 // FIXED: Increased z-index
       }}>
-        <div className={`flex items-center justify-around px-1 py-2 ${navTabs.length > 5 ? 'overflow-x-auto' : ''}`} style={{
-          minHeight: '56px'
+        <div className="flex items-center justify-around px-2 py-2" style={{ // Changed px-1 to px-2, removed conditional overflow-x-auto
+          minHeight: '68px' // FIXED: Increased minimum height
         }}>
           {navTabs.map((tab) => {
             const Icon = tab.icon;
@@ -398,15 +400,16 @@ export default function Layout({ children, currentPageName }) {
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '6px 8px',
+                  padding: '8px 10px', // Changed from 6px 8px
                   borderRadius: '12px',
                   transition: 'all 0.2s',
                   flex: 1,
-                  minWidth: '56px',
-                  maxWidth: '80px',
+                  minWidth: '60px', // Changed from 56px
+                  maxWidth: '90px', // Changed from 80px
                   backgroundColor: isActive ? '#0C3B2E' : 'transparent',
                   color: isActive ? '#FFFFFF' : colors.textPrimary,
-                  textDecoration: 'none'
+                  textDecoration: 'none',
+                  opacity: 1 // FIXED: Force full opacity
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
@@ -419,8 +422,8 @@ export default function Layout({ children, currentPageName }) {
                   }
                 }}
               >
-                <Icon className="w-5 h-5 mb-0.5" style={{ animation: isActive ? 'pulse 2s infinite' : 'none' }} />
-                <span style={{ fontSize: '11px', fontWeight: '500', whiteWhiteSpace: 'nowrap' }}>{tab.label}</span>
+                <Icon className="w-5 h-5 mb-1" style={{ animation: isActive ? 'pulse 2s infinite' : 'none', opacity: 1 }} /> {/* Changed mb-0.5 to mb-1, added opacity */}
+                <span style={{ fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap', opacity: 1 }}>{tab.label}</span> {/* Changed font-weight to 600, fixed whiteWhiteSpace to whiteSpace, added opacity */}
               </Link>
             );
           })}
