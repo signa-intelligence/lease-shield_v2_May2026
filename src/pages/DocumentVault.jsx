@@ -360,7 +360,6 @@ export default function DocumentVault() {
       deleteConfirm: "Are you sure?",
       view: "View",
       download: "Download",
-      edit: "Edit",
       sendEmail: "Send Email",
       delete: "Delete",
       selectAll: "Select All",
@@ -397,7 +396,6 @@ export default function DocumentVault() {
       deleteConfirm: "คุณแน่ใจหรือไม่?",
       view: "ดู",
       download: "ดาวน์โหลด",
-      edit: "แก้ไข",
       sendEmail: "ส่งอีเมล",
       delete: "ลบ",
       selectAll: "เลือกทั้งหมด",
@@ -803,7 +801,7 @@ export default function DocumentVault() {
                               />
                             </div>
                           )}
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             <Button
                               variant="outline"
                               size="sm"
@@ -835,20 +833,6 @@ export default function DocumentVault() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleEdit(doc)}
-                              className="w-full justify-center text-xs"
-                              style={{
-                                borderColor: colors.borderColor,
-                                backgroundColor: colors.cardBg,
-                                color: colors.textPrimary,
-                              }}
-                            >
-                              <Edit2 className="w-3 h-3 mr-1" />
-                              {strings.edit}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
                               onClick={() => handleSendEmail(doc)}
                               className="w-full justify-center text-xs"
                               style={{
@@ -865,7 +849,7 @@ export default function DocumentVault() {
                               size="sm"
                               onClick={() => handleDelete(doc.id)}
                               disabled={deleteDocumentMutation.isPending}
-                              className="w-full sm:col-span-4 text-red-600 hover:text-red-700 justify-center text-xs"
+                              className="w-full sm:col-span-3 text-red-600 hover:text-red-700 justify-center text-xs"
                               style={{
                                 borderColor: colors.borderColor,
                                 backgroundColor: colors.cardBg,
