@@ -265,49 +265,61 @@ export default function DocumentVault() {
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(doc.html_content, 'text/html');
       
-      // Remove headers, footers, style/script tags, and anything that's not content
-      htmlDoc.querySelectorAll('style, script, .header, .footer, .section-title').forEach(el => el.remove());
+      // First, find the sections BEFORE removing anything
+      const sections = htmlDoc.querySelectorAll('.section');
       
-      // Get all paragraphs from the entire document
-      const allParagraphs = htmlDoc.querySelectorAll('p');
+      let thaiText = '';
+      let englishText = '';
       
-      const thaiParagraphs = [];
-      const englishParagraphs = [];
-      
-      for (const p of allParagraphs) {
-        const text = (p.textContent || p.innerText || '').trim();
+      // Process each section to extract content
+      for (const section of sections) {
+        // Get the section title to determine language
+        const sectionTitle = section.querySelector('.section-title')?.textContent || '';
         
-        // Skip empty or very short text
-        if (!text || text.length < 10) continue;
+        // Get the content div within this section
+        const contentDiv = section.querySelector('.content');
         
-        // Skip placeholders and form fields
-        if (text.startsWith('[') && text.endsWith(']')) continue;
-        if (text.includes('[Your Name]') || text.includes('[Your Address]')) continue;
-        if (text.includes('[Date]') || text.includes('[Phone Number]')) continue;
-        if (text.includes('[Landlord') || text.includes('[City,')) continue;
+        if (!contentDiv) continue;
         
-        // Skip salutations and closings (we add our own)
-        if (text.match(/^(Dear|เรียน)\s+(Mr\.|Mrs\.|Ms\.|คุณ|Landlord)/i)) continue;
-        if (text.match(/^(Sincerely|Best regards|Kind regards|Warm regards|Respectfully|ขอแสดงความนับถือ|ด้วยความเคารพ)/i)) continue;
+        // Determine if this is Thai or English section
+        const isThaiSection = sectionTitle.includes('ไทย') || sectionTitle.includes('Thai Version');
+        const isEnglishSection = sectionTitle.includes('English Version');
         
-        // Skip lines that look like addresses or names only
-        if (text.length < 30 && text.match(/^[A-Z][a-z]+(\s+[A-Z][a-z]+)?$/)) continue;
-        if (text.match(/^\d+\s+\w+\s+(Street|Road|Avenue|St|Rd|Ave)/i)) continue;
+        if (!isThaiSection && !isEnglishSection) continue;
         
-        // Detect language - if contains Thai characters, it's Thai
-        const containsThai = /[\u0E00-\u0E7F]/.test(text);
+        // Extract all paragraph text from this section
+        const paragraphs = contentDiv.querySelectorAll('p');
+        const contentLines = [];
         
-        if (containsThai) {
-          thaiParagraphs.push(text);
-        } else if (text.match(/[a-zA-Z]/)) {
-          // Only add to English if it has actual English letters
-          englishParagraphs.push(text);
+        for (const p of paragraphs) {
+          const text = (p.textContent || p.innerText || '').trim();
+          
+          // Skip empty lines
+          if (!text || text.length < 5) continue;
+          
+          // Skip placeholder text
+          if (text.startsWith('[') && text.endsWith(']')) continue;
+          
+          // Skip salutations (we add our own)
+          if (text.match(/^(Dear|เรียน)\s/i)) continue;
+          
+          // Skip signature lines (we add our own)
+          if (text.match(/^(Sincerely|Best regards|Kind regards|Warm regards|ขอแสดงความนับถือ|ด้วยความเคารพ)/i)) continue;
+          
+          // Add this line to content
+          contentLines.push(text);
+        }
+        
+        // Join the content lines
+        const sectionContent = contentLines.join('\n\n');
+        
+        // Assign to appropriate variable
+        if (isThaiSection) {
+          thaiText = sectionContent;
+        } else if (isEnglishSection) {
+          englishText = sectionContent;
         }
       }
-      
-      // Join paragraphs with proper spacing
-      const thaiContent = thaiParagraphs.join('\n\n');
-      const englishContent = englishParagraphs.join('\n\n');
       
       // Get landlord and tenant names
       const landlordName = user?.landlord_name || '[Landlord Name]';
@@ -316,9 +328,9 @@ export default function DocumentVault() {
       // Format as bilingual email - Thai first, then English
       body = '==== English language below ===\n\n' +
              `Dear ${landlordName},\n\n` +
-             (thaiContent || '[Thai version not available]') + 
+             (thaiText || '[Thai version not available]') + 
              '\n\n' +
-             (englishContent || '[English version not available]') +
+             (englishText || '[English version not available]') +
              '\n\n' +
              `Kind Regards,\n${tenantName}` +
              '\n\n---\n\n' +
