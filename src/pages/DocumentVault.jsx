@@ -311,7 +311,7 @@ export default function DocumentVault() {
           if (text.match(/^(Dear|เรียน)\s+(Mr\.|Mrs\.|Ms\.|คุณ)/i)) continue;
           
           // Skip closing signatures
-          if (text.match(/^(Sincerely|Best regards|Warm regards|Yours|Respectfully|ขอแสดงความนับถือ|ด้วยความเคารพ)/i)) continue;
+          if (text.match(/^(Sincerely|Best regards|Warm regards|Yours|Respectfully|ขอแสดงความนับถือ|ด้วยความเคารพ|Kind regards)/i)) continue;
           if (text.match(/^[\[\]a-zA-Zก-๙\s]{2,30}$/) && cleanParagraphs.length > 0) continue;
           
           // If we find a substantial paragraph, mark that we've started
@@ -358,12 +358,19 @@ export default function DocumentVault() {
         thaiContent = thaiLines.join('\n\n');
       }
       
-      // Format as bilingual email
-      body = '=== ENGLISH VERSION ===\n\n' + 
+      // Get landlord and tenant names
+      const landlordName = user?.landlord_name || '[Landlord Name]';
+      const tenantName = user?.full_name || '[Your Name]';
+      
+      // Format as bilingual email with salutation and signature
+      body = `Dear ${landlordName},\n\n` + 
+             '=== ENGLISH VERSION ===\n\n' + 
              (englishContent || '[English version not available]') + 
              '\n\n' +
              '=== เวอร์ชันภาษาไทย (THAI VERSION) ===\n\n' +
              (thaiContent || '[Thai version not available]') +
+             '\n\n' +
+             `Kind Regards,\n${tenantName}` +
              '\n\n---\n\n' +
              'Created by Lease Shield - https://www.leaseshield.asia\n' +
              'สร้างโดย Lease Shield - https://www.leaseshield.asia';
