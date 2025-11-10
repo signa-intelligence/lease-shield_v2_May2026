@@ -2,11 +2,16 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { FileText, Shield, AlertCircle, FileX, Scale, Camera, Mail, AlertTriangle, Gavel, CheckCircle, ArrowLeft, Coins, CheckCircle2 } from "lucide-react";
+import { FileText, Shield, AlertCircle, FileX, Scale, Camera, Mail, AlertTriangle, Gavel, CheckCircle, ArrowLeft, Coins, CheckCircle2, Upload, Plus, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TEMPLATES = [
   {
@@ -135,15 +140,53 @@ const TEMPLATES = [
 
 export default function Templates() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadFormData, setUploadFormData] = useState({
+    category: 'friendly',
+    title_en: '',
+    title_th: '',
+    description_en: '',
+    description_th: '',
+    credit_cost: 1,
+    file: null
+  });
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
+  const { data: customTemplates = [] } = useQuery({
+    queryKey: ['customTemplates'],
+    queryFn: () => base44.entities.TemplateLibrary.filter({ is_active: true }),
+    enabled: !!user,
+    initialData: []
+  });
+
+  const createTemplateMutation = useMutation({
+    mutationFn: async (data) => {
+      return await base44.entities.TemplateLibrary.create(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customTemplates'] });
+      setShowUploadDialog(false);
+      setUploadFormData({
+        category: 'friendly',
+        title_en: '',
+        title_th: '',
+        description_en: '',
+        description_th: '',
+        credit_cost: 1,
+        file: null
+      });
+    }
+  });
+
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
-  const userTier = user?.plan_tier || 'free';
+  const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(user?.access_level);
   const userCredits = user?.letter_credits || 0;
 
   const colors = isDarkMode ? {
@@ -151,11 +194,15 @@ export default function Templates() {
     cardBg: '#2A2D30',
     textPrimary: '#ECEFED',
     textSecondary: '#A8ABAD',
+    inputBg: '#353A3D',
+    borderColor: '#3A3D40'
   } : {
     bg: '#F8FAFC',
     cardBg: '#FFFFFF',
     textPrimary: '#1A1D1F',
     textSecondary: '#64748b',
+    inputBg: '#FFFFFF',
+    borderColor: '#E5E7EB'
   };
 
   const t = {
@@ -175,7 +222,20 @@ export default function Templates() {
       accessTemplateLibrary: "Access template library",
       bilingual: "Bilingual Templates",
       creditsNeverExpire: "Credits never expire",
-      purchaseCredits: "Purchase Credits"
+      purchaseCredits: "Purchase Credits",
+      uploadTemplate: "Upload Template",
+      uploadTemplateTitle: "Upload New Letter Template",
+      category: "Category",
+      titleEnglish: "Title (English)",
+      titleThai: "Title (Thai)",
+      descriptionEnglish: "Description (English)",
+      descriptionThai: "Description (Thai)",
+      creditCost: "Credit Cost",
+      selectFile: "Select Template File",
+      uploading: "Uploading...",
+      cancel: "Cancel",
+      upload: "Upload",
+      adminOnly: "Admin Only"
     },
     th: {
       title: "เทมเพลตจดหมายทางกฎหมาย",
@@ -193,21 +253,150 @@ export default function Templates() {
       accessTemplateLibrary: "เข้าถึงคลังเทมเพลต",
       bilingual: "เทมเพลตสองภาษา",
       creditsNeverExpire: "เครดิตไม่หมดอายุ",
-      purchaseCredits: "ซื้อเครดิต"
+      purchaseCredits: "ซื้อเครดิต",
+      uploadTemplate: "อัปโหลดเทมเพลต",
+      uploadTemplateTitle: "อัปโหลดเทมเพลตจดหมายใหม่",
+      category: "หมวดหมู่",
+      titleEnglish: "ชื่อ (อังกฤษ)",
+      titleThai: "ชื่อ (ไทย)",
+      descriptionEnglish: "คำอธิบาย (อังกฤษ)",
+      descriptionThai: "คำอธิบาย (ไทย)",
+      creditCost: "ต้นทุนเครดิต",
+      selectFile: "เลือกไฟล์เทมเพลต",
+      uploading: "กำลังอัปโหลด...",
+      cancel: "ยกเลิก",
+      upload: "อัปโหลด",
+      adminOnly: "สำหรับแอดมินเท่านั้น"
     }
   };
 
   const strings = t[language];
 
-  const preSigningTemplates = TEMPLATES.filter(t => t.preSigning);
-  const liteTemplates = TEMPLATES.filter(t => ['deposit', 'deductions', 'reminder'].includes(t.id));
-  const protectTemplates = TEMPLATES.filter(t => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(t.id));
-  const secureTemplates = TEMPLATES.filter(t => ['final_opportunity', 'non_compliance', 'settlement'].includes(t.id));
+  const categoryOptions = {
+    en: {
+      pre_signing: 'Pre-Signing Negotiation',
+      friendly: 'Friendly Approach',
+      professional: 'Professional Escalation',
+      final: 'Final Measures'
+    },
+    th: {
+      pre_signing: 'เจรจาก่อนลงนาม',
+      friendly: 'แนวทางเป็นมิตร',
+      professional: 'การยกระดับอย่างมืออาชีพ',
+      final: 'มาตรการสุดท้าย'
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploadFormData({ ...uploadFormData, file });
+    }
+  };
+
+  const handleUploadTemplate = async () => {
+    if (!uploadFormData.file || !uploadFormData.title_en || !uploadFormData.title_th) {
+      alert(language === 'th' 
+        ? 'กรุณากรอกข้อมูลให้ครบถ้วนและเลือกไฟล์' 
+        : 'Please fill in all fields and select a file');
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      // Upload file first
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: uploadFormData.file });
+
+      // Create template record
+      await createTemplateMutation.mutateAsync({
+        category: uploadFormData.category,
+        title_en: uploadFormData.title_en,
+        title_th: uploadFormData.title_th,
+        description_en: uploadFormData.description_en,
+        description_th: uploadFormData.description_th,
+        credit_cost: uploadFormData.credit_cost,
+        file_url: file_url,
+        is_active: true
+      });
+
+      alert(language === 'th' ? 'อัปโหลดเทมเพลตสำเร็จ!' : 'Template uploaded successfully!');
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert(language === 'th' ? 'อัปโหลดล้มเหลว กรุณาลองอีกครั้ง' : 'Upload failed. Please try again.');
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  // Organize templates by category
+  const preSigningTemplates = [...TEMPLATES.filter(t => t.preSigning), ...customTemplates.filter(t => t.category === 'pre_signing')];
+  const liteTemplates = [...TEMPLATES.filter(t => ['deposit', 'deductions', 'reminder'].includes(t.id)), ...customTemplates.filter(t => t.category === 'friendly')];
+  const protectTemplates = [...TEMPLATES.filter(t => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(t.id)), ...customTemplates.filter(t => t.category === 'professional')];
+  const secureTemplates = [...TEMPLATES.filter(t => ['final_opportunity', 'non_compliance', 'settlement'].includes(t.id)), ...customTemplates.filter(t => t.category === 'final')];
 
   const handleTemplateClick = (template) => {
-    if (userCredits >= template.creditCost) {
-      navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`);
+    // For built-in templates, check credits and navigate to form
+    if (template.id) {
+      if (userCredits >= template.creditCost) {
+        navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`);
+      }
+    } else {
+      // For custom uploaded templates, open the file directly
+      if (userCredits >= template.credit_cost) {
+        window.open(template.file_url, '_blank');
+      }
     }
+  };
+
+  const renderTemplateCard = (template, isCustom = false) => {
+    const Icon = isCustom ? FileText : template.icon;
+    const hasEnoughCredits = userCredits >= (isCustom ? template.credit_cost : template.creditCost);
+    const color = isCustom ? 'from-blue-500 to-blue-700' : template.color;
+
+    return (
+      <Card
+        key={isCustom ? template.id : template.id}
+        className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
+        style={{ backgroundColor: colors.cardBg }}
+        onClick={() => handleTemplateClick(template)}
+      >
+        <div className={`h-2 bg-gradient-to-r ${color} rounded-t-xl`} />
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-start justify-between mb-3 sm:mb-4">
+            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center`}>
+              <Icon className="w-6 h-6 text-white" />
+            </div>
+            <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
+              <Coins className="w-3 h-3" />
+              {isCustom ? template.credit_cost : template.creditCost}
+            </Badge>
+          </div>
+
+          <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
+            {isCustom 
+              ? (language === 'th' ? template.title_th : template.title_en)
+              : (language === 'th' ? template.name_th : template.name_en)
+            }
+          </h3>
+
+          <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
+            {isCustom
+              ? (language === 'th' ? template.description_th : template.description_en)
+              : (language === 'th' ? template.description_th : template.description_en)
+            }
+          </p>
+
+          {!hasEnoughCredits && (
+            <div className="text-xs text-center p-2 rounded-lg" style={{
+              backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+              color: '#DC2626'
+            }}>
+              {strings.insufficientCredits}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -223,23 +412,161 @@ export default function Templates() {
         </Button>
 
         <div className="mb-8">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2">
-            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-ls-forest" />
-            <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+          <div className="flex items-center justify-between gap-2 sm:gap-3 mb-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-ls-forest" />
+              <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+            </div>
+            {isAdmin && (
+              <Button
+                onClick={() => setShowUploadDialog(true)}
+                className="bg-ls-forest hover:bg-ls-forest/90"
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {strings.uploadTemplate}
+              </Button>
+            )}
           </div>
           <p className="text-sm sm:text-base mb-4" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
           
-          {/* Total Letters Badge */}
           <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs sm:text-sm">
             {strings.allLetters}
           </Badge>
         </div>
 
+        {/* Upload Dialog */}
+        <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+          <DialogContent className="sm:max-w-2xl" style={{
+            backgroundColor: colors.cardBg,
+            borderColor: colors.borderColor
+          }}>
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>
+                {strings.uploadTemplateTitle}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
+                <Select value={uploadFormData.category} onValueChange={(val) => setUploadFormData({...uploadFormData, category: val})}>
+                  <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                    <SelectItem value="pre_signing">{categoryOptions[language].pre_signing}</SelectItem>
+                    <SelectItem value="friendly">{categoryOptions[language].friendly}</SelectItem>
+                    <SelectItem value="professional">{categoryOptions[language].professional}</SelectItem>
+                    <SelectItem value="final">{categoryOptions[language].final}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label style={{ color: colors.textPrimary }}>{strings.titleEnglish}</Label>
+                  <Input
+                    value={uploadFormData.title_en}
+                    onChange={(e) => setUploadFormData({...uploadFormData, title_en: e.target.value})}
+                    className="mt-2"
+                    style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
+                  />
+                </div>
+                <div>
+                  <Label style={{ color: colors.textPrimary }}>{strings.titleThai}</Label>
+                  <Input
+                    value={uploadFormData.title_th}
+                    onChange={(e) => setUploadFormData({...uploadFormData, title_th: e.target.value})}
+                    className="mt-2"
+                    style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label style={{ color: colors.textPrimary }}>{strings.descriptionEnglish}</Label>
+                <Textarea
+                  value={uploadFormData.description_en}
+                  onChange={(e) => setUploadFormData({...uploadFormData, description_en: e.target.value})}
+                  className="mt-2"
+                  rows={2}
+                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
+                />
+              </div>
+
+              <div>
+                <Label style={{ color: colors.textPrimary }}>{strings.descriptionThai}</Label>
+                <Textarea
+                  value={uploadFormData.description_th}
+                  onChange={(e) => setUploadFormData({...uploadFormData, description_th: e.target.value})}
+                  className="mt-2"
+                  rows={2}
+                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
+                />
+              </div>
+
+              <div>
+                <Label style={{ color: colors.textPrimary }}>{strings.creditCost}</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={uploadFormData.credit_cost}
+                  onChange={(e) => setUploadFormData({...uploadFormData, credit_cost: parseInt(e.target.value) || 1})}
+                  className="mt-2"
+                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
+                />
+              </div>
+
+              <div>
+                <Label style={{ color: colors.textPrimary }}>{strings.selectFile}</Label>
+                <input
+                  type="file"
+                  onChange={handleFileSelect}
+                  className="mt-2 w-full"
+                  accept=".pdf,.doc,.docx"
+                  style={{ color: colors.textPrimary }}
+                />
+                {uploadFormData.file && (
+                  <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
+                    {uploadFormData.file.name}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3 justify-end pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUploadDialog(false)}
+                  disabled={uploadingFile}
+                >
+                  {strings.cancel}
+                </Button>
+                <Button
+                  onClick={handleUploadTemplate}
+                  disabled={uploadingFile}
+                  className="bg-ls-forest hover:bg-ls-forest/90"
+                >
+                  {uploadingFile ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {strings.uploading}
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      {strings.upload}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* SIMPLIFIED CREDIT BALANCE SECTION */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              {/* Credit Balance Display */}
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
                   <Coins className="w-8 h-8 text-white" />
@@ -257,7 +584,6 @@ export default function Templates() {
                 </div>
               </div>
 
-              {/* Benefits & CTA */}
               <div className="flex flex-col items-end gap-3 w-full md:w-auto">
                 <div className="flex flex-wrap gap-2 justify-center md:justify-end">
                   <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
@@ -296,49 +622,7 @@ export default function Templates() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {preSigningTemplates.map((template) => {
-              const Icon = template.icon;
-              const hasEnoughCredits = userCredits >= template.creditCost;
-
-              return (
-                <Card
-                  key={template.id}
-                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
-                  style={{ backgroundColor: colors.cardBg }}
-                  onClick={() => handleTemplateClick(template)}
-                >
-                  <div className={`h-2 bg-gradient-to-r ${template.color} rounded-t-xl`} />
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-start justify-between mb-3 sm:mb-4">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center`}>
-                        <Icon className="w-6 h-6 text-white" />
-                      </div>
-                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
-                        <Coins className="w-3 h-3" />
-                        {template.creditCost}
-                      </Badge>
-                    </div>
-
-                    <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? template.name_th : template.name_en}
-                    </h3>
-
-                    <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
-                      {language === 'th' ? template.description_th : template.description_en}
-                    </p>
-
-                    {!hasEnoughCredits && (
-                      <div className="text-xs text-center p-2 rounded-lg" style={{
-                        backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                        color: '#DC2626'
-                      }}>
-                        {strings.insufficientCredits}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {preSigningTemplates.map((template) => renderTemplateCard(template, !template.id))}
           </div>
         </div>
 
@@ -353,49 +637,7 @@ export default function Templates() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {liteTemplates.map((template) => {
-              const Icon = template.icon;
-              const hasEnoughCredits = userCredits >= template.creditCost;
-
-              return (
-                <Card
-                  key={template.id}
-                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
-                  style={{ backgroundColor: colors.cardBg }}
-                  onClick={() => handleTemplateClick(template)}
-                >
-                  <div className={`h-2 bg-gradient-to-r ${template.color} rounded-t-xl`} />
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-start justify-between mb-3 sm:mb-4">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center`}>
-                        <Icon className="w-6 h-6 text-white" />
-                      </div>
-                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
-                        <Coins className="w-3 h-3" />
-                        {template.creditCost}
-                      </Badge>
-                    </div>
-
-                    <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? template.name_th : template.name_en}
-                    </h3>
-
-                    <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
-                      {language === 'th' ? template.description_th : template.description_en}
-                    </p>
-
-                    {!hasEnoughCredits && (
-                      <div className="text-xs text-center p-2 rounded-lg" style={{
-                        backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                        color: '#DC2626'
-                      }}>
-                        {strings.insufficientCredits}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {liteTemplates.map((template) => renderTemplateCard(template, !template.id))}
           </div>
         </div>
 
@@ -410,49 +652,7 @@ export default function Templates() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {protectTemplates.map((template) => {
-              const Icon = template.icon;
-              const hasEnoughCredits = userCredits >= template.creditCost;
-
-              return (
-                <Card
-                  key={template.id}
-                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
-                  style={{ backgroundColor: colors.cardBg }}
-                  onClick={() => handleTemplateClick(template)}
-                >
-                  <div className={`h-2 bg-gradient-to-r ${template.color} rounded-t-xl`} />
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-start justify-between mb-3 sm:mb-4">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center`}>
-                        <Icon className="w-6 h-6 text-white" />
-                      </div>
-                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
-                        <Coins className="w-3 h-3" />
-                        {template.creditCost}
-                      </Badge>
-                    </div>
-
-                    <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? template.name_th : template.name_en}
-                    </h3>
-
-                    <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
-                      {language === 'th' ? template.description_th : template.description_en}
-                    </p>
-
-                    {!hasEnoughCredits && (
-                      <div className="text-xs text-center p-2 rounded-lg" style={{
-                        backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                        color: '#DC2626'
-                      }}>
-                        {strings.insufficientCredits}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {protectTemplates.map((template) => renderTemplateCard(template, !template.id))}
           </div>
         </div>
 
@@ -467,49 +667,7 @@ export default function Templates() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {secureTemplates.map((template) => {
-              const Icon = template.icon;
-              const hasEnoughCredits = userCredits >= template.creditCost;
-
-              return (
-                <Card
-                  key={template.id}
-                  className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
-                  style={{ backgroundColor: colors.cardBg }}
-                  onClick={() => handleTemplateClick(template)}
-                >
-                  <div className={`h-2 bg-gradient-to-r ${template.color} rounded-t-xl`} />
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-start justify-between mb-3 sm:mb-4">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center`}>
-                        <Icon className="w-6 h-6 text-white" />
-                      </div>
-                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
-                        <Coins className="w-3 h-3" />
-                        {template.creditCost}
-                      </Badge>
-                    </div>
-
-                    <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? template.name_th : template.name_en}
-                    </h3>
-
-                    <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
-                      {language === 'th' ? template.description_th : template.description_en}
-                    </p>
-
-                    {!hasEnoughCredits && (
-                      <div className="text-xs text-center p-2 rounded-lg" style={{
-                        backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                        color: '#DC2626'
-                      }}>
-                        {strings.insufficientCredits}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {secureTemplates.map((template) => renderTemplateCard(template, !template.id))}
           </div>
         </div>
       </div>
