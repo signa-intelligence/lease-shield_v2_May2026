@@ -319,7 +319,12 @@ export default function MaintenanceTracker() {
       confirmDeleteDesc: "This will permanently delete this maintenance request. This action cannot be undone.",
       cancelDelete: "Cancel",
       confirmDeleteBtn: "Delete",
-      updateButton: "Update"
+      updateButton: "Update",
+      issuePhotos: "Issue Photos:",
+      completionPhotos: "Completion Photos:",
+      billsReceipts: "Bills/Receipts:",
+      landlordResponse: "Landlord Response:",
+      cost: "Cost:"
     },
     th: {
       title: "ติดตามการซ่อมบำรุง",
@@ -384,7 +389,12 @@ export default function MaintenanceTracker() {
       confirmDeleteDesc: "การดำเนินการนี้จะลบคำขอซ่อมบำรุงนี้อย่างถาวร และไม่สามารถยกเลิกได้",
       cancelDelete: "ยกเลิก",
       confirmDeleteBtn: "ลบ",
-      updateButton: "อัปเดต"
+      updateButton: "อัปเดต",
+      issuePhotos: "รูปภาพปัญหา:",
+      completionPhotos: "รูปงานเสร็จ:",
+      billsReceipts: "ใบเสร็จ/บิล:",
+      landlordResponse: "ข้อความจากเจ้าของบ้าน:",
+      cost: "ค่าใช้จ่าย:"
     }
   };
 
@@ -939,16 +949,76 @@ export default function MaintenanceTracker() {
                   )}
 
                   {request.photo_urls && request.photo_urls.length > 0 && (
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      {request.photo_urls.map((url, index) => (
-                        <img
-                          key={index}
-                          src={url}
-                          alt={`Issue Photo ${index + 1}`}
-                          className="w-full h-20 object-cover rounded-md"
-                          style={{ border: `1px solid ${colors.borderColor}` }}
-                        />
-                      ))}
+                    <div className="mb-3">
+                      <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                        {strings.issuePhotos}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {request.photo_urls.map((url, index) => (
+                          <img
+                            key={index}
+                            src={url}
+                            alt={`Issue Photo ${index + 1}`}
+                            className="w-full h-20 object-cover rounded-md cursor-pointer hover:opacity-80"
+                            style={{ border: `1px solid ${colors.borderColor}` }}
+                            onClick={() => window.open(url, '_blank')}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {request.completion_photo_urls && request.completion_photo_urls.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: colors.textSecondary }}>
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        {strings.completionPhotos}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {request.completion_photo_urls.map((url, index) => (
+                          <img
+                            key={index}
+                            src={url}
+                            alt={`Completion ${index + 1}`}
+                            className="w-full h-20 object-cover rounded-md cursor-pointer hover:opacity-80"
+                            style={{ border: `2px solid #10B981` }}
+                            onClick={() => window.open(url, '_blank')}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {request.bill_photo_urls && request.bill_photo_urls.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: colors.textSecondary }}>
+                        <Package className="w-3 h-3 text-amber-600" />
+                        {strings.billsReceipts}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {request.bill_photo_urls.map((url, index) => (
+                          <img
+                            key={index}
+                            src={url}
+                            alt={`Bill ${index + 1}`}
+                            className="w-full h-20 object-cover rounded-md cursor-pointer hover:opacity-80"
+                            style={{ border: `2px solid #C7A338` }}
+                            onClick={() => window.open(url, '_blank')}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {request.landlord_response && (
+                    <div className="mb-3 p-3 rounded-lg" style={{
+                      backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                      border: `1px solid ${colors.borderColor}`
+                    }}>
+                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                        {strings.landlordResponse}
+                      </p>
+                      <p className="text-sm" style={{ color: colors.textPrimary }}>{request.landlord_response}</p>
                     </div>
                   )}
 
@@ -957,8 +1027,10 @@ export default function MaintenanceTracker() {
                       <Clock className="w-3 h-3 inline mr-1" />
                       {strings.reported}: {format(new Date(request.reported_date), 'MMM d, yyyy')}
                     </span>
-                    {request.estimated_cost && (
-                      <span>{strings.estCost}: ฿{request.estimated_cost.toLocaleString()}</span>
+                    {request.actual_cost && (
+                      <span className="font-semibold" style={{ color: colors.textPrimary }}>
+                        {strings.cost} ฿{request.actual_cost.toLocaleString()}
+                      </span>
                     )}
                   </div>
 
