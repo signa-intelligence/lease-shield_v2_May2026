@@ -255,9 +255,8 @@ export default function DocumentVault() {
     const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
     const docLabel = doc.label || (language === 'th' ? config.label_th : config.label_en);
     
-    const subject = language === 'th' 
-      ? `${docLabel}` 
-      : `${docLabel}`;
+    // Single language subject only
+    const subject = docLabel;
     
     let body = '';
     
@@ -289,7 +288,8 @@ export default function DocumentVault() {
         for (const p of paragraphs) {
           const text = (p.textContent || p.innerText || '').trim();
           
-          // Skip paragraphs that look like letter header information
+          // Skip ALL header-like content including addresses
+          if (!text || text.length < 10) continue;
           if (text.startsWith('[Your Name]') || 
               text.startsWith('[Your Address]') ||
               text.startsWith('[City, State') ||
@@ -298,9 +298,13 @@ export default function DocumentVault() {
               text.startsWith('[Date]') ||
               text.startsWith('[Landlord\'s Name]') ||
               text.startsWith('[Landlord\'s Address]') ||
+              /^\d+\s+\w+\s+(Street|Road|Avenue|Lane|Drive|Boulevard)/i.test(text) || // Addresses like "63 Main Street"
+              /^(Bangkok|Chiang Mai|Phuket|Pattaya|Thailand|กรุงเทพ)/i.test(text) || // City names
+              /^\[.*\]$/.test(text) || // Any bracketed placeholder
               (text.includes('Mr.') && text.length < 50) ||
-              (text.includes('Dear ') && text.length < 50) ||
-              /^\[.*\]$/.test(text)) {
+              (text.includes('Mrs.') && text.length < 50) ||
+              (text.includes('Ms.') && text.length < 50) ||
+              (text.includes('Dear ') && text.length < 50)) {
             continue;
           }
           
@@ -309,22 +313,20 @@ export default function DocumentVault() {
         
         const content = cleanParagraphs.join('\n\n');
         
-        // Match based on user's language preference
+        // Match based on user's language preference - ONLY ONE LANGUAGE
         if (language === 'th') {
-          // For Thai users, look for Thai section
-          if (sectionTitle.includes('ไทย') || sectionTitle.includes('Thai') || /[\u0E00-\u0E7F]/.test(content)) {
+          // For Thai users, look for Thai section ONLY
+          if ((sectionTitle.includes('ไทย') || sectionTitle.includes('Thai')) && /[\u0E00-\u0E7F]/.test(content)) {
             letterContent = content;
             break;
           }
         } else {
-          // For English users, look for English section
-          if (sectionTitle.toLowerCase().includes('english') || 
-              (!sectionTitle.includes('ไทย') && !sectionTitle.includes('Thai') && !/[\u0E00-\u0E7F]/.test(sectionTitle))) {
-            // Verify content is actually English
-            if (!/[\u0E00-\u0E7F]/.test(content.substring(0, 100))) {
-              letterContent = content;
-              break;
-            }
+          // For English users, look for English section ONLY
+          if ((sectionTitle.toLowerCase().includes('english') || 
+              (!sectionTitle.includes('ไทย') && !sectionTitle.includes('Thai'))) &&
+              !/[\u0E00-\u0E7F]/.test(content.substring(0, 100))) {
+            letterContent = content;
+            break;
           }
         }
       }
@@ -339,11 +341,34 @@ export default function DocumentVault() {
           // Skip empty lines and header-like content
           if (!line || line.length < 10) return false;
           if (line.startsWith('[') && line.endsWith(']')) return false;
-          if (line.startsWith('Mr.') || line.startsWith('Dear')) return false;
+          if (line.startsWith('Mr.') || line.startsWith('Mrs.') || line.startsWith('Ms.') || line.startsWith('Dear')) return false;
+          if (/^\d+\s+\w+\s+(Street|Road|Avenue|Lane|Drive)/i.test(line)) return false;
+          if (/^(Bangkok|Chiang Mai|Phuket|Pattaya|Thailand)/i.test(line)) return false;
           return true;
         });
         
         letterContent = lines.join('\n\n');
+        
+        // Final filter - if Thai user, keep only Thai content; if English user, keep only English
+        if (language === 'th') {
+          // Keep lines with Thai characters
+          const thaiLines = letterContent.split('\n\n').filter(line => /[\u0E00-\u0E7F]/.test(line));
+          if (thaiLines.length > 0) {
+            letterContent = thaiLines.join('\n\n');
+          } else {
+             // If no Thai content found, and user is Thai, clear letterContent to avoid sending English by mistake.
+             letterContent = '';
+          }
+        } else {
+          // Keep lines WITHOUT Thai characters
+          const englishLines = letterContent.split('\n\n').filter(line => !/[\u0E00-\u0E7F]/.test(line));
+          if (englishLines.length > 0) {
+            letterContent = englishLines.join('\n\n');
+          } else {
+            // If no English content found, and user is English, clear letterContent to avoid sending Thai by mistake.
+            letterContent = '';
+          }
+        }
       }
       
       // Format as email with Lease Shield footer only
