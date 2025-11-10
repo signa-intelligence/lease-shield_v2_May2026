@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Plus, Clock, CheckCircle2, AlertTriangle, Home, Zap, Droplet, Hammer, Thermometer, Bug, Package, Loader2, Camera, X, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
+import { Wrench, Plus, Clock, CheckCircle2, AlertTriangle, Home, Zap, Droplet, Hammer, Thermometer, Bug, Package, Loader2, Camera, X, Image as ImageIcon, Pencil, Trash2, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import {
@@ -1006,6 +1006,38 @@ export default function MaintenanceTracker() {
                             style={{ border: `1px solid ${colors.borderColor}` }}
                             onClick={() => window.open(url, '_blank')}
                           />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Communication Log Display */}
+                  {request.communication_log && request.communication_log.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: colors.textSecondary }}>
+                        <MessageCircle className="w-3 h-3" />
+                        {language === 'th' ? 'ข้อความ' : 'Messages'}
+                      </p>
+                      <div className="space-y-2">
+                        {request.communication_log.map((msg, index) => (
+                          <div 
+                            key={index} 
+                            className="p-2 rounded-lg border-l-4"
+                            style={{
+                              backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                              borderLeftColor: '#3B82F6'
+                            }}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-xs font-semibold" style={{ color: colors.textPrimary }}>
+                                {msg.sender}
+                              </p>
+                              <p className="text-xs" style={{ color: colors.textSecondary }}>
+                                {format(new Date(msg.date), 'MMM d, h:mm a')}
+                              </p>
+                            </div>
+                            <p className="text-sm" style={{ color: colors.textPrimary }}>{msg.message}</p>
+                          </div>
                         ))}
                       </div>
                     </div>

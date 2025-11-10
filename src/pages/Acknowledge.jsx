@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -31,6 +32,7 @@ export default function AcknowledgeMaintenance() {
   const [completionPhotos, setCompletionPhotos] = useState([]);
   const [billPhotos, setBillPhotos] = useState([]);
   const [submitted, setSubmitted] = useState(false);
+  const [senderName, setSenderName] = useState('');
 
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
@@ -105,7 +107,6 @@ export default function AcknowledgeMaintenance() {
     try {
       const updateData = {
         status: newStatus,
-        landlord_response: landlordResponse.trim() || undefined,
         estimated_cost: estimatedCost ? parseFloat(estimatedCost) : undefined,
         actual_cost: actualCost ? parseFloat(actualCost) : undefined,
         acknowledged_date: new Date().toISOString()
@@ -121,6 +122,17 @@ export default function AcknowledgeMaintenance() {
 
       if (billPhotos.length > 0) {
         updateData.bill_photo_urls = [...(request.bill_photo_urls || []), ...billPhotos];
+      }
+
+      // Add message to communication log instead of overwriting landlord_response
+      if (landlordResponse.trim()) {
+        const communicationLog = request.communication_log ? [...request.communication_log] : [];
+        communicationLog.push({
+          date: new Date().toISOString(),
+          message: landlordResponse.trim(),
+          sender: senderName.trim() || 'Landlord/Juristic'
+        });
+        updateData.communication_log = communicationLog;
       }
 
       await updateRequestMutation.mutateAsync({
@@ -265,6 +277,26 @@ export default function AcknowledgeMaintenance() {
                   </div>
                 </div>
               )}
+
+              {/* Show Communication Log */}
+              {request.communication_log && request.communication_log.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <p className="text-sm font-semibold text-gray-600 mb-3">Communication History</p>
+                  <div className="space-y-3">
+                    {request.communication_log.map((msg, index) => (
+                      <div key={index} className="p-3 rounded-lg bg-blue-50 border-l-4 border-blue-500">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-semibold text-blue-900">{msg.sender}</p>
+                          <p className="text-xs text-blue-600">
+                            {format(new Date(msg.date), 'MMM d, yyyy h:mm a')}
+                          </p>
+                        </div>
+                        <p className="text-sm text-gray-700">{msg.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -279,6 +311,20 @@ export default function AcknowledgeMaintenance() {
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Sender Name Input */}
+              <div>
+                <Label htmlFor="senderName">Your Name</Label>
+                <input
+                  id="senderName"
+                  type="text"
+                  value={senderName}
+                  onChange={(e) => setSenderName(e.target.value)}
+                  placeholder="e.g., Landlord, Juristic Office, Property Manager..."
+                  className="mt-2 w-full p-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">This will identify you in the communication history</p>
+              </div>
+
               {/* Status Selection */}
               <div>
                 <Label className="text-sm font-semibold mb-3 block">Select Status</Label>
@@ -347,7 +393,7 @@ export default function AcknowledgeMaintenance() {
 
               {/* Response Message */}
               <div>
-                <Label htmlFor="response">Your Response (Optional)</Label>
+                <Label htmlFor="response">Your Message (Optional)</Label>
                 <Textarea
                   id="response"
                   value={landlordResponse}
@@ -356,6 +402,7 @@ export default function AcknowledgeMaintenance() {
                   rows={4}
                   className="mt-2"
                 />
+                <p className="text-xs text-gray-500 mt-1">This message will be added to the communication log</p>
               </div>
 
               {/* Cost Estimates */}
