@@ -447,17 +447,31 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
         {/* Header */}
         <div className="mb-4 sm:mb-6">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-            <div className="px-2 sm:px-3 py-1 border rounded-full" style={{
-              backgroundColor: isDarkMode ? '#2A2D30' : '#ECEFED',
-              borderColor: isDarkMode ? '#3A3D40' : 'rgba(12, 59, 46, 0.2)'
+          {/* Enhanced Motto Badge with Brand Colors */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3" style={{
+            background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+            boxShadow: '0 4px 6px rgba(12, 59, 46, 0.2)'
+          }}>
+            <div className="w-5 h-5 flex-shrink-0" style={{
+              position: 'relative',
+              display: 'inline-block'
             }}>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-ls-forest" />
-                <span className="text-xs sm:text-sm font-semibold text-ls-forest">{strings.tagline}</span>
-              </div>
+              {/* Green Shield with Gold Lock Icon */}
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+                {/* Shield */}
+                <path d="M12 2L4 5V11C4 16 7 20.5 12 22C17 20.5 20 16 20 11V5L12 2Z" fill="#0C3B2E" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                {/* Lock */}
+                <rect x="9" y="11" width="6" height="5" rx="1" fill="#C7A338"/>
+                <path d="M10 11V9.5C10 8.67 10.67 8 11.5 8H12.5C13.33 8 14 8.67 14 9.5V11" stroke="#C7A338" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <div className="flex items-center gap-2 text-sm sm:text-base font-semibold">
+              <span style={{ color: '#FFFFFF' }}>Fair.</span>
+              <span style={{ color: '#ECEFED' }}>Transparent.</span>
+              <span style={{ color: '#C7A338' }}>Protected.</span>
             </div>
           </div>
+          
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ color: colors.textPrimary }}>
             {strings.welcome}, {user?.full_name?.split(' ')[0] || 'User'}
           </h1>
