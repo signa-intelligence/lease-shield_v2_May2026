@@ -273,9 +273,10 @@ export default function DocumentVault() {
       // Get all content sections
       const sections = htmlDoc.querySelectorAll('.section');
       
-      let letterContent = '';
+      let thaiContent = '';
+      let englishContent = '';
       
-      // Try to find the section matching user's language
+      // Extract both Thai and English versions
       for (const section of sections) {
         const sectionTitle = section.querySelector('.section-title')?.textContent || '';
         const contentEl = section.querySelector('.content');
@@ -309,29 +310,33 @@ export default function DocumentVault() {
         
         const content = cleanParagraphs.join('\n\n');
         
-        // Match based on user's language preference
-        if (language === 'th') {
-          // For Thai users, look for Thai section
-          if (sectionTitle.includes('ไทย') || sectionTitle.includes('Thai') || /[\u0E00-\u0E7F]/.test(content)) {
-            letterContent = content;
-            break;
-          }
-        } else {
-          // For English users, look for English section
-          if (sectionTitle.toLowerCase().includes('english') || 
-              (!sectionTitle.includes('ไทย') && !sectionTitle.includes('Thai') && !/[\u0E00-\u0E7F]/.test(sectionTitle))) {
-            // Verify content is actually English
-            if (!/[\u0E00-\u0E7F]/.test(content.substring(0, 100))) {
-              letterContent = content;
-              break;
-            }
+        // Check if this is Thai or English section
+        if (sectionTitle.includes('ไทย') || sectionTitle.includes('Thai') || /[\u0E00-\u0E7F]/.test(content)) {
+          thaiContent = content;
+        } else if (sectionTitle.toLowerCase().includes('english') || 
+                   (!sectionTitle.includes('ไทย') && !sectionTitle.includes('Thai') && !/[\u0E00-\u0E7F]/.test(sectionTitle))) {
+          // Verify content is actually English
+          if (!/[\u0E00-\u0E7F]/.test(content.substring(0, 100))) {
+            englishContent = content;
           }
         }
       }
       
-      // If no match found, try getting body text without header elements
+      // Format as email with Thai first, then English (Cultural awareness in Thailand)
+      let letterContent = '';
+      if (thaiContent) {
+        letterContent = thaiContent;
+      }
+      if (englishContent) {
+        if (letterContent) {
+          letterContent += '\n\n---\n\n' + englishContent;
+        } else {
+          letterContent = englishContent;
+        }
+      }
+      
+      // If still no content, fallback to extracting body text
       if (!letterContent) {
-        // Remove all potential header elements
         htmlDoc.querySelectorAll('.header, .footer, .section-title').forEach(el => el.remove());
         
         const bodyText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
