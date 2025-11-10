@@ -3,9 +3,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const authenticatedUser = await base44.auth.me();
 
-    if (!user) {
+    if (!authenticatedUser) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -15,8 +15,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing maintenanceRequest data' }, { status: 400 });
     }
 
+    // CRITICAL FIX: Fetch full user data with landlord/juristic contact info
+    const users = await base44.asServiceRole.entities.User.filter({ 
+      email: authenticatedUser.email 
+    });
+    
+    if (!users || users.length === 0) {
+      return Response.json({ error: 'User not found' }, { status: 404 });
+    }
+    
+    const user = users[0];
     const language = user.language || 'en';
     const notifications = [];
+
+    console.log('📧 Sending maintenance notifications for user:', user.email);
+    console.log('📧 Landlord email:', user.landlord_email);
+    console.log('📧 Juristic email:', user.juristic_email);
 
     // Generate unique acknowledgment token
     const acknowledgmentToken = crypto.randomUUID();
@@ -34,10 +48,6 @@ Deno.serve(async (req) => {
     const subject = language === 'th'
       ? `🔧 แจ้งซ่อม: ${maintenanceRequest.issue_title}`
       : `🔧 Maintenance Request: ${maintenanceRequest.issue_title}`;
-
-    const messageBody = language === 'th'
-      ? `แจ้งซ่อมใหม่\n\nหัวข้อ: ${maintenanceRequest.issue_title}\nรายละเอียด: ${maintenanceRequest.description}\nหมวดหมู่: ${maintenanceRequest.category}\nระดับความสำคัญ: ${maintenanceRequest.priority}\n${maintenanceRequest.property_address ? `ที่อยู่: ${maintenanceRequest.property_address}\n` : ''}\nวันที่แจ้ง: ${new Date(maintenanceRequest.reported_date).toLocaleDateString('th-TH')}\n\nแจ้งโดย: ${user.full_name} (${user.email})`
-      : `New Maintenance Request\n\nTitle: ${maintenanceRequest.issue_title}\nDescription: ${maintenanceRequest.description}\nCategory: ${maintenanceRequest.category}\nPriority: ${maintenanceRequest.priority}\n${maintenanceRequest.property_address ? `Address: ${maintenanceRequest.property_address}\n` : ''}\nReported: ${new Date(maintenanceRequest.reported_date).toLocaleDateString('en-US')}\n\nReported by: ${user.full_name} (${user.email})`;
 
     // Get tenant full address for display
     const tenantAddress = [
@@ -181,8 +191,10 @@ Deno.serve(async (req) => {
           subject: language === 'th' ? '✅ สำเนาคำขอซ่อม' : '✅ Maintenance Request Copy',
           body: tenantHtmlBody
         });
+        console.log('✅ Tenant email sent to:', user.email);
         notifications.push({ recipient: 'user', method: 'email', status: 'sent' });
       } catch (error) {
+        console.error('❌ Failed to send tenant email:', error);
         notifications.push({ recipient: 'user', method: 'email', status: 'failed', error: error.message });
       }
     }
@@ -195,10 +207,14 @@ Deno.serve(async (req) => {
           subject: subject,
           body: landlordHtmlBody
         });
+        console.log('✅ Landlord email sent to:', user.landlord_email);
         notifications.push({ recipient: 'landlord', method: 'email', status: 'sent' });
       } catch (error) {
+        console.error('❌ Failed to send landlord email:', error);
         notifications.push({ recipient: 'landlord', method: 'email', status: 'failed', error: error.message });
       }
+    } else {
+      console.log('⚠️ No landlord email configured for user:', user.email);
     }
 
     // Send to juristic (email) - with acknowledgment button
@@ -209,11 +225,17 @@ Deno.serve(async (req) => {
           subject: subject,
           body: landlordHtmlBody
         });
+        console.log('✅ Juristic email sent to:', user.juristic_email);
         notifications.push({ recipient: 'juristic', method: 'email', status: 'sent' });
       } catch (error) {
+        console.error('❌ Failed to send juristic email:', error);
         notifications.push({ recipient: 'juristic', method: 'email', status: 'failed', error: error.message });
       }
+    } else {
+      console.log('⚠️ No juristic email configured for user:', user.email);
     }
+
+    console.log('📊 Notification summary:', notifications);
 
     return Response.json({
       success: true,
@@ -222,7 +244,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Maintenance notification error:', error);
+    console.error('❌ Maintenance notification error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
