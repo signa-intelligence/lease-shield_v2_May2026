@@ -310,19 +310,17 @@ export default function DocumentVault() {
         
         const content = cleanParagraphs.join('\n\n');
         
-        // Check if this is Thai or English section
-        if (sectionTitle.includes('ไทย') || sectionTitle.includes('Thai') || /[\u0E00-\u0E7F]/.test(content)) {
+        // Check if section title or content has Thai characters (U+0E00 to U+0E7F is Thai Unicode range)
+        const hasThai = /[\u0E00-\u0E7F]/.test(sectionTitle) || /[\u0E00-\u0E7F]/.test(content);
+        
+        if (hasThai) {
           thaiContent = content;
-        } else if (sectionTitle.toLowerCase().includes('english') || 
-                   (!sectionTitle.includes('ไทย') && !sectionTitle.includes('Thai') && !/[\u0E00-\u0E7F]/.test(sectionTitle))) {
-          // Verify content is actually English
-          if (!/[\u0E00-\u0E7F]/.test(content.substring(0, 100))) {
-            englishContent = content;
-          }
+        } else {
+          englishContent = content;
         }
       }
       
-      // Format as email with header, Thai first, then English
+      // Format as email with header, Thai first, then English (Cultural awareness in Thailand)
       let letterContent = '--English version below--\n\n';
       
       if (thaiContent) {
@@ -342,7 +340,6 @@ export default function DocumentVault() {
         
         const bodyText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
         const lines = bodyText.split('\n').map(line => line.trim()).filter(line => {
-          // Skip empty lines and header-like content
           if (!line || line.length < 10) return false;
           if (line.startsWith('[') && line.endsWith(']')) return false;
           if (line.startsWith('Mr.') || line.startsWith('Dear')) return false;
