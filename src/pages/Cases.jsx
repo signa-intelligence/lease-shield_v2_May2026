@@ -1,13 +1,14 @@
+
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom"; // Added Link import
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Scale, Plus, Crown, Calendar, DollarSign, Zap, Mail, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
-import { format } from "date-fns";
+import { format } = "date-fns";
 import { useFeatureAccess } from "@/components/shared/FeatureGate";
 
 const STATUS_CONFIG = {
@@ -174,36 +175,72 @@ export default function Cases() {
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <Scale className="w-7 h-7 md:w-8 md:h-8 text-blue-600" />
-              {strings.myCases}
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <Scale className="w-8 h-8 text-blue-600" />
+            <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
+              {language === 'th' ? '⚖️ คดีของฉัน' : '⚖️ My Cases'}
             </h1>
-            <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>
-              {strings.trackYourCases}
-            </p>
           </div>
-          <Button
-            onClick={() => navigate(createPageUrl("ResolveCase"))}
-            className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
-            size="sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {strings.openNewCase}
-          </Button>
+          <p style={{ color: colors.textSecondary }}>
+            {language === 'th' ? 'ติดตามคดีพิพาทของคุณ' : 'Track your dispute cases'}
+          </p>
         </div>
 
-        {(hasPriorityQueue || hasMemberPrice) && (
-          <div className="mb-6 p-4 md:p-6 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg">
-            <div className="flex items-start gap-3">
-              <Crown className="w-6 h-6 flex-shrink-0 mt-1" />
+        <Link to={createPageUrl("ResolveCase")} className="block mb-6">
+          <button
+            style={{
+              width: '100%',
+              backgroundColor: '#3B82F6',
+              color: '#FFFFFF',
+              padding: '16px 24px',
+              borderRadius: '12px',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 6px rgba(59, 130, 246, 0.3)',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#2563EB';
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 10px rgba(59, 130, 246, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#3B82F6';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 6px rgba(59, 130, 246, 0.3)';
+            }}
+          >
+            <Plus className="w-5 h-5" />
+            {language === 'th' ? 'เปิดคดีใหม่' : 'Open New Case'}
+          </button>
+        </Link>
+
+        {(user?.plan_tier === 'lite' || user?.plan_tier === 'protect' || user?.plan_tier === 'secure') && (
+          <div className="mb-6 p-6 rounded-xl" style={{
+            background: isDarkMode 
+              ? 'linear-gradient(to right, #7C3AED, #3B82F6)'
+              : 'linear-gradient(to right, #7C3AED, #3B82F6)',
+            color: '#FFFFFF'
+          }}>
+            <div className="flex items-start gap-3 mb-3">
+              <Crown className="w-6 h-6 flex-shrink-0" />
               <div>
-                <h3 className="font-bold text-base md:text-lg mb-2">{strings.premiumBenefits}</h3>
-                <ul className="space-y-1 text-xs md:text-sm opacity-90">
-                  {hasMemberPrice && <li>• {strings.memberPricing}</li>}
-                  {hasPriorityQueue && <li>• {strings.priorityHandling}</li>}
+                <h3 className="font-bold text-lg mb-2">
+                  {language === 'th' ? 'ผลประโยชน์สำหรับสมาชิก' : 'Premium Case Benefits'}
+                </h3>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                    <span>{language === 'th' ? 'จัดการคดีแบบเร่งด่วน' : 'Priority case handling'}</span>
+                  </li>
                 </ul>
               </div>
             </div>
