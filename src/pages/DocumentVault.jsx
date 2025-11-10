@@ -267,80 +267,41 @@ export default function DocumentVault() {
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(doc.html_content, 'text/html');
       
-      // Remove headers, footers, section titles, and style/script tags
+      // Remove all non-content elements
       htmlDoc.querySelectorAll('style, script, .header, .footer, .section-title').forEach(el => el.remove());
       
-      // Get ALL text content from body
+      // Get full text
       const fullText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
       
-      // Split into lines
-      const lines = fullText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      // Extract English letter: Start from "Dear" to closing
+      let englishMatch = fullText.match(/Dear\s+[^,]+,[\s\S]*?(Warm regards|Best regards|Sincerely|Yours truly),?/i);
+      let englishLetter = englishMatch ? englishMatch[0].trim() : '';
       
-      let letters = [];
-      let currentLetter = [];
-      let inLetter = false;
+      // Extract Thai letter: Start from "เรียน" to Thai closing
+      let thaiMatch = fullText.match(/เรียน[^,]+,[\s\S]*?(ขอแสดงความนับถือ|ด้วยความเคารพ|ขอแสดงความเคารพ),?/);
+      let thaiLetter = thaiMatch ? thaiMatch[0].trim() : '';
       
-      // Extract each letter (Thai and English)
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        
-        // Detect start of letter (salutation)
-        if (line.startsWith('Dear ') || line.startsWith('เรียน')) {
-          inLetter = true;
-          currentLetter = [line];
-          continue;
-        }
-        
-        // If we're in a letter, collect lines
-        if (inLetter) {
-          // Detect end of letter (closing)
-          if (line.match(/^(Warm regards|Best regards|Sincerely|Yours truly|ขอแสดงความนับถือ|ด้วยความเคารพ),?\s*$/i)) {
-            currentLetter.push(line);
-            
-            // Save this complete letter
-            letters.push({
-              text: currentLetter.join('\n\n'),
-              isThai: /[\u0E00-\u0E7F]/.test(currentLetter.join(' '))
-            });
-            
-            // Reset for next letter
-            currentLetter = [];
-            inLetter = false;
-            continue;
-          }
-          
-          // Add line to current letter
-          currentLetter.push(line);
-        }
-      }
-      
-      // Find Thai and English letters
-      const thaiLetter = letters.find(l => l.isThai);
-      const englishLetter = letters.find(l => !l.isThai);
-      
-      // Build email body: Thai header, Thai letter, separator, English letter
+      // Build email body: Thai header + Thai content + separator + English content
       let letterContent = 'ภาษาไทยด้านล่าง\n\n';
       
-      // Add Thai content FIRST
       if (thaiLetter) {
-        letterContent += thaiLetter.text;
+        letterContent += thaiLetter;
       }
       
-      // Add separator and English content SECOND
       if (englishLetter) {
         if (thaiLetter) {
           letterContent += '\n\n---\n\n';
         }
-        letterContent += englishLetter.text;
+        letterContent += englishLetter;
       }
       
-      // If no content extracted, show error
+      // If no letters extracted, fallback
       if (!thaiLetter && !englishLetter) {
-        letterContent = 'ภาษาไทยด้านล่าง\n\n[Letter content could not be extracted]';
+        letterContent += '[Letter content could not be extracted]';
       }
       
-      // Format final email with Lease Shield footer only
-      body = `${letterContent}\n\n---\n\nCreated by Lease Shield - https://www.leaseshield.asia`;
+      // Format final email with footer
+      body = `${letterContent}\n\n---\n\n${language === 'th' ? 'สร้างโดย' : 'Created by'} Lease Shield - https://www.leaseshield.asia`;
     } else {
       // For other document types, keep existing format
       body = language === 'th'
