@@ -7,17 +7,17 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Scale, Plus, Crown, Calendar, DollarSign, Zap, FileText, Loader2, CheckCircle2, Eye, Download, ChevronDown, ChevronUp } from "lucide-react"; // Added Eye, Download, ChevronDown, ChevronUp
+import { Scale, Plus, Crown, Calendar, DollarSign, Zap, FileText, Loader2, CheckCircle2, Eye, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { useFeatureAccess } from "@/components/shared/FeatureGate";
-import LetterPreview from "../components/shared/LetterPreview"; // Added LetterPreview import
+import LetterPreview from "../components/shared/LetterPreview";
 
 const STATUS_CONFIG = {
-  intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar }, // Changed icon from Clock to Calendar for Intake
-  pending: { label: 'Pending', color: 'bg-amber-100 text-amber-800', icon: Calendar }, // Changed icon from Clock to Calendar for Pending
+  intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
+  pending: { label: 'Pending', color: 'bg-amber-100 text-amber-800', icon: Calendar },
   active: { label: 'Active', color: 'bg-blue-100 text-blue-800', icon: Scale },
-  waiting: { label: 'Waiting', color: 'bg-purple-100 text-purple-800', icon: Calendar }, // Changed icon from Clock to Calendar for Waiting
-  user_action: { label: 'Action Required', color: 'bg-red-100 text-red-800', icon: CheckCircle2 }, // Changed icon from AlertCircle to CheckCircle2 for Action Required
+  waiting: { label: 'Waiting', color: 'bg-purple-100 text-purple-800', icon: Calendar },
+  user_action: { label: 'Action Required', color: 'bg-red-100 text-red-800', icon: CheckCircle2 },
   closed: { label: 'Closed', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 }
 };
 
@@ -28,15 +28,14 @@ export default function Cases() {
   const { hasAccess: hasPriorityQueue } = useFeatureAccess('priority_queue');
   const { hasAccess: hasMemberPrice } = useFeatureAccess('resolve_member_price');
   
-  const [expandedCase, setExpandedCase] = useState(null); // Track which case's letters are expanded
-  const [previewLetter, setPreviewLetter] = useState(null); // Track which letter to preview
+  const [expandedCase, setExpandedCase] = useState(null);
+  const [previewLetter, setPreviewLetter] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  // Debug: Log user email when it loads
   useEffect(() => {
     if (user) {
       console.log('🔍 Current user email:', user.email);
@@ -56,12 +55,10 @@ export default function Cases() {
     refetchOnWindowFocus: true,
   });
 
-  // Debug: Log cases when they change
   useEffect(() => {
     console.log('📦 Cases data updated:', cases.length, 'cases');
   }, [cases]);
 
-  // Handle payment success - refetch cases
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const paymentStatus = urlParams.get('payment');
@@ -70,12 +67,10 @@ export default function Cases() {
       console.log('💰 Payment success detected - refetching cases');
       console.log('👤 User email:', user.email);
       
-      // Force immediate refetch
       refetchCases().then((result) => {
         console.log('🔄 Immediate refetch result:', result.data?.length || 0, 'cases');
       });
       
-      // Refetch again after delays to catch webhook processing
       setTimeout(() => {
         console.log('⏱️ Refetch after 2s');
         refetchCases().then((result) => {
@@ -97,7 +92,6 @@ export default function Cases() {
         });
       }, 10000);
       
-      // Clean up URL
       const newUrl = location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
@@ -106,7 +100,6 @@ export default function Cases() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
-  // Debug loading and error states
   if (isLoading) {
     console.log('⏳ Cases loading...');
   }
@@ -121,7 +114,7 @@ export default function Cases() {
     textSecondary: '#A8ABAD',
     borderColor: '#3A3D40'
   } : {
-    bg: '#ECEFED', // Changed from '#F8FAFC' to '#ECEFED'
+    bg: '#ECEFED',
     cardBg: '#FFFFFF',
     textPrimary: '#1A1D1F',
     textSecondary: '#64748b',
@@ -330,8 +323,8 @@ export default function Cases() {
                         onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
                       >
                         <Scale className="w-5 h-5 text-ls-forest flex-shrink-0" />
-                        <CardTitle className="text-lg truncate" style={{ color: colors.textPrimary }}>
-                          {strings.caseNumber} #{caseItem.id.slice(0, 8)}
+                        <CardTitle className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                          {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
                         </CardTitle>
                       </div>
                       <Badge className={`${statusConfig.color} border whitespace-nowrap`}>

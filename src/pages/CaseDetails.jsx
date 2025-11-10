@@ -318,8 +318,8 @@ export default function CaseDetails() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {strings.caseNumber}{caseItem.id.slice(0, 8)}
+            <h1 className="text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
             </h1>
             <div className="flex items-center gap-2 text-sm" style={{ color: colors.textSecondary }}>
               <Calendar className="w-4 h-4" />

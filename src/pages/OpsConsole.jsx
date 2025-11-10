@@ -364,7 +364,7 @@ export default function OpsConsole() {
                       <Scale className="w-6 h-6 text-blue-600" />
                       <div>
                         <CardTitle className="text-lg" style={{ color: colors.textPrimary }}>
-                          Case #{caseItem.id.slice(0, 8)}
+                          {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
                         </CardTitle>
                         <p className="text-sm" style={{ color: colors.textSecondary }}>
                           {tenant?.full_name || caseItem.user_email}
