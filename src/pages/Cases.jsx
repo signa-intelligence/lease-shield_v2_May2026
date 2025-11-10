@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -7,9 +7,10 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Scale, Plus, Crown, Calendar, DollarSign, Zap, FileText, Loader2, CheckCircle2 } from "lucide-react"; // Added FileText and Loader2
+import { Scale, Plus, Crown, Calendar, DollarSign, Zap, FileText, Loader2, CheckCircle2, Eye, Download, ChevronDown, ChevronUp } from "lucide-react"; // Added Eye, Download, ChevronDown, ChevronUp
 import { format } from "date-fns";
 import { useFeatureAccess } from "@/components/shared/FeatureGate";
+import LetterPreview from "../components/shared/LetterPreview"; // Added LetterPreview import
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar }, // Changed icon from Clock to Calendar for Intake
@@ -26,6 +27,9 @@ export default function Cases() {
   const queryClient = useQueryClient();
   const { hasAccess: hasPriorityQueue } = useFeatureAccess('priority_queue');
   const { hasAccess: hasMemberPrice } = useFeatureAccess('resolve_member_price');
+  
+  const [expandedCase, setExpandedCase] = useState(null); // Track which case's letters are expanded
+  const [previewLetter, setPreviewLetter] = useState(null); // Track which letter to preview
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -141,7 +145,12 @@ export default function Cases() {
       fastTrack: "Fast Track",
       letterPack: "Letter Pack",
       memberRateBadge: "Member Rate",
-      viewDetails: "View Details"
+      viewDetails: "View Details",
+      generatedLetters: "Letters",
+      showLetters: "Show Letters",
+      hideLetters: "Hide Letters",
+      preview: "Preview",
+      download: "Download",
     },
     th: {
       title: "คดีของฉัน",
@@ -159,18 +168,92 @@ export default function Cases() {
       fastTrack: "เร่งด่วน",
       letterPack: "แพ็กจดหมาย",
       memberRateBadge: "ราคาสมาชิก",
-      viewDetails: "ดูรายละเอียด"
+      viewDetails: "ดูรายละเอียด",
+      generatedLetters: "จดหมาย",
+      showLetters: "แสดงจดหมาย",
+      hideLetters: "ซ่อนจดหมาย",
+      preview: "ดูตัวอย่าง",
+      download: "ดาวน์โหลด",
     }
   };
 
   const strings = t[language];
 
+  const getLetterTitle = (subject) => {
+    const titles = {
+      lease_negotiation: language === 'th' ? 'จดหมายขอทบทวนสัญญาเช่า' : 'Lease Negotiation Request',
+      deposit: language === 'th' ? 'จดหมายขอคืนเงินมัดจำ' : 'Deposit Return Request',
+      damages: language === 'th' ? 'จดหมายโต้แย้งค่าเสียหาย' : 'Damage Claim Response',
+      early_termination: language === 'th' ? 'จดหมายแจ้งยกเลิกก่อนกำหนด' : 'Early Termination Notice',
+      deductions: language === 'th' ? 'ขอรายละเอียดการหักเงิน' : 'Request for Itemised Deductions'
+    };
+    return titles[subject] || subject;
+  };
+
+  const handleDownloadWord = (caseItem, subject) => {
+    const urlKey = `${subject}_url`;
+    const url = caseItem?.letters?.[urlKey];
+    
+    if (!url) {
+      alert(language === 'th' 
+        ? `ไม่พบไฟล์ Word สำหรับ ${getLetterTitle(subject)}` 
+        : `No Word file found for ${getLetterTitle(subject)}`);
+      return;
+    }
+    
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const handlePreviewHtml = (caseItem, subject) => {
+    const htmlKey = `${subject}_html_url`;
+    const docKey = `${subject}_url`;
+    
+    const htmlUrl = caseItem?.letters?.[htmlKey];
+    const docUrl = caseItem?.letters?.[docKey];
+    
+    if (!htmlUrl && !docUrl) {
+      alert(language === 'th' 
+        ? `ไม่พบไฟล์สำหรับ ${getLetterTitle(subject)}` 
+        : `No file found for ${getLetterTitle(subject)}`);
+      return;
+    }
+    
+    setPreviewLetter({
+      htmlUrl: htmlUrl,
+      docUrl: docUrl,
+      subject: subject
+    });
+  };
+
+  const getLetterList = (caseItem) => {
+    const letters = [];
+    if (caseItem?.letters) {
+      if (caseItem.letters.lease_negotiation_url) letters.push('lease_negotiation');
+      if (caseItem.letters.deposit_url) letters.push('deposit');
+      if (caseItem.letters.damages_url) letters.push('damages');
+      if (caseItem.letters.deductions_url) letters.push('deductions');
+      if (caseItem.letters.early_termination_url) letters.push('early_termination');
+    }
+    return letters;
+  };
+
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-4xl mx-auto">
+        {/* Letter Preview Modal */}
+        {previewLetter && (
+          <LetterPreview
+            open={!!previewLetter}
+            onOpenChange={() => setPreviewLetter(null)}
+            htmlUrl={previewLetter.htmlUrl}
+            docUrl={previewLetter.docUrl}
+            title={getLetterTitle(previewLetter.subject)}
+          />
+        )}
+
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-            <Scale className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" /> {/* Changed color from blue-600 to ls-forest */}
+            <Scale className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
             {strings.title}
           </h1>
           <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>
@@ -230,18 +313,23 @@ export default function Cases() {
             {cases.map((caseItem) => {
               const statusConfig = STATUS_CONFIG[caseItem.status] || STATUS_CONFIG.intake;
               const StatusIcon = statusConfig.icon;
+              const availableLetters = getLetterList(caseItem);
+              const hasLetters = availableLetters.length > 0;
+              const isExpanded = expandedCase === caseItem.id;
 
               return (
                 <Card
                   key={caseItem.id}
-                  className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                  className="border-none shadow-lg hover:shadow-xl transition-all"
                   style={{ backgroundColor: colors.cardBg }}
-                  onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <Scale className="w-5 h-5 text-ls-forest flex-shrink-0" /> {/* Changed color from blue-600 to ls-forest */}
+                      <div 
+                        className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer"
+                        onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
+                      >
+                        <Scale className="w-5 h-5 text-ls-forest flex-shrink-0" />
                         <CardTitle className="text-lg truncate" style={{ color: colors.textPrimary }}>
                           {strings.caseNumber} #{caseItem.id.slice(0, 8)}
                         </CardTitle>
@@ -260,7 +348,7 @@ export default function Cases() {
                       <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
                         {strings.disputeAmount}
                       </p>
-                      <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}> {/* Changed text size to 2xl */}
+                      <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
                         ฿{caseItem.dispute_amount?.toLocaleString() || '0'}
                       </p>
                     </div>
@@ -279,13 +367,13 @@ export default function Cases() {
                           )}
                           {caseItem.letter_pack && (
                             <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
-                              <FileText className="w-3 h-3 mr-1" /> {/* Changed icon from Mail to FileText */}
+                              <FileText className="w-3 h-3 mr-1" />
                               {strings.letterPack}
                             </Badge>
                           )}
                           {caseItem.is_member_at_creation && (
                             <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
-                              <CheckCircle2 className="w-3 h-3 mr-1" /> {/* Changed icon from Crown to CheckCircle2 */}
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
                               {strings.memberRateBadge}
                             </Badge>
                           )}
@@ -299,11 +387,99 @@ export default function Cases() {
                       </p>
                     )}
 
+                    {/* Generated Letters Section */}
+                    {hasLetters && (
+                      <div className="border-t pt-3" style={{ borderColor: colors.borderColor }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedCase(isExpanded ? null : caseItem.id);
+                          }}
+                          className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-opacity-80 transition-all"
+                          style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4" style={{ color: colors.textPrimary }} />
+                            <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                              {strings.generatedLetters} ({availableLetters.length})
+                            </span>
+                          </div>
+                          {isExpanded ? (
+                            <ChevronUp className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                          )}
+                        </button>
+
+                        {isExpanded && (
+                          <div className="mt-3 space-y-2">
+                            {availableLetters.map((subject) => (
+                              <div
+                                key={subject}
+                                className="flex items-center justify-between p-3 rounded-lg"
+                                style={{
+                                  backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                                  border: `1px solid ${colors.borderColor}`
+                                }}
+                              >
+                                <div className="flex-1 min-w-0 mr-3">
+                                  <p className="text-sm font-semibold truncate" style={{ color: colors.textPrimary }}>
+                                    {getLetterTitle(subject)}
+                                  </p>
+                                </div>
+                                <div className="flex gap-2 flex-shrink-0">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePreviewHtml(caseItem, subject);
+                                    }}
+                                    className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
+                                    style={{
+                                      backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                                      color: colors.textPrimary,
+                                      border: `1px solid ${colors.borderColor}`
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.target.style.backgroundColor = isDarkMode ? '#4A4D50' : '#EEF2FF';
+                                      e.target.style.borderColor = '#6366F1';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                                      e.target.style.borderColor = colors.borderColor;
+                                    }}
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                    {strings.preview}
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDownloadWord(caseItem, subject);
+                                    }}
+                                    className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
+                                    style={{
+                                      backgroundColor: '#0C3B2E',
+                                      color: '#FFFFFF'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                                  >
+                                    <Download className="w-3 h-3" />
+                                    {strings.download}
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <Button
                       variant="outline"
                       className="w-full mt-2"
                       onClick={(e) => {
-                        e.stopPropagation(); // Prevent the card's onClick from firing when button is clicked
+                        e.stopPropagation();
                         navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`);
                       }}
                     >
