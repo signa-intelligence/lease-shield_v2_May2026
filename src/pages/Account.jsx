@@ -673,7 +673,7 @@ export default function Account() {
       perCredit: "per credit",
       buyNow: "Buy Now",
       bestValue: "Best Value",
-      creditPacks: "Credit Packs",
+      creditPacks: "แพ็กเกจเครดิต",
       oneLetterPerCredit: "1 letter = 1 credit",
       accessTemplateLibrary: "Access template library",
       bilingual: "Bilingual Templates",
@@ -821,32 +821,6 @@ export default function Account() {
   };
 
   const strings = t[language];
-  const currentPlanTier = user?.plan_tier || 'free';
-  const isFree = currentPlanTier === 'free';
-  const language = user?.language || 'en';
-  const currentTheme = user?.theme || 'dark'; // Default to 'dark' if user?.theme is undefined
-  const isDarkMode = currentTheme === 'dark';
-
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D',
-    fieldBg: '#353A3D',
-    hoverBg: '#3A3D40'
-  } : {
-    bg: '#ECEFED',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    inputBg: '#FFFFFF',
-    fieldBg: '#ECEFED',
-    hoverBg: '#F8FAFC'
-  };
-
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
@@ -873,7 +847,7 @@ export default function Account() {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.pageTitle}</h1>
-              <p style={{ color: colors.textSecondary }}>{strings.pageSubtitle}</p>
+              <p style={{ color: colors.textSecondary thaw: colors.textSecondary }}>{strings.pageSubtitle}</p>
             </div>
           </div>
         </div>
@@ -2869,7 +2843,7 @@ export default function Account() {
                 <p className="text-3xl font-bold" style={{ color: '#C7A338' }}>
                   {user?.letter_credits || 0}
                 </p>
-              </div>
+              </div >
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
