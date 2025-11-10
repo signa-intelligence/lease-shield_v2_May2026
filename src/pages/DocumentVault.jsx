@@ -261,28 +261,62 @@ export default function DocumentVault() {
     
     let body = '';
     
-    // For letters, extract and paste the full content
+    // For letters, extract and format as proper email
     if (doc.type === 'letter' && doc.html_content) {
       // Parse HTML properly using DOMParser
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(doc.html_content, 'text/html');
       
-      // Remove style tags and script tags
-      htmlDoc.querySelectorAll('style, script').forEach(el => el.remove());
+      // Get the content sections (skip header and footer)
+      const sections = htmlDoc.querySelectorAll('.section .content');
       
-      // Get plain text from body
-      const plainText = htmlDoc.body.textContent || htmlDoc.body.innerText || '';
-      
-      // Clean up extra whitespace and format nicely
-      const cleanedText = plainText
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .join('\n\n');
-      
-      body = language === 'th'
-        ? `${cleanedText}\n\n---\n\nดาวน์โหลด: ${doc.file_url}`
-        : `${cleanedText}\n\n---\n\nDownload: ${doc.file_url}`;
+      if (sections.length > 0) {
+        // Extract content from the section matching user's language
+        let letterContent = '';
+        
+        // Try to find the section with the user's preferred language
+        sections.forEach((section) => {
+          const sectionTitle = section.closest('.section')?.querySelector('.section-title')?.textContent || '';
+          const content = section.textContent || section.innerText || '';
+          
+          // For user's language, use that content
+          if ((language === 'th' && sectionTitle.includes('ไทย')) || 
+              (language === 'en' && !sectionTitle.includes('ไทย'))) {
+            letterContent = content.trim();
+          }
+        });
+        
+        // If no language match, use first section
+        if (!letterContent && sections[0]) {
+          letterContent = (sections[0].textContent || sections[0].innerText || '').trim();
+        }
+        
+        // Clean up the content - remove extra whitespace but keep paragraph structure
+        const cleanedContent = letterContent
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .join('\n\n');
+        
+        // Format as email
+        body = language === 'th'
+          ? `${cleanedContent}\n\n---\n\n💾 เอกสารฉบับเต็ม: ${doc.file_url}\n\n📧 ส่งจาก Lease Shield | www.leaseshield.com`
+          : `${cleanedContent}\n\n---\n\n💾 Full document: ${doc.file_url}\n\n📧 Sent via Lease Shield | www.leaseshield.com`;
+      } else {
+        // Fallback: strip all HTML and use clean text
+        htmlDoc.querySelectorAll('style, script, .header, .footer').forEach(el => el.remove());
+        const plainText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
+        
+        const cleanedText = plainText
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .join('\n\n');
+        
+        body = language === 'th'
+          ? `${cleanedText}\n\n---\n\n💾 ดาวน์โหลด: ${doc.file_url}`
+          : `${cleanedText}\n\n---\n\n💾 Download: ${doc.file_url}`;
+      }
     } else {
       // For other document types, keep existing format
       body = language === 'th'
