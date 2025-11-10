@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea"; // Added Textarea import
+import { Textarea } from "@/components/ui/textarea";
 import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye, Download, Edit2, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -36,8 +36,6 @@ export default function DocumentVault() {
   const [editingDoc, setEditingDoc] = useState(null);
   const [editFormData, setEditFormData] = useState({ type: '', label: '' });
   const [viewingDoc, setViewingDoc] = useState(null);
-  const [editingLetterContent, setEditingLetterContent] = useState(null); // New state for editing letter content
-  const [letterContentEdit, setLetterContentEdit] = useState(''); // New state for letter content being edited
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -105,7 +103,6 @@ export default function DocumentVault() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       setEditingDoc(null);
-      setEditingLetterContent(null); // Close letter content edit dialog on success
     },
   });
 
@@ -278,29 +275,6 @@ export default function DocumentVault() {
     window.location.href = mailtoLink;
   };
 
-  const handleEditLetterContent = (doc) => {
-    setEditingLetterContent(doc);
-    setLetterContentEdit(doc.html_content || '');
-  };
-
-  const handleSaveLetterContent = async () => {
-    if (!editingLetterContent) return;
-
-    try {
-      await updateDocumentMutation.mutateAsync({
-        id: editingLetterContent.id,
-        data: {
-          html_content: letterContentEdit
-        }
-      });
-      setEditingLetterContent(null);
-      alert(language === 'th' ? 'บันทึกการแก้ไขสำเร็จ' : 'Letter updated successfully');
-    } catch (error) {
-      console.error('Failed to save letter content:', error);
-      alert(language === 'th' ? 'ไม่สามารถบันทึกได้ กรุณาลองอีกครั้ง' : 'Failed to save. Please try again.');
-    }
-  };
-
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
@@ -361,10 +335,7 @@ export default function DocumentVault() {
       save: "Save",
       cancel: "Cancel",
       saving: "Saving...",
-      loadingDocuments: "Loading documents...",
-      editLetterContent: "Edit Letter Content", // New translation
-      letterContentLabel: "Letter HTML Content", // New translation
-      editLetter: "Edit Letter" // New translation
+      loadingDocuments: "Loading documents..."
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -401,10 +372,7 @@ export default function DocumentVault() {
       save: "บันทึก",
       cancel: "ยกเลิก",
       saving: "กำลังบันทึก...",
-      loadingDocuments: "กำลังโหลดเอกสาร...",
-      editLetterContent: "แก้ไขเนื้อหาจดหมาย", // New translation
-      letterContentLabel: "เนื้อหา HTML จดหมาย", // New translation
-      editLetter: "แก้ไขจดหมาย" // New translation
+      loadingDocuments: "กำลังโหลดเอกสาร..."
     }
   };
 
@@ -452,50 +420,6 @@ export default function DocumentVault() {
                 </Button>
                 <Button 
                   onClick={handleSaveEdit}
-                  disabled={updateDocumentMutation.isPending}
-                  className="bg-ls-forest hover:bg-ls-forest/90"
-                >
-                  {updateDocumentMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {strings.saving}
-                    </>
-                  ) : (
-                    strings.save
-                  )}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* NEW: Edit Letter Content Dialog */}
-        <Dialog open={!!editingLetterContent} onOpenChange={() => setEditingLetterContent(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh]" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-            <DialogHeader>
-              <DialogTitle style={{ color: colors.textPrimary }}>{strings.editLetterContent}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-4 overflow-y-auto max-h-[60vh] flex flex-col">
-              <div>
-                <Label htmlFor="letter_content" style={{ color: colors.textPrimary }}>{strings.letterContentLabel}</Label>
-                <Textarea
-                  id="letter_content"
-                  value={letterContentEdit}
-                  onChange={(e) => setLetterContentEdit(e.target.value)}
-                  className="mt-2 font-mono text-xs w-full"
-                  rows={20}
-                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                />
-                <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                  {language === 'th' ? 'แก้ไข HTML โดยตรง - ใช้ความระมัดระวัง' : 'Edit HTML directly - use caution'}
-                </p>
-              </div>
-              <div className="flex gap-3 justify-end sticky bottom-0 bg-inherit pt-4">
-                <Button variant="outline" onClick={() => setEditingLetterContent(null)}>
-                  {strings.cancel}
-                </Button>
-                <Button 
-                  onClick={handleSaveLetterContent}
                   disabled={updateDocumentMutation.isPending}
                   className="bg-ls-forest hover:bg-ls-forest/90"
                 >
@@ -898,29 +822,12 @@ export default function DocumentVault() {
                               <Send className="w-3 h-3 mr-1" />
                               {strings.sendEmail}
                             </Button>
-                            {/* NEW: Edit Letter Content button for letter documents */}
-                            {doc.type === 'letter' && doc.html_content && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditLetterContent(doc)}
-                                className="w-full sm:col-span-2 justify-center text-xs"
-                                style={{
-                                  borderColor: '#6366F1',
-                                  backgroundColor: colors.cardBg,
-                                  color: '#6366F1',
-                                }}
-                              >
-                                <Edit2 className="w-3 h-3 mr-1" />
-                                {strings.editLetter}
-                              </Button>
-                            )}
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleDelete(doc.id)}
                               disabled={deleteDocumentMutation.isPending}
-                              className={`w-full ${doc.type === 'letter' && doc.html_content ? 'sm:col-span-2' : 'sm:col-span-4'} text-red-600 hover:text-red-700 justify-center text-xs`}
+                              className="w-full sm:col-span-4 text-red-600 hover:text-red-700 justify-center text-xs"
                               style={{
                                 borderColor: colors.borderColor,
                                 backgroundColor: colors.cardBg,

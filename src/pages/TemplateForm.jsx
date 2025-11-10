@@ -1,44 +1,56 @@
 
-import React, { useState } from "react";
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge"; // Import Badge component
+import { Textarea } from "@/components/ui/textarea"; // Added Textarea component
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Added Select components
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Loader2, FileText, Send, CheckCircle2, Download, Eye } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Send, AlertCircle, Edit2, Save } from "lucide-react"; // Removed CheckCircle2, Download, Eye, added AlertCircle, Edit2, Save
 import { base44 } from "@/api/base44Client";
-import LetterPreview from "../components/shared/LetterPreview";
+// Removed LetterPreview import
 
 export default function TemplateForm() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient(); // Added useQueryClient
   const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false); // New state for saving reviewed letter
   const [error, setError] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [generatedUrls, setGeneratedUrls] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
+  // Removed showSuccess, generatedUrls, showPreview
+  const [generatedLetter, setGeneratedLetter] = useState(null); // New state for generated letter content
+  const [reviewMode, setReviewMode] = useState(false); // New state for review mode
+  const [editedContent, setEditedContent] = useState({ letter_en: '', letter_th: '' }); // New state for editable content
 
   // Get subject from URL parameter
   const urlParams = new URLSearchParams(window.location.search);
-  const subjectFromUrl = urlParams.get('subject') || 'deposit';
+  const preSelectedSubject = urlParams.get('subject'); // Renamed subjectFromUrl for clarity
 
   const [formData, setFormData] = useState({
+    subject: '', // Changed to empty string, will be set by preSelectedSubject or user selection
     tenant_name: '',
     landlord_name: '',
     property_address: '',
     contract_ref: '',
-    deposit_amount_thb: '',
+    deposit_amount: '', // Changed from deposit_amount_thb
     example_item_1: '',
     example_item_2: '',
     example_item_3: '',
     breach_summary: '',
     settlement_amount: '',
     settlement_date: '',
-    subject: subjectFromUrl
+    concerns_list: '' // New field
   });
+
+  // Effect to set initial subject from URL, runs once on mount
+  useEffect(() => {
+    if (preSelectedSubject) { // Only set if a preSelectedSubject exists
+      setFormData(prev => ({ ...prev, subject: preSelectedSubject }));
+    }
+  }, [preSelectedSubject]); // Dependency array includes preSelectedSubject
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -81,19 +93,19 @@ export default function TemplateForm() {
       depositAmount: "Deposit Amount (optional)",
       letterType: "Letter Type",
       depositReturn: "Deposit Return Request",
-      damageDispute: "Damage Claim Response",
-      earlyTermination: "Early Termination Notice",
+      damageDispute: "Damage Claim Response", // No longer used for subject, but can be for display
+      earlyTermination: "Early Termination Notice", // No longer used for subject, but can be for display
       generateButton: "Generate Letter",
       generating: "Generating...",
-      cancel: "Back",
+      cancel: "Back", // Renamed for main form button
       required: "Required",
       errorFillRequired: 'Please fill in your name and landlord name.',
       errorGenerationFailed: 'Failed to generate letter. Please try again.',
-      successTitle: "Letter Generated Successfully!",
-      successDesc: "Your bilingual letter has been created and saved to your Document Vault.",
-      previewHtml: "Preview in Browser",
-      downloadWord: "Download Word",
-      goToVault: "Go to Document Vault",
+      successTitle: "Letter Generated Successfully!", // No longer used for dialog
+      successDesc: "Your bilingual letter has been created and saved to your Document Vault.", // No longer used for dialog
+      previewHtml: "Preview in Browser", // No longer used
+      downloadWord: "Download Word", // No longer used
+      goToVault: "Go to Document Vault", // No longer used
       exampleItem1: "Example Item 1 (optional)",
       exampleItem1Placeholder: "e.g., Wall scuff marks",
       exampleItem2: "Example Item 2 (optional)",
@@ -110,6 +122,23 @@ export default function TemplateForm() {
       insufficientCreditsWarningDesc: "You need 1 credit to generate a letter. Please purchase credits from the Account page.",
       goToAccount: "Go to Account",
       creditsLabel: "Credits",
+      // New strings for review mode and general concerns
+      back: "Back", // New string for review mode back button
+      reviewEditLetter: "Review & Edit Letter",
+      reviewEditLetterDesc: "Review the content and make edits before saving. You can edit the text directly.",
+      editContent: "Edit Content",
+      englishLetter: "English Letter",
+      thaiLetter: "Thai Letter",
+      saveLetter: "Save Letter",
+      saving: "Saving...",
+      saveLetterSuccess: "Letter saved successfully!\nCredits remaining: ",
+      saveLetterCreditDeduction: "⚡ On save, 1 credit will be deducted and the letter will be saved to Document Vault.",
+      cancelReviewConfirm: "Cancel letter generation? Changes will not be saved.",
+      selectLetterType: "Select Letter Type",
+      selectLetterTypePlaceholder: "Choose a letter type",
+      concernsList: "List of Concerns (Optional)", // New field
+      concernsListPlaceholder: "e.g., Unpaid rent, Noise complaints, Unauthorized pet",
+      creditsDeductedMessage: "1 credit will be deducted upon saving this letter."
     },
     th: {
       generateLetter: "สร้างจดหมาย",
@@ -130,15 +159,15 @@ export default function TemplateForm() {
       earlyTermination: "แจ้งยกเลิกก่อนกำหนด",
       generateButton: "สร้างจดหมาย",
       generating: "กำลังสร้าง...",
-      cancel: "กลับ",
+      cancel: "กลับ", // Renamed for main form button
       required: "จำเป็น",
       errorFillRequired: 'กรุณากรอกชื่อของคุณและชื่อเจ้าของบ้าน',
       errorGenerationFailed: 'ไม่สามารถสร้างจดหมายได้ กรุณาลองอีกครั้ง',
-      successTitle: "สร้างจดหมายสำเร็จ!",
-      successDesc: "จดหมายสองภาษาของคุณถูกสร้างและบันทึกไว้ใน Document Vault แล้ว",
-      previewHtml: "ดูตัวอย่างในเบราว์เซอร์",
-      downloadWord: "ดาวน์โหลด Word",
-      goToVault: "ไปที่ Document Vault",
+      successTitle: "สร้างจดหมายสำเร็จ!", // No longer used
+      successDesc: "จดหมายสองภาษาของคุณถูกสร้างและบันทึกไว้ใน Document Vault แล้ว", // No longer used
+      previewHtml: "ดูตัวอย่างในเบราว์เซอร์", // No longer used
+      downloadWord: "ดาวน์โหลด Word", // No longer used
+      goToVault: "ไปที่ Document Vault", // No longer used
       exampleItem1: "ตัวอย่างรายการ 1 (ไม่บังคับ)",
       exampleItem1Placeholder: "เช่น รอยขีดข่วนกำแพง",
       exampleItem2: "ตัวอย่างรายการ 2 (ไม่บังคับ)",
@@ -155,6 +184,23 @@ export default function TemplateForm() {
       insufficientCreditsWarningDesc: "คุณต้องการ 1 เครดิตเพื่อสร้างจดหมาย กรุณาซื้อเครดิตเพิ่มจากหน้าบัญชี",
       goToAccount: "ไปที่หน้าบัญชี",
       creditsLabel: "เครดิต",
+      // New strings for review mode and general concerns
+      back: "กลับ", // New string for review mode back button
+      reviewEditLetter: "ตรวจสอบและแก้ไขจดหมาย",
+      reviewEditLetterDesc: "ตรวจสอบเนื้อหาและแก้ไขก่อนบันทึก คุณสามารถแก้ไขข้อความได้โดยตรง",
+      editContent: "แก้ไขเนื้อหา",
+      englishLetter: "จดหมายภาษาอังกฤษ",
+      thaiLetter: "จดหมายภาษาไทย",
+      saveLetter: "บันทึกจดหมาย",
+      saving: "กำลังบันทึก...",
+      saveLetterSuccess: "บันทึกจดหมายสำเร็จ!\nเครดิตคงเหลือ: ",
+      saveLetterCreditDeduction: "⚡ เมื่อบันทึก เครดิต 1 จะถูกหัก และจดหมายจะถูกบันทึกในคลังเอกสาร.",
+      cancelReviewConfirm: "ยกเลิกการสร้างจดหมาย? การเปลี่ยนแปลงจะไม่ถูกบันทึก",
+      selectLetterType: "เลือกประเภทจดหมาย",
+      selectLetterTypePlaceholder: "เลือกประเภทจดหมาย",
+      concernsList: "รายการข้อกังวล (ไม่บังคับ)", // New field
+      concernsListPlaceholder: "เช่น ค่าเช่าที่ค้างชำระ, ข้อร้องเรียนเรื่องเสียงดัง, สัตว์เลี้ยงไม่ได้รับอนุญาต",
+      creditsDeductedMessage: "จะถูกหัก 1 เครดิตเมื่อบันทึกจดหมายนี้"
     }
   };
 
@@ -170,109 +216,236 @@ export default function TemplateForm() {
     evidence: language === 'th' ? 'ขอหลักฐานประกอบ' : 'Request for Evidence',
     final_opportunity: language === 'th' ? 'โอกาสสุดท้าย' : 'Final Opportunity',
     non_compliance: language === 'th' ? 'แจ้งไม่ปฏิบัติตามสัญญา' : 'Notice of Non-Compliance',
-    settlement: language === 'th' ? 'ยืนยันการตกลงชำระเงิน' : 'Settlement Confirmation'
+    settlement: language === 'th' ? 'ยืนยันการตกลงชำระเงิน' : 'Settlement Confirmation',
+    general_concerns: language === 'th' ? 'ข้อกังวลทั่วไป' : 'General Concerns/Issues' // New letter type
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleInputChange = (field, value) => { // Renamed from handleChange
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setError(null);
+  };
 
+  const handleGenerate = async (e) => { // Renamed from handleSubmit
+    e.preventDefault();
+    setError(null);
+
+    // Basic validation
+    if (!formData.subject) {
+      setError(language === 'th' ? 'กรุณาเลือกประเภทจดหมาย' : 'Please select a letter type');
+      return;
+    }
     if (!formData.tenant_name || !formData.landlord_name) {
-      setError(strings.errorFillRequired);
+      setError(strings.errorFillRequired); // Reusing existing error string
       return;
     }
 
-    // Check credits before proceeding
+    // Credit check
     if (userCredits < 1) {
-      setError(strings.insufficientCreditsError);
+      setError(language === 'th'
+        ? 'เครดิตไม่เพียงพอ กรุณาซื้อเครดิตเพื่อสร้างจดหมาย'
+        : 'Insufficient credits. Please purchase credits to generate letters.');
       return;
     }
 
     setGenerating(true);
-    setError(null);
-
     try {
-      const payload = {
-        subject: formData.subject,
-        tenant_name: formData.tenant_name,
-        landlord_name: formData.landlord_name,
-        property_address: formData.property_address || undefined,
-        contract_ref: formData.contract_ref || undefined,
-      };
-
-      if (['deposit', 'deductions'].includes(formData.subject)) {
-        payload.deposit_amount = formData.deposit_amount_thb || undefined;
-      }
-      if (formData.subject === 'condition_dispute') {
-        payload.example_item_1 = formData.example_item_1 || undefined;
-        payload.example_item_2 = formData.example_item_2 || undefined;
-        payload.example_item_3 = formData.example_item_3 || undefined;
-      }
-      if (formData.subject === 'non_compliance') {
-        payload.breach_summary = formData.breach_summary || undefined;
-      }
-      if (formData.subject === 'settlement') {
-        payload.settlement_amount = formData.settlement_amount || undefined;
-        payload.settlement_date = formData.settlement_date || undefined;
-      }
-
-      const response = await base44.functions.invoke('generatePhase1Letter', payload);
+      // The backend `generatePhase1Letter` expects the full formData and handles specific fields based on subject
+      const response = await base44.functions.invoke('generatePhase1Letter', formData);
 
       if (response.data?.ok) {
-        setGeneratedUrls({
-          html: response.data.urls?.html,
-          doc: response.data.urls?.doc
+        setGeneratedLetter(response.data);
+        setEditedContent({
+          letter_en: response.data.letter_content?.letter_en || '',
+          letter_th: response.data.letter_content?.letter_th || ''
         });
-        setShowSuccess(true);
+        setReviewMode(true); // Enter review mode
       } else {
         throw new Error(response.data?.error || 'Generation failed');
       }
     } catch (err) {
-      console.error('Letter generation error:', err);
+      console.error('Generation error:', err);
       setError(err.message || strings.errorGenerationFailed);
     } finally {
       setGenerating(false);
     }
   };
 
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    setError(null);
-  };
+  const handleSaveAfterReview = async () => {
+    if (!generatedLetter || !editedContent.letter_en || !editedContent.letter_th) {
+      setError(language === 'th' ? 'กรุณาตรวจสอบเนื้อหาจดหมาย' : 'Please review letter content');
+      return;
+    }
 
-  const handlePreviewHtml = () => {
-    setShowSuccess(false); // Close success dialog
-    setShowPreview(true); // Open preview dialog
-  };
+    setSaving(true);
+    setError(null); // Clear any previous error
 
-  const handleDownloadWord = () => {
-    if (generatedUrls?.doc) {
-      window.open(generatedUrls.doc, '_blank', 'noopener,noreferrer');
+    try {
+      const response = await base44.functions.invoke('saveReviewedLetter', {
+        ...formData, // Send all form data again
+        letter_id: generatedLetter.letter_id, // Pass the letter_id from the initial generation response
+        letter_en: editedContent.letter_en,
+        letter_th: editedContent.letter_th,
+      });
+
+      if (response.data?.ok) {
+        queryClient.invalidateQueries({ queryKey: ['documents'] }); // Invalidate documents cache
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] }); // Invalidate user credits cache
+
+        alert(strings.saveLetterSuccess + (response.data.credits_remaining ?? (userCredits - 1))); // Display credits remaining
+        navigate(createPageUrl("DocumentVault"));
+      } else {
+        throw new Error(response.data?.error || 'Save failed');
+      }
+    } catch (err) {
+      console.error('Save error:', err);
+      setError(err.message || (language === 'th'
+        ? 'ไม่สามารถบันทึกได้ กรุณาลองอีกครั้ง'
+        : 'Failed to save. Please try again.'));
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleGoToVault = () => {
-    setShowSuccess(false);
-    navigate(createPageUrl("DocumentVault"));
+  const handleCancelReview = () => {
+    if (window.confirm(strings.cancelReviewConfirm)) { // Use window.confirm for browser native dialog
+      setReviewMode(false);
+      setGeneratedLetter(null);
+      setEditedContent({ letter_en: '', letter_th: '' });
+      setError(null); // Clear any error
+    }
   };
 
-  if (generating) {
+  // Review Mode UI
+  if (reviewMode && generatedLetter) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
-        <Card className="max-w-md w-full border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardContent className="p-8 text-center">
-            <Loader2 className="w-16 h-16 animate-spin text-purple-600 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {strings.generating}
-            </h3>
+      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-5xl mx-auto">
+          <button
+            onClick={handleCancelReview}
+            className="flex items-center gap-2 mb-6 text-sm font-medium hover:opacity-70 transition-opacity"
+            style={{ color: colors.textSecondary }}
+            disabled={saving}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {strings.back}
+          </button>
+
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {strings.reviewEditLetter}
+            </h1>
             <p style={{ color: colors.textSecondary }}>
-              {language === 'th' ? 'กำลังสร้างจดหมายของคุณ...' : 'Creating your letter...'}
+              {strings.reviewEditLetterDesc}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 rounded-lg border-2" style={{
+              backgroundColor: isDarkMode ? 'rgb(58, 38, 38)' : '#FEE2E2',
+              borderColor: isDarkMode ? 'rgb(80, 40, 40)' : '#FECACA',
+              color: '#DC2626'
+            }}>
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                <p className="text-red-600">{error}</p>
+              </div>
+            </div>
+          )}
+
+          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <Edit2 className="w-5 h-5 text-purple-600" />
+                {strings.editContent}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {/* English Version */}
+              <div>
+                <Label htmlFor="letter_en" className="text-base font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
+                  {strings.englishLetter}
+                </Label>
+                <Textarea
+                  id="letter_en"
+                  value={editedContent.letter_en}
+                  onChange={(e) => setEditedContent(prev => ({ ...prev, letter_en: e.target.value }))}
+                  rows={15}
+                  className="font-sans"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary,
+                    whiteSpace: 'pre-wrap' // Ensure newlines are rendered
+                  }}
+                />
+              </div>
+
+              {/* Thai Version */}
+              <div>
+                <Label htmlFor="letter_th" className="text-base font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
+                  {strings.thaiLetter}
+                </Label>
+                <Textarea
+                  id="letter_th"
+                  value={editedContent.letter_th}
+                  onChange={(e) => setEditedContent(prev => ({ ...prev, letter_th: e.target.value }))}
+                  rows={15}
+                  className="font-sans"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary,
+                    whiteSpace: 'pre-wrap' // Ensure newlines are rendered
+                  }}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button
+                  type="button" // Important for buttons not to submit forms
+                  variant="outline"
+                  onClick={handleCancelReview}
+                  disabled={saving}
+                  className="flex-1"
+                  style={{
+                    backgroundColor: colors.cardBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary,
+                  }}
+                >
+                  {strings.cancel}
+                </Button>
+                <Button
+                  onClick={handleSaveAfterReview}
+                  disabled={saving || !editedContent.letter_en || !editedContent.letter_th}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {strings.saving}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      {strings.saveLetter}
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <div className="text-xs text-center pt-2" style={{ color: colors.textSecondary }}>
+                {strings.saveLetterCreditDeduction}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
+  // Original Form UI - this block executes if not in reviewMode
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-3xl mx-auto">
@@ -284,93 +457,6 @@ export default function TemplateForm() {
           <ArrowLeft className="w-4 h-4" />
           {strings.cancel}
         </button>
-
-        {/* Letter Preview Dialog */}
-        <LetterPreview
-          open={showPreview}
-          onOpenChange={setShowPreview}
-          htmlUrl={generatedUrls?.html}
-          docUrl={generatedUrls?.doc}
-          title={letterTypeLabels[formData.subject]}
-        />
-
-        {/* Success Dialog */}
-        <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
-          <DialogContent className="sm:max-w-md" style={{
-            backgroundColor: colors.cardBg,
-            borderColor: colors.borderColor
-          }}>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
-                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                </div>
-                <div>
-                  {strings.successTitle}
-                </div>
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <p style={{ color: colors.textSecondary }}>
-                {strings.successDesc}
-              </p>
-
-              <div className="space-y-3">
-                {/* Preview HTML Button */}
-                <button
-                  onClick={handlePreviewHtml}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-all"
-                  style={{
-                    backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                    color: colors.textPrimary,
-                    border: `2px solid ${colors.borderColor}`
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#EEF2FF';
-                    e.target.style.borderColor = '#6366F1';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
-                    e.target.style.borderColor = colors.borderColor;
-                  }}
-                >
-                  <Eye className="w-5 h-5" />
-                  {strings.previewHtml}
-                </button>
-
-                {/* Download Word Button */}
-                <button
-                  onClick={handleDownloadWord}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-all"
-                  style={{
-                    backgroundColor: '#0C3B2E',
-                    color: '#FFFFFF'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-                >
-                  <Download className="w-5 h-5" />
-                  {strings.downloadWord}
-                </button>
-
-                {/* Go to Vault Button */}
-                <button
-                  onClick={handleGoToVault}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-all"
-                  style={{
-                    backgroundColor: '#C7A338',
-                    color: '#1A1D1F'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#d4af37'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
-                >
-                  <FileText className="w-5 h-5" />
-                  {strings.goToVault}
-                </button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
@@ -423,19 +509,52 @@ export default function TemplateForm() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Letter Type - Display Only */}
-              <div className="p-4 rounded-lg" style={{
-                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                border: `1px solid ${colors.borderColor}`
-              }}>
-                <Label style={{ color: colors.textSecondary, fontSize: '12px', fontWeight: '600' }}>
-                  {strings.letterType}
+            <form onSubmit={handleGenerate} className="space-y-4">
+              {/* Letter Type Selection - Replaced display-only with Select component */}
+              <div>
+                <Label htmlFor="letter_subject" style={{ color: colors.textPrimary }}>
+                  {strings.letterType} <span className="text-red-500">*</span>
                 </Label>
-                <p className="mt-1 text-lg font-semibold" style={{ color: colors.textPrimary }}>
-                  {letterTypeLabels[formData.subject]}
-                </p>
+                <Select
+                  value={formData.subject}
+                  onValueChange={(value) => handleInputChange('subject', value)}
+                  disabled={generating} // Disable selection while generating
+                >
+                  <SelectTrigger
+                    id="letter_subject"
+                    className="w-full"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  >
+                    <SelectValue placeholder={strings.selectLetterTypePlaceholder}>
+                      {formData.subject ? letterTypeLabels[formData.subject] : strings.selectLetterTypePlaceholder}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent style={{
+                    backgroundColor: colors.cardBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}>
+                    {Object.entries(letterTypeLabels).map(([key, label]) => (
+                      <SelectItem
+                        key={key}
+                        value={key}
+                        style={{
+                          backgroundColor: colors.cardBg,
+                          color: colors.textPrimary
+                        }}
+                        className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
 
               {/* Common Fields */}
               <div>
@@ -445,7 +564,7 @@ export default function TemplateForm() {
                 <Input
                   id="tenant_name"
                   value={formData.tenant_name}
-                  onChange={(e) => handleChange('tenant_name', e.target.value)}
+                  onChange={(e) => handleInputChange('tenant_name', e.target.value)}
                   placeholder={strings.yourNamePlaceholder}
                   required
                   style={{
@@ -453,6 +572,7 @@ export default function TemplateForm() {
                     borderColor: colors.borderColor,
                     color: colors.textPrimary
                   }}
+                  disabled={generating}
                 />
               </div>
 
@@ -463,7 +583,7 @@ export default function TemplateForm() {
                 <Input
                   id="landlord_name"
                   value={formData.landlord_name}
-                  onChange={(e) => handleChange('landlord_name', e.target.value)}
+                  onChange={(e) => handleInputChange('landlord_name', e.target.value)}
                   placeholder={strings.landlordNamePlaceholder}
                   required
                   style={{
@@ -471,6 +591,7 @@ export default function TemplateForm() {
                     borderColor: colors.borderColor,
                     color: colors.textPrimary
                   }}
+                  disabled={generating}
                 />
               </div>
 
@@ -481,13 +602,14 @@ export default function TemplateForm() {
                 <Input
                   id="property_address"
                   value={formData.property_address}
-                  onChange={(e) => handleChange('property_address', e.target.value)}
+                  onChange={(e) => handleInputChange('property_address', e.target.value)}
                   placeholder={strings.propertyAddressPlaceholder}
                   style={{
                     backgroundColor: colors.inputBg,
                     borderColor: colors.borderColor,
                     color: colors.textPrimary
                   }}
+                  disabled={generating}
                 />
               </div>
 
@@ -498,33 +620,35 @@ export default function TemplateForm() {
                 <Input
                   id="contract_ref"
                   value={formData.contract_ref}
-                  onChange={(e) => handleChange('contract_ref', e.target.value)}
+                  onChange={(e) => handleInputChange('contract_ref', e.target.value)}
                   placeholder={strings.contractRefPlaceholder}
                   style={{
                     backgroundColor: colors.inputBg,
                     borderColor: colors.borderColor,
                     color: colors.textPrimary
                   }}
+                  disabled={generating}
                 />
               </div>
 
               {/* Conditional Fields Based on Letter Type */}
               {['deposit', 'deductions'].includes(formData.subject) && (
                 <div>
-                  <Label htmlFor="deposit_amount_thb" style={{ color: colors.textPrimary }}>
+                  <Label htmlFor="deposit_amount" style={{ color: colors.textPrimary }}>
                     {strings.depositAmount}
                   </Label>
                   <Input
-                    id="deposit_amount_thb"
+                    id="deposit_amount"
                     type="number"
-                    value={formData.deposit_amount_thb}
-                    onChange={(e) => handleChange('deposit_amount_thb', e.target.value)}
+                    value={formData.deposit_amount}
+                    onChange={(e) => handleInputChange('deposit_amount', e.target.value)}
                     placeholder="25000"
                     style={{
                       backgroundColor: colors.inputBg,
                       borderColor: colors.borderColor,
                       color: colors.textPrimary
                     }}
+                    disabled={generating}
                   />
                 </div>
               )}
@@ -538,13 +662,14 @@ export default function TemplateForm() {
                     <Input
                       id="example_item_1"
                       value={formData.example_item_1}
-                      onChange={(e) => handleChange('example_item_1', e.target.value)}
+                      onChange={(e) => handleInputChange('example_item_1', e.target.value)}
                       placeholder={strings.exampleItem1Placeholder}
                       style={{
                         backgroundColor: colors.inputBg,
                         borderColor: colors.borderColor,
                         color: colors.textPrimary
                       }}
+                      disabled={generating}
                     />
                   </div>
                   <div>
@@ -554,13 +679,14 @@ export default function TemplateForm() {
                     <Input
                       id="example_item_2"
                       value={formData.example_item_2}
-                      onChange={(e) => handleChange('example_item_2', e.target.value)}
+                      onChange={(e) => handleInputChange('example_item_2', e.target.value)}
                       placeholder={strings.exampleItem2Placeholder}
                       style={{
                         backgroundColor: colors.inputBg,
                         borderColor: colors.borderColor,
                         color: colors.textPrimary
                       }}
+                      disabled={generating}
                     />
                   </div>
                   <div>
@@ -570,13 +696,14 @@ export default function TemplateForm() {
                     <Input
                       id="example_item_3"
                       value={formData.example_item_3}
-                      onChange={(e) => handleChange('example_item_3', e.target.value)}
+                      onChange={(e) => handleInputChange('example_item_3', e.target.value)}
                       placeholder={strings.exampleItem3Placeholder}
                       style={{
                         backgroundColor: colors.inputBg,
                         borderColor: colors.borderColor,
                         color: colors.textPrimary
                       }}
+                      disabled={generating}
                     />
                   </div>
                 </>
@@ -587,10 +714,10 @@ export default function TemplateForm() {
                   <Label htmlFor="breach_summary" style={{ color: colors.textPrimary }}>
                     {strings.breachSummary}
                   </Label>
-                  <textarea
+                  <Textarea
                     id="breach_summary"
                     value={formData.breach_summary}
-                    onChange={(e) => handleChange('breach_summary', e.target.value)}
+                    onChange={(e) => handleInputChange('breach_summary', e.target.value)}
                     placeholder={strings.breachSummaryPlaceholder}
                     rows={4}
                     style={{
@@ -604,6 +731,7 @@ export default function TemplateForm() {
                       outline: 'none',
                       fontFamily: 'inherit'
                     }}
+                    disabled={generating}
                   />
                 </div>
               )}
@@ -618,13 +746,14 @@ export default function TemplateForm() {
                       id="settlement_amount"
                       type="number"
                       value={formData.settlement_amount}
-                      onChange={(e) => handleChange('settlement_amount', e.target.value)}
+                      onChange={(e) => handleInputChange('settlement_amount', e.target.value)}
                       placeholder={strings.settlementAmountPlaceholder}
                       style={{
                         backgroundColor: colors.inputBg,
                         borderColor: colors.borderColor,
                         color: colors.textPrimary
                       }}
+                      disabled={generating}
                     />
                   </div>
                   <div>
@@ -635,15 +764,43 @@ export default function TemplateForm() {
                       id="settlement_date"
                       type="date"
                       value={formData.settlement_date}
-                      onChange={(e) => handleChange('settlement_date', e.target.value)}
+                      onChange={(e) => handleInputChange('settlement_date', e.target.value)}
                       style={{
                         backgroundColor: colors.inputBg,
                         borderColor: colors.borderColor,
                         color: colors.textPrimary
                       }}
+                      disabled={generating}
                     />
                   </div>
                 </>
+              )}
+
+              {formData.subject === 'general_concerns' && (
+                <div>
+                  <Label htmlFor="concerns_list" style={{ color: colors.textPrimary }}>
+                    {strings.concernsList}
+                  </Label>
+                  <Textarea
+                    id="concerns_list"
+                    value={formData.concerns_list}
+                    onChange={(e) => handleInputChange('concerns_list', e.target.value)}
+                    placeholder={strings.concernsListPlaceholder}
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      backgroundColor: colors.inputBg,
+                      color: colors.textPrimary,
+                      border: `1px solid ${colors.borderColor}`,
+                      outline: 'none',
+                      fontFamily: 'inherit'
+                    }}
+                    disabled={generating}
+                  />
+                </div>
               )}
 
               <div className="flex gap-3 pt-4">
@@ -657,6 +814,7 @@ export default function TemplateForm() {
                     borderColor: colors.borderColor,
                     color: colors.textPrimary,
                   }}
+                  disabled={generating}
                 >
                   {strings.cancel}
                 </Button>
@@ -665,9 +823,21 @@ export default function TemplateForm() {
                   className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
                   disabled={generating || userCredits < 1}
                 >
-                  <Send className="w-4 h-4 mr-2" />
-                  {strings.generateButton}
+                  {generating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {strings.generating}
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      {strings.generateButton}
+                    </>
+                  )}
                 </Button>
+              </div>
+              <div className="text-xs text-center pt-2" style={{ color: colors.textSecondary }}>
+                {strings.creditsDeductedMessage}
               </div>
             </form>
           </CardContent>
