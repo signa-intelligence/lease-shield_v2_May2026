@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,7 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, tit
           setLoading(false);
         });
     }
-  }, [open, htmlUrl]);
+  }, [open, htmlUrl, strings.error]); // Added strings.error to dependency array
 
   const handleDownload = () => {
     if (docUrl) {
@@ -88,16 +89,16 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, tit
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0"
         style={{
           backgroundColor: colors.cardBg,
           borderColor: colors.borderColor
         }}
       >
-        <DialogHeader className="flex flex-row items-center justify-between pb-4" style={{
+        <DialogHeader className="flex flex-row items-center justify-between px-4 py-3 flex-shrink-0" style={{
           borderBottom: `1px solid ${colors.borderColor}`
         }}>
-          <DialogTitle style={{ color: colors.textPrimary }}>
+          <DialogTitle className="text-sm sm:text-base" style={{ color: colors.textPrimary }}>
             {title || (language === 'th' ? 'ตัวอย่างจดหมาย' : 'Letter Preview')}
           </DialogTitle>
           <div className="flex items-center gap-2">
@@ -106,31 +107,29 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, tit
                 size="sm"
                 variant="outline"
                 onClick={handleOpenNew}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-xs sm:text-sm h-8"
               >
-                <ExternalLink className="w-4 h-4" />
-                {strings.openNew}
+                <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{strings.openNew}</span>
               </Button>
             )}
             {docUrl && (
               <Button
                 size="sm"
                 onClick={handleDownload}
-                className="bg-ls-forest hover:bg-ls-forest/90 text-white flex items-center gap-2"
+                className="bg-ls-forest hover:bg-ls-forest/90 text-white flex items-center gap-2 text-xs sm:text-sm h-8"
               >
-                <Download className="w-4 h-4" />
-                {strings.download}
+                <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{strings.download}</span>
               </Button>
             )}
           </div>
         </DialogHeader>
 
         <div 
-          className="flex-1 overflow-y-auto mt-4"
+          className="flex-1 overflow-y-auto"
           style={{
-            backgroundColor: isDarkMode ? '#1A1D1F' : '#F8FAFC',
-            borderRadius: '8px',
-            padding: '16px'
+            backgroundColor: isDarkMode ? '#1A1D1F' : '#F8FAFC'
           }}
         >
           {loading && (
@@ -154,10 +153,8 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, tit
               className="letter-preview-content"
               style={{
                 backgroundColor: '#FFFFFF',
-                padding: '40px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                minHeight: '600px'
+                padding: '20px',
+                minHeight: '400px'
               }}
               dangerouslySetInnerHTML={{ __html: htmlContent }}
             />
@@ -174,6 +171,10 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, tit
           .letter-preview-content img {
             max-width: 100%;
             height: auto;
+          }
+          .letter-preview-content > *:first-child {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
           }
         `}</style>
       </DialogContent>
