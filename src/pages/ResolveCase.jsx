@@ -703,7 +703,7 @@ export default function ResolveCase() {
                     {strings.fastTrackDesc}
                   </p>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                    <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#1A1D1F' }}>฿{fastTrackPrice}</span>
+                    <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#1A1D1F' }}>฿500</span>
                     <span style={{ fontSize: '14px', color: '#6B7280' }}>({strings.public})</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginTop: '4px' }}>
@@ -758,7 +758,7 @@ export default function ResolveCase() {
                     {strings.letterPackDesc}
                   </p>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                    <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#1A1D1F' }}>฿{letterPackPrice}</span>
+                    <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#1A1D1F' }}>฿1,500</span>
                     <span style={{ fontSize: '14px', color: '#6B7280' }}>({strings.public})</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginTop: '4px' }}>
