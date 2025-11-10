@@ -38,6 +38,16 @@ Deno.serve(async (req) => {
     console.log('📧 Juristic email:', user.juristic_email || 'NOT SET');
     console.log('📧 User email notifications enabled:', user.email_notifications);
 
+    // Helper function to validate email
+    const isValidEmail = (email) => {
+      if (!email || typeof email !== 'string') return false;
+      const trimmed = email.trim();
+      if (trimmed.length === 0) return false;
+      // Basic email validation regex
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(trimmed);
+    };
+
     // Generate unique acknowledgment token
     const acknowledgmentToken = crypto.randomUUID();
 
@@ -142,7 +152,7 @@ Deno.serve(async (req) => {
         <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
           <p style="background: #D1FAE5; color: #065F46; padding: 15px; border-radius: 8px; border-left: 4px solid #10B981;">
             <strong>✓ คำขอซ่อมของคุณถูกส่งเรียบร้อยแล้ว</strong><br/>
-            ${user.landlord_email || user.juristic_email 
+            ${isValidEmail(user.landlord_email) || isValidEmail(user.juristic_email)
               ? `คุณจะได้รับการแจ้งเตือนเมื่อ${user.landlord_name || user.juristic_name || 'เจ้าของบ้าน'}รับทราบ` 
               : 'กรุณาเพิ่มข้อมูลติดต่อเจ้าของบ้าน/นิติบุคคลในหน้าบัญชีเพื่อส่งการแจ้งเตือน'}
           </p>
@@ -157,8 +167,8 @@ Deno.serve(async (req) => {
           <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
           
           <p style="font-size: 12px; color: #666;"><strong>ส่งถึง:</strong></p>
-          ${user.landlord_email ? `<p style="font-size: 12px; color: #666;">✓ เจ้าของบ้าน: ${user.landlord_name || 'ไม่ทราบชื่อ'} (${user.landlord_email})</p>` : '<p style="font-size: 12px; color: #999;">✗ ยังไม่ได้ตั้งค่าอีเมลเจ้าของบ้าน</p>'}
-          ${user.juristic_email ? `<p style="font-size: 12px; color: #666;">✓ นิติบุคคล: ${user.juristic_name || 'ไม่ทราบชื่อ'} (${user.juristic_email})</p>` : '<p style="font-size: 12px; color: #999;">✗ ยังไม่ได้ตั้งค่าอีเมลนิติบุคคล</p>'}
+          ${isValidEmail(user.landlord_email) ? `<p style="font-size: 12px; color: #666;">✓ เจ้าของบ้าน: ${user.landlord_name || 'ไม่ทราบชื่อ'} (${user.landlord_email})</p>` : '<p style="font-size: 12px; color: #999;">✗ ยังไม่ได้ตั้งค่าอีเมลเจ้าของบ้าน</p>'}
+          ${isValidEmail(user.juristic_email) ? `<p style="font-size: 12px; color: #666;">✓ นิติบุคคล: ${user.juristic_name || 'ไม่ทราบชื่อ'} (${user.juristic_email})</p>` : '<p style="font-size: 12px; color: #999;">✗ ยังไม่ได้ตั้งค่าอีเมลนิติบุคคล</p>'}
           
           <p style="font-size: 10px; color: #999; text-align: center; margin-top: 20px;">ส่งจาก Lease Shield - www.leaseshield.asia</p>
         </div>
@@ -172,7 +182,7 @@ Deno.serve(async (req) => {
         <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
           <p style="background: #D1FAE5; color: #065F46; padding: 15px; border-radius: 8px; border-left: 4px solid #10B981;">
             <strong>✓ Your maintenance request has been sent successfully</strong><br/>
-            ${user.landlord_email || user.juristic_email 
+            ${isValidEmail(user.landlord_email) || isValidEmail(user.juristic_email)
               ? `You'll be notified when ${user.landlord_name || user.juristic_name || 'your landlord'} acknowledges it` 
               : 'Please add landlord/juristic contact info in Account page to send notifications'}
           </p>
@@ -187,8 +197,8 @@ Deno.serve(async (req) => {
           <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
           
           <p style="font-size: 12px; color: #666;"><strong>Sent to:</strong></p>
-          ${user.landlord_email ? `<p style="font-size: 12px; color: #666;">✓ Landlord: ${user.landlord_name || 'Unknown'} (${user.landlord_email})</p>` : '<p style="font-size: 12px; color: #999;">✗ Landlord email not configured</p>'}
-          ${user.juristic_email ? `<p style="font-size: 12px; color: #666;">✓ Juristic: ${user.juristic_name || 'Unknown'} (${user.juristic_email})</p>` : '<p style="font-size: 12px; color: #999;">✗ Juristic email not configured</p>'}
+          ${isValidEmail(user.landlord_email) ? `<p style="font-size: 12px; color: #666;">✓ Landlord: ${user.landlord_name || 'Unknown'} (${user.landlord_email})</p>` : '<p style="font-size: 12px; color: #999;">✗ Landlord email not configured</p>'}
+          ${isValidEmail(user.juristic_email) ? `<p style="font-size: 12px; color: #666;">✓ Juristic: ${user.juristic_name || 'Unknown'} (${user.juristic_email})</p>` : '<p style="font-size: 12px; color: #999;">✗ Juristic email not configured</p>'}
           
           <p style="font-size: 10px; color: #999; text-align: center; margin-top: 20px;">Sent from Lease Shield - www.leaseshield.asia</p>
         </div>
@@ -217,11 +227,11 @@ Deno.serve(async (req) => {
 
     // Send to landlord (email) with acknowledgment button
     console.log('📤 Attempting to send landlord email...');
-    if (user.landlord_email && user.landlord_email.trim().length > 0) {
+    if (isValidEmail(user.landlord_email)) {
       try {
         console.log('📧 Sending to landlord:', user.landlord_email);
         await base44.integrations.Core.SendEmail({
-          to: user.landlord_email,
+          to: user.landlord_email.trim(),
           subject: subject,
           body: landlordHtmlBody
         });
@@ -233,17 +243,18 @@ Deno.serve(async (req) => {
         notifications.push({ recipient: 'landlord', method: 'email', status: 'failed', error: error.message, to: user.landlord_email });
       }
     } else {
-      console.log('⚠️ No landlord email configured for user:', user.email);
-      notifications.push({ recipient: 'landlord', method: 'email', status: 'skipped', reason: 'no_email_configured' });
+      console.log('⚠️ No valid landlord email configured for user:', user.email);
+      console.log('⚠️ Landlord email value:', user.landlord_email);
+      notifications.push({ recipient: 'landlord', method: 'email', status: 'skipped', reason: 'invalid_or_missing_email' });
     }
 
     // Send to juristic (email) - with acknowledgment button
     console.log('📤 Attempting to send juristic email...');
-    if (user.juristic_email && user.juristic_email.trim().length > 0) {
+    if (isValidEmail(user.juristic_email)) {
       try {
         console.log('📧 Sending to juristic:', user.juristic_email);
         await base44.integrations.Core.SendEmail({
-          to: user.juristic_email,
+          to: user.juristic_email.trim(),
           subject: subject,
           body: landlordHtmlBody
         });
@@ -255,8 +266,9 @@ Deno.serve(async (req) => {
         notifications.push({ recipient: 'juristic', method: 'email', status: 'failed', error: error.message, to: user.juristic_email });
       }
     } else {
-      console.log('⚠️ No juristic email configured for user:', user.email);
-      notifications.push({ recipient: 'juristic', method: 'email', status: 'skipped', reason: 'no_email_configured' });
+      console.log('⚠️ No valid juristic email configured for user:', user.email);
+      console.log('⚠️ Juristic email value:', user.juristic_email);
+      notifications.push({ recipient: 'juristic', method: 'email', status: 'skipped', reason: 'invalid_or_missing_email' });
     }
 
     console.log('📊 Final notification summary:', JSON.stringify(notifications, null, 2));
@@ -269,6 +281,8 @@ Deno.serve(async (req) => {
         userEmail: user.email,
         landlordEmail: user.landlord_email || 'not_set',
         juristicEmail: user.juristic_email || 'not_set',
+        landlordEmailValid: isValidEmail(user.landlord_email),
+        juristicEmailValid: isValidEmail(user.juristic_email),
         emailsSent: notifications.filter(n => n.status === 'sent').length,
         emailsFailed: notifications.filter(n => n.status === 'failed').length,
         emailsSkipped: notifications.filter(n => n.status === 'skipped').length
