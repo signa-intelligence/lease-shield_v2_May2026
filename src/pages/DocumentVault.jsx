@@ -278,9 +278,7 @@ export default function DocumentVault() {
       
       // Extract both Thai and English versions
       for (const section of sections) {
-        const sectionTitle = section.querySelector('.section-title')?.textContent || '';
         const contentEl = section.querySelector('.content');
-        
         if (!contentEl) continue;
         
         // Get all paragraphs from content
@@ -309,32 +307,38 @@ export default function DocumentVault() {
         }
         
         const content = cleanParagraphs.join('\n\n');
+        if (!content.trim()) continue;
         
-        // Check if section title or content has Thai characters (U+0E00 to U+0E7F is Thai Unicode range)
-        const hasThai = /[\u0E00-\u0E7F]/.test(sectionTitle) || /[\u0E00-\u0E7F]/.test(content);
+        // Determine if this is Thai or English content
+        // Thai Unicode range is U+0E00 to U+0E7F
+        // Check if content has ANY Thai characters
+        const isThaiContent = /[\u0E00-\u0E7F]/.test(content);
         
-        if (hasThai) {
+        if (isThaiContent) {
           thaiContent = content;
         } else {
           englishContent = content;
         }
       }
       
-      // Format as email with header, Thai first, then English (Cultural awareness in Thailand)
+      // Build email body: THAI FIRST, then English (Cultural awareness in Thailand)
+      // Header always says "English version below" because Thai comes first
       let letterContent = '--English version below--\n\n';
       
+      // Add Thai content FIRST
       if (thaiContent) {
         letterContent += thaiContent;
       }
+      
+      // Add separator and English content SECOND
       if (englishContent) {
         if (thaiContent) {
-          letterContent += '\n\n---\n\n' + englishContent;
-        } else {
-          letterContent += englishContent;
+          letterContent += '\n\n---\n\n';
         }
+        letterContent += englishContent;
       }
       
-      // If still no content, fallback to extracting body text
+      // If still no content extracted, fallback to extracting all body text
       if (!thaiContent && !englishContent) {
         htmlDoc.querySelectorAll('.header, .footer, .section-title').forEach(el => el.remove());
         
@@ -349,7 +353,7 @@ export default function DocumentVault() {
         letterContent = '--English version below--\n\n' + lines.join('\n\n');
       }
       
-      // Format as email with Lease Shield footer only
+      // Format final email with Lease Shield footer only
       body = language === 'th'
         ? `${letterContent}\n\n---\n\nสร้างโดย Lease Shield - https://www.leaseshield.asia`
         : `${letterContent}\n\n---\n\nCreated by Lease Shield - https://www.leaseshield.asia`;
