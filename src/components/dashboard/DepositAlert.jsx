@@ -1,9 +1,10 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Clock } from "lucide-react";
+import { Shield, AlertTriangle, CheckCircle2, Calendar } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
@@ -15,102 +16,139 @@ export default function DepositAlert({ deposits, language }) {
 
   const isDarkMode = user?.theme === 'dark';
 
-  const colors = isDarkMode ? {
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    urgentBg: '#3A2626',
-    alertBg: '#353A3D'
-  } : {
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    urgentBg: '#FEE2E2',
-    alertBg: '#FFF7ED'
+  const colors = {
+    cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
+    textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
+    textSecondary: isDarkMode ? '#9CA3AF' : '#64748b',
+    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
+    urgentBg: isDarkMode ? '#3A2626' : '#FEF2F2',
+    safeBg: isDarkMode ? '#1E4435' : '#ECFDF5'
   };
-
-  const now = new Date();
-  const urgentDeposits = deposits.filter(d => {
-    const daysRemaining = differenceInDays(new Date(d.expected_return_date), now);
-    return daysRemaining <= 30 && daysRemaining > 0 && d.status === 'tracking';
-  }).sort((a, b) => {
-    const daysA = differenceInDays(new Date(a.expected_return_date), now);
-    const daysB = differenceInDays(new Date(b.expected_return_date), now);
-    return daysA - daysB;
-  });
 
   const t = {
     en: {
       depositAlerts: "Deposit Alerts",
+      urgentReturn: "Urgent Return",
       daysRemaining: "days remaining",
-      noAlerts: "No Urgent Alerts",
-      allGood: "All deposits are well tracked"
+      allClear: "All Clear",
+      depositsTracked: "All deposits tracked properly",
+      dueDate: "Due",
+      viewDetails: "View Details"
     },
     th: {
       depositAlerts: "การแจ้งเตือนเงินมัดจำ",
-      daysRemaining: "วันคงเหลือ",
-      noAlerts: "ไม่มีการแจ้งเตือนเร่งด่วน",
-      allGood: "เงินมัดจำทั้งหมดได้รับการติดตามอย่างดี"
+      urgentReturn: "ครบกำหนดเร็วๆ นี้",
+      daysRemaining: "วันที่เหลือ",
+      allClear: "ทุกอย่างปลอดภัย",
+      depositsTracked: "เงินมัดจำทั้งหมดถูกติดตามอย่างถูกต้อง",
+      dueDate: "ครบกำหนด",
+      viewDetails: "ดูรายละเอียด"
     }
   };
 
-  const strings = t[language] || t.en;
+  const strings = t[language];
+
+  const now = new Date();
+  const urgentDeposits = deposits
+    .filter(d => {
+      if (!d.expected_return_date || d.status !== 'tracking') return false;
+      const daysRemaining = differenceInDays(new Date(d.expected_return_date), now);
+      return daysRemaining <= 30 && daysRemaining > 0;
+    })
+    .sort((a, b) => new Date(a.expected_return_date) - new Date(b.expected_return_date));
 
   return (
-    <Card className="border-none shadow-lg h-full flex flex-col" style={{ backgroundColor: colors.cardBg }}>
-      <CardHeader className="pb-4" style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-        <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-          <AlertTriangle className="w-5 h-5 text-amber-500" />
+    <Card 
+      className="border-none" 
+      style={{ 
+        backgroundColor: colors.cardBg,
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '16px'
+      }}
+    >
+      <CardHeader className="pb-4" style={{ 
+        borderBottom: `1px solid ${colors.borderColor}`,
+        backgroundColor: isDarkMode ? '#353A3D' : '#F9FAFB',
+        borderTopLeftRadius: '16px',
+        borderTopRightRadius: '16px'
+      }}>
+        <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+          <Shield className="w-5 h-5 text-ls-gold" />
           {strings.depositAlerts}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4 flex-1">
+      <CardContent className="p-6">
         {urgentDeposits.length === 0 ? (
           <div className="text-center py-8">
-            <Clock className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.5 }} />
-            <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>{strings.noAlerts}</p>
-            <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.allGood}</p>
+            <div
+              className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
+              }}
+            >
+              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+            </div>
+            <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
+              {strings.allClear}
+            </p>
+            <p className="text-sm" style={{ color: colors.textSecondary }}>
+              {strings.depositsTracked}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {urgentDeposits.map((deposit) => {
+            {urgentDeposits.slice(0, 3).map((deposit) => {
               const daysRemaining = differenceInDays(new Date(deposit.expected_return_date), now);
               const isVeryUrgent = daysRemaining <= 7;
-              
+
               return (
-                <div
-                  key={deposit.id}
-                  className="p-4 rounded-xl border-l-4"
-                  style={{
-                    backgroundColor: isVeryUrgent ? colors.urgentBg : colors.alertBg,
-                    borderLeftColor: isVeryUrgent ? '#EF4444' : '#F59E0B'
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex-1">
-                      <p className="font-bold text-sm mb-1" style={{ color: colors.textPrimary }}>
-                        ฿{deposit.deposit_amount.toLocaleString()}
-                      </p>
-                      {deposit.property_address && (
-                        <p className="text-xs mb-1" style={{ color: colors.textSecondary }}>
-                          {deposit.property_address}
+                <Link key={deposit.id} to={createPageUrl("DepositTracker")}>
+                  <div
+                    className="p-4 rounded-xl"
+                    style={{
+                      backgroundColor: isVeryUrgent ? colors.urgentBg : colors.safeBg,
+                      border: `2px solid ${isVeryUrgent ? '#EF4444' : '#10B981'}`,
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateX(4px)';
+                      e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateX(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertTriangle className={`w-4 h-4 ${isVeryUrgent ? 'text-red-600' : 'text-amber-600'}`} />
+                          <span className="text-xs font-semibold" style={{ 
+                            color: isVeryUrgent ? '#DC2626' : '#D97706' 
+                          }}>
+                            {strings.urgentReturn}
+                          </span>
+                        </div>
+                        <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                          {deposit.property_address || 'Deposit'}
                         </p>
-                      )}
+                        <p className="text-sm" style={{ color: colors.textSecondary }}>
+                          ฿{deposit.deposit_amount?.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge className={`${isVeryUrgent ? 'bg-red-100 text-red-700 border-red-200' : 'bg-amber-100 text-amber-700 border-amber-200'} mb-1`}>
+                          <Calendar className="w-3 h-3 mr-1" />
+                          {daysRemaining} {strings.daysRemaining}
+                        </Badge>
+                        <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                          {strings.dueDate}: {format(new Date(deposit.expected_return_date), 'MMM d')}
+                        </p>
+                      </div>
                     </div>
-                    <Badge className={`flex-shrink-0 text-xs ${
-                      isVeryUrgent 
-                        ? 'bg-red-100 text-red-800 border-red-200' 
-                        : 'bg-amber-100 text-amber-800 border-amber-200'
-                    } border`}>
-                      {daysRemaining} {strings.daysRemaining}
-                    </Badge>
                   </div>
-                  <p className="text-xs" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'คืนเงิน' : 'Return'}: {format(new Date(deposit.expected_return_date), 'MMM d, yyyy')}
-                  </p>
-                </div>
+                </Link>
               );
             })}
           </div>

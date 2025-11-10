@@ -1,26 +1,25 @@
-
 import React from "react";
-import { Card } from "@/components/ui/card";
-import { ArrowUpRight, ArrowDownRight, ChevronRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import ProtectionScoreGauge from "./ProtectionScoreGauge";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import ProtectionScoreGauge from "./ProtectionScoreGauge";
 
 export default function StatsCard({ 
   title, 
   value, 
   icon: Icon, 
   trend, 
-  trendUp, 
-  bgGradient, 
-  scoreColor, 
-  scoreStatus, 
-  ctaText, 
-  onCtaClick, 
-  showGauge = false, 
+  scoreColor,
+  bgGradient,
+  scoreStatus,
+  showGauge = false,
   scoreValue,
+  ctaText,
+  onCtaClick,
   miniStats,
   actionButton
 }) {
@@ -31,142 +30,196 @@ export default function StatsCard({
 
   const isDarkMode = user?.theme === 'dark';
 
-  const colors = isDarkMode ? {
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    miniStatBg: '#353A3D'
-  } : {
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    miniStatBg: '#F8FAFC'
+  const colors = {
+    cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
+    textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
+    textSecondary: isDarkMode ? '#9CA3AF' : '#64748b',
+    miniStatBg: isDarkMode ? '#353A3D' : '#F8FAFC'
   };
 
   return (
-    <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col h-full" style={{ backgroundColor: colors.cardBg }}>
-      {/* Background circle */}
-      {!showGauge && (
-        <div 
-          className="absolute top-0 right-0 w-32 h-32 transform translate-x-8 -translate-y-8 rounded-full opacity-10"
-          style={{
-            backgroundColor: scoreColor || undefined
-          }}
-        />
-      )}
-      <div className={`${showGauge ? 'p-3' : 'p-4'} relative z-10 flex flex-col h-full`}>
-        {/* Top section - Icon and trend */}
-        <div className="flex justify-between items-start mb-3">
-          <div 
-            className={`p-3 rounded-xl ${bgGradient || ''}`}
-            style={
-              scoreColor ? { backgroundColor: scoreColor } : {}
-            }
-          >
-            <Icon className="w-6 h-6 text-white" />
+    <Card 
+      className={`border-none overflow-hidden ${bgGradient || ''}`}
+      style={{
+        backgroundColor: bgGradient ? 'transparent' : colors.cardBg,
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        borderRadius: '16px',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+        e.currentTarget.style.transform = 'translateY(-4px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
+    >
+      <CardContent className="p-6" style={{ position: 'relative' }}>
+        {/* Background Circle Effect */}
+        {!bgGradient && (
+          <div style={{
+            position: 'absolute',
+            top: '-20px',
+            right: '-20px',
+            width: '100px',
+            height: '100px',
+            borderRadius: '50%',
+            background: scoreColor ? `radial-gradient(circle, ${scoreColor}20 0%, transparent 70%)` : 'radial-gradient(circle, rgba(12, 59, 46, 0.1) 0%, transparent 70%)',
+            pointerEvents: 'none'
+          }} />
+        )}
+
+        {/* Icon & Value */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <p className="text-sm font-semibold mb-2" style={{ 
+              color: bgGradient ? 'rgba(255, 255, 255, 0.9)' : colors.textSecondary,
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase'
+            }}>
+              {title}
+            </p>
+            <p className="text-3xl font-bold" style={{ 
+              color: bgGradient ? '#FFFFFF' : (scoreColor || colors.textPrimary),
+              letterSpacing: '-0.02em'
+            }}>
+              {value}
+            </p>
           </div>
-          {trend && (
-            <div className={`flex items-center gap-1 text-sm font-medium ${trendUp ? 'text-emerald-600' : 'text-red-600'}`}>
-              {trendUp ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-              {trend}
-            </div>
-          )}
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '14px',
+            background: bgGradient 
+              ? 'rgba(255, 255, 255, 0.2)' 
+              : scoreColor 
+                ? `linear-gradient(135deg, ${scoreColor}20 0%, ${scoreColor}10 100%)`
+                : 'linear-gradient(135deg, rgba(12, 59, 46, 0.1) 0%, rgba(12, 59, 46, 0.05) 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+          }}>
+            <Icon className="w-7 h-7" style={{ 
+              color: bgGradient ? '#FFFFFF' : (scoreColor || '#0C3B2E')
+            }} />
+          </div>
         </div>
 
-        {/* Title */}
-        <p className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>{title}</p>
-        
-        {/* Main value area - flex-grow to push action button to bottom */}
-        <div className="flex-grow flex flex-col">
-          {showGauge ? (
-            <div className="flex items-center justify-center py-1">
-              <ProtectionScoreGauge score={scoreValue || 0} size={220} />
-            </div>
-          ) : (
-            <>
-              <p className="text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{value}</p>
-              {scoreStatus && (
-                <Badge 
-                  style={{
-                    backgroundColor: `${scoreColor}15`,
-                    color: scoreColor,
-                    border: `1px solid ${scoreColor}30`
-                  }}
-                  className="font-semibold mb-2"
-                >
-                  {scoreStatus}
-                </Badge>
-              )}
-              
-              {/* Mini Stats - consistent height */}
-              {miniStats && miniStats.length > 0 && (
-                <div className="space-y-2 mb-3">
-                  {miniStats.map((stat, idx) => (
-                    <div key={idx} className="flex items-center justify-between py-2 px-3 rounded-lg" style={{ backgroundColor: colors.miniStatBg }}>
-                      <span className="text-xs font-medium" style={{ color: colors.textSecondary }}>{stat.label}</span>
-                      <span className="text-sm font-bold" style={{ color: colors.textPrimary }}>{stat.value}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-        
-        {/* Action buttons - always at bottom */}
-        <div className="mt-auto pt-2">
-          {/* CTA Button */}
-          {ctaText && onCtaClick && (
+        {/* Trend Badge */}
+        {trend && (
+          <Badge className={`${trend > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'} text-xs font-semibold`}>
+            {trend > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+            {Math.abs(trend)}%
+          </Badge>
+        )}
+
+        {/* Protection Score Gauge */}
+        {showGauge && (
+          <div className="mt-4">
+            <ProtectionScoreGauge score={scoreValue} />
+            {scoreStatus && (
+              <Badge className="mt-3 w-full justify-center bg-white/90 border-none text-xs font-bold" style={{ color: scoreColor }}>
+                {scoreStatus}
+              </Badge>
+            )}
+          </div>
+        )}
+
+        {/* Mini Stats */}
+        {miniStats && miniStats.length > 0 && (
+          <div className="grid grid-cols-2 gap-2 mt-4">
+            {miniStats.map((stat, idx) => (
+              <div key={idx} className="p-3 rounded-xl" style={{ 
+                backgroundColor: bgGradient ? 'rgba(255, 255, 255, 0.15)' : colors.miniStatBg,
+                backdropFilter: bgGradient ? 'blur(10px)' : 'none'
+              }}>
+                <p className="text-xs font-semibold mb-1" style={{ 
+                  color: bgGradient ? 'rgba(255, 255, 255, 0.8)' : colors.textSecondary 
+                }}>
+                  {stat.label}
+                </p>
+                <p className="text-lg font-bold" style={{ 
+                  color: bgGradient ? '#FFFFFF' : colors.textPrimary 
+                }}>
+                  {stat.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CTA Button */}
+        {ctaText && onCtaClick && (
+          <button
+            onClick={onCtaClick}
+            style={{
+              width: '100%',
+              marginTop: '16px',
+              padding: '10px 20px',
+              backgroundColor: scoreColor || '#0C3B2E',
+              color: '#FFFFFF',
+              borderRadius: '10px',
+              fontWeight: '600',
+              fontSize: '14px',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+            }}
+          >
+            {ctaText}
+          </button>
+        )}
+
+        {/* Action Button */}
+        {actionButton && (
+          <Link to={actionButton.link} className="block mt-4">
             <button
-              onClick={onCtaClick}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 hover:gap-3"
               style={{
-                backgroundColor: `${scoreColor}20`,
-                color: scoreColor,
-                border: `2px solid ${scoreColor}40`
+                width: '100%',
+                padding: '10px 20px',
+                backgroundColor: bgGradient ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                color: bgGradient ? '#FFFFFF' : '#0C3B2E',
+                borderRadius: '10px',
+                fontWeight: '600',
+                fontSize: '14px',
+                border: bgGradient ? '1px solid rgba(255, 255, 255, 0.3)' : '2px solid #0C3B2E',
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                backdropFilter: bgGradient ? 'blur(10px)' : 'none'
               }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = scoreColor;
-                e.target.style.color = '#FFFFFF';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = `${scoreColor}20`;
-                e.target.style.color = scoreColor;
-              }}
-            >
-              {ctaText}
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          )}
-          
-          {/* Action Button */}
-          {actionButton && (
-            <Link to={actionButton.link}>
-              <button
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200"
-                style={{
-                  backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
-                  color: '#0C3B2E',
-                  border: '2px solid transparent'
-                }}
-                onMouseEnter={(e) => {
+                if (bgGradient) {
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                } else {
                   e.target.style.backgroundColor = '#0C3B2E';
                   e.target.style.color = '#FFFFFF';
-                  e.target.style.borderColor = '#0C3B2E';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (bgGradient) {
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                } else {
+                  e.target.style.backgroundColor = 'transparent';
                   e.target.style.color = '#0C3B2E';
-                  e.target.style.borderColor = 'transparent';
-                }}
-              >
-                {actionButton.label}
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </Link>
-          )}
-        </div>
-      </div>
+                }
+              }}
+            >
+              {actionButton.label}
+            </button>
+          </Link>
+        )}
+      </CardContent>
     </Card>
   );
 }
