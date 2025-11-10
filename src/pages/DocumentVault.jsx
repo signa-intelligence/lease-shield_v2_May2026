@@ -322,21 +322,22 @@ export default function DocumentVault() {
         }
       }
       
-      // Format as email with Thai first, then English (Cultural awareness in Thailand)
-      let letterContent = '';
+      // Format as email with header, Thai first, then English
+      let letterContent = '--English version below--\n\n';
+      
       if (thaiContent) {
-        letterContent = thaiContent;
+        letterContent += thaiContent;
       }
       if (englishContent) {
-        if (letterContent) {
+        if (thaiContent) {
           letterContent += '\n\n---\n\n' + englishContent;
         } else {
-          letterContent = englishContent;
+          letterContent += englishContent;
         }
       }
       
       // If still no content, fallback to extracting body text
-      if (!letterContent) {
+      if (!thaiContent && !englishContent) {
         htmlDoc.querySelectorAll('.header, .footer, .section-title').forEach(el => el.remove());
         
         const bodyText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
@@ -348,7 +349,7 @@ export default function DocumentVault() {
           return true;
         });
         
-        letterContent = lines.join('\n\n');
+        letterContent = '--English version below--\n\n' + lines.join('\n\n');
       }
       
       // Format as email with Lease Shield footer only
