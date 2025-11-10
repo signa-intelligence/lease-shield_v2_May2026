@@ -821,6 +821,32 @@ export default function Account() {
   };
 
   const strings = t[language];
+  const currentPlanTier = user?.plan_tier || 'free';
+  const isFree = currentPlanTier === 'free';
+  const language = user?.language || 'en';
+  const currentTheme = user?.theme || 'dark'; // Default to 'dark' if user?.theme is undefined
+  const isDarkMode = currentTheme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+    inputBg: '#353A3D',
+    fieldBg: '#353A3D',
+    hoverBg: '#3A3D40'
+  } : {
+    bg: '#ECEFED',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+    inputBg: '#FFFFFF',
+    fieldBg: '#ECEFED',
+    hoverBg: '#F8FAFC'
+  };
+
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
@@ -1813,11 +1839,54 @@ export default function Account() {
                 />
               </div>
             </div>
-            <div className="mt-4">
-              <Button onClick={handleLandlordUpdate} className="bg-ls-forest hover:bg-ls-forest/90 text-white w-full md:w-auto">
-                <Save className="w-4 h-4 mr-2" />
-                {strings.saveContactInfo}
-              </Button>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={handleLandlordUpdate}
+                disabled={updateProfileMutation.isPending}
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  border: 'none',
+                  backgroundColor: updateProfileMutation.isPending ? '#9CA3AF' : '#0C3B2E',
+                  color: '#FFFFFF',
+                  cursor: updateProfileMutation.isPending ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  opacity: updateProfileMutation.isPending ? 0.6 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!updateProfileMutation.isPending) {
+                    e.target.style.backgroundColor = '#C7A338';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 8px rgba(199, 163, 56, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!updateProfileMutation.isPending) {
+                    e.target.style.backgroundColor = '#0C3B2E';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
+                  }
+                }}
+              >
+                {updateProfileMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    {strings.saveContactInfo}
+                  </>
+                )}
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -2053,11 +2122,56 @@ export default function Account() {
                 />
               </div>
             </div>
-            <div className="mt-4">
-              <Button onClick={handleJuristicUpdate} className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal w-full md:w-auto">
-                <Save className="w-4 h-4 mr-2" />
-                {strings.saveContactInfo}
-              </Button>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={handleJuristicUpdate}
+                disabled={updateProfileMutation.isPending}
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  border: 'none',
+                  backgroundColor: updateProfileMutation.isPending ? '#9CA3AF' : '#C7A338',
+                  color: updateProfileMutation.isPending ? '#FFFFFF' : '#1A1D1F',
+                  cursor: updateProfileMutation.isPending ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 6px rgba(199, 163, 56, 0.3)',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  opacity: updateProfileMutation.isPending ? 0.6 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!updateProfileMutation.isPending) {
+                    e.target.style.backgroundColor = '#0C3B2E';
+                    e.target.style.color = '#FFFFFF';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 8px rgba(12, 59, 46, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!updateProfileMutation.isPending) {
+                    e.target.style.backgroundColor = '#C7A338';
+                    e.target.style.color = '#1A1D1F';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 6px rgba(199, 163, 56, 0.3)';
+                  }
+                }}
+              >
+                {updateProfileMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    {strings.saveContactInfo}
+                  </>
+                )}
+              </button>
             </div>
           </CardContent>
         </Card>
