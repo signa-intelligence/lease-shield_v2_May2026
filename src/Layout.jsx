@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale } from "lucide-react";
@@ -9,6 +9,7 @@ import LanguageToggle from "./components/shared/LanguageToggle";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const mainContentRef = useRef(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -17,6 +18,11 @@ export default function Layout({ children, currentPageName }) {
   });
 
   React.useEffect(() => {
+    // Scroll main content container to top on route change
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo(0, 0);
+    }
+    // Also scroll window for desktop
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
@@ -357,7 +363,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      <main className="main-content flex-1" style={{
+      <main ref={mainContentRef} className="main-content flex-1" style={{
         marginTop: 'calc(64px + env(safe-area-inset-top, 0px))',
         marginBottom: 'calc(68px + max(env(safe-area-inset-bottom, 0px), 12px))',
         height: 'calc(100vh - 64px - 68px - env(safe-area-inset-top, 0px) - max(env(safe-area-inset-bottom, 0px), 12px))'
