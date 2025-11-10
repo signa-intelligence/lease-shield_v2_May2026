@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import LetterPreview from "../components/shared/LetterPreview";
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -197,6 +198,16 @@ export default function DocumentVault() {
     
     if (confirm(confirmMessage)) {
       deleteBulkMutation.mutate(selectedDocs);
+    }
+  };
+
+  const handleView = (doc) => {
+    // For letter type with html_content, use LetterPreview component
+    if (doc.type === 'letter' && doc.html_content) {
+      setViewingDoc(doc);
+    } else {
+      // For all other document types, open in new tab
+      window.open(doc.file_url, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -425,47 +436,51 @@ export default function DocumentVault() {
           </DialogContent>
         </Dialog>
 
-        {/* View Document Dialog */}
-        <Dialog open={!!viewingDoc} onOpenChange={() => setViewingDoc(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh]" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-            <DialogHeader>
-              <DialogTitle style={{ color: colors.textPrimary }}>
-                {viewingDoc?.label || (language === 'th' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_th : DOC_TYPE_CONFIG[viewingDoc?.type]?.label_en)}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="mt-4 overflow-auto max-h-[70vh]">
-              {viewingDoc?.file_url ? (
-                <>
-                  {viewingDoc?.type === 'photo' && (
-                    <img src={viewingDoc.file_url} alt={viewingDoc.label} className="w-full h-auto rounded-lg object-contain max-h-[60vh]" />
-                  )}
-                  {viewingDoc?.type === 'video' && (
-                    <video src={viewingDoc.file_url} controls className="w-full h-auto rounded-lg max-h-[60vh]" />
-                  )}
-                  {(!['photo', 'video'].includes(viewingDoc?.type)) && (
-                    // For PDFs, documents, etc. Use iframe for most file types that browsers can render directly.
-                    // Note: Browser support for direct iframe viewing varies and might require specific headers/MIME types.
-                    // For truly robust display, a third-party viewer library might be needed for some document types.
-                    <iframe
-                      src={viewingDoc.file_url}
-                      className="w-full h-[60vh] rounded-lg border"
-                      style={{ borderColor: colors.borderColor }}
-                      title={viewingDoc.label}
-                    />
-                  )}
-                  {viewingDoc?.html_content && (
-                    <div 
-                      className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800"
-                      dangerouslySetInnerHTML={{ __html: viewingDoc.html_content }}
-                    />
-                  )}
-                </>
-              ) : (
-                <p className="text-center" style={{ color: colors.textSecondary }}>{language === 'th' ? 'ไม่พบเนื้อหาเอกสาร' : 'No document content found.'}</p>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* View Document Dialogs (Conditional rendering for LetterPreview) */}
+        {viewingDoc?.type === 'letter' && viewingDoc?.html_content ? (
+          <LetterPreview
+            open={!!viewingDoc}
+            onOpenChange={() => setViewingDoc(null)}
+            htmlContent={viewingDoc.html_content} // Pass html_content directly
+            docUrl={viewingDoc.file_url} // Pass file_url for download/print in LetterPreview
+            title={viewingDoc.label || (language === 'th' ? DOC_TYPE_CONFIG.letter.label_th : DOC_TYPE_CONFIG.letter.label_en)}
+          />
+        ) : (
+          <Dialog open={!!viewingDoc} onOpenChange={() => setViewingDoc(null)}>
+            <DialogContent className="max-w-4xl max-h-[90vh]" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+              <DialogHeader>
+                <DialogTitle style={{ color: colors.textPrimary }}>
+                  {viewingDoc?.label || (language === 'th' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_th : DOC_TYPE_CONFIG[viewingDoc?.type]?.label_en)}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="mt-4 overflow-auto max-h-[70vh]">
+                {viewingDoc?.file_url ? (
+                  <>
+                    {viewingDoc?.type === 'photo' && (
+                      <img src={viewingDoc.file_url} alt={viewingDoc.label} className="w-full h-auto rounded-lg object-contain max-h-[60vh]" />
+                    )}
+                    {viewingDoc?.type === 'video' && (
+                      <video src={viewingDoc.file_url} controls className="w-full h-auto rounded-lg max-h-[60vh]" />
+                    )}
+                    {(!['photo', 'video', 'letter'].includes(viewingDoc?.type)) && (
+                      // For PDFs, documents, etc. Use iframe for most file types that browsers can render directly.
+                      // Note: Browser support for direct iframe viewing varies and might require specific headers/MIME types.
+                      // For truly robust display, a third-party viewer library might be needed for some document types.
+                      <iframe
+                        src={viewingDoc.file_url}
+                        className="w-full h-[60vh] rounded-lg border"
+                        style={{ borderColor: colors.borderColor }}
+                        title={viewingDoc.label}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <p className="text-center" style={{ color: colors.textSecondary }}>{language === 'th' ? 'ไม่พบเนื้อหาเอกสาร' : 'No document content found.'}</p>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
 
         <Button
           variant="ghost"
@@ -756,7 +771,7 @@ export default function DocumentVault() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setViewingDoc(doc)}
+                              onClick={() => handleView(doc)}
                               className="w-full justify-center text-xs"
                               style={{
                                 borderColor: colors.borderColor,
