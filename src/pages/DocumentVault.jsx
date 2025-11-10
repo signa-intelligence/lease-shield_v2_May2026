@@ -212,19 +212,17 @@ export default function DocumentVault() {
   };
 
   const handleDownload = (doc) => {
-    // Check if the file_url is present
     if (!doc.file_url) {
-        console.error("Document has no file_url to download:", doc);
-        alert(language === 'th' ? 'ไม่พบไฟล์ที่จะดาวน์โหลด' : 'No file found to download.');
-        return;
+      console.error("Document has no file_url to download:", doc);
+      alert(language === 'th' ? 'ไม่พบไฟล์ที่จะดาวน์โหลด' : 'No file found to download.');
+      return;
     }
 
     const link = document.createElement('a');
     link.href = doc.file_url;
-    // Attempt to extract filename from URL, or use a generic name
     const filename = doc.file_url.substring(doc.file_url.lastIndexOf('/') + 1);
     link.download = doc.label || filename || 'document';
-    link.target = '_blank'; // Open in new tab/window for direct download or preview
+    link.target = '_blank';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -260,10 +258,16 @@ export default function DocumentVault() {
       ? `เอกสาร: ${docLabel}` 
       : `Document: ${docLabel}`;
     
-    // Always use simple text format with link, even for letters
-    const body = language === 'th'
-      ? `กรุณาดูเอกสารที่แนบมาด้วย:\n\n${doc.file_url}\n\nชื่อเอกสาร: ${docLabel}\nวันที่: ${format(new Date(doc.created_date), 'dd/MM/yyyy')}`
-      : `Please find the attached document:\n\n${doc.file_url}\n\nDocument: ${docLabel}\nDate: ${format(new Date(doc.created_date), 'MMM d, yyyy')}`;
+    let body = '';
+    if (doc.type === 'letter') {
+      body = language === 'th'
+        ? `เรียน ผู้รับ,\n\nกรุณาดูเอกสารที่แนบมา: ${docLabel}\n\nท่านสามารถดาวน์โหลดเอกสารได้จากลิงก์ด้านล่าง:\n${doc.file_url}\n\nวันที่: ${format(new Date(doc.created_date), 'dd/MM/yyyy')}\n\nขอแสดงความนับถือ`
+        : `Dear Recipient,\n\nPlease find the attached document: ${docLabel}\n\nYou can download the document from the link below:\n${doc.file_url}\n\nDate: ${format(new Date(doc.created_date), 'MMM d, yyyy')}\n\nKind regards`;
+    } else {
+      body = language === 'th'
+        ? `กรุณาดูเอกสารที่แนบมาด้วย:\n\n${doc.file_url}\n\nชื่อเอกสาร: ${docLabel}\nวันที่: ${format(new Date(doc.created_date), 'dd/MM/yyyy')}`
+        : `Please find the attached document:\n\n${doc.file_url}\n\nDocument: ${docLabel}\nDate: ${format(new Date(doc.created_date), 'MMM d, yyyy')}`;
+    }
     
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoLink;
@@ -431,17 +435,17 @@ export default function DocumentVault() {
           </DialogContent>
         </Dialog>
 
-        {/* View Document Dialogs (Conditional rendering for LetterPreview) */}
+        {/* View Document - Use LetterPreview for letters with htmlContent */}
         {viewingDoc?.type === 'letter' && viewingDoc?.html_content ? (
           <LetterPreview
             open={!!viewingDoc}
             onOpenChange={() => setViewingDoc(null)}
-            htmlContent={viewingDoc.html_content} // Pass html_content directly
-            docUrl={viewingDoc.file_url} // Pass file_url for download/print in LetterPreview
-            title={viewingDoc.label || (language === 'th' ? DOC_TYPE_CONFIG.letter.label_th : DOC_TYPE_CONFIG.letter.label_en)}
+            htmlContent={viewingDoc.html_content}
+            docUrl={viewingDoc.file_url}
+            title={viewingDoc.label || (language === 'th' ? 'จดหมาย' : 'Letter')}
           />
         ) : (
-          <Dialog open={!!viewingDoc} onOpenChange={() => setViewingDoc(null)}>
+          <Dialog open={!!viewingDoc && viewingDoc?.type !== 'letter'} onOpenChange={() => setViewingDoc(null)}>
             <DialogContent className="max-w-4xl max-h-[90vh]" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
               <DialogHeader>
                 <DialogTitle style={{ color: colors.textPrimary }}>
@@ -458,9 +462,6 @@ export default function DocumentVault() {
                       <video src={viewingDoc.file_url} controls className="w-full h-auto rounded-lg max-h-[60vh]" />
                     )}
                     {(!['photo', 'video', 'letter'].includes(viewingDoc?.type)) && (
-                      // For PDFs, documents, etc. Use iframe for most file types that browsers can render directly.
-                      // Note: Browser support for direct iframe viewing varies and might require specific headers/MIME types.
-                      // For truly robust display, a third-party viewer library might be needed for some document types.
                       <iframe
                         src={viewingDoc.file_url}
                         className="w-full h-[60vh] rounded-lg border"

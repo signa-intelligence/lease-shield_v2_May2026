@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,8 +5,8 @@ import { Download, X, Loader2, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
-export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, title }) {
-  const [htmlContent, setHtmlContent] = useState("");
+export default function LetterPreview({ open, onOpenChange, htmlUrl, htmlContent, docUrl, title }) {
+  const [fetchedHtmlContent, setFetchedHtmlContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -53,6 +52,14 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, tit
   const strings = t[language];
 
   useEffect(() => {
+    // If htmlContent is provided directly, use it
+    if (htmlContent) {
+      setFetchedHtmlContent(htmlContent);
+      setLoading(false);
+      return;
+    }
+
+    // Otherwise fetch from htmlUrl
     if (open && htmlUrl) {
       setLoading(true);
       setError(null);
@@ -63,7 +70,7 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, tit
           return res.text();
         })
         .then(html => {
-          setHtmlContent(html);
+          setFetchedHtmlContent(html);
           setLoading(false);
         })
         .catch(err => {
@@ -72,7 +79,7 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, tit
           setLoading(false);
         });
     }
-  }, [open, htmlUrl, strings.error]); // Added strings.error to dependency array
+  }, [open, htmlUrl, htmlContent, strings.error]);
 
   const handleDownload = () => {
     if (docUrl) {
@@ -85,6 +92,8 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, tit
       window.open(htmlUrl, '_blank', 'noopener,noreferrer');
     }
   };
+
+  const displayContent = htmlContent || fetchedHtmlContent;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -148,7 +157,7 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, tit
             </div>
           )}
 
-          {!loading && !error && htmlContent && (
+          {!loading && !error && displayContent && (
             <div 
               className="letter-preview-content"
               style={{
@@ -156,7 +165,7 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, docUrl, tit
                 padding: '20px',
                 minHeight: '400px'
               }}
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
+              dangerouslySetInnerHTML={{ __html: displayContent }}
             />
           )}
         </div>
