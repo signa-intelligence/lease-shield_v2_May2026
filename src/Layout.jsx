@@ -302,93 +302,63 @@ export default function Layout({ children, currentPageName }) {
         backgroundColor: colors.topBarBg,
         borderBottomColor: colors.borderColor
       }}>
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
-          {/* Logo Row */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8c49b879c_LeaseShieldmainlogowobkg.png"
-                alt="Lease Shield"
-                className="h-8 sm:h-10 w-auto flex-shrink-0"
-                style={{ maxWidth: '180px' }}
-              />
-              {accessLevel !== 'user' && (
-                <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
-                  {accessLevel === 'super_admin' ? 'SUPER ADMIN' : accessLevel === 'admin' ? 'ADMIN' : 'VA'}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <LanguageToggle />
-              <Link to={createPageUrl("Account")}>
-                <button
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActiveTab(createPageUrl("Account"))) {
-                      e.currentTarget.style.backgroundColor = '#0C3B2E';
-                      const icon = e.currentTarget.querySelector('svg');
-                      if (icon) icon.style.color = '#FFFFFF';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActiveTab(createPageUrl("Account"))) {
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
-                      const icon = e.currentTarget.querySelector('svg');
-                      if (icon) icon.style.color = '#0C3B2E';
-                    }
-                  }}
-                >
-                  <User 
-                    className="w-4 h-4 sm:w-5 sm:h-5" 
-                    style={{ 
-                      color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : '#0C3B2E',
-                      transition: 'color 0.2s'
-                    }}
-                  />
-                </button>
-              </Link>
-            </div>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
+              alt="Lease Shield"
+              className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0"
+            />
+            <span className="font-bold text-ls-forest text-base sm:text-lg truncate" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
+              {strings.appName}
+            </span>
+            {accessLevel !== 'user' && (
+              <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
+                {accessLevel === 'super_admin' ? 'SUPER ADMIN' : accessLevel === 'admin' ? 'ADMIN' : 'VA'}
+              </span>
+            )}
           </div>
-
-          {/* Motto Banner */}
-          <div className="flex items-center justify-center">
-            <div 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
-              style={{
-                background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-                border: '1px solid #C7A338'
-              }}
-            >
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
-                alt="Shield"
-                className="w-4 h-4 sm:w-5 sm:h-5"
-              />
-              <span 
-                className="text-xs sm:text-sm font-semibold"
-                style={{ 
-                  background: 'linear-gradient(90deg, #FFFFFF 0%, #C7A338 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  letterSpacing: '0.5px'
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <LanguageToggle />
+            <Link to={createPageUrl("Account")}>
+              <button
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActiveTab(createPageUrl("Account"))) {
+                    e.currentTarget.style.backgroundColor = '#0C3B2E';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.color = '#FFFFFF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActiveTab(createPageUrl("Account"))) {
+                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.color = '#0C3B2E';
+                  }
                 }}
               >
-                Fair. Transparent. Protected.
-              </span>
-            </div>
+                <User 
+                  className="w-4 h-4 sm:w-5 sm:h-5" 
+                  style={{ 
+                    color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : '#0C3B2E',
+                    transition: 'color 0.2s'
+                  }}
+                />
+              </button>
+            </Link>
           </div>
         </div>
       </div>
