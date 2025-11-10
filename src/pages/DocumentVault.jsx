@@ -271,17 +271,29 @@ export default function DocumentVault() {
       // Get all content sections
       const sections = htmlDoc.querySelectorAll('.section');
       
-      let englishParagraphs = [];
-      let thaiParagraphs = [];
+      let thaiSection = null;
+      let englishSection = null;
       
-      // Extract BOTH English and Thai versions - keep them separate
+      // Find Thai and English sections by title
       for (const section of sections) {
+        const sectionTitle = section.querySelector('.section-title')?.textContent || '';
+        
+        if (sectionTitle.includes('ไทย') || sectionTitle.includes('Thai')) {
+          thaiSection = section;
+        } else if (sectionTitle.toLowerCase().includes('english')) {
+          englishSection = section;
+        }
+      }
+      
+      // Extract clean content from each section
+      const extractCleanContent = (section) => {
+        if (!section) return '';
+        
         const contentEl = section.querySelector('.content');
+        if (!contentEl) return '';
         
-        if (!contentEl) continue;
-        
-        // Get all paragraphs from content
         const paragraphs = contentEl.querySelectorAll('p');
+        const cleanParagraphs = [];
         
         for (const p of paragraphs) {
           const text = (p.textContent || p.innerText || '').trim();
@@ -289,20 +301,20 @@ export default function DocumentVault() {
           // Skip empty or very short lines
           if (!text || text.length < 15) continue;
           
-          // Skip all header-like content (addresses, names, dates, salutations)
+          // Skip all header-like content
           if (text.startsWith('[') && text.endsWith(']')) continue;
-          if (text.startsWith('[Your Name]') || text.startsWith('[Your Address]')) continue;
+          if (text.includes('[Your Name]') || text.includes('[Your Address]')) continue;
           if (text.includes('[City, State') || text.includes('[Email Address]')) continue;
           if (text.includes('[Phone Number]') || text.includes('[Date]')) continue;
-          if (text.startsWith('[Landlord') || text.includes('Landlord\'s')) continue;
+          if (text.includes('[Landlord') || text.includes('Landlord\'s')) continue;
           
-          // Skip lines that look like addresses
+          // Skip address-like lines
           if (text.match(/^\d+\s+\w+\s+(Street|Road|Avenue|Lane|St|Rd|Ave)/i)) continue;
           if (text.match(/^(Bangkok|Thailand|Chiang Mai|Phuket)/i)) continue;
           if (text.match(/^(Mr\.|Mrs\.|Ms\.|Dr\.|Miss)\s+\w+(\s+\w+)?$/)) continue;
           
-          // Skip short standalone lines that are likely names or addresses
-          if (text.length < 30 && !text.includes(',')) continue;
+          // Skip short lines that look like addresses or names
+          if (text.length < 30 && !text.includes(',') && !text.includes('.')) continue;
           
           // Skip salutations
           if (text.match(/^(Dear|เรียน)\s+(Mr\.|Mrs\.|Ms\.|คุณ)/i)) continue;
@@ -311,45 +323,51 @@ export default function DocumentVault() {
           if (text.match(/^(Sincerely|Best regards|Warm regards|Yours|Respectfully|ขอแสดงความนับถือ|ด้วยความเคารพ|Kind regards)/i)) continue;
           if (text.match(/^[\[\]a-zA-Zก-๙\s]{2,30}$/)) continue;
           
-          // Determine if this paragraph is Thai or English based on content
-          const isThaiContent = /[\u0E00-\u0E7F]/.test(text);
+          // If it passes all filters, it's content
+          cleanParagraphs.push(text);
+        }
+        
+        return cleanParagraphs.join('\n\n');
+      };
+      
+      let thaiContent = extractCleanContent(thaiSection);
+      let englishContent = extractCleanContent(englishSection);
+      
+      // If sections weren't found by title, try to separate by language detection
+      if (!thaiContent && !englishContent) {
+        const allSections = htmlDoc.querySelectorAll('.section');
+        const thaiParagraphs = [];
+        const englishParagraphs = [];
+        
+        for (const section of allSections) {
+          const contentEl = section.querySelector('.content');
+          if (!contentEl) continue;
           
-          if (isThaiContent) {
-            thaiParagraphs.push(text);
-          } else {
-            englishParagraphs.push(text);
+          const paragraphs = contentEl.querySelectorAll('p');
+          for (const p of paragraphs) {
+            const text = (p.textContent || p.innerText || '').trim();
+            
+            // Skip junk
+            if (!text || text.length < 15) continue;
+            if (text.startsWith('[') || text.includes('[Your Name]')) continue;
+            if (text.match(/^(Dear|เรียน)\s/i)) continue;
+            if (text.match(/^(Sincerely|Kind regards)/i)) continue;
+            
+            // Classify by language - if contains Thai chars, it's Thai
+            const containsThai = /[\u0E00-\u0E7F]/.test(text);
+            
+            if (containsThai) {
+              thaiParagraphs.push(text);
+            } else if (text.match(/[a-zA-Z]/)) {
+              // Only add to English if it has English letters
+              englishParagraphs.push(text);
+            }
           }
         }
-      }
-      
-      // If no paragraphs found in sections, try extracting from body
-      if (englishParagraphs.length === 0 && thaiParagraphs.length === 0) {
-        htmlDoc.querySelectorAll('.header, .footer, .section-title').forEach(el => el.remove());
         
-        const bodyText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
-        const lines = bodyText.split('\n').map(line => line.trim()).filter(line => {
-          if (!line || line.length < 15) return false;
-          if (line.startsWith('[') && line.endsWith(']')) return false;
-          if (line.match(/^\d+\s+\w+\s+(Street|Road|Avenue)/i)) return false;
-          if (line.match(/^(Bangkok|Thailand)/i)) return false;
-          if (line.match(/^(Mr\.|Mrs\.|Ms\.|Dear|เรียน)/i)) return false;
-          return true;
-        });
-        
-        // Separate into Thai and English
-        for (const line of lines) {
-          const isThaiContent = /[\u0E00-\u0E7F]/.test(line);
-          if (isThaiContent) {
-            thaiParagraphs.push(line);
-          } else {
-            englishParagraphs.push(line);
-          }
-        }
+        thaiContent = thaiParagraphs.join('\n\n');
+        englishContent = englishParagraphs.join('\n\n');
       }
-      
-      // Join paragraphs into clean content blocks
-      const thaiContent = thaiParagraphs.join('\n\n');
-      const englishContent = englishParagraphs.join('\n\n');
       
       // Get landlord and tenant names
       const landlordName = user?.landlord_name || '[Landlord Name]';
