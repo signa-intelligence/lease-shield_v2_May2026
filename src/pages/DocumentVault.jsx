@@ -267,7 +267,7 @@ export default function DocumentVault() {
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(doc.html_content, 'text/html');
       
-      // Remove headers, footers, and style/script tags
+      // Remove headers, footers, section titles, and style/script tags
       htmlDoc.querySelectorAll('style, script, .header, .footer, .section-title').forEach(el => el.remove());
       
       // Get ALL text content from body
@@ -276,13 +276,11 @@ export default function DocumentVault() {
       // Split into lines
       const lines = fullText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
       
-      let thaiLetter = '';
-      let englishLetter = '';
-      
-      // Process lines to extract clean letter content
+      let letters = [];
       let currentLetter = [];
       let inLetter = false;
       
+      // Extract each letter (Thai and English)
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         
@@ -299,15 +297,11 @@ export default function DocumentVault() {
           if (line.match(/^(Warm regards|Best regards|Sincerely|Yours truly|ขอแสดงความนับถือ|ด้วยความเคารพ),?\s*$/i)) {
             currentLetter.push(line);
             
-            // Save this letter and determine language
-            const letterText = currentLetter.join('\n\n');
-            const isThai = /[\u0E00-\u0E7F]/.test(letterText);
-            
-            if (isThai) {
-              thaiLetter = letterText;
-            } else {
-              englishLetter = letterText;
-            }
+            // Save this complete letter
+            letters.push({
+              text: currentLetter.join('\n\n'),
+              isThai: /[\u0E00-\u0E7F]/.test(currentLetter.join(' '))
+            });
             
             // Reset for next letter
             currentLetter = [];
@@ -320,12 +314,16 @@ export default function DocumentVault() {
         }
       }
       
-      // Build email body: THAI FIRST, then English
+      // Find Thai and English letters
+      const thaiLetter = letters.find(l => l.isThai);
+      const englishLetter = letters.find(l => !l.isThai);
+      
+      // Build email body: Thai header, Thai letter, separator, English letter
       let letterContent = 'ภาษาไทยด้านล่าง\n\n';
       
       // Add Thai content FIRST
       if (thaiLetter) {
-        letterContent += thaiLetter;
+        letterContent += thaiLetter.text;
       }
       
       // Add separator and English content SECOND
@@ -333,7 +331,7 @@ export default function DocumentVault() {
         if (thaiLetter) {
           letterContent += '\n\n---\n\n';
         }
-        letterContent += englishLetter;
+        letterContent += englishLetter.text;
       }
       
       // If no content extracted, show error
@@ -342,9 +340,7 @@ export default function DocumentVault() {
       }
       
       // Format final email with Lease Shield footer only
-      body = language === 'th'
-        ? `${letterContent}\n\n---\n\nสร้างโดย Lease Shield - https://www.leaseshield.asia`
-        : `${letterContent}\n\n---\n\nCreated by Lease Shield - https://www.leaseshield.asia`;
+      body = `${letterContent}\n\n---\n\nCreated by Lease Shield - https://www.leaseshield.asia`;
     } else {
       // For other document types, keep existing format
       body = language === 'th'
