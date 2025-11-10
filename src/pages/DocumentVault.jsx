@@ -285,6 +285,7 @@ export default function DocumentVault() {
         const paragraphs = contentEl.querySelectorAll('p');
         let cleanParagraphs = [];
         let foundSalutation = false; // Track when we hit the actual letter start
+        let afterClosing = false; // Track when we hit the closing
         
         for (const p of paragraphs) {
           const text = (p.textContent || p.innerText || '').trim();
@@ -295,9 +296,17 @@ export default function DocumentVault() {
           // Check if this is a salutation (start of actual letter)
           if (text.startsWith('Dear ') || text.startsWith('เรียน')) {
             foundSalutation = true;
+            afterClosing = false; // Reset if we hit another salutation
           }
           
-          // Skip header information (name, address, date) that appears BEFORE salutation
+          // Check if this is a closing line
+          if (text.match(/^(Warm regards|Best regards|Sincerely|Yours truly|ขอแสดงความนับถือ|ด้วยความเคารพ),?\s*$/i)) {
+            afterClosing = true;
+            cleanParagraphs.push(text); // Include the closing itself
+            continue;
+          }
+          
+          // Skip everything before salutation
           if (!foundSalutation) {
             // Skip patterns that look like letter headers
             if (text.startsWith('[') && text.endsWith(']')) continue;
@@ -305,6 +314,11 @@ export default function DocumentVault() {
             if (text.match(/^[A-Z][a-z]+,\s*[A-Z]/)) continue; // City, Country like "Bangkok, Thailand"
             if (text.split(' ').length <= 4 && text[0] === text[0].toUpperCase()) continue; // Short capitalized lines (likely names)
             continue; // Skip everything before salutation
+          }
+          
+          // Skip everything after closing (sender name, address)
+          if (afterClosing) {
+            continue;
           }
           
           // Now we're in the actual letter body
