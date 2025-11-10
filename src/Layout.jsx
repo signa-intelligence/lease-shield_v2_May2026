@@ -305,13 +305,11 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8c49b879c_LeaseShieldmainlogowobkg.png"
               alt="Lease Shield"
-              className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0"
+              className="h-8 sm:h-10 w-auto flex-shrink-0"
+              style={{ maxWidth: '180px' }}
             />
-            <span className="font-bold text-ls-forest text-base sm:text-lg truncate" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
-              {strings.appName}
-            </span>
             {accessLevel !== 'user' && (
               <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
                 {accessLevel === 'super_admin' ? 'SUPER ADMIN' : accessLevel === 'admin' ? 'ADMIN' : 'VA'}
