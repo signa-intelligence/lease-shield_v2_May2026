@@ -255,9 +255,7 @@ export default function DocumentVault() {
     const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
     const docLabel = doc.label || (language === 'th' ? config.label_th : config.label_en);
     
-    const subject = language === 'th' 
-      ? `${docLabel}` 
-      : `${docLabel}`;
+    const subject = docLabel;
     
     let body = '';
     
@@ -273,9 +271,10 @@ export default function DocumentVault() {
       // Get all content sections
       const sections = htmlDoc.querySelectorAll('.section');
       
-      let letterContent = '';
+      let englishContent = '';
+      let thaiContent = '';
       
-      // Try to find the section matching user's language
+      // Extract BOTH English and Thai versions
       for (const section of sections) {
         const sectionTitle = section.querySelector('.section-title')?.textContent || '';
         const contentEl = section.querySelector('.content');
@@ -300,7 +299,7 @@ export default function DocumentVault() {
           if (text.includes('[Phone Number]') || text.includes('[Date]')) continue;
           if (text.startsWith('[Landlord') || text.includes('Landlord\'s')) continue;
           
-          // Skip lines that look like addresses (containing street, city names, or short standalone lines)
+          // Skip lines that look like addresses
           if (text.match(/^\d+\s+\w+\s+(Street|Road|Avenue|Lane|St|Rd|Ave)/i)) continue;
           if (text.match(/^(Bangkok|Thailand|Chiang Mai|Phuket)/i)) continue;
           if (text.match(/^(Mr\.|Mrs\.|Ms\.|Dr\.|Miss)\s+\w+(\s+\w+)?$/)) continue;
@@ -313,9 +312,9 @@ export default function DocumentVault() {
           
           // Skip closing signatures
           if (text.match(/^(Sincerely|Best regards|Warm regards|Yours|Respectfully|ขอแสดงความนับถือ|ด้วยความเคารพ)/i)) continue;
-          if (text.match(/^[\[\]a-zA-Zก-๙\s]{2,30}$/) && cleanParagraphs.length > 0) continue; // Likely a signature name
+          if (text.match(/^[\[\]a-zA-Zก-๙\s]{2,30}$/) && cleanParagraphs.length > 0) continue;
           
-          // If we find a substantial paragraph (body content), mark that we've started
+          // If we find a substantial paragraph, mark that we've started
           if (text.length > 50) {
             foundBodyStart = true;
           }
@@ -328,34 +327,21 @@ export default function DocumentVault() {
         
         const content = cleanParagraphs.join('\n\n');
         
-        // Match based on user's language preference
-        if (language === 'th') {
-          // For Thai users, look for Thai section
-          if (sectionTitle.includes('ไทย') || sectionTitle.includes('Thai') || /[\u0E00-\u0E7F]/.test(content)) {
-            letterContent = content;
-            break;
-          }
-        } else {
-          // For English users, look for English section
-          if (sectionTitle.toLowerCase().includes('english') || 
-              (!sectionTitle.includes('ไทย') && !sectionTitle.includes('Thai') && !/[\u0E00-\u0E7F]/.test(sectionTitle))) {
-            // Verify content is actually English
-            if (!/[\u0E00-\u0E7F]/.test(content.substring(0, 100))) {
-              letterContent = content;
-              break;
-            }
-          }
+        // Identify English vs Thai sections
+        if (sectionTitle.toLowerCase().includes('english') || 
+            (!sectionTitle.includes('ไทย') && !sectionTitle.includes('Thai') && !/[\u0E00-\u0E7F]/.test(content.substring(0, 100)))) {
+          englishContent = content;
+        } else if (sectionTitle.includes('ไทย') || sectionTitle.includes('Thai') || /[\u0E00-\u0E7F]/.test(content)) {
+          thaiContent = content;
         }
       }
       
-      // If no match found, try getting body text without header elements
-      if (!letterContent) {
-        // Remove all potential header elements
+      // If sections not found, try extracting from body
+      if (!englishContent && !thaiContent) {
         htmlDoc.querySelectorAll('.header, .footer, .section-title').forEach(el => el.remove());
         
         const bodyText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
         const lines = bodyText.split('\n').map(line => line.trim()).filter(line => {
-          // Skip empty lines and header-like content
           if (!line || line.length < 15) return false;
           if (line.startsWith('[') && line.endsWith(']')) return false;
           if (line.match(/^\d+\s+\w+\s+(Street|Road|Avenue)/i)) return false;
@@ -364,13 +350,23 @@ export default function DocumentVault() {
           return true;
         });
         
-        letterContent = lines.join('\n\n');
+        // Split into English and Thai
+        const englishLines = lines.filter(line => !/[\u0E00-\u0E7F]/.test(line));
+        const thaiLines = lines.filter(line => /[\u0E00-\u0E7F]/.test(line));
+        
+        englishContent = englishLines.join('\n\n');
+        thaiContent = thaiLines.join('\n\n');
       }
       
-      // Format as email with Lease Shield footer only
-      body = language === 'th'
-        ? `${letterContent}\n\n---\n\nสร้างโดย Lease Shield - https://www.leaseshield.asia`
-        : `${letterContent}\n\n---\n\nCreated by Lease Shield - https://www.leaseshield.asia`;
+      // Format as bilingual email
+      body = '=== ENGLISH VERSION ===\n\n' + 
+             (englishContent || '[English version not available]') + 
+             '\n\n' +
+             '=== เวอร์ชันภาษาไทย (THAI VERSION) ===\n\n' +
+             (thaiContent || '[Thai version not available]') +
+             '\n\n---\n\n' +
+             'Created by Lease Shield - https://www.leaseshield.asia\n' +
+             'สร้างโดย Lease Shield - https://www.leaseshield.asia';
     } else {
       // For other document types, keep existing format
       body = language === 'th'
