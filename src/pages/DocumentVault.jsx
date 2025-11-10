@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input"; // New import
-import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye } from "lucide-react"; // Added new icons
+import { Input } from "@/components/ui/input";
+import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye, Download, Edit2, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { useNavigate, Link } from "react-router-dom"; // Added Link
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -27,9 +28,12 @@ export default function DocumentVault() {
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [uploadType, setUploadType] = useState('photo');
-  const [customLabel, setCustomLabel] = useState(''); // Renamed from uploadLabel
+  const [customLabel, setCustomLabel] = useState('');
   const [selectedDocs, setSelectedDocs] = useState([]);
-  const [selectedFiles, setSelectedFiles] = useState([]); // New state for files chosen by user
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [editingDoc, setEditingDoc] = useState(null);
+  const [editFormData, setEditFormData] = useState({ type: '', label: '' });
+  const [viewingDoc, setViewingDoc] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -46,10 +50,10 @@ export default function DocumentVault() {
   const getStorageLimits = () => {
     const tier = user?.plan_tier || 'free';
     switch(tier) {
-      case 'free': return { limit: 100 * 1024 * 1024, limitMB: 100, fileLimit: 3 }; // 100MB, 3 files
-      case 'lite': return { limit: 1024 * 1024 * 1024, limitMB: 1024, fileLimit: 999 }; // 1GB
-      case 'protect': return { limit: 5 * 1024 * 1024 * 1024, limitMB: 5120, fileLimit: 999 }; // 5GB
-      case 'secure': return { limit: 20 * 1024 * 1024 * 1024, limitMB: 20480, fileLimit: 999 }; // 20GB
+      case 'free': return { limit: 100 * 1024 * 1024, limitMB: 100, fileLimit: 3 };
+      case 'lite': return { limit: 1024 * 1024 * 1024, limitMB: 1024, fileLimit: 999 };
+      case 'protect': return { limit: 5 * 1024 * 1024 * 1024, limitMB: 5120, fileLimit: 999 };
+      case 'secure': return { limit: 20 * 1024 * 1024 * 1024, limitMB: 20480, fileLimit: 999 };
       default: return { limit: 100 * 1024 * 1024, limitMB: 100, fileLimit: 3 };
     }
   };
@@ -63,7 +67,6 @@ export default function DocumentVault() {
   const canUploadFiles = (fileCount) => {
     const limits = getStorageLimits();
     const currentFileCount = documents.length;
-    // const estimatedUsage = estimateTotalStorage(); // Not used in current check for upload limits
     
     // Check file count limit (Free tier only)
     if (user?.plan_tier === 'free' && currentFileCount + fileCount > limits.fileLimit) {
@@ -88,8 +91,16 @@ export default function DocumentVault() {
     mutationFn: (data) => base44.entities.Document.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
-      setCustomLabel(''); // Clear custom label
-      setSelectedFiles([]); // Clear selected files
+      setCustomLabel('');
+      setSelectedFiles([]);
+    },
+  });
+
+  const updateDocumentMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Document.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setEditingDoc(null);
     },
   });
 
@@ -97,7 +108,7 @@ export default function DocumentVault() {
     mutationFn: (id) => base44.entities.Document.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
-      setSelectedDocs([]); // Clear selections after delete
+      setSelectedDocs([]);
     },
   });
 
@@ -189,6 +200,69 @@ export default function DocumentVault() {
     }
   };
 
+  const handleDownload = (doc) => {
+    // Check if the file_url is present
+    if (!doc.file_url) {
+        console.error("Document has no file_url to download:", doc);
+        alert(language === 'th' ? 'ไม่พบไฟล์ที่จะดาวน์โหลด' : 'No file found to download.');
+        return;
+    }
+
+    const link = document.createElement('a');
+    link.href = doc.file_url;
+    // Attempt to extract filename from URL, or use a generic name
+    const filename = doc.file_url.substring(doc.file_url.lastIndexOf('/') + 1);
+    link.download = doc.label || filename || 'document';
+    link.target = '_blank'; // Open in new tab/window for direct download or preview
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleEdit = (doc) => {
+    setEditingDoc(doc);
+    setEditFormData({ type: doc.type, label: doc.label || '' });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingDoc) return;
+    
+    try {
+      await updateDocumentMutation.mutateAsync({
+        id: editingDoc.id,
+        data: {
+          type: editFormData.type,
+          label: editFormData.label
+        }
+      });
+    } catch (error) {
+      console.error('Failed to save document edit:', error);
+      alert(language === 'th' ? 'ไม่สามารถบันทึกการแก้ไขได้ โปรดลองอีกครั้ง' : 'Failed to save edits. Please try again.');
+    }
+  };
+
+  const handleSendEmail = (doc) => {
+    const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
+    const docLabel = doc.label || (language === 'th' ? config.label_th : config.label_en);
+    
+    const subject = language === 'th' 
+      ? `เอกสาร: ${docLabel}` 
+      : `Document: ${docLabel}`;
+    
+    let body = '';
+    
+    if (doc.html_content) { // Assuming `html_content` might be present for 'letter' type documents.
+      body = doc.html_content;
+    } else {
+      body = language === 'th'
+        ? `กรุณาดูเอกสารที่แนบมาด้วย:\n\n${doc.file_url}\n\nชื่อเอกสาร: ${docLabel}\nวันที่: ${format(new Date(doc.created_date), 'dd/MM/yyyy')}`
+        : `Please find the attached document:\n\n${doc.file_url}\n\nDocument: ${docLabel}\nDate: ${format(new Date(doc.created_date), 'MMM d, yyyy')}`;
+    }
+    
+    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoLink;
+  };
+
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
@@ -232,16 +306,24 @@ export default function DocumentVault() {
       viewTemplatesDesc: "Professional letter templates for common rental situations.",
       noDocuments: "No Documents Yet",
       noDocumentsDesc: "Start building your evidence vault for better protection. All your uploaded documents are securely stored here.",
-      uploadFirst: "Upload First Document", // This one is not used in the new UI, but keeping it for completeness if needed elsewhere.
-      deleteConfirm: "Are you sure?", // This one is not used in the new UI, specific messages are used.
+      uploadFirst: "Upload First Document",
+      deleteConfirm: "Are you sure?",
       view: "View",
+      download: "Download",
+      edit: "Edit",
+      sendEmail: "Send Email",
       delete: "Delete",
-      selectAll: "Select All", // This is not used in the new UI.
+      selectAll: "Select All",
       deleteSelected: "Delete Selected",
       deleting: "Deleting...",
       selected: "selected",
       storageUsed: "Storage: ~{used}MB / {limit}MB",
-      filesUsed: "{count} / {limit} files"
+      filesUsed: "{count} / {limit} files",
+      editDocument: "Edit Document",
+      save: "Save",
+      cancel: "Cancel",
+      saving: "Saving...",
+      loadingDocuments: "Loading documents..."
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -261,16 +343,24 @@ export default function DocumentVault() {
       viewTemplatesDesc: "เทมเพลตจดหมายมืออาชีพสำหรับสถานการณ์การเช่าทั่วไป",
       noDocuments: "ยังไม่มีเอกสาร",
       noDocumentsDesc: "เริ่มสร้างคลังหลักฐานเพื่อการป้องกันที่ดีขึ้น เอกสารทั้งหมดที่คุณอัปโหลดจะถูกจัดเก็บอย่างปลอดภัยที่นี่",
-      uploadFirst: "อัปโหลดเอกสารแรก", // Not used
-      deleteConfirm: "คุณแน่ใจหรือไม่?", // Not used
+      uploadFirst: "อัปโหลดเอกสารแรก",
+      deleteConfirm: "คุณแน่ใจหรือไม่?",
       view: "ดู",
+      download: "ดาวน์โหลด",
+      edit: "แก้ไข",
+      sendEmail: "ส่งอีเมล",
       delete: "ลบ",
-      selectAll: "เลือกทั้งหมด", // Not used
+      selectAll: "เลือกทั้งหมด",
       deleteSelected: "ลบที่เลือก",
       deleting: "กำลังลบ...",
       selected: "เลือกแล้ว",
       storageUsed: "พื้นที่: ~{used}MB / {limit}MB",
-      filesUsed: "{count} / {limit} ไฟล์"
+      filesUsed: "{count} / {limit} ไฟล์",
+      editDocument: "แก้ไขเอกสาร",
+      save: "บันทึก",
+      cancel: "ยกเลิก",
+      saving: "กำลังบันทึก...",
+      loadingDocuments: "กำลังโหลดเอกสาร..."
     }
   };
 
@@ -279,6 +369,104 @@ export default function DocumentVault() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-6xl mx-auto">
+        {/* Edit Dialog */}
+        <Dialog open={!!editingDoc} onOpenChange={() => setEditingDoc(null)}>
+          <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>{strings.editDocument}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label htmlFor="edit_doc_type" style={{ color: colors.textPrimary }}>{strings.documentType}</Label>
+                <Select value={editFormData.type} onValueChange={(val) => setEditFormData({...editFormData, type: val})}>
+                  <SelectTrigger id="edit_doc_type" className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                    {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        {language === 'th' ? config.label_th : config.label_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit_custom_label" style={{ color: colors.textPrimary }}>{strings.customLabel}</Label>
+                <Input
+                  id="edit_custom_label"
+                  value={editFormData.label}
+                  onChange={(e) => setEditFormData({...editFormData, label: e.target.value})}
+                  placeholder={strings.customLabelPlaceholder}
+                  className="mt-2"
+                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button variant="outline" onClick={() => setEditingDoc(null)}>
+                  {strings.cancel}
+                </Button>
+                <Button 
+                  onClick={handleSaveEdit}
+                  disabled={updateDocumentMutation.isPending}
+                  className="bg-ls-forest hover:bg-ls-forest/90"
+                >
+                  {updateDocumentMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {strings.saving}
+                    </>
+                  ) : (
+                    strings.save
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Document Dialog */}
+        <Dialog open={!!viewingDoc} onOpenChange={() => setViewingDoc(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh]" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>
+                {viewingDoc?.label || (language === 'th' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_th : DOC_TYPE_CONFIG[viewingDoc?.type]?.label_en)}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="mt-4 overflow-auto max-h-[70vh]">
+              {viewingDoc?.file_url ? (
+                <>
+                  {viewingDoc?.type === 'photo' && (
+                    <img src={viewingDoc.file_url} alt={viewingDoc.label} className="w-full h-auto rounded-lg object-contain max-h-[60vh]" />
+                  )}
+                  {viewingDoc?.type === 'video' && (
+                    <video src={viewingDoc.file_url} controls className="w-full h-auto rounded-lg max-h-[60vh]" />
+                  )}
+                  {(!['photo', 'video'].includes(viewingDoc?.type)) && (
+                    // For PDFs, documents, etc. Use iframe for most file types that browsers can render directly.
+                    // Note: Browser support for direct iframe viewing varies and might require specific headers/MIME types.
+                    // For truly robust display, a third-party viewer library might be needed for some document types.
+                    <iframe
+                      src={viewingDoc.file_url}
+                      className="w-full h-[60vh] rounded-lg border"
+                      style={{ borderColor: colors.borderColor }}
+                      title={viewingDoc.label}
+                    />
+                  )}
+                  {viewingDoc?.html_content && (
+                    <div 
+                      className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800"
+                      dangerouslySetInnerHTML={{ __html: viewingDoc.html_content }}
+                    />
+                  )}
+                </>
+              ) : (
+                <p className="text-center" style={{ color: colors.textSecondary }}>{language === 'th' ? 'ไม่พบเนื้อหาเอกสาร' : 'No document content found.'}</p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Button
           variant="ghost"
           onClick={() => navigate(createPageUrl("Dashboard"))}
@@ -456,7 +644,7 @@ export default function DocumentVault() {
           <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-8 text-center text-ls-forest">
               <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-              <p>{language === 'th' ? 'กำลังโหลดเอกสาร...' : 'Loading documents...'}</p>
+              <p>{strings.loadingDocuments}</p>
             </CardContent>
           </Card>
         ) : documents.length > 0 ? (
@@ -528,7 +716,7 @@ export default function DocumentVault() {
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => handleToggleSelect(doc.id)}
-                          className="mt-1 flex-shrink-0 rounded" // Ensure checkbox styling
+                          className="mt-1 flex-shrink-0 rounded"
                         />
                         <div
                           className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}
@@ -564,33 +752,75 @@ export default function DocumentVault() {
                               />
                             </div>
                           )}
-                          <div className="flex flex-col sm:flex-row gap-2">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => window.open(doc.file_url, '_blank')}
-                              className="w-full sm:w-auto justify-center"
+                              onClick={() => setViewingDoc(doc)}
+                              className="w-full justify-center text-xs"
                               style={{
                                 borderColor: colors.borderColor,
                                 backgroundColor: colors.cardBg,
                                 color: colors.textPrimary,
                               }}
                             >
-                              <Eye className="w-4 h-4 mr-2" />
+                              <Eye className="w-3 h-3 mr-1" />
                               {strings.view}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownload(doc)}
+                              className="w-full justify-center text-xs"
+                              style={{
+                                borderColor: colors.borderColor,
+                                backgroundColor: colors.cardBg,
+                                color: colors.textPrimary,
+                              }}
+                            >
+                              <Download className="w-3 h-3 mr-1" />
+                              {strings.download}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(doc)}
+                              className="w-full justify-center text-xs"
+                              style={{
+                                borderColor: colors.borderColor,
+                                backgroundColor: colors.cardBg,
+                                color: colors.textPrimary,
+                              }}
+                            >
+                              <Edit2 className="w-3 h-3 mr-1" />
+                              {strings.edit}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSendEmail(doc)}
+                              className="w-full justify-center text-xs"
+                              style={{
+                                borderColor: colors.borderColor,
+                                backgroundColor: colors.cardBg,
+                                color: colors.textPrimary,
+                              }}
+                            >
+                              <Send className="w-3 h-3 mr-1" />
+                              {strings.sendEmail}
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleDelete(doc.id)}
                               disabled={deleteDocumentMutation.isPending}
-                              className="w-full sm:w-auto text-red-600 hover:text-red-700 justify-center"
+                              className="w-full sm:col-span-4 text-red-600 hover:text-red-700 justify-center text-xs"
                               style={{
                                 borderColor: colors.borderColor,
                                 backgroundColor: colors.cardBg,
                               }}
                             >
-                              <Trash2 className="w-4 h-4 mr-2" />
+                              <Trash2 className="w-3 h-3 mr-1" />
                               {strings.delete}
                             </Button>
                           </div>
