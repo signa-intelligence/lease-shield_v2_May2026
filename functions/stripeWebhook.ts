@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
       const email = session.customer_details?.email;
       
       const base44 = createClientFromRequest(req);
+      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
       
       // HANDLE CREDITS PURCHASE
       if (metadata.type === 'credits') {
@@ -77,36 +78,72 @@ Deno.serve(async (req) => {
           : `${creditsToAdd} Credits Purchased Successfully`;
         
         const emailBody = lang === 'th'
-          ? `สวัสดี ${user.full_name},
+          ? `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(to right, #C7A338, #B89330); padding: 20px; border-radius: 8px 8px 0 0;">
+              <h2 style="color: white; margin: 0;">💰 ซื้อเครดิตสำเร็จ</h2>
+            </div>
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+              <p>สวัสดี <strong>${user.full_name}</strong>,</p>
+              <p>เครดิตของคุณเพิ่มแล้ว! 🎉</p>
+              <p style="background: #FFF7ED; padding: 16px; border-radius: 8px; border-left: 4px solid #C7A338;">
+                <strong>เครดิตที่ซื้อ:</strong> ${creditsToAdd}<br/>
+                <strong>ยอดคงเหลือใหม่:</strong> ${currentCredits + creditsToAdd}<br/>
+                <strong>จำนวนเงิน:</strong> ฿${(session.amount_total / 100).toLocaleString()}
+              </p>
+              <p>ใช้เครดิตของคุณเพื่อสร้างจดหมายทางกฎหมายมืออาชีพได้ทันที</p>
+              <p><a href="https://app.leaseshield.asia/templates" style="color: #0C3B2E; font-weight: bold;">ดูเทมเพลต →</a></p>
+              <p style="margin-top: 24px;">— ทีม Lease Shield</p>
+            </div>
+          </div>
+          `
+          : `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(to right, #C7A338, #B89330); padding: 20px; border-radius: 8px 8px 0 0;">
+              <h2 style="color: white; margin: 0;">💰 Credits Purchase Successful</h2>
+            </div>
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+              <p>Hi <strong>${user.full_name}</strong>,</p>
+              <p>Your credits have been added! 🎉</p>
+              <p style="background: #FFF7ED; padding: 16px; border-radius: 8px; border-left: 4px solid #C7A338;">
+                <strong>Credits Purchased:</strong> ${creditsToAdd}<br/>
+                <strong>New Balance:</strong> ${currentCredits + creditsToAdd}<br/>
+                <strong>Amount Paid:</strong> ฿${(session.amount_total / 100).toLocaleString()}
+              </p>
+              <p>Use your credits to generate professional legal letters instantly.</p>
+              <p><a href="https://app.leaseshield.asia/templates" style="color: #0C3B2E; font-weight: bold;">View Templates →</a></p>
+              <p style="margin-top: 24px;">— The Lease Shield Team</p>
+            </div>
+          </div>
+          `;
 
-เครดิตของคุณเพิ่มแล้ว! 🎉
+        // Send via Resend with no-reply@leaseshield.asia
+        if (RESEND_API_KEY) {
+          try {
+            const resendResponse = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${RESEND_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: 'Lease Shield <no-reply@leaseshield.asia>',
+                to: [user.email],
+                subject: subject,
+                html: emailBody,
+              }),
+            });
 
-• เครดิตที่ซื้อ: ${creditsToAdd}
-• ยอดคงเหลือใหม่: ${currentCredits + creditsToAdd}
-• จำนวนเงิน: ฿${(session.amount_total / 100).toLocaleString()}
-
-ใช้เครดิตของคุณเพื่อสร้างจดหมายทางกฎหมายมืออาชีพได้ทันที
-
-— ทีม Lease Shield`
-          : `Hi ${user.full_name},
-
-Your credits have been added! 🎉
-
-• Credits Purchased: ${creditsToAdd}
-• New Balance: ${currentCredits + creditsToAdd}
-• Amount Paid: ฿${(session.amount_total / 100).toLocaleString()}
-
-Use your credits to generate professional legal letters instantly.
-
-— The Lease Shield Team`;
-
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: user.email,
-          subject,
-          body: emailBody
-        });
-
-        console.log('✅ Email sent to:', user.email);
+            const resendData = await resendResponse.json();
+            if (resendResponse.ok) {
+              console.log('✅ Credits email sent via Resend. Message ID:', resendData.id);
+            } else {
+              console.error('❌ Resend email failed:', resendData);
+            }
+          } catch (emailError) {
+            console.error('❌ Email error:', emailError);
+          }
+        }
 
         if (user.line_messaging_token && user.line_notifications) {
           console.log('📱 Sending LINE notification...');
@@ -225,7 +262,7 @@ Use your credits to generate professional legal letters instantly.
           created_by: user.email
         });
 
-        // Send confirmation email
+        // Send confirmation email via Resend
         const lang = user.language || 'en';
         const planLabels = {
           lite: { en: 'Lite', th: 'ไลท์' },
@@ -243,40 +280,76 @@ Use your credits to generate professional legal letters instantly.
           : `Welcome to Lease Shield ${planLabel}!`;
 
         const emailBody = lang === 'th'
-          ? `สวัสดี ${user.full_name},
+          ? `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(to right, #8B5CF6, #7C3AED); padding: 20px; border-radius: 8px 8px 0 0;">
+              <h2 style="color: white; margin: 0;">🎉 ยินดีต้อนรับสู่ ${planLabel}!</h2>
+            </div>
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+              <p>สวัสดี <strong>${user.full_name}</strong>,</p>
+              <p>การสมัครสมาชิกของคุณเปิดใช้งานแล้ว! 🎉</p>
+              <p style="background: #F5F3FF; padding: 16px; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+                <strong>แผน:</strong> ${planLabel}<br/>
+                <strong>การเรียกเก็บเงิน:</strong> ${intervalLabel}<br/>
+                <strong>ต่ออายุเมื่อ:</strong> ${new Date(renewalDate).toLocaleDateString('th-TH')}<br/>
+                <strong>จำนวนเงิน:</strong> ฿${(session.amount_total / 100).toLocaleString()}<br/>
+                <strong>เครดิตจดหมาย:</strong> ${currentCredits + creditsToAdd}
+              </p>
+              <p>คุณสามารถเข้าถึงฟีเจอร์ทั้งหมดในแผนของคุณได้แล้ว</p>
+              <p><a href="https://app.leaseshield.asia/account" style="color: #0C3B2E; font-weight: bold;">ดูบัญชีของคุณ →</a></p>
+              <p style="margin-top: 24px;">— ทีม Lease Shield</p>
+            </div>
+          </div>
+          `
+          : `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(to right, #8B5CF6, #7C3AED); padding: 20px; border-radius: 8px 8px 0 0;">
+              <h2 style="color: white; margin: 0;">🎉 Welcome to ${planLabel}!</h2>
+            </div>
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+              <p>Hi <strong>${user.full_name}</strong>,</p>
+              <p>Your subscription is now active! 🎉</p>
+              <p style="background: #F5F3FF; padding: 16px; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+                <strong>Plan:</strong> ${planLabel}<br/>
+                <strong>Billing:</strong> ${intervalLabel}<br/>
+                <strong>Renews:</strong> ${new Date(renewalDate).toLocaleDateString('en-US')}<br/>
+                <strong>Amount:</strong> ฿${(session.amount_total / 100).toLocaleString()}<br/>
+                <strong>Letter Credits:</strong> ${currentCredits + creditsToAdd}
+              </p>
+              <p>You now have access to all features in your plan.</p>
+              <p><a href="https://app.leaseshield.asia/account" style="color: #0C3B2E; font-weight: bold;">View Your Account →</a></p>
+              <p style="margin-top: 24px;">— The Lease Shield Team</p>
+            </div>
+          </div>
+          `;
 
-ยินดีต้อนรับสู่แผน ${planLabel}! 🎉
+        // Send via Resend with no-reply@leaseshield.asia
+        if (RESEND_API_KEY) {
+          try {
+            const resendResponse = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${RESEND_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: 'Lease Shield <no-reply@leaseshield.asia>',
+                to: [user.email],
+                subject: subject,
+                html: emailBody,
+              }),
+            });
 
-• แผน: ${planLabel}
-• การเรียกเก็บเงิน: ${intervalLabel}
-• ต่ออายุเมื่อ: ${new Date(renewalDate).toLocaleDateString('th-TH')}
-• จำนวนเงิน: ฿${(session.amount_total / 100).toLocaleString()}
-• เครดิตจดหมาย: ${currentCredits + creditsToAdd}
-
-คุณสามารถเข้าถึงฟีเจอร์ทั้งหมดในแผนของคุณได้แล้ว
-
-— ทีม Lease Shield`
-          : `Hi ${user.full_name},
-
-Welcome to ${planLabel} plan! 🎉
-
-• Plan: ${planLabel}
-• Billing: ${intervalLabel}
-• Renews: ${new Date(renewalDate).toLocaleDateString('en-US')}
-• Amount: ฿${(session.amount_total / 100).toLocaleString()}
-• Letter Credits: ${currentCredits + creditsToAdd}
-
-You now have access to all features in your plan.
-
-— The Lease Shield Team`;
-
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: user.email,
-          subject,
-          body: emailBody
-        });
-
-        console.log('✅ Subscription confirmation email sent!');
+            const resendData = await resendResponse.json();
+            if (resendResponse.ok) {
+              console.log('✅ Subscription email sent via Resend. Message ID:', resendData.id);
+            } else {
+              console.error('❌ Resend email failed:', resendData);
+            }
+          } catch (emailError) {
+            console.error('❌ Email error:', emailError);
+          }
+        }
 
         // ✅ FIXED LINE NOTIFICATION - USE CORRECT DATE!
         if (user.line_messaging_token && user.line_notifications) {
