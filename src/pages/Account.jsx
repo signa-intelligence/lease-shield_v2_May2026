@@ -258,7 +258,11 @@ export default function Account() {
     phone: user?.phone || '',
     country: user?.country || '',
     language: user?.language || 'en',
-    theme: user?.theme || 'light'
+    theme: user?.theme || 'light',
+    tenant_address: user?.tenant_address || '',
+    tenant_city: user?.tenant_city || '',
+    tenant_state: user?.tenant_state || '',
+    tenant_zip: user?.tenant_zip || ''
   });
 
   const [landlordData, setLandlordData] = useState({
@@ -283,7 +287,11 @@ export default function Account() {
         phone: user.phone || '',
         country: user.country || '',
         language: user.language || 'en',
-        theme: user.theme || 'light'
+        theme: user.theme || 'light',
+        tenant_address: user.tenant_address || '',
+        tenant_city: user.tenant_city || '',
+        tenant_state: user.tenant_state || '',
+        tenant_zip: user.tenant_zip || ''
       });
       setLandlordData({
         landlord_name: user.landlord_name || '',
@@ -552,6 +560,14 @@ export default function Account() {
       theme: "Theme",
       lightMode: "Light Mode",
       darkMode: "Dark Mode",
+      tenantAddress: "Your Address",
+      tenantAddressPlaceholder: "Street address",
+      tenantCity: "City",
+      tenantCityPlaceholder: "Bangkok",
+      tenantState: "State/Province",
+      tenantStatePlaceholder: "Bangkok",
+      tenantZip: "Postal Code",
+      tenantZipPlaceholder: "10110",
       saveChanges: "Save Changes",
       cancel: "Cancel",
       currentPlan: "Current Plan",
@@ -681,6 +697,14 @@ export default function Account() {
       theme: "ธีม",
       lightMode: "โหมดสว่าง",
       darkMode: "โหมดมืด",
+      tenantAddress: "ที่อยู่ของคุณ",
+      tenantAddressPlaceholder: "ที่อยู่",
+      tenantCity: "เมือง",
+      tenantCityPlaceholder: "กรุงเทพฯ",
+      tenantState: "จังหวัด",
+      tenantStatePlaceholder: "กรุงเทพฯ",
+      tenantZip: "รหัสไปรษณีย์",
+      tenantZipPlaceholder: "10110",
       saveChanges: "บันทึกการเปลี่ยนแปลง",
       cancel: "ยกเลิก",
       currentPlan: "แผนปัจจุบัน",
@@ -944,7 +968,7 @@ export default function Account() {
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}>
-                        <Phone className="w-5 h-5 text-white" />
+                        <Phone className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1">
                         <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.phone}</p>
@@ -952,6 +976,39 @@ export default function Account() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Tenant Address Display */}
+                  {(user?.tenant_address || user?.tenant_city || user?.tenant_state || user?.tenant_zip) && (
+                    <div style={{
+                      padding: '16px',
+                      backgroundColor: colors.fieldBg,
+                      borderRadius: '12px',
+                      borderLeft: '4px solid #C7A338'
+                    }}>
+                      <div className="flex items-start gap-3">
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          backgroundColor: '#C7A338',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <Globe className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.tenantAddress}</p>
+                          <p className="font-bold" style={{ color: colors.textPrimary }}>
+                            {user?.tenant_address && <span>{user.tenant_address}<br /></span>}
+                            {user?.tenant_city && <span>{user.tenant_city}</span>}
+                            {user?.tenant_state && <span>, {user.tenant_state}</span>}
+                            {user?.tenant_zip && <span> {user.tenant_zip}</span>}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Language Display */}
                   <div style={{
@@ -1153,6 +1210,90 @@ export default function Account() {
                         fontSize: '14px'
                       }}
                     />
+                  </div>
+
+                  {/* Tenant Address Inputs */}
+                  <div>
+                    <Label htmlFor="tenant_address" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                      <Globe className="w-4 h-4 text-ls-gold" />
+                      {strings.tenantAddress}
+                    </Label>
+                    <Input
+                      id="tenant_address"
+                      value={formData.tenant_address}
+                      onChange={(e) => setFormData({...formData, tenant_address: e.target.value})}
+                      placeholder={strings.tenantAddressPlaceholder}
+                      style={{
+                        border: `2px solid ${colors.borderColor}`,
+                        backgroundColor: colors.inputBg,
+                        color: colors.textPrimary,
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="tenant_city" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                        {strings.tenantCity}
+                      </Label>
+                      <Input
+                        id="tenant_city"
+                        value={formData.tenant_city}
+                        onChange={(e) => setFormData({...formData, tenant_city: e.target.value})}
+                        placeholder={strings.tenantCityPlaceholder}
+                        style={{
+                          border: `2px solid ${colors.borderColor}`,
+                          backgroundColor: colors.inputBg,
+                          color: colors.textPrimary,
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="tenant_state" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                        {strings.tenantState}
+                      </Label>
+                      <Input
+                        id="tenant_state"
+                        value={formData.tenant_state}
+                        onChange={(e) => setFormData({...formData, tenant_state: e.target.value})}
+                        placeholder={strings.tenantStatePlaceholder}
+                        style={{
+                          border: `2px solid ${colors.borderColor}`,
+                          backgroundColor: colors.inputBg,
+                          color: colors.textPrimary,
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="tenant_zip" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                        {strings.tenantZip}
+                      </Label>
+                      <Input
+                        id="tenant_zip"
+                        value={formData.tenant_zip}
+                        onChange={(e) => setFormData({...formData, tenant_zip: e.target.value})}
+                        placeholder={strings.tenantZipPlaceholder}
+                        style={{
+                          border: `2px solid ${colors.borderColor}`,
+                          backgroundColor: colors.inputBg,
+                          color: colors.textPrimary,
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {/* Country Input */}
