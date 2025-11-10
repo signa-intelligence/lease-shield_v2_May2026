@@ -2,32 +2,34 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square } from "lucide-react";
+import { Input } from "@/components/ui/input"; // New import
+import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye } from "lucide-react"; // Added new icons
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // Added Link
 import { createPageUrl } from "@/utils";
 
 const DOC_TYPE_CONFIG = {
-  lease: { label: 'Lease', icon: FileText, color: 'bg-blue-100 text-blue-800' },
-  receipt: { label: 'Receipt', icon: FileText, color: 'bg-emerald-100 text-emerald-800' },
-  photo: { label: 'Photo', icon: Camera, color: 'bg-purple-100 text-purple-800' },
-  video: { label: 'Video', icon: FileVideo, color: 'bg-amber-100 text-amber-800' },
-  letter: { label: 'Letter', icon: Mail, color: 'bg-indigo-100 text-indigo-800' },
-  other: { label: 'Other', icon: HelpCircle, color: 'bg-slate-100 text-slate-800' }
+  lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
+  receipt: { label_en: 'Receipt', label_th: 'ใบเสร็จ', icon: FileText, color: 'bg-emerald-100 text-emerald-800', bgColor: '#10B981' },
+  photo: { label_en: 'Photo', label_th: 'รูปภาพ', icon: Camera, color: 'bg-purple-100 text-purple-800', bgColor: '#A855F7' },
+  video: { label_en: 'Video', label_th: 'วิดีโอ', icon: FileVideo, color: 'bg-amber-100 text-amber-800', bgColor: '#F59E0B' },
+  letter: { label_en: 'Letter', label_th: 'จดหมาย', icon: Mail, color: 'bg-indigo-100 text-indigo-800', bgColor: '#6366F1' },
+  other: { label_en: 'Other', label_th: 'อื่น ๆ', icon: HelpCircle, color: 'bg-slate-100 text-slate-800', bgColor: '#64748B' }
 };
 
 export default function DocumentVault() {
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [uploadType, setUploadType] = useState('photo');
-  const [uploadLabel, setUploadLabel] = useState('');
+  const [customLabel, setCustomLabel] = useState(''); // Renamed from uploadLabel
   const [selectedDocs, setSelectedDocs] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]); // New state for files chosen by user
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -35,7 +37,7 @@ export default function DocumentVault() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: documents = [] } = useQuery({
+  const { data: documents = [], isLoading: isLoadingDocuments } = useQuery({
     queryKey: ['documents'],
     queryFn: () => base44.entities.Document.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
@@ -61,7 +63,7 @@ export default function DocumentVault() {
   const canUploadFiles = (fileCount) => {
     const limits = getStorageLimits();
     const currentFileCount = documents.length;
-    const estimatedUsage = estimateTotalStorage();
+    // const estimatedUsage = estimateTotalStorage(); // Not used in current check for upload limits
     
     // Check file count limit (Free tier only)
     if (user?.plan_tier === 'free' && currentFileCount + fileCount > limits.fileLimit) {
@@ -77,7 +79,7 @@ export default function DocumentVault() {
     // Since we don't have exact file sizes in DB, we'll be permissive
     return {
       allowed: true,
-      usedMB: Math.round(estimatedUsage / 1024 / 1024),
+      usedMB: Math.round(estimateTotalStorage() / 1024 / 1024),
       limitMB: limits.limitMB
     };
   };
@@ -86,7 +88,8 @@ export default function DocumentVault() {
     mutationFn: (data) => base44.entities.Document.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
-      setUploadLabel('');
+      setCustomLabel(''); // Clear custom label
+      setSelectedFiles([]); // Clear selected files
     },
   });
 
@@ -94,6 +97,7 @@ export default function DocumentVault() {
     mutationFn: (id) => base44.entities.Document.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setSelectedDocs([]); // Clear selections after delete
     },
   });
 
@@ -107,12 +111,17 @@ export default function DocumentVault() {
     },
   });
 
-  const handleFileUpload = async (e) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(prev => [...prev, ...files]);
+    e.target.value = null; // Clear input so same file can be selected again
+  };
+
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0) return;
 
     // CHECK STORAGE/FILE LIMITS
-    const uploadCheck = canUploadFiles(files.length);
+    const uploadCheck = canUploadFiles(selectedFiles.length);
     if (!uploadCheck.allowed) {
       if (uploadCheck.reason === 'file_limit') {
         alert(
@@ -126,16 +135,17 @@ export default function DocumentVault() {
 
     setUploading(true);
     try {
-      for (const file of files) {
+      for (const file of selectedFiles) {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         await createDocumentMutation.mutateAsync({
           type: uploadType,
           file_url,
-          label: uploadLabel || file.name
+          label: customLabel || file.name
         });
       }
     } catch (error) {
       console.error('Upload failed:', error);
+      alert(language === 'th' ? 'อัปโหลดไม่สำเร็จ โปรดลองอีกครั้ง' : 'Upload failed. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -157,7 +167,17 @@ export default function DocumentVault() {
     );
   };
 
-  const handleDeleteSelected = () => {
+  const handleDelete = (docId) => {
+    const confirmMessage = language === 'th' 
+      ? `คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์นี้?`
+      : `Are you sure you want to delete this file?`;
+    
+    if (confirm(confirmMessage)) {
+      deleteDocumentMutation.mutate(docId);
+    }
+  };
+
+  const handleBulkDelete = () => {
     if (selectedDocs.length === 0) return;
     
     const confirmMessage = language === 'th' 
@@ -195,45 +215,59 @@ export default function DocumentVault() {
 
   const t = {
     en: {
+      back: "Back to Dashboard",
       title: "Evidence Vault",
       subtitle: "Secure storage for all your rental documentation",
       uploadFiles: "Upload Files",
       documentType: "Document Type",
-      customLabel: "Custom Label (optional)",
-      selectFiles: "Select Files",
+      customLabel: "Custom Label",
+      customLabelPlaceholder: "e.g., Move-in photos",
+      selectFiles: "Drag & drop files here or click to browse",
+      supportedFormats: "PDF, Images (JPG, PNG), Videos (MP4, MOV, AVI)",
+      selectedFiles: "Selected Files",
+      uploadButton: "Upload",
       uploading: "Uploading...",
       recentUploads: "Recent Uploads",
       viewTemplates: "View Templates",
-      templatesDesc: "Professional letter templates",
+      viewTemplatesDesc: "Professional letter templates for common rental situations.",
       noDocuments: "No Documents Yet",
-      noDocsSub: "Start building your evidence vault for better protection",
-      uploadFirst: "Upload First Document",
-      deleteConfirm: "Are you sure?",
-      viewFile: "View File",
-      selectAll: "Select All",
+      noDocumentsDesc: "Start building your evidence vault for better protection. All your uploaded documents are securely stored here.",
+      uploadFirst: "Upload First Document", // This one is not used in the new UI, but keeping it for completeness if needed elsewhere.
+      deleteConfirm: "Are you sure?", // This one is not used in the new UI, specific messages are used.
+      view: "View",
+      delete: "Delete",
+      selectAll: "Select All", // This is not used in the new UI.
       deleteSelected: "Delete Selected",
+      deleting: "Deleting...",
       selected: "selected",
       storageUsed: "Storage: ~{used}MB / {limit}MB",
       filesUsed: "{count} / {limit} files"
     },
     th: {
+      back: "กลับไปยังแดชบอร์ด",
       title: "คลังหลักฐาน",
-      subtitle: "จัดเก็บเอกสารการเช่าอย่างปลอดภัย",
+      subtitle: "จัดเก็บเอกสารการเช่าทั้งหมดของคุณอย่างปลอดภัย",
       uploadFiles: "อัปโหลดไฟล์",
       documentType: "ประเภทเอกสาร",
-      customLabel: "ป้ายกำกับที่กำหนดเอง (ไม่บังคับ)",
-      selectFiles: "เลือกไฟล์",
+      customLabel: "ป้ายกำกับที่กำหนดเอง",
+      customLabelPlaceholder: "เช่น รูปภาพตอนย้ายเข้า",
+      selectFiles: "ลากและวางไฟล์ที่นี่หรือคลิกเพื่อเลือก",
+      supportedFormats: "PDF, รูปภาพ (JPG, PNG), วิดีโอ (MP4, MOV, AVI)",
+      selectedFiles: "ไฟล์ที่เลือก",
+      uploadButton: "อัปโหลด",
       uploading: "กำลังอัปโหลด...",
       recentUploads: "อัปโหลดล่าสุด",
       viewTemplates: "ดูเทมเพลต",
-      templatesDesc: "เทมเพลตจดหมายมืออาชีพ",
+      viewTemplatesDesc: "เทมเพลตจดหมายมืออาชีพสำหรับสถานการณ์การเช่าทั่วไป",
       noDocuments: "ยังไม่มีเอกสาร",
-      noDocsSub: "เริ่มสร้างคลังหลักฐานเพื่อการป้องกันที่ดีขึ้น",
-      uploadFirst: "อัปโหลดเอกสารแรก",
-      deleteConfirm: "คุณแน่ใจหรือไม่?",
-      viewFile: "ดูไฟล์",
-      selectAll: "เลือกทั้งหมด",
+      noDocumentsDesc: "เริ่มสร้างคลังหลักฐานเพื่อการป้องกันที่ดีขึ้น เอกสารทั้งหมดที่คุณอัปโหลดจะถูกจัดเก็บอย่างปลอดภัยที่นี่",
+      uploadFirst: "อัปโหลดเอกสารแรก", // Not used
+      deleteConfirm: "คุณแน่ใจหรือไม่?", // Not used
+      view: "ดู",
+      delete: "ลบ",
+      selectAll: "เลือกทั้งหมด", // Not used
       deleteSelected: "ลบที่เลือก",
+      deleting: "กำลังลบ...",
       selected: "เลือกแล้ว",
       storageUsed: "พื้นที่: ~{used}MB / {limit}MB",
       filesUsed: "{count} / {limit} ไฟล์"
@@ -243,8 +277,18 @@ export default function DocumentVault() {
   const strings = t[language];
 
   return (
-    <div className="min-h-screen p-3 sm:p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="max-w-6xl mx-auto">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(createPageUrl("Dashboard"))}
+          className="mb-4"
+          style={{ color: colors.textSecondary }}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          {strings.back}
+        </Button>
+
         <div className="mb-4 sm:mb-6">
           <div className="flex items-center gap-2 sm:gap-3 mb-2">
             <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-ls-forest" />
@@ -269,300 +313,310 @@ export default function DocumentVault() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
-          {/* Upload Form - Left Side */}
-          <Card className="border-none shadow-lg lg:col-span-1" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-4 sm:p-6">
-              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-ls-forest" />
-                {strings.uploadFiles}
-              </h3>
-              <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <Label className="text-sm" style={{ color: colors.textPrimary }}>{strings.documentType}</Label>
-                  <Select value={uploadType} onValueChange={setUploadType}>
-                    <SelectTrigger className="mt-1 h-10" style={{
-                      backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
-                      borderColor: colors.borderColor
-                    }}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lease">Lease</SelectItem>
-                      <SelectItem value="receipt">Receipt</SelectItem>
-                      <SelectItem value="photo">Photo</SelectItem>
-                      <SelectItem value="video">Video</SelectItem>
-                      <SelectItem value="letter">Letter</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-sm" style={{ color: colors.textPrimary }}>{strings.customLabel}</Label>
-                  <input
-                    type="text"
-                    value={uploadLabel}
-                    onChange={(e) => setUploadLabel(e.target.value)}
-                    placeholder="e.g., Move-in photos"
-                    className="mt-1"
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
-                      border: `1px solid ${colors.borderColor}`,
-                      outline: 'none',
-                      height: '40px'
-                    }}
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="file-upload"
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '20px',
-                      border: `2px dashed ${colors.borderColor}`,
-                      borderRadius: '12px',
-                      cursor: uploading ? 'not-allowed' : 'pointer',
-                      backgroundColor: colors.uploadBg,
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!uploading) e.target.style.borderColor = '#0C3B2E';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!uploading) e.target.style.borderColor = colors.borderColor;
-                    }}
-                  >
-                    <Upload className="w-6 h-6 sm:w-8 sm:h-8 mb-2" style={{ color: colors.textSecondary }} />
-                    <span className="text-sm font-medium text-center" style={{ color: colors.textPrimary }}>
-                      {uploading ? strings.uploading : strings.selectFiles}
-                    </span>
-                    <span className="text-xs mt-1 text-center" style={{ color: colors.textSecondary }}>
-                      PDF, Images, Videos
-                    </span>
-                    <input
-                      id="file-upload"
-                      type="file"
-                      multiple
-                      onChange={handleFileUpload}
-                      disabled={uploading}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
+        {/* Upload Section */}
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <Upload className="w-5 h-5 text-ls-forest" />
+              {strings.uploadFiles}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 md:p-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="doc_type" style={{ color: colors.textPrimary }}>{strings.documentType}</Label>
+                <Select value={uploadType} onValueChange={setUploadType}>
+                  <SelectTrigger id="doc_type" className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                    {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        {language === 'th' ? config.label_th : config.label_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Templates Link */}
-              <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl border" style={{
-                backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
-                borderColor: 'rgba(12, 59, 46, 0.2)'
-              }}>
-                <button
-                  onClick={() => navigate(createPageUrl("Templates"))}
-                  className="w-full flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-ls-forest flex-shrink-0" />
-                    <div className="text-left">
-                      <p className="font-bold text-xs sm:text-sm" style={{ color: colors.textPrimary }}>{strings.viewTemplates}</p>
-                      <p className="text-xs" style={{ color: colors.textSecondary }}>{strings.templatesDesc}</p>
-                    </div>
+              <div>
+                <Label htmlFor="custom_label" style={{ color: colors.textPrimary }}>{strings.customLabel}</Label>
+                <Input
+                  id="custom_label"
+                  type="text"
+                  value={customLabel}
+                  onChange={(e) => setCustomLabel(e.target.value)}
+                  placeholder={strings.customLabelPlaceholder}
+                  className="mt-2"
+                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
+                />
+              </div>
+
+              <div>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="file-upload"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mov,.avi"
+                  disabled={uploading}
+                />
+                <label htmlFor="file-upload" className={uploading ? 'cursor-not-allowed opacity-70' : ''}>
+                  <div
+                    className="border-2 border-dashed rounded-xl p-6 md:p-8 text-center transition-colors"
+                    style={{
+                      borderColor: colors.borderColor,
+                      backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                      cursor: uploading ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <Upload className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3" style={{ color: colors.textSecondary }} />
+                    <p className="font-semibold mb-1 text-sm md:text-base" style={{ color: colors.textPrimary }}>{strings.selectFiles}</p>
+                    <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>{strings.supportedFormats}</p>
                   </div>
-                  <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 text-ls-forest flex-shrink-0" />
-                </button>
+                </label>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Recent Uploads - Right Side */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2 flex-wrap">
-              <h3 className="font-bold text-base sm:text-lg" style={{ color: colors.textPrimary }}>{strings.recentUploads}</h3>
-              {documents.length > 0 && (
-                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                  {selectedDocs.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-medium" style={{ color: colors.textSecondary }}>
-                        {selectedDocs.length} {strings.selected}
-                      </span>
-                      <Button
-                        onClick={handleDeleteSelected}
-                        variant="destructive"
-                        size="sm"
-                        className="bg-red-600 hover:bg-red-700 text-xs h-8"
-                      >
-                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">{strings.deleteSelected}</span>
-                        <span className="sm:hidden">Delete</span>
-                      </Button>
-                    </div>
-                  )}
-                  <button
-                    onClick={handleSelectAll}
-                    className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm"
-                    style={{
-                      backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                      color: colors.textPrimary
-                    }}
+              {selectedFiles.length > 0 && (
+                <div>
+                  <p className="font-semibold mb-2 text-sm" style={{ color: colors.textPrimary }}>
+                    {strings.selectedFiles} ({selectedFiles.length})
+                  </p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <FileText className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                          <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
+                        </div>
+                        <button
+                          onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
+                          className="p-1 hover:bg-red-100 rounded flex-shrink-0 ml-2"
+                          disabled={uploading}
+                        >
+                          <X className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    onClick={handleUpload}
+                    disabled={uploading}
+                    className="w-full mt-4 bg-ls-forest hover:bg-ls-forest-dark"
                   >
-                    {selectedDocs.length === documents.length ? (
-                      <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4 text-ls-forest" />
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {strings.uploading}
+                      </>
                     ) : (
-                      <Square className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        {strings.uploadButton}
+                      </>
                     )}
-                    <span className="font-medium">{strings.selectAll}</span>
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
 
-            {documents.length === 0 ? (
-              <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-                <CardContent className="p-8 sm:p-12 text-center">
-                  <FileText className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
-                  <h4 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.noDocuments}</h4>
-                  <p className="mb-4 sm:mb-6 text-sm" style={{ color: colors.textSecondary }}>{strings.noDocsSub}</p>
-                  <Button
-                    onClick={() => document.getElementById('file-upload').click()}
-                    className="text-sm"
-                    style={{
-                      backgroundColor: '#0C3B2E',
-                      color: '#FFFFFF'
-                    }}
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    {strings.uploadFirst}
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-3 sm:gap-4">
+            {/* Templates Link */}
+            <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
+              <Link to={createPageUrl("Templates")}>
+                <div
+                  className="p-4 rounded-lg border-2 hover:shadow-md transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                    borderColor: '#0C3B2E'
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-ls-forest flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm md:text-base" style={{ color: colors.textPrimary }}>
+                        {strings.viewTemplates}
+                      </p>
+                      <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>
+                        {strings.viewTemplatesDesc}
+                      </p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-ls-forest flex-shrink-0" />
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Uploads */}
+        {isLoadingDocuments ? (
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-8 text-center text-ls-forest">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+              <p>{language === 'th' ? 'กำลังโหลดเอกสาร...' : 'Loading documents...'}</p>
+            </CardContent>
+          </Card>
+        ) : documents.length > 0 ? (
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <FileText className="w-5 h-5 text-ls-forest" />
+                  {strings.recentUploads} ({documents.length})
+                </CardTitle>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {documents.length > 0 && (
+                    <button
+                      onClick={handleSelectAll}
+                      className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm"
+                      style={{
+                        backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                        color: colors.textPrimary
+                      }}
+                    >
+                      {selectedDocs.length === documents.length ? (
+                        <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4 text-ls-forest" />
+                      ) : (
+                        <Square className="w-3 h-3 sm:w-4 sm:h-4" />
+                      )}
+                      <span className="font-medium">{language === 'th' ? 'เลือกทั้งหมด' : 'Select All'}</span>
+                    </button>
+                  )}
+                  {selectedDocs.length > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBulkDelete}
+                      disabled={deleteBulkMutation.isPending}
+                      className="w-full sm:w-auto text-xs h-8"
+                    >
+                      {deleteBulkMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          {strings.deleting}
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          {strings.deleteSelected} ({selectedDocs.length})
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y" style={{ borderColor: colors.borderColor }}>
                 {documents.map((doc) => {
-                  const typeConfig = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
-                  const TypeIcon = typeConfig.icon;
+                  const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
+                  const Icon = config.icon;
                   const isSelected = selectedDocs.includes(doc.id);
-                  
+
                   return (
-                    <Card key={doc.id} className={`border-none shadow-md hover:shadow-lg transition-all duration-300 ${isSelected ? 'ring-2 ring-ls-forest' : ''}`} style={{
-                      backgroundColor: colors.cardBg
-                    }}>
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => handleToggleSelect(doc.id)}
-                            className="mt-1 flex-shrink-0"
-                          />
-                          <div className="flex items-start justify-between flex-1 min-w-0 gap-2">
-                            <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-                              <div className="p-2 rounded-lg flex-shrink-0" style={{
-                                backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED'
+                    <div
+                      key={doc.id}
+                      className="p-4 hover:bg-opacity-50 transition-colors"
+                      style={{
+                        backgroundColor: isSelected ? (isDarkMode ? '#3A3D40' : '#F3F4F6') : 'transparent'
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => handleToggleSelect(doc.id)}
+                          className="mt-1 flex-shrink-0 rounded" // Ensure checkbox styling
+                        />
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}
+                          style={{ backgroundColor: config.bgColor }}
+                        >
+                          <Icon className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-sm break-words" style={{ 
+                                color: colors.textPrimary,
+                                wordBreak: 'break-word',
+                                overflowWrap: 'anywhere'
                               }}>
-                                <TypeIcon className="w-4 h-4 sm:w-5 sm:h-5 text-ls-forest" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-xs sm:text-sm truncate" style={{ color: colors.textPrimary }}>
-                                  {doc.label}
-                                </p>
-                                <p className="text-xs" style={{ color: colors.textSecondary }}>
-                                  {format(new Date(doc.created_date), 'MMM d, yyyy')}
-                                </p>
-                              </div>
+                                {doc.label || (language === 'th' ? config.label_th : config.label_en)}
+                              </p>
+                              <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                                {format(new Date(doc.created_date), 'MMM d, yyyy')}
+                              </p>
                             </div>
-                            <Badge className={`${typeConfig.color} text-xs flex-shrink-0`}>
-                              {typeConfig.label}
+                            <Badge className="text-xs whitespace-nowrap" style={{ backgroundColor: config.bgColor + '20', color: config.bgColor, border: `1px solid ${config.bgColor}40` }}>
+                              {language === 'th' ? config.label_th : config.label_en}
                             </Badge>
                           </div>
-                        </div>
-
-                        {/* Preview for images */}
-                        {doc.type === 'photo' && doc.file_url && (
-                          <div className="mb-2 sm:mb-3 ml-7 sm:ml-9">
-                            <img
-                              src={doc.file_url}
-                              alt={doc.label}
-                              className="w-full h-24 sm:h-32 object-cover rounded-lg"
-                              style={{ border: `1px solid ${colors.borderColor}` }}
-                            />
-                          </div>
-                        )}
-
-                        <div className="flex gap-2 ml-7 sm:ml-9">
-                          <a
-                            href={doc.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1"
-                          >
-                            <button
+                          {doc.type === 'photo' && doc.file_url && (
+                            <div className="mb-3">
+                              <img
+                                src={doc.file_url}
+                                alt={doc.label}
+                                className="w-full h-32 object-cover rounded-lg"
+                                style={{ border: `1px solid ${colors.borderColor}` }}
+                              />
+                            </div>
+                          )}
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(doc.file_url, '_blank')}
+                              className="w-full sm:w-auto justify-center"
                               style={{
-                                width: '100%',
-                                backgroundColor: '#0C3B2E',
-                                color: '#FFFFFF',
-                                padding: '8px 12px',
-                                borderRadius: '8px',
-                                fontWeight: 'bold',
-                                fontSize: '12px',
-                                border: 'none',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                transition: 'all 0.2s'
+                                borderColor: colors.borderColor,
+                                backgroundColor: colors.cardBg,
+                                color: colors.textPrimary,
                               }}
-                              onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                              onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                             >
-                              <ExternalLink style={{ width: '12px', height: '12px' }} />
-                              <span className="hidden sm:inline">{strings.viewFile}</span>
-                              <span className="sm:hidden">View</span>
-                            </button>
-                          </a>
-                          <button
-                            onClick={() => {
-                              if (confirm(strings.deleteConfirm)) {
-                                deleteDocumentMutation.mutate(doc.id);
-                              }
-                            }}
-                            style={{
-                              backgroundColor: isDarkMode ? '#3A2626' : '#FFFFFF',
-                              color: '#EF4444',
-                              padding: '8px 12px',
-                              borderRadius: '8px',
-                              fontWeight: 'bold',
-                              fontSize: '12px',
-                              border: '2px solid #EF4444',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s',
-                              flexShrink: 0
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#FEE2E2';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FFFFFF';
-                            }}
-                          >
-                            <Trash2 style={{ width: '14px', height: '14px' }} />
-                          </button>
+                              <Eye className="w-4 h-4 mr-2" />
+                              {strings.view}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(doc.id)}
+                              disabled={deleteDocumentMutation.isPending}
+                              className="w-full sm:w-auto text-red-600 hover:text-red-700 justify-center"
+                              style={{
+                                borderColor: colors.borderColor,
+                                backgroundColor: colors.cardBg,
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              {strings.delete}
+                            </Button>
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
-            )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="text-center py-12 md:py-20">
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style={{
+              backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6'
+            }}>
+              <FileText className="w-10 h-10 md:w-12 md:h-12" style={{ color: colors.textSecondary, opacity: 0.5 }} />
+            </div>
+            <h2 className="text-xl md:text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {strings.noDocuments}
+            </h2>
+            <p className="mb-6 max-w-md mx-auto text-sm md:text-base px-4" style={{ color: colors.textSecondary }}>
+              {strings.noDocumentsDesc}
+            </p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
