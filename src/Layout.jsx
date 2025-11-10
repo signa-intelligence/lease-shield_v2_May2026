@@ -304,12 +304,19 @@ export default function Layout({ children, currentPageName }) {
       }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Mobile Logo - Full LEASE SHIELD text logo */}
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
+              alt="Lease Shield"
+              className="h-6 w-auto md:hidden flex-shrink-0"
+            />
+            {/* Desktop Logo - Crest only */}
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
               alt="Lease Shield"
-              className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0"
+              className="hidden md:block h-8 w-8 flex-shrink-0"
             />
-            <span className="font-bold text-ls-forest text-base sm:text-lg truncate" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
+            <span className="font-bold text-ls-forest text-base sm:text-lg truncate hidden md:block" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
               {strings.appName}
             </span>
             {accessLevel !== 'user' && (
