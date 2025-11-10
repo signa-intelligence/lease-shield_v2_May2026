@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X } from "lucide-react";
@@ -15,7 +15,7 @@ import DepositAlert from "../components/dashboard/DepositAlert";
 import RecentLeases from "../components/dashboard/RecentLeases";
 
 export default function Dashboard() {
-  const [showImprovementDialog, setShowImprovementDialog] = useState(false);
+  const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -445,22 +445,16 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
-        {/* Header */}
-        <div className="mb-4 sm:mb-6">
-          {/* Enhanced Motto Badge with Brand Colors */}
+        {/* Header - MODERNIZED */}
+        <div className="mb-6">
+          {/* Enhanced Motto Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3" style={{
             background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-            boxShadow: '0 4px 6px rgba(12, 59, 46, 0.2)'
+            boxShadow: '0 8px 16px rgba(12, 59, 46, 0.25)'
           }}>
-            <div className="w-5 h-5 flex-shrink-0" style={{
-              position: 'relative',
-              display: 'inline-block'
-            }}>
-              {/* Green Shield with Gold Lock Icon */}
+            <div className="w-5 h-5 flex-shrink-0" style={{ position: 'relative', display: 'inline-block' }}>
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
-                {/* Shield */}
                 <path d="M12 2L4 5V11C4 16 7 20.5 12 22C17 20.5 20 16 20 11V5L12 2Z" fill="#0C3B2E" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                {/* Lock */}
                 <rect x="9" y="11" width="6" height="5" rx="1" fill="#C7A338"/>
                 <path d="M10 11V9.5C10 8.67 10.67 8 11.5 8H12.5C13.33 8 14 8.67 14 9.5V11" stroke="#C7A338" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
@@ -472,10 +466,18 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ color: colors.textPrimary }}>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ 
+            color: colors.textPrimary,
+            letterSpacing: '-0.02em'
+          }}>
             {strings.welcome}, {user?.full_name?.split(' ')[0] || 'User'}
           </h1>
-          <p style={{ color: colors.textSecondary, fontSize: '16px', lineHeight: '1.5' }}>
+          <p style={{ 
+            color: colors.textSecondary, 
+            fontSize: '16px', 
+            lineHeight: '1.6',
+            fontWeight: '500'
+          }}>
             {strings.subtitle}
           </p>
         </div>
@@ -640,35 +642,36 @@ export default function Dashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* Quick Actions - Stack on mobile */}
+        {/* Quick Actions - MODERNIZED */}
         <div style={{
           background: isDarkMode 
-            ? 'linear-gradient(to right, #0C3B2E, #047857)'
-            : 'linear-gradient(to right, #0C3B2E, #047857)',
-          borderRadius: '16px',
-          padding: '20px',
-          marginBottom: '24px',
-          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+            ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
+            : 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+          borderRadius: '20px',
+          padding: '32px',
+          marginBottom: '32px',
+          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)'
         }}>
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'stretch',
-            gap: '16px'
+            gap: '20px'
           }}>
             <div style={{ flex: 1 }}>
               <h2 style={{
-                fontSize: '20px',
+                fontSize: '24px',
                 fontWeight: 'bold',
                 color: '#FFFFFF',
-                marginBottom: '8px'
+                marginBottom: '12px',
+                letterSpacing: '-0.01em'
               }}>
                 {strings.protectRights}
               </h2>
               <p style={{
-                fontSize: '14px',
+                fontSize: '15px',
                 color: '#D1FAE5',
-                lineHeight: '1.5'
+                lineHeight: '1.6'
               }}>
                 {strings.uploadCta}
               </p>
@@ -679,25 +682,38 @@ export default function Dashboard() {
                   width: '100%',
                   backgroundColor: '#C7A338',
                   color: '#1A1D1F',
-                  padding: '14px 24px',
-                  borderRadius: '8px',
+                  padding: '16px 32px',
+                  borderRadius: '12px',
                   fontWeight: 'bold',
                   fontSize: '16px',
                   border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  transition: 'all 0.2s'
+                  boxShadow: '0 8px 12px rgba(0,0,0,0.15)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#d4af37'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#d4af37';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 12px 20px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#C7A338';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 8px 12px rgba(0,0,0,0.15)';
+                }}
               >
+                <Shield className="w-5 h-5" />
                 {strings.uploadLease}
               </button>
             </Link>
           </div>
         </div>
 
-        {/* Main Content Grid - Stack on mobile */}
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2">
             <RecentLeases leases={leases} language={language} />
@@ -707,38 +723,40 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Upgrade Banner - Stack on mobile */}
+        {/* Upgrade Banner - MODERNIZED */}
         {user?.plan_tier === 'free' && (
           <div style={{
-            marginTop: '24px',
+            marginTop: '32px',
             background: isDarkMode
-              ? 'linear-gradient(to right, #C7A338, #d97706)'
-              : 'linear-gradient(to right, #C7A338, #d97706)',
-            borderRadius: '16px',
-            padding: '20px',
-            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+              ? 'linear-gradient(135deg, #C7A338 0%, #d97706 100%)'
+              : 'linear-gradient(135deg, #C7A338 0%, #d97706 100%)',
+            borderRadius: '20px',
+            padding: '32px',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)'
           }}>
             <div style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'stretch',
-              gap: '16px'
+              gap: '20px'
             }}>
               <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <TrendingUp style={{ width: '20px', height: '20px', color: '#1A1D1F' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                  <TrendingUp style={{ width: '24px', height: '24px', color: '#1A1D1F' }} />
                   <h3 style={{
-                    fontSize: '18px',
+                    fontSize: '22px',
                     fontWeight: 'bold',
-                    color: '#1A1D1F'
+                    color: '#1A1D1F',
+                    letterSpacing: '-0.01em'
                   }}>
                     {strings.upgradePremium}
                   </h3>
                 </div>
                 <p style={{
-                  fontSize: '13px',
+                  fontSize: '14px',
                   color: '#292524',
-                  opacity: 0.8
+                  opacity: 0.9,
+                  lineHeight: '1.5'
                 }}>
                   {strings.upgradeDesc}
                 </p>
@@ -749,18 +767,31 @@ export default function Dashboard() {
                     width: '100%',
                     backgroundColor: '#0C3B2E',
                     color: '#FFFFFF',
-                    padding: '14px 24px',
-                    borderRadius: '8px',
+                    padding: '16px 32px',
+                    borderRadius: '12px',
                     fontWeight: 'bold',
                     fontSize: '16px',
                     border: 'none',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                    transition: 'all 0.2s'
+                    boxShadow: '0 8px 12px rgba(0,0,0,0.15)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px'
                   }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#0a2f25';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 12px 20px rgba(0,0,0,0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = '#0C3B2E';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 8px 12px rgba(0,0,0,0.15)';
+                  }}
                 >
+                  <ArrowRight className="w-5 h-5" />
                   {strings.viewPlans}
                 </button>
               </Link>
