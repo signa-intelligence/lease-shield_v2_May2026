@@ -821,7 +821,7 @@ export default function Account() {
   };
 
   const strings = t[language];
-  const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
+  const currentPlanTier = user?.plan_tier || 'free';
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
   // Updated LINE QR Code URL
@@ -847,7 +847,7 @@ export default function Account() {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.pageTitle}</h1>
-              <p style={{ color: colors.textSecondary thaw: colors.textSecondary }}>{strings.pageSubtitle}</p>
+              <p style={{ color: colors.textSecondary }}>{strings.pageSubtitle}</p>
             </div>
           </div>
         </div>
