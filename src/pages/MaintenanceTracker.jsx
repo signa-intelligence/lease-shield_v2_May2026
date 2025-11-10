@@ -200,16 +200,14 @@ export default function MaintenanceTracker() {
         priority: formData.priority,
         property_address: formData.property_address.trim() || undefined,
         reported_date: formData.reported_date,
-        status: editingRequest ? editingRequest.status : 'reported' // Preserve status if editing, else 'reported'
+        status: editingRequest ? editingRequest.status : 'reported'
       };
 
-      // Only include photo_urls if there are photos
       if (formData.photo_urls.length > 0) {
         requestData.photo_urls = formData.photo_urls;
       }
 
       if (editingRequest) {
-        // Update existing request
         await updateRequestMutation.mutateAsync({
           id: editingRequest.id,
           data: requestData
@@ -218,21 +216,65 @@ export default function MaintenanceTracker() {
         // Create new request
         const createdRequest = await createRequestMutation.mutateAsync(requestData);
         
-        // Send notifications after successful creation
+        console.log('📧 Attempting to send maintenance notifications...');
+        console.log('🔍 User data:', {
+          email: user.email,
+          landlord_email: user.landlord_email,
+          juristic_email: user.juristic_email
+        });
+        
+        // Send notifications after successful creation - with detailed error tracking
         try {
-          await base44.functions.invoke('sendMaintenanceNotification', {
+          const notificationResponse = await base44.functions.invoke('sendMaintenanceNotification', {
             maintenanceRequest: createdRequest
           });
+          
+          console.log('✅ Notification response:', notificationResponse.data);
+          
+          // Check if emails were actually sent
+          const notifications = notificationResponse.data?.notifications || [];
+          const landlordSent = notifications.find(n => n.recipient === 'landlord' && n.status === 'sent');
+          const juristicSent = notifications.find(n => n.recipient === 'juristic' && n.status === 'sent');
+          
+          if (!user.landlord_email && !user.juristic_email) {
+            console.warn('⚠️ No landlord or juristic email configured');
+            if (language === 'th') {
+              alert('⚠️ คำเตือน: ยังไม่ได้ตั้งค่าอีเมลเจ้าของบ้านหรือนิติบุคคล\nกรุณาไปที่หน้าบัญชีเพื่อเพิ่มข้อมูลติดต่อ');
+            } else {
+              alert('⚠️ Warning: No landlord or juristic email configured\nPlease add contact info in Account page');
+            }
+          } else {
+            // Show success message with details
+            let message = language === 'th' 
+              ? '✅ คำขอซ่อมถูกส่งแล้ว\n\n' 
+              : '✅ Maintenance request sent\n\n';
+            
+            if (user.landlord_email) {
+              message += landlordSent 
+                ? (language === 'th' ? '✓ ส่งอีเมลถึงเจ้าของบ้านแล้ว\n' : '✓ Landlord email sent\n')
+                : (language === 'th' ? '✗ ส่งอีเมลถึงเจ้าของบ้านไม่สำเร็จ\n' : '✗ Landlord email failed\n');
+            }
+            
+            if (user.juristic_email) {
+              message += juristicSent 
+                ? (language === 'th' ? '✓ ส่งอีเมลถึงนิติบุคคลแล้ว' : '✓ Juristic email sent')
+                : (language === 'th' ? '✗ ส่งอีเมลถึงนิติบุคคลไม่สำเร็จ' : '✗ Juristic email failed');
+            }
+            
+            alert(message);
+          }
+          
         } catch (notificationError) {
-          console.error('Failed to send notifications:', notificationError);
-          // Don't fail the request creation if notifications fail
+          console.error('❌ Failed to send notifications:', notificationError);
+          alert(language === 'th' 
+            ? '⚠️ คำขอซ่อมถูกบันทึกแล้ว แต่ไม่สามารถส่งการแจ้งเตือนได้' 
+            : '⚠️ Request saved but failed to send notifications');
         }
       }
       
-      // On success actions
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       setShowAddDialog(false);
-      setEditingRequest(null); // Reset editing request
+      setEditingRequest(null);
       setFormData({
         issue_title: '',
         description: '',
