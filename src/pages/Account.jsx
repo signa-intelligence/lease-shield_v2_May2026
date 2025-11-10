@@ -673,7 +673,7 @@ export default function Account() {
       perCredit: "per credit",
       buyNow: "Buy Now",
       bestValue: "Best Value",
-      creditPacks: "แพ็กเกจเครดิต",
+      creditPacks: "Credit Packs",
       oneLetterPerCredit: "1 letter = 1 credit",
       accessTemplateLibrary: "Access template library",
       bilingual: "Bilingual Templates",
@@ -821,7 +821,7 @@ export default function Account() {
   };
 
   const strings = t[language];
-  const currentPlanTier = user?.plan_tier || 'free';
+  const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
   // Updated LINE QR Code URL
