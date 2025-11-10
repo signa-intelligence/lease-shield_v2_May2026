@@ -260,15 +260,10 @@ export default function DocumentVault() {
       ? `เอกสาร: ${docLabel}` 
       : `Document: ${docLabel}`;
     
-    let body = '';
-    
-    if (doc.html_content) { // Assuming `html_content` might be present for 'letter' type documents.
-      body = doc.html_content;
-    } else {
-      body = language === 'th'
-        ? `กรุณาดูเอกสารที่แนบมาด้วย:\n\n${doc.file_url}\n\nชื่อเอกสาร: ${docLabel}\nวันที่: ${format(new Date(doc.created_date), 'dd/MM/yyyy')}`
-        : `Please find the attached document:\n\n${doc.file_url}\n\nDocument: ${docLabel}\nDate: ${format(new Date(doc.created_date), 'MMM d, yyyy')}`;
-    }
+    // Always use simple text format with link, even for letters
+    const body = language === 'th'
+      ? `กรุณาดูเอกสารที่แนบมาด้วย:\n\n${doc.file_url}\n\nชื่อเอกสาร: ${docLabel}\nวันที่: ${format(new Date(doc.created_date), 'dd/MM/yyyy')}`
+      : `Please find the attached document:\n\n${doc.file_url}\n\nDocument: ${docLabel}\nDate: ${format(new Date(doc.created_date), 'MMM d, yyyy')}`;
     
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoLink;
