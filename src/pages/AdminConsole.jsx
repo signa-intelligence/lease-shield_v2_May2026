@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins } from "lucide-react";
+import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock } from "lucide-react";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
@@ -30,6 +30,9 @@ export default function AdminConsole() {
   const [editCreditsDialog, setEditCreditsDialog] = useState(false);
   const [selectedUserForCredits, setSelectedUserForCredits] = useState(null);
   const [newCreditAmount, setNewCreditAmount] = useState('');
+  const [permissionsDialog, setPermissionsDialog] = useState(false);
+  const [selectedUserForPermissions, setSelectedUserForPermissions] = useState(null);
+  const [permissionsFormData, setPermissionsFormData] = useState({});
 
   const queryClient = useQueryClient();
 
@@ -61,14 +64,12 @@ export default function AdminConsole() {
     onSuccess: async (updatedUser, variables) => {
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });
       
-      // Send LINE notification if user has LINE connected
       const targetUser = users.find(u => u.id === variables.userId);
       if (targetUser?.line_messaging_token) {
         try {
           let message = '';
           const lang = targetUser.language || 'en';
           
-          // Determine what changed and create appropriate message
           if (variables.data.letter_credits !== undefined) {
             const oldCredits = targetUser.letter_credits || 0;
             const newCredits = variables.data.letter_credits;
@@ -102,7 +103,6 @@ export default function AdminConsole() {
           }
         } catch (error) {
           console.error('Failed to send LINE notification:', error);
-          // Don't fail the mutation if LINE message fails
         }
       }
     },
@@ -117,6 +117,7 @@ export default function AdminConsole() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+  const isSuperAdmin = user?.access_level === 'super_admin';
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -179,6 +180,20 @@ export default function AdminConsole() {
       updateCredits: "Update Credits",
       cancel: "Cancel",
       updating: "Updating...",
+      managePermissions: "Manage Permissions",
+      featurePermissions: "Feature Permissions",
+      featurePermissionsDesc: "Configure feature access for Admin and VA roles",
+      permissions: "Permissions",
+      savePermissions: "Save Permissions",
+      manageUsers: "Manage Users",
+      manageCases: "Manage Cases",
+      viewAnalytics: "View Analytics",
+      manageSubscriptions: "Manage Subscriptions",
+      manageCredits: "Manage Credits",
+      sendNotifications: "Send Notifications",
+      manageTemplates: "Manage Templates",
+      deleteData: "Delete Data",
+      accessOpsConsole: "Access Ops Console"
     },
     th: {
       adminConsole: "คอนโซลผู้ดูแล",
@@ -226,6 +241,20 @@ export default function AdminConsole() {
       updateCredits: "อัปเดตเครดิต",
       cancel: "ยกเลิก",
       updating: "กำลังอัปเดต...",
+      managePermissions: "จัดการสิทธิ์",
+      featurePermissions: "สิทธิ์การเข้าถึงฟีเจอร์",
+      featurePermissionsDesc: "กำหนดการเข้าถึงฟีเจอร์สำหรับบทบาท Admin และ VA",
+      permissions: "สิทธิ์",
+      savePermissions: "บันทึกสิทธิ์",
+      manageUsers: "จัดการผู้ใช้",
+      manageCases: "จัดการคดี",
+      viewAnalytics: "ดูสถิติ",
+      manageSubscriptions: "จัดการการสมัครสมาชิก",
+      manageCredits: "จัดการเครดิต",
+      sendNotifications: "ส่งการแจ้งเตือน",
+      manageTemplates: "จัดการเทมเพลต",
+      deleteData: "ลบข้อมูล",
+      accessOpsConsole: "เข้าถึงคอนโซลปฏิบัติการ"
     }
   };
 
@@ -304,6 +333,46 @@ export default function AdminConsole() {
     setEditCreditsDialog(true);
   };
 
+  const handleOpenPermissionsDialog = (targetUser) => {
+    setSelectedUserForPermissions(targetUser);
+    setPermissionsFormData(targetUser.feature_permissions || {
+      manage_users: false,
+      manage_cases: false,
+      view_analytics: false,
+      manage_subscriptions: false,
+      manage_credits: false,
+      send_notifications: false,
+      manage_templates: false,
+      delete_data: false,
+      access_ops_console: false
+    });
+    setPermissionsDialog(true);
+  };
+
+  const handleSavePermissions = async () => {
+    if (!selectedUserForPermissions) return;
+
+    try {
+      await updateUserMutation.mutateAsync({
+        userId: selectedUserForPermissions.id,
+        data: { feature_permissions: permissionsFormData }
+      });
+      setPermissionsDialog(false);
+      setSelectedUserForPermissions(null);
+      alert(language === 'th' ? 'อัปเดตสิทธิ์สำเร็จ' : 'Permissions updated successfully');
+    } catch (error) {
+      console.error('Failed to update permissions:', error);
+      alert(language === 'th' ? 'ไม่สามารถอัปเดตสิทธิ์ได้' : 'Failed to update permissions');
+    }
+  };
+
+  const togglePermission = (key) => {
+    setPermissionsFormData(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
   const activeSubscribers = users.filter(u => 
     u.subscription_status === 'active' && u.plan_tier && u.plan_tier !== 'free'
   ).length;
@@ -316,6 +385,18 @@ export default function AdminConsole() {
     }
     return aVal < bVal ? 1 : -1;
   });
+
+  const FEATURE_DEFINITIONS = [
+    { key: 'manage_users', label: strings.manageUsers, icon: Users, color: 'text-blue-600' },
+    { key: 'manage_cases', label: strings.manageCases, icon: Shield, color: 'text-emerald-600' },
+    { key: 'view_analytics', label: strings.viewAnalytics, icon: Database, color: 'text-purple-600' },
+    { key: 'manage_subscriptions', label: strings.manageSubscriptions, icon: Crown, color: 'text-amber-600' },
+    { key: 'manage_credits', label: strings.manageCredits, icon: Coins, color: 'text-amber-600' },
+    { key: 'send_notifications', label: strings.sendNotifications, icon: Send, color: 'text-blue-600' },
+    { key: 'manage_templates', label: strings.manageTemplates, icon: FileText, color: 'text-indigo-600' },
+    { key: 'delete_data', label: strings.deleteData, icon: Trash2, color: 'text-red-600' },
+    { key: 'access_ops_console', label: strings.accessOpsConsole, icon: Settings, color: 'text-slate-600' }
+  ];
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
@@ -474,6 +555,107 @@ export default function AdminConsole() {
           </CardContent>
         </Card>
 
+        {/* Permissions Dialog */}
+        <Dialog open={permissionsDialog} onOpenChange={setPermissionsDialog}>
+          <DialogContent className="max-w-2xl" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <Lock className="w-5 h-5 text-purple-600" />
+                {strings.featurePermissions}
+              </DialogTitle>
+            </DialogHeader>
+            {selectedUserForPermissions && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg" style={{ 
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                  border: `1px solid ${colors.borderColor}`
+                }}>
+                  <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                    {selectedUserForPermissions.full_name}
+                  </p>
+                  <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                    {selectedUserForPermissions.email}
+                  </p>
+                  <Badge className={
+                    selectedUserForPermissions.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+                    selectedUserForPermissions.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
+                    selectedUserForPermissions.access_level === 'va' ? 'bg-amber-100 text-amber-800' :
+                    'bg-slate-100 text-slate-800'
+                  }>
+                    {selectedUserForPermissions.access_level || 'user'}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
+                  {FEATURE_DEFINITIONS.map((feature) => {
+                    const Icon = feature.icon;
+                    const isEnabled = permissionsFormData[feature.key];
+                    
+                    return (
+                      <div
+                        key={feature.key}
+                        onClick={() => togglePermission(feature.key)}
+                        className="p-4 rounded-lg border-2 cursor-pointer transition-all"
+                        style={{
+                          backgroundColor: isEnabled 
+                            ? (isDarkMode ? '#1F2937' : '#F0FDF4')
+                            : (isDarkMode ? '#2A2D30' : '#FFFFFF'),
+                          borderColor: isEnabled ? '#10B981' : colors.borderColor
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                              isEnabled ? 'bg-emerald-100' : 'bg-slate-100'
+                            }`}>
+                              <Icon className={`w-5 h-5 ${isEnabled ? 'text-emerald-600' : feature.color}`} />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                                {feature.label}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0">
+                            {isEnabled ? (
+                              <Unlock className="w-5 h-5 text-emerald-600" />
+                            ) : (
+                              <Lock className="w-5 h-5 text-slate-400" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setPermissionsDialog(false)}
+                style={{ borderColor: colors.borderColor }}
+              >
+                {strings.cancel}
+              </Button>
+              <Button
+                onClick={handleSavePermissions}
+                disabled={updateUserMutation.isPending}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {updateUserMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {strings.updating}
+                  </>
+                ) : (
+                  strings.savePermissions
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Edit Credits Dialog */}
         <Dialog open={editCreditsDialog} onOpenChange={setEditCreditsDialog}>
           <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
@@ -588,7 +770,6 @@ export default function AdminConsole() {
                 </thead>
                 <tbody>
                   {sortedUsers.map((u, idx) => {
-                    // Check if user is "online" - updated in last 5 minutes
                     const lastUpdate = new Date(u.updated_date || u.created_date);
                     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
                     const isOnline = lastUpdate > fiveMinutesAgo;
@@ -662,7 +843,7 @@ export default function AdminConsole() {
                           </button>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex gap-2">
+                          <div className="flex flex-col gap-2">
                             <Select
                               value={u.access_level || 'user'}
                               onValueChange={(val) => updateUserMutation.mutate({
@@ -697,6 +878,17 @@ export default function AdminConsole() {
                                 <SelectItem value="secure">Secure</SelectItem>
                               </SelectContent>
                             </Select>
+                            {isSuperAdmin && (u.access_level === 'admin' || u.access_level === 'va') && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenPermissionsDialog(u)}
+                                className="text-xs h-8"
+                              >
+                                <Lock className="w-3 h-3 mr-1" />
+                                {strings.permissions}
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
