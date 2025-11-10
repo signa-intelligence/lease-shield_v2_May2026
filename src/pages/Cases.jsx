@@ -1,14 +1,13 @@
-
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useLocation, Link } from "react-router-dom"; // Added Link import
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Scale, Plus, Crown, Calendar, DollarSign, Zap, Mail, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
-import { format } = "date-fns";
+import { format } from "date-fns";
 import { useFeatureAccess } from "@/components/shared/FeatureGate";
 
 const STATUS_CONFIG = {
@@ -32,7 +31,6 @@ export default function Cases() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Debug: Log user email when it loads
   useEffect(() => {
     if (user) {
       console.log('🔍 Current user email:', user.email);
@@ -52,12 +50,10 @@ export default function Cases() {
     refetchOnWindowFocus: true,
   });
 
-  // Debug: Log cases when they change
   useEffect(() => {
     console.log('📦 Cases data updated:', cases.length, 'cases');
   }, [cases]);
 
-  // Handle payment success - refetch cases
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const paymentStatus = urlParams.get('payment');
@@ -66,12 +62,10 @@ export default function Cases() {
       console.log('💰 Payment success detected - refetching cases');
       console.log('👤 User email:', user.email);
       
-      // Force immediate refetch
       refetchCases().then((result) => {
         console.log('🔄 Immediate refetch result:', result.data?.length || 0, 'cases');
       });
       
-      // Refetch again after delays to catch webhook processing
       setTimeout(() => {
         console.log('⏱️ Refetch after 2s');
         refetchCases().then((result) => {
@@ -93,7 +87,6 @@ export default function Cases() {
         });
       }, 10000);
       
-      // Clean up URL
       const newUrl = location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
@@ -102,7 +95,6 @@ export default function Cases() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
-  // Debug loading and error states
   if (isLoading) {
     console.log('⏳ Cases loading...');
   }
@@ -130,7 +122,6 @@ export default function Cases() {
       trackYourCases: "Track your dispute cases",
       openNewCase: "Open New Case",
       premiumBenefits: "Premium Case Benefits",
-      memberPricing: "Member pricing on success fees",
       priorityHandling: "Priority case handling",
       caseNumber: "Case #",
       opened: "Opened",
@@ -150,7 +141,6 @@ export default function Cases() {
       trackYourCases: "ติดตามคดีพิพาทของคุณ",
       openNewCase: "เปิดคดีใหม่",
       premiumBenefits: "สิทธิพิเศษสำหรับคดี",
-      memberPricing: "ราคาสมาชิกสำหรับค่าธรรมเนียมความสำเร็จ",
       priorityHandling: "การจัดการคดีแบบเร่งด่วน",
       caseNumber: "คดีหมายเลข #",
       opened: "เปิด",
