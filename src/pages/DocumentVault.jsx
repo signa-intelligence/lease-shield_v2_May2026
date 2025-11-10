@@ -267,56 +267,64 @@ export default function DocumentVault() {
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(doc.html_content, 'text/html');
       
-      // Get the content sections (skip header and footer)
-      const sections = htmlDoc.querySelectorAll('.section .content');
+      // Get all content sections
+      const sections = htmlDoc.querySelectorAll('.section');
       
-      if (sections.length > 0) {
-        // Extract content from the section matching user's language
-        let letterContent = '';
+      let letterContent = '';
+      
+      // Try to find the section matching user's language
+      for (const section of sections) {
+        const sectionTitle = section.querySelector('.section-title')?.textContent || '';
+        const contentEl = section.querySelector('.content');
         
-        // Try to find the section with the user's preferred language
-        sections.forEach((section) => {
-          const sectionTitle = section.closest('.section')?.querySelector('.section-title')?.textContent || '';
-          const content = section.textContent || section.innerText || '';
-          
-          // For user's language, use that content
-          if ((language === 'th' && sectionTitle.includes('ไทย')) || 
-              (language === 'en' && !sectionTitle.includes('ไทย'))) {
-            letterContent = content.trim();
+        if (!contentEl) continue;
+        
+        const content = (contentEl.textContent || contentEl.innerText || '').trim();
+        
+        // Match based on user's language preference
+        if (language === 'th') {
+          // For Thai users, look for Thai section (title contains Thai characters or mentions Thai/ไทย)
+          if (sectionTitle.includes('ไทย') || sectionTitle.includes('Thai') || /[\u0E00-\u0E7F]/.test(content)) {
+            letterContent = content;
+            break;
           }
-        });
-        
-        // If no language match, use first section
-        if (!letterContent && sections[0]) {
-          letterContent = (sections[0].textContent || sections[0].innerText || '').trim();
+        } else {
+          // For English users, look for English section (title contains English or no Thai markers)
+          if (sectionTitle.toLowerCase().includes('english') || 
+              (!sectionTitle.includes('ไทย') && !sectionTitle.includes('Thai') && !/[\u0E00-\u0E7F]/.test(sectionTitle))) {
+            // Verify content is actually English by checking if it doesn't have Thai characters
+            if (!/[\u0E00-\u0E7F]/.test(content.substring(0, 100))) {
+              letterContent = content;
+              break;
+            }
+          }
         }
-        
-        // Clean up the content - remove extra whitespace but keep paragraph structure
-        const cleanedContent = letterContent
-          .split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0)
-          .join('\n\n');
-        
-        // Format as email
-        body = language === 'th'
-          ? `${cleanedContent}\n\n---\n\n💾 เอกสารฉบับเต็ม: ${doc.file_url}\n\n📧 ส่งจาก Lease Shield | www.leaseshield.com`
-          : `${cleanedContent}\n\n---\n\n💾 Full document: ${doc.file_url}\n\n📧 Sent via Lease Shield | www.leaseshield.com`;
-      } else {
-        // Fallback: strip all HTML and use clean text
-        htmlDoc.querySelectorAll('style, script, .header, .footer').forEach(el => el.remove());
-        const plainText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
-        
-        const cleanedText = plainText
-          .split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0)
-          .join('\n\n');
-        
-        body = language === 'th'
-          ? `${cleanedText}\n\n---\n\n💾 ดาวน์โหลด: ${doc.file_url}`
-          : `${cleanedText}\n\n---\n\n💾 Download: ${doc.file_url}`;
       }
+      
+      // If no match found, try alternate approach: get first or second section based on language
+      if (!letterContent && sections.length > 0) {
+        const firstContent = sections[0]?.querySelector('.content');
+        const secondContent = sections[1]?.querySelector('.content');
+        
+        if (language === 'en' && secondContent) {
+          // English is usually second section
+          letterContent = (secondContent.textContent || secondContent.innerText || '').trim();
+        } else if (firstContent) {
+          letterContent = (firstContent.textContent || firstContent.innerText || '').trim();
+        }
+      }
+      
+      // Clean up the content - remove extra whitespace but keep paragraph structure
+      const cleanedContent = letterContent
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .join('\n\n');
+      
+      // Format as email WITHOUT Lease Shield footer
+      body = language === 'th'
+        ? `${cleanedContent}\n\n---\n\n💾 ดาวน์โหลดเอกสารฉบับเต็ม: ${doc.file_url}`
+        : `${cleanedContent}\n\n---\n\n💾 Download full document: ${doc.file_url}`;
     } else {
       // For other document types, keep existing format
       body = language === 'th'
