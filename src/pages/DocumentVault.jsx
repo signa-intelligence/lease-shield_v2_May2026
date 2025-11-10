@@ -261,37 +261,87 @@ export default function DocumentVault() {
     
     // For letters, extract and format as proper email
     if (doc.type === 'letter' && doc.html_content) {
+      console.log('🔍 DEBUG: Starting email content extraction');
+      console.log('📄 HTML content length:', doc.html_content?.length || 0);
+      
       // Parse HTML
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(doc.html_content, 'text/html');
       
-      // The HTML structure from saveReviewedLetter has TWO .section divs:
-      // First section = Thai version
-      // Second section = English version
-      const sections = htmlDoc.querySelectorAll('.section');
-      
       let thaiText = '';
       let englishText = '';
       
+      // STRATEGY 1: Try structured extraction (sections with content divs)
+      const sections = htmlDoc.querySelectorAll('.section');
+      console.log('📦 Found sections:', sections.length);
+      
       if (sections.length >= 2) {
-        // Extract Thai content from first section
-        const thaiSection = sections[0];
-        const thaiContent = thaiSection.querySelector('.content');
+        // First section should be Thai
+        const thaiContent = sections[0].querySelector('.content');
         if (thaiContent) {
           const paragraphs = Array.from(thaiContent.querySelectorAll('p'))
             .map(p => (p.textContent || '').trim())
-            .filter(text => text.length > 0);
+            .filter(text => text.length > 0 && !text.includes('[') && !text.includes('Section'));
           thaiText = paragraphs.join('\n\n');
+          console.log('✅ Thai paragraphs found:', paragraphs.length);
         }
         
-        // Extract English content from second section
-        const englishSection = sections[1];
-        const englishContent = englishSection.querySelector('.content');
+        // Second section should be English
+        const englishContent = sections[1].querySelector('.content');
         if (englishContent) {
           const paragraphs = Array.from(englishContent.querySelectorAll('p'))
             .map(p => (p.textContent || '').trim())
-            .filter(text => text.length > 0);
+            .filter(text => text.length > 0 && !text.includes('[') && !text.includes('Section'));
           englishText = paragraphs.join('\n\n');
+          console.log('✅ English paragraphs found:', paragraphs.length);
+        }
+      }
+      
+      // STRATEGY 2: If structured approach failed, extract ALL paragraphs and separate by language
+      if (!thaiText || !englishText) {
+        console.log('⚠️ Structured extraction failed, trying fallback...');
+        const allParagraphs = htmlDoc.querySelectorAll('p');
+        console.log('📝 Total paragraphs found:', allParagraphs.length);
+        
+        const thaiParagraphs = [];
+        const englishParagraphs = [];
+        
+        allParagraphs.forEach(p => {
+          const text = (p.textContent || '').trim();
+          if (text.length < 20) return; // Skip short/empty
+          if (text.includes('[') || text.includes('Section')) return; // Skip placeholders
+          
+          const hasThai = /[\u0E00-\u0E7F]/.test(text);
+          if (hasThai) {
+            thaiParagraphs.push(text);
+          } else if (/[a-zA-Z]/.test(text)) {
+            englishParagraphs.push(text);
+          }
+        });
+        
+        if (!thaiText) thaiText = thaiParagraphs.join('\n\n');
+        if (!englishText) englishText = englishParagraphs.join('\n\n');
+        
+        console.log('📊 Fallback results - Thai paras:', thaiParagraphs.length, 'English paras:', englishParagraphs.length);
+      }
+      
+      // STRATEGY 3: Last resort - get ALL text and split by language detection
+      if (!thaiText || !englishText) {
+        console.log('⚠️ All strategies failed, using last resort text extraction');
+        const bodyElement = htmlDoc.querySelector('body');
+        if (bodyElement) {
+          const allText = bodyElement.textContent || bodyElement.innerText || '';
+          const lines = allText.split('\n')
+            .map(l => l.trim())
+            .filter(l => l.length > 20 && !l.includes('[') && !l.includes('Section'));
+          
+          const thaiLines = lines.filter(l => /[\u0E00-\u0E7F]/.test(l));
+          const englishLines = lines.filter(l => /[a-zA-Z]/.test(l) && !/[\u0E00-\u0E7F]/.test(l));
+          
+          if (!thaiText) thaiText = thaiLines.join('\n\n');
+          if (!englishText) englishText = englishLines.join('\n\n');
+          
+          console.log('📊 Last resort - Thai lines:', thaiLines.length, 'English lines:', englishLines.length);
         }
       }
       
@@ -299,7 +349,11 @@ export default function DocumentVault() {
       const landlordName = user?.landlord_name || '[Landlord Name]';
       const tenantName = user?.full_name || '[Your Name]';
       
-      // Format email body - Thai first, then separator, then English
+      console.log('🎯 Final extraction results:');
+      console.log('Thai text length:', thaiText?.length || 0);
+      console.log('English text length:', englishText?.length || 0);
+      
+      // Format email body
       body = `Dear ${landlordName},\n\n` +
              (thaiText || '[Thai version not available]') + 
              '\n\n==== English language below ====\n\n' +
