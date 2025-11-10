@@ -864,7 +864,7 @@ export default function UploadScanPage() {
                   </CardContent>
                 </Card>
 
-                {/* Risk Analysis */}
+                {/* Risk Analysis - IMPROVED BUTTON VISIBILITY */}
                 {selectedScan && (
                   <Card className="border-none" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
                     <CardHeader className="pb-3">
@@ -884,28 +884,50 @@ export default function UploadScanPage() {
                             <span className="text-lg" style={{ color: colors.textSecondary }}>/100</span>
                           </div>
                         </div>
-                        <div className="flex flex-col sm:flex-row gap-2">
+                        
+                        {/* ✅ IMPROVED: More visible, prominent buttons */}
+                        <div className="flex flex-col gap-3">
                           <Button
-                            variant="outline"
-                            size="sm"
                             onClick={() => {
                               setSelectedLease(null);
                               navigate(createPageUrl("ScanPreview") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
                             }}
-                            className="w-full sm:w-auto text-xs"
+                            className="w-full justify-center py-3 text-sm font-bold"
+                            style={{
+                              backgroundColor: isDarkMode ? '#4B5563' : '#F3F4F6',
+                              color: colors.textPrimary,
+                              border: `2px solid ${colors.borderColor}`
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = isDarkMode ? '#6B7280' : '#E5E7EB';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = isDarkMode ? '#4B5563' : '#F3F4F6';
+                            }}
                           >
-                            <Eye className="w-3 h-3 mr-1" />
+                            <Eye className="w-4 h-4 mr-2" />
                             {strings.viewScanResults}
                           </Button>
+                          
                           <Button
-                            size="sm"
-                            className="bg-ls-forest hover:bg-ls-forest/90 w-full sm:w-auto text-xs"
                             onClick={() => {
                               setSelectedLease(null);
                               navigate(createPageUrl("ReportFull") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
                             }}
+                            className="w-full justify-center py-3 text-sm font-bold"
+                            style={{
+                              backgroundColor: '#0C3B2E',
+                              color: '#FFFFFF',
+                              border: 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#0a2f25';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#0C3B2E';
+                            }}
                           >
-                            <FileText className="w-3 h-3 mr-1" />
+                            <FileText className="w-4 h-4 mr-2" />
                             {strings.viewFullReport}
                           </Button>
                         </div>
@@ -1177,7 +1199,7 @@ export default function UploadScanPage() {
                           onClick={(e) => handleDeleteLease(lease.id, e)}
                           disabled={deleteLeaseWithScanMutation.isPending}
                           style={{
-                            backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                            backgroundColor: isDarkMode ? '#3A2626' : '#FEE2F2',
                             color: '#EF4444',
                             padding: '8px 12px',
                             borderRadius: '6px',
@@ -1201,7 +1223,7 @@ export default function UploadScanPage() {
                           onMouseLeave={(e) => {
                             e.stopPropagation();
                             if (!deleteLeaseWithScanMutation.isPending) {
-                              e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
+                              e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2F2';
                               e.target.style.color = '#EF4444';
                             }
                           }}
