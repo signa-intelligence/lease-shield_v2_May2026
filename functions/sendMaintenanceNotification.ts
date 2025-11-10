@@ -38,6 +38,10 @@ Deno.serve(async (req) => {
     console.log('📧 Juristic email:', user.juristic_email || 'NOT SET');
     console.log('📧 User email notifications enabled:', user.email_notifications);
 
+    // Get Resend API key for external emails
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+    console.log('🔑 Resend API Key configured:', !!RESEND_API_KEY);
+
     // Helper function to validate email
     const isValidEmail = (email) => {
       if (!email || typeof email !== 'string') return false;
@@ -45,6 +49,36 @@ Deno.serve(async (req) => {
       if (trimmed.length === 0) return false;
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(trimmed);
+    };
+
+    // Helper function to send email via Resend
+    const sendViaResend = async (to, subject, htmlBody, fromName) => {
+      if (!RESEND_API_KEY) {
+        throw new Error('RESEND_API_KEY not configured');
+      }
+
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: fromName ? `${fromName} <notifications@leaseshield.asia>` : 'Lease Shield <notifications@leaseshield.asia>',
+          to: [to],
+          subject: subject,
+          html: htmlBody,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Resend API error:', data);
+        throw new Error(data.message || 'Failed to send via Resend');
+      }
+
+      return data;
     };
 
     // Generate unique acknowledgment token
@@ -224,24 +258,19 @@ Deno.serve(async (req) => {
       notifications.push({ recipient: 'user', method: 'email', status: 'skipped', reason: 'notifications_disabled' });
     }
 
-    // Send to landlord (email) using external email function (Resend)
+    // Send to landlord (email) using Resend directly
     console.log('📤 Attempting to send landlord email...');
     if (isValidEmail(user.landlord_email)) {
       try {
         console.log('📧 Sending to landlord via Resend:', user.landlord_email);
-        const response = await base44.functions.invoke('sendExternalEmail', {
-          to: user.landlord_email.trim(),
-          subject: subject,
-          htmlBody: landlordHtmlBody,
-          fromName: user.full_name || 'Lease Shield Tenant'
-        });
-        
-        if (response.data?.success) {
-          console.log('✅ Landlord email sent successfully via Resend to:', user.landlord_email);
-          notifications.push({ recipient: 'landlord', method: 'email', status: 'sent', to: user.landlord_email });
-        } else {
-          throw new Error(response.data?.error || 'Unknown error');
-        }
+        const result = await sendViaResend(
+          user.landlord_email.trim(),
+          subject,
+          landlordHtmlBody,
+          user.full_name || 'Lease Shield Tenant'
+        );
+        console.log('✅ Landlord email sent successfully via Resend. Message ID:', result.id);
+        notifications.push({ recipient: 'landlord', method: 'email', status: 'sent', to: user.landlord_email, messageId: result.id });
       } catch (error) {
         console.error('❌ Failed to send landlord email to', user.landlord_email, ':', error.message);
         console.error('❌ Full error:', error);
@@ -253,24 +282,19 @@ Deno.serve(async (req) => {
       notifications.push({ recipient: 'landlord', method: 'email', status: 'skipped', reason: 'invalid_or_missing_email' });
     }
 
-    // Send to juristic (email) using external email function (Resend)
+    // Send to juristic (email) using Resend directly
     console.log('📤 Attempting to send juristic email...');
     if (isValidEmail(user.juristic_email)) {
       try {
         console.log('📧 Sending to juristic via Resend:', user.juristic_email);
-        const response = await base44.functions.invoke('sendExternalEmail', {
-          to: user.juristic_email.trim(),
-          subject: subject,
-          htmlBody: landlordHtmlBody,
-          fromName: user.full_name || 'Lease Shield Tenant'
-        });
-        
-        if (response.data?.success) {
-          console.log('✅ Juristic email sent successfully via Resend to:', user.juristic_email);
-          notifications.push({ recipient: 'juristic', method: 'email', status: 'sent', to: user.juristic_email });
-        } else {
-          throw new Error(response.data?.error || 'Unknown error');
-        }
+        const result = await sendViaResend(
+          user.juristic_email.trim(),
+          subject,
+          landlordHtmlBody,
+          user.full_name || 'Lease Shield Tenant'
+        );
+        console.log('✅ Juristic email sent successfully via Resend. Message ID:', result.id);
+        notifications.push({ recipient: 'juristic', method: 'email', status: 'sent', to: user.juristic_email, messageId: result.id });
       } catch (error) {
         console.error('❌ Failed to send juristic email to', user.juristic_email, ':', error.message);
         console.error('❌ Full error:', error);
@@ -294,6 +318,7 @@ Deno.serve(async (req) => {
         juristicEmail: user.juristic_email || 'not_set',
         landlordEmailValid: isValidEmail(user.landlord_email),
         juristicEmailValid: isValidEmail(user.juristic_email),
+        resendConfigured: !!RESEND_API_KEY,
         emailsSent: notifications.filter(n => n.status === 'sent').length,
         emailsFailed: notifications.filter(n => n.status === 'failed').length,
         emailsSkipped: notifications.filter(n => n.status === 'skipped').length
