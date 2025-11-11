@@ -30,9 +30,12 @@ Deno.serve(async (req) => {
       ? '🚨 เงินมัดจำเกินกำหนด - Deposit Shield พร้อมช่วย' 
       : '🚨 Deposit Overdue - Deposit Shield Ready';
     
+    // Fixed URL: Use correct Base44 page name format (PascalCase)
+    const caseUrl = `https://app.leaseshield.asia/ResolveCase?depositId=${deposit.id}&auto=true`;
+    
     const messageText = language === 'th' ?
-      `🚨 แจ้งเตือนด่วน Lease Shield\n\n💰 เงินมัดจำเกินกำหนด ${daysOverdue} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield พร้อมช่วยคุณ!\n\n📋 คลิกเพื่อเปิดคดีอัตโนมัติ\nข้อมูลเงินมัดจำจะถูกกรอกให้อัตโนมัติ\n\nเปิดแอป → https://app.leaseshield.asia/resolve-case?depositId=${deposit.id}&auto=true` :
-      `🚨 Lease Shield Urgent Alert\n\n💰 Deposit ${daysOverdue} days overdue\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield is ready to help!\n\n📋 Click to auto-open case\nDeposit data will be pre-filled\n\nOpen app → https://app.leaseshield.asia/resolve-case?depositId=${deposit.id}&auto=true`;
+      `🚨 แจ้งเตือนด่วน Lease Shield\n\n💰 เงินมัดจำเกินกำหนด ${daysOverdue} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield พร้อมช่วยคุณ!\n\n📋 คลิกเพื่อเปิดคดีอัตโนมัติ\nข้อมูลเงินมัดจำจะถูกกรอกให้อัตโนมัติ\n\nเปิดแอป → ${caseUrl}` :
+      `🚨 Lease Shield Urgent Alert\n\n💰 Deposit ${daysOverdue} days overdue\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield is ready to help!\n\n📋 Click to auto-open case\nDeposit data will be pre-filled\n\nOpen app → ${caseUrl}`;
 
     const channels = [];
     let anySuccess = false;
