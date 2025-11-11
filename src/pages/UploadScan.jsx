@@ -615,7 +615,7 @@ export default function UploadScanPage() {
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
 
           {/* ✅ SCAN LIMIT INDICATOR */}
@@ -1203,7 +1203,7 @@ export default function UploadScanPage() {
                           onClick={(e) => handleDeleteLease(lease.id, e)}
                           disabled={deleteLeaseWithScanMutation.isPending}
                           style={{
-                            backgroundColor: isDarkMode ? '#3A2626' : '#FEE2F2',
+                            backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
                             color: '#EF4444',
                             padding: '8px 12px',
                             borderRadius: '6px',
@@ -1227,7 +1227,7 @@ export default function UploadScanPage() {
                           onMouseLeave={(e) => {
                             e.stopPropagation();
                             if (!deleteLeaseWithScanMutation.isPending) {
-                              e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2F2';
+                              e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
                               e.target.style.color = '#EF4444';
                             }
                           }}

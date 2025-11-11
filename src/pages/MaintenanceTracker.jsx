@@ -16,7 +16,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 export default function MaintenanceTracker() {
@@ -336,15 +335,19 @@ export default function MaintenanceTracker() {
       subtitle: "Document and track all repair requests",
       reportIssue: "Report Issue",
       reportFirst: "Report First Request",
-      dialogTitle: "New Maintenance Request",
-      reportNewIssue: "New Maintenance Request",
+      dialogTitle: "New Maintenance Request", 
+      newRequest: "New Maintenance Request", 
       issueTitle: "Issue Title",
+      issueTitlePlaceholder: "e.g., Leaking faucet", 
       description: "Description",
+      descriptionPlaceholder: "Describe the issue in detail...", 
       category: "Category",
       priority: "Priority",
       propertyAddress: "Property Address",
+      propertyAddressPlaceholder: "Property address", 
       reportedDate: "Reported Date",
-      submitButton: "Submit Request",
+      save: "Save", 
+      saving: "Saving...", 
       noRequests: "No Maintenance Requests",
       noRequestsSub: "Track repair requests and communications",
       reported: "Reported",
@@ -381,20 +384,18 @@ export default function MaintenanceTracker() {
         high: "High",
         urgent: "Urgent"
       },
-      addPhotos: "Add Photos",
+      addPhotosHint: "Click or tap to add photos", 
       takePhoto: "Take Photo",
       uploadPhoto: "Upload Photo",
-      photosOptional: "Photos (Optional)",
-      photosHelp: "Add photos to document the issue",
+      photos: "Photos", 
       uploading: "Uploading...",
-      photos: "photos",
       editRequest: "Edit Request",
       deleteRequest: "Delete Request",
       confirmDelete: "Are you sure?",
       confirmDeleteDesc: "This will permanently delete this maintenance request. This action cannot be undone.",
       cancelDelete: "Cancel",
       confirmDeleteBtn: "Delete",
-      updateButton: "Update",
+      updateButton: "Update", // Still used in the card edit button
       issuePhotos: "Issue Photos:",
       completionPhotos: "Completion Photos:",
       billsReceipts: "Bills/Receipts:",
@@ -413,15 +414,19 @@ export default function MaintenanceTracker() {
       subtitle: "บันทึกและติดตามคำขอซ่อมทั้งหมด",
       reportIssue: "แจ้งปัญหา",
       reportFirst: "แจ้งปัญหาแรก",
-      dialogTitle: "คำขอซ่อมบำรุงใหม่",
-      reportNewIssue: "คำขอซ่อมบำรุงใหม่",
+      dialogTitle: "คำขอซ่อมบำรุงใหม่", 
+      newRequest: "คำขอซ่อมบำรุงใหม่", 
       issueTitle: "หัวข้อปัญหา",
+      issueTitlePlaceholder: "เช่น: ก๊อกน้ำรั่ว", 
       description: "รายละเอียด",
+      descriptionPlaceholder: "อธิบายปัญหาโดยละเอียด...", 
       category: "หมวดหมู่",
       priority: "ลำดับความสำคัญ",
       propertyAddress: "ที่อยู่ทรัพย์สิน",
+      propertyAddressPlaceholder: "ที่อยู่ทรัพย์สิน", 
       reportedDate: "วันที่รายงาน",
-      submitButton: "ส่งคำขอ",
+      save: "บันทึก", 
+      saving: "กำลังบันทึก...", 
       noRequests: "ไม่มีคำขอซ่อมบำรุง",
       noRequestsSub: "ติดตามคำขอซ่อมและการติดต่อสื่อสาร",
       reported: "รายงานแล้ว",
@@ -458,20 +463,18 @@ export default function MaintenanceTracker() {
         high: "สูง",
         urgent: "เร่งด่วน"
       },
-      addPhotos: "เพิ่มรูปภาพ",
+      addPhotosHint: "คลิกหรือแตะเพื่อเพิ่มรูปภาพ", 
       takePhoto: "ถ่ายรูป",
       uploadPhoto: "อัปโหลดรูป",
-      photosOptional: "รูปภาพ (ไม่บังคับ)",
-      photosHelp: "เพิ่มรูปภาพเพื่อบันทึกปัญหา",
+      photos: "รูปภาพ", 
       uploading: "กำลังอัปโหลด...",
-      photos: "รูป",
       editRequest: "แก้ไขคำขอ",
       deleteRequest: "ลบคำขอ",
       confirmDelete: "คุณแน่ใจหรือไม่?",
       confirmDeleteDesc: "การดำเนินการนี้จะลบคำขอซ่อมบำรุงนี้อย่างถาวร และไม่สามารถยกเลิกได้",
       cancelDelete: "ยกเลิก",
       confirmDeleteBtn: "ลบ",
-      updateButton: "อัปเดต",
+      updateButton: "อัปเดต", // Still used in the card edit button
       issuePhotos: "รูปภาพปัญหา:",
       completionPhotos: "รูปงานเสร็จ:",
       billsReceipts: "ใบเสร็จ/บิล:",
@@ -537,7 +540,7 @@ export default function MaintenanceTracker() {
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2 sm:gap-3 mb-2">
@@ -549,7 +552,7 @@ export default function MaintenanceTracker() {
           
           {maintenanceRequests.length > 0 && (
             <button 
-              onClick={() => setShowAddDialog(true)} // Direct click handler
+              onClick={() => setShowAddDialog(true)} 
               className="w-full sm:w-auto"
               style={{
                 backgroundColor: '#0C3B2E',
@@ -576,7 +579,7 @@ export default function MaintenanceTracker() {
           )}
         </div>
 
-        {/* Dialog - MOVED OUTSIDE CONDITIONAL so it's always available */}
+        {/* Add/Edit Dialog - FIXED MOBILE OVERFLOW */}
         <Dialog open={showAddDialog} onOpenChange={(open) => {
           setShowAddDialog(open);
           if (!open) {
@@ -593,339 +596,331 @@ export default function MaintenanceTracker() {
             });
           }
         }}>
-          <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto" style={{
-            backgroundColor: colors.cardBg,
-            borderColor: colors.borderColor,
-            margin: '16px'
-          }}>
-            <DialogHeader>
-              <DialogTitle style={{ color: colors.textPrimary }}>
-                {editingRequest ? strings.editRequest : strings.reportNewIssue}
-              </DialogTitle>
+          <DialogContent 
+            className="max-w-2xl w-[95vw] max-h-[90vh] flex flex-col p-0"
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor
+            }}
+          >
+            <DialogHeader className="px-4 py-4 border-b flex-shrink-0" style={{ 
+              borderBottom: `1px solid ${colors.borderColor}`,
+              backgroundColor: colors.cardBg
+            }}>
+              <div className="flex items-center justify-between">
+                <DialogTitle style={{ color: colors.textPrimary }}>
+                  {editingRequest ? strings.editRequest : strings.newRequest}
+                </DialogTitle>
+                <button
+                  onClick={() => setShowAddDialog(false)}
+                  className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}
+                >
+                  <X className="w-5 h-5" style={{ color: colors.textPrimary }} />
+                </button>
+              </div>
             </DialogHeader>
-            
-            {formErrors.submit && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
-                <span className="mr-2">❌</span>{formErrors.submit}
-              </div>
-            )}
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="issue_title" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                  {strings.issueTitle} *
-                </label>
-                <input
-                  id="issue_title"
-                  type="text"
-                  required
-                  value={formData.issue_title}
-                  onChange={(e) => {
-                    setFormData({...formData, issue_title: e.target.value});
-                    setFormErrors(prev => ({...prev, issue_title: null}));
-                  }}
-                  maxLength={200}
-                  className={`w-full p-3 border-2 rounded-lg ${formErrors.issue_title ? 'border-red-500' : ''}`}
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: formErrors.issue_title ? '#EF4444' : colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                  placeholder={language === 'th' ? 'เช่น: ก๊อกน้ำรั่ว' : 'e.g., Leaking faucet'}
-                />
-                {formErrors.issue_title && (
-                  <p className="text-xs text-red-600 mt-1">{formErrors.issue_title}</p>
-                )}
-                <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                  {formData.issue_title.length}/200
-                </p>
-              </div>
 
-              <div>
-                <label htmlFor="description" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                  {strings.description} *
-                </label>
-                <textarea
-                  id="description"
-                  required
-                  value={formData.description}
-                  onChange={(e) => {
-                    setFormData({...formData, description: e.target.value});
-                    setFormErrors(prev => ({...prev, description: null}));
-                  }}
-                  maxLength={2000}
-                  rows={4}
-                  className={`w-full p-3 border-2 rounded-lg ${formErrors.description ? 'border-red-500' : ''}`}
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: formErrors.description ? '#EF4444' : colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                  placeholder={language === 'th' ? 'อธิบายปัญหาโดยละเอียด...' : 'Describe the issue in detail...'}
-                />
-                {formErrors.description && (
-                  <p className="text-xs text-red-600 mt-1">{formErrors.description}</p>
-                )}
-                <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                  {formData.description.length}/2000
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="category" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                    {strings.category}
-                  </label>
-                  <select
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    className="w-full p-3 border-2 rounded-lg appearance-none"
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary,
-                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 0.75rem center',
-                      backgroundSize: '1em 1em',
-                    }}
-                  >
-                    <option value="plumbing">{strings.categories.plumbing}</option>
-                    <option value="electrical">{strings.categories.electrical}</option>
-                    <option value="structural">{strings.categories.structural}</option>
-                    <option value="appliance">{strings.categories.appliance}</option>
-                    <option value="hvac">{strings.categories.hvac}</option>
-                    <option value="pest">{strings.categories.pest}</option>
-                    <option value="other">{strings.categories.other}</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="priority" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                    {strings.priority}
-                  </label>
-                  <select
-                    id="priority"
-                    value={formData.priority}
-                    onChange={(e) => setFormData({...formData, priority: e.target.value})}
-                    className="w-full p-3 border-2 rounded-lg appearance-none"
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary,
-                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 0.75rem center',
-                      backgroundSize: '1em 1em',
-                    }}
-                  >
-                    <option value="low">{strings.priorities.low}</option>
-                    <option value="medium">{strings.priorities.medium}</option>
-                    <option value="high">{strings.priorities.high}</option>
-                    <option value="urgent">{strings.priorities.urgent}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="property_address" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                  {strings.propertyAddress}
-                </label>
-                <input
-                  id="property_address"
-                  type="text"
-                  value={formData.property_address}
-                  onChange={(e) => setFormData({...formData, property_address: e.target.value})}
-                  className="w-full p-3 border-2 rounded-lg"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                  placeholder={language === 'th' ? 'ที่อยู่ทรัพย์สิน' : 'Property address'}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="reported_date" className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                  {strings.reportedDate} *
-                </label>
-                <input
-                  id="reported_date"
-                  type="date"
-                  required
-                  value={formData.reported_date}
-                  onChange={(e) => {
-                    setFormData({...formData, reported_date: e.target.value});
-                    setFormErrors(prev => ({...prev, reported_date: null}));
-                  }}
-                  className={`w-full p-3 border-2 rounded-lg ${formErrors.reported_date ? 'border-red-500' : ''}`}
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: formErrors.reported_date ? '#EF4444' : colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-                {formErrors.reported_date && (
-                  <p className="text-xs text-red-600 mt-1">{formErrors.reported_date}</p>
-                )}
-              </div>
-
-              {/* Photo Upload Section */}
-              <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                  {strings.photosOptional}
-                </label>
-                <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
-                  {strings.photosHelp}
-                </p>
-
-                {/* Photo Preview Grid */}
-                {formData.photo_urls.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 mb-3">
-                    {formData.photo_urls.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={url}
-                          alt={`Photo ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                          style={{ border: `1px solid ${colors.borderColor}` }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePhoto(index)}
-                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1">
+              <div className="flex-1 overflow-y-auto px-4 py-4">
+                
+                {formErrors.submit && (
+                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm mb-4">
+                    <span className="mr-2">❌</span>{formErrors.submit}
                   </div>
                 )}
-
-                {/* Upload Buttons */}
-                <div className="flex gap-2">
-                  {/* Take Photo Button */}
-                  <label
-                    className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg cursor-pointer transition-all text-center"
-                    style={{
-                      backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                      border: `2px dashed ${colors.borderColor}`,
-                      color: colors.textPrimary
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#0C3B2E';
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#ECEFED';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = colors.borderColor;
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      multiple
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                      disabled={uploadingPhotos}
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="issue_title" style={{ color: colors.textPrimary }}>
+                      {strings.issueTitle} <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="issue_title"
+                      value={formData.issue_title}
+                      onChange={(e) => {
+                        setFormData({...formData, issue_title: e.target.value});
+                        setFormErrors(prev => ({...prev, issue_title: null}));
+                      }}
+                      placeholder={strings.issueTitlePlaceholder}
+                      maxLength={200}
+                      required
+                      className={`mt-2 ${formErrors.issue_title ? 'border-red-500' : ''}`}
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: formErrors.issue_title ? '#EF4444' : colors.borderColor,
+                        color: colors.textPrimary
+                      }}
                     />
-                    {uploadingPhotos ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm font-medium">{strings.uploading}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Camera className="w-4 h-4" />
-                        <span className="text-sm font-medium">{strings.takePhoto}</span>
-                      </>
+                    {formErrors.issue_title && (
+                      <p className="text-xs text-red-600 mt-1">{formErrors.issue_title}</p>
                     )}
-                  </label>
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                      {formData.issue_title.length}/200
+                    </p>
+                  </div>
 
-                  {/* Upload Photo Button */}
-                  <label
-                    className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg cursor-pointer transition-all text-center"
-                    style={{
-                      backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                      border: `2px dashed ${colors.borderColor}`,
-                      color: colors.textPrimary
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#0C3B2E';
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#ECEFED';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = colors.borderColor;
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                      disabled={uploadingPhotos}
+                  <div>
+                    <Label htmlFor="description" style={{ color: colors.textPrimary }}>
+                      {strings.description} <span className="text-red-500">*</span>
+                    </Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => {
+                        setFormData({...formData, description: e.target.value});
+                        setFormErrors(prev => ({...prev, description: null}));
+                      }}
+                      placeholder={strings.descriptionPlaceholder}
+                      maxLength={2000}
+                      required
+                      rows={4}
+                      className={`mt-2 ${formErrors.description ? 'border-red-500' : ''}`}
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: formErrors.description ? '#EF4444' : colors.borderColor,
+                        color: colors.textPrimary
+                      }}
                     />
-                    {uploadingPhotos ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm font-medium">{strings.uploading}</span>
-                      </>
-                    ) : (
-                      <>
-                        <ImageIcon className="w-4 h-4" />
-                        <span className="text-sm font-medium">{strings.uploadPhoto}</span>
-                      </>
+                    {formErrors.description && (
+                      <p className="text-xs text-red-600 mt-1">{formErrors.description}</p>
                     )}
-                  </label>
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                      {formData.description.length}/2000
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="category" style={{ color: colors.textPrimary }}>{strings.category}</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value) => setFormData({...formData, category: value})}
+                      >
+                        <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                          <SelectItem value="plumbing" style={{ color: colors.textPrimary }}>{strings.categories.plumbing}</SelectItem>
+                          <SelectItem value="electrical" style={{ color: colors.textPrimary }}>{strings.categories.electrical}</SelectItem>
+                          <SelectItem value="structural" style={{ color: colors.textPrimary }}>{strings.categories.structural}</SelectItem>
+                          <SelectItem value="appliance" style={{ color: colors.textPrimary }}>{strings.categories.appliance}</SelectItem>
+                          <SelectItem value="hvac" style={{ color: colors.textPrimary }}>{strings.categories.hvac}</SelectItem>
+                          <SelectItem value="pest" style={{ color: colors.textPrimary }}>{strings.categories.pest}</SelectItem>
+                          <SelectItem value="other" style={{ color: colors.textPrimary }}>{strings.categories.other}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="priority" style={{ color: colors.textPrimary }}>{strings.priority}</Label>
+                      <Select
+                        value={formData.priority}
+                        onValueChange={(value) => setFormData({...formData, priority: value})}
+                      >
+                        <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                          <SelectItem value="low" style={{ color: colors.textPrimary }}>{strings.priorities.low}</SelectItem>
+                          <SelectItem value="medium" style={{ color: colors.textPrimary }}>{strings.priorities.medium}</SelectItem>
+                          <SelectItem value="high" style={{ color: colors.textPrimary }}>{strings.priorities.high}</SelectItem>
+                          <SelectItem value="urgent" style={{ color: colors.textPrimary }}>{strings.priorities.urgent}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="property_address" style={{ color: colors.textPrimary }}>{strings.propertyAddress}</Label>
+                    <Input
+                      id="property_address"
+                      type="text"
+                      value={formData.property_address}
+                      onChange={(e) => setFormData({...formData, property_address: e.target.value})}
+                      placeholder={strings.propertyAddressPlaceholder}
+                      className="mt-2"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="reported_date" style={{ color: colors.textPrimary }}>
+                      {strings.reportedDate} <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="reported_date"
+                      type="date"
+                      value={formData.reported_date}
+                      onChange={(e) => {
+                        setFormData({...formData, reported_date: e.target.value});
+                        setFormErrors(prev => ({...prev, reported_date: null}));
+                      }}
+                      required
+                      className={`mt-2 ${formErrors.reported_date ? 'border-red-500' : ''}`}
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: formErrors.reported_date ? '#EF4444' : colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                    {formErrors.reported_date && (
+                      <p className="text-xs text-red-600 mt-1">{formErrors.reported_date}</p>
+                    )}
+                  </div>
+
+                  {/* Photo Upload Section */}
+                  <div>
+                    <Label style={{ color: colors.textPrimary }}>{strings.photos}</Label>
+                    <p className="text-xs mt-1 mb-3" style={{ color: colors.textSecondary }}>
+                      {strings.addPhotosHint}
+                    </p>
+
+                    {/* Photo Preview Grid */}
+                    {formData.photo_urls.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        {formData.photo_urls.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url}
+                              alt={`Photo ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                              style={{ border: `1px solid ${colors.borderColor}` }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePhoto(index)}
+                              className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upload Buttons */}
+                    <div className="flex gap-2">
+                      {/* Take Photo Button */}
+                      <label
+                        className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg cursor-pointer transition-all text-center"
+                        style={{
+                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                          border: `2px dashed ${colors.borderColor}`,
+                          color: colors.textPrimary
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#0C3B2E';
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#ECEFED';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = colors.borderColor;
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          multiple
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                          disabled={uploadingPhotos}
+                        />
+                        {uploadingPhotos ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-sm font-medium">{strings.uploading}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="w-4 h-4" />
+                            <span className="text-sm font-medium">{strings.takePhoto}</span>
+                          </>
+                        )}
+                      </label>
+
+                      {/* Upload Photo Button */}
+                      <label
+                        className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg cursor-pointer transition-all text-center"
+                        style={{
+                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                          border: `2px dashed ${colors.borderColor}`,
+                          color: colors.textPrimary
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#0C3B2E';
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#ECEFED';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = colors.borderColor;
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                          disabled={uploadingPhotos}
+                        />
+                        {uploadingPhotos ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-sm font-medium">{strings.uploading}</span>
+                          </>
+                        ) : (
+                          <>
+                            <ImageIcon className="w-4 h-4" />
+                            <span className="text-sm font-medium">{strings.uploadPhoto}</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+
+                    {formData.photo_urls.length > 0 && (
+                      <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                        {formData.photo_urls.length} {strings.photos}
+                      </p>
+                    )}
+
+                    {formErrors.photos && (
+                      <p className="text-xs text-red-600 mt-1">{formErrors.photos}</p>
+                    )}
+                  </div>
                 </div>
-
-                {formData.photo_urls.length > 0 && (
-                  <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
-                    {formData.photo_urls.length} {strings.photos}
-                  </p>
-                )}
-
-                {formErrors.photos && (
-                  <p className="text-xs text-red-600 mt-1">{formErrors.photos}</p>
-                )}
               </div>
 
-              <button
-                type="submit"
-                disabled={submitting || uploadingPhotos}
-                style={{
-                  width: '100%',
-                  backgroundColor: (submitting || uploadingPhotos) ? '#9CA3AF' : '#0C3B2E',
-                  color: '#FFFFFF',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  border: 'none',
-                  cursor: (submitting || uploadingPhotos) ? 'not-allowed' : 'pointer',
-                  opacity: (submitting || uploadingPhotos) ? 0.6 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    {editingRequest ? strings.updateButton : strings.submitButton}
-                  </>
-                )}
-              </button>
+              <div className="flex gap-3 justify-end px-4 py-4 border-t flex-shrink-0" style={{ borderColor: colors.borderColor }}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowAddDialog(false)}
+                  disabled={createRequestMutation.isPending || updateRequestMutation.isPending || submitting || uploadingPhotos}
+                  style={{ borderColor: colors.borderColor, backgroundColor: colors.inputBg, color: colors.textPrimary }}
+                >
+                  {strings.cancel}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createRequestMutation.isPending || updateRequestMutation.isPending || submitting || uploadingPhotos}
+                  className="bg-[#0C3B2E] hover:bg-[#0a2f25]"
+                >
+                  {(createRequestMutation.isPending || updateRequestMutation.isPending || submitting || uploadingPhotos) ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {strings.saving}
+                    </>
+                  ) : (
+                    strings.save
+                  )}
+                </Button>
+              </div>
             </form>
           </DialogContent>
         </Dialog>
