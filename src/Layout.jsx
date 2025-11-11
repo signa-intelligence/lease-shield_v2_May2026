@@ -205,13 +205,19 @@ export default function Layout({ children, currentPageName }) {
         }
         
         .bottom-tabs {
-          padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+          padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px) !important;
+          z-index: 99999 !important;
+          position: fixed !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
         }
         
         .top-bar {
           padding-top: env(safe-area-inset-top, 0px);
           height: auto;
           min-height: 64px;
+          z-index: 9998 !important;
         }
         
         .main-content {
@@ -231,7 +237,7 @@ export default function Layout({ children, currentPageName }) {
             transform: translateX(-50%);
             border-radius: 24px;
             margin-bottom: 16px;
-            padding-bottom: 0;
+            padding-bottom: 0 !important;
           }
         }
 
@@ -251,8 +257,6 @@ export default function Layout({ children, currentPageName }) {
             box-shadow: 0 6px 12px rgba(199, 163, 56, 0.6), 0 0 0 6px rgba(199, 163, 56, 0.2);
           }
         }
-
-        /* REMOVED: Global transition that might affect opacity */
         
         *:focus-visible {
           outline: 2px solid var(--ls-gold);
@@ -279,7 +283,7 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
+      <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm" style={{
         backgroundColor: colors.topBarBg,
         borderBottomColor: colors.borderColor
       }}>
@@ -357,10 +361,9 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </main>
 
-      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 border-t shadow-2xl" style={{
+      <nav className="bottom-tabs border-t shadow-2xl" style={{
         backgroundColor: colors.bottomTabBg,
-        borderTopColor: colors.borderColor,
-        zIndex: 9999
+        borderTopColor: colors.borderColor
       }}>
         <div className="flex items-center justify-around px-2 py-2" style={{
           minHeight: '68px'
