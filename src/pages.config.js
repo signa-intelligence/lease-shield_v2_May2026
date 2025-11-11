@@ -21,9 +21,6 @@ import CaseDetails from './pages/CaseDetails';
 import OpsConsole from './pages/OpsConsole';
 import AcknowledgeMaintenance from './pages/AcknowledgeMaintenance';
 import Acknowledge from './pages/Acknowledge';
-import Messages from './pages/Messages';
-import Conversation from './pages/Conversation';
-import NewConversation from './pages/NewConversation';
 import Layout from './Layout.jsx';
 
 
@@ -51,9 +48,6 @@ export const PAGES = {
     "OpsConsole": OpsConsole,
     "AcknowledgeMaintenance": AcknowledgeMaintenance,
     "Acknowledge": Acknowledge,
-    "Messages": Messages,
-    "Conversation": Conversation,
-    "NewConversation": NewConversation,
 }
 
 export const pagesConfig = {

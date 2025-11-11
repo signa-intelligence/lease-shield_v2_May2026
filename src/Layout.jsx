@@ -172,7 +172,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bg }}>
       <style>{`
         :root {
           --ls-forest: #0C3B2E;
@@ -187,16 +187,12 @@ export default function Layout({ children, currentPageName }) {
           --accent-foreground: 0 0% 100%;
         }
         
-        * {
-          box-sizing: border-box;
-        }
-        
-        html, body, #root {
+        html, body {
           height: 100%;
           width: 100%;
-          margin: 0;
-          padding: 0;
           overflow-x: hidden;
+          position: fixed;
+          overscroll-behavior: none;
         }
 
         body {
@@ -207,17 +203,44 @@ export default function Layout({ children, currentPageName }) {
         h1, h2, h3, h4, h5, h6 {
           font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
         }
+        
+        .bottom-tabs {
+          padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+        }
+        
+        .top-bar {
+          padding-top: env(safe-area-inset-top, 0px);
+          height: auto;
+          min-height: 64px;
+        }
+        
+        .main-content {
+          overflow-y: auto;
+          overflow-x: hidden;
+          -webkit-overflow-scrolling: touch;
+        }
 
-        /* CRITICAL: Ensure bottom nav is ALWAYS visible */
-        #bottom-nav-bar {
-          position: fixed !important;
-          bottom: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          z-index: 999999 !important;
-          pointer-events: auto !important;
-          visibility: visible !important;
-          display: block !important;
+        @media (min-width: 768px) {
+          html, body {
+            position: static;
+          }
+          
+          .bottom-tabs {
+            max-width: 600px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 24px;
+            margin-bottom: 16px;
+            padding-bottom: 0;
+          }
+        }
+
+        @media (display-mode: standalone) {
+          body {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+          }
         }
 
         @keyframes pulse {
@@ -228,6 +251,8 @@ export default function Layout({ children, currentPageName }) {
             box-shadow: 0 6px 12px rgba(199, 163, 56, 0.6), 0 0 0 6px rgba(199, 163, 56, 0.2);
           }
         }
+
+        /* REMOVED: Global transition that might affect opacity */
         
         *:focus-visible {
           outline: 2px solid var(--ls-gold);
@@ -254,177 +279,142 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      <div style={{ 
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: colors.bg,
-        position: 'relative'
+      <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
+        backgroundColor: colors.topBarBg,
+        borderBottomColor: colors.borderColor
       }}>
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 40,
-          backgroundColor: colors.topBarBg,
-          borderBottom: `1px solid ${colors.borderColor}`,
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-          paddingTop: 'env(safe-area-inset-top, 0px)',
-          minHeight: '64px'
-        }}>
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
-                alt="Lease Shield"
-                className="h-6 w-auto md:hidden flex-shrink-0"
-              />
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
-                alt="Lease Shield"
-                className="hidden md:block h-8 w-8 flex-shrink-0"
-              />
-              <span className="font-bold text-ls-forest text-base sm:text-lg truncate hidden md:block" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
-                {strings.appName}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
+              alt="Lease Shield"
+              className="h-6 w-auto md:hidden flex-shrink-0"
+            />
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
+              alt="Lease Shield"
+              className="hidden md:block h-8 w-8 flex-shrink-0"
+            />
+            <span className="font-bold text-ls-forest text-base sm:text-lg truncate hidden md:block" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
+              {strings.appName}
+            </span>
+            {accessLevel !== 'user' && (
+              <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
+                {accessLevel === 'super_admin' ? 'SUPER ADMIN' : accessLevel === 'admin' ? 'ADMIN' : 'VA'}
               </span>
-              {accessLevel !== 'user' && (
-                <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
-                  {accessLevel === 'super_admin' ? 'SUPER ADMIN' : accessLevel === 'admin' ? 'ADMIN' : 'VA'}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <LanguageToggle />
-              <Link to={createPageUrl("Account")}>
-                <button
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActiveTab(createPageUrl("Account"))) {
-                      e.currentTarget.style.backgroundColor = '#0C3B2E';
-                      const icon = e.currentTarget.querySelector('svg');
-                      if (icon) icon.style.color = '#FFFFFF';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActiveTab(createPageUrl("Account"))) {
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
-                      const icon = e.currentTarget.querySelector('svg');
-                      if (icon) icon.style.color = '#0C3B2E';
-                    }
-                  }}
-                >
-                  <User 
-                    className="w-4 h-4 sm:w-5 sm:h-5" 
-                    style={{ 
-                      color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : '#0C3B2E',
-                      transition: 'color 0.2s'
-                    }}
-                  />
-                </button>
-              </Link>
-            </div>
+            )}
           </div>
-        </div>
-
-        <div ref={mainContentRef} style={{
-          marginTop: '64px',
-          marginBottom: '80px',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          WebkitOverflowScrolling: 'touch',
-          flex: 1
-        }}>
-          {children}
-        </div>
-
-        <div 
-          id="bottom-nav-bar"
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 999999,
-            backgroundColor: colors.bottomTabBg,
-            borderTop: `2px solid ${colors.borderColor}`,
-            boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
-            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)'
-          }}
-        >
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-around',
-            padding: '8px',
-            minHeight: '68px'
-          }}>
-            {navTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = isActiveTab(tab.route);
-              
-              return (
-                <Link
-                  key={tab.key}
-                  to={tab.route}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '8px 10px',
-                    borderRadius: '12px',
-                    transition: 'all 0.2s',
-                    flex: 1,
-                    minWidth: '60px',
-                    maxWidth: '90px',
-                    backgroundColor: isActive ? '#0C3B2E' : 'transparent',
-                    textDecoration: 'none',
-                    cursor: 'pointer'
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <LanguageToggle />
+            <Link to={createPageUrl("Account")}>
+              <button
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActiveTab(createPageUrl("Account"))) {
+                    e.currentTarget.style.backgroundColor = '#0C3B2E';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.color = '#FFFFFF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActiveTab(createPageUrl("Account"))) {
+                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.color = '#0C3B2E';
+                  }
+                }}
+              >
+                <User 
+                  className="w-4 h-4 sm:w-5 sm:h-5" 
+                  style={{ 
+                    color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : '#0C3B2E',
+                    transition: 'color 0.2s'
                   }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = colors.hoverBg;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }
-                  }}
-                >
-                  <Icon style={{ 
-                    width: '20px',
-                    height: '20px',
-                    marginBottom: '4px',
-                    color: isActive ? '#FFFFFF' : colors.textPrimary
-                  }} />
-                  <span style={{ 
-                    fontSize: '11px', 
-                    fontWeight: '600', 
-                    whiteSpace: 'nowrap',
-                    color: isActive ? '#FFFFFF' : colors.textPrimary
-                  }}>
-                    {tab.label}
-                  </span>
-                </Link>
-              );
-            })}
+                />
+              </button>
+            </Link>
           </div>
         </div>
       </div>
-    </>
+
+      <main ref={mainContentRef} className="main-content flex-1" style={{
+        marginTop: 'calc(64px + env(safe-area-inset-top, 0px))',
+        marginBottom: 'calc(72px + max(env(safe-area-inset-bottom, 0px), 12px))',
+        height: 'calc(100vh - 64px - 72px - env(safe-area-inset-top, 0px) - max(env(safe-area-inset-bottom, 0px), 12px))'
+      }}>
+        {children}
+      </main>
+
+      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 border-t shadow-2xl" style={{
+        backgroundColor: colors.bottomTabBg,
+        borderTopColor: colors.borderColor,
+        zIndex: 9999
+      }}>
+        <div className="flex items-center justify-around px-2 py-2" style={{
+          minHeight: '68px'
+        }}>
+          {navTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = isActiveTab(tab.route);
+            
+            return (
+              <Link
+                key={tab.key}
+                to={tab.route}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '8px 10px',
+                  borderRadius: '12px',
+                  transition: 'all 0.2s',
+                  flex: 1,
+                  minWidth: '60px',
+                  maxWidth: '90px',
+                  backgroundColor: isActive ? '#0C3B2E' : 'transparent',
+                  textDecoration: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = colors.hoverBg;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }
+                }}
+              >
+                <Icon className="w-5 h-5 mb-1" style={{ 
+                  animation: isActive ? 'pulse 2s infinite' : 'none',
+                  color: isActive ? '#FFFFFF' : colors.textPrimary
+                }} />
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: '600', 
+                  whiteSpace: 'nowrap',
+                  color: isActive ? '#FFFFFF' : colors.textPrimary
+                }}>
+                  {tab.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
   );
 }
