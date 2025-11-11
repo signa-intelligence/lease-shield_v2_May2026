@@ -85,33 +85,33 @@ Deno.serve(async (req) => {
 
           const depositAmount = deposit.deposit_amount || 0;
           const propertyAddress = deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
-          const caseUrl = `https://app.leaseshield.asia/ResolveCase?depositId=${deposit.id}&auto=true`;
+          const depositUrl = 'https://app.leaseshield.asia/DepositTracker';
 
           if (daysDiff === 30) {
             shouldNotify = true;
             notificationType = 'deposit_30d';
             message = language === 'th' ?
-              `🔔 แจ้งเตือน Lease Shield\n\nเงินมัดจำครบกำหนดคืนในอีก 30 วัน\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n\n💡 แนะนำ: เก็บใบเสร็จและรูปภาพไว้ใน Evidence Vault\n\nเปิดแอป → https://app.leaseshield.asia/DepositTracker` :
-              `🔔 Lease Shield Reminder\n\nDeposit due back in 30 days\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n\n💡 Tip: Keep receipts in your Evidence Vault\n\nOpen app → https://app.leaseshield.asia/DepositTracker`;
+              `🔔 แจ้งเตือน Lease Shield\n\nเงินมัดจำครบกำหนดคืนในอีก 30 วัน\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n\n💡 แนะนำ: เก็บใบเสร็จและรูปภาพไว้ใน Evidence Vault\n\nเปิดแอป → ${depositUrl}` :
+              `🔔 Lease Shield Reminder\n\nDeposit due back in 30 days\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n\n💡 Tip: Keep receipts in your Evidence Vault\n\nOpen app → ${depositUrl}`;
           } else if (daysDiff === 7) {
             shouldNotify = true;
             notificationType = 'deposit_7d';
             message = language === 'th' ?
-              `⚠️ แจ้งเตือน Lease Shield\n\nอีก 7 วันครบกำหนดคืนเงินมัดจำ\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n\n📝 หากยังไม่ได้รับเงิน พร้อมช่วยคุณ\n\nเปิดแอป → https://app.leaseshield.asia/DepositTracker` :
-              `⚠️ Lease Shield Alert\n\n7 days until deposit return\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n\n📝 We're here if you need help\n\nOpen app → https://app.leaseshield.asia/DepositTracker`;
+              `⚠️ แจ้งเตือน Lease Shield\n\nอีก 7 วันครบกำหนดคืนเงินมัดจำ\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n\n📝 หากยังไม่ได้รับเงิน พร้อมช่วยคุณ\n\nเปิดแอป → ${depositUrl}` :
+              `⚠️ Lease Shield Alert\n\n7 days until deposit return\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n\n📝 We're here if you need help\n\nOpen app → ${depositUrl}`;
           } else if (daysDiff === 3) {
             shouldNotify = true;
             notificationType = 'deposit_3d';
             message = language === 'th' ?
-              `🚨 เตือนเร่งด่วน Lease Shield\n\nอีก 3 วันครบกำหนดคืนเงินมัดจำ!\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n\n⚠️ หากยังไม่ติดต่อเจ้าของบ้าน กรุณาดำเนินการทันที\n\nเปิดแอป → https://app.leaseshield.asia/DepositTracker` :
-              `🚨 Lease Shield Urgent\n\nOnly 3 days until deposit return!\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n\n⚠️ Contact landlord now\n\nOpen app → https://app.leaseshield.asia/DepositTracker`;
+              `🚨 เตือนเร่งด่วน Lease Shield\n\nอีก 3 วันครบกำหนดคืนเงินมัดจำ!\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n\n⚠️ หากยังไม่ติดต่อเจ้าของบ้าน กรุณาดำเนินการทันที\n\nเปิดแอป → ${depositUrl}` :
+              `🚨 Lease Shield Urgent\n\nOnly 3 days until deposit return!\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n\n⚠️ Contact landlord now\n\nOpen app → ${depositUrl}`;
           } else if (daysDiff < 0) {
             shouldNotify = true;
             notificationType = 'deposit_overdue';
             const daysOverdue = Math.abs(daysDiff);
             message = language === 'th' ?
-              `🚨 แจ้งเตือนด่วน Lease Shield\n\n💰 เงินมัดจำเกินกำหนด ${daysOverdue} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield พร้อมช่วยคุณ!\n\n📋 คลิกเพื่อเปิดคดีอัตโนมัติ\n\n${caseUrl}` :
-              `🚨 Lease Shield Urgent Alert\n\n💰 Deposit ${daysOverdue} days overdue\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield is ready to help!\n\n📋 Click to auto-open case\n\n${caseUrl}`;
+              `🚨 แจ้งเตือนด่วน Lease Shield\n\n💰 เงินมัดจำเกินกำหนด ${daysOverdue} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield พร้อมช่วยคุณ!\n\n📋 เปิดแอปเพื่อดูรายละเอียดและเปิดคดี\n\nเปิดแอป → ${depositUrl}` :
+              `🚨 Lease Shield Urgent Alert\n\n💰 Deposit ${daysOverdue} days overdue\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield is ready to help!\n\n📋 Open app to view details and open a case\n\nOpen app → ${depositUrl}`;
           }
 
           if (shouldNotify) {
@@ -151,31 +151,32 @@ Deno.serve(async (req) => {
 
           const propertyAddress = lease.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
           const leaseEndDate = lease.end_date ? new Date(lease.end_date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US') : 'N/A';
+          const leaseUrl = 'https://app.leaseshield.asia/UploadScan';
 
           if (daysDiff === 30) {
             shouldNotify = true;
             notificationType = 'lease_30d';
             message = language === 'th' ?
-              `📅 เตือนสัญญาเช่า Lease Shield\n\nอีก 30 วันถึงกำหนดแจ้งสัญญา\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n📆 สัญญาสิ้นสุด: ${leaseEndDate}\n\nเปิดแอป → https://app.leaseshield.asia/UploadScan` :
-              `📅 Lease Shield Notice Reminder\n\n30 days until notice deadline\n\n🏠 Property: ${propertyAddress}\n📆 Lease ends: ${leaseEndDate}\n\nOpen app → https://app.leaseshield.asia/UploadScan`;
+              `📅 เตือนสัญญาเช่า Lease Shield\n\nอีก 30 วันถึงกำหนดแจ้งสัญญา\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n📆 สัญญาสิ้นสุด: ${leaseEndDate}\n\nเปิดแอป → ${leaseUrl}` :
+              `📅 Lease Shield Notice Reminder\n\n30 days until notice deadline\n\n🏠 Property: ${propertyAddress}\n📆 Lease ends: ${leaseEndDate}\n\nOpen app → ${leaseUrl}`;
           } else if (daysDiff === 7) {
             shouldNotify = true;
             notificationType = 'lease_7d';
             message = language === 'th' ?
-              `⚠️ แจ้งเตือนด่วน Lease Shield\n\nเหลือ 7 วันต้องแจ้งเจ้าของบ้าน!\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n\nเปิดแอป → https://app.leaseshield.asia/UploadScan` :
-              `⚠️ Lease Shield Urgent\n\n7 days left to notify!\n\n🏠 Property: ${propertyAddress}\n\nOpen app → https://app.leaseshield.asia/UploadScan`;
+              `⚠️ แจ้งเตือนด่วน Lease Shield\n\nเหลือ 7 วันต้องแจ้งเจ้าของบ้าน!\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n\nเปิดแอป → ${leaseUrl}` :
+              `⚠️ Lease Shield Urgent\n\n7 days left to notify!\n\n🏠 Property: ${propertyAddress}\n\nOpen app → ${leaseUrl}`;
           } else if (daysDiff === 3) {
             shouldNotify = true;
             notificationType = 'lease_3d';
             message = language === 'th' ?
-              `🚨 คำเตือนสุดท้าย Lease Shield\n\nเหลือ 3 วัน!\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n\nแจ้งเจ้าของบ้านทันที!\n\nเปิดแอป → https://app.leaseshield.asia/UploadScan` :
-              `🚨 Lease Shield Final Warning\n\n3 days left!\n\n🏠 Property: ${propertyAddress}\n\nContact landlord NOW!\n\nOpen app → https://app.leaseshield.asia/UploadScan`;
+              `🚨 คำเตือนสุดท้าย Lease Shield\n\nเหลือ 3 วัน!\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n\nแจ้งเจ้าของบ้านทันที!\n\nเปิดแอป → ${leaseUrl}` :
+              `🚨 Lease Shield Final Warning\n\n3 days left!\n\n🏠 Property: ${propertyAddress}\n\nContact landlord NOW!\n\nOpen app → ${leaseUrl}`;
           } else if (daysDiff === 0) {
             shouldNotify = true;
             notificationType = 'lease_0d';
             message = language === 'th' ?
-              `🔴 วันนี้คือกำหนด!\n\nต้องแจ้งเจ้าของบ้าน วันนี้!\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n\nเปิดแอป → https://app.leaseshield.asia/UploadScan` :
-              `🔴 Deadline TODAY!\n\nMust notify landlord TODAY!\n\n🏠 Property: ${propertyAddress}\n\nOpen app → https://app.leaseshield.asia/UploadScan`;
+              `🔴 วันนี้คือกำหนด!\n\nต้องแจ้งเจ้าของบ้าน วันนี้!\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n\nเปิดแอป → ${leaseUrl}` :
+              `🔴 Deadline TODAY!\n\nMust notify landlord TODAY!\n\n🏠 Property: ${propertyAddress}\n\nOpen app → ${leaseUrl}`;
           }
 
           if (shouldNotify) {
@@ -213,10 +214,11 @@ Deno.serve(async (req) => {
           if (isAlertDay) {
             const rentAmount = deposit.rent_amount;
             const propertyAddress = deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
+            const depositUrl = 'https://app.leaseshield.asia/DepositTracker';
             
             const message = language === 'th' ?
-              `💰 แจ้งเตือนค่าเช่า Lease Shield\n\nค่าเช่าครบกำหนดใน ${alertDaysBefore} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${rentAmount.toLocaleString()}\n📅 ครบกำหนด: ${dueDay} ของเดือน\n\nเปิดแอป → https://app.leaseshield.asia/DepositTracker` :
-              `💰 Lease Shield Rent Reminder\n\nRent due in ${alertDaysBefore} days\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${rentAmount.toLocaleString()}\n📅 Due: ${dueDay}${dueDay === 1 ? 'st' : dueDay === 2 ? 'nd' : dueDay === 3 ? 'rd' : 'th'}\n\nOpen app → https://app.leaseshield.asia/DepositTracker`;
+              `💰 แจ้งเตือนค่าเช่า Lease Shield\n\nค่าเช่าครบกำหนดใน ${alertDaysBefore} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${rentAmount.toLocaleString()}\n📅 ครบกำหนด: ${dueDay} ของเดือน\n\nเปิดแอป → ${depositUrl}` :
+              `💰 Lease Shield Rent Reminder\n\nRent due in ${alertDaysBefore} days\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${rentAmount.toLocaleString()}\n📅 Due: ${dueDay}${dueDay === 1 ? 'st' : dueDay === 2 ? 'nd' : dueDay === 3 ? 'rd' : 'th'}\n\nOpen app → ${depositUrl}`;
 
             const sent = await sendNotification(base44, user, message, 'rent_reminder', 'deposit', deposit.id);
             if (sent) {
