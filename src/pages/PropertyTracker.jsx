@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -317,9 +316,9 @@ export default function PropertyTracker() {
       send: "Send",
       attachPhoto: "Attach Photo",
       uploading: "Uploading...",
-      addPhotos: "Add Photos/Videos", // MODIFIED
-      photos: "files", // MODIFIED
-      takePhoto: "Take Photo/Video", // MODIFIED
+      addPhotos: "Add Photos/Videos",
+      photos: "files",
+      takePhoto: "Take Photo/Video",
       uploadFromGallery: "Upload from Gallery"
     },
     th: {
@@ -366,9 +365,9 @@ export default function PropertyTracker() {
       send: "ส่ง",
       attachPhoto: "แนบรูป",
       uploading: "กำลังอัปโหลด...",
-      addPhotos: "เพิ่มรูป/วิดีโอ", // MODIFIED
-      photos: "ไฟล์", // MODIFIED
-      takePhoto: "ถ่ายรูป/วิดีโอ", // MODIFIED
+      addPhotos: "เพิ่มรูป/วิดีโอ",
+      photos: "ไฟล์",
+      takePhoto: "ถ่ายรูป/วิดีโอ",
       uploadFromGallery: "เลือกจากแกลเลอรี่"
     }
   };
@@ -535,7 +534,7 @@ export default function PropertyTracker() {
                 <div className="text-center py-8">
                   <Wallet className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
                   <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noDeposit}</p>
-                  <p className="text-sm mb-4" style={{ color: colors.textSecondary}>{strings.addDepositDesc}</p>
+                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addDepositDesc}</p>
                   <Button onClick={() => setEditingDeposit(true)} className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal">
                     <Plus className="w-4 h-4 mr-2" />
                     {strings.addDeposit}
@@ -869,9 +868,9 @@ export default function PropertyTracker() {
                                     className="w-full h-20 object-cover rounded-lg"
                                     style={{ border: `1px solid ${colors.borderColor}` }}
                                     controls={false}
-                                    muted // Mute videos in preview for better UX
-                                    loop // Loop videos in preview
-                                    playsInline // Play inline on iOS
+                                    muted
+                                    loop
+                                    playsInline
                                   />
                                 ) : (
                                   <img
@@ -908,7 +907,7 @@ export default function PropertyTracker() {
                           <input
                             type="file"
                             accept="image/*,video/*"
-                            capture="user" // Changed from "environment" to "user"
+                            capture="user"
                             multiple
                             onChange={handleNewRequestPhotoUpload}
                             className="hidden"
@@ -1198,7 +1197,7 @@ export default function PropertyTracker() {
                                   <input
                                     type="file"
                                     accept="image/*,video/*"
-                                    capture="user" // Changed from "environment" to "user"
+                                    capture="user"
                                     multiple
                                     onChange={(e) => handleChatPhotoUpload(e, request.id)}
                                     className="hidden"
