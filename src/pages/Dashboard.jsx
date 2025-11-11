@@ -337,6 +337,43 @@ function DashboardContent() {
     }
   };
 
+  const [testingRent, setTestingRent] = React.useState(false);
+
+  const testRentReminder = async () => {
+    setTestingRent(true);
+    try {
+      const response = await base44.functions.invoke('testRentReminder');
+      console.log('💰 Rent reminder test:', response.data);
+      
+      if (response.data?.success) {
+        const { deposit, channels } = response.data;
+        toast.success(
+          language === 'th' 
+            ? `✅ ส่งการแจ้งเตือนค่าเช่าผ่าน ${channels.join(' & ')}` 
+            : `✅ Rent reminder sent via ${channels.join(' & ')}`
+        );
+        
+        alert(
+          `💰 RENT REMINDER TEST\n\n` +
+          `✅ Sent via: ${channels.join(' & ')}\n\n` +
+          `Property: ${deposit.property}\n` +
+          `Amount: ฿${deposit.amount?.toLocaleString()}\n` +
+          `Due day: ${deposit.due_day} of the month\n\n` +
+          `Check your ${channels.includes('LINE') ? 'LINE' : 'email'}!`
+        );
+      } else {
+        toast.error(response.data?.message || (language === 'th' ? 'การทดสอบล้มเหลว' : 'Test failed'));
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['notificationLogs'] });
+    } catch (error) {
+      console.error('Rent test failed:', error);
+      toast.error(language === 'th' ? 'เกิดข้อผิดพลาด' : 'Error occurred');
+    } finally {
+      setTestingRent(false);
+    }
+  };
+
 
   const testOverdueCheck = async () => { // Kept, but button removed from UI
     setTestingOverdue(true);
@@ -613,6 +650,7 @@ function DashboardContent() {
       scheduledSystem: "Scheduled System",
       checkAllUsers: "Check all users for reminders",
       testBrowserFlex: "Test Flex (Browser)",
+      testRent: "Test Rent",
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -650,6 +688,7 @@ function DashboardContent() {
       scheduledSystem: "ระบบตรวจสอบอัตโนมัติ",
       checkAllUsers: "ตรวจสอบการแจ้งเตือนของผู้ใช้ทั้งหมด",
       testBrowserFlex: "ทดสอบ Flex",
+      testRent: "ทดสอบค่าเช่า",
     }
   };
 
@@ -765,6 +804,49 @@ function DashboardContent() {
                     </button>
 
                     <button
+                      onClick={testRentReminder}
+                      disabled={testingRent}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: testingRent ? '#9CA3AF' : '#10B981',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: testingRent ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        opacity: testingRent ? 0.7 : 1,
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!testingRent) {
+                          e.target.style.backgroundColor = '#059669';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!testingRent) {
+                          e.target.style.backgroundColor = '#10B981';
+                        }
+                      }}
+                    >
+                      {testingRent ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          {strings.sending}
+                        </>
+                      ) : (
+                        <>
+                          <Wallet className="w-3 h-3" />
+                          {strings.testRent}
+                        </>
+                      )}
+                    </button>
+
+                    <button
                       onClick={testDirectEmail}
                       disabled={testingEmail}
                       style={{
@@ -855,7 +937,7 @@ function DashboardContent() {
                       disabled={runningScheduled}
                       style={{
                         padding: '6px 12px',
-                        backgroundColor: runningScheduled ? '#9CA3AF' : '#10B981',
+                        backgroundColor: runningScheduled ? '#9CA3AF' : '#3B82F6',
                         color: '#FFFFFF',
                         border: 'none',
                         borderRadius: '8px',
@@ -871,12 +953,12 @@ function DashboardContent() {
                       }}
                       onMouseEnter={(e) => {
                         if (!runningScheduled) {
-                          e.target.style.backgroundColor = '#059669';
+                          e.target.style.backgroundColor = '#2563EB';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (!runningScheduled) {
-                          e.target.style.backgroundColor = '#10B981';
+                          e.target.style.backgroundColor = '#3B82F6';
                         }
                       }}
                       title={strings.checkAllUsers}
