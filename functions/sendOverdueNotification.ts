@@ -1,7 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createDepositReminderFlex } from './lineFlexTemplates.js';
 
 /**
- * Simple notification sender for overdue deposits
+ * Simple notification sender for overdue deposits with Rich Flex Messages
  * Called from frontend with deposit details
  */
 
@@ -25,31 +26,39 @@ Deno.serve(async (req) => {
     const daysOverdue = deposit.daysOverdue || 0;
     const depositAmount = deposit.deposit_amount || 0;
     const propertyAddress = deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
+    const expectedDate = new Date(deposit.expected_return_date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US');
     
     const subject = language === 'th' 
       ? '🚨 เงินมัดจำเกินกำหนด - Deposit Shield พร้อมช่วย' 
       : '🚨 Deposit Overdue - Deposit Shield Ready';
     
-    // Use simpler URL that works reliably with auth
-    const appUrl = 'https://app.leaseshield.asia/DepositTracker';
+    // Create Rich Flex Message
+    const flexMessage = createDepositReminderFlex({
+      days: -daysOverdue,
+      depositAmount,
+      propertyAddress,
+      expectedDate: expectedDate,
+      urgency: 'critical'
+    }, language);
     
+    // Fallback plain text for email
     const messageText = language === 'th' ?
-      `🚨 แจ้งเตือนด่วน Lease Shield\n\n💰 เงินมัดจำเกินกำหนด ${daysOverdue} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield พร้อมช่วยคุณ!\n\n📋 เปิดแอปเพื่อดูรายละเอียดและเปิดคดี\n\nเปิดแอป → ${appUrl}` :
-      `🚨 Lease Shield Urgent Alert\n\n💰 Deposit ${daysOverdue} days overdue\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield is ready to help!\n\n📋 Open app to view details and open a case\n\nOpen app → ${appUrl}`;
+      `🚨 แจ้งเตือนด่วน Lease Shield\n\n💰 เงินมัดจำเกินกำหนด ${daysOverdue} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield พร้อมช่วยคุณ!\n\n📋 เปิดแอปเพื่อดูรายละเอียดและเปิดคดี\n\nเปิดแอป → https://app.leaseshield.asia/DepositTracker` :
+      `🚨 Lease Shield Urgent Alert\n\n💰 Deposit ${daysOverdue} days overdue\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield is ready to help!\n\n📋 Open app to view details and open a case\n\nOpen app → https://app.leaseshield.asia/DepositTracker`;
 
     const channels = [];
     let anySuccess = false;
 
-    // Send to LINE if enabled
+    // Send to LINE with Flex Message if enabled
     if (user.line_messaging_token && user.line_notifications) {
       try {
         await base44.functions.invoke('sendLineMessage', {
           userId: user.line_messaging_token,
-          message: messageText
+          flexMessage: flexMessage
         });
         channels.push('LINE');
         anySuccess = true;
-        console.log(`✅ LINE sent to ${user.email}`);
+        console.log(`✅ LINE Flex sent to ${user.email}`);
       } catch (lineError) {
         console.error(`❌ LINE failed:`, lineError);
       }

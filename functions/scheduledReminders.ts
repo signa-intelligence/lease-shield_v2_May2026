@@ -1,7 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createDepositReminderFlex, createLeaseNoticeFlex, createRentReminderFlex } from './lineFlexTemplates.js';
 
 /**
- * Comprehensive scheduled reminder system
+ * Comprehensive scheduled reminder system with Rich LINE Flex Messages
  * Checks deposits, leases, and rent alerts for ALL users
  * Designed to run daily via cron job or manual trigger
  */
@@ -37,7 +38,7 @@ Deno.serve(async (req) => {
     let users = [];
     try {
       const allUsers = await base44.asServiceRole.entities.User.list();
-      users = allUsers.filter(u => u.email); // Only users with email
+      users = allUsers.filter(u => u.email);
       diagnostics.total_users = users.length;
       console.log(`✅ Found ${users.length} users`);
     } catch (err) {
@@ -81,41 +82,40 @@ Deno.serve(async (req) => {
 
           let shouldNotify = false;
           let notificationType = '';
-          let message = '';
+          let urgency = 'low';
 
           const depositAmount = deposit.deposit_amount || 0;
           const propertyAddress = deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
-          const depositUrl = 'https://app.leaseshield.asia/DepositTracker';
+          const expectedDateStr = expectedDate.toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US');
 
           if (daysDiff === 30) {
             shouldNotify = true;
             notificationType = 'deposit_30d';
-            message = language === 'th' ?
-              `🔔 แจ้งเตือน Lease Shield\n\nเงินมัดจำครบกำหนดคืนในอีก 30 วัน\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n\n💡 แนะนำ: เก็บใบเสร็จและรูปภาพไว้ใน Evidence Vault\n\nเปิดแอป → ${depositUrl}` :
-              `🔔 Lease Shield Reminder\n\nDeposit due back in 30 days\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n\n💡 Tip: Keep receipts in your Evidence Vault\n\nOpen app → ${depositUrl}`;
+            urgency = 'medium';
           } else if (daysDiff === 7) {
             shouldNotify = true;
             notificationType = 'deposit_7d';
-            message = language === 'th' ?
-              `⚠️ แจ้งเตือน Lease Shield\n\nอีก 7 วันครบกำหนดคืนเงินมัดจำ\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n\n📝 หากยังไม่ได้รับเงิน พร้อมช่วยคุณ\n\nเปิดแอป → ${depositUrl}` :
-              `⚠️ Lease Shield Alert\n\n7 days until deposit return\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n\n📝 We're here if you need help\n\nOpen app → ${depositUrl}`;
+            urgency = 'high';
           } else if (daysDiff === 3) {
             shouldNotify = true;
             notificationType = 'deposit_3d';
-            message = language === 'th' ?
-              `🚨 เตือนเร่งด่วน Lease Shield\n\nอีก 3 วันครบกำหนดคืนเงินมัดจำ!\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n\n⚠️ หากยังไม่ติดต่อเจ้าของบ้าน กรุณาดำเนินการทันที\n\nเปิดแอป → ${depositUrl}` :
-              `🚨 Lease Shield Urgent\n\nOnly 3 days until deposit return!\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n\n⚠️ Contact landlord now\n\nOpen app → ${depositUrl}`;
+            urgency = 'critical';
           } else if (daysDiff < 0) {
             shouldNotify = true;
             notificationType = 'deposit_overdue';
-            const daysOverdue = Math.abs(daysDiff);
-            message = language === 'th' ?
-              `🚨 แจ้งเตือนด่วน Lease Shield\n\n💰 เงินมัดจำเกินกำหนด ${daysOverdue} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield พร้อมช่วยคุณ!\n\n📋 เปิดแอปเพื่อดูรายละเอียดและเปิดคดี\n\nเปิดแอป → ${depositUrl}` :
-              `🚨 Lease Shield Urgent Alert\n\n💰 Deposit ${daysOverdue} days overdue\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield is ready to help!\n\n📋 Open app to view details and open a case\n\nOpen app → ${depositUrl}`;
+            urgency = 'critical';
           }
 
           if (shouldNotify) {
-            const sent = await sendNotification(base44, user, message, notificationType, 'deposit', deposit.id);
+            const flexMessage = createDepositReminderFlex({
+              days: daysDiff < 0 ? daysDiff : daysDiff,
+              depositAmount,
+              propertyAddress,
+              expectedDate: expectedDateStr,
+              urgency
+            }, language);
+
+            const sent = await sendNotification(base44, user, flexMessage, notificationType, 'deposit', deposit.id, language);
             if (sent) {
               diagnostics.notifications_sent++;
               diagnostics.breakdown[notificationType]++;
@@ -147,40 +147,36 @@ Deno.serve(async (req) => {
 
           let shouldNotify = false;
           let notificationType = '';
-          let message = '';
 
           const propertyAddress = lease.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
           const leaseEndDate = lease.end_date ? new Date(lease.end_date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US') : 'N/A';
-          const leaseUrl = 'https://app.leaseshield.asia/UploadScan';
+          const noticeDeadlineStr = noticeDeadline.toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US');
+          const noticePeriod = lease.notice_period_days || 30;
 
           if (daysDiff === 30) {
             shouldNotify = true;
             notificationType = 'lease_30d';
-            message = language === 'th' ?
-              `📅 เตือนสัญญาเช่า Lease Shield\n\nอีก 30 วันถึงกำหนดแจ้งสัญญา\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n📆 สัญญาสิ้นสุด: ${leaseEndDate}\n\nเปิดแอป → ${leaseUrl}` :
-              `📅 Lease Shield Notice Reminder\n\n30 days until notice deadline\n\n🏠 Property: ${propertyAddress}\n📆 Lease ends: ${leaseEndDate}\n\nOpen app → ${leaseUrl}`;
           } else if (daysDiff === 7) {
             shouldNotify = true;
             notificationType = 'lease_7d';
-            message = language === 'th' ?
-              `⚠️ แจ้งเตือนด่วน Lease Shield\n\nเหลือ 7 วันต้องแจ้งเจ้าของบ้าน!\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n\nเปิดแอป → ${leaseUrl}` :
-              `⚠️ Lease Shield Urgent\n\n7 days left to notify!\n\n🏠 Property: ${propertyAddress}\n\nOpen app → ${leaseUrl}`;
           } else if (daysDiff === 3) {
             shouldNotify = true;
             notificationType = 'lease_3d';
-            message = language === 'th' ?
-              `🚨 คำเตือนสุดท้าย Lease Shield\n\nเหลือ 3 วัน!\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n\nแจ้งเจ้าของบ้านทันที!\n\nเปิดแอป → ${leaseUrl}` :
-              `🚨 Lease Shield Final Warning\n\n3 days left!\n\n🏠 Property: ${propertyAddress}\n\nContact landlord NOW!\n\nOpen app → ${leaseUrl}`;
           } else if (daysDiff === 0) {
             shouldNotify = true;
             notificationType = 'lease_0d';
-            message = language === 'th' ?
-              `🔴 วันนี้คือกำหนด!\n\nต้องแจ้งเจ้าของบ้าน วันนี้!\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n\nเปิดแอป → ${leaseUrl}` :
-              `🔴 Deadline TODAY!\n\nMust notify landlord TODAY!\n\n🏠 Property: ${propertyAddress}\n\nOpen app → ${leaseUrl}`;
           }
 
           if (shouldNotify) {
-            const sent = await sendNotification(base44, user, message, notificationType, 'lease', lease.id);
+            const flexMessage = createLeaseNoticeFlex({
+              days: daysDiff,
+              propertyAddress,
+              leaseEndDate,
+              noticeDeadline: noticeDeadlineStr,
+              noticePeriod
+            }, language);
+
+            const sent = await sendNotification(base44, user, flexMessage, notificationType, 'lease', lease.id, language);
             if (sent) {
               diagnostics.notifications_sent++;
               diagnostics.breakdown[notificationType]++;
@@ -214,13 +210,15 @@ Deno.serve(async (req) => {
           if (isAlertDay) {
             const rentAmount = deposit.rent_amount;
             const propertyAddress = deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
-            const depositUrl = 'https://app.leaseshield.asia/DepositTracker';
-            
-            const message = language === 'th' ?
-              `💰 แจ้งเตือนค่าเช่า Lease Shield\n\nค่าเช่าครบกำหนดใน ${alertDaysBefore} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${rentAmount.toLocaleString()}\n📅 ครบกำหนด: ${dueDay} ของเดือน\n\nเปิดแอป → ${depositUrl}` :
-              `💰 Lease Shield Rent Reminder\n\nRent due in ${alertDaysBefore} days\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${rentAmount.toLocaleString()}\n📅 Due: ${dueDay}${dueDay === 1 ? 'st' : dueDay === 2 ? 'nd' : dueDay === 3 ? 'rd' : 'th'}\n\nOpen app → ${depositUrl}`;
 
-            const sent = await sendNotification(base44, user, message, 'rent_reminder', 'deposit', deposit.id);
+            const flexMessage = createRentReminderFlex({
+              rentAmount,
+              propertyAddress,
+              dueDay,
+              daysUntilDue: alertDaysBefore
+            }, language);
+
+            const sent = await sendNotification(base44, user, flexMessage, 'rent_reminder', 'deposit', deposit.id, language);
             if (sent) {
               diagnostics.notifications_sent++;
               diagnostics.breakdown.rent_reminder++;
@@ -254,18 +252,22 @@ Deno.serve(async (req) => {
   }
 });
 
-// Helper function to send notification
-async function sendNotification(base44, user, message, notificationType, entityType, entityId) {
+// Helper function to send notification with Rich Flex Messages
+async function sendNotification(base44, user, flexMessage, notificationType, entityType, entityId, language) {
   const channels = [];
+  
+  // Generate fallback plain text for email
+  const plainText = generatePlainTextFromFlex(flexMessage, language);
 
-  // Send to LINE if enabled
+  // Send to LINE with Flex Message if enabled
   if (user.line_messaging_token && user.line_notifications) {
     try {
       await base44.asServiceRole.functions.invoke('sendLineMessage', {
         userId: user.line_messaging_token,
-        message: message
+        flexMessage: flexMessage
       });
       channels.push('LINE');
+      console.log(`✅ LINE Flex sent to ${user.email}`);
     } catch (err) {
       console.error(`❌ LINE failed for ${user.email}:`, err);
     }
@@ -274,14 +276,15 @@ async function sendNotification(base44, user, message, notificationType, entityT
   // Send to Email if enabled
   if (user.email_notifications) {
     try {
-      const subject = message.split('\n')[0]; // Use first line as subject
+      const subject = flexMessage.altText || 'Lease Shield Notification';
       await base44.integrations.Core.SendEmail({
         from_name: 'Lease Shield',
         to: user.email,
         subject: subject,
-        body: message
+        body: plainText
       });
       channels.push('Email');
+      console.log(`✅ Email sent to ${user.email}`);
     } catch (err) {
       console.error(`❌ Email failed for ${user.email}:`, err);
     }
@@ -297,7 +300,7 @@ async function sendNotification(base44, user, message, notificationType, entityT
         status: 'sent',
         related_entity_type: entityType,
         related_entity_id: entityId,
-        message_preview: message.substring(0, 200)
+        message_preview: plainText.substring(0, 200)
       });
     } catch (err) {
       console.error(`❌ Failed to log notification:`, err);
@@ -305,4 +308,49 @@ async function sendNotification(base44, user, message, notificationType, entityT
   }
 
   return channels.length > 0;
+}
+
+// Generate plain text version for email from Flex Message
+function generatePlainTextFromFlex(flexMessage, language) {
+  const bubble = flexMessage.contents;
+  const header = bubble.header?.contents[0]?.contents || [];
+  const body = bubble.body?.contents || [];
+  
+  let text = '';
+  
+  // Extract title from header
+  const titleBox = header.find(c => c.type === 'text' && c.weight === 'bold');
+  if (titleBox) {
+    text += `${titleBox.text}\n`;
+  }
+  
+  // Extract subtitle
+  const subtitleBox = bubble.header?.contents.find(c => c.type === 'text' && c.size === 'sm');
+  if (subtitleBox) {
+    text += `${subtitleBox.text}\n\n`;
+  }
+  
+  // Extract body content
+  const contentBox = body.find(b => b.type === 'box' && b.layout === 'vertical');
+  if (contentBox) {
+    contentBox.contents.forEach(item => {
+      if (item.type === 'box' && item.layout === 'baseline') {
+        const label = item.contents[0]?.text || '';
+        const value = item.contents[1]?.text || '';
+        text += `${label}: ${value}\n`;
+      }
+    });
+  }
+  
+  // Extract tip
+  const tipBox = body.find(b => b.backgroundColor && b.cornerRadius);
+  if (tipBox) {
+    const tip = tipBox.contents[0]?.text || '';
+    text += `\n${tip}\n`;
+  }
+  
+  // Add link
+  text += `\n${language === 'th' ? 'เปิดแอป' : 'Open app'} → https://app.leaseshield.asia/DepositTracker`;
+  
+  return text;
 }
