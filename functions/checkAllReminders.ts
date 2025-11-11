@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import { createDepositReminderFlex, createLeaseNoticeFlex, createRentReminderFlex } from './lineFlexTemplates.js';
 
@@ -145,7 +146,7 @@ Deno.serve(async (req) => {
     };
 
     // ============================================
-    // 1. CHECK DEPOSIT RETURN REMINDERS
+    // 1. CHECK DEPOSIT RETURN REMINDERS + AUTOMATION
     // ============================================
     for (const deposit of deposits) {
       if (deposit.status !== 'tracking') continue;
@@ -231,27 +232,195 @@ Deno.serve(async (req) => {
           notifications.push({ user: user.email, type: notificationType, deposit: deposit.id });
         }
       }
-      else if (daysDiff === -1) {
+      else if (daysDiff <= -1) {
+        // 🛡️ DEPOSIT SHIELD AUTOMATION - OVERDUE DEPOSIT
         urgency = 'critical';
         notificationType = 'overdue_deposit';
-        subject = language === 'th' ? 'ยังไม่ได้รับเงินมัดจำคืน - ดำเนินการด่วน' : 'Deposit Not Returned - Action Required';
+        subject = language === 'th' ? '🚨 เงินมัดจำเกินกำหนด - Deposit Shield พร้อมช่วย' : '🚨 Deposit Overdue - Deposit Shield Ready';
         
         const daysOverdue = Math.abs(daysDiff);
         
-        flexMessage = createDepositReminderFlex({
-          days: -1,
-          depositAmount,
-          propertyAddress,
-          expectedDate: expectedDateStr,
-          urgency
-        }, language);
+        // Check if user already has a case for this deposit
+        const existingCases = await base44.asServiceRole.entities.Case.filter({ 
+          user_email: user.email,
+          type: 'deposit'
+        });
+        
+        const hasOpenCase = existingCases.some(c => 
+          !['closed', 'resolved'].includes(c.status) && 
+          c.summary?.includes(propertyAddress) // Assuming propertyAddress is usually part of the summary for deposit cases
+        );
+        
+        // Create special overdue Flex Message with "Open Case" action
+        flexMessage = {
+          type: "bubble",
+          size: "mega",
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "text",
+                    text: language === 'th' ? "🚨 เงินมัดจำเกินกำหนด" : "🚨 DEPOSIT OVERDUE",
+                    color: "#FFFFFF",
+                    size: "lg",
+                    weight: "bold"
+                  },
+                  {
+                    type: "text",
+                    text: language === 'th' ? `เกิน ${daysOverdue} วัน` : `${daysOverdue} days overdue`,
+                    color: "#FFFFFF",
+                    size: "sm",
+                    margin: "sm"
+                  }
+                ],
+                backgroundColor: "#DC2626",
+                paddingAll: "20px",
+                cornerRadius: "12px"
+              }
+            ]
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: language === 'th' ? "💰 จำนวนเงิน" : "💰 Amount",
+                size: "xs",
+                color: "#6B7280",
+                margin: "md"
+              },
+              {
+                type: "text",
+                text: `฿${depositAmount.toLocaleString()}`,
+                size: "xl",
+                weight: "bold",
+                color: "#DC2626"
+              },
+              {
+                type: "separator",
+                margin: "lg"
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "text",
+                    text: language === 'th' ? "🏠 ทรัพย์สิน" : "🏠 Property",
+                    size: "xs",
+                    color: "#6B7280"
+                  },
+                  {
+                    type: "text",
+                    text: propertyAddress,
+                    size: "sm",
+                    wrap: true,
+                    weight: "bold"
+                  }
+                ],
+                margin: "lg"
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "text",
+                    text: language === 'th' ? "📅 ควรคืนวันที่" : "📅 Due Date",
+                    size: "xs",
+                    color: "#6B7280"
+                  },
+                  {
+                    type: "text",
+                    text: expectedDateStr,
+                    size: "sm",
+                    weight: "bold"
+                  }
+                ],
+                margin: "md"
+              },
+              {
+                type: "separator",
+                margin: "lg"
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "text",
+                    text: language === 'th' ? "🛡️ Deposit Shield พร้อมช่วย" : "🛡️ Deposit Shield Ready",
+                    size: "md",
+                    weight: "bold",
+                    color: "#0C3B2E",
+                    margin: "md"
+                  },
+                  {
+                    type: "text",
+                    text: hasOpenCase 
+                      ? (language === 'th' ? "คุณมีคดีเปิดอยู่แล้ว\nเข้าแอปเพื่อดูสถานะ" : "You have an open case\nCheck app for status")
+                      : (language === 'th' ? "เปิดคดีอัตโนมัติด้วยข้อมูลเงินมัดจำของคุณ" : "Auto-open case with your deposit data"),
+                    size: "xs",
+                    color: "#6B7280",
+                    wrap: true,
+                    margin: "sm"
+                  }
+                ]
+              }
+            ],
+            paddingAll: "20px"
+          },
+          footer: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                action: {
+                  type: "uri",
+                  label: hasOpenCase 
+                    ? (language === 'th' ? "ดูคดี" : "View Case")
+                    : (language === 'th' ? "เปิดคดีเลย" : "Open Case Now"),
+                  uri: `https://app.leaseshield.asia${hasOpenCase ? '/cases' : `/resolve-case?depositId=${deposit.id}&auto=true`}`
+                },
+                color: "#DC2626",
+                height: "sm"
+              },
+              {
+                type: "button",
+                style: "link",
+                action: {
+                  type: "uri",
+                  label: language === 'th' ? "ดูรายละเอียด" : "View Details",
+                  uri: `https://app.leaseshield.asia/deposit-tracker`
+                },
+                height: "sm"
+              }
+            ],
+            spacing: "sm",
+            paddingAll: "20px"
+          }
+        };
         
         messageText = language === 'th' ?
-          `🚨 แจ้งเตือนด่วน Lease Shield\n\nยังไม่ได้รับเงินมัดจำคืน\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n⏰ เกินกำหนด: ${daysOverdue} วัน\n\n📋 แนะนำ: เปิดคดี Resolve\n\nเปิดแอป → app.leaseshield.asia` :
-          `🚨 Lease Shield Urgent\n\nDeposit not returned\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n⏰ Overdue: ${daysOverdue} days\n\n📋 Recommended: Open case\n\nOpen app → app.leaseshield.asia`;
+          `🚨 แจ้งเตือนด่วน Lease Shield\n\n💰 เงินมัดจำเกินกำหนด ${daysOverdue} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${depositAmount.toLocaleString()}\n⏰ ควรคืน: ${expectedDateStr}\n\n🛡️ Deposit Shield พร้อมช่วยคุณ!\n\n${hasOpenCase ? '📋 คุณมีคดีเปิดอยู่แล้ว\nเข้าแอปเพื่อดูสถานะ' : '📋 คลิกเพื่อเปิดคดีอัตโนมัติ\nข้อมูลเงินมัดจำจะถูกกรอกให้อัตโนมัติ'}\n\nเปิดแอป → https://app.leaseshield.asia${hasOpenCase ? '/cases' : `/resolve-case?depositId=${deposit.id}&auto=true`}` :
+          `🚨 Lease Shield Urgent Alert\n\n💰 Deposit ${daysOverdue} days overdue\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${depositAmount.toLocaleString()}\n⏰ Due: ${expectedDateStr}\n\n🛡️ Deposit Shield is ready to help!\n\n${hasOpenCase ? '📋 You have an open case\nCheck app for status' : '📋 Click to auto-open case\nDeposit data will be pre-filled'}\n\nOpen app → https://app.leaseshield.asia${hasOpenCase ? '/cases' : `/resolve-case?depositId=${deposit.id}&auto=true`}`;
 
         if (await sendNotification(user, messageText, subject, flexMessage, notificationType, 'deposit', deposit.id)) {
-          notifications.push({ user: user.email, type: notificationType, deposit: deposit.id });
+          notifications.push({ 
+            user: user.email, 
+            type: notificationType, 
+            deposit: deposit.id,
+            automation: 'deposit_shield',
+            hasOpenCase 
+          });
         }
       }
     }
