@@ -145,69 +145,98 @@ function DashboardContent() {
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
 
+  // ✅ NEW: Client-side overdue deposit checker
+  const [checkingOverdue, setCheckingOverdue] = React.useState(false);
+  
+  const checkAndNotifyOverdue = React.useCallback(async () => {
+    if (!deposits || deposits.length === 0) {
+      toast.info(language === 'th' ? 'ไม่พบเงินมัดจำที่จะตรวจสอบ' : 'No deposits to check for overdue.');
+      return;
+    }
+    
+    setCheckingOverdue(true);
+    try {
+      const now = new Date();
+      let notificationsSent = 0;
+      let overdueDepositsFound = 0;
+      
+      for (const deposit of deposits) {
+        if (deposit.status !== 'tracking' || !deposit.expected_return_date) continue;
+        
+        const expectedDate = new Date(deposit.expected_return_date);
+        const daysDiff = Math.floor((expectedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // If overdue, send notification
+        if (daysDiff < 0) {
+          overdueDepositsFound++;
+          console.log(`🚨 Overdue deposit found: ${deposit.id}, ${Math.abs(daysDiff)} days overdue`);
+          
+          try {
+            const response = await base44.functions.invoke('sendOverdueNotification', {
+              deposit: {
+                id: deposit.id,
+                deposit_amount: deposit.deposit_amount,
+                property_address: deposit.property_address,
+                expected_return_date: deposit.expected_return_date,
+                daysOverdue: Math.abs(daysDiff)
+              }
+            });
+            
+            if (response.data?.success) {
+              notificationsSent++;
+              console.log(`✅ Notification sent for deposit ${deposit.id}`);
+            } else {
+              console.warn(`⚠️ sendOverdueNotification function call for deposit ${deposit.id} returned no success or failure:`, response.data);
+            }
+          } catch (err) {
+            console.error(`❌ Failed to send notification for deposit ${deposit.id}:`, err);
+            toast.error(language === 'th' ? `ไม่สามารถส่งการแจ้งเตือนสำหรับเงินมัดจำ ${deposit.id} ได้` : `Failed to send notification for deposit ${deposit.id}`);
+          }
+        }
+      }
+      
+      if (notificationsSent > 0) {
+        toast.success(
+          language === 'th' 
+            ? `ส่งการแจ้งเตือน ${notificationsSent} รายการ (${overdueDepositsFound} พบ)` 
+            : `Sent ${notificationsSent} notifications (${overdueDepositsFound} found)`
+        );
+      } else if (overdueDepositsFound > 0) {
+        toast.warning(
+          language === 'th' 
+            ? `พบเงินมัดจำเกินกำหนด ${overdueDepositsFound} รายการ แต่ไม่สามารถส่งการแจ้งเตือนได้` 
+            : `Found ${overdueDepositsFound} overdue deposits, but no notifications were sent.`
+        );
+      } else {
+        toast.info(language === 'th' ? 'ไม่พบเงินมัดจำที่เกินกำหนด' : 'No overdue deposits found');
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['notificationLogs'] });
+    } catch (error) {
+      console.error('Failed to check overdue deposits:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถตรวจสอบได้' : 'Check failed');
+    } finally {
+      setCheckingOverdue(false);
+    }
+  }, [deposits, language, toast, queryClient]);
+
   // Admin: Manual reminder trigger
   const [triggeringReminders, setTriggeringReminders] = useState(false);
-  const [testingOverdue, setTestingOverdue] = useState(false);
-  const [testingSettings, setTestingSettings] = useState(false);
+  const [testingOverdue, setTestingOverdue] = useState(false); // Kept, but button removed from UI
+  const [testingSettings, setTestingSettings] = useState(false); // Kept, but button removed from UI
   const [testingEmail, setTestingEmail] = useState(false);
   
   const triggerReminders = async () => {
     setTriggeringReminders(true);
     try {
-      const response = await base44.functions.invoke('checkAllReminders');
-      console.log('✅ Full response:', response.data);
-      
-      const diag = response.data?.diagnostics || {};
-      
-      // Show detailed diagnostic alert
-      let message = `📊 DIAGNOSTIC REPORT\n\n`;
-      message += `✅ Notifications Sent: ${response.data?.notifications_sent || 0}\n\n`;
-      message += `📋 Deposits Checked: ${diag.deposits_checked || 0}\n`;
-      message += `🚨 Overdue Found: ${diag.overdue_found || 0}\n`;
-      message += `📤 Notifications Attempted: ${diag.notifications_attempted || 0}\n\n`;
-      
-      if (diag.overdue_details?.length > 0) {
-        message += `🔴 OVERDUE DEPOSITS:\n`;
-        diag.overdue_details.forEach(d => {
-          message += `\n- ฿${d.amount?.toLocaleString()} at ${d.property}\n`;
-          message += `  ${d.days_overdue} days overdue\n`;
-          message += `  User: ${d.user}\n`;
-        });
-        message += `\n`;
-      }
-      
-      if (diag.skipped_reasons?.length > 0) {
-        message += `⏭️ SKIPPED (first 5):\n`;
-        diag.skipped_reasons.slice(0, 5).forEach(reason => {
-          message += `\n- ${reason}`;
-        });
-        message += `\n\n`;
-      }
-      
-      if (diag.errors?.length > 0) {
-        message += `❌ ERRORS:\n`;
-        diag.errors.forEach(err => {
-          message += `\n- ${err}`;
-        });
-      }
-      
-      alert(message);
-      
-      toast.success(
-        language === 'th' 
-          ? `ส่งการแจ้งเตือน ${response.data?.notifications_sent || 0} รายการ` 
-          : `Sent ${response.data?.notifications_sent || 0} notifications`
-      );
-      queryClient.invalidateQueries({ queryKey: ['notificationLogs'] });
-    } catch (error) {
-      console.error('Failed to trigger reminders:', error);
-      toast.error(language === 'th' ? 'ไม่สามารถส่งการแจ้งเตือนได้' : 'Failed to send notifications');
+      // Call the new client-side checker instead
+      await checkAndNotifyOverdue();
     } finally {
       setTriggeringReminders(false);
     }
   };
 
-  const testOverdueCheck = async () => {
+  const testOverdueCheck = async () => { // Kept, but button removed from UI
     setTestingOverdue(true);
     try {
       const response = await base44.functions.invoke('testOverdueCheck');
@@ -238,7 +267,7 @@ function DashboardContent() {
     }
   };
 
-  const testUserSettings = async () => {
+  const testUserSettings = async () => { // Kept, but button removed from UI
     setTestingSettings(true);
     try {
       const response = await base44.functions.invoke('testUserSettings');
@@ -587,7 +616,7 @@ function DashboardContent() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Admin: Test Buttons */}
+                {/* Admin: Test Buttons - UPDATED to use new function */}
                 {isAdmin && (
                   <>
                     <button
@@ -634,122 +663,36 @@ function DashboardContent() {
                     </button>
 
                     <button
-                      onClick={testOverdueCheck}
-                      disabled={testingOverdue}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: testingOverdue ? '#9CA3AF' : '#10B981',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        cursor: testingOverdue ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        opacity: testingOverdue ? 0.7 : 1,
-                        whiteSpace: 'nowrap'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!testingOverdue) {
-                          e.target.style.backgroundColor = '#059669';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!testingOverdue) {
-                          e.target.style.backgroundColor = '#10B981';
-                        }
-                      }}
-                    >
-                      {testingOverdue ? (
-                        <>
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          {strings.testing}
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="w-3 h-3" />
-                          {strings.testOverdue}
-                        </>
-                      )}
-                    </button>
-                    
-                    <button
-                      onClick={testUserSettings}
-                      disabled={testingSettings}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: testingSettings ? '#9CA3AF' : '#F59E0B',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        cursor: testingSettings ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        opacity: testingSettings ? 0.7 : 1,
-                        whiteSpace: 'nowrap'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!testingSettings) {
-                          e.target.style.backgroundColor = '#D97706';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!testingSettings) {
-                          e.target.style.backgroundColor = '#F59E0B';
-                        }
-                      }}
-                    >
-                      {testingSettings ? (
-                        <>
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          {strings.testing}
-                        </>
-                      ) : (
-                        <>
-                          <Settings className="w-3 h-3" />
-                          Check Settings
-                        </>
-                      )}
-                    </button>
-
-                    <button
                       onClick={triggerReminders}
-                      disabled={triggeringReminders}
+                      disabled={triggeringReminders || checkingOverdue}
                       style={{
                         padding: '6px 12px',
-                        backgroundColor: triggeringReminders ? '#9CA3AF' : '#3B82F6',
+                        backgroundColor: (triggeringReminders || checkingOverdue) ? '#9CA3AF' : '#3B82F6',
                         color: '#FFFFFF',
                         border: 'none',
                         borderRadius: '8px',
                         fontSize: '12px',
                         fontWeight: '600',
-                        cursor: triggeringReminders ? 'not-allowed' : 'pointer',
+                        cursor: (triggeringReminders || checkingOverdue) ? 'not-allowed' : 'pointer',
                         transition: 'all 0.2s ease',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '4px',
-                        opacity: triggeringReminders ? 0.7 : 1,
+                        opacity: (triggeringReminders || checkingOverdue) ? 0.7 : 1,
                         whiteSpace: 'nowrap'
                       }}
                       onMouseEnter={(e) => {
-                        if (!triggeringReminders) {
+                        if (!triggeringReminders && !checkingOverdue) {
                           e.target.style.backgroundColor = '#2563EB';
                         }
                       }}
                       onMouseLeave={(e) => {
-                        if (!triggeringReminders) {
+                        if (!triggeringReminders && !checkingOverdue) {
                           e.target.style.backgroundColor = '#3B82F6';
                         }
                       }}
                     >
-                      {triggeringReminders ? (
+                      {(triggeringReminders || checkingOverdue) ? (
                         <>
                           <Zap className="w-3 h-3 animate-spin" />
                           {strings.triggering}
@@ -757,7 +700,7 @@ function DashboardContent() {
                       ) : (
                         <>
                           <Bell className="w-3 h-3" />
-                          Send Now
+                          Send Now (New)
                         </>
                       )}
                     </button>

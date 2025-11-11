@@ -1,0 +1,102 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+/**
+ * Simple notification sender for overdue deposits
+ * Called from frontend with deposit details
+ */
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Authenticate user
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { deposit } = await req.json();
+    
+    if (!deposit) {
+      return Response.json({ error: 'No deposit data provided' }, { status: 400 });
+    }
+
+    const language = user.language || 'en';
+    const daysOverdue = deposit.daysOverdue || 0;
+    const depositAmount = deposit.deposit_amount || 0;
+    const propertyAddress = deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
+    
+    const subject = language === 'th' 
+      ? '🚨 เงินมัดจำเกินกำหนด - Deposit Shield พร้อมช่วย' 
+      : '🚨 Deposit Overdue - Deposit Shield Ready';
+    
+    const messageText = language === 'th' ?
+      `🚨 แจ้งเตือนด่วน Lease Shield\n\n💰 เงินมัดจำเกินกำหนด ${daysOverdue} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield พร้อมช่วยคุณ!\n\n📋 คลิกเพื่อเปิดคดีอัตโนมัติ\nข้อมูลเงินมัดจำจะถูกกรอกให้อัตโนมัติ\n\nเปิดแอป → https://app.leaseshield.asia/resolve-case?depositId=${deposit.id}&auto=true` :
+      `🚨 Lease Shield Urgent Alert\n\n💰 Deposit ${daysOverdue} days overdue\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield is ready to help!\n\n📋 Click to auto-open case\nDeposit data will be pre-filled\n\nOpen app → https://app.leaseshield.asia/resolve-case?depositId=${deposit.id}&auto=true`;
+
+    let notificationSent = false;
+    let channel = '';
+
+    // Try LINE first
+    if (user.line_messaging_token && user.line_notifications) {
+      try {
+        await base44.functions.invoke('sendLineMessage', {
+          userId: user.line_messaging_token,
+          message: messageText
+        });
+        channel = 'LINE';
+        notificationSent = true;
+        console.log(`✅ LINE sent to ${user.email}`);
+      } catch (lineError) {
+        console.error(`❌ LINE failed:`, lineError);
+      }
+    }
+
+    // Fallback to email
+    if (!notificationSent && user.email_notifications) {
+      try {
+        await base44.integrations.Core.SendEmail({
+          from_name: 'Lease Shield',
+          to: user.email,
+          subject: subject,
+          body: messageText
+        });
+        channel = 'Email';
+        notificationSent = true;
+        console.log(`✅ Email sent to ${user.email}`);
+      } catch (emailError) {
+        console.error(`❌ Email failed:`, emailError);
+      }
+    }
+
+    // Log the notification
+    try {
+      await base44.entities.NotificationLog.create({
+        user_email: user.email,
+        notification_type: 'overdue_deposit',
+        channel: channel || 'None',
+        status: notificationSent ? 'sent' : 'failed',
+        related_entity_type: 'deposit',
+        related_entity_id: deposit.id,
+        message_preview: messageText.substring(0, 200)
+      });
+    } catch (logError) {
+      console.error('Failed to log notification:', logError);
+    }
+
+    return Response.json({ 
+      success: notificationSent,
+      channel: channel,
+      message: notificationSent 
+        ? `Notification sent via ${channel}` 
+        : 'No notification channels enabled'
+    });
+
+  } catch (error) {
+    console.error('❌ Notification error:', error);
+    return Response.json({ 
+      success: false,
+      error: error.message 
+    }, { status: 500 });
+  }
+});
