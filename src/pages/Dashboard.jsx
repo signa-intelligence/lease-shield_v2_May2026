@@ -158,7 +158,6 @@ function DashboardContent() {
           ? `ส่งการแจ้งเตือน ${response.data?.notifications_sent || 0} รายการ` 
           : `Sent ${response.data?.notifications_sent || 0} notifications`
       );
-      // Refresh notification logs (assuming there's a queryKey for notificationLogs)
       queryClient.invalidateQueries({ queryKey: ['notificationLogs'] });
     } catch (error) {
       console.error('Failed to trigger reminders:', error);
