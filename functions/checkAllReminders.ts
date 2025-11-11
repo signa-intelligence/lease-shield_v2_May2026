@@ -2,11 +2,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import { createDepositReminderFlex, createLeaseNoticeFlex, createRentReminderFlex } from './lineFlexTemplates.js';
 
 /**
- * Unified reminder check system
- * Checks all types of reminders: deposits, leases, rent payments
- * Sends notifications via LINE Flex Messages (primary) with email fallback
- * Logs all notifications to NotificationLog entity
- * Should be called by cron job daily
+ * Unified reminder check system with granular user preferences
+ * Checks: deposits, leases, rent payments
+ * Sends: LINE Flex Messages (primary) with email fallback
+ * Logs: All notifications to NotificationLog entity
+ * Respects: User preferences, quiet hours, timezone
  */
 
 Deno.serve(async (req) => {
@@ -22,9 +22,70 @@ Deno.serve(async (req) => {
 
     const getUserByEmail = (email) => users.find(u => u.email === email);
 
+    // Helper to check if notification is allowed based on user preferences
+    const isNotificationAllowed = (user, notificationType) => {
+      // Check if user has disabled this specific notification type
+      const prefs = user.notification_preferences || {};
+      
+      // Map notification types to preference keys
+      const typeMap = {
+        '30d_deposit': 'deposit_30d',
+        '7d_deposit': 'deposit_7d',
+        '3d_deposit': 'deposit_3d',
+        'overdue_deposit': 'deposit_overdue',
+        '30d_notice': 'lease_30d',
+        '7d_notice': 'lease_7d',
+        '3d_notice': 'lease_3d',
+        '0d_notice': 'lease_0d',
+        'rent_reminder': 'rent_reminder',
+        'maintenance_update': 'maintenance_updates'
+      };
+
+      const prefKey = typeMap[notificationType];
+      if (prefKey && prefs[prefKey] === false) {
+        console.log(`🔕 User ${user.email} disabled ${notificationType}`);
+        return false;
+      }
+
+      // Check quiet hours
+      if (user.quiet_hours?.enabled) {
+        const userTimezone = user.notification_timezone || 'Asia/Bangkok';
+        const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+        const currentHour = userTime.getHours();
+        const currentMinute = userTime.getMinutes();
+        const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+        const [startHour, startMin] = (user.quiet_hours.start || '22:00').split(':').map(Number);
+        const [endHour, endMin] = (user.quiet_hours.end || '08:00').split(':').map(Number);
+        const startTimeInMinutes = startHour * 60 + startMin;
+        const endTimeInMinutes = endHour * 60 + endMin;
+
+        let inQuietHours = false;
+        if (startTimeInMinutes > endTimeInMinutes) {
+          // Crosses midnight
+          inQuietHours = currentTimeInMinutes >= startTimeInMinutes || currentTimeInMinutes < endTimeInMinutes;
+        } else {
+          inQuietHours = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes < endTimeInMinutes;
+        }
+
+        if (inQuietHours) {
+          console.log(`🌙 User ${user.email} in quiet hours, skipping ${notificationType}`);
+          return false;
+        }
+      }
+
+      return true;
+    };
+
     // Helper to send notification with logging
     const sendNotification = async (user, messageText, subject, flexMessage = null, notificationType = '', relatedEntityType = '', relatedEntityId = '') => {
       if (!user) return false;
+
+      // Check if notification is allowed
+      if (!isNotificationAllowed(user, notificationType)) {
+        console.log(`⏭️ Skipping ${notificationType} for ${user.email} (user preferences)`);
+        return false;
+      }
 
       let channel = '';
       let success = false;

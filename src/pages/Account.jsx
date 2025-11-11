@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
-import NotificationSettings from "../components/settings/NotificationSettings";
+import NotificationSettings from "../components/settings/NotificationSettings"; // This import will be removed
+import NotificationPreferences from "../components/settings/NotificationPreferences"; // New import
+import NotificationAnalytics from "../components/dashboard/NotificationAnalytics"; // New import
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
@@ -2090,10 +2092,15 @@ export default function Account() {
           </CardContent>
         </Card>
 
-        <div className="mb-6">
-          <NotificationSettings 
+        {/* Notification Settings - SPLIT INTO TWO CARDS */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-6">
+          <NotificationPreferences 
             user={user} 
             onUpdate={handleNotificationUpdate}
+            colors={colors}
+          />
+          <NotificationAnalytics 
+            language={language}
             colors={colors}
           />
         </div>
