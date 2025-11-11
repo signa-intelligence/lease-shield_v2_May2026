@@ -325,7 +325,7 @@ export default function AcknowledgeMaintenance() {
           </CardContent>
         </Card>
 
-        {/* Communication History Card - FIXED CAMERA CAPTURE */}
+        {/* Communication History Card */}
         {maintenanceRequest?.communication_log && (
           <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
@@ -393,7 +393,7 @@ export default function AcknowledgeMaintenance() {
                 </div>
               )}
 
-              {/* FIXED: Chat Input Area with Working Camera */}
+              {/* Chat Input Area with Working Camera */}
               <div className="border-t pt-4" style={{ borderColor: colors.borderColor }}>
                 {/* Photo/Video Preview */}
                 {chatPhotos.length > 0 && (
@@ -447,7 +447,7 @@ export default function AcknowledgeMaintenance() {
                     <input
                       type="file"
                       accept="image/*,video/*"
-                      capture="user" // Changed from "environment" to "user"
+                      capture
                       multiple
                       onChange={handleChatPhotoUpload}
                       className="hidden"
@@ -529,7 +529,7 @@ export default function AcknowledgeMaintenance() {
           </Card>
         )}
 
-        {/* Update Status Card - FIXED CAMERA CAPTURE */}
+        {/* Update Status Card */}
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
@@ -598,7 +598,7 @@ export default function AcknowledgeMaintenance() {
                 />
               </div>
 
-              {/* FIXED: Completion Photos/Videos with Working Camera */}
+              {/* Completion Photos/Videos with Working Camera */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Camera className="w-4 h-4 inline mr-1" />
@@ -655,7 +655,7 @@ export default function AcknowledgeMaintenance() {
                     <input
                       type="file"
                       accept="image/*,video/*"
-                      capture="user" // Changed from "environment" to "user"
+                      capture
                       multiple
                       onChange={(e) => handlePhotoUpload(e, 'completion')}
                       className="hidden"
@@ -706,7 +706,7 @@ export default function AcknowledgeMaintenance() {
                 </div>
               </div>
 
-              {/* FIXED: Bill Photos/Videos with Working Camera */}
+              {/* Bill Photos/Videos with Working Camera */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Receipt className="w-4 h-4 inline mr-1" />
@@ -763,7 +763,7 @@ export default function AcknowledgeMaintenance() {
                     <input
                       type="file"
                       accept="image/*,video/*"
-                      capture="user" // Changed from "environment" to "user"
+                      capture
                       multiple
                       onChange={(e) => handlePhotoUpload(e, 'bill')}
                       className="hidden"

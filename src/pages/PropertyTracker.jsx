@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -907,7 +908,7 @@ export default function PropertyTracker() {
                           <input
                             type="file"
                             accept="image/*,video/*"
-                            capture="user"
+                            capture
                             multiple
                             onChange={handleNewRequestPhotoUpload}
                             className="hidden"
@@ -1197,7 +1198,7 @@ export default function PropertyTracker() {
                                   <input
                                     type="file"
                                     accept="image/*,video/*"
-                                    capture="user"
+                                    capture
                                     multiple
                                     onChange={(e) => handleChatPhotoUpload(e, request.id)}
                                     className="hidden"
