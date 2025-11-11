@@ -32,82 +32,79 @@ export default function StatsCard({
     cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
     textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
     textSecondary: isDarkMode ? '#9CA3AF' : '#64748b',
-    miniStatBg: isDarkMode ? '#353A3D' : '#F8FAFC'
+    miniStatBg: isDarkMode ? '#353A3D' : '#F8FAFC',
+    borderAccent: isDarkMode ? '#0C3B2E' : '#0C3B2E'
   };
 
-  // Convert bgGradient class to actual background style
-  let gradientStyle = null;
+  // Use solid brand colors instead of gradients
+  let cardStyle = {
+    backgroundColor: colors.cardBg,
+    borderLeft: scoreColor ? `4px solid ${scoreColor}` : '4px solid #0C3B2E'
+  };
+
+  // Special styling for gradient cards - use subtle brand colors
   if (bgGradient === 'bg-gradient-to-br from-ls-gold to-amber-600') {
-    gradientStyle = 'linear-gradient(135deg, #C7A338 0%, #D97706 100%)';
+    cardStyle = {
+      backgroundColor: isDarkMode ? '#2D2920' : '#FFFBEB',
+      borderLeft: '4px solid #C7A338'
+    };
   } else if (bgGradient === 'bg-gradient-to-br from-ls-charcoal to-slate-700') {
-    gradientStyle = 'linear-gradient(135deg, #1A1D1F 0%, #334155 100%)';
+    cardStyle = {
+      backgroundColor: isDarkMode ? '#1A1D1F' : '#F8FAFC',
+      borderLeft: '4px solid #1A1D1F'
+    };
   }
+
+  const isSpecialCard = !!bgGradient;
+  const textColor = isSpecialCard ? (bgGradient.includes('gold') ? '#C7A338' : '#1A1D1F') : colors.textPrimary;
+  const iconColor = isSpecialCard ? (bgGradient.includes('gold') ? '#C7A338' : '#1A1D1F') : (scoreColor || '#0C3B2E');
 
   return (
     <div
       style={{
-        background: gradientStyle || colors.cardBg,
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        ...cardStyle,
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         borderRadius: '16px',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         padding: '24px',
         position: 'relative'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
-        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+        e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
         e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
-      {!gradientStyle && (
-        <div style={{
-          position: 'absolute',
-          top: '-20px',
-          right: '-20px',
-          width: '100px',
-          height: '100px',
-          borderRadius: '50%',
-          background: scoreColor ? `radial-gradient(circle, ${scoreColor}20 0%, transparent 70%)` : 'radial-gradient(circle, rgba(12, 59, 46, 0.1) 0%, transparent 70%)',
-          pointerEvents: 'none'
-        }} />
-      )}
-
+      {/* Icon & Value */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <p className="text-sm font-semibold mb-2" style={{ 
-            color: gradientStyle ? '#FFFFFF' : colors.textSecondary,
-            letterSpacing: '0.02em',
+          <p className="text-xs font-bold mb-2" style={{ 
+            color: colors.textSecondary,
+            letterSpacing: '0.05em',
             textTransform: 'uppercase'
           }}>
             {title}
           </p>
           <p className="text-3xl font-bold" style={{ 
-            color: gradientStyle ? '#FFFFFF' : (scoreColor || colors.textPrimary),
+            color: textColor,
             letterSpacing: '-0.02em'
           }}>
             {value}
           </p>
         </div>
         <div style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '14px',
-          background: gradientStyle 
-            ? 'rgba(255, 255, 255, 0.2)' 
-            : scoreColor 
-              ? `linear-gradient(135deg, ${scoreColor}20 0%, ${scoreColor}10 100%)`
-              : 'linear-gradient(135deg, rgba(12, 59, 46, 0.1) 0%, rgba(12, 59, 46, 0.05) 100%)',
+          width: '48px',
+          height: '48px',
+          borderRadius: '12px',
+          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+          justifyContent: 'center'
         }}>
-          <Icon className="w-7 h-7" style={{ 
-            color: gradientStyle ? '#FFFFFF' : (scoreColor || '#0C3B2E')
-          }} />
+          <Icon className="w-6 h-6" style={{ color: iconColor }} />
         </div>
       </div>
 
@@ -122,7 +119,10 @@ export default function StatsCard({
         <div className="mt-4">
           <ProtectionScoreGauge score={scoreValue} />
           {scoreStatus && (
-            <Badge className="mt-3 w-full justify-center bg-white/90 border-none text-xs font-bold" style={{ color: scoreColor }}>
+            <Badge className="mt-3 w-full justify-center border-none text-xs font-bold" style={{ 
+              backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+              color: scoreColor 
+            }}>
               {scoreStatus}
             </Badge>
           )}
@@ -132,17 +132,17 @@ export default function StatsCard({
       {miniStats && miniStats.length > 0 && (
         <div className="grid grid-cols-2 gap-2 mt-4">
           {miniStats.map((stat, idx) => (
-            <div key={idx} className="p-3 rounded-xl" style={{ 
-              backgroundColor: gradientStyle ? 'rgba(255, 255, 255, 0.2)' : colors.miniStatBg,
-              backdropFilter: gradientStyle ? 'blur(10px)' : 'none'
+            <div key={idx} className="p-3 rounded-lg" style={{ 
+              backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+              border: `1px solid ${colors.borderAccent}20`
             }}>
               <p className="text-xs font-semibold mb-1" style={{ 
-                color: gradientStyle ? '#FFFFFF' : colors.textSecondary
+                color: colors.textSecondary
               }}>
                 {stat.label}
               </p>
               <p className="text-lg font-bold" style={{ 
-                color: gradientStyle ? '#FFFFFF' : colors.textPrimary
+                color: colors.textPrimary
               }}>
                 {stat.value}
               </p>
@@ -187,31 +187,22 @@ export default function StatsCard({
             style={{
               width: '100%',
               padding: '10px 20px',
-              backgroundColor: gradientStyle ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-              color: gradientStyle ? '#FFFFFF' : '#0C3B2E',
+              backgroundColor: 'transparent',
+              color: '#0C3B2E',
               borderRadius: '10px',
               fontWeight: '600',
               fontSize: '14px',
-              border: gradientStyle ? '1px solid rgba(255, 255, 255, 0.3)' : '2px solid #0C3B2E',
+              border: '2px solid #0C3B2E',
               cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              backdropFilter: gradientStyle ? 'blur(10px)' : 'none'
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
             onMouseEnter={(e) => {
-              if (gradientStyle) {
-                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-              } else {
-                e.target.style.backgroundColor = '#0C3B2E';
-                e.target.style.color = '#FFFFFF';
-              }
+              e.target.style.backgroundColor = '#0C3B2E';
+              e.target.style.color = '#FFFFFF';
             }}
             onMouseLeave={(e) => {
-              if (gradientStyle) {
-                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-              } else {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.color = '#0C3B2E';
-              }
+              e.target.style.backgroundColor = 'transparent';
+              e.target.style.color = '#0C3B2E';
             }}
           >
             {actionButton.label}
