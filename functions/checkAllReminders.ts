@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import { createDepositReminderFlex, createLeaseNoticeFlex, createRentReminderFlex } from './lineFlexTemplates.js';
 
@@ -24,9 +25,19 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    const deposits = await base44.asServiceRole.entities.DepositTracker.list();
-    const leases = await base44.asServiceRole.entities.Lease.list();
-    const users = await base44.asServiceRole.entities.User.list();
+    // ✅ FIXED: Use filter() instead of list() to ensure we get all deposits
+    const deposits = await base44.asServiceRole.entities.DepositTracker.filter({});
+    const leases = await base44.asServiceRole.entities.Lease.filter({});
+    
+    // Get all users - we'll match them by email
+    let users = [];
+    try {
+      users = await base44.asServiceRole.functions.invoke('getAllUsers');
+      users = users.data || [];
+    } catch (err) {
+      console.error('⚠️ Could not fetch all users, falling back to per-deposit user fetch:', err);
+      diagnostics.errors.push(`Failed to fetch all users: ${err.message}`);
+    }
     
     const now = new Date();
     const notifications = [];
@@ -37,7 +48,13 @@ Deno.serve(async (req) => {
     diagnostics.deposits_checked = deposits.length;
     diagnostics.users_checked = users.length;
 
-    const getUserByEmail = (email) => users.find(u => u.email === email);
+    const getUserByEmail = (email) => {
+      const user = users.find(u => u.email === email);
+      if (!user) {
+        console.log(`⚠️ User not found in users array: ${email}`);
+      }
+      return user;
+    };
 
     // Helper to check if notification is allowed based on user preferences
     const isNotificationAllowed = (user, notificationType) => {
