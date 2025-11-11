@@ -19,7 +19,7 @@ import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
-import { createRentReminderFlex } from '../functions/lineFlexTemplates';
+// REMOVED: createRentReminderFlex is now defined inline
 
 function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -361,13 +361,193 @@ function DashboardContent() {
 
       console.log('💰 FORCING rent reminder:', rentDeposit);
 
-      // Create Flex message
-      const flexMessage = createRentReminderFlex({
-        rentAmount: rentDeposit.rent_amount,
-        propertyAddress: rentDeposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A'),
-        dueDay: rentDeposit.rent_due_day,
-        daysUntilDue: rentDeposit.rent_alert_days_before || 3
-      }, language);
+      const daysUntilDue = rentDeposit.rent_alert_days_before || 3;
+      const propertyAddress = rentDeposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
+      const rentAmount = rentDeposit.rent_amount;
+      const dueDay = rentDeposit.rent_due_day;
+
+      // Create Flex message inline
+      const flexMessage = {
+        altText: language === 'th' 
+          ? `💰 เตือนชำระค่าเช่า: ฿${rentAmount.toLocaleString()}` 
+          : `💰 Rent Payment Reminder: ฿${rentAmount.toLocaleString()}`,
+        contents: {
+          type: 'bubble',
+          size: 'mega',
+          header: {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'text',
+                text: '💰',
+                size: 'xxl',
+                align: 'center'
+              },
+              {
+                type: 'text',
+                text: language === 'th' ? 'เตือนชำระค่าเช่า' : 'Rent Payment Reminder',
+                weight: 'bold',
+                size: 'xl',
+                align: 'center',
+                color: '#FFFFFF',
+                margin: 'md'
+              }
+            ],
+            backgroundColor: '#0C3B2E',
+            paddingAll: '20px'
+          },
+          body: {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '🏠',
+                    size: 'lg',
+                    flex: 0
+                  },
+                  {
+                    type: 'text',
+                    text: propertyAddress,
+                    wrap: true,
+                    color: '#1A1D1F',
+                    size: 'sm',
+                    flex: 1,
+                    margin: 'sm'
+                  }
+                ],
+                margin: 'lg'
+              },
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '💵',
+                    size: 'lg',
+                    flex: 0
+                  },
+                  {
+                    type: 'text',
+                    text: `฿${rentAmount.toLocaleString()}`,
+                    wrap: true,
+                    color: '#C7A338',
+                    size: 'xl',
+                    weight: 'bold',
+                    flex: 1,
+                    margin: 'sm'
+                  }
+                ],
+                margin: 'lg'
+              },
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '📅',
+                    size: 'lg',
+                    flex: 0
+                  },
+                  {
+                    type: 'text',
+                    text: language === 'th' 
+                      ? `ครบกำหนด: วันที่ ${dueDay} ของเดือน` 
+                      : `Due: Day ${dueDay} of month`,
+                    wrap: true,
+                    color: '#1A1D1F',
+                    size: 'sm',
+                    flex: 1,
+                    margin: 'sm'
+                  }
+                ],
+                margin: 'lg'
+              },
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '⏰',
+                    size: 'lg',
+                    flex: 0
+                  },
+                  {
+                    type: 'text',
+                    text: language === 'th' 
+                      ? `เหลืออีก ${daysUntilDue} วัน` 
+                      : `${daysUntilDue} days until due`,
+                    wrap: true,
+                    color: '#DC2626',
+                    size: 'sm',
+                    weight: 'bold',
+                    flex: 1,
+                    margin: 'sm'
+                  }
+                ],
+                margin: 'lg'
+              },
+              {
+                type: 'separator',
+                margin: 'xl'
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                contents: [
+                  {
+                    type: 'text',
+                    text: language === 'th' ? '💡 เคล็ดลับ' : '💡 Tip',
+                    size: 'sm',
+                    color: '#047857',
+                    weight: 'bold'
+                  },
+                  {
+                    type: 'text',
+                    text: language === 'th' 
+                      ? 'ชำระก่อนกำหนดเพื่อหลีกเลี่ยงค่าปรับ' 
+                      : 'Pay early to avoid late fees',
+                    size: 'xs',
+                    color: '#64748b',
+                    wrap: true,
+                    margin: 'sm'
+                  }
+                ],
+                margin: 'xl',
+                paddingAll: '12px',
+                backgroundColor: '#F0FDF4',
+                cornerRadius: '8px'
+              }
+            ],
+            paddingAll: '20px'
+          },
+          footer: {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'button',
+                action: {
+                  type: 'uri',
+                  label: language === 'th' ? 'เปิดแอป' : 'Open App',
+                  uri: 'https://app.leaseshield.asia/DepositTracker'
+                },
+                style: 'primary',
+                color: '#0C3B2E'
+              }
+            ],
+            paddingAll: '12px'
+          }
+        }
+      };
 
       const channels = [];
 
@@ -392,8 +572,8 @@ function DashboardContent() {
           : '💰 Rent Payment Reminder - Lease Shield';
         
         const body = language === 'th'
-          ? `💰 เตือนชำระค่าเช่า\n\n🏠 ทรัพย์สิน: ${rentDeposit.property_address || 'ไม่ระบุ'}\n💵 จำนวน: ฿${rentDeposit.rent_amount.toLocaleString()}\n📅 ครบกำหนด: วันที่ ${rentDeposit.rent_due_day} ของเดือน\n⏰ เหลืออีก ${rentDeposit.rent_alert_days_before || 3} วัน\n\nเปิดแอป → https://app.leaseshield.asia/DepositTracker`
-          : `💰 Rent Payment Reminder\n\n🏠 Property: ${rentDeposit.property_address || 'N/A'}\n💵 Amount: ฿${rentDeposit.rent_amount.toLocaleString()}\n📅 Due: Day ${rentDeposit.rent_due_day} of the month\n⏰ ${rentDeposit.rent_alert_days_before || 3} days until due\n\nOpen app → https://app.leaseshield.asia/DepositTracker`;
+          ? `💰 เตือนชำระค่าเช่า\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${rentAmount.toLocaleString()}\n📅 ครบกำหนด: วันที่ ${dueDay} ของเดือน\n⏰ เหลืออีก ${daysUntilDue} วัน\n\n💡 เคล็ดลับ: ชำระก่อนกำหนดเพื่อหลีกเลี่ยงค่าปรับ\n\nเปิดแอป → https://app.leaseshield.asia/DepositTracker`
+          : `💰 Rent Payment Reminder\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${rentAmount.toLocaleString()}\n📅 Due: Day ${dueDay} of the month\n⏰ ${daysUntilDue} days until due\n\n💡 Tip: Pay early to avoid late fees\n\nOpen app → https://app.leaseshield.asia/DepositTracker`;
 
         try {
           await base44.integrations.Core.SendEmail({
@@ -418,7 +598,7 @@ function DashboardContent() {
           status: 'sent',
           related_entity_type: 'deposit',
           related_entity_id: rentDeposit.id,
-          message_preview: `Test: ฿${rentDeposit.rent_amount} due day ${rentDeposit.rent_due_day}`
+          message_preview: `Test: ฿${rentAmount} due day ${dueDay}`
         });
       }
 
@@ -432,10 +612,10 @@ function DashboardContent() {
         alert(
           `💰 RENT REMINDER SENT!\n\n` +
           `✅ Channels: ${channels.join(' & ')}\n\n` +
-          `Property: ${rentDeposit.property_address || 'N/A'}\n` +
-          `Amount: ฿${rentDeposit.rent_amount.toLocaleString()}\n` +
-          `Due day: ${rentDeposit.rent_due_day} of month\n` +
-          `Alert: ${rentDeposit.rent_alert_days_before || 3} days before\n\n` +
+          `Property: ${propertyAddress}\n` +
+          `Amount: ฿${rentAmount.toLocaleString()}\n` +
+          `Due day: ${dueDay} of month\n` +
+          `Alert: ${daysUntilDue} days before\n\n` +
           `🎯 FORCED TEST - Ignores schedule!\n` +
           `Check your ${channels.includes('LINE') ? 'LINE' : 'email'} now!`
         );
