@@ -171,7 +171,9 @@ export default function PropertyTracker() {
     },
   });
 
-  // NEW: Handle photo upload for new maintenance request
+  const language = user?.language || 'en';
+
+  // NEW: Handle photo/video upload for new maintenance request
   const handleNewRequestPhotoUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -187,8 +189,8 @@ export default function PropertyTracker() {
       
       setNewRequestPhotos(prev => [...prev, ...photoUrls]);
     } catch (error) {
-      console.error('Photo upload failed:', error);
-      alert(user?.language === 'th' ? 'อัปโหลดไม่สำเร็จ' : 'Upload failed');
+      console.error('Photo/video upload failed:', error);
+      alert(language === 'th' ? 'อัปโหลดไม่สำเร็จ' : 'Upload failed');
     } finally {
       setUploadingNewRequestPhoto(false);
       e.target.value = '';
@@ -217,8 +219,8 @@ export default function PropertyTracker() {
         [requestId]: [...(prev[requestId] || []), ...photoUrls]
       }));
     } catch (error) {
-      console.error('Photo upload failed:', error);
-      alert(user?.language === 'th' ? 'อัปโหลดไม่สำเร็จ' : 'Upload failed');
+      console.error('Photo/video upload failed:', error);
+      alert(language === 'th' ? 'อัปโหลดไม่สำเร็จ' : 'Upload failed');
     } finally {
       setUploadingChatPhoto(prev => ({ ...prev, [requestId]: false }));
       e.target.value = '';
@@ -240,7 +242,7 @@ export default function PropertyTracker() {
     try {
       const response = await base44.functions.invoke('addMaintenanceComment', {
         maintenanceId: requestId,
-        message: message || (user?.language === 'th' ? '[ส่งรูปภาพ]' : '[Photo sent]'),
+        message: message || (language === 'th' ? '[ส่งรูปภาพ]' : '[Photo sent]'), // Message updated to reflect photo/video
         photoUrls: chatPhotos[requestId] || [],
         senderType: 'Tenant'
       });
@@ -252,13 +254,12 @@ export default function PropertyTracker() {
       }
     } catch (error) {
       console.error('Failed to send message:', error);
-      alert(user?.language === 'th' ? 'ส่งข้อความไม่สำเร็จ' : 'Failed to send message');
+      alert(language === 'th' ? 'ส่งข้อความไม่สำเร็จ' : 'Failed to send message');
     } finally {
       setSendingChat(prev => ({ ...prev, [requestId]: false }));
     }
   };
 
-  const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
   const colors = {
@@ -316,9 +317,9 @@ export default function PropertyTracker() {
       send: "Send",
       attachPhoto: "Attach Photo",
       uploading: "Uploading...",
-      addPhotos: "Add Photos",
-      photos: "photos",
-      takePhoto: "Take Photo",
+      addPhotos: "Add Photos/Videos", // MODIFIED
+      photos: "files", // MODIFIED
+      takePhoto: "Take Photo/Video", // MODIFIED
       uploadFromGallery: "Upload from Gallery"
     },
     th: {
@@ -365,9 +366,9 @@ export default function PropertyTracker() {
       send: "ส่ง",
       attachPhoto: "แนบรูป",
       uploading: "กำลังอัปโหลด...",
-      addPhotos: "เพิ่มรูปภาพ",
-      photos: "รูป",
-      takePhoto: "ถ่ายรูป",
+      addPhotos: "เพิ่มรูป/วิดีโอ", // MODIFIED
+      photos: "ไฟล์", // MODIFIED
+      takePhoto: "ถ่ายรูป/วิดีโอ", // MODIFIED
       uploadFromGallery: "เลือกจากแกลเลอรี่"
     }
   };
@@ -848,39 +849,54 @@ export default function PropertyTracker() {
                       />
                     </div>
                     
-                    {/* UPDATED: Photo Upload Section with Camera & Gallery Options */}
+                    {/* UPDATED: Photo/Video Upload Section */}
                     <div>
                       <Label style={{ color: colors.textPrimary }}>
                         <Camera className="w-4 h-4 inline mr-1" />
                         {strings.addPhotos}
                       </Label>
                       
-                      {/* Photo Preview Grid */}
+                      {/* Photo/Video Preview Grid */}
                       {newRequestPhotos.length > 0 && (
                         <div className="grid grid-cols-3 gap-2 mt-2 mb-3">
-                          {newRequestPhotos.map((url, index) => (
-                            <div key={index} className="relative group">
-                              <img
-                                src={url}
-                                alt={`Photo ${index + 1}`}
-                                className="w-full h-20 object-cover rounded-lg"
-                                style={{ border: `1px solid ${colors.borderColor}` }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveNewRequestPhoto(index)}
-                                className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))}
+                          {newRequestPhotos.map((url, index) => {
+                            const isVideo = url.match(/\.(mp4|mov|avi|webm)$/i);
+                            return (
+                              <div key={index} className="relative group">
+                                {isVideo ? (
+                                  <video
+                                    src={url}
+                                    className="w-full h-20 object-cover rounded-lg"
+                                    style={{ border: `1px solid ${colors.borderColor}` }}
+                                    controls={false}
+                                    muted // Mute videos in preview for better UX
+                                    loop // Loop videos in preview
+                                    playsInline // Play inline on iOS
+                                  />
+                                ) : (
+                                  <img
+                                    src={url}
+                                    alt={`File ${index + 1}`}
+                                    className="w-full h-20 object-cover rounded-lg"
+                                    style={{ border: `1px solid ${colors.borderColor}` }}
+                                  />
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveNewRequestPhoto(index)}
+                                  className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                       
-                      {/* Upload Buttons - Camera & Gallery */}
+                      {/* Upload Buttons - Camera & Gallery with Video Support */}
                       <div className="grid grid-cols-2 gap-2 mt-2">
-                        {/* Take Photo Button */}
+                        {/* Take Photo/Video Button */}
                         <label
                           className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                           style={{
@@ -891,7 +907,7 @@ export default function PropertyTracker() {
                         >
                           <input
                             type="file"
-                            accept="image/*"
+                            accept="image/*,video/*" // MODIFIED
                             capture="environment"
                             multiple
                             onChange={handleNewRequestPhotoUpload}
@@ -922,7 +938,7 @@ export default function PropertyTracker() {
                         >
                           <input
                             type="file"
-                            accept="image/*"
+                            accept="image/*,video/*" // MODIFIED
                             multiple
                             onChange={handleNewRequestPhotoUpload}
                             className="hidden"
@@ -1099,15 +1115,26 @@ export default function PropertyTracker() {
                                     </p>
                                     {entry.photo_urls && entry.photo_urls.length > 0 && (
                                       <div className="grid grid-cols-3 gap-1 mt-2">
-                                        {entry.photo_urls.map((url, photoIndex) => (
-                                          <img
-                                            key={photoIndex}
-                                            src={url}
-                                            alt={`Photo ${photoIndex + 1}`}
-                                            className="w-full h-16 object-cover rounded cursor-pointer hover:opacity-80"
-                                            onClick={() => window.open(url, '_blank')}
-                                          />
-                                        ))}
+                                        {entry.photo_urls.map((url, photoIndex) => {
+                                          const isVideo = url.match(/\.(mp4|mov|avi|webm)$/i);
+                                          return isVideo ? (
+                                            <video
+                                              key={photoIndex}
+                                              src={url}
+                                              className="w-full h-16 object-cover rounded cursor-pointer hover:opacity-80"
+                                              onClick={() => window.open(url, '_blank')}
+                                              controls
+                                            />
+                                          ) : (
+                                            <img
+                                              key={photoIndex}
+                                              src={url}
+                                              alt={`Media ${photoIndex + 1}`}
+                                              className="w-full h-16 object-cover rounded cursor-pointer hover:opacity-80"
+                                              onClick={() => window.open(url, '_blank')}
+                                            />
+                                          );
+                                        })}
                                       </div>
                                     )}
                                   </div>
@@ -1115,32 +1142,46 @@ export default function PropertyTracker() {
                               })}
                             </div>
 
-                            {/* Chat Input */}
+                            {/* Chat Input with Video Support */}
                             <div className="p-4 border-t" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
-                              {/* Photo Preview */}
+                              {/* Photo/Video Preview */}
                               {chatPhotos[request.id] && chatPhotos[request.id].length > 0 && (
                                 <div className="grid grid-cols-4 gap-2 mb-3">
-                                  {chatPhotos[request.id].map((url, index) => (
-                                    <div key={index} className="relative group">
-                                      <img
-                                        src={url}
-                                        alt={`Attachment ${index + 1}`}
-                                        className="w-full h-16 object-cover rounded"
-                                      />
-                                      <button
-                                        onClick={() => handleRemoveChatPhoto(request.id, index)}
-                                        className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                        style={{ transform: 'translate(25%, -25%)' }}
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                  ))}
+                                  {chatPhotos[request.id].map((url, index) => {
+                                    const isVideo = url.match(/\.(mp4|mov|avi|webm)$/i);
+                                    return (
+                                      <div key={index} className="relative group">
+                                        {isVideo ? (
+                                          <video
+                                            src={url}
+                                            className="w-full h-16 object-cover rounded"
+                                            controls={false}
+                                            muted
+                                            loop
+                                            playsInline
+                                          />
+                                        ) : (
+                                          <img
+                                            src={url}
+                                            alt={`Attachment ${index + 1}`}
+                                            className="w-full h-16 object-cover rounded"
+                                          />
+                                        )}
+                                        <button
+                                          onClick={() => handleRemoveChatPhoto(request.id, index)}
+                                          className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                          style={{ transform: 'translate(25%, -25%)' }}
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
 
                               <div className="flex gap-2">
-                                {/* Photo Upload Button */}
+                                {/* Take Photo/Video Button */}
                                 <label
                                   className="flex-shrink-0 cursor-pointer"
                                   style={{
@@ -1156,7 +1197,8 @@ export default function PropertyTracker() {
                                 >
                                   <input
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/*,video/*" // MODIFIED
+                                    capture="environment"
                                     multiple
                                     onChange={(e) => handleChatPhotoUpload(e, request.id)}
                                     className="hidden"
@@ -1166,6 +1208,35 @@ export default function PropertyTracker() {
                                     <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
                                   ) : (
                                     <Camera className="w-5 h-5" style={{ color: colors.textPrimary }} />
+                                  )}
+                                </label>
+
+                                {/* Upload from Gallery Button with Video Support */}
+                                <label
+                                  className="flex-shrink-0 cursor-pointer"
+                                  style={{
+                                    padding: '10px',
+                                    borderRadius: '8px',
+                                    backgroundColor: uploadingChatPhoto[request.id] ? colors.borderColor : colors.inputBg,
+                                    border: `2px solid ${colors.borderColor}`,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
+                                  <input
+                                    type="file"
+                                    accept="image/*,video/*" // MODIFIED
+                                    multiple
+                                    onChange={(e) => handleChatPhotoUpload(e, request.id)}
+                                    className="hidden"
+                                    disabled={uploadingChatPhoto[request.id]}
+                                  />
+                                  {uploadingChatPhoto[request.id] ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
+                                  ) : (
+                                    <Image className="w-5 h-5" style={{ color: colors.textPrimary }} />
                                   )}
                                 </label>
 

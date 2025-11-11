@@ -85,8 +85,8 @@ export default function AcknowledgeMaintenance() {
         setBillPhotos(prev => [...prev, ...photoUrls]);
       }
     } catch (error) {
-      console.error('Photo upload failed:', error);
-      alert('Failed to upload photos. Please try again.');
+      console.error('Photo/video upload failed:', error);
+      alert('Failed to upload files. Please try again.');
     } finally {
       setUploadingPhotos(false);
       e.target.value = '';
@@ -145,8 +145,8 @@ export default function AcknowledgeMaintenance() {
       
       setChatPhotos(prev => [...prev, ...photoUrls]);
     } catch (error) {
-      console.error('Chat photo upload failed:', error);
-      alert('Failed to upload chat photos. Please try again.');
+      console.error('Chat media upload failed:', error);
+      alert('Failed to upload files. Please try again.');
     } finally {
       setUploadingPhotos(false);
       e.target.value = ''; // Clear input field
@@ -325,7 +325,7 @@ export default function AcknowledgeMaintenance() {
           </CardContent>
         </Card>
 
-        {/* Communication History Card - UPDATED WITH CHAT INPUT */}
+        {/* Communication History Card - UPDATED WITH VIDEO SUPPORT */}
         {maintenanceRequest?.communication_log && (
           <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
@@ -335,7 +335,7 @@ export default function AcknowledgeMaintenance() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {/* Chat Messages */}
+              {/* Chat Messages with Video Support */}
               {maintenanceRequest.communication_log.length > 0 && (
                 <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
                   {maintenanceRequest.communication_log.map((entry, index) => {
@@ -366,15 +366,26 @@ export default function AcknowledgeMaintenance() {
                         </p>
                         {entry.photo_urls && entry.photo_urls.length > 0 && (
                           <div className="grid grid-cols-3 gap-1 mt-2">
-                            {entry.photo_urls.map((url, photoIndex) => (
-                              <img
-                                key={photoIndex}
-                                src={url}
-                                alt={`Photo ${photoIndex + 1}`}
-                                className="w-full h-16 object-cover rounded cursor-pointer hover:opacity-80"
-                                onClick={() => window.open(url, '_blank')}
-                              />
-                            ))}
+                            {entry.photo_urls.map((url, photoIndex) => {
+                              const isVideo = url.match(/\.(mp4|mov|avi|webm)$/i);
+                              return isVideo ? (
+                                <video
+                                  key={photoIndex}
+                                  src={url}
+                                  className="w-full h-16 object-cover rounded cursor-pointer hover:opacity-80"
+                                  onClick={() => window.open(url, '_blank')}
+                                  controls
+                                />
+                              ) : (
+                                <img
+                                  key={photoIndex}
+                                  src={url}
+                                  alt={`Media ${photoIndex + 1}`}
+                                  className="w-full h-16 object-cover rounded cursor-pointer hover:opacity-80"
+                                  onClick={() => window.open(url, '_blank')}
+                                />
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -383,33 +394,44 @@ export default function AcknowledgeMaintenance() {
                 </div>
               )}
 
-              {/* UPDATED: Chat Input Area with Camera & Gallery */}
+              {/* Chat Input Area with Video Support */}
               <div className="border-t pt-4" style={{ borderColor: colors.borderColor }}>
-                {/* Photo Preview */}
+                {/* Photo/Video Preview */}
                 {chatPhotos.length > 0 && (
                   <div className="grid grid-cols-4 gap-2 mb-3">
-                    {chatPhotos.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={url}
-                          alt={`Attachment ${index + 1}`}
-                          className="w-full h-16 object-cover rounded"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveChatPhoto(index)}
-                          className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          style={{ transform: 'translate(25%, -25%)' }}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
+                    {chatPhotos.map((url, index) => {
+                      const isVideo = url.match(/\.(mp4|mov|avi|webm)$/i);
+                      return (
+                        <div key={index} className="relative group">
+                          {isVideo ? (
+                            <video
+                              src={url}
+                              className="w-full h-16 object-cover rounded"
+                              controls={false}
+                            />
+                          ) : (
+                            <img
+                              src={url}
+                              alt={`Attachment ${index + 1}`}
+                              className="w-full h-16 object-cover rounded"
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveChatPhoto(index)}
+                            className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            style={{ transform: 'translate(25%, -25%)' }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
                 <div className="flex gap-2 items-center">
-                  {/* Take Photo Button */}
+                  {/* Take Photo/Video Button */}
                   <label
                     className="flex-shrink-0 cursor-pointer"
                     style={{
@@ -425,7 +447,7 @@ export default function AcknowledgeMaintenance() {
                   >
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       capture="environment"
                       multiple
                       onChange={handleChatPhotoUpload}
@@ -439,7 +461,7 @@ export default function AcknowledgeMaintenance() {
                     )}
                   </label>
 
-                  {/* Upload from Gallery Button */}
+                  {/* Upload from Gallery Button with Video Support */}
                   <label
                     className="flex-shrink-0 cursor-pointer"
                     style={{
@@ -455,7 +477,7 @@ export default function AcknowledgeMaintenance() {
                   >
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       multiple
                       onChange={handleChatPhotoUpload}
                       className="hidden"
@@ -481,7 +503,7 @@ export default function AcknowledgeMaintenance() {
                     }}
                     className="flex-1 p-3 border-2 rounded-lg"
                     style={{
-                      backgroundColor: colors.cardBg, // Assuming colors.inputBg defaults to colors.cardBg as it's not defined
+                      backgroundColor: colors.cardBg,
                       borderColor: colors.borderColor,
                       color: colors.textPrimary
                     }}
@@ -508,7 +530,7 @@ export default function AcknowledgeMaintenance() {
           </Card>
         )}
 
-        {/* Update Status Card - UPDATED WITH CAMERA & GALLERY OPTIONS */}
+        {/* Update Status Card - WITH VIDEO SUPPORT */}
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
@@ -577,40 +599,52 @@ export default function AcknowledgeMaintenance() {
                 />
               </div>
 
-              {/* UPDATED: Completion Photos with Camera & Gallery */}
+              {/* Completion Photos/Videos with Camera & Gallery */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Camera className="w-4 h-4 inline mr-1" />
-                  Completion Photos (Optional):
+                  Completion Photos/Videos (Optional):
                 </Label>
                 <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
-                  Upload photos showing the completed repair
+                  Upload photos or videos showing the completed repair
                 </p>
 
                 {completionPhotos.length > 0 && (
                   <div className="grid grid-cols-3 gap-2 mb-3">
-                    {completionPhotos.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={url}
-                          alt={`Completion ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                          style={{ border: `1px solid ${colors.borderColor}` }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePhoto(index, 'completion')}
-                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
+                    {completionPhotos.map((url, index) => {
+                      const isVideo = url.match(/\.(mp4|mov|avi|webm)$/i);
+                      return (
+                        <div key={index} className="relative group">
+                          {isVideo ? (
+                            <video
+                              src={url}
+                              className="w-full h-24 object-cover rounded-lg"
+                              style={{ border: `1px solid ${colors.borderColor}` }}
+                              controls
+                            />
+                          ) : (
+                            <img
+                              src={url}
+                              alt={`Completion ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                              style={{ border: `1px solid ${colors.borderColor}` }}
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePhoto(index, 'completion')}
+                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Take Photo */}
+                  {/* Take Photo/Video */}
                   <label
                     className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                     style={{
@@ -621,7 +655,7 @@ export default function AcknowledgeMaintenance() {
                   >
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       capture="environment"
                       multiple
                       onChange={(e) => handlePhotoUpload(e, 'completion')}
@@ -636,12 +670,12 @@ export default function AcknowledgeMaintenance() {
                     ) : (
                       <>
                         <Camera className="w-5 h-5" />
-                        <span className="font-medium text-sm">Take Photo</span>
+                        <span className="font-medium text-sm">Take Photo/Video</span>
                       </>
                     )}
                   </label>
 
-                  {/* Upload from Gallery */}
+                  {/* Upload from Gallery with Video Support */}
                   <label
                     className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                     style={{
@@ -652,7 +686,7 @@ export default function AcknowledgeMaintenance() {
                   >
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       multiple
                       onChange={(e) => handlePhotoUpload(e, 'completion')}
                       className="hidden"
@@ -673,40 +707,52 @@ export default function AcknowledgeMaintenance() {
                 </div>
               </div>
 
-              {/* UPDATED: Bill Photos with Camera & Gallery */}
+              {/* Bill Photos/Videos with Camera & Gallery */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Receipt className="w-4 h-4 inline mr-1" />
-                  Bill/Receipt Photos (Optional):
+                  Bill/Receipt Photos/Videos (Optional):
                 </Label>
                 <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
-                  Upload photos of repair bills or receipts
+                  Upload photos or videos of repair bills or receipts
                 </p>
 
                 {billPhotos.length > 0 && (
                   <div className="grid grid-cols-3 gap-2 mb-3">
-                    {billPhotos.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={url}
-                          alt={`Bill ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                          style={{ border: `1px solid ${colors.borderColor}` }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePhoto(index, 'bill')}
-                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
+                    {billPhotos.map((url, index) => {
+                      const isVideo = url.match(/\.(mp4|mov|avi|webm)$/i);
+                      return (
+                        <div key={index} className="relative group">
+                          {isVideo ? (
+                            <video
+                              src={url}
+                              className="w-full h-24 object-cover rounded-lg"
+                              style={{ border: `1px solid ${colors.borderColor}` }}
+                              controls
+                            />
+                          ) : (
+                            <img
+                              src={url}
+                              alt={`Bill ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                              style={{ border: `1px solid ${colors.borderColor}` }}
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePhoto(index, 'bill')}
+                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Take Photo */}
+                  {/* Take Photo/Video */}
                   <label
                     className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                     style={{
@@ -717,7 +763,7 @@ export default function AcknowledgeMaintenance() {
                   >
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       capture="environment"
                       multiple
                       onChange={(e) => handlePhotoUpload(e, 'bill')}
@@ -732,12 +778,12 @@ export default function AcknowledgeMaintenance() {
                     ) : (
                       <>
                         <Camera className="w-5 h-5" />
-                        <span className="font-medium text-sm">Take Photo</span>
+                        <span className="font-medium text-sm">Take Photo/Video</span>
                       </>
                     )}
                   </label>
 
-                  {/* Upload from Gallery */}
+                  {/* Upload from Gallery with Video Support */}
                   <label
                     className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                     style={{
@@ -748,7 +794,7 @@ export default function AcknowledgeMaintenance() {
                   >
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       multiple
                       onChange={(e) => handlePhotoUpload(e, 'bill')}
                       className="hidden"
