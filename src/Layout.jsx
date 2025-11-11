@@ -172,7 +172,13 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bg }}>
+    <div style={{ 
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      backgroundColor: colors.bg,
+      position: 'relative'
+    }}>
       <style>{`
         :root {
           --ls-forest: #0C3B2E;
@@ -191,7 +197,6 @@ export default function Layout({ children, currentPageName }) {
           height: 100%;
           width: 100%;
           overflow-x: hidden;
-          overscroll-behavior: none;
         }
 
         body {
@@ -201,20 +206,6 @@ export default function Layout({ children, currentPageName }) {
         
         h1, h2, h3, h4, h5, h6 {
           font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
-        }
-        
-        .main-content {
-          overflow-y: auto;
-          overflow-x: hidden;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        @media (display-mode: standalone) {
-          body {
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-          }
         }
 
         @keyframes pulse {
@@ -251,9 +242,15 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      <div className="fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 40,
         backgroundColor: colors.topBarBg,
-        borderBottomColor: colors.borderColor,
+        borderBottom: `1px solid ${colors.borderColor}`,
+        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
         paddingTop: 'env(safe-area-inset-top, 0px)',
         minHeight: '64px'
       }}>
@@ -323,26 +320,32 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      <main ref={mainContentRef} className="main-content flex-1" style={{
-        marginTop: 'calc(64px + env(safe-area-inset-top, 0px))',
-        marginBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
-        height: 'calc(100vh - 64px - 80px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))'
+      <div ref={mainContentRef} style={{
+        marginTop: '64px',
+        marginBottom: '80px',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        WebkitOverflowScrolling: 'touch'
       }}>
         {children}
-      </main>
+      </div>
 
-      <nav style={{
+      <div style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: 99999,
+        zIndex: 999999,
         backgroundColor: colors.bottomTabBg,
-        borderTop: `1px solid ${colors.borderColor}`,
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
-        boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)'
+        borderTop: `2px solid ${colors.borderColor}`,
+        boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
+        paddingBottom: '12px'
       }}>
-        <div className="flex items-center justify-around px-2 py-2" style={{
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-around',
+          padding: '8px',
           minHeight: '68px'
         }}>
           {navTabs.map((tab) => {
@@ -365,7 +368,8 @@ export default function Layout({ children, currentPageName }) {
                   minWidth: '60px',
                   maxWidth: '90px',
                   backgroundColor: isActive ? '#0C3B2E' : 'transparent',
-                  textDecoration: 'none'
+                  textDecoration: 'none',
+                  cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
@@ -378,8 +382,10 @@ export default function Layout({ children, currentPageName }) {
                   }
                 }}
               >
-                <Icon className="w-5 h-5 mb-1" style={{ 
-                  animation: isActive ? 'pulse 2s infinite' : 'none',
+                <Icon style={{ 
+                  width: '20px',
+                  height: '20px',
+                  marginBottom: '4px',
                   color: isActive ? '#FFFFFF' : colors.textPrimary
                 }} />
                 <span style={{ 
@@ -394,7 +400,7 @@ export default function Layout({ children, currentPageName }) {
             );
           })}
         </div>
-      </nav>
+      </div>
     </div>
   );
 }
