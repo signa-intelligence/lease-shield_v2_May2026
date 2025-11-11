@@ -62,12 +62,6 @@ function DashboardContent() {
     enabled: !!user,
   });
 
-  const { data: maintenanceRequests = [] } = useQuery({
-    queryKey: ['maintenance'],
-    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
-
   const handleRefresh = async () => {
     await queryClient.invalidateQueries();
     toast.success(language === 'th' ? 'รีเฟรชสำเร็จ' : 'Refreshed successfully');
@@ -249,6 +243,33 @@ function DashboardContent() {
   const [testingSettings, setTestingSettings] = useState(false); // Kept, but button removed from UI
   const [testingEmail, setTestingEmail] = useState(false);
 
+  // Add Test Flex button state
+  const [testingFlex, setTestingFlex] = React.useState(false);
+
+  const testFlexMessage = async () => {
+    setTestingFlex(true);
+    try {
+      const response = await base44.functions.invoke('testFlexMessage');
+      console.log('🎨 Flex test result:', response.data);
+      
+      if (response.data?.success) {
+        toast.success(
+          language === 'th' 
+            ? 'ส่ง Flex Card ทดสอบแล้ว! ตรวจสอบ LINE' 
+            : 'Test Flex Card sent! Check LINE'
+        );
+      } else {
+        toast.error(language === 'th' ? 'ส่งไม่สำเร็จ' : 'Failed to send');
+      }
+    } catch (error) {
+      console.error('Flex test error:', error);
+      toast.error(language === 'th' ? 'เกิดข้อผิดพลาด' : 'Error occurred');
+    } finally {
+      setTestingFlex(false);
+    }
+  };
+
+
   const testOverdueCheck = async () => { // Kept, but button removed from UI
     setTestingOverdue(true);
     try {
@@ -266,7 +287,7 @@ function DashboardContent() {
         alert(
           `🔍 OVERDUE CHECK RESULTS:\n\n` +
           `Total deposits: ${response.data.total_deposits}\n` +
-          `Overdue deposits: ${overdueCount}\n\n` +
+          `Overdue deposits: ${overdueCount}\n` +
           `Details:\n${JSON.stringify(response.data.overdue_list, null, 2)}`
         );
       } else {
@@ -523,6 +544,8 @@ function DashboardContent() {
       running: "Running...",
       scheduledSystem: "Scheduled System",
       checkAllUsers: "Check all users for reminders",
+      testFlex: "Test Flex Card",
+      testingFlex: "Sending...",
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -559,6 +582,8 @@ function DashboardContent() {
       running: "กำลังตรวจสอบ...",
       scheduledSystem: "ระบบตรวจสอบอัตโนมัติ",
       checkAllUsers: "ตรวจสอบการแจ้งเตือนของผู้ใช้ทั้งหมด",
+      testFlex: "ทดสอบ Flex",
+      testingFlex: "กำลังส่ง...",
     }
   };
 
@@ -630,6 +655,49 @@ function DashboardContent() {
                 {/* Admin: Comprehensive test buttons */}
                 {isAdmin && (
                   <>
+                    <button
+                      onClick={testFlexMessage}
+                      disabled={testingFlex}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: testingFlex ? '#9CA3AF' : '#8B5CF6',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: testingFlex ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        opacity: testingFlex ? 0.7 : 1,
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!testingFlex) {
+                          e.target.style.backgroundColor = '#7C3AED';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!testingFlex) {
+                          e.target.style.backgroundColor = '#8B5CF6';
+                        }
+                      }}
+                    >
+                      {testingFlex ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          {strings.testingFlex}
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-3 h-3" />
+                          {strings.testFlex}
+                        </>
+                      )}
+                    </button>
+
                     <button
                       onClick={testDirectEmail}
                       disabled={testingEmail}
