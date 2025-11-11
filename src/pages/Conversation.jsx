@@ -38,10 +38,9 @@ export default function ConversationPage() {
     queryKey: ['messages', conversationId],
     queryFn: () => base44.entities.Message.filter({ conversation_id: conversationId }, 'created_date'),
     enabled: !!conversationId,
-    refetchInterval: 3000, // Poll every 3 seconds
+    refetchInterval: 3000,
   });
 
-  // Mark messages as read
   useEffect(() => {
     if (!messages.length || !user?.email) return;
 
@@ -59,7 +58,6 @@ export default function ConversationPage() {
       }
     });
 
-    // Update conversation unread count
     if (conversation && unreadMessages.length > 0) {
       const unreadCount = conversation.unread_count || {};
       unreadCount[user.email] = 0;
@@ -67,7 +65,6 @@ export default function ConversationPage() {
     }
   }, [messages, user, conversation]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -76,7 +73,6 @@ export default function ConversationPage() {
     mutationFn: async (data) => {
       const message = await base44.entities.Message.create(data);
       
-      // Update conversation
       const otherParticipants = conversation.participants.filter(p => p.email !== user.email);
       const newUnreadCount = conversation.unread_count || {};
       otherParticipants.forEach(p => {
@@ -89,7 +85,6 @@ export default function ConversationPage() {
         unread_count: newUnreadCount
       });
 
-      // Send notifications
       for (const participant of otherParticipants) {
         await base44.functions.invoke('sendMessageNotification', {
           recipientEmail: participant.email,
@@ -150,30 +145,73 @@ export default function ConversationPage() {
   };
 
   const handleTemplateSelect = (template) => {
-    const content = language === 'th' ? template.content_th : template.content_en;
+    const content = user?.language === 'th' ? template.content_th : template.content_en;
     setMessageText(content);
     setShowTemplates(false);
   };
 
-  const language_str = user?.language || 'en';
-  const isDark = user?.theme === 'dark';
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40',
+  } : {
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB',
+  };
+
+  const t = {
+    en: {
+      back: "Back",
+      typeMessage: "Type a message...",
+    },
+    th: {
+      back: "กลับ",
+      typeMessage: "พิมพ์ข้อความ...",
+    }
+  };
+
+  const strings = t[language];
+
+  const getOtherParticipant = (conv) => {
+    if (!conv) return null;
+    return conv.participants?.find(p => p.email !== user?.email);
+  };
 
   const otherParticipant = getOtherParticipant(conversation);
 
   if (!conversation) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
+      <div style={{ 
+        minHeight: 'calc(100vh - 144px)',
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: colors.bg 
+      }}>
         <Loader2 className="w-8 h-8 animate-spin text-ls-forest" />
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col" style={{ backgroundColor: colors.bg }}>
+    <div style={{ 
+      backgroundColor: colors.bg,
+      minHeight: 'calc(100vh - 144px)',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
       {/* Header */}
-      <div className="border-b p-4 flex items-center gap-3" style={{
+      <div className="p-4 flex items-center gap-3" style={{
         backgroundColor: colors.cardBg,
-        borderBottomColor: colors.borderColor
+        borderBottom: `1px solid ${colors.borderColor}`
       }}>
         <Button
           variant="ghost"
@@ -184,7 +222,7 @@ export default function ConversationPage() {
         </Button>
         <div className="flex-1">
           <h2 className="font-bold" style={{ color: colors.textPrimary }}>
-            {otherParticipant?.name || strings[otherParticipant?.role]}
+            {otherParticipant?.name || (language === 'th' ? 'การสนทนา' : 'Conversation')}
           </h2>
           <p className="text-sm" style={{ color: colors.textSecondary }}>
             {conversation.subject}
@@ -193,7 +231,9 @@ export default function ConversationPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{
+        maxHeight: 'calc(100vh - 350px)'
+      }}>
         {messages.map((message) => {
           const isOwn = message.sender_email === user?.email;
           
@@ -257,9 +297,9 @@ export default function ConversationPage() {
       </div>
 
       {/* Message Composer */}
-      <div className="border-t p-4" style={{
+      <div className="p-4" style={{
         backgroundColor: colors.cardBg,
-        borderTopColor: colors.borderColor
+        borderTop: `1px solid ${colors.borderColor}`
       }}>
         {attachments.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
@@ -309,7 +349,7 @@ export default function ConversationPage() {
           <Textarea
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            placeholder={language === 'th' ? 'พิมพ์ข้อความ...' : 'Type a message...'}
+            placeholder={strings.typeMessage}
             className="flex-1 min-h-[44px] max-h-[120px]"
             style={{
               backgroundColor: colors.cardBg,
