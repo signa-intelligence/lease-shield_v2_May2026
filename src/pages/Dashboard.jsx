@@ -2,7 +2,7 @@
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Settings } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Settings, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, format } from "date-fns";
@@ -149,6 +149,7 @@ function DashboardContent() {
   const [triggeringReminders, setTriggeringReminders] = useState(false);
   const [testingOverdue, setTestingOverdue] = useState(false);
   const [testingSettings, setTestingSettings] = useState(false);
+  const [testingEmail, setTestingEmail] = useState(false);
   
   const triggerReminders = async () => {
     setTriggeringReminders(true);
@@ -253,6 +254,44 @@ function DashboardContent() {
       toast.error(language === 'th' ? 'การทดสอบล้มเหลว' : 'Test failed');
     } finally {
       setTestingSettings(false);
+    }
+  };
+
+  const testDirectEmail = async () => {
+    setTestingEmail(true);
+    try {
+      const response = await base44.functions.invoke('testDirectEmail');
+      console.log('📧 Email test result:', response.data);
+      
+      if (response.data?.success) {
+        alert(
+          `✅ TEST EMAIL SENT!\n\n` +
+          `Check your inbox: ${response.data.recipient}\n\n` +
+          `If you don't see it:\n` +
+          `1. Check spam/junk folder\n` +
+          `2. Wait 1-2 minutes\n` +
+          `3. Make sure ${response.data.recipient} is correct`
+        );
+        toast.success(language === 'th' ? 'ส่งอีเมลทดสอบแล้ว!' : 'Test email sent!');
+      } else {
+        alert(
+          `❌ EMAIL SEND FAILED:\n\n` +
+          `Error: ${response.data?.details || 'Unknown error'}\n\n` +
+          `This means your email service is NOT working.\n` +
+          `Contact support or check your Resend API key.`
+        );
+        toast.error(language === 'th' ? 'ส่งอีเมลไม่สำเร็จ' : 'Email send failed');
+      }
+    } catch (error) {
+      console.error('Failed to test email:', error);
+      alert(
+        `❌ EMAIL TEST ERROR:\n\n` +
+        `${error.message}\n\n` +
+        `Your email service might be broken.`
+      );
+      toast.error(language === 'th' ? 'ทดสอบล้มเหลว' : 'Test failed');
+    } finally {
+      setTestingEmail(false);
     }
   };
 
@@ -403,7 +442,9 @@ function DashboardContent() {
       triggerNow: "Send Reminders Now",
       triggering: "Sending...",
       testOverdue: "Test Overdue",
-      testing: "Testing..."
+      testing: "Testing...",
+      testEmail: "Test Email",
+      sending: "Sending...",
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -438,7 +479,9 @@ function DashboardContent() {
       triggerNow: "ส่งการแจ้งเตือนทันที",
       triggering: "กำลังส่ง...",
       testOverdue: "ทดสอบเงินมัดจำเกินกำหนด",
-      testing: "กำลังทดสอบ..."
+      testing: "กำลังทดสอบ...",
+      testEmail: "ทดสอบอีเมล",
+      sending: "กำลังส่ง...",
     }
   };
 
@@ -511,6 +554,49 @@ function DashboardContent() {
                 {isAdmin && (
                   <>
                     <button
+                      onClick={testDirectEmail}
+                      disabled={testingEmail}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: testingEmail ? '#9CA3AF' : '#EF4444',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: testingEmail ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        opacity: testingEmail ? 0.7 : 1,
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!testingEmail) {
+                          e.target.style.backgroundColor = '#DC2626';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!testingEmail) {
+                          e.target.style.backgroundColor = '#EF4444';
+                        }
+                      }}
+                    >
+                      {testingEmail ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          {strings.sending}
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="w-3 h-3" />
+                          {strings.testEmail}
+                        </>
+                      )}
+                    </button>
+
+                    <button
                       onClick={testOverdueCheck}
                       disabled={testingOverdue}
                       style={{
@@ -543,12 +629,12 @@ function DashboardContent() {
                       {testingOverdue ? (
                         <>
                           <Loader2 className="w-3 h-3 animate-spin" />
-                          Testing...
+                          {strings.testing}
                         </>
                       ) : (
                         <>
                           <AlertCircle className="w-3 h-3" />
-                          Test Overdue
+                          {strings.testOverdue}
                         </>
                       )}
                     </button>
@@ -586,7 +672,7 @@ function DashboardContent() {
                       {testingSettings ? (
                         <>
                           <Loader2 className="w-3 h-3 animate-spin" />
-                          Checking...
+                          {strings.testing}
                         </>
                       ) : (
                         <>
