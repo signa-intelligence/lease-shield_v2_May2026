@@ -22,8 +22,7 @@ import {
   Loader2,
   ArrowLeft,
   LayoutGrid,
-  List,
-  Target
+  List
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -755,8 +754,8 @@ function OpsConsoleContent() {
                 )}
               </CardContent>
             </Card>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

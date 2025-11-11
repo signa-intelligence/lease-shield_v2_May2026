@@ -1,7 +1,8 @@
+
 import React, { useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target } from "lucide-react"; // Added Target icon
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, format } from "date-fns";
@@ -17,7 +18,7 @@ import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
-import { spacing, borderRadius, shadows, transitions, brandColors } from "@/utils/designSystem";
+import { spacing, borderRadius, shadows, transitions, brandColors, typography } from "@/utils/designSystem";
 
 function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
