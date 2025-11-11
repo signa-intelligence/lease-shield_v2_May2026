@@ -1,8 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import { createMaintenanceReportedFlex, createMaintenanceStatusFlex } from './lineFlexTemplates.js';
+import { createMaintenanceEmail } from './emailTemplates.js';
 
 /**
- * Sends notifications for maintenance requests
+ * Sends notifications for maintenance requests with Beautiful HTML Emails + LINE Flex
  * - To landlord/juristic when tenant creates request
  * - To tenant when status changes
  */
@@ -54,29 +55,16 @@ Deno.serve(async (req) => {
         reportedBy: tenant.full_name || tenant.email
       }, language);
       
+      const htmlEmail = createMaintenanceEmail({
+        issueTitle: request.issue_title,
+        status: 'reported',
+        propertyAddress: request.property_address || tenant.tenant_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A'),
+        landlordResponse: request.description
+      }, language);
+      
       const emailSubject = language === 'th' 
         ? `🔧 คำขอซ่อมบำรุงใหม่: ${request.issue_title}`
         : `🔧 New Maintenance Request: ${request.issue_title}`;
-      
-      const emailBody = language === 'th'
-        ? `คำขอซ่อมบำรุงใหม่จากผู้เช่า\n\n` +
-          `🔧 ปัญหา: ${request.issue_title}\n` +
-          `📝 รายละเอียด: ${request.description || 'ไม่มี'}\n` +
-          `🏠 ทรัพย์สิน: ${request.property_address || tenant.tenant_address || 'ไม่ระบุ'}\n` +
-          `🏷️ ประเภท: ${request.category}\n` +
-          `⚡ ความสำคัญ: ${request.priority}\n` +
-          `👤 รายงานโดย: ${tenant.full_name || tenant.email}\n\n` +
-          `กรุณารับทราบและตอบกลับผู้เช่า\n\n` +
-          `ดูรายละเอียด → https://app.leaseshield.asia/PropertyTracker`
-        : `New maintenance request from tenant\n\n` +
-          `🔧 Issue: ${request.issue_title}\n` +
-          `📝 Details: ${request.description || 'None'}\n` +
-          `🏠 Property: ${request.property_address || tenant.tenant_address || 'N/A'}\n` +
-          `🏷️ Category: ${request.category}\n` +
-          `⚡ Priority: ${request.priority}\n` +
-          `👤 Reported by: ${tenant.full_name || tenant.email}\n\n` +
-          `Please acknowledge and respond to tenant\n\n` +
-          `View details → https://app.leaseshield.asia/PropertyTracker`;
       
       // Send to Landlord
       if (tenant.landlord_email) {
@@ -85,10 +73,10 @@ Deno.serve(async (req) => {
             from_name: 'Lease Shield',
             to: tenant.landlord_email,
             subject: emailSubject,
-            body: emailBody
+            body: htmlEmail
           });
           channels.push('Landlord Email');
-          console.log(`✅ Email sent to landlord: ${tenant.landlord_email}`);
+          console.log(`✅ HTML Email sent to landlord: ${tenant.landlord_email}`);
         } catch (err) {
           console.error('❌ Failed to email landlord:', err);
         }
@@ -115,10 +103,10 @@ Deno.serve(async (req) => {
             from_name: 'Lease Shield',
             to: tenant.juristic_email,
             subject: emailSubject,
-            body: emailBody
+            body: htmlEmail
           });
           channels.push('Juristic Email');
-          console.log(`✅ Email sent to juristic: ${tenant.juristic_email}`);
+          console.log(`✅ HTML Email sent to juristic: ${tenant.juristic_email}`);
         } catch (err) {
           console.error('❌ Failed to email juristic:', err);
         }
@@ -156,26 +144,22 @@ Deno.serve(async (req) => {
       
       const flexMessage = createMaintenanceStatusFlex({
         issueTitle: request.issue_title,
-        oldStatus: request.status, // Actually current, but kept for compatibility
+        oldStatus: request.status,
         newStatus: request.status,
         propertyAddress: request.property_address || tenant.tenant_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A')
+      }, language);
+      
+      const htmlEmail = createMaintenanceEmail({
+        issueTitle: request.issue_title,
+        status: request.status,
+        propertyAddress: request.property_address || tenant.tenant_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A'),
+        landlordResponse: request.landlord_response,
+        actualCost: request.actual_cost
       }, language);
       
       const emailSubject = language === 'th'
         ? `🔧 อัปเดตการซ่อมบำรุง: ${request.issue_title}`
         : `🔧 Maintenance Update: ${request.issue_title}`;
-      
-      const emailBody = language === 'th'
-        ? `สถานะการซ่อมบำรุงอัปเดตแล้ว\n\n` +
-          `🔧 ปัญหา: ${request.issue_title}\n` +
-          `📊 สถานะใหม่: ${request.status}\n` +
-          `🏠 ทรัพย์สิน: ${request.property_address || tenant.tenant_address || 'ไม่ระบุ'}\n\n` +
-          `ดูรายละเอียด → https://app.leaseshield.asia/PropertyTracker`
-        : `Maintenance status updated\n\n` +
-          `🔧 Issue: ${request.issue_title}\n` +
-          `📊 New Status: ${request.status}\n` +
-          `🏠 Property: ${request.property_address || tenant.tenant_address || 'N/A'}\n\n` +
-          `View details → https://app.leaseshield.asia/PropertyTracker`;
       
       // Send to Tenant LINE
       if (tenant.line_messaging_token && tenant.line_notifications) {
@@ -198,10 +182,10 @@ Deno.serve(async (req) => {
             from_name: 'Lease Shield',
             to: tenant.email,
             subject: emailSubject,
-            body: emailBody
+            body: htmlEmail
           });
           channels.push('Tenant Email');
-          console.log(`✅ Email sent to tenant: ${tenant.email}`);
+          console.log(`✅ HTML Email sent to tenant: ${tenant.email}`);
         } catch (err) {
           console.error('❌ Failed to email tenant:', err);
         }

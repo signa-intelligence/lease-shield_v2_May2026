@@ -1,8 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import { createDepositReminderFlex, createLeaseNoticeFlex, createRentReminderFlex } from './lineFlexTemplates.js';
+import { createDepositReminderEmail, createLeaseNoticeEmail, createRentReminderEmail } from './emailTemplates.js';
 
 /**
- * Comprehensive scheduled reminder system with Rich LINE Flex Messages
+ * Comprehensive scheduled reminder system with Rich LINE Flex Messages + Beautiful HTML Emails
  * Checks deposits, leases, and rent alerts for ALL users
  * Designed to run daily via cron job or manual trigger
  */
@@ -115,7 +116,14 @@ Deno.serve(async (req) => {
               urgency
             }, language);
 
-            const sent = await sendNotification(base44, user, flexMessage, notificationType, 'deposit', deposit.id, language);
+            const sent = await sendNotification(base44, user, flexMessage, null, notificationType, 'deposit', deposit.id, language, {
+              days: daysDiff < 0 ? daysDiff : daysDiff,
+              depositAmount,
+              propertyAddress,
+              expectedDate: expectedDateStr,
+              urgency
+            });
+            
             if (sent) {
               diagnostics.notifications_sent++;
               diagnostics.breakdown[notificationType]++;
@@ -176,7 +184,14 @@ Deno.serve(async (req) => {
               noticePeriod
             }, language);
 
-            const sent = await sendNotification(base44, user, flexMessage, notificationType, 'lease', lease.id, language);
+            const sent = await sendNotification(base44, user, flexMessage, null, notificationType, 'lease', lease.id, language, {
+              days: daysDiff,
+              propertyAddress,
+              leaseEndDate,
+              noticeDeadline: noticeDeadlineStr,
+              noticePeriod
+            });
+            
             if (sent) {
               diagnostics.notifications_sent++;
               diagnostics.breakdown[notificationType]++;
@@ -218,7 +233,13 @@ Deno.serve(async (req) => {
               daysUntilDue: alertDaysBefore
             }, language);
 
-            const sent = await sendNotification(base44, user, flexMessage, 'rent_reminder', 'deposit', deposit.id, language);
+            const sent = await sendNotification(base44, user, flexMessage, null, 'rent_reminder', 'deposit', deposit.id, language, {
+              rentAmount,
+              propertyAddress,
+              dueDay,
+              daysUntilDue: alertDaysBefore
+            });
+            
             if (sent) {
               diagnostics.notifications_sent++;
               diagnostics.breakdown.rent_reminder++;
@@ -252,13 +273,10 @@ Deno.serve(async (req) => {
   }
 });
 
-// Helper function to send notification with Rich Flex Messages
-async function sendNotification(base44, user, flexMessage, notificationType, entityType, entityId, language) {
+// Helper function to send notification with Rich Flex Messages + Beautiful HTML Emails
+async function sendNotification(base44, user, flexMessage, plainText, notificationType, entityType, entityId, language, emailData) {
   const channels = [];
   
-  // Generate fallback plain text for email
-  const plainText = generatePlainTextFromFlex(flexMessage, language);
-
   // Send to LINE with Flex Message if enabled
   if (user.line_messaging_token && user.line_notifications) {
     try {
@@ -273,18 +291,32 @@ async function sendNotification(base44, user, flexMessage, notificationType, ent
     }
   }
 
-  // Send to Email if enabled
+  // Send Beautiful HTML Email if enabled
   if (user.email_notifications) {
     try {
-      const subject = flexMessage.altText || 'Lease Shield Notification';
+      let htmlBody = '';
+      let subject = '';
+      
+      // Generate appropriate email based on type
+      if (notificationType.startsWith('deposit')) {
+        htmlBody = createDepositReminderEmail(emailData, language);
+        subject = flexMessage.altText || (language === 'th' ? '🛡️ แจ้งเตือนเงินมัดจำ' : '🛡️ Deposit Reminder');
+      } else if (notificationType.startsWith('lease')) {
+        htmlBody = createLeaseNoticeEmail(emailData, language);
+        subject = flexMessage.altText || (language === 'th' ? '📅 เตือนแจ้งสัญญาเช่า' : '📅 Lease Notice Reminder');
+      } else if (notificationType === 'rent_reminder') {
+        htmlBody = createRentReminderEmail(emailData, language);
+        subject = flexMessage.altText || (language === 'th' ? '💰 เตือนชำระค่าเช่า' : '💰 Rent Payment Reminder');
+      }
+      
       await base44.integrations.Core.SendEmail({
         from_name: 'Lease Shield',
         to: user.email,
         subject: subject,
-        body: plainText
+        body: htmlBody
       });
       channels.push('Email');
-      console.log(`✅ Email sent to ${user.email}`);
+      console.log(`✅ HTML Email sent to ${user.email}`);
     } catch (err) {
       console.error(`❌ Email failed for ${user.email}:`, err);
     }
@@ -300,7 +332,7 @@ async function sendNotification(base44, user, flexMessage, notificationType, ent
         status: 'sent',
         related_entity_type: entityType,
         related_entity_id: entityId,
-        message_preview: plainText.substring(0, 200)
+        message_preview: flexMessage.altText || 'Notification sent'
       });
     } catch (err) {
       console.error(`❌ Failed to log notification:`, err);
@@ -308,49 +340,4 @@ async function sendNotification(base44, user, flexMessage, notificationType, ent
   }
 
   return channels.length > 0;
-}
-
-// Generate plain text version for email from Flex Message
-function generatePlainTextFromFlex(flexMessage, language) {
-  const bubble = flexMessage.contents;
-  const header = bubble.header?.contents[0]?.contents || [];
-  const body = bubble.body?.contents || [];
-  
-  let text = '';
-  
-  // Extract title from header
-  const titleBox = header.find(c => c.type === 'text' && c.weight === 'bold');
-  if (titleBox) {
-    text += `${titleBox.text}\n`;
-  }
-  
-  // Extract subtitle
-  const subtitleBox = bubble.header?.contents.find(c => c.type === 'text' && c.size === 'sm');
-  if (subtitleBox) {
-    text += `${subtitleBox.text}\n\n`;
-  }
-  
-  // Extract body content
-  const contentBox = body.find(b => b.type === 'box' && b.layout === 'vertical');
-  if (contentBox) {
-    contentBox.contents.forEach(item => {
-      if (item.type === 'box' && item.layout === 'baseline') {
-        const label = item.contents[0]?.text || '';
-        const value = item.contents[1]?.text || '';
-        text += `${label}: ${value}\n`;
-      }
-    });
-  }
-  
-  // Extract tip
-  const tipBox = body.find(b => b.backgroundColor && b.cornerRadius);
-  if (tipBox) {
-    const tip = tipBox.contents[0]?.text || '';
-    text += `\n${tip}\n`;
-  }
-  
-  // Add link
-  text += `\n${language === 'th' ? 'เปิดแอป' : 'Open app'} → https://app.leaseshield.asia/DepositTracker`;
-  
-  return text;
 }
