@@ -20,13 +20,10 @@ Deno.serve(async (req) => {
     
     const now = new Date();
     const notifications = [];
-    const debugInfo = {
-      totalDepositsChecked: deposits.length,
-      totalLeasesChecked: leases.length,
-      totalUsersChecked: users.length,
-      skippedReasons: [],
-      notificationsSent: 0
-    };
+    
+    // 🔍 DEBUG MODE - Log what we're checking
+    console.log('🔍 DEBUG: Total deposits found:', deposits.length);
+    console.log('🔍 DEBUG: Total users found:', users.length);
 
     const getUserByEmail = (email) => users.find(u => u.email === email);
 
@@ -52,10 +49,6 @@ Deno.serve(async (req) => {
       const prefKey = typeMap[notificationType];
       if (prefKey && prefs[prefKey] === false) {
         console.log(`🔕 User ${user.email} disabled ${notificationType}`);
-        debugInfo.skippedReasons.push({
-          user: user.email,
-          reason: `User disabled ${notificationType} in preferences`
-        });
         return false;
       }
 
@@ -82,10 +75,6 @@ Deno.serve(async (req) => {
 
         if (inQuietHours) {
           console.log(`🌙 User ${user.email} in quiet hours, skipping ${notificationType}`);
-          debugInfo.skippedReasons.push({
-            user: user.email,
-            reason: `In quiet hours for ${notificationType}`
-          });
           return false;
         }
       }
@@ -95,19 +84,12 @@ Deno.serve(async (req) => {
 
     // Helper to send notification with logging
     const sendNotification = async (user, messageText, subject, flexMessage = null, notificationType = '', relatedEntityType = '', relatedEntityId = '') => {
-      if (!user) {
-        debugInfo.skippedReasons.push({
-          reason: `User not found for related entity ${relatedEntityType} (ID: ${relatedEntityId})`,
-          entityType: relatedEntityType,
-          entityId: relatedEntityId,
-          notificationType
-        });
-        return false;
-      }
+      if (!user) return false;
 
-      // Check if notification is allowed (this call will log to debugInfo.skippedReasons if skipped)
+      // Check if notification is allowed
       if (!isNotificationAllowed(user, notificationType)) {
-        return false; // isNotificationAllowed already logged the skip
+        console.log(`⏭️ Skipping ${notificationType} for ${user.email} (user preferences)`);
+        return false;
       }
 
       let channel = '';
@@ -123,35 +105,10 @@ Deno.serve(async (req) => {
           });
           channel = 'LINE';
           success = true;
-          console.log(`✅ LINE Flex sent to ${user.email} for ${notificationType}`);
+          console.log(`✅ LINE Flex sent to ${user.email}`);
         } catch (lineError) {
-          console.error(`❌ LINE failed for ${user.email} (${notificationType}):`, lineError);
+          console.error(`❌ LINE failed for ${user.email}:`, lineError);
           errorMsg = lineError.message;
-          debugInfo.skippedReasons.push({
-            user: user.email,
-            reason: `LINE send failed: ${lineError.message}`,
-            type: notificationType,
-            relatedEntityType,
-            relatedEntityId
-          });
-        }
-      } else if (flexMessage) { // flexMessage was provided, but LINE not configured or disabled
-        if (!user.line_messaging_token) {
-          debugInfo.skippedReasons.push({
-            user: user.email,
-            reason: 'LINE not connected (no line_messaging_token)',
-            type: notificationType,
-            relatedEntityType,
-            relatedEntityId
-          });
-        } else if (!user.line_notifications) {
-          debugInfo.skippedReasons.push({
-            user: user.email,
-            reason: 'LINE notifications disabled in user settings',
-            type: notificationType,
-            relatedEntityType,
-            relatedEntityId
-          });
         }
       }
 
@@ -166,26 +123,11 @@ Deno.serve(async (req) => {
           });
           channel = 'Email';
           success = true;
-          console.log(`✅ Email sent to ${user.email} for ${notificationType}`);
+          console.log(`✅ Email sent to ${user.email}`);
         } catch (emailError) {
-          console.error(`❌ Email failed for ${user.email} (${notificationType}):`, emailError);
+          console.error(`❌ Email failed for ${user.email}:`, emailError);
           errorMsg = errorMsg ? `${errorMsg}; Email: ${emailError.message}` : emailError.message;
-          debugInfo.skippedReasons.push({
-            user: user.email,
-            reason: `Email send failed: ${emailError.message}`,
-            type: notificationType,
-            relatedEntityType,
-            relatedEntityId
-          });
         }
-      } else if (!success && !user.email_notifications) { // If LINE failed or wasn't attempted, and email is also disabled
-        debugInfo.skippedReasons.push({
-          user: user.email,
-          reason: 'Email notifications disabled in user settings',
-          type: notificationType,
-          relatedEntityType,
-          relatedEntityId
-        });
       }
 
       // Log notification attempt
@@ -204,10 +146,6 @@ Deno.serve(async (req) => {
         console.error('Failed to log notification:', logError);
       }
 
-      if (success) {
-        debugInfo.notificationsSent++;
-      }
-
       return success;
     };
 
@@ -215,37 +153,31 @@ Deno.serve(async (req) => {
     // 1. CHECK DEPOSIT RETURN REMINDERS + AUTOMATION
     // ============================================
     for (const deposit of deposits) {
+      console.log(`🔍 DEBUG: Checking deposit ${deposit.id}`, {
+        status: deposit.status,
+        expected_return_date: deposit.expected_return_date,
+        created_by: deposit.created_by
+      });
+      
       if (deposit.status !== 'tracking') {
-        debugInfo.skippedReasons.push({
-          depositId: deposit.id,
-          reason: `Deposit status is "${deposit.status}", not "tracking"`,
-          type: 'deposit_check'
-        });
+        console.log(`⏭️ Skipping deposit ${deposit.id} - status is ${deposit.status}, not "tracking"`);
         continue;
       }
       if (!deposit.expected_return_date) {
-        debugInfo.skippedReasons.push({
-          depositId: deposit.id,
-          reason: 'No expected_return_date set',
-          type: 'deposit_check'
-        });
+        console.log(`⏭️ Skipping deposit ${deposit.id} - no expected_return_date`);
         continue;
       }
 
       const user = getUserByEmail(deposit.created_by);
       if (!user) {
-        debugInfo.skippedReasons.push({
-          depositId: deposit.id,
-          reason: `User not found: ${deposit.created_by}`,
-          type: 'deposit_check'
-        });
+        console.log(`⏭️ Skipping deposit ${deposit.id} - user not found for ${deposit.created_by}`);
         continue;
       }
 
       const expectedDate = new Date(deposit.expected_return_date);
-      const daysDiff = Math.floor((expectedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.floor((expectedDate - now) / (1000 * 60 * 60 * 24));
       
-      console.log(`📊 Deposit ${deposit.id}: ${daysDiff} days until return (${deposit.expected_return_date})`);
+      console.log(`🔍 DEBUG: Deposit ${deposit.id} daysDiff: ${daysDiff}`);
       
       const language = user.language || 'en';
       const depositAmount = deposit.deposit_amount || 0;
@@ -321,15 +253,15 @@ Deno.serve(async (req) => {
           notifications.push({ user: user.email, type: notificationType, deposit: deposit.id });
         }
       }
-      else if (daysDiff <= -1) {
-        // 🛡️ DEPOSIT SHIELD AUTOMATION - OVERDUE DEPOSIT
+      else if (daysDiff < 0) {
+        // 🛡️ DEPOSIT SHIELD AUTOMATION - OVERDUE DEPOSIT (ANY NEGATIVE DAY)
+        console.log(`🚨 OVERDUE DEPOSIT FOUND! ${deposit.id} - ${daysDiff} days overdue`);
+        
         urgency = 'critical';
         notificationType = 'overdue_deposit';
         subject = language === 'th' ? '🚨 เงินมัดจำเกินกำหนด - Deposit Shield พร้อมช่วย' : '🚨 Deposit Overdue - Deposit Shield Ready';
         
         const daysOverdue = Math.abs(daysDiff);
-        
-        console.log(`🚨 OVERDUE DEPOSIT FOUND: ${deposit.id} - ${daysOverdue} days overdue!`);
         
         // Check if user already has a case for this deposit
         const existingCases = await base44.asServiceRole.entities.Case.filter({ 
@@ -341,6 +273,13 @@ Deno.serve(async (req) => {
           !['closed', 'resolved'].includes(c.status) && 
           c.summary?.includes(propertyAddress) // Assuming propertyAddress is usually part of the summary for deposit cases
         );
+        
+        console.log(`🔍 DEBUG: User has existing cases: ${existingCases.length}, hasOpenCase: ${hasOpenCase}`);
+        console.log(`🔍 DEBUG: User notification settings:`, {
+          email_notifications: user.email_notifications,
+          line_notifications: user.line_notifications,
+          line_messaging_token: user.line_messaging_token ? 'SET' : 'NOT SET'
+        });
         
         // Create special overdue Flex Message with "Open Case" action
         flexMessage = {
@@ -510,16 +449,10 @@ Deno.serve(async (req) => {
             type: notificationType, 
             deposit: deposit.id,
             automation: 'deposit_shield',
-            hasOpenCase 
+            hasOpenCase,
+            daysOverdue
           });
         }
-      } else {
-        // Not a trigger day
-        debugInfo.skippedReasons.push({
-          depositId: deposit.id,
-          reason: `Not a trigger day (${daysDiff} days remaining - triggers are 30, 7, 3, or overdue)`,
-          type: 'deposit_check'
-        });
       }
     }
 
@@ -527,30 +460,14 @@ Deno.serve(async (req) => {
     // 2. CHECK LEASE NOTICE REMINDERS
     // ============================================
     for (const lease of leases) {
-      if (!lease.notice_deadline || !lease.notice_alerts_enabled) {
-        debugInfo.skippedReasons.push({
-          leaseId: lease.id,
-          reason: !lease.notice_deadline ? 'No notice_deadline set' : 'Notice alerts disabled',
-          type: 'lease_check'
-        });
-        continue;
-      }
+      if (!lease.notice_deadline || !lease.notice_alerts_enabled) continue;
 
       const user = getUserByEmail(lease.created_by);
-      if (!user) {
-        debugInfo.skippedReasons.push({
-          leaseId: lease.id,
-          reason: `User not found: ${lease.created_by}`,
-          type: 'lease_check'
-        });
-        continue;
-      }
+      if (!user) continue;
 
       const noticeDeadline = new Date(lease.notice_deadline);
-      const daysDiff = Math.floor((noticeDeadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.floor((noticeDeadline - now) / (1000 * 60 * 60 * 24));
       
-      console.log(`📊 Lease ${lease.id}: ${daysDiff} days until notice deadline (${lease.notice_deadline})`);
-
       const language = user.language || 'en';
       const propertyAddress = lease.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
       const leaseEndDate = lease.end_date ? new Date(lease.end_date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US') : 'N/A';
@@ -641,37 +558,17 @@ Deno.serve(async (req) => {
         if (await sendNotification(user, messageText, subject, flexMessage, notificationType, 'lease', lease.id)) {
           notifications.push({ user: user.email, type: notificationType, lease: lease.id });
         }
-      } else {
-        debugInfo.skippedReasons.push({
-          leaseId: lease.id,
-          reason: `Not a trigger day (${daysDiff} days remaining - triggers are 30, 7, 3, 0)`,
-          type: 'lease_check'
-        });
       }
     }
 
     // ============================================
     // 3. CHECK RENT PAYMENT REMINDERS
     // ============================================
-    for (const deposit of deposits) { // DepositTracker entity also holds rent details
-      if (!deposit.rent_alerts_enabled || !deposit.rent_due_day || !deposit.rent_amount) {
-        debugInfo.skippedReasons.push({
-          depositId: deposit.id,
-          reason: 'Rent alerts disabled, or rent_due_day/rent_amount not set',
-          type: 'rent_check'
-        });
-        continue;
-      }
+    for (const deposit of deposits) {
+      if (!deposit.rent_alerts_enabled || !deposit.rent_due_day || !deposit.rent_amount) continue;
 
       const user = getUserByEmail(deposit.created_by);
-      if (!user) {
-        debugInfo.skippedReasons.push({
-          depositId: deposit.id,
-          reason: `User not found: ${deposit.created_by}`,
-          type: 'rent_check'
-        });
-        continue;
-      }
+      if (!user) continue;
 
       const language = user.language || 'en';
       const currentDay = now.getDate();
@@ -679,9 +576,6 @@ Deno.serve(async (req) => {
       const alertDaysBefore = deposit.rent_alert_days_before || 3;
       
       const targetAlertDay = dueDay - alertDaysBefore;
-      // Handle cases where targetAlertDay is <= 0 (e.g., due on 1st, alert 3 days before means previous month)
-      // For simplicity, we'll only trigger if targetAlertDay is within the current month's days.
-      // A more robust solution would involve date calculations for previous month.
       const isAlertDay = currentDay === (targetAlertDay > 0 ? targetAlertDay : 1);
 
       if (isAlertDay) {
@@ -707,31 +601,20 @@ Deno.serve(async (req) => {
         if (await sendNotification(user, messageText, subject, flexMessage, notificationType, 'deposit', deposit.id)) {
           notifications.push({ user: user.email, type: notificationType, deposit: deposit.id });
         }
-      } else {
-        debugInfo.skippedReasons.push({
-          depositId: deposit.id,
-          reason: `Not a rent alert trigger day (current day: ${currentDay}, target alert day: ${targetAlertDay})`,
-          type: 'rent_check'
-        });
       }
     }
 
     console.log(`✅ Reminder check complete. Sent ${notifications.length} notifications.`);
-    console.log('📊 Debug Info:', JSON.stringify(debugInfo, null, 2));
 
     return Response.json({ 
       success: true, 
       notifications_sent: notifications.length,
       details: notifications,
-      debug: debugInfo,
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('❌ Reminder check error:', error);
-    return Response.json({ 
-      error: error.message,
-      stack: error.stack 
-    }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
