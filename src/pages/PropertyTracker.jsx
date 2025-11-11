@@ -849,7 +849,7 @@ export default function PropertyTracker() {
                       />
                     </div>
                     
-                    {/* FIXED: Photo/Video Upload Section with Working Camera */}
+                    {/* Photo/Video Upload Section - RESTORED TO WORKING VERSION */}
                     <div>
                       <Label style={{ color: colors.textPrimary }}>
                         <Camera className="w-4 h-4 inline mr-1" />
@@ -894,9 +894,9 @@ export default function PropertyTracker() {
                         </div>
                       )}
                       
-                      {/* FIXED: Upload Buttons - Camera triggers camera, Gallery triggers gallery */}
+                      {/* Upload Buttons - BACK TO ORIGINAL WORKING VERSION */}
                       <div className="grid grid-cols-2 gap-2 mt-2">
-                        {/* Take Photo/Video Button - FIXED capture attribute */}
+                        {/* Take Photo/Video Button - capture="user" */}
                         <label
                           className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                           style={{
@@ -908,7 +908,7 @@ export default function PropertyTracker() {
                           <input
                             type="file"
                             accept="image/*,video/*"
-                            capture
+                            capture="user"
                             multiple
                             onChange={handleNewRequestPhotoUpload}
                             className="hidden"
@@ -927,7 +927,7 @@ export default function PropertyTracker() {
                           )}
                         </label>
 
-                        {/* Upload from Gallery Button - NO capture attribute */}
+                        {/* Upload from Gallery Button - NO capture */}
                         <label
                           className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                           style={{
@@ -1142,7 +1142,7 @@ export default function PropertyTracker() {
                               })}
                             </div>
 
-                            {/* FIXED: Chat Input with Working Camera */}
+                            {/* Chat Input with Working Camera */}
                             <div className="p-4 border-t" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
                               {/* Photo/Video Preview */}
                               {chatPhotos[request.id] && chatPhotos[request.id].length > 0 && (
@@ -1198,7 +1198,7 @@ export default function PropertyTracker() {
                                   <input
                                     type="file"
                                     accept="image/*,video/*"
-                                    capture
+                                    capture="user"
                                     multiple
                                     onChange={(e) => handleChatPhotoUpload(e, request.id)}
                                     className="hidden"

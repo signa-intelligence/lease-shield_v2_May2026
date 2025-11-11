@@ -430,7 +430,7 @@ export default function AcknowledgeMaintenance() {
                 )}
 
                 <div className="flex gap-2 items-center">
-                  {/* Take Photo/Video Button - FIXED */}
+                  {/* Take Photo/Video Button - capture="user" */}
                   <label
                     className="flex-shrink-0 cursor-pointer"
                     style={{
@@ -447,7 +447,7 @@ export default function AcknowledgeMaintenance() {
                     <input
                       type="file"
                       accept="image/*,video/*"
-                      capture
+                      capture="user"
                       multiple
                       onChange={handleChatPhotoUpload}
                       className="hidden"
@@ -643,7 +643,7 @@ export default function AcknowledgeMaintenance() {
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Take Photo/Video - FIXED */}
+                  {/* Take Photo/Video - capture="user" */}
                   <label
                     className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                     style={{
@@ -655,7 +655,7 @@ export default function AcknowledgeMaintenance() {
                     <input
                       type="file"
                       accept="image/*,video/*"
-                      capture
+                      capture="user"
                       multiple
                       onChange={(e) => handlePhotoUpload(e, 'completion')}
                       className="hidden"
@@ -751,7 +751,7 @@ export default function AcknowledgeMaintenance() {
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Take Photo/Video - FIXED */}
+                  {/* Take Photo/Video - capture="user" */}
                   <label
                     className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                     style={{
@@ -763,7 +763,7 @@ export default function AcknowledgeMaintenance() {
                     <input
                       type="file"
                       accept="image/*,video/*"
-                      capture
+                      capture="user"
                       multiple
                       onChange={(e) => handlePhotoUpload(e, 'bill')}
                       className="hidden"
