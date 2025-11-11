@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,9 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus, 
-  Edit2, Save, X, Wrench, AlertCircle, CheckCircle2, Clock, 
+import {
+  Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
+  Edit2, Save, X, Wrench, AlertCircle, CheckCircle2, Clock,
   DollarSign, ArrowLeft, Shield
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
@@ -96,7 +97,22 @@ export default function PropertyTracker() {
   });
 
   const createMaintenanceMutation = useMutation({
-    mutationFn: (data) => base44.entities.MaintenanceRequest.create(data),
+    mutationFn: async (data) => {
+      const request = await base44.entities.MaintenanceRequest.create(data);
+
+      // Send notifications to landlord/juristic
+      try {
+        await base44.functions.invoke('sendMaintenanceNotification', {
+          maintenanceId: request.id,
+          notifyType: 'new_request'
+        });
+        console.log('✅ Maintenance notifications sent');
+      } catch (err) {
+        console.error('❌ Failed to send maintenance notifications:', err);
+      }
+
+      return request;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       setShowAddMaintenance(false);
@@ -108,6 +124,26 @@ export default function PropertyTracker() {
         property_address: '',
         reported_date: new Date().toISOString().split('T')[0]
       });
+    },
+  });
+
+  const updateMaintenanceStatusMutation = useMutation({
+    mutationFn: async ({ id, status }) => {
+      await base44.entities.MaintenanceRequest.update(id, { status });
+
+      // Send notification to tenant about status change
+      try {
+        await base44.functions.invoke('sendMaintenanceNotification', {
+          maintenanceId: id,
+          notifyType: 'status_update'
+        });
+        console.log('✅ Status update notification sent');
+      } catch (err) {
+        console.error('❌ Failed to send status notification:', err);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
     },
   });
 
@@ -255,8 +291,8 @@ export default function PropertyTracker() {
 
   const deposit = deposits[0];
   const now = new Date();
-  const daysRemaining = deposit?.expected_return_date 
-    ? differenceInDays(new Date(deposit.expected_return_date), now) 
+  const daysRemaining = deposit?.expected_return_date
+    ? differenceInDays(new Date(deposit.expected_return_date), now)
     : null;
   const isOverdue = daysRemaining !== null && daysRemaining < 0;
   const isUrgent = daysRemaining !== null && daysRemaining <= 30 && daysRemaining > 0;
@@ -297,10 +333,10 @@ export default function PropertyTracker() {
 
         {/* DEPOSIT SECTION */}
         <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader 
+          <CardHeader
             className="cursor-pointer"
             onClick={() => toggleSection('deposit')}
-            style={{ 
+            style={{
               backgroundColor: colors.sectionBg,
               borderBottom: expandedSections.deposit ? `1px solid ${colors.borderColor}` : 'none'
             }}
@@ -311,9 +347,9 @@ export default function PropertyTracker() {
                 {strings.depositSection}
                 {deposit && deposit.deposit_amount > 0 && (
                   <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>
-                    {isOverdue 
+                    {isOverdue
                       ? `${strings.overdue} ${Math.abs(daysRemaining)} ${strings.daysRemaining}`
-                      : daysRemaining !== null 
+                      : daysRemaining !== null
                         ? `${daysRemaining} ${strings.daysRemaining}`
                         : 'Active'
                     }
@@ -451,10 +487,10 @@ export default function PropertyTracker() {
 
         {/* RENT SECTION */}
         <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader 
+          <CardHeader
             className="cursor-pointer"
             onClick={() => toggleSection('rent')}
-            style={{ 
+            style={{
               backgroundColor: colors.sectionBg,
               borderBottom: expandedSections.rent ? `1px solid ${colors.borderColor}` : 'none'
             }}
@@ -605,10 +641,10 @@ export default function PropertyTracker() {
 
         {/* MAINTENANCE SECTION */}
         <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader 
+          <CardHeader
             className="cursor-pointer"
             onClick={() => toggleSection('maintenance')}
-            style={{ 
+            style={{
               backgroundColor: colors.sectionBg,
               borderBottom: expandedSections.maintenance ? `1px solid ${colors.borderColor}` : 'none'
             }}
@@ -725,9 +761,21 @@ export default function PropertyTracker() {
                           <h4 className="font-bold" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
                           <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{request.description}</p>
                         </div>
-                        <Badge className={getStatusColor(request.status)}>
-                          {request.status}
-                        </Badge>
+                        <Select
+                          value={request.status}
+                          onValueChange={(value) => updateMaintenanceStatusMutation.mutate({ id: request.id, status: value })}
+                        >
+                          <SelectTrigger className={`${getStatusColor(request.status)} border-none w-32`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="reported">Reported</SelectItem>
+                            <SelectItem value="acknowledged">Acknowledged</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="flex items-center gap-4 text-xs" style={{ color: colors.textSecondary }}>
                         <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
