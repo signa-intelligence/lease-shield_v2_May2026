@@ -34,26 +34,26 @@ Deno.serve(async (req) => {
       `🚨 แจ้งเตือนด่วน Lease Shield\n\n💰 เงินมัดจำเกินกำหนด ${daysOverdue} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield พร้อมช่วยคุณ!\n\n📋 คลิกเพื่อเปิดคดีอัตโนมัติ\nข้อมูลเงินมัดจำจะถูกกรอกให้อัตโนมัติ\n\nเปิดแอป → https://app.leaseshield.asia/resolve-case?depositId=${deposit.id}&auto=true` :
       `🚨 Lease Shield Urgent Alert\n\n💰 Deposit ${daysOverdue} days overdue\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${depositAmount.toLocaleString()}\n\n🛡️ Deposit Shield is ready to help!\n\n📋 Click to auto-open case\nDeposit data will be pre-filled\n\nOpen app → https://app.leaseshield.asia/resolve-case?depositId=${deposit.id}&auto=true`;
 
-    let notificationSent = false;
-    let channel = '';
+    const channels = [];
+    let anySuccess = false;
 
-    // Try LINE first
+    // Send to LINE if enabled
     if (user.line_messaging_token && user.line_notifications) {
       try {
         await base44.functions.invoke('sendLineMessage', {
           userId: user.line_messaging_token,
           message: messageText
         });
-        channel = 'LINE';
-        notificationSent = true;
+        channels.push('LINE');
+        anySuccess = true;
         console.log(`✅ LINE sent to ${user.email}`);
       } catch (lineError) {
         console.error(`❌ LINE failed:`, lineError);
       }
     }
 
-    // Fallback to email
-    if (!notificationSent && user.email_notifications) {
+    // Send to Email if enabled (independently)
+    if (user.email_notifications) {
       try {
         await base44.integrations.Core.SendEmail({
           from_name: 'Lease Shield',
@@ -61,34 +61,36 @@ Deno.serve(async (req) => {
           subject: subject,
           body: messageText
         });
-        channel = 'Email';
-        notificationSent = true;
+        channels.push('Email');
+        anySuccess = true;
         console.log(`✅ Email sent to ${user.email}`);
       } catch (emailError) {
         console.error(`❌ Email failed:`, emailError);
       }
     }
 
-    // Log the notification
-    try {
-      await base44.entities.NotificationLog.create({
-        user_email: user.email,
-        notification_type: 'overdue_deposit',
-        channel: channel || 'None',
-        status: notificationSent ? 'sent' : 'failed',
-        related_entity_type: 'deposit',
-        related_entity_id: deposit.id,
-        message_preview: messageText.substring(0, 200)
-      });
-    } catch (logError) {
-      console.error('Failed to log notification:', logError);
+    // Log the notification for each channel
+    for (const channel of channels) {
+      try {
+        await base44.entities.NotificationLog.create({
+          user_email: user.email,
+          notification_type: 'overdue_deposit',
+          channel: channel,
+          status: 'sent',
+          related_entity_type: 'deposit',
+          related_entity_id: deposit.id,
+          message_preview: messageText.substring(0, 200)
+        });
+      } catch (logError) {
+        console.error('Failed to log notification:', logError);
+      }
     }
 
     return Response.json({ 
-      success: notificationSent,
-      channel: channel,
-      message: notificationSent 
-        ? `Notification sent via ${channel}` 
+      success: anySuccess,
+      channels: channels,
+      message: anySuccess 
+        ? `Notification sent via ${channels.join(' & ')}` 
         : 'No notification channels enabled'
     });
 
