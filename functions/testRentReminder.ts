@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import { createRentReminderFlex } from './lineFlexTemplates.js';
 
 /**
- * Test rent reminder - sends immediately for testing
+ * FORCE send rent reminder for testing - IGNORES SCHEDULE
  */
 
 Deno.serve(async (req) => {
@@ -14,34 +14,34 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('🧪 Testing rent reminder for:', user.email);
+    console.log('💰 FORCE rent reminder test for:', user.email);
 
-    // Find a deposit with rent alerts enabled
+    // Find ANY deposit with rent amount set
     const deposits = await base44.entities.DepositTracker.filter({
-      created_by: user.email,
-      rent_alerts_enabled: true
+      created_by: user.email
     });
 
-    if (deposits.length === 0) {
+    const rentDeposit = deposits.find(d => d.rent_amount && d.rent_due_day);
+
+    if (!rentDeposit) {
       return Response.json({
         success: false,
-        message: 'No deposits with rent alerts enabled'
+        message: 'No deposits with rent amount and due day configured'
       });
     }
 
-    const deposit = deposits[0];
     const language = user.language || 'en';
     
-    console.log('📦 Using deposit:', deposit.id);
-    console.log('💰 Rent amount:', deposit.rent_amount);
-    console.log('📅 Due day:', deposit.rent_due_day);
+    console.log('📦 Using deposit:', rentDeposit.id);
+    console.log('💰 Rent amount:', rentDeposit.rent_amount);
+    console.log('📅 Due day:', rentDeposit.rent_due_day);
 
-    // Create Flex message
+    // FORCE create Flex message
     const flexMessage = createRentReminderFlex({
-      rentAmount: deposit.rent_amount,
-      propertyAddress: deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A'),
-      dueDay: deposit.rent_due_day,
-      daysUntilDue: deposit.rent_alert_days_before || 3
+      rentAmount: rentDeposit.rent_amount,
+      propertyAddress: rentDeposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A'),
+      dueDay: rentDeposit.rent_due_day,
+      daysUntilDue: rentDeposit.rent_alert_days_before || 3
     }, language);
 
     const channels = [];
@@ -54,21 +54,21 @@ Deno.serve(async (req) => {
           flexMessage: flexMessage
         });
         channels.push('LINE');
-        console.log('✅ LINE sent');
+        console.log('✅ LINE rent reminder sent');
       } catch (err) {
-        console.error('❌ LINE failed:', err);
+        console.error('❌ LINE failed:', err.message);
       }
     }
 
     // Send Email
     if (user.email_notifications) {
       const subject = language === 'th' 
-        ? '💰 เตือนชำระค่าเช่า' 
-        : '💰 Rent Payment Reminder';
+        ? '💰 เตือนชำระค่าเช่า - Lease Shield' 
+        : '💰 Rent Payment Reminder - Lease Shield';
       
       const body = language === 'th'
-        ? `💰 เตือนชำระค่าเช่า\n\n🏠 ทรัพย์สิน: ${deposit.property_address}\n💵 จำนวน: ฿${deposit.rent_amount.toLocaleString()}\n📅 ครบกำหนด: วันที่ ${deposit.rent_due_day} ของเดือน\n\nเปิดแอป → https://app.leaseshield.asia/DepositTracker`
-        : `💰 Rent Payment Reminder\n\n🏠 Property: ${deposit.property_address}\n💵 Amount: ฿${deposit.rent_amount.toLocaleString()}\n📅 Due: ${deposit.rent_due_day} of the month\n\nOpen app → https://app.leaseshield.asia/DepositTracker`;
+        ? `💰 เตือนชำระค่าเช่า\n\n🏠 ทรัพย์สิน: ${rentDeposit.property_address || 'ไม่ระบุ'}\n💵 จำนวน: ฿${rentDeposit.rent_amount.toLocaleString()}\n📅 ครบกำหนด: วันที่ ${rentDeposit.rent_due_day} ของเดือน\n⏰ เหลืออีก ${rentDeposit.rent_alert_days_before || 3} วัน\n\nเปิดแอป → https://app.leaseshield.asia/DepositTracker`
+        : `💰 Rent Payment Reminder\n\n🏠 Property: ${rentDeposit.property_address || 'N/A'}\n💵 Amount: ฿${rentDeposit.rent_amount.toLocaleString()}\n📅 Due: Day ${rentDeposit.rent_due_day} of the month\n⏰ ${rentDeposit.rent_alert_days_before || 3} days until due\n\nOpen app → https://app.leaseshield.asia/DepositTracker`;
 
       try {
         await base44.integrations.Core.SendEmail({
@@ -78,9 +78,9 @@ Deno.serve(async (req) => {
           body: body
         });
         channels.push('Email');
-        console.log('✅ Email sent');
+        console.log('✅ Email rent reminder sent');
       } catch (err) {
-        console.error('❌ Email failed:', err);
+        console.error('❌ Email failed:', err.message);
       }
     }
 
@@ -88,12 +88,12 @@ Deno.serve(async (req) => {
     for (const channel of channels) {
       await base44.entities.NotificationLog.create({
         user_email: user.email,
-        notification_type: 'test',
+        notification_type: 'rent_reminder',
         channel: channel,
         status: 'sent',
         related_entity_type: 'deposit',
-        related_entity_id: deposit.id,
-        message_preview: 'Test rent reminder'
+        related_entity_id: rentDeposit.id,
+        message_preview: `Test rent reminder: ฿${rentDeposit.rent_amount} due day ${rentDeposit.rent_due_day}`
       });
     }
 
@@ -101,10 +101,12 @@ Deno.serve(async (req) => {
       success: true,
       channels: channels,
       deposit: {
-        amount: deposit.rent_amount,
-        due_day: deposit.rent_due_day,
-        property: deposit.property_address
-      }
+        amount: rentDeposit.rent_amount,
+        due_day: rentDeposit.rent_due_day,
+        property: rentDeposit.property_address,
+        alert_days_before: rentDeposit.rent_alert_days_before || 3
+      },
+      message: 'FORCED rent reminder sent (ignores schedule)'
     });
 
   } catch (error) {
