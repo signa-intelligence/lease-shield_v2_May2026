@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,6 +43,14 @@ const STATUS_CONFIG = {
   resolved: { label: 'Resolved', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 },
   closed: { label: 'Closed', color: 'bg-gray-100 text-gray-800', icon: CheckCircle2 }
 };
+
+// Assuming brandColors are defined elsewhere or should be imported.
+// For now, I'll define a placeholder if not found, to prevent errors.
+const brandColors = {
+  forest: '#1E392A', // Example color
+  // ... other brand colors
+};
+
 
 function OpsConsoleContent() {
   const navigate = useNavigate();
@@ -765,7 +774,6 @@ function OpsConsoleContent() {
         )}
       </div>
     </div>
-    </PullToRefresh>
   );
 }
 
