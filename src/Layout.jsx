@@ -191,8 +191,6 @@ export default function Layout({ children, currentPageName }) {
           height: 100%;
           width: 100%;
           overflow-x: hidden;
-          position: fixed;
-          overscroll-behavior: none;
         }
 
         body {
@@ -204,22 +202,6 @@ export default function Layout({ children, currentPageName }) {
           font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
         }
         
-        .bottom-tabs {
-          padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px) !important;
-          z-index: 99999 !important;
-          position: fixed !important;
-          bottom: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-        }
-        
-        .top-bar {
-          padding-top: env(safe-area-inset-top, 0px);
-          height: auto;
-          min-height: 64px;
-          z-index: 9998 !important;
-        }
-        
         .main-content {
           overflow-y: auto;
           overflow-x: hidden;
@@ -227,25 +209,12 @@ export default function Layout({ children, currentPageName }) {
         }
 
         @media (min-width: 768px) {
-          html, body {
-            position: static;
-          }
-          
           .bottom-tabs {
             max-width: 600px;
-            left: 50%;
+            left: 50% !important;
             transform: translateX(-50%);
             border-radius: 24px;
             margin-bottom: 16px;
-            padding-bottom: 0 !important;
-          }
-        }
-
-        @media (display-mode: standalone) {
-          body {
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
           }
         }
 
@@ -283,9 +252,10 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm" style={{
+      <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
         backgroundColor: colors.topBarBg,
-        borderBottomColor: colors.borderColor
+        borderBottomColor: colors.borderColor,
+        paddingTop: 'env(safe-area-inset-top, 0px)'
       }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -355,16 +325,25 @@ export default function Layout({ children, currentPageName }) {
 
       <main ref={mainContentRef} className="main-content flex-1" style={{
         marginTop: 'calc(64px + env(safe-area-inset-top, 0px))',
-        marginBottom: 'calc(72px + max(env(safe-area-inset-bottom, 0px), 12px))',
-        height: 'calc(100vh - 64px - 72px - env(safe-area-inset-top, 0px) - max(env(safe-area-inset-bottom, 0px), 12px))'
+        marginBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+        minHeight: 'calc(100vh - 144px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))'
       }}>
         {children}
       </main>
 
-      <nav className="bottom-tabs border-t shadow-2xl" style={{
-        backgroundColor: colors.bottomTabBg,
-        borderTopColor: colors.borderColor
-      }}>
+      <nav 
+        className="bottom-tabs border-t shadow-2xl" 
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 99999,
+          backgroundColor: colors.bottomTabBg,
+          borderTopColor: colors.borderColor,
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)'
+        }}
+      >
         <div className="flex items-center justify-around px-2 py-2" style={{
           minHeight: '68px'
         }}>
