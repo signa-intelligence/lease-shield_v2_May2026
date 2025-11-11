@@ -182,7 +182,9 @@ export default function UploadScanPage() {
       scanLimitMsg: "You've used {used} of {limit} scans {periodText}",
       upgradeForMore: "Upgrade for More Scans",
       scansRemaining: "{remaining} scan(s) remaining {periodText}",
-      unlimitedScans: "Unlimited Scans"
+      unlimitedScans: "Unlimited Scans",
+      browseDocuments: "Browse Documents",
+      takePhotos: "Take Photos"
     },
     th: {
       title: "สแกนสัญญาเช่า",
@@ -245,7 +247,9 @@ export default function UploadScanPage() {
       scanLimitMsg: "คุณใช้ไป {used} จาก {limit} การสแกน{periodText}",
       upgradeForMore: "อัปเกรดเพื่อเพิ่มการสแกน",
       scansRemaining: "เหลืออีก {remaining} การสแกน{periodText}",
-      unlimitedScans: "สแกนได้ไม่จำกัด"
+      unlimitedScans: "สแกนได้ไม่จำกัด",
+      browseDocuments: "เลือกเอกสาร",
+      takePhotos: "ถ่ายรูป"
     }
   }[language];
 
@@ -1082,7 +1086,7 @@ export default function UploadScanPage() {
                         }}
                       >
                         <FileText className="w-5 h-5" />
-                        {language === 'th' ? 'เลือกเอกสาร' : 'Browse Documents'}
+                        {strings.browseDocuments}
                       </span>
                     </label>
 
@@ -1104,7 +1108,7 @@ export default function UploadScanPage() {
                         }}
                       >
                         <Camera className="w-5 h-5" />
-                        {language === 'th' ? 'ถ่ายรูป' : 'Take Photos'}
+                        {strings.takePhotos}
                       </span>
                     </label>
                   </div>

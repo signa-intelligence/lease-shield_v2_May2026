@@ -9,52 +9,105 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Scale, Shield, Clock, Mail, CheckCircle2, Zap, FileText, Users, MessageCircle, ArrowRight, Gift, AlertCircle } from "lucide-react";
+import { Scale, Shield, Clock, Mail, CheckCircle2, Zap, FileText, Users, MessageCircle, ArrowRight, Gift, AlertCircle, Send, Database } from "lucide-react"; // Added Send, Database
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
 
-const SERVICE_COMPONENTS = [
-  {
-    category: 'Case Intake & Evidence Review',
-    description: 'Our team carefully reviews your lease agreement, photos, and message history to understand your situation and prepare your case summary.'
-  },
-  {
-    category: 'Professional Letter Pack',
-    description: 'Professionally written Thai and English letters and message templates to help you communicate clearly and confidently with your landlord.'
-  },
-  {
-    category: 'Negotiation Support',
-    description: 'Lease Shield guides you through each step of communication and dispute resolution — helping you stay organised and professional while keeping all contact in your name.'
-  },
-  {
-    category: 'Dispute Documentation Pack',
-    description: 'A complete, well-structured file that includes your contract, evidence, and a clear timeline — ready to use for any further action if needed.'
-  },
-  {
-    category: 'Optional Legal Referral',
-    description: 'If your case requires formal legal action, we can connect you with a trusted partner law firm. All legal work is handled directly between you and the firm at standard rates.'
-  }
-];
-
 const PROCESS_STEPS = [
   {
     number: 1,
-    title: 'Submit Your Case',
-    description: 'Upload your lease, evidence, and describe the issue',
-    icon: FileText
+    icon: FileText,
+    title: {
+      en: "Submit Your Case",
+      th: "ส่งคดีของคุณ",
+    },
+    description: {
+      en: "Upload your lease, evidence, and describe the issue",
+      th: "อัปโหลดสัญญาเช่า หลักฐาน และอธิบายปัญหา"
+    }
   },
   {
     number: 2,
-    title: 'Get Documentation',
-    description: 'Receive professional letter templates and case summary',
-    icon: Mail
+    icon: Send, // Changed icon
+    title: {
+      en: "Get Documentation",
+      th: "รับเอกสาร",
+    },
+    description: {
+      en: "Receive professional letter templates and case summary",
+      th: "รับเทมเพลตจดหมายมืออาชีพและสรุปคดี"
+    }
   },
   {
     number: 3,
-    title: 'Negotiation Support',
-    description: 'We facilitate communication and track progress',
-    icon: Users
+    icon: Users,
+    title: {
+      en: "Negotiation Support",
+      th: "การสนับสนุนการเจรจา",
+    },
+    description: {
+      en: "We facilitate communication and track progress",
+      th: "เราอำนวยความสะดวกในการสื่อสารและติดตามความคืบหน้า"
+    }
+  }
+];
+
+const SERVICE_COMPONENTS = [
+  {
+    icon: CheckCircle2,
+    title: {
+      en: "Case Intake & Evidence Review",
+      th: "รับคดีและตรวจสอบหลักฐาน",
+    },
+    description: {
+      en: "Our team carefully reviews your lease agreement, photos, and message history to understand your situation and prepare your case summary.",
+      th: "ทีมงานของเราตรวจสอบสัญญาเช่า รูปภาพ และประวัติข้อความของคุณอย่างละเอียดเพื่อทำความเข้าใจสถานการณ์และเตรียมสรุปคดี"
+    }
+  },
+  {
+    icon: FileText,
+    title: {
+      en: "Professional Letter Pack",
+      th: "แพ็กจดหมายมืออาชีพ",
+    },
+    description: {
+      en: "Professionally written Thai and English letters and message templates to help you communicate clearly and confidently with your landlord.",
+      th: "จดหมายและเทมเพลตข้อความภาษาไทยและอังกฤษที่เขียนอย่างมืออาชีพเพื่อช่วยให้คุณสื่อสารกับเจ้าของบ้านได้อย่างชัดเจนและมั่นใจ"
+    }
+  },
+  {
+    icon: Users,
+    title: {
+      en: "Negotiation Support",
+      th: "การสนับสนุนการเจรจา",
+    },
+    description: {
+      en: "Lease Shield guides you through each step of communication and dispute resolution — helping you stay organised and professional while keeping all contact in your name.",
+      th: "Lease Shield แนะนำคุณในทุกขั้นตอนของการสื่อสารและการแก้ไขข้อพิพาท — ช่วยให้คุณจัดการอย่างเป็นระเบียบและมืออาชีพ ขณะที่รักษาการติดต่อทั้งหมดในนามของคุณ"
+    }
+  },
+  {
+    icon: Database, // Added icon
+    title: {
+      en: "Dispute Documentation Pack",
+      th: "แพ็กเอกสารข้อพิพาท",
+    },
+    description: {
+      en: "A complete, well-structured file that includes your contract, evidence, and a clear timeline — ready to use for any further action if needed.",
+      th: "ไฟล์ที่สมบูรณ์และจัดโครงสร้างอย่างดีที่รวมสัญญา หลักฐาน และไทม์ไลน์ที่ชัดเจน — พร้อมใช้สำหรับการดำเนินการเพิ่มเติมหากจำเป็น"
+    }
+  },
+  {
+    icon: Scale, // Added icon
+    title: {
+      en: "Optional Legal Referral",
+      th: "การแนะนำทนายความ (ถ้าต้องการ)",
+    },
+    description: {
+      en: "If your case requires formal legal action, we can connect you with trusted legal partners who understand tenant rights in Thailand.", // Updated description
+      th: "หากคดีของคุณต้องการการดำเนินการทางกฎหมาย เราสามารถเชื่อมต่อคุณกับพันธมิตรทางกฎหมายที่เชื่อถือได้ซึ่งเข้าใจสิทธิ์ผู้เช่าในประเทศไทย" // Updated description
+    }
   }
 ];
 
@@ -350,10 +403,10 @@ export default function ResolveCase() {
                       <Icon className="w-8 h-8 text-white" />
                     </div>
                     <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                      {step.number}. {step.title}
+                      {step.number}. {step.title[language]} {/* Updated to use language */}
                     </h3>
                     <p className="text-sm" style={{ color: colors.textSecondary }}>
-                      {step.description}
+                      {step.description[language]} {/* Updated to use language */}
                     </p>
                   </CardContent>
                 </Card>
@@ -780,21 +833,24 @@ export default function ResolveCase() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              {SERVICE_COMPONENTS.map((component, index) => (
-                <div key={index} className="flex gap-4 pb-4 border-b last:border-0" style={{ borderBottomColor: colors.borderColor }}>
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-ls-forest/10 flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-ls-forest" />
+              {SERVICE_COMPONENTS.map((component, index) => {
+                const Icon = component.icon; // Get the icon from the component object
+                return (
+                  <div key={index} className="flex gap-4 pb-4 border-b last:border-0" style={{ borderBottomColor: colors.borderColor }}>
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-ls-forest/10 flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-ls-forest" /> {/* Use the component's icon */}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold mb-1" style={{ color: colors.textPrimary }}>
+                        {component.title[language]} {/* Updated to use language */}
+                      </h3>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                        {component.description[language]} {/* Updated to use language */}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold mb-1" style={{ color: colors.textPrimary }}>
-                      {component.category}
-                    </h3>
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>
-                      {component.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

@@ -177,10 +177,6 @@ export default function AdminConsole() {
       return date >= startOfLastMonth && date <= endOfLastMonth;
     }).length;
 
-    const userTrend = lastMonthUsers > 0 ? Math.round(((currentMonthUsers - lastMonthUsers) / lastMonthUsers) * 100) : 0;
-    const leaseTrend = lastMonthLeases > 0 ? Math.round(((currentMonthLeases - lastMonthLeases) / lastMonthLeases) * 100) : 0;
-    const caseTrend = lastMonthCases > 0 ? Math.round(((currentMonthCases - lastMonthCases) / lastMonthCases) * 100) : 0;
-
     const activeSubscribers = users.filter(u => 
       u.subscription_status === 'active' && u.plan_tier && u.plan_tier !== 'free'
     ).length;
@@ -190,6 +186,9 @@ export default function AdminConsole() {
       return subDate && subDate >= startOfLastMonth && subDate <= endOfLastMonth;
     }).length;
 
+    const userTrend = lastMonthUsers > 0 ? Math.round(((currentMonthUsers - lastMonthUsers) / lastMonthUsers) * 100) : 0;
+    const leaseTrend = lastMonthLeases > 0 ? Math.round(((currentMonthLeases - lastMonthLeases) / lastMonthLeases) * 100) : 0;
+    const caseTrend = lastMonthCases > 0 ? Math.round(((currentMonthCases - lastMonthCases) / lastMonthCases) * 100) : 0;
     const subscriberTrend = lastMonthSubscribers > 0 ? Math.round(((activeSubscribers - lastMonthSubscribers) / lastMonthSubscribers) * 100) : 0;
 
     const monthlyRevenue = users.reduce((sum, u) => {
@@ -726,11 +725,21 @@ export default function AdminConsole() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="deposit_30day">Deposit 30 Day</SelectItem>
-                    <SelectItem value="deposit_7day">Deposit 7 Day</SelectItem>
-                    <SelectItem value="deposit_overdue">Deposit Overdue</SelectItem>
-                    <SelectItem value="rent_reminder">Rent Reminder</SelectItem>
-                    <SelectItem value="lease_notice_30day">Lease Notice 30 Day</SelectItem>
+                    <SelectItem value="deposit_30day">
+                      {language === 'th' ? 'เงินมัดจำครบกำหนด 30 วัน' : 'Deposit 30 Day'}
+                    </SelectItem>
+                    <SelectItem value="deposit_7day">
+                      {language === 'th' ? 'เงินมัดจำครบกำหนด 7 วัน' : 'Deposit 7 Day'}
+                    </SelectItem>
+                    <SelectItem value="deposit_overdue">
+                      {language === 'th' ? 'เงินมัดจำเกินกำหนด' : 'Deposit Overdue'}
+                    </SelectItem>
+                    <SelectItem value="rent_reminder">
+                      {language === 'th' ? 'แจ้งเตือนค่าเช่า' : 'Rent Reminder'}
+                    </SelectItem>
+                    <SelectItem value="lease_notice_30day">
+                      {language === 'th' ? 'แจ้งออกครบกำหนด 30 วัน' : 'Lease Notice 30 Day'}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
