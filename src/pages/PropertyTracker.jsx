@@ -36,6 +36,10 @@ export default function PropertyTracker() {
   const [sendingChat, setSendingChat] = useState({}); // {requestId: boolean}
   const [uploadingChatPhoto, setUploadingChatPhoto] = useState({}); // {requestId: boolean}
 
+  // NEW: Photo upload for creating maintenance request
+  const [newRequestPhotos, setNewRequestPhotos] = useState([]);
+  const [uploadingNewRequestPhoto, setUploadingNewRequestPhoto] = useState(false);
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -108,7 +112,7 @@ export default function PropertyTracker() {
         date: new Date().toISOString(),
         sender: 'Tenant',
         message: `Issue reported: ${data.issue_title}`,
-        photo_urls: []
+        photo_urls: data.photo_urls || []
       }];
       
       const requestData = {
@@ -143,6 +147,7 @@ export default function PropertyTracker() {
         property_address: '',
         reported_date: new Date().toISOString().split('T')[0]
       });
+      setNewRequestPhotos([]); // Clear photos after successful creation
     },
   });
 
@@ -165,6 +170,34 @@ export default function PropertyTracker() {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
     },
   });
+
+  // NEW: Handle photo upload for new maintenance request
+  const handleNewRequestPhotoUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setUploadingNewRequestPhoto(true);
+    try {
+      const uploadPromises = files.map(file => 
+        base44.integrations.Core.UploadFile({ file })
+      );
+      
+      const uploadResults = await Promise.all(uploadPromises);
+      const photoUrls = uploadResults.map(result => result.file_url);
+      
+      setNewRequestPhotos(prev => [...prev, ...photoUrls]);
+    } catch (error) {
+      console.error('Photo upload failed:', error);
+      alert(user?.language === 'th' ? 'อัปโหลดไม่สำเร็จ' : 'Upload failed');
+    } finally {
+      setUploadingNewRequestPhoto(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveNewRequestPhoto = (index) => {
+    setNewRequestPhotos(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleChatPhotoUpload = async (e, requestId) => {
     const files = Array.from(e.target.files);
@@ -282,7 +315,9 @@ export default function PropertyTracker() {
       typeMessage: "Type your message...",
       send: "Send",
       attachPhoto: "Attach Photo",
-      uploading: "Uploading..."
+      uploading: "Uploading...",
+      addPhotos: "Add Photos",
+      photos: "photos"
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -327,7 +362,9 @@ export default function PropertyTracker() {
       typeMessage: "พิมพ์ข้อความ...",
       send: "ส่ง",
       attachPhoto: "แนบรูป",
-      uploading: "กำลังอัปโหลด..."
+      uploading: "กำลังอัปโหลด...",
+      addPhotos: "เพิ่มรูปภาพ",
+      photos: "รูป"
     }
   };
 
@@ -388,7 +425,11 @@ export default function PropertyTracker() {
   };
 
   const handleMaintenanceSubmit = () => {
-    createMaintenanceMutation.mutate(maintenanceForm);
+    const formDataWithPhotos = {
+      ...maintenanceForm,
+      photo_urls: newRequestPhotos
+    };
+    createMaintenanceMutation.mutate(formDataWithPhotos);
   };
 
   const deposit = deposits[0];
@@ -741,7 +782,7 @@ export default function PropertyTracker() {
           )}
         </Card>
 
-        {/* MAINTENANCE SECTION */}
+        {/* MAINTENANCE SECTION - UPDATED WITH PHOTO UPLOAD IN CREATION FORM */}
         <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader 
             className="cursor-pointer"
@@ -802,6 +843,71 @@ export default function PropertyTracker() {
                         style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
                       />
                     </div>
+                    
+                    {/* NEW: Photo Upload Section */}
+                    <div>
+                      <Label style={{ color: colors.textPrimary }}>
+                        <Camera className="w-4 h-4 inline mr-1" />
+                        {strings.addPhotos}
+                      </Label>
+                      
+                      {/* Photo Preview Grid */}
+                      {newRequestPhotos.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2 mt-2 mb-3">
+                          {newRequestPhotos.map((url, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={url}
+                                alt={`Photo ${index + 1}`}
+                                className="w-full h-20 object-cover rounded-lg"
+                                style={{ border: `1px solid ${colors.borderColor}` }}
+                              />
+                              <button
+                                onClick={() => handleRemoveNewRequestPhoto(index)}
+                                className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Upload Button */}
+                      <label
+                        className="flex items-center justify-center gap-2 p-4 rounded-lg cursor-pointer transition-all border-2 border-dashed mt-2"
+                        style={{
+                          backgroundColor: colors.inputBg,
+                          borderColor: colors.borderColor,
+                          color: colors.textPrimary
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleNewRequestPhotoUpload}
+                          className="hidden"
+                          disabled={uploadingNewRequestPhoto}
+                        />
+                        {uploadingNewRequestPhoto ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span className="font-medium">{strings.uploading}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="w-5 h-5" />
+                            <span className="font-medium">
+                              {newRequestPhotos.length > 0 
+                                ? `${newRequestPhotos.length} ${strings.photos}` 
+                                : strings.attachPhoto}
+                            </span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                    
                     <div className="grid md:grid-cols-2 gap-3">
                       <div>
                         <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
@@ -836,11 +942,18 @@ export default function PropertyTracker() {
                       </div>
                     </div>
                     <div className="flex gap-2 justify-end">
-                      <Button variant="outline" onClick={() => setShowAddMaintenance(false)}>
+                      <Button variant="outline" onClick={() => {
+                        setShowAddMaintenance(false);
+                        setNewRequestPhotos([]);
+                      }}>
                         <X className="w-4 h-4 mr-2" />
                         {strings.cancel}
                       </Button>
-                      <Button onClick={handleMaintenanceSubmit} className="bg-orange-600 hover:bg-orange-700">
+                      <Button 
+                        onClick={handleMaintenanceSubmit} 
+                        disabled={uploadingNewRequestPhoto}
+                        className="bg-orange-600 hover:bg-orange-700"
+                      >
                         <Save className="w-4 h-4 mr-2" />
                         {strings.save}
                       </Button>
