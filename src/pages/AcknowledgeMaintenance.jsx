@@ -325,7 +325,7 @@ export default function AcknowledgeMaintenance() {
           </CardContent>
         </Card>
 
-        {/* Communication History Card - UPDATED WITH VIDEO SUPPORT */}
+        {/* Communication History Card - FIXED CAMERA CAPTURE */}
         {maintenanceRequest?.communication_log && (
           <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
@@ -335,7 +335,6 @@ export default function AcknowledgeMaintenance() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {/* Chat Messages with Video Support */}
               {maintenanceRequest.communication_log.length > 0 && (
                 <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
                   {maintenanceRequest.communication_log.map((entry, index) => {
@@ -394,7 +393,7 @@ export default function AcknowledgeMaintenance() {
                 </div>
               )}
 
-              {/* Chat Input Area with Video Support */}
+              {/* FIXED: Chat Input Area with Working Camera */}
               <div className="border-t pt-4" style={{ borderColor: colors.borderColor }}>
                 {/* Photo/Video Preview */}
                 {chatPhotos.length > 0 && (
@@ -431,7 +430,7 @@ export default function AcknowledgeMaintenance() {
                 )}
 
                 <div className="flex gap-2 items-center">
-                  {/* Take Photo/Video Button */}
+                  {/* Take Photo/Video Button - FIXED */}
                   <label
                     className="flex-shrink-0 cursor-pointer"
                     style={{
@@ -448,7 +447,7 @@ export default function AcknowledgeMaintenance() {
                     <input
                       type="file"
                       accept="image/*,video/*"
-                      capture="environment"
+                      capture="user" // Changed from "environment" to "user"
                       multiple
                       onChange={handleChatPhotoUpload}
                       className="hidden"
@@ -461,7 +460,7 @@ export default function AcknowledgeMaintenance() {
                     )}
                   </label>
 
-                  {/* Upload from Gallery Button with Video Support */}
+                  {/* Upload from Gallery Button - NO capture */}
                   <label
                     className="flex-shrink-0 cursor-pointer"
                     style={{
@@ -530,7 +529,7 @@ export default function AcknowledgeMaintenance() {
           </Card>
         )}
 
-        {/* Update Status Card - WITH VIDEO SUPPORT */}
+        {/* Update Status Card - FIXED CAMERA CAPTURE */}
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
@@ -599,7 +598,7 @@ export default function AcknowledgeMaintenance() {
                 />
               </div>
 
-              {/* Completion Photos/Videos with Camera & Gallery */}
+              {/* FIXED: Completion Photos/Videos with Working Camera */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Camera className="w-4 h-4 inline mr-1" />
@@ -644,7 +643,7 @@ export default function AcknowledgeMaintenance() {
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Take Photo/Video */}
+                  {/* Take Photo/Video - FIXED */}
                   <label
                     className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                     style={{
@@ -656,7 +655,7 @@ export default function AcknowledgeMaintenance() {
                     <input
                       type="file"
                       accept="image/*,video/*"
-                      capture="environment"
+                      capture="user" // Changed from "environment" to "user"
                       multiple
                       onChange={(e) => handlePhotoUpload(e, 'completion')}
                       className="hidden"
@@ -675,7 +674,7 @@ export default function AcknowledgeMaintenance() {
                     )}
                   </label>
 
-                  {/* Upload from Gallery with Video Support */}
+                  {/* Upload from Gallery - NO capture */}
                   <label
                     className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                     style={{
@@ -707,7 +706,7 @@ export default function AcknowledgeMaintenance() {
                 </div>
               </div>
 
-              {/* Bill Photos/Videos with Camera & Gallery */}
+              {/* FIXED: Bill Photos/Videos with Working Camera */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Receipt className="w-4 h-4 inline mr-1" />
@@ -752,7 +751,7 @@ export default function AcknowledgeMaintenance() {
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Take Photo/Video */}
+                  {/* Take Photo/Video - FIXED */}
                   <label
                     className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                     style={{
@@ -764,7 +763,7 @@ export default function AcknowledgeMaintenance() {
                     <input
                       type="file"
                       accept="image/*,video/*"
-                      capture="environment"
+                      capture="user" // Changed from "environment" to "user"
                       multiple
                       onChange={(e) => handlePhotoUpload(e, 'bill')}
                       className="hidden"
@@ -783,7 +782,7 @@ export default function AcknowledgeMaintenance() {
                     )}
                   </label>
 
-                  {/* Upload from Gallery with Video Support */}
+                  {/* Upload from Gallery - NO capture */}
                   <label
                     className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                     style={{

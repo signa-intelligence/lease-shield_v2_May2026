@@ -535,7 +535,7 @@ export default function PropertyTracker() {
                 <div className="text-center py-8">
                   <Wallet className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
                   <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noDeposit}</p>
-                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addDepositDesc}</p>
+                  <p className="text-sm mb-4" style={{ color: colors.textSecondary}>{strings.addDepositDesc}</p>
                   <Button onClick={() => setEditingDeposit(true)} className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal">
                     <Plus className="w-4 h-4 mr-2" />
                     {strings.addDeposit}
@@ -849,7 +849,7 @@ export default function PropertyTracker() {
                       />
                     </div>
                     
-                    {/* UPDATED: Photo/Video Upload Section */}
+                    {/* FIXED: Photo/Video Upload Section with Working Camera */}
                     <div>
                       <Label style={{ color: colors.textPrimary }}>
                         <Camera className="w-4 h-4 inline mr-1" />
@@ -894,9 +894,9 @@ export default function PropertyTracker() {
                         </div>
                       )}
                       
-                      {/* Upload Buttons - Camera & Gallery with Video Support */}
+                      {/* FIXED: Upload Buttons - Camera triggers camera, Gallery triggers gallery */}
                       <div className="grid grid-cols-2 gap-2 mt-2">
-                        {/* Take Photo/Video Button */}
+                        {/* Take Photo/Video Button - FIXED capture attribute */}
                         <label
                           className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                           style={{
@@ -907,8 +907,8 @@ export default function PropertyTracker() {
                         >
                           <input
                             type="file"
-                            accept="image/*,video/*" // MODIFIED
-                            capture="environment"
+                            accept="image/*,video/*"
+                            capture="user" // Changed from "environment" to "user"
                             multiple
                             onChange={handleNewRequestPhotoUpload}
                             className="hidden"
@@ -927,7 +927,7 @@ export default function PropertyTracker() {
                           )}
                         </label>
 
-                        {/* Upload from Gallery Button */}
+                        {/* Upload from Gallery Button - NO capture attribute */}
                         <label
                           className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
                           style={{
@@ -938,7 +938,7 @@ export default function PropertyTracker() {
                         >
                           <input
                             type="file"
-                            accept="image/*,video/*" // MODIFIED
+                            accept="image/*,video/*"
                             multiple
                             onChange={handleNewRequestPhotoUpload}
                             className="hidden"
@@ -1142,7 +1142,7 @@ export default function PropertyTracker() {
                               })}
                             </div>
 
-                            {/* Chat Input with Video Support */}
+                            {/* FIXED: Chat Input with Working Camera */}
                             <div className="p-4 border-t" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
                               {/* Photo/Video Preview */}
                               {chatPhotos[request.id] && chatPhotos[request.id].length > 0 && (
@@ -1181,7 +1181,7 @@ export default function PropertyTracker() {
                               )}
 
                               <div className="flex gap-2">
-                                {/* Take Photo/Video Button */}
+                                {/* Take Photo/Video Button - FIXED */}
                                 <label
                                   className="flex-shrink-0 cursor-pointer"
                                   style={{
@@ -1197,8 +1197,8 @@ export default function PropertyTracker() {
                                 >
                                   <input
                                     type="file"
-                                    accept="image/*,video/*" // MODIFIED
-                                    capture="environment"
+                                    accept="image/*,video/*"
+                                    capture="user" // Changed from "environment" to "user"
                                     multiple
                                     onChange={(e) => handleChatPhotoUpload(e, request.id)}
                                     className="hidden"
@@ -1211,7 +1211,7 @@ export default function PropertyTracker() {
                                   )}
                                 </label>
 
-                                {/* Upload from Gallery Button with Video Support */}
+                                {/* Upload from Gallery Button - NO capture */}
                                 <label
                                   className="flex-shrink-0 cursor-pointer"
                                   style={{
@@ -1227,7 +1227,7 @@ export default function PropertyTracker() {
                                 >
                                   <input
                                     type="file"
-                                    accept="image/*,video/*" // MODIFIED
+                                    accept="image/*,video/*"
                                     multiple
                                     onChange={(e) => handleChatPhotoUpload(e, request.id)}
                                     className="hidden"
