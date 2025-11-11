@@ -2,7 +2,7 @@
 import React, { useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, DollarSign } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays } from "date-fns";
@@ -13,6 +13,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import StatsCard from "../components/dashboard/StatsCard";
 import DepositAlert from "../components/dashboard/DepositAlert";
 import RecentLeases from "../components/dashboard/RecentLeases";
+import TrendChart from "../components/dashboard/TrendChart";
+import CaseAnalytics from "../components/dashboard/CaseAnalytics";
+import KPIDashboard from "../components/dashboard/KPIDashboard";
 
 export default function Dashboard() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -353,6 +356,55 @@ export default function Dashboard() {
     setShowImprovementDialog(true);
   };
 
+  // Calculate trend data for charts
+  const getLast6MonthsData = () => {
+    const months = [];
+    const now = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { month: 'short' });
+      
+      const monthLeases = leases.filter(l => {
+        const leaseDate = new Date(l.created_date);
+        return leaseDate.getMonth() === date.getMonth() && 
+               leaseDate.getFullYear() === date.getFullYear();
+      }).length;
+
+      const monthDeposits = deposits.filter(d => {
+        const depositDate = new Date(d.created_date);
+        return depositDate.getMonth() === date.getMonth() && 
+               depositDate.getFullYear() === date.getFullYear();
+      }).length;
+
+      const monthCases = cases.filter(c => {
+        const caseDate = new Date(c.created_date);
+        return caseDate.getMonth() === date.getMonth() && 
+               caseDate.getFullYear() === date.getFullYear();
+      }).length;
+
+      const monthDepositValue = deposits
+        .filter(d => {
+          const depositDate = new Date(d.created_date);
+          return depositDate.getMonth() === date.getMonth() && 
+                 depositDate.getFullYear() === date.getFullYear();
+        })
+        .reduce((sum, d) => sum + (d.deposit_amount || 0), 0);
+
+      months.push({
+        month: monthName,
+        leases: monthLeases,
+        deposits: monthDeposits,
+        cases: monthCases,
+        depositValue: Math.round(monthDepositValue / 1000) // in thousands
+      });
+    }
+    
+    return months;
+  };
+
+  const trendData = getLast6MonthsData();
+
   const t = {
     en: {
       welcome: "Welcome back",
@@ -383,7 +435,16 @@ export default function Dashboard() {
       manageLeases: "Manage Leases",
       alertsEnabled: "Alerts Enabled",
       uploadFirstLease: "Upload First Lease",
-      scannedLeases: "Scanned"
+      scannedLeases: "Scanned",
+      sixMonthTrends: "6-Month Trends",
+      newLeases: "New Leases",
+      depositsTrackedChart: "Deposits Tracked",
+      casesOpened: "Cases Opened",
+      depositValue: "Deposit Value",
+      caseAnalytics: "Case Analytics",
+      perfectScore: "Perfect Score! 🎉",
+      perfectScoreDesc: "You're all set with maximum protection",
+      addPoints: "Increase your protection by {points} points",
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -414,7 +475,16 @@ export default function Dashboard() {
       manageLeases: "จัดการสัญญา",
       alertsEnabled: "การแจ้งเตือนเปิดอยู่",
       uploadFirstLease: "อัปโหลดสัญญาแรก",
-      scannedLeases: "สัญญาที่สแกนแล้ว"
+      scannedLeases: "สัญญาที่สแกนแล้ว",
+      sixMonthTrends: "แนวโน้มตลอด 6 เดือน",
+      newLeases: "สัญญาเช่าใหม่",
+      depositsTrackedChart: "เงินมัดจำที่ติดตาม",
+      casesOpened: "คดีที่เปิด",
+      depositValue: "มูลค่าเงินมัดจำ",
+      caseAnalytics: "วิเคราะห์คดี",
+      perfectScore: "คะแนนเต็ม! 🎉",
+      perfectScoreDesc: "คุณทำได้ดีมาก ทุกอย่างพร้อมแล้ว",
+      addPoints: "เพิ่มคะแนนการป้องกันของคุณ {points} คะแนน",
     }
   };
 
@@ -424,7 +494,10 @@ export default function Dashboard() {
     FileText: FileText,
     Shield: Shield,
     Bell: Bell,
-    Wrench: Wrench
+    Wrench: Wrench,
+    Wallet: Wallet,
+    Scale: Scale,
+    DollarSign: DollarSign
   };
 
   // Dark mode colors
@@ -480,6 +553,17 @@ export default function Dashboard() {
           }}>
             {strings.subtitle}
           </p>
+        </div>
+
+        {/* KPI Dashboard */}
+        <div className="mb-6 sm:mb-8">
+          <KPIDashboard
+            leases={leases}
+            deposits={deposits}
+            cases={cases}
+            documents={documents}
+            language={language}
+          />
         </div>
 
         {/* Stats Grid - Single column on mobile, 2 on tablet, 4 on desktop */}
@@ -578,10 +662,10 @@ export default function Dashboard() {
                 <div className="text-center py-8">
                   <Shield className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
                   <p className="text-lg font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                    {language === 'th' ? 'คะแนนเต็ม! 🎉' : 'Perfect Score! 🎉'}
+                    {strings.perfectScore}
                   </p>
                   <p style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'คุณทำได้ดีมาก ทุกอย่างพร้อมแล้ว' : 'You\'re all set with maximum protection'}
+                    {strings.perfectScoreDesc}
                   </p>
                 </div>
               ) : (
@@ -625,9 +709,7 @@ export default function Dashboard() {
                                 </Badge>
                               </div>
                               <p className="text-sm" style={{ color: colors.textSecondary }}>
-                                {language === 'th' 
-                                  ? `เพิ่มคะแนนการป้องกันของคุณ ${rec.points} คะแนน` 
-                                  : `Increase your protection by ${rec.points} points`}
+                                {strings.addPoints.replace('{points}', rec.points)}
                               </p>
                             </div>
                           </div>
@@ -641,6 +723,59 @@ export default function Dashboard() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Trend Charts */}
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
+            {strings.sixMonthTrends}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TrendChart
+              title={strings.newLeases}
+              data={trendData}
+              dataKey="leases"
+              color="#0C3B2E"
+              icon={FileText}
+              type="area"
+            />
+            <TrendChart
+              title={strings.depositsTrackedChart}
+              data={trendData}
+              dataKey="deposits"
+              color="#C7A338"
+              icon={Wallet}
+              type="line"
+            />
+            <TrendChart
+              title={strings.casesOpened}
+              data={trendData}
+              dataKey="cases"
+              color="#3B82F6"
+              icon={Scale}
+              type="line"
+            />
+            <TrendChart
+              title={strings.depositValue}
+              data={trendData}
+              dataKey="depositValue"
+              color="#10B981"
+              icon={DollarSign}
+              type="area"
+              valuePrefix="฿"
+              valueSuffix="k"
+            />
+          </div>
+        </div>
+
+        {/* Case Analytics */}
+        {cases.length > 0 && (
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
+              {strings.caseAnalytics}
+            </h2>
+            <CaseAnalytics cases={cases} language={language} />
+          </div>
+        )}
 
         {/* Quick Actions - MODERNIZED */}
         <div style={{
