@@ -10,6 +10,10 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import MessageTemplateSelector from "../components/messages/MessageTemplateSelector";
 
+function getOtherParticipant(conversation) {
+  return conversation?.participants?.find(p => p.email !== window.currentUserEmail);
+}
+
 export default function ConversationPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -26,6 +30,13 @@ export default function ConversationPage() {
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
+
+  // Store user email globally for helper function
+  useEffect(() => {
+    if (user?.email) {
+      window.currentUserEmail = user.email;
+    }
+  }, [user]);
 
   const { data: conversation } = useQuery({
     queryKey: ['conversation', conversationId],
@@ -145,7 +156,7 @@ export default function ConversationPage() {
   };
 
   const handleTemplateSelect = (template) => {
-    const content = user?.language === 'th' ? template.content_th : template.content_en;
+    const content = language === 'th' ? template.content_th : template.content_en;
     setMessageText(content);
     setShowTemplates(false);
   };
@@ -153,46 +164,35 @@ export default function ConversationPage() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-  } : {
-    bg: '#F8FAFC',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
+  const colors = {
+    bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
+    cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
+    textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
+    textSecondary: isDarkMode ? '#9CA3AF' : '#64748b',
+    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB'
   };
 
-  const t = {
+  const strings = {
     en: {
-      back: "Back",
-      typeMessage: "Type a message...",
+      landlord: "Landlord",
+      juristic: "Juristic",
+      tenant: "Tenant"
     },
     th: {
-      back: "กลับ",
-      typeMessage: "พิมพ์ข้อความ...",
+      landlord: "เจ้าของบ้าน",
+      juristic: "นิติบุคคล",
+      tenant: "ผู้เช่า"
     }
-  };
-
-  const strings = t[language];
-
-  const getOtherParticipant = (conv) => {
-    if (!conv) return null;
-    return conv.participants?.find(p => p.email !== user?.email);
-  };
+  }[language];
 
   const otherParticipant = getOtherParticipant(conversation);
 
   if (!conversation) {
     return (
       <div style={{ 
-        minHeight: 'calc(100vh - 144px)',
-        display: 'flex', 
-        alignItems: 'center', 
+        minHeight: '400px',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.bg 
       }}>
@@ -203,15 +203,20 @@ export default function ConversationPage() {
 
   return (
     <div style={{ 
-      backgroundColor: colors.bg,
-      minHeight: 'calc(100vh - 144px)',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      height: 'calc(100vh - 144px)',
+      backgroundColor: colors.bg
     }}>
       {/* Header */}
-      <div className="p-4 flex items-center gap-3" style={{
+      <div style={{
+        borderBottom: `1px solid ${colors.borderColor}`,
+        padding: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
         backgroundColor: colors.cardBg,
-        borderBottom: `1px solid ${colors.borderColor}`
+        flexShrink: 0
       }}>
         <Button
           variant="ghost"
@@ -220,9 +225,9 @@ export default function ConversationPage() {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="flex-1">
+        <div style={{ flex: 1 }}>
           <h2 className="font-bold" style={{ color: colors.textPrimary }}>
-            {otherParticipant?.name || (language === 'th' ? 'การสนทนา' : 'Conversation')}
+            {otherParticipant?.name || strings[otherParticipant?.role]}
           </h2>
           <p className="text-sm" style={{ color: colors.textSecondary }}>
             {conversation.subject}
@@ -231,17 +236,37 @@ export default function ConversationPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{
-        maxHeight: 'calc(100vh - 350px)'
+      <div style={{ 
+        flex: 1,
+        overflowY: 'auto',
+        padding: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
       }}>
         {messages.map((message) => {
           const isOwn = message.sender_email === user?.email;
           
           return (
-            <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+            <div key={message.id} style={{ 
+              display: 'flex',
+              justifyContent: isOwn ? 'flex-end' : 'flex-start'
+            }}>
+              <div style={{
+                maxWidth: '80%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: isOwn ? 'flex-end' : 'flex-start',
+                gap: '4px'
+              }}>
                 {!isOwn && (
-                  <div className="flex items-center gap-2 px-2">
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    paddingLeft: '8px',
+                    paddingRight: '8px'
+                  }}>
                     <div style={{
                       width: '24px',
                       height: '24px',
@@ -253,40 +278,61 @@ export default function ConversationPage() {
                     }}>
                       <User className="w-3 h-3 text-white" />
                     </div>
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                    <p style={{ 
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      color: colors.textSecondary 
+                    }}>
                       {message.sender_name}
                     </p>
                   </div>
                 )}
-                <div
-                  className="rounded-2xl p-4"
-                  style={{
-                    backgroundColor: isOwn ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#F3F4F6'),
-                    color: isOwn ? '#FFFFFF' : colors.textPrimary
-                  }}
-                >
-                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                <div style={{
+                  borderRadius: '16px',
+                  padding: '16px',
+                  backgroundColor: isOwn ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#F3F4F6'),
+                  color: isOwn ? '#FFFFFF' : colors.textPrimary
+                }}>
+                  <p style={{ 
+                    fontSize: '14px',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word'
+                  }}>
+                    {message.content}
+                  </p>
                   {message.attachments?.length > 0 && (
-                    <div className="mt-3 space-y-2">
+                    <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {message.attachments.map((att, idx) => (
                         <a
                           key={idx}
                           href={att.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-2 rounded-lg hover:opacity-80 transition-opacity"
                           style={{
-                            backgroundColor: isOwn ? 'rgba(255,255,255,0.1)' : (isDarkMode ? '#2A2D30' : '#FFFFFF')
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px',
+                            borderRadius: '8px',
+                            backgroundColor: isOwn ? 'rgba(255,255,255,0.1)' : (isDarkMode ? '#2A2D30' : '#FFFFFF'),
+                            transition: 'opacity 0.2s'
                           }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                         >
                           <Paperclip className="w-4 h-4" />
-                          <span className="text-xs truncate">{att.name}</span>
+                          <span style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{att.name}</span>
                         </a>
                       ))}
                     </div>
                   )}
                 </div>
-                <p className="text-xs px-2" style={{ color: colors.textSecondary }}>
+                <p style={{ 
+                  fontSize: '12px',
+                  paddingLeft: '8px',
+                  paddingRight: '8px',
+                  color: colors.textSecondary 
+                }}>
                   {format(new Date(message.created_date), 'MMM d, h:mm a')}
                 </p>
               </div>
@@ -297,17 +343,29 @@ export default function ConversationPage() {
       </div>
 
       {/* Message Composer */}
-      <div className="p-4" style={{
+      <div style={{
+        borderTop: `1px solid ${colors.borderColor}`,
+        padding: '16px',
         backgroundColor: colors.cardBg,
-        borderTop: `1px solid ${colors.borderColor}`
+        flexShrink: 0
       }}>
         {attachments.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-2">
+          <div style={{ 
+            marginBottom: '8px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '8px'
+          }}>
             {attachments.map((att, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-2 px-3 py-1 rounded-full text-xs"
                 style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
+                  fontSize: '12px',
                   backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
                   color: colors.textPrimary
                 }}
@@ -318,7 +376,7 @@ export default function ConversationPage() {
             ))}
           </div>
         )}
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: '8px' }}>
           <Button
             variant="outline"
             size="icon"
@@ -349,7 +407,7 @@ export default function ConversationPage() {
           <Textarea
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            placeholder={strings.typeMessage}
+            placeholder={language === 'th' ? 'พิมพ์ข้อความ...' : 'Type a message...'}
             className="flex-1 min-h-[44px] max-h-[120px]"
             style={{
               backgroundColor: colors.cardBg,
