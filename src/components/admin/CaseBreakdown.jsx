@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
@@ -87,12 +88,12 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
           {t.caseBreakdown}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4 md:p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Pie Chart */}
-          <div className="w-full overflow-hidden">
+      <CardContent className="p-4 md:p-6 overflow-x-hidden">
+        <div className="grid grid-cols-1 gap-6">
+          {/* Pie Chart - MOBILE RESPONSIVE */}
+          <div className="w-full overflow-hidden flex justify-center">
             {chartData.length > 0 ? (
-              <div style={{ width: '100%', height: '250px' }}>
+              <div style={{ width: '100%', maxWidth: '350px', height: '250px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -119,8 +120,8 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
             )}
           </div>
 
-          {/* Stats */}
-          <div className="space-y-4">
+          {/* Stats - MOBILE RESPONSIVE */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div
               className="p-4 rounded-xl"
               style={{
@@ -129,12 +130,12 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
               }}
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                <span className="text-xs font-semibold truncate" style={{ color: colors.textSecondary }}>
                   {t.totalCases}
                 </span>
-                <Scale className="w-5 h-5 text-ls-forest" />
+                <Scale className="w-4 h-4 text-ls-forest flex-shrink-0" />
               </div>
-              <p className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
+              <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
                 {totalCases}
               </p>
             </div>
@@ -147,15 +148,15 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
               }}
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                <span className="text-xs font-semibold truncate" style={{ color: colors.textSecondary }}>
                   {t.activeRate}
                 </span>
-                <Clock className="w-5 h-5 text-blue-600" />
+                <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
               </div>
-              <p className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
+              <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
                 {activeRate}%
               </p>
-              <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+              <p className="text-xs mt-1 truncate" style={{ color: colors.textSecondary }}>
                 {activeCases} {language === 'th' ? 'คดี' : 'cases'}
               </p>
             </div>
@@ -168,15 +169,15 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
               }}
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                <span className="text-xs font-semibold truncate" style={{ color: colors.textSecondary }}>
                   {t.resolutionRate}
                 </span>
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
               </div>
-              <p className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
+              <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
                 {resolutionRate}%
               </p>
-              <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+              <p className="text-xs mt-1 truncate" style={{ color: colors.textSecondary }}>
                 {resolvedCases} {language === 'th' ? 'คดี' : 'cases'}
               </p>
             </div>

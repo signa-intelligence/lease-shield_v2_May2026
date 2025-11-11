@@ -653,10 +653,10 @@ export default function AdminConsole() {
 
         {/* Case Breakdown & Activity */}
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3 xl:col-span-2">
             <CaseBreakdown cases={allCases} colors={colors} language={language} />
           </div>
-          <div>
+          <div className="lg:col-span-3 xl:col-span-1">
             <ActivityTimeline activities={recentActivities} colors={colors} language={language} />
           </div>
         </div>

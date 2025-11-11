@@ -27,84 +27,88 @@ export default function ActivityTimeline({ activities = [], colors, language }) 
     }
   };
 
-  const t = strings[language];
+  // The 't' object is still defined but some new strings directly use `language === 'th' ? ... : ...`
+  const t = strings[language]; 
 
   const getActivityIcon = (type) => {
     switch (type) {
       case 'user_registered':
-        return { icon: User, color: '#3B82F6', bg: '#EFF6FF' };
+        return { icon: User, color: '#3B82F6', bgColor: '#EFF6FF' }; // Changed 'bg' to 'bgColor'
       case 'lease_uploaded':
-        return { icon: FileText, color: '#8B5CF6', bg: '#F5F3FF' };
+        return { icon: FileText, color: '#8B5CF6', bgColor: '#F5F3FF' }; // Changed 'bg' to 'bgColor'
       case 'case_opened':
-        return { icon: Scale, color: '#F59E0B', bg: '#FFFBEB' };
+        return { icon: Scale, color: '#F59E0B', bgColor: '#FFFBEB' }; // Changed 'bg' to 'bgColor'
       case 'case_resolved':
-        return { icon: Scale, color: '#10B981', bg: '#F0FDF4' };
+        return { icon: Scale, color: '#10B981', bgColor: '#F0FDF4' }; // Changed 'bg' to 'bgColor'
       case 'subscription':
-        return { icon: Shield, color: '#C7A338', bg: '#FFFBEB' };
+        return { icon: Shield, color: '#C7A338', bgColor: '#FFFBEB' }; // Changed 'bg' to 'bgColor'
       default:
-        return { icon: Clock, color: '#64748B', bg: '#F8FAFC' };
+        return { icon: Clock, color: '#64748B', bgColor: '#F8FAFC' }; // Changed 'bg' to 'bgColor'
     }
   };
 
   const getActivityLabel = (type) => {
-    switch (type) {
-      case 'user_registered':
-        return t.newUser;
-      case 'lease_uploaded':
-        return t.newLease;
-      case 'case_opened':
-        return t.newCase;
-      case 'case_resolved':
-        return t.caseResolved;
-      case 'subscription':
-        return t.subscribed;
-      default:
-        return type;
-    }
+    const labels = {
+      en: {
+        user_registered: 'New User Registered',
+        lease_uploaded: 'Lease Uploaded',
+        case_opened: 'Case Opened',
+        case_resolved: 'Case Resolved'
+      },
+      th: {
+        user_registered: 'ผู้ใช้ใหม่ลงทะเบียน',
+        lease_uploaded: 'อัปโหลดสัญญาเช่า',
+        case_opened: 'เปิดคดี',
+        case_resolved: 'แก้ไขคดี'
+      }
+    };
+    return labels[language]?.[type] || type;
   };
 
   return (
     <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
       <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-        <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
+        <CardTitle className="flex items-center gap-2 text-base md:text-lg" style={{ color: colors.textPrimary }}>
           <Clock className="w-5 h-5 text-ls-forest" />
-          {t.recentActivity}
+          {language === 'th' ? 'กิจกรรมล่าสุด' : 'Recent Activity'}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6">
-        {activities.length > 0 ? (
-          <div className="space-y-4">
+      <CardContent className="p-4 md:p-6">
+        {activities.length === 0 ? (
+          <div className="text-center py-8">
+            <p style={{ color: colors.textSecondary }}>{language === 'th' ? 'ไม่มีกิจกรรมล่าสุด' : 'No recent activity'}</p>
+          </div>
+        ) : (
+          <div className="space-y-3 overflow-x-hidden">
             {activities.map((activity, index) => {
-              const { icon: Icon, color, bg } = getActivityIcon(activity.type);
-              const isDark = colors.bg === '#1A1D1F';
+              const { icon: Icon, color, bgColor } = getActivityIcon(activity.type);
               
               return (
-                <div key={index} className="flex items-start gap-4">
+                <div key={index} className="flex items-start gap-3">
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: isDark ? color + '30' : bg }}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: bgColor }}
                   >
-                    <Icon className="w-5 h-5" style={{ color: color }} />
+                    <Icon className="w-4 h-4" style={{ color: color }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                    <p className="font-semibold text-sm mb-1" style={{ color: colors.textPrimary }}>
                       {getActivityLabel(activity.type)}
                     </p>
-                    <p className="text-xs truncate" style={{ color: colors.textSecondary }}>
+                    <p className="text-xs break-words line-clamp-2" style={{ 
+                      color: colors.textSecondary,
+                      wordBreak: 'break-word',
+                      overflowWrap: 'anywhere'
+                    }}>
                       {activity.description}
                     </p>
                     <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                      {format(new Date(activity.timestamp), 'MMM d, yyyy h:mm a')}
+                      {format(new Date(activity.timestamp), 'MMM d, h:mm a')}
                     </p>
                   </div>
                 </div>
               );
             })}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <Clock className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-            <p style={{ color: colors.textSecondary }}>{t.noActivity}</p>
           </div>
         )}
       </CardContent>
