@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, Loader2, AlertTriangle, Wrench, Clock, MessageSquare, Camera, Receipt, X, ImageIcon } from "lucide-react";
+import { CheckCircle2, Loader2, AlertTriangle, Wrench, Clock, MessageSquare, Camera, Receipt, X, ImageIcon, User } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
@@ -260,11 +261,50 @@ export default function AcknowledgeMaintenance() {
                   </div>
                 </div>
               )}
+
+              {/* Communication History */}
+              {maintenanceRequest?.communication_log && maintenanceRequest.communication_log.length > 0 && (
+                <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <MessageSquare className="w-4 h-4 text-ls-forest" />
+                    <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>Communication History:</p>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {maintenanceRequest.communication_log.map((entry, index) => {
+                      const isTenant = entry.sender?.toLowerCase().includes('tenant');
+                      
+                      return (
+                        <div
+                          key={index}
+                          className="p-3 rounded-lg border-l-4 text-sm"
+                          style={{
+                            backgroundColor: isTenant ? '#EFF6FF' : '#FEF3C7',
+                            borderLeftColor: isTenant ? '#3B82F6' : '#F59E0B'
+                          }}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2">
+                              <User className="w-3 h-3" style={{ color: isTenant ? '#3B82F6' : '#F59E0B' }} />
+                              <span className="font-bold text-xs" style={{ color: colors.textPrimary }}>
+                                {entry.sender}
+                              </span>
+                            </div>
+                            <span className="text-xs" style={{ color: colors.textSecondary }}>
+                              {new Date(entry.date).toLocaleString()}
+                            </span>
+                          </div>
+                          <p style={{ color: colors.textPrimary }}>{entry.message}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+        <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <Clock className="w-5 h-5 text-ls-gold" />
@@ -492,6 +532,51 @@ export default function AcknowledgeMaintenance() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Communication History Card */}
+        {maintenanceRequest?.communication_log && maintenanceRequest.communication_log.length > 0 && (
+          <Card className="border-none shadow-xl mt-6" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <MessageSquare className="w-5 h-5 text-ls-forest" />
+                Communication History
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-3">
+                {maintenanceRequest.communication_log.map((entry, index) => {
+                  const isTenant = entry.sender?.toLowerCase().includes('tenant');
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="p-4 rounded-lg border-l-4"
+                      style={{
+                        backgroundColor: isTenant ? '#EFF6FF' : '#FEF3C7',
+                        borderLeftColor: isTenant ? '#3B82F6' : '#F59E0B'
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4" style={{ color: isTenant ? '#3B82F6' : '#F59E0B' }} />
+                          <span className="font-bold text-sm" style={{ color: colors.textPrimary }}>
+                            {entry.sender}
+                          </span>
+                        </div>
+                        <span className="text-xs" style={{ color: colors.textSecondary }}>
+                          {new Date(entry.date).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-sm" style={{ color: colors.textPrimary }}>
+                        {entry.message}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

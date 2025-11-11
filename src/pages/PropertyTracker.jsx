@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
   Edit2, Save, X, Wrench, AlertCircle, CheckCircle2, Clock,
-  DollarSign, ArrowLeft, Shield
+  DollarSign, ArrowLeft, Shield, MessageSquare, User
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +29,7 @@ export default function PropertyTracker() {
   const [editingDeposit, setEditingDeposit] = useState(false);
   const [editingRent, setEditingRent] = useState(false);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
+  const [expandedRequests, setExpandedRequests] = useState({});
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -98,8 +98,21 @@ export default function PropertyTracker() {
 
   const createMaintenanceMutation = useMutation({
     mutationFn: async (data) => {
-      const request = await base44.entities.MaintenanceRequest.create(data);
-
+      // ✅ Add initial log entry when tenant creates request
+      const initialLog = [{
+        date: new Date().toISOString(),
+        sender: 'Tenant',
+        message: `Issue reported: ${data.issue_title}`
+      }];
+      
+      const requestData = {
+        ...data,
+        communication_log: initialLog,
+        acknowledgment_token: crypto.randomUUID() // Generate secure token for landlord access
+      };
+      
+      const request = await base44.entities.MaintenanceRequest.create(requestData);
+      
       // Send notifications to landlord/juristic
       try {
         await base44.functions.invoke('sendMaintenanceNotification', {
@@ -110,7 +123,7 @@ export default function PropertyTracker() {
       } catch (err) {
         console.error('❌ Failed to send maintenance notifications:', err);
       }
-
+      
       return request;
     },
     onSuccess: () => {
@@ -130,7 +143,7 @@ export default function PropertyTracker() {
   const updateMaintenanceStatusMutation = useMutation({
     mutationFn: async ({ id, status }) => {
       await base44.entities.MaintenanceRequest.update(id, { status });
-
+      
       // Send notification to tenant about status change
       try {
         await base44.functions.invoke('sendMaintenanceNotification', {
@@ -195,7 +208,12 @@ export default function PropertyTracker() {
       reportedDate: "Reported Date",
       noMaintenance: "No maintenance requests",
       status: "Status",
-      back: "Back"
+      back: "Back",
+      chatLog: "Communication History",
+      viewChat: "View Chat",
+      hideChat: "Hide Chat",
+      tenant: "Tenant",
+      landlord: "Landlord/Juristic"
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -231,7 +249,12 @@ export default function PropertyTracker() {
       reportedDate: "วันที่รายงาน",
       noMaintenance: "ไม่มีคำขอซ่อมบำรุง",
       status: "สถานะ",
-      back: "กลับ"
+      back: "กลับ",
+      chatLog: "ประวัติการสื่อสาร",
+      viewChat: "ดูแชท",
+      hideChat: "ซ่อนแชท",
+      tenant: "ผู้เช่า",
+      landlord: "เจ้าของบ้าน/นิติ"
     }
   };
 
@@ -241,6 +264,13 @@ export default function PropertyTracker() {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
+    }));
+  };
+
+  const toggleRequestChat = (requestId) => {
+    setExpandedRequests(prev => ({
+      ...prev,
+      [requestId]: !prev[requestId]
     }));
   };
 
@@ -641,10 +671,10 @@ export default function PropertyTracker() {
 
         {/* MAINTENANCE SECTION */}
         <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader
+          <CardHeader 
             className="cursor-pointer"
             onClick={() => toggleSection('maintenance')}
-            style={{
+            style={{ 
               backgroundColor: colors.sectionBg,
               borderBottom: expandedSections.maintenance ? `1px solid ${colors.borderColor}` : 'none'
             }}
@@ -754,36 +784,105 @@ export default function PropertyTracker() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {maintenanceRequests.map((request) => (
-                    <div key={request.id} className="p-4 rounded-lg border" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div className="flex-1">
-                          <h4 className="font-bold" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
-                          <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{request.description}</p>
+                  {maintenanceRequests.map((request) => {
+                    const chatLog = request.communication_log || [];
+                    const isChatExpanded = expandedRequests[request.id];
+                    
+                    return (
+                      <div key={request.id} className="rounded-lg border" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
+                        <div className="p-4">
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div className="flex-1">
+                              <h4 className="font-bold" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
+                              <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{request.description}</p>
+                            </div>
+                            <Select
+                              value={request.status}
+                              onValueChange={(value) => updateMaintenanceStatusMutation.mutate({ id: request.id, status: value })}
+                            >
+                              <SelectTrigger className={`${getStatusColor(request.status)} border-none w-32`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="reported">Reported</SelectItem>
+                                <SelectItem value="acknowledged">Acknowledged</SelectItem>
+                                <SelectItem value="in_progress">In Progress</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs mb-3" style={{ color: colors.textSecondary }}>
+                            <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
+                            <span>🏷️ {request.category}</span>
+                            <span>⚡ {request.priority}</span>
+                            {chatLog.length > 0 && (
+                              <span className="flex items-center gap-1">
+                                <MessageSquare className="w-3 h-3" />
+                                {chatLog.length} updates
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Chat Log Toggle */}
+                          {chatLog.length > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleRequestChat(request.id)}
+                              className="w-full justify-center text-xs mt-2"
+                            >
+                              <MessageSquare className="w-3 h-3 mr-1" />
+                              {isChatExpanded ? strings.hideChat : strings.viewChat}
+                              <ChevronDown className={`w-3 h-3 ml-1 transition-transform ${isChatExpanded ? 'rotate-180' : ''}`} />
+                            </Button>
+                          )}
                         </div>
-                        <Select
-                          value={request.status}
-                          onValueChange={(value) => updateMaintenanceStatusMutation.mutate({ id: request.id, status: value })}
-                        >
-                          <SelectTrigger className={`${getStatusColor(request.status)} border-none w-32`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="reported">Reported</SelectItem>
-                            <SelectItem value="acknowledged">Acknowledged</SelectItem>
-                            <SelectItem value="in_progress">In Progress</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="rejected">Rejected</SelectItem>
-                          </SelectContent>
-                        </Select>
+
+                        {/* Communication Log */}
+                        {isChatExpanded && chatLog.length > 0 && (
+                          <div className="border-t p-4 space-y-3" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF' }}>
+                            <div className="flex items-center gap-2 mb-3">
+                              <MessageSquare className="w-4 h-4 text-ls-forest" />
+                              <h5 className="font-bold text-sm" style={{ color: colors.textPrimary }}>{strings.chatLog}</h5>
+                            </div>
+                            {chatLog.map((entry, index) => {
+                              const isTenant = entry.sender?.toLowerCase().includes('tenant');
+                              const isLandlord = entry.sender?.toLowerCase().includes('landlord') || entry.sender?.toLowerCase().includes('juristic');
+                              
+                              return (
+                                <div
+                                  key={index}
+                                  className="p-3 rounded-lg border-l-4"
+                                  style={{
+                                    backgroundColor: isTenant 
+                                      ? (isDarkMode ? '#1E3A5F' : '#EFF6FF')
+                                      : (isDarkMode ? '#1F2937' : '#F9FAFB'),
+                                    borderLeftColor: isTenant ? '#3B82F6' : '#F59E0B'
+                                  }}
+                                >
+                                  <div className="flex items-start justify-between gap-2 mb-1">
+                                    <div className="flex items-center gap-2">
+                                      <User className="w-3 h-3" style={{ color: isTenant ? '#3B82F6' : '#F59E0B' }} />
+                                      <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>
+                                        {isTenant ? strings.tenant : isLandlord ? strings.landlord : entry.sender}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs" style={{ color: colors.textSecondary }}>
+                                      {format(new Date(entry.date), 'MMM d, h:mm a')}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm" style={{ color: colors.textPrimary }}>
+                                    {entry.message}
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-4 text-xs" style={{ color: colors.textSecondary }}>
-                        <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
-                        <span>🏷️ {request.category}</span>
-                        <span>⚡ {request.priority}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

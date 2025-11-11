@@ -59,6 +59,16 @@ Deno.serve(async (req) => {
         updateData.resolved_date = new Date().toISOString().split('T')[0];
       }
 
+      // ✅ ADD TO COMMUNICATION LOG
+      const existingLog = maintenanceRequest.communication_log || [];
+      const newLogEntry = {
+        date: new Date().toISOString(),
+        sender: 'Landlord/Juristic',
+        message: landlordResponse || `Status updated to: ${status}`
+      };
+      
+      updateData.communication_log = [...existingLog, newLogEntry];
+
       await base44.asServiceRole.entities.MaintenanceRequest.update(maintenanceRequest.id, updateData);
 
       // Get tenant user data to send notification
