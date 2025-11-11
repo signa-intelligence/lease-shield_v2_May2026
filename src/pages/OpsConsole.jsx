@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,14 +22,14 @@ import {
   Loader2,
   ArrowLeft,
   LayoutGrid,
-  List
+  List,
+  Target
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import CaseKanban from "../components/admin/CaseKanban";
 import { ToastProvider, useToast } from "../components/shared/Toast";
-import { spacing, borderRadius, transitions } from "@/utils/designSystem";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -44,14 +43,6 @@ const STATUS_CONFIG = {
   closed: { label: 'Closed', color: 'bg-gray-100 text-gray-800', icon: CheckCircle2 }
 };
 
-// Assuming brandColors are defined elsewhere or should be imported.
-// For now, I'll define a placeholder if not found, to prevent errors.
-const brandColors = {
-  forest: '#1E392A', // Example color
-  // ... other brand colors
-};
-
-
 function OpsConsoleContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -61,7 +52,7 @@ function OpsConsoleContent() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [generatingLetters, setGeneratingLetters] = useState(null);
-  const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'list'
+  const [viewMode, setViewMode] = useState('kanban');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -229,7 +220,6 @@ function OpsConsoleContent() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        {/* Header with View Toggle */}
         <div className="mb-6">
           <Button
             variant="outline"
@@ -258,7 +248,6 @@ function OpsConsoleContent() {
               </div>
             </div>
 
-            {/* View Mode Toggle */}
             <div 
               className="flex rounded-lg p-1"
               style={{ 
@@ -270,17 +259,17 @@ function OpsConsoleContent() {
                 onClick={() => setViewMode('kanban')}
                 style={{
                   padding: '8px 16px',
-                  borderRadius: borderRadius.md,
-                  backgroundColor: viewMode === 'kanban' ? brandColors.forest : 'transparent',
+                  borderRadius: '8px',
+                  backgroundColor: viewMode === 'kanban' ? '#0C3B2E' : 'transparent',
                   color: viewMode === 'kanban' ? '#FFFFFF' : colors.textPrimary,
                   border: 'none',
                   cursor: 'pointer',
                   fontSize: '14px',
                   fontWeight: '600',
-                  transition: transitions.fast,
+                  transition: 'all 0.2s',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: spacing.sm,
+                  gap: '8px',
                 }}
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -290,17 +279,17 @@ function OpsConsoleContent() {
                 onClick={() => setViewMode('list')}
                 style={{
                   padding: '8px 16px',
-                  borderRadius: borderRadius.md,
-                  backgroundColor: viewMode === 'list' ? brandColors.forest : 'transparent',
+                  borderRadius: '8px',
+                  backgroundColor: viewMode === 'list' ? '#0C3B2E' : 'transparent',
                   color: viewMode === 'list' ? '#FFFFFF' : colors.textPrimary,
                   border: 'none',
                   cursor: 'pointer',
                   fontSize: '14px',
                   fontWeight: '600',
-                  transition: transitions.fast,
+                  transition: 'all 0.2s',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: spacing.sm,
+                  gap: '8px',
                 }}
               >
                 <List className="w-4 h-4" />
@@ -310,7 +299,6 @@ function OpsConsoleContent() {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card className="border-none shadow-md" style={{ backgroundColor: colors.statBg, borderColor: colors.borderColor }}>
             <CardContent className="p-4">
@@ -375,7 +363,6 @@ function OpsConsoleContent() {
           </Card>
         </div>
 
-        {/* Filters */}
         <Card className="mb-6 border-none shadow-md" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
           <CardContent className="p-4">
             <div className="grid md:grid-cols-2 gap-4">
@@ -426,7 +413,6 @@ function OpsConsoleContent() {
           </CardContent>
         </Card>
 
-        {/* Kanban or List View */}
         {viewMode === 'kanban' ? (
           <CaseKanban
             cases={filteredCases}
@@ -602,7 +588,6 @@ function OpsConsoleContent() {
           </div>
         )}
 
-        {/* Action Modal */}
         {selectedCase && actionMode && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-md border-none shadow-2xl" style={{ backgroundColor: colors.modalBg }}>
@@ -770,8 +755,8 @@ function OpsConsoleContent() {
                 )}
               </CardContent>
             </Card>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
