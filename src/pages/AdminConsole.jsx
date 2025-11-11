@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -24,6 +25,7 @@ import TrendChart from "../components/admin/TrendChart";
 import CaseBreakdown from "../components/admin/CaseBreakdown";
 import ActivityTimeline from "../components/admin/ActivityTimeline";
 import TestNotifications from "../components/admin/TestNotifications";
+import ReminderControl from "../components/admin/ReminderControl";
 
 export default function AdminConsole() {
   const [seedingDemo, setSeedingDemo] = useState(false);
@@ -637,6 +639,10 @@ export default function AdminConsole() {
             </Button>
           </CardContent>
         </Card>
+
+        <div className="mb-6">
+          <ReminderControl language={language} colors={colors} />
+        </div>
 
         <div className="mb-6">
           <TestNotifications users={users} language={language} colors={colors} />
