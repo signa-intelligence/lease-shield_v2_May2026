@@ -25,12 +25,10 @@ import AdminDashboardStats from "../components/admin/AdminDashboardStats";
 import TrendChart from "../components/admin/TrendChart";
 import CaseBreakdown from "../components/admin/CaseBreakdown";
 import ActivityTimeline from "../components/admin/ActivityTimeline";
+import TestNotifications from "../components/admin/TestNotifications";
 
 export default function AdminConsole() {
   const [seedingDemo, setSeedingDemo] = useState(false);
-  const [sendingTest, setSendingTest] = useState(false);
-  const [selectedUserForTest, setSelectedUserForTest] = useState(null);
-  const [testNotificationType, setTestNotificationType] = useState('deposit_30day');
   const [sortField, setSortField] = useState('created_date');
   const [sortOrder, setSortOrder] = useState('desc');
   const [editCreditsDialog, setEditCreditsDialog] = useState(false);
@@ -208,8 +206,8 @@ export default function AdminConsole() {
           resolvedCases.reduce((sum, c) => {
             const opened = new Date(c.created_date);
             const closedEntry = c.timeline.find(t_item => t_item.event === 'Case closed' || t_item.event === 'Case resolved');
-            const closed = closedEntry ? new Date(closedEntry.timestamp) : null;
-            if (closed) {
+            if (closedEntry) {
+              const closed = new Date(closedEntry.timestamp);
               return sum + differenceInDays(closed, opened);
             }
             return sum;
@@ -488,27 +486,6 @@ export default function AdminConsole() {
     }
   };
 
-  const handleSendTestNotification = async () => {
-    if (!selectedUserForTest) {
-      alert('Please select a user');
-      return;
-    }
-
-    setSendingTest(true);
-    try {
-      await base44.functions.invoke('testLineNotifications', {
-        targetUserId: selectedUserForTest.id,
-        notificationType: testNotificationType
-      });
-      alert(strings.testSent);
-    } catch (error) {
-      console.error('Test notification failed:', error);
-      alert('Failed to send test notification');
-    } finally {
-      setSendingTest(false);
-    }
-  };
-
   const handleUpdateCredits = async () => {
     if (!selectedUserForCredits || newCreditAmount === '') return;
 
@@ -691,80 +668,7 @@ export default function AdminConsole() {
         </Card>
 
         {/* Test LINE Notifications */}
-        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <Send className="w-5 h-5 text-emerald-600" />
-              {strings.testNotifications}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <Label style={{ color: colors.textPrimary }}>{strings.selectUser}</Label>
-                <Select
-                  value={selectedUserForTest?.id}
-                  onValueChange={(userId) => setSelectedUserForTest(users.find(u => u.id === userId))}
-                >
-                  <SelectTrigger style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-                    <SelectValue placeholder={strings.selectUser} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.filter(u => u.line_messaging_token).map(u => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.full_name} ({u.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label style={{ color: colors.textPrimary }}>{strings.notificationType}</Label>
-                <Select value={testNotificationType} onValueChange={setTestNotificationType}>
-                  <SelectTrigger style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="deposit_30day">
-                      {language === 'th' ? 'เงินมัดจำครบกำหนด 30 วัน' : 'Deposit 30 Day'}
-                    </SelectItem>
-                    <SelectItem value="deposit_7day">
-                      {language === 'th' ? 'เงินมัดจำครบกำหนด 7 วัน' : 'Deposit 7 Day'}
-                    </SelectItem>
-                    <SelectItem value="deposit_overdue">
-                      {language === 'th' ? 'เงินมัดจำเกินกำหนด' : 'Deposit Overdue'}
-                    </SelectItem>
-                    <SelectItem value="rent_reminder">
-                      {language === 'th' ? 'แจ้งเตือนค่าเช่า' : 'Rent Reminder'}
-                    </SelectItem>
-                    <SelectItem value="lease_notice_30day">
-                      {language === 'th' ? 'แจ้งออกครบกำหนด 30 วัน' : 'Lease Notice 30 Day'}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-end">
-                <Button
-                  onClick={handleSendTestNotification}
-                  disabled={sendingTest || !selectedUserForTest}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                >
-                  {sendingTest ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {strings.sending}
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      {strings.sendTest}
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <TestNotifications users={users} language={language} colors={colors} strings={strings} />
 
         {/* Permissions Dialog */}
         <Dialog open={permissionsDialog} onOpenChange={setPermissionsDialog}>
