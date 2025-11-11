@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, QrCode, Share2, Coins } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationSettings from "../components/settings/NotificationSettings";
 import { createPageUrl } from "@/utils";
@@ -167,7 +167,6 @@ export default function Account() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelFeedback, setCancelFeedback] = useState('');
   const [copiedLink, setCopiedLink] = useState(null);
-  const [showQR, setShowQR] = useState({ landlord: false, juristic: false });
   const [buyingCredits, setBuyingCredits] = useState({}); // Object to track each package separately
 
   const { data: user } = useQuery({
@@ -824,7 +823,7 @@ export default function Account() {
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
-  // Updated LINE QR Code URL
+  // Updated LINE QR Code URL - Kept as it might be used elsewhere or for future features, despite QR buttons being removed.
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46470_M_gainfriends_2dbarcodes_GW.png";
 
   return (
@@ -1672,62 +1671,9 @@ export default function Account() {
                       <Share2 className="w-4 h-4" />
                       {strings.shareLink}
                     </button>
-                    <button
-                      onClick={() => setShowQR({...showQR, landlord: !showQR.landlord})}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                        color: '#10B981',
-                        border: '2px solid #10B981',
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#10B981';
-                        e.target.style.color = '#FFFFFF';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#FFFFFF';
-                        e.target.style.color = '#10B981';
-                      }}
-                    >
-                      <QrCode className="w-4 h-4" />
-                      {showQR.landlord ? strings.hideQR : strings.showQR}
-                    </button>
                   </div>
                 </div>
               </div>
-              
-              {/* QR Code Display */}
-              {showQR.landlord && (
-                <div className="mt-4 p-4 rounded-lg text-center" style={{
-                  backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
-                  border: `2px solid ${colors.borderColor}`
-                }}>
-                  <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
-                    {strings.scanQR}
-                  </p>
-                  <img 
-                    src={lineQRCodeUrl}
-                    alt="LINE OA QR Code"
-                    className="mx-auto"
-                    style={{
-                      width: '200px',
-                      height: '200px',
-                      borderRadius: '12px'
-                    }}
-                  />
-                  <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
-                    Lease Shield Official Account
-                  </p>
-                </div>
-              )}
             </div>
 
             <div className="mb-4 text-center">
@@ -1971,62 +1917,9 @@ export default function Account() {
                       <Share2 className="w-4 h-4" />
                       {strings.shareLink}
                     </button>
-                    <button
-                      onClick={() => setShowQR({...showQR, juristic: !showQR.juristic})}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                        color: '#F59E0B',
-                        border: '2px solid #F59E0B',
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#F59E0B';
-                        e.target.style.color = '#FFFFFF';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#FFFFFF';
-                        e.target.style.color = '#F59E0B';
-                      }}
-                    >
-                      <QrCode className="w-4 h-4" />
-                      {showQR.juristic ? strings.hideQR : strings.showQR}
-                    </button>
                   </div>
                 </div>
               </div>
-              
-              {/* QR Code Display */}
-              {showQR.juristic && (
-                <div className="mt-4 p-4 rounded-lg text-center" style={{
-                  backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
-                  border: `2px solid ${colors.borderColor}`
-                }}>
-                  <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
-                    {strings.scanQR}
-                  </p>
-                  <img 
-                    src={lineQRCodeUrl}
-                    alt="LINE OA QR Code"
-                    className="mx-auto"
-                    style={{
-                      width: '200px',
-                      height: '200px',
-                      borderRadius: '12px'
-                    }}
-                  />
-                  <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
-                    Lease Shield Official Account
-                  </p>
-                </div>
-              )}
             </div>
 
             <div className="mb-4 text-center">
@@ -2835,7 +2728,7 @@ export default function Account() {
                     {strings.oneLetterPerCredit}
                   </p>
                 </div>
-              </div>
+              </div >
               <div className="text-right flex items-center gap-2">
                 <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
                   {strings.creditBalance}
