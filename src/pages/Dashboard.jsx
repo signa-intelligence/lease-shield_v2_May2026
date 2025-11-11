@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +14,7 @@ import StatsCard from "../components/dashboard/StatsCard";
 import DepositAlert from "../components/dashboard/DepositAlert";
 import RecentLeases from "../components/dashboard/RecentLeases";
 import ProtectionScoreEnhanced from "../components/dashboard/ProtectionScoreEnhanced";
+import NotificationSummary from "../components/dashboard/NotificationSummary";
 import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
@@ -635,11 +637,14 @@ function DashboardContent() {
           {/* Main Content Grid - Collapsible in Focus Mode */}
           {(!focusMode || expandedSections.content) && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 {isLoading ? (
                   <SkeletonLoader variant="card" count={3} colors={colors} />
                 ) : (
-                  <RecentLeases leases={leases} language={language} />
+                  <>
+                    <RecentLeases leases={leases} language={language} />
+                    <NotificationSummary language={language} colors={colors} />
+                  </>
                 )}
               </div>
               <div>
