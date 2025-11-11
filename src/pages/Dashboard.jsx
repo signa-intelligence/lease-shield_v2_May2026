@@ -2,7 +2,7 @@
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, format } from "date-fns";
@@ -147,6 +147,7 @@ function DashboardContent() {
 
   // Admin: Manual reminder trigger
   const [triggeringReminders, setTriggeringReminders] = useState(false);
+  const [testingOverdue, setTestingOverdue] = useState(false);
   
   const triggerReminders = async () => {
     setTriggeringReminders(true);
@@ -164,6 +165,38 @@ function DashboardContent() {
       toast.error(language === 'th' ? 'ไม่สามารถส่งการแจ้งเตือนได้' : 'Failed to send notifications');
     } finally {
       setTriggeringReminders(false);
+    }
+  };
+
+  const testOverdueCheck = async () => {
+    setTestingOverdue(true);
+    try {
+      const response = await base44.functions.invoke('testOverdueCheck');
+      console.log('🔍 Overdue test results:', response.data);
+      
+      const overdueCount = response.data?.overdue_deposits || 0;
+      if (overdueCount > 0) {
+        toast.success(
+          language === 'th' 
+            ? `พบเงินมัดจำเกินกำหนด ${overdueCount} รายการ! ตรวจสอบ Console` 
+            : `Found ${overdueCount} overdue deposits! Check logs below`
+        );
+        
+        // Show alert with details
+        alert(
+          `🔍 OVERDUE CHECK RESULTS:\n\n` +
+          `Total deposits: ${response.data.total_deposits}\n` +
+          `Overdue deposits: ${overdueCount}\n\n` +
+          `Details:\n${JSON.stringify(response.data.overdue_list, null, 2)}`
+        );
+      } else {
+        toast.info(language === 'th' ? 'ไม่พบเงินมัดจำที่เกินกำหนด' : 'No overdue deposits found');
+      }
+    } catch (error) {
+      console.error('Failed to test overdue:', error);
+      toast.error(language === 'th' ? 'การทดสอบล้มเหลว' : 'Test failed');
+    } finally {
+      setTestingOverdue(false);
     }
   };
 
@@ -312,7 +345,9 @@ function DashboardContent() {
       startNow: "Get Started",
       testReminders: "Test Notifications",
       triggerNow: "Send Reminders Now",
-      triggering: "Sending..."
+      triggering: "Sending...",
+      testOverdue: "Test Overdue",
+      testing: "Testing..."
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -345,7 +380,9 @@ function DashboardContent() {
       startNow: "เริ่มเลย",
       testReminders: "ทดสอบการแจ้งเตือน",
       triggerNow: "ส่งการแจ้งเตือนทันที",
-      triggering: "กำลังส่ง..."
+      triggering: "กำลังส่ง...",
+      testOverdue: "ทดสอบเงินมัดจำเกินกำหนด",
+      testing: "กำลังทดสอบ..."
     }
   };
 
@@ -414,49 +451,93 @@ function DashboardContent() {
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Admin: Test Notification Button */}
+                {/* Admin: Test Buttons */}
                 {isAdmin && (
-                  <button
-                    onClick={triggerReminders}
-                    disabled={triggeringReminders}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: triggeringReminders ? '#9CA3AF' : '#3B82F6',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      cursor: triggeringReminders ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      opacity: triggeringReminders ? 0.7 : 1
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!triggeringReminders) {
-                        e.target.style.backgroundColor = '#2563EB';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!triggeringReminders) {
-                        e.target.style.backgroundColor = '#3B82F6';
-                      }
-                    }}
-                  >
-                    {triggeringReminders ? (
-                      <>
-                        <Zap className="w-4 h-4 animate-spin" />
-                        {strings.triggering}
-                      </>
-                    ) : (
-                      <>
-                        <Bell className="w-4 h-4" />
-                        {strings.triggerNow}
-                      </>
-                    )}
-                  </button>
+                  <>
+                    <button
+                      onClick={testOverdueCheck}
+                      disabled={testingOverdue}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: testingOverdue ? '#9CA3AF' : '#10B981',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '12px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: testingOverdue ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        opacity: testingOverdue ? 0.7 : 1
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!testingOverdue) {
+                          e.target.style.backgroundColor = '#059669';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!testingOverdue) {
+                          e.target.style.backgroundColor = '#10B981';
+                        }
+                      }}
+                    >
+                      {testingOverdue ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          {strings.testing}
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-4 h-4" />
+                          {strings.testOverdue}
+                        </>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={triggerReminders}
+                      disabled={triggeringReminders}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: triggeringReminders ? '#9CA3AF' : '#3B82F6',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '12px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: triggeringReminders ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        opacity: triggeringReminders ? 0.7 : 1
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!triggeringReminders) {
+                          e.target.style.backgroundColor = '#2563EB';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!triggeringReminders) {
+                          e.target.style.backgroundColor = '#3B82F6';
+                        }
+                      }}
+                    >
+                      {triggeringReminders ? (
+                        <>
+                          <Zap className="w-4 h-4 animate-spin" />
+                          {strings.triggering}
+                        </>
+                      ) : (
+                        <>
+                          <Bell className="w-4 h-4" />
+                          {strings.triggerNow}
+                        </>
+                      )}
+                    </button>
+                  </>
                 )}
 
                 {/* Focus Mode Toggle */}
