@@ -55,7 +55,19 @@ export default function AdminConsole() {
 
   const { data: leases = [] } = useQuery({
     queryKey: ['allLeases'],
-    queryFn: () => base44.entities.Lease.list('-created_date', 10),
+    queryFn: () => base44.entities.Lease.list('-created_date'),
+    enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
+  });
+
+  const { data: allCases = [] } = useQuery({
+    queryKey: ['allCases'],
+    queryFn: () => base44.entities.Case.list('-created_date'),
+    enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
+  });
+
+  const { data: allDeposits = [] } = useQuery({
+    queryKey: ['allDeposits'],
+    queryFn: () => base44.entities.DepositTracker.list('-created_date'),
     enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
   });
 
@@ -139,9 +151,186 @@ export default function AdminConsole() {
     borderColor: '#E5E7EB',
   };
 
+  // Calculate admin statistics
+  const calculateAdminStats = () => {
+    const now = new Date();
+    const lastMonth = subMonths(now, 1);
+    const startOfLastMonth = startOfMonth(lastMonth);
+    const endOfLastMonth = endOfMonth(lastMonth);
+    const startOfCurrentMonth = startOfMonth(now);
+
+    const currentMonthUsers = users.filter(u => new Date(u.created_date) >= startOfCurrentMonth).length;
+    const lastMonthUsers = users.filter(u => {
+      const date = new Date(u.created_date);
+      return date >= startOfLastMonth && date <= endOfLastMonth;
+    }).length;
+
+    const currentMonthLeases = leases.filter(l => new Date(l.created_date) >= startOfCurrentMonth).length;
+    const lastMonthLeases = leases.filter(l => {
+      const date = new Date(l.created_date);
+      return date >= startOfLastMonth && date <= endOfLastMonth;
+    }).length;
+
+    const currentMonthCases = allCases.filter(c => new Date(c.created_date) >= startOfCurrentMonth).length;
+    const lastMonthCases = allCases.filter(c => {
+      const date = new Date(c.created_date);
+      return date >= startOfLastMonth && date <= endOfLastMonth;
+    }).length;
+
+    const userTrend = lastMonthUsers > 0 ? Math.round(((currentMonthUsers - lastMonthUsers) / lastMonthUsers) * 100) : 0;
+    const leaseTrend = lastMonthLeases > 0 ? Math.round(((currentMonthLeases - lastMonthLeases) / lastMonthLeases) * 100) : 0;
+    const caseTrend = lastMonthCases > 0 ? Math.round(((currentMonthCases - lastMonthCases) / lastMonthCases) * 100) : 0;
+
+    const activeSubscribers = users.filter(u => 
+      u.subscription_status === 'active' && u.plan_tier && u.plan_tier !== 'free'
+    ).length;
+
+    const lastMonthSubscribers = users.filter(u => {
+      const subDate = u.subscription_start_date ? new Date(u.subscription_start_date) : null;
+      return subDate && subDate >= startOfLastMonth && subDate <= endOfLastMonth;
+    }).length;
+
+    const subscriberTrend = lastMonthSubscribers > 0 ? Math.round(((activeSubscribers - lastMonthSubscribers) / lastMonthSubscribers) * 100) : 0;
+
+    const monthlyRevenue = users.reduce((sum, u) => {
+      if (u.subscription_status === 'active' && u.plan_tier !== 'free') {
+        const planPrices = { lite: 390, protect: 690, secure: 1290 };
+        return sum + (planPrices[u.plan_tier] || 0);
+      }
+      return sum;
+    }, 0);
+
+    const activeCases = allCases.filter(c => !['closed', 'resolved'].includes(c.status)).length;
+    const urgentCases = allCases.filter(c => c.flags?.urgent || c.fast_track).length;
+    
+    const resolvedCases = allCases.filter(c => c.status === 'closed' && c.timeline?.length > 0);
+    const avgResolutionDays = resolvedCases.length > 0
+      ? Math.round(
+          resolvedCases.reduce((sum, c) => {
+            const opened = new Date(c.created_date);
+            const closedEntry = c.timeline.find(t_item => t_item.event === 'Case closed' || t_item.event === 'Case resolved');
+            const closed = closedEntry ? new Date(closedEntry.timestamp) : null;
+            if (closed) {
+              return sum + differenceInDays(closed, opened);
+            }
+            return sum;
+          }, 0) / resolvedCases.length
+        )
+      : 0;
+
+    const revenueTrend = 0; // Placeholder, requires more complex historical subscription data
+    const activeCaseTrend = 0; // Placeholder
+    const resolutionTrend = 0; // Placeholder
+    const urgentTrend = 0; // Placeholder
+
+    return {
+      totalUsers: users.length,
+      userTrend,
+      activeSubscribers,
+      subscriberTrend,
+      monthlyRevenue,
+      revenueTrend,
+      totalLeases: leases.length,
+      leaseTrend,
+      totalCases: allCases.length,
+      caseTrend,
+      activeCases,
+      activeCaseTrend,
+      avgResolutionDays,
+      resolutionTrend,
+      urgentCases,
+      urgentTrend
+    };
+  };
+
+  // Generate trend data for charts
+  const generateTrendData = () => {
+    const last6Months = eachMonthOfInterval({
+      start: subMonths(new Date(), 5),
+      end: new Date()
+    });
+
+    const leaseTrend = last6Months.map(month => {
+      const monthStart = startOfMonth(month);
+      const monthEnd = endOfMonth(month);
+      const count = leases.filter(l => {
+        const date = new Date(l.created_date);
+        return date >= monthStart && date <= monthEnd;
+      }).length;
+
+      return {
+        name: format(month, 'MMM'),
+        value: count
+      };
+    });
+
+    const depositTrend = last6Months.map(month => {
+      const monthStart = startOfMonth(month);
+      const monthEnd = endOfMonth(month);
+      const count = allDeposits.filter(d => {
+        const date = new Date(d.created_date);
+        return date >= monthStart && date <= monthEnd;
+      }).length;
+
+      return {
+        name: format(month, 'MMM'),
+        value: count
+      };
+    });
+
+    return { leaseTrend, depositTrend };
+  };
+
+  // Generate recent activities
+  const generateRecentActivities = () => {
+    const activities = [];
+
+    users.slice(0, 3).forEach(u => {
+      activities.push({
+        type: 'user_registered',
+        description: u.email,
+        timestamp: u.created_date
+      });
+    });
+
+    leases.slice(0, 3).forEach(l => {
+      activities.push({
+        type: 'lease_uploaded',
+        description: l.property_address || l.created_by,
+        timestamp: l.created_date
+      });
+    });
+
+    allCases.slice(0, 3).forEach(c => {
+      if (c.status === 'closed' || c.status === 'resolved') {
+        activities.push({
+          type: 'case_resolved',
+          description: c.case_number || `Case #${c.id.slice(0, 8)}`,
+          timestamp: c.updated_date || c.created_date
+        });
+      } else {
+        activities.push({
+          type: 'case_opened',
+          description: c.case_number || `Case #${c.id.slice(0, 8)}`,
+          timestamp: c.created_date
+        });
+      }
+    });
+
+    return activities
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .slice(0, 10);
+  };
+
+  const adminStats = calculateAdminStats();
+  const { leaseTrend, depositTrend } = generateTrendData();
+  const recentActivities = generateRecentActivities();
+
   const t = {
     en: {
       adminConsole: "Admin Console",
+      adminDashboard: "Admin Dashboard",
+      adminSubtitle: "Monitor system performance and user activity",
       systemOverview: "System Overview & Management",
       totalUsers: "Total Users",
       activeSubscribers: "Active Subscribers",
@@ -199,10 +388,14 @@ export default function AdminConsole() {
       sendNotifications: "Send Notifications",
       manageTemplates: "Manage Templates",
       deleteData: "Delete Data",
-      accessOpsConsole: "Access Ops Console"
+      accessOpsConsole: "Access Ops Console",
+      leaseTrends: "Lease Upload Trends",
+      depositTrends: "Deposit Tracking Trends"
     },
     th: {
       adminConsole: "คอนโซลผู้ดูแล",
+      adminDashboard: "แดชบอร์ดผู้ดูแล",
+      adminSubtitle: "ติดตามประสิทธิภาพระบบและกิจกรรมผู้ใช้",
       systemOverview: "ภาพรวมระบบและการจัดการ",
       totalUsers: "ผู้ใช้ทั้งหมด",
       activeSubscribers: "สมาชิกที่ใช้งาน",
@@ -260,7 +453,9 @@ export default function AdminConsole() {
       sendNotifications: "ส่งการแจ้งเตือน",
       manageTemplates: "จัดการเทมเพลต",
       deleteData: "ลบข้อมูล",
-      accessOpsConsole: "เข้าถึงคอนโซลปฏิบัติการ"
+      accessOpsConsole: "เข้าถึงคอนโซลปฏิบัติการ",
+      leaseTrends: "แนวโน้มการอัปโหลดสัญญา",
+      depositTrends: "แนวโน้มการติดตามเงินมัดจำ"
     }
   };
 
@@ -379,10 +574,6 @@ export default function AdminConsole() {
     }));
   };
 
-  const activeSubscribers = users.filter(u => 
-    u.subscription_status === 'active' && u.plan_tier && u.plan_tier !== 'free'
-  ).length;
-
   const sortedUsers = [...users].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
@@ -407,62 +598,67 @@ export default function AdminConsole() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
+        {/* Admin Header */}
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-            {strings.adminConsole}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3" style={{
+            background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+            boxShadow: '0 8px 16px rgba(12, 59, 46, 0.25)'
+          }}>
+            <Shield className="w-5 h-5 text-white" />
+            <span className="text-sm font-semibold text-white">
+              {user?.access_level?.toUpperCase() || 'ADMIN'}
+            </span>
+          </div>
+          
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ 
+            color: colors.textPrimary,
+            letterSpacing: '-0.02em'
+          }}>
+            {strings.adminDashboard}
           </h1>
-          <p style={{ color: colors.textSecondary }}>{strings.systemOverview}</p>
+          <p style={{ 
+            color: colors.textSecondary, 
+            fontSize: '16px', 
+            lineHeight: '1.6',
+            fontWeight: '500'
+          }}>
+            {strings.adminSubtitle}
+          </p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.totalUsers}</p>
-                  <p className="text-3xl font-bold mt-1" style={{ color: colors.textPrimary }}>{users.length}</p>
-                </div>
-                <Users className="w-12 h-12 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* KPI Stats */}
+        <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
 
-          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.activeSubscribers}</p>
-                  <p className="text-3xl font-bold mt-1" style={{ color: colors.textPrimary }}>{activeSubscribers}</p>
-                </div>
-                <Crown className="w-12 h-12 text-amber-600" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Charts Grid */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <TrendChart
+            title={strings.leaseTrends}
+            data={leaseTrend}
+            dataKey="value"
+            chartType="bar"
+            color="#8B5CF6"
+            colors={colors}
+            language={language}
+          />
+          <TrendChart
+            title={strings.depositTrends}
+            data={depositTrend}
+            dataKey="value"
+            chartType="line"
+            color="#C7A338"
+            colors={colors}
+            language={language}
+          />
+        </div>
 
-          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.totalLeases}</p>
-                  <p className="text-3xl font-bold mt-1" style={{ color: colors.textPrimary }}>{leases.length}</p>
-                </div>
-                <FileText className="w-12 h-12 text-emerald-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.totalDocuments}</p>
-                  <p className="text-3xl font-bold mt-1" style={{ color: colors.textPrimary }}>{documents.length}</p>
-                </div>
-                <Database className="w-12 h-12 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Case Breakdown & Activity */}
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2">
+            <CaseBreakdown cases={allCases} colors={colors} language={language} />
+          </div>
+          <div>
+            <ActivityTimeline activities={recentActivities} colors={colors} language={language} />
+          </div>
         </div>
 
         {/* Demo Data Seeder */}
