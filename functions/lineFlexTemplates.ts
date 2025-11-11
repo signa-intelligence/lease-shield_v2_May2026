@@ -39,7 +39,6 @@ export const createDepositReminderFlex = (data, language = 'en') => {
   const str = strings[language];
   
   return {
-    type: 'flex',
     altText: `🛡️ ${str.title}`,
     contents: {
       type: 'bubble',
@@ -252,7 +251,6 @@ export const createLeaseNoticeFlex = (data, language = 'en') => {
   const str = strings[language];
   
   return {
-    type: 'flex',
     altText: `📅 ${str.title}`,
     contents: {
       type: 'bubble',
@@ -475,7 +473,6 @@ export const createRentReminderFlex = (data, language = 'en') => {
   const str = strings[language];
   
   return {
-    type: 'flex',
     altText: `💰 ${str.title}`,
     contents: {
       type: 'bubble',
