@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,11 +20,16 @@ import {
   Search,
   Filter,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  LayoutGrid,
+  List
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import CaseKanban from "../components/admin/CaseKanban";
+import { ToastProvider, useToast } from "../components/shared/Toast";
+import { spacing, borderRadius, transitions } from "@/utils/designSystem";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -39,26 +43,25 @@ const STATUS_CONFIG = {
   closed: { label: 'Closed', color: 'bg-gray-100 text-gray-800', icon: CheckCircle2 }
 };
 
-export default function OpsConsole() {
+function OpsConsoleContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [selectedCase, setSelectedCase] = useState(null);
   const [actionMode, setActionMode] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [generatingLetters, setGeneratingLetters] = useState(null);
+  const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'list'
 
-  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  // Check access: VA, Admin, or Super Admin
   const accessLevel = user?.access_level || 'user';
   const hasOpsAccess = ['va', 'admin', 'super_admin'].includes(accessLevel) || user?.role === 'admin';
 
-  // These hooks must be called BEFORE the access check return
   const { data: cases = [] } = useQuery({
     queryKey: ['allCases'],
     queryFn: () => base44.entities.Case.list('-created_date'),
@@ -75,6 +78,7 @@ export default function OpsConsole() {
     mutationFn: ({ id, data }) => base44.entities.Case.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCases'] });
+      toast.success(language === 'th' ? 'อัปเดตคดีสำเร็จ' : 'Case updated successfully');
       setSelectedCase(null);
       setActionMode(null);
     },
@@ -105,7 +109,6 @@ export default function OpsConsole() {
     inputBorder: '#E5E7EB'
   };
 
-  // NOW we can do the conditional return AFTER all hooks are called
   if (!hasOpsAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
@@ -130,6 +133,7 @@ export default function OpsConsole() {
     const matchesStatus = filterStatus === 'all' || c.status === filterStatus;
     const matchesSearch = !searchQuery ||
       c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.case_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.user_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.summary?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
@@ -201,14 +205,13 @@ export default function OpsConsole() {
 
       if (response.data?.ok) {
         queryClient.invalidateQueries({ queryKey: ['allCases'] });
-        const url = response.data.urls.pdf || response.data.urls.html;
-        alert(`✅ ${subject.toUpperCase()} letter generated!\n\nView: ${url}`);
+        toast.success(`${subject.toUpperCase()} letter generated!`);
       } else {
         throw new Error(response.data?.error || 'Generation failed');
       }
     } catch (error) {
       console.error('Letter generation failed:', error);
-      alert('❌ Failed to generate letter: ' + (error.message || 'Please try again'));
+      toast.error('Failed to generate letter');
     } finally {
       setGeneratingLetters(null);
     }
@@ -217,7 +220,7 @@ export default function OpsConsole() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        {/* Header with Back Button */}
+        {/* Header with View Toggle */}
         <div className="mb-6">
           <Button
             variant="outline"
@@ -233,11 +236,69 @@ export default function OpsConsole() {
             {language === 'th' ? 'กลับไปแอดมิน' : 'Back to Admin'}
           </Button>
           
-          <div className="flex items-center gap-3 mb-2">
-            <Scale className="w-8 h-8 text-ls-forest" />
-            <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>Ops Console</h1>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Scale className="w-8 h-8 text-ls-forest" />
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>
+                  {language === 'th' ? 'คอนโซลปฏิบัติการ' : 'Ops Console'}
+                </h1>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  {language === 'th' ? 'จัดการคดีพิพาทจนถึงการแก้ปัญหา' : 'Manage dispute cases through resolution'}
+                </p>
+              </div>
+            </div>
+
+            {/* View Mode Toggle */}
+            <div 
+              className="flex rounded-lg p-1"
+              style={{ 
+                backgroundColor: colors.cardBg,
+                border: `2px solid ${colors.borderColor}`,
+              }}
+            >
+              <button
+                onClick={() => setViewMode('kanban')}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: borderRadius.md,
+                  backgroundColor: viewMode === 'kanban' ? brandColors.forest : 'transparent',
+                  color: viewMode === 'kanban' ? '#FFFFFF' : colors.textPrimary,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: transitions.fast,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing.sm,
+                }}
+              >
+                <LayoutGrid className="w-4 h-4" />
+                Kanban
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: borderRadius.md,
+                  backgroundColor: viewMode === 'list' ? brandColors.forest : 'transparent',
+                  color: viewMode === 'list' ? '#FFFFFF' : colors.textPrimary,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: transitions.fast,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing.sm,
+                }}
+              >
+                <List className="w-4 h-4" />
+                List
+              </button>
+            </div>
           </div>
-          <p style={{ color: colors.textSecondary }}>Manage dispute cases through resolution</p>
         </div>
 
         {/* Stats Cards */}
@@ -246,7 +307,9 @@ export default function OpsConsole() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>Total Cases</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'คดีทั้งหมด' : 'Total Cases'}
+                  </p>
                   <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{cases.length}</p>
                 </div>
                 <Scale className="w-8 h-8 text-blue-600" />
@@ -258,7 +321,9 @@ export default function OpsConsole() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>Pending Review</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'รอตรวจสอบ' : 'Pending Review'}
+                  </p>
                   <p className="text-2xl font-bold text-amber-600">
                     {cases.filter(c => c.status === 'pending_review').length}
                   </p>
@@ -272,7 +337,9 @@ export default function OpsConsole() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>In Progress</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'ดำเนินการ' : 'In Progress'}
+                  </p>
                   <p className="text-2xl font-bold text-blue-600">
                     {cases.filter(c => ['under_review', 'ready_drafts', 'client_review', 'awaiting_landlord', 'in_progress'].includes(c.status)).length}
                   </p>
@@ -286,7 +353,9 @@ export default function OpsConsole() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>Resolved</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'แก้ไขแล้ว' : 'Resolved'}
+                  </p>
                   <p className="text-2xl font-bold text-emerald-600">
                     {cases.filter(c => c.status === 'resolved' || c.status === 'closed').length}
                   </p>
@@ -304,11 +373,11 @@ export default function OpsConsole() {
               <div>
                 <Label htmlFor="search" className="text-sm font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
                   <Search className="w-4 h-4 inline mr-2" />
-                  Search Cases
+                  {language === 'th' ? 'ค้นหาคดี' : 'Search Cases'}
                 </Label>
                 <Input
                   id="search"
-                  placeholder="Case ID, email, or summary..."
+                  placeholder={language === 'th' ? 'รหัสคดี, อีเมล, หรือสรุป...' : 'Case ID, email, or summary...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
@@ -321,7 +390,7 @@ export default function OpsConsole() {
               <div>
                 <Label htmlFor="filter" className="text-sm font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
                   <Filter className="w-4 h-4 inline mr-2" />
-                  Filter by Status
+                  {language === 'th' ? 'กรองตามสถานะ' : 'Filter by Status'}
                 </Label>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger style={{
@@ -332,15 +401,15 @@ export default function OpsConsole() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending_review">Pending Review</SelectItem>
-                    <SelectItem value="under_review">Under Review</SelectItem>
-                    <SelectItem value="ready_drafts">Drafts Ready</SelectItem>
-                    <SelectItem value="client_review">Client Review</SelectItem>
-                    <SelectItem value="awaiting_landlord">Awaiting Landlord</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
+                    <SelectItem value="all">{language === 'th' ? 'สถานะทั้งหมด' : 'All Statuses'}</SelectItem>
+                    <SelectItem value="pending_review">{language === 'th' ? 'รอตรวจสอบ' : 'Pending Review'}</SelectItem>
+                    <SelectItem value="under_review">{language === 'th' ? 'กำลังตรวจสอบ' : 'Under Review'}</SelectItem>
+                    <SelectItem value="ready_drafts">{language === 'th' ? 'ร่างพร้อม' : 'Drafts Ready'}</SelectItem>
+                    <SelectItem value="client_review">{language === 'th' ? 'ลูกค้าตรวจสอบ' : 'Client Review'}</SelectItem>
+                    <SelectItem value="awaiting_landlord">{language === 'th' ? 'รอเจ้าของบ้าน' : 'Awaiting Landlord'}</SelectItem>
+                    <SelectItem value="in_progress">{language === 'th' ? 'ดำเนินการ' : 'In Progress'}</SelectItem>
+                    <SelectItem value="resolved">{language === 'th' ? 'แก้ไขแล้ว' : 'Resolved'}</SelectItem>
+                    <SelectItem value="closed">{language === 'th' ? 'ปิดแล้ว' : 'Closed'}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -348,180 +417,181 @@ export default function OpsConsole() {
           </CardContent>
         </Card>
 
-        {/* Cases List */}
-        <div className="grid gap-4">
-          {filteredCases.map((caseItem) => {
-            const statusConfig = STATUS_CONFIG[caseItem.status] || STATUS_CONFIG.pending_review;
-            const StatusIcon = statusConfig.icon;
-            const tenant = users.find(u => u.email === caseItem.user_email);
-            const assignee = users.find(u => u.email === caseItem.assignee_id);
+        {/* Kanban or List View */}
+        {viewMode === 'kanban' ? (
+          <CaseKanban
+            cases={filteredCases}
+            users={users}
+            onUpdateStatus={handleUpdateStatus}
+            language={language}
+            colors={colors}
+          />
+        ) : (
+          <div className="grid gap-4">
+            {filteredCases.map((caseItem) => {
+              const statusConfig = STATUS_CONFIG[caseItem.status] || STATUS_CONFIG.pending_review;
+              const StatusIcon = statusConfig.icon;
+              const tenant = users.find(u => u.email === caseItem.user_email);
+              const assignee = users.find(u => u.email === caseItem.assignee_id);
 
-            return (
-              <Card key={caseItem.id} className="border-none shadow-lg hover:shadow-xl transition-all" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-                <CardHeader className="pb-3" style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <Scale className="w-6 h-6 text-blue-600" />
+              return (
+                <Card key={caseItem.id} className="border-none shadow-lg hover:shadow-xl transition-all" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                  <CardHeader className="pb-3" style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <Scale className="w-6 h-6 text-blue-600" />
+                        <div>
+                          <CardTitle className="text-lg" style={{ color: colors.textPrimary }}>
+                            {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
+                          </CardTitle>
+                          <p className="text-sm" style={{ color: colors.textSecondary }}>
+                            {tenant?.full_name || caseItem.user_email}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className={`${statusConfig.color} border flex items-center gap-1`}>
+                        <StatusIcon className="w-3 h-3" />
+                        {statusConfig.label}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="p-6">
+                    <div className="grid md:grid-cols-3 gap-6 mb-4">
                       <div>
-                        <CardTitle className="text-lg" style={{ color: colors.textPrimary }}>
-                          {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
-                        </CardTitle>
-                        <p className="text-sm" style={{ color: colors.textSecondary }}>
-                          {tenant?.full_name || caseItem.user_email}
+                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                          {language === 'th' ? 'จำนวนเงินพิพาท' : 'Dispute Amount'}
+                        </p>
+                        <div className="flex items-baseline gap-1">
+                          <DollarSign className="w-4 h-4 text-emerald-600" />
+                          <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                            ฿{caseItem.dispute_amount?.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                          {language === 'th' ? 'มอบหมายให้' : 'Assigned To'}
+                        </p>
+                        <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                          {assignee?.full_name || (language === 'th' ? 'ยังไม่มอบหมาย' : 'Unassigned')}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                          {language === 'th' ? 'เปิดเมื่อ' : 'Opened'}
+                        </p>
+                        <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                          {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
                         </p>
                       </div>
                     </div>
-                    <Badge className={`${statusConfig.color} border flex items-center gap-1`}>
-                      <StatusIcon className="w-3 h-3" />
-                      {statusConfig.label}
-                    </Badge>
-                  </div>
-                </CardHeader>
 
-                <CardContent className="p-6">
-                  <div className="grid md:grid-cols-3 gap-6 mb-4">
-                    <div>
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>Dispute Amount</p>
-                      <div className="flex items-baseline gap-1">
-                        <DollarSign className="w-4 h-4 text-emerald-600" />
-                        <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>฿{caseItem.dispute_amount?.toLocaleString()}</p>
+                    {caseItem.summary && (
+                      <div className="mb-4">
+                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                          {language === 'th' ? 'สรุป' : 'Summary'}
+                        </p>
+                        <p className="text-sm line-clamp-2" style={{ color: colors.textPrimary }}>{caseItem.summary}</p>
                       </div>
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>Assigned To</p>
-                      <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                        {assignee?.full_name || 'Unassigned'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>Opened</p>
-                      <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                        {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
-                      </p>
-                    </div>
-                  </div>
-
-                  {caseItem.summary && (
-                    <div className="mb-4">
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>Summary</p>
-                      <p className="text-sm line-clamp-2" style={{ color: colors.textPrimary }}>{caseItem.summary}</p>
-                    </div>
-                  )}
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedCase(caseItem);
-                        setActionMode('status');
-                      }}
-                    >
-                      Update Status
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedCase(caseItem);
-                        setActionMode('assign');
-                      }}
-                    >
-                      Assign
-                    </Button>
-
-                    {caseItem.status === 'under_review' && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleGenerateLetter(caseItem, 'deposit')}
-                          disabled={generatingLetters === `${caseItem.id}-deposit`}
-                          className="border-blue-600 text-blue-600"
-                        >
-                          {generatingLetters === `${caseItem.id}-deposit` ? (
-                            <>
-                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <FileText className="w-3 h-3 mr-1" />
-                              Deposit
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleGenerateLetter(caseItem, 'damages')}
-                          disabled={generatingLetters === `${caseItem.id}-damages`}
-                          className="border-orange-600 text-orange-600"
-                        >
-                          {generatingLetters === `${caseItem.id}-damages` ? (
-                            <>
-                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <FileText className="w-3 h-3 mr-1" />
-                              Damages
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleGenerateLetter(caseItem, 'early_termination')}
-                          disabled={generatingLetters === `${caseItem.id}-early_termination`}
-                          className="border-purple-600 text-purple-600"
-                        >
-                          {generatingLetters === `${caseItem.id}-early_termination` ? (
-                            <>
-                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <FileText className="w-3 h-3 mr-1" />
-                              Early Term
-                            </>
-                          )}
-                        </Button>
-                      </>
                     )}
 
-                    {caseItem.status === 'in_progress' && (
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
                           setSelectedCase(caseItem);
-                          setActionMode('settlement');
+                          setActionMode('status');
                         }}
-                        className="border-emerald-600 text-emerald-600"
                       >
-                        Record Settlement
+                        {language === 'th' ? 'อัปเดตสถานะ' : 'Update Status'}
                       </Button>
-                    )}
 
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
-                    >
-                      View Details
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedCase(caseItem);
+                          setActionMode('assign');
+                        }}
+                      >
+                        {language === 'th' ? 'มอบหมาย' : 'Assign'}
+                      </Button>
+
+                      {caseItem.status === 'under_review' && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleGenerateLetter(caseItem, 'deposit')}
+                            disabled={generatingLetters === `${caseItem.id}-deposit`}
+                            className="border-blue-600 text-blue-600"
+                          >
+                            {generatingLetters === `${caseItem.id}-deposit` ? (
+                              <>
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                {language === 'th' ? 'กำลังสร้าง...' : 'Generating...'}
+                              </>
+                            ) : (
+                              <>
+                                <FileText className="w-3 h-3 mr-1" />
+                                {language === 'th' ? 'มัดจำ' : 'Deposit'}
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleGenerateLetter(caseItem, 'damages')}
+                            disabled={generatingLetters === `${caseItem.id}-damages`}
+                            className="border-orange-600 text-orange-600"
+                          >
+                            {generatingLetters === `${caseItem.id}-damages` ? (
+                              <>
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                {language === 'th' ? 'กำลังสร้าง...' : 'Generating...'}
+                              </>
+                            ) : (
+                              <>
+                                <FileText className="w-3 h-3 mr-1" />
+                                {language === 'th' ? 'ความเสียหาย' : 'Damages'}
+                              </>
+                            )}
+                          </Button>
+                        </>
+                      )}
+
+                      {caseItem.status === 'in_progress' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedCase(caseItem);
+                            setActionMode('settlement');
+                          }}
+                          className="border-emerald-600 text-emerald-600"
+                        >
+                          {language === 'th' ? 'บันทึกการตกลง' : 'Record Settlement'}
+                        </Button>
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
+                      >
+                        {language === 'th' ? 'ดูรายละเอียด' : 'View Details'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
 
         {/* Action Modal */}
         {selectedCase && actionMode && (
@@ -529,15 +599,17 @@ export default function OpsConsole() {
             <Card className="w-full max-w-md border-none shadow-2xl" style={{ backgroundColor: colors.modalBg }}>
               <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
                 <CardTitle style={{ color: colors.textPrimary }}>
-                  {actionMode === 'status' && 'Update Status'}
-                  {actionMode === 'assign' && 'Assign Case'}
-                  {actionMode === 'settlement' && 'Record Settlement'}
+                  {actionMode === 'status' && (language === 'th' ? 'อัปเดตสถานะ' : 'Update Status')}
+                  {actionMode === 'assign' && (language === 'th' ? 'มอบหมายคดี' : 'Assign Case')}
+                  {actionMode === 'settlement' && (language === 'th' ? 'บันทึกการตกลง' : 'Record Settlement')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 {actionMode === 'status' && (
                   <div className="space-y-4">
-                    <Label style={{ color: colors.textPrimary }}>New Status</Label>
+                    <Label style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? 'สถานะใหม่' : 'New Status'}
+                    </Label>
                     <Select
                       defaultValue={selectedCase.status}
                       onValueChange={(value) => {
@@ -552,14 +624,14 @@ export default function OpsConsole() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending_review">Pending Review</SelectItem>
-                        <SelectItem value="under_review">Under Review</SelectItem>
-                        <SelectItem value="ready_drafts">Drafts Ready</SelectItem>
-                        <SelectItem value="client_review">Client Review</SelectItem>
-                        <SelectItem value="awaiting_landlord">Awaiting Landlord</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="resolved">Resolved</SelectItem>
-                        <SelectItem value="closed">Closed</SelectItem>
+                        <SelectItem value="pending_review">{language === 'th' ? 'รอตรวจสอบ' : 'Pending Review'}</SelectItem>
+                        <SelectItem value="under_review">{language === 'th' ? 'กำลังตรวจสอบ' : 'Under Review'}</SelectItem>
+                        <SelectItem value="ready_drafts">{language === 'th' ? 'ร่างพร้อม' : 'Drafts Ready'}</SelectItem>
+                        <SelectItem value="client_review">{language === 'th' ? 'ลูกค้าตรวจสอบ' : 'Client Review'}</SelectItem>
+                        <SelectItem value="awaiting_landlord">{language === 'th' ? 'รอเจ้าของบ้าน' : 'Awaiting Landlord'}</SelectItem>
+                        <SelectItem value="in_progress">{language === 'th' ? 'ดำเนินการ' : 'In Progress'}</SelectItem>
+                        <SelectItem value="resolved">{language === 'th' ? 'แก้ไขแล้ว' : 'Resolved'}</SelectItem>
+                        <SelectItem value="closed">{language === 'th' ? 'ปิดแล้ว' : 'Closed'}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -567,7 +639,9 @@ export default function OpsConsole() {
 
                 {actionMode === 'assign' && (
                   <div className="space-y-4">
-                    <Label style={{ color: colors.textPrimary }}>Assign To</Label>
+                    <Label style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? 'มอบหมายให้' : 'Assign To'}
+                    </Label>
                     <Select
                       defaultValue={selectedCase.assignee_id}
                       onValueChange={(value) => {
@@ -579,7 +653,7 @@ export default function OpsConsole() {
                         borderColor: colors.inputBorder,
                         color: colors.textPrimary
                       }}>
-                        <SelectValue placeholder="Select team member" />
+                        <SelectValue placeholder={language === 'th' ? 'เลือกสมาชิกทีม' : 'Select team member'} />
                       </SelectTrigger>
                       <SelectContent>
                         {users.filter(u => u.access_level === 'va' || u.access_level === 'admin' || u.access_level === 'super_admin' || u.role === 'admin').map(u => (
@@ -607,7 +681,9 @@ export default function OpsConsole() {
                     className="space-y-4"
                   >
                     <div>
-                      <Label htmlFor="amount" style={{ color: colors.textPrimary }}>Settlement Amount (฿)</Label>
+                      <Label htmlFor="amount" style={{ color: colors.textPrimary }}>
+                        {language === 'th' ? 'จำนวนเงินตกลง (฿)' : 'Settlement Amount (฿)'}
+                      </Label>
                       <Input
                         id="amount"
                         name="amount"
@@ -622,11 +698,13 @@ export default function OpsConsole() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="method" style={{ color: colors.textPrimary }}>Payment Method</Label>
+                      <Label htmlFor="method" style={{ color: colors.textPrimary }}>
+                        {language === 'th' ? 'วิธีการชำระเงิน' : 'Payment Method'}
+                      </Label>
                       <Input
                         id="method"
                         name="method"
-                        placeholder="Bank transfer, Cash, etc."
+                        placeholder={language === 'th' ? 'โอนธนาคาร, เงินสด ฯลฯ' : 'Bank transfer, Cash, etc.'}
                         style={{
                           backgroundColor: colors.inputBg,
                           borderColor: colors.inputBorder,
@@ -635,12 +713,14 @@ export default function OpsConsole() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="notes" style={{ color: colors.textPrimary }}>Notes</Label>
+                      <Label htmlFor="notes" style={{ color: colors.textPrimary }}>
+                        {language === 'th' ? 'หมายเหตุ' : 'Notes'}
+                      </Label>
                       <Textarea
                         id="notes"
                         name="notes"
                         rows={3}
-                        placeholder="Settlement details..."
+                        placeholder={language === 'th' ? 'รายละเอียดการตกลง...' : 'Settlement details...'}
                         style={{
                           backgroundColor: colors.inputBg,
                           borderColor: colors.inputBorder,
@@ -658,10 +738,10 @@ export default function OpsConsole() {
                           setActionMode(null);
                         }}
                       >
-                        Cancel
+                        {language === 'th' ? 'ยกเลิก' : 'Cancel'}
                       </Button>
                       <Button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                        Record Settlement
+                        {language === 'th' ? 'บันทึกการตกลง' : 'Record Settlement'}
                       </Button>
                     </div>
                   </form>
@@ -676,7 +756,7 @@ export default function OpsConsole() {
                       setActionMode(null);
                     }}
                   >
-                    Cancel
+                    {language === 'th' ? 'ยกเลิก' : 'Cancel'}
                   </Button>
                 )}
               </CardContent>
@@ -685,5 +765,14 @@ export default function OpsConsole() {
         )}
       </div>
     </div>
+    </PullToRefresh>
+  );
+}
+
+export default function OpsConsole() {
+  return (
+    <ToastProvider>
+      <OpsConsoleContent />
+    </ToastProvider>
   );
 }

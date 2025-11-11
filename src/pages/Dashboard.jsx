@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, format } from "date-fns";
@@ -12,11 +12,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import StatsCard from "../components/dashboard/StatsCard";
 import DepositAlert from "../components/dashboard/DepositAlert";
 import RecentLeases from "../components/dashboard/RecentLeases";
+import ProtectionScoreEnhanced from "../components/dashboard/ProtectionScoreEnhanced";
+import EmptyState from "../components/shared/EmptyState";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
+import PullToRefresh from "../components/shared/PullToRefresh";
+import { ToastProvider, useToast } from "../components/shared/Toast";
+import { spacing, borderRadius, shadows, transitions, brandColors } from "@/utils/designSystem";
 
-export default function Dashboard() {
+function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
+  const [focusMode, setFocusMode] = React.useState(false);
+  const [expandedSections, setExpandedSections] = React.useState({
+    stats: true,
+    quickActions: true,
+    content: true,
+  });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -24,13 +37,13 @@ export default function Dashboard() {
   });
 
   // Regular user queries
-  const { data: leases = [] } = useQuery({
+  const { data: leases = [], isLoading: leasesLoading } = useQuery({
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
     enabled: !!user,
   });
 
-  const { data: deposits = [] } = useQuery({
+  const { data: deposits = [], isLoading: depositsLoading } = useQuery({
     queryKey: ['deposits'],
     queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
@@ -54,32 +67,35 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries();
+    toast.success(language === 'th' ? 'รีเฟรชสำเร็จ' : 'Refreshed successfully');
+  };
+
   // Auto-refresh logic
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const subscriptionStatus = urlParams.get('subscription');
     
     if (subscriptionStatus === 'success' && user) {
-      console.log('💳 Subscription success detected - starting refresh...');
       window.history.replaceState({}, '', window.location.pathname);
+      toast.success(language === 'th' ? 'การสมัครสมาชิกสำเร็จ!' : 'Subscription successful!');
       
       let pollCount = 0;
       const maxPolls = 12;
       
       const pollInterval = setInterval(() => {
         pollCount++;
-        console.log(`🔄 Polling for user data update (${pollCount}/${maxPolls})...`);
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         
         if (pollCount >= maxPolls) {
           clearInterval(pollInterval);
-          console.log('✅ User data refresh polling complete');
         }
       }, 5000);
       
       return () => clearInterval(pollInterval);
     }
-  }, [queryClient]);
+  }, [queryClient, user, toast]);
 
   React.useEffect(() => {
     let intervalId;
@@ -217,41 +233,7 @@ export default function Dashboard() {
   };
 
   const protectionData = calculateProtectionScore();
-  const { score: protectionScore, recommendations } = protectionData;
-
-  const getProtectionScoreColor = (score) => {
-    if (score >= 85) return '#10B981';
-    if (score >= 70) return '#EAB308';
-    if (score >= 50) return '#F59E0B';
-    return '#EF4444';
-  };
-
-  const getProtectionScoreStatus = (score) => {
-    const statuses = {
-      en: {
-        excellent: 'Excellent Protection',
-        good: 'Good Protection',
-        fair: 'Needs Improvement',
-        poor: 'Attention Required'
-      },
-      th: {
-        excellent: 'การป้องกันที่ยอดเยี่ยม',
-        good: 'การป้องกันที่ดี',
-        fair: 'ต้องการปรับปรุง',
-        poor: 'ต้องการความสนใจ'
-      }
-    };
-
-    const lang = statuses[language] || statuses.en;
-
-    if (score >= 85) return lang.excellent;
-    if (score >= 70) return lang.good;
-    if (score >= 50) return lang.fair;
-    return lang.poor;
-  };
-
-  const protectionScoreColor = getProtectionScoreColor(protectionScore);
-  const protectionScoreStatus = getProtectionScoreStatus(protectionScore);
+  const { score: protectionScore, breakdown, recommendations } = protectionData;
 
   const activeDeposits = deposits.filter(d => d.status === 'tracking' || d.status === 'dispute');
   const activeCases = cases.filter(c => !['closed'].includes(c.status));
@@ -266,10 +248,6 @@ export default function Dashboard() {
     return daysRemaining <= 30 && daysRemaining > 0;
   }).length;
   const resolvedCases = cases.filter(c => c.status === 'closed').length;
-
-  const handleImproveScoreClick = () => {
-    setShowImprovementDialog(true);
-  };
 
   const t = {
     en: {
@@ -287,21 +265,19 @@ export default function Dashboard() {
       upgradePremium: "Upgrade to Premium",
       upgradeDesc: "Get unlimited lease scans, priority case handling, and expert legal support",
       viewPlans: "View Plans",
-      thisMonth: "this month",
-      improveScore: "How to Improve Your Score",
-      improveScoreDesc: "Complete these actions to strengthen your protection",
-      takeAction: "Take Action",
+      focusMode: "Focus Mode",
+      normalView: "Normal View",
       scanned: "Scanned",
       avgDeposit: "Avg Deposit",
       urgentReturns: "Due Soon",
       resolved: "Resolved",
-      viewAll: "View All",
       addDeposit: "Add Deposit",
       openCase: "Open Case",
       manageLeases: "Manage Leases",
-      alertsEnabled: "Alerts Enabled",
       uploadFirstLease: "Upload First Lease",
-      scannedLeases: "Scanned"
+      noDataYet: "No Data Yet",
+      getStartedDesc: "Start protecting your rental rights by uploading your lease agreement",
+      startNow: "Get Started"
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -318,21 +294,19 @@ export default function Dashboard() {
       upgradePremium: "อัปเกรดเป็นพรีเมียม",
       upgradeDesc: "รับการสแกนสัญญาไม่จำกัด การจัดการคดีแบบเร่งด่วน และการสนับสนุนจากผู้เชี่ยวชาญ",
       viewPlans: "ดูแผน",
-      thisMonth: "เดือนนี้",
-      improveScore: "วิธีเพิ่มคะแนนของคุณ",
-      improveScoreDesc: "ดำเนินการเหล่านี้เพื่อเสริมสร้างการป้องกัน",
-      takeAction: "ดำเนินการ",
+      focusMode: "โหมดโฟกัส",
+      normalView: "มุมมองปกติ",
       scanned: "สแกนแล้ว",
       avgDeposit: "มัดจำเฉลี่ย",
       urgentReturns: "ครบกำหนดเร็วๆ นี้",
       resolved: "แก้ไขแล้ว",
-      viewAll: "ดูทั้งหมด",
       addDeposit: "เพิ่มมัดจำ",
       openCase: "เปิดคดี",
       manageLeases: "จัดการสัญญา",
-      alertsEnabled: "การแจ้งเตือนเปิดอยู่",
       uploadFirstLease: "อัปโหลดสัญญาแรก",
-      scannedLeases: "สัญญาที่สแกนแล้ว"
+      noDataYet: "ยังไม่มีข้อมูล",
+      getStartedDesc: "เริ่มปกป้องสิทธิ์การเช่าของคุณโดยการอัปโหลดสัญญาเช่า",
+      startNow: "เริ่มเลย"
     }
   };
 
@@ -345,358 +319,425 @@ export default function Dashboard() {
     Wrench: Wrench
   };
 
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const isLoading = leasesLoading || depositsLoading;
+
+  // Check if user has any data
+  const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
+
+  // Show empty state for completely new users
+  if (!isLoading && !hasAnyData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
+        <EmptyState
+          icon={Shield}
+          title={strings.noDataYet}
+          description={strings.getStartedDesc}
+          illustration="leases"
+          actionLabel={strings.uploadLease}
+          onAction={() => navigate(createPageUrl("UploadScan"))}
+          secondaryActionLabel={language === 'th' ? 'ดูแผนการป้องกัน' : 'View Protection Plans'}
+          onSecondaryAction={() => navigate(createPageUrl("Account"))}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3" style={{
-            background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-            boxShadow: '0 8px 16px rgba(12, 59, 46, 0.25)'
-          }}>
-            <div className="w-5 h-5 flex-shrink-0" style={{ position: 'relative', display: 'inline-block' }}>
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
-                <path d="M12 2L4 5V11C4 16 7 20.5 12 22C17 20.5 20 16 20 11V5L12 2Z" fill="#0C3B2E" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <rect x="9" y="11" width="6" height="5" rx="1" fill="#C7A338"/>
-                <path d="M10 11V9.5C10 8.67 10.67 8 11.5 8H12.5C13.33 8 14 8.67 14 9.5V11" stroke="#C7A338" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <div className="flex items-center gap-2 text-sm sm:text-base font-semibold">
-              <span style={{ color: '#FFFFFF' }}>Fair.</span>
-              <span style={{ color: '#ECEFED' }}>Transparent.</span>
-              <span style={{ color: '#C7A338' }}>Protected.</span>
-            </div>
-          </div>
-          
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ 
-            color: colors.textPrimary,
-            letterSpacing: '-0.02em'
-          }}>
-            {strings.welcome}, {user?.full_name?.split(' ')[0] || 'User'}
-          </h1>
-          <p style={{ 
-            color: colors.textSecondary, 
-            fontSize: '16px', 
-            lineHeight: '1.6',
-            fontWeight: '500'
-          }}>
-            {strings.subtitle}
-          </p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <StatsCard
-            title={strings.activeLeases}
-            value={leases.length.toString()}
-            icon={FileText}
-            scoreColor="#3B82F6"
-            miniStats={leases.length > 0 ? [
-              {
-                label: language === 'th' ? 'สัญญาที่สแกนแล้ว' : 'Scanned',
-                value: leases.filter(l => l.status === 'scanned' || l.status === 'paid').length
-              },
-              {
-                label: language === 'th' ? 'การแจ้งเตือนเปิดอยู่' : 'Alerts Enabled',
-                value: leases.filter(l => l.notice_alerts_enabled).length
-              }
-            ] : undefined}
-            actionButton={leases.length > 0 ? {
-              label: language === 'th' ? 'จัดการสัญญา' : 'Manage Leases',
-              link: createPageUrl("UploadScan")
-            } : undefined}
-            ctaText={leases.length === 0 ? (language === 'th' ? 'อัปโหลดสัญญาแรก' : 'Upload First Lease') : undefined}
-            onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
-          />
-          
-          <StatsCard
-            title={strings.depositsTracked}
-            value={`฿${totalDepositValue.toLocaleString()}`}
-            icon={Wallet}
-            bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
-            miniStats={[
-              { label: strings.avgDeposit, value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
-              { label: strings.urgentReturns, value: urgentDeposits }
-            ]}
-            actionButton={{
-              label: strings.addDeposit,
-              link: createPageUrl("DepositTracker")
-            }}
-          />
-          
-          <StatsCard
-            title={strings.activeCases}
-            value={activeCases.length}
-            icon={Scale}
-            bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
-            miniStats={[
-              { label: strings.resolved, value: resolvedCases }
-            ]}
-            actionButton={{
-              label: strings.openCase,
-              link: createPageUrl("Cases")
-            }}
-          />
-          
-          <StatsCard
-            title={strings.protectionScore}
-            value={`${protectionScore}%`}
-            icon={Shield}
-            scoreColor={protectionScoreColor}
-            scoreStatus={protectionScoreStatus}
-            showGauge={true}
-            scoreValue={protectionScore}
-            ctaText={protectionScore < 100 ? strings.improveScoreCta : undefined}
-            onCtaClick={protectionScore < 100 ? handleImproveScoreClick : undefined}
-          />
-        </div>
-
-        {/* Improvement Dialog */}
-        <Dialog open={showImprovementDialog} onOpenChange={setShowImprovementDialog}>
-          <DialogContent className="sm:max-w-2xl" style={{
-            backgroundColor: colors.cardBg,
-            borderColor: colors.borderColor
-          }}>
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center gap-3" style={{ color: colors.textPrimary }}>
-                <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: protectionScoreColor }}
-                >
-                  <TrendingUp className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  {strings.improveScore}
-                  <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>{strings.improveScoreDesc}</p>
-                </div>
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 mt-4">
-              {recommendations.length === 0 ? (
-                <div className="text-center py-8">
-                  <Shield className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-                  <p className="text-lg font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                    {language === 'th' ? 'คะแนนเต็ม! 🎉' : 'Perfect Score! 🎉'}
-                  </p>
-                  <p style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'คุณทำได้ดีมาก ทุกอย่างพร้อมแล้ว' : 'You\'re all set with maximum protection'}
-                  </p>
-                </div>
-              ) : (
-                recommendations.map((rec, index) => {
-                  const IconComponent = iconMap[rec.icon] || FileText;
-                  return (
-                    <Link 
-                      key={index} 
-                      to={createPageUrl(rec.route)}
-                      onClick={() => setShowImprovementDialog(false)}
-                    >
-                      <div
-                        className="p-4 rounded-xl border-2 hover:shadow-md transition-all duration-300 cursor-pointer"
-                        style={{
-                          backgroundColor: colors.cardBg,
-                          borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = '#C7A338';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = isDarkMode ? '#3A3D40' : '#E5E7EB';
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4 flex-1">
-                            <div
-                              className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                              style={{
-                                backgroundColor: '#0C3B2E',
-                                boxShadow: '0 2px 4px rgba(12, 59, 46, 0.2)'
-                              }}
-                            >
-                              <IconComponent className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-bold" style={{ color: colors.textPrimary }}>{rec.action}</span>
-                                <Badge className="bg-ls-gold/20 text-ls-gold border border-ls-gold/30">
-                                  +{rec.points}%
-                                </Badge>
-                              </div>
-                              <p className="text-sm" style={{ color: colors.textSecondary }}>
-                                {language === 'th' 
-                                  ? `เพิ่มคะแนนการป้องกันของคุณ ${rec.points} คะแนน` 
-                                  : `Increase your protection by ${rec.points} points`}
-                              </p>
-                            </div>
-                          </div>
-                          <ArrowRight className="w-5 h-5 text-ls-gold flex-shrink-0 ml-3" />
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Quick Actions */}
-        <div style={{
-          background: isDarkMode 
-            ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
-            : 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-          borderRadius: '20px',
-          padding: '32px',
-          marginBottom: '32px',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)'
-        }}>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'stretch',
-            gap: '20px'
-          }}>
-            <div style={{ flex: 1 }}>
-              <h2 style={{
-                fontSize: '24px',
-                fontWeight: 'bold',
-                color: '#FFFFFF',
-                marginBottom: '12px',
-                letterSpacing: '-0.01em'
+    <PullToRefresh onRefresh={handleRefresh} colors={colors}>
+      <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
+          {/* Header with Focus Mode Toggle */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
+                background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+                boxShadow: shadows.lg,
               }}>
-                {strings.protectRights}
-              </h2>
-              <p style={{
-                fontSize: '15px',
-                color: '#D1FAE5',
-                lineHeight: '1.6'
-              }}>
-                {strings.uploadCta}
-              </p>
-            </div>
-            <Link to={createPageUrl("UploadScan")} className="w-full">
+                <div className="w-5 h-5 flex-shrink-0">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+                    <path d="M12 2L4 5V11C4 16 7 20.5 12 22C17 20.5 20 16 20 11V5L12 2Z" fill="#0C3B2E" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <rect x="9" y="11" width="6" height="5" rx="1" fill="#C7A338"/>
+                    <path d="M10 11V9.5C10 8.67 10.67 8 11.5 8H12.5C13.33 8 14 8.67 14 9.5V11" stroke="#C7A338" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <div className="flex items-center gap-2 text-sm sm:text-base font-semibold">
+                  <span style={{ color: '#FFFFFF' }}>Fair.</span>
+                  <span style={{ color: '#ECEFED' }}>Transparent.</span>
+                  <span style={{ color: '#C7A338' }}>Protected.</span>
+                </div>
+              </div>
+
+              {/* Focus Mode Toggle */}
               <button
+                onClick={() => setFocusMode(!focusMode)}
                 style={{
-                  width: '100%',
-                  backgroundColor: '#C7A338',
-                  color: '#1A1D1F',
-                  padding: '16px 32px',
-                  borderRadius: '12px',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  border: 'none',
+                  padding: '8px 16px',
+                  backgroundColor: focusMode ? brandColors.gold : colors.cardBg,
+                  color: focusMode ? '#FFFFFF' : colors.textPrimary,
+                  border: `2px solid ${focusMode ? brandColors.gold : colors.borderColor}`,
+                  borderRadius: borderRadius.lg,
+                  fontSize: '14px',
+                  fontWeight: '600',
                   cursor: 'pointer',
-                  boxShadow: '0 8px 12px rgba(0,0,0,0.15)',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transition: transitions.base,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px'
+                  gap: spacing.sm,
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#d4af37';
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 12px 20px rgba(0,0,0,0.2)';
+                  if (!focusMode) {
+                    e.target.style.backgroundColor = colors.borderColor;
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#C7A338';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 8px 12px rgba(0,0,0,0.15)';
+                  if (!focusMode) {
+                    e.target.style.backgroundColor = colors.cardBg;
+                  }
                 }}
               >
-                <Shield className="w-5 h-5" />
-                {strings.uploadLease}
+                <Target className="w-4 h-4" />
+                {focusMode ? strings.normalView : strings.focusMode}
               </button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="lg:col-span-2">
-            <RecentLeases leases={leases} language={language} />
-          </div>
-          <div>
-            <DepositAlert deposits={deposits} language={language} />
-          </div>
-        </div>
-
-        {/* Upgrade Banner */}
-        {user?.plan_tier === 'free' && (
-          <div style={{
-            marginTop: '32px',
-            background: isDarkMode
-              ? 'linear-gradient(135deg, #C7A338 0%, #d97706 100%)'
-              : 'linear-gradient(135deg, #C7A338 0%, #d97706 100%)',
-            borderRadius: '20px',
-            padding: '32px',
-            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)'
-          }}>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'stretch',
-              gap: '20px'
+            </div>
+            
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ 
+              color: colors.textPrimary,
+              letterSpacing: '-0.02em'
             }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                  <TrendingUp style={{ width: '24px', height: '24px', color: '#1A1D1F' }} />
-                  <h3 style={{
-                    fontSize: '22px',
-                    fontWeight: 'bold',
-                    color: '#1A1D1F',
-                    letterSpacing: '-0.01em'
-                  }}>
-                    {strings.upgradePremium}
-                  </h3>
-                </div>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#292524',
-                  opacity: 0.9,
-                  lineHeight: '1.5'
-                }}>
-                  {strings.upgradeDesc}
-                </p>
-              </div>
-              <Link to={createPageUrl("Account")} className="w-full">
-                <button
+              {strings.welcome}, {user?.full_name?.split(' ')[0] || 'User'}
+            </h1>
+            <p style={{ 
+              color: colors.textSecondary, 
+              fontSize: typography.base, 
+              lineHeight: '1.6',
+              fontWeight: '500'
+            }}>
+              {strings.subtitle}
+            </p>
+          </div>
+
+          {/* Stats Grid - Collapsible */}
+          {(!focusMode || urgentDeposits > 0 || activeCases.length > 0) && (
+            <div className="mb-6">
+              <button
+                onClick={() => toggleSection('stats')}
+                className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg hover:bg-opacity-80 transition-all"
+                style={{
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <h2 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+                  {language === 'th' ? 'ภาพรวม' : 'Overview'}
+                </h2>
+                {expandedSections.stats ? (
+                  <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                ) : (
+                  <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                )}
+              </button>
+
+              {expandedSections.stats && (
+                <div 
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
                   style={{
-                    width: '100%',
-                    backgroundColor: '#0C3B2E',
-                    color: '#FFFFFF',
-                    padding: '16px 32px',
-                    borderRadius: '12px',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    boxShadow: '0 8px 12px rgba(0,0,0,0.15)',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#0a2f25';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 12px 20px rgba(0,0,0,0.2)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#0C3B2E';
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 8px 12px rgba(0,0,0,0.15)';
+                    animation: 'slideDown 0.3s ease-out',
                   }}
                 >
-                  <ArrowRight className="w-5 h-5" />
-                  {strings.viewPlans}
-                </button>
-              </Link>
+                  <style>
+                    {`
+                      @keyframes slideDown {
+                        from {
+                          opacity: 0;
+                          transform: translateY(-10px);
+                        }
+                        to {
+                          opacity: 1;
+                          transform: translateY(0);
+                        }
+                      }
+                    `}
+                  </style>
+                  
+                  {isLoading ? (
+                    <>
+                      <SkeletonLoader variant="stat" colors={colors} />
+                      <SkeletonLoader variant="stat" colors={colors} />
+                      <SkeletonLoader variant="stat" colors={colors} />
+                      <SkeletonLoader variant="stat" colors={colors} />
+                    </>
+                  ) : (
+                    <>
+                      <StatsCard
+                        title={strings.activeLeases}
+                        value={leases.length.toString()}
+                        icon={FileText}
+                        scoreColor="#3B82F6"
+                        miniStats={leases.length > 0 ? [
+                          {
+                            label: language === 'th' ? 'สัญญาที่สแกนแล้ว' : 'Scanned',
+                            value: scannedLeases.length
+                          },
+                          {
+                            label: language === 'th' ? 'การแจ้งเตือนเปิดอยู่' : 'Alerts Enabled',
+                            value: leases.filter(l => l.notice_alerts_enabled).length
+                          }
+                        ] : undefined}
+                        actionButton={leases.length > 0 ? {
+                          label: language === 'th' ? 'จัดการสัญญา' : 'Manage Leases',
+                          link: createPageUrl("UploadScan")
+                        } : undefined}
+                        ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
+                        onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
+                      />
+                      
+                      <StatsCard
+                        title={strings.depositsTracked}
+                        value={`฿${totalDepositValue.toLocaleString()}`}
+                        icon={Wallet}
+                        bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
+                        miniStats={[
+                          { label: strings.avgDeposit, value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
+                          { label: strings.urgentReturns, value: urgentDeposits }
+                        ]}
+                        actionButton={{
+                          label: strings.addDeposit,
+                          link: createPageUrl("DepositTracker")
+                        }}
+                      />
+                      
+                      <StatsCard
+                        title={strings.activeCases}
+                        value={activeCases.length}
+                        icon={Scale}
+                        bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
+                        miniStats={[
+                          { label: strings.resolved, value: resolvedCases }
+                        ]}
+                        actionButton={{
+                          label: strings.openCase,
+                          link: createPageUrl("Cases")
+                        }}
+                      />
+                      
+                      {/* Enhanced Protection Score Card */}
+                      <div className="sm:col-span-2 lg:col-span-1">
+                        <ProtectionScoreEnhanced
+                          score={protectionScore}
+                          breakdown={breakdown}
+                          recommendations={recommendations}
+                          language={language}
+                          colors={colors}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Quick Actions - Priority in Focus Mode */}
+          {expandedSections.quickActions && (
+            <div style={{
+              background: isDarkMode 
+                ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
+                : 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+              borderRadius: borderRadius['2xl'],
+              padding: spacing.xl,
+              marginBottom: spacing.xl,
+              boxShadow: shadows.xl,
+              animation: 'scaleIn 0.3s ease-out',
+            }}>
+              <style>
+                {`
+                  @keyframes scaleIn {
+                    from {
+                      opacity: 0;
+                      transform: scale(0.95);
+                    }
+                    to {
+                      opacity: 1;
+                      transform: scale(1);
+                    }
+                  }
+                `}
+              </style>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'stretch',
+                gap: spacing.lg,
+              }}>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{
+                    fontSize: typography['2xl'],
+                    fontWeight: 'bold',
+                    color: '#FFFFFF',
+                    marginBottom: spacing.md,
+                    letterSpacing: '-0.01em'
+                  }}>
+                    {strings.protectRights}
+                  </h2>
+                  <p style={{
+                    fontSize: typography.base,
+                    color: '#D1FAE5',
+                    lineHeight: '1.6'
+                  }}>
+                    {strings.uploadCta}
+                  </p>
+                </div>
+                <Link to={createPageUrl("UploadScan")} className="w-full">
+                  <button
+                    style={{
+                      width: '100%',
+                      backgroundColor: brandColors.gold,
+                      color: brandColors.charcoal,
+                      padding: `${spacing.md} ${spacing.xl}`,
+                      borderRadius: borderRadius.lg,
+                      fontWeight: 'bold',
+                      fontSize: typography.base,
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: shadows.lg,
+                      transition: transitions.slow,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: spacing.sm,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = brandColors.goldLight;
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = shadows.xl;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = brandColors.gold;
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = shadows.lg;
+                    }}
+                  >
+                    <Shield className="w-5 h-5" />
+                    {strings.uploadLease}
+                  </button>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Main Content Grid - Collapsible in Focus Mode */}
+          {(!focusMode || expandedSections.content) && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="lg:col-span-2">
+                {isLoading ? (
+                  <SkeletonLoader variant="card" count={3} colors={colors} />
+                ) : (
+                  <RecentLeases leases={leases} language={language} />
+                )}
+              </div>
+              <div>
+                {isLoading ? (
+                  <SkeletonLoader variant="card" colors={colors} />
+                ) : (
+                  <DepositAlert deposits={deposits} language={language} />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Upgrade Banner */}
+          {user?.plan_tier === 'free' && !focusMode && (
+            <div style={{
+              marginTop: spacing.xl,
+              background: isDarkMode
+                ? 'linear-gradient(135deg, #C7A338 0%, #d97706 100%)'
+                : 'linear-gradient(135deg, #C7A338 0%, #d97706 100%)',
+              borderRadius: borderRadius['2xl'],
+              padding: spacing.xl,
+              boxShadow: shadows.xl,
+            }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'stretch',
+                gap: spacing.lg,
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md }}>
+                    <TrendingUp style={{ width: '24px', height: '24px', color: '#1A1D1F' }} />
+                    <h3 style={{
+                      fontSize: typography.xl,
+                      fontWeight: 'bold',
+                      color: '#1A1D1F',
+                      letterSpacing: '-0.01em'
+                    }}>
+                      {strings.upgradePremium}
+                    </h3>
+                  </div>
+                  <p style={{
+                    fontSize: typography.sm,
+                    color: '#292524',
+                    opacity: 0.9,
+                    lineHeight: '1.5'
+                  }}>
+                    {strings.upgradeDesc}
+                  </p>
+                </div>
+                <Link to={createPageUrl("Account")} className="w-full">
+                  <button
+                    style={{
+                      width: '100%',
+                      backgroundColor: brandColors.forest,
+                      color: '#FFFFFF',
+                      padding: `${spacing.md} ${spacing.xl}`,
+                      borderRadius: borderRadius.lg,
+                      fontWeight: 'bold',
+                      fontSize: typography.base,
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: shadows.lg,
+                      transition: transitions.slow,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: spacing.sm,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#0a2f25';
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = shadows.xl;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = brandColors.forest;
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = shadows.lg;
+                    }}
+                  >
+                    <ArrowRight className="w-5 h-5" />
+                    {strings.viewPlans}
+                  </button>
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </PullToRefresh>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <ToastProvider>
+      <DashboardContent />
+    </ToastProvider>
   );
 }
