@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import { createDepositReminderFlex, createLeaseNoticeFlex, createRentReminderFlex } from './lineFlexTemplates.js';
 
@@ -29,8 +28,11 @@ Deno.serve(async (req) => {
 
     // Helper to check if notification is allowed based on user preferences
     const isNotificationAllowed = (user, notificationType) => {
+      console.log(`🔍 Checking notification allowed for ${user.email}, type: ${notificationType}`);
+      
       // Check if user has disabled this specific notification type
       const prefs = user.notification_preferences || {};
+      console.log(`🔍 User preferences:`, JSON.stringify(prefs));
       
       // Map notification types to preference keys
       const typeMap = {
@@ -48,7 +50,7 @@ Deno.serve(async (req) => {
 
       const prefKey = typeMap[notificationType];
       if (prefKey && prefs[prefKey] === false) {
-        console.log(`🔕 User ${user.email} disabled ${notificationType}`);
+        console.log(`🔕 User ${user.email} disabled ${notificationType} (prefKey: ${prefKey} = false)`);
         return false;
       }
 
@@ -79,12 +81,18 @@ Deno.serve(async (req) => {
         }
       }
 
+      console.log(`✅ Notification allowed for ${user.email}`);
       return true;
     };
 
     // Helper to send notification with logging
     const sendNotification = async (user, messageText, subject, flexMessage = null, notificationType = '', relatedEntityType = '', relatedEntityId = '') => {
-      if (!user) return false;
+      console.log(`📤 Attempting to send notification to ${user?.email}, type: ${notificationType}`);
+      
+      if (!user) {
+        console.log(`❌ No user provided`);
+        return false;
+      }
 
       // Check if notification is allowed
       if (!isNotificationAllowed(user, notificationType)) {
@@ -96,8 +104,15 @@ Deno.serve(async (req) => {
       let success = false;
       let errorMsg = '';
 
+      console.log(`🔍 User notification settings:`, {
+        email_notifications: user.email_notifications,
+        line_notifications: user.line_notifications,
+        line_messaging_token: user.line_messaging_token ? 'SET' : 'NOT SET'
+      });
+
       // Try LINE first if enabled and flex message provided
       if (user.line_messaging_token && user.line_notifications && flexMessage) {
+        console.log(`📱 Attempting LINE send to ${user.email}...`);
         try {
           await base44.asServiceRole.functions.invoke('sendLineMessage', {
             userId: user.line_messaging_token,
@@ -110,10 +125,13 @@ Deno.serve(async (req) => {
           console.error(`❌ LINE failed for ${user.email}:`, lineError);
           errorMsg = lineError.message;
         }
+      } else {
+        console.log(`⏭️ Skipping LINE (token: ${user.line_messaging_token ? 'SET' : 'NOT SET'}, notifications: ${user.line_notifications}, flexMessage: ${flexMessage ? 'YES' : 'NO'})`);
       }
 
       // Fallback to email
       if (!success && user.email_notifications) {
+        console.log(`📧 Attempting email send to ${user.email}...`);
         try {
           await base44.asServiceRole.integrations.Core.SendEmail({
             from_name: 'Lease Shield',
@@ -128,6 +146,8 @@ Deno.serve(async (req) => {
           console.error(`❌ Email failed for ${user.email}:`, emailError);
           errorMsg = errorMsg ? `${errorMsg}; Email: ${emailError.message}` : emailError.message;
         }
+      } else if (!success) {
+        console.log(`⏭️ Skipping email (email_notifications: ${user.email_notifications})`);
       }
 
       // Log notification attempt
@@ -146,12 +166,14 @@ Deno.serve(async (req) => {
         console.error('Failed to log notification:', logError);
       }
 
+      console.log(`📊 Notification result: ${success ? 'SUCCESS' : 'FAILED'} (channel: ${channel || 'none'})`);
       return success;
     };
 
     // ============================================
     // 1. CHECK DEPOSIT RETURN REMINDERS + AUTOMATION
     // ============================================
+    console.log('🔍 Starting deposit check...');
     for (const deposit of deposits) {
       console.log(`🔍 DEBUG: Checking deposit ${deposit.id}`, {
         status: deposit.status,
@@ -207,6 +229,7 @@ Deno.serve(async (req) => {
           `🔔 แจ้งเตือน Lease Shield\n\nถึงกำหนดคืนเงินมัดจำในอีก 30 วัน\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n📅 กำหนดคืน: ${expectedDateStr}\n\n💡 แนะนำ: แนบใบเสร็จและรูปภาพใน Evidence Vault ของคุณ\n\nเปิดแอป → app.leaseshield.asia` :
           `🔔 Lease Shield Reminder\n\nYour deposit is due back in 30 days\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n📅 Expected: ${expectedDateStr}\n\n💡 Tip: Keep receipts and photos in your Evidence Vault\n\nOpen app → app.leaseshield.asia`;
 
+        console.log(`📬 Preparing 30d notification for ${user.email}`);
         if (await sendNotification(user, messageText, subject, flexMessage, notificationType, 'deposit', deposit.id)) {
           notifications.push({ user: user.email, type: notificationType, deposit: deposit.id });
         }
@@ -228,6 +251,7 @@ Deno.serve(async (req) => {
           `⚠️ แจ้งเตือนสุดท้าย Lease Shield\n\nอีก 7 วันครบกำหนดคืนเงินมัดจำ\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n📅 กำหนดคืน: ${expectedDateStr}\n\n📝 หากยังไม่ได้รับเงิน สามารถสร้างจดหมายร้องขอได้ทันที\n\nเปิดแอป → app.leaseshield.asia` :
           `⚠️ Lease Shield Final Reminder\n\n7 days until deposit return\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n📅 Expected: ${expectedDateStr}\n\n📝 Generate a letter if needed\n\nOpen app → app.leaseshield.asia`;
 
+        console.log(`📬 Preparing 7d notification for ${user.email}`);
         if (await sendNotification(user, messageText, subject, flexMessage, notificationType, 'deposit', deposit.id)) {
           notifications.push({ user: user.email, type: notificationType, deposit: deposit.id });
         }
@@ -249,6 +273,7 @@ Deno.serve(async (req) => {
           `🚨 เตือนเร่งด่วน Lease Shield\n\nอีก 3 วันครบกำหนดคืนเงินมัดจำ!\n\n💰 จำนวน: ฿${depositAmount.toLocaleString()}\n🏠 ทรัพย์สิน: ${propertyAddress}\n📅 กำหนดคืน: ${expectedDateStr}\n\n⚠️ หากยังไม่ติดต่อเจ้าของบ้าน กรุณาดำเนินการทันที\n\nเปิดแอป → app.leaseshield.asia` :
           `🚨 Lease Shield Urgent\n\nOnly 3 days until deposit return!\n\n💰 Amount: ฿${depositAmount.toLocaleString()}\n🏠 Property: ${propertyAddress}\n📅 Expected: ${expectedDateStr}\n\n⚠️ Contact landlord now\n\nOpen app → app.leaseshield.asia`;
 
+        console.log(`📬 Preparing 3d notification for ${user.email}`);
         if (await sendNotification(user, messageText, subject, flexMessage, notificationType, 'deposit', deposit.id)) {
           notifications.push({ user: user.email, type: notificationType, deposit: deposit.id });
         }
@@ -271,15 +296,10 @@ Deno.serve(async (req) => {
         
         const hasOpenCase = existingCases.some(c => 
           !['closed', 'resolved'].includes(c.status) && 
-          c.summary?.includes(propertyAddress) // Assuming propertyAddress is usually part of the summary for deposit cases
+          c.summary?.includes(propertyAddress)
         );
         
         console.log(`🔍 DEBUG: User has existing cases: ${existingCases.length}, hasOpenCase: ${hasOpenCase}`);
-        console.log(`🔍 DEBUG: User notification settings:`, {
-          email_notifications: user.email_notifications,
-          line_notifications: user.line_notifications,
-          line_messaging_token: user.line_messaging_token ? 'SET' : 'NOT SET'
-        });
         
         // Create special overdue Flex Message with "Open Case" action
         flexMessage = {
@@ -443,6 +463,7 @@ Deno.serve(async (req) => {
           `🚨 แจ้งเตือนด่วน Lease Shield\n\n💰 เงินมัดจำเกินกำหนด ${daysOverdue} วัน\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${depositAmount.toLocaleString()}\n⏰ ควรคืน: ${expectedDateStr}\n\n🛡️ Deposit Shield พร้อมช่วยคุณ!\n\n${hasOpenCase ? '📋 คุณมีคดีเปิดอยู่แล้ว\nเข้าแอปเพื่อดูสถานะ' : '📋 คลิกเพื่อเปิดคดีอัตโนมัติ\nข้อมูลเงินมัดจำจะถูกกรอกให้อัตโนมัติ'}\n\nเปิดแอป → https://app.leaseshield.asia${hasOpenCase ? '/cases' : `/resolve-case?depositId=${deposit.id}&auto=true`}` :
           `🚨 Lease Shield Urgent Alert\n\n💰 Deposit ${daysOverdue} days overdue\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${depositAmount.toLocaleString()}\n⏰ Due: ${expectedDateStr}\n\n🛡️ Deposit Shield is ready to help!\n\n${hasOpenCase ? '📋 You have an open case\nCheck app for status' : '📋 Click to auto-open case\nDeposit data will be pre-filled'}\n\nOpen app → https://app.leaseshield.asia${hasOpenCase ? '/cases' : `/resolve-case?depositId=${deposit.id}&auto=true`}`;
 
+        console.log(`📬 Preparing OVERDUE notification for ${user.email}`);
         if (await sendNotification(user, messageText, subject, flexMessage, notificationType, 'deposit', deposit.id)) {
           notifications.push({ 
             user: user.email, 
@@ -459,6 +480,7 @@ Deno.serve(async (req) => {
     // ============================================
     // 2. CHECK LEASE NOTICE REMINDERS
     // ============================================
+    console.log('🔍 Starting lease check...');
     for (const lease of leases) {
       if (!lease.notice_deadline || !lease.notice_alerts_enabled) continue;
 
@@ -564,6 +586,7 @@ Deno.serve(async (req) => {
     // ============================================
     // 3. CHECK RENT PAYMENT REMINDERS
     // ============================================
+    console.log('🔍 Starting rent alerts check...');
     for (const deposit of deposits) {
       if (!deposit.rent_alerts_enabled || !deposit.rent_due_day || !deposit.rent_amount) continue;
 
