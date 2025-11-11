@@ -1,9 +1,9 @@
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap } from "lucide-react";
+import { Link, useNavigate } => "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,20 +141,51 @@ function DashboardContent() {
   }, [queryClient]);
 
   const language = user?.language || 'en';
+  const accessLevel = user?.access_level || 'user';
+  const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
+
+  // Admin: Manual reminder trigger
+  const [triggeringReminders, setTriggeringReminders] = useState(false);
+  
+  const triggerReminders = async () => {
+    setTriggeringReminders(true);
+    try {
+      const response = await base44.functions.invoke('checkAllReminders');
+      console.log('✅ Reminders triggered:', response);
+      toast.success(
+        language === 'th' 
+          ? `ส่งการแจ้งเตือน ${response.data?.notifications_sent || 0} รายการ` 
+          : `Sent ${response.data?.notifications_sent || 0} notifications`
+      );
+      // Refresh notification logs (assuming there's a queryKey for notificationLogs)
+      queryClient.invalidateQueries({ queryKey: ['notificationLogs'] });
+    } catch (error) {
+      console.error('Failed to trigger reminders:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถส่งการแจ้งเตือนได้' : 'Failed to send notifications');
+    } finally {
+      setTriggeringReminders(false);
+    }
+  };
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
     cardBg: '#2A2D30',
     textPrimary: '#ECEFED',
     textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40'
+    borderColor: '#3A3D40',
+    inputBg: '#353A3D',
+    fieldBg: '#353A3D',
+    hoverBg: '#3A3D40'
   } : {
     bg: '#ECEFED',
     cardBg: '#FFFFFF',
     textPrimary: '#1A1D1F',
     textSecondary: '#64748b',
-    borderColor: '#E5E7EB'
+    borderColor: '#E5E7EB',
+    inputBg: '#FFFFFF',
+    fieldBg: '#ECEFED',
+    hoverBg: '#F8FAFC'
   };
 
   // Calculate protection score
@@ -252,6 +283,7 @@ function DashboardContent() {
 
   const t = {
     en: {
+      pageTitle: "My Account",
       welcome: "Welcome back",
       tagline: "Fair. Transparent. Protected.",
       subtitle: "Prevent rental problems before they happen.",
@@ -278,9 +310,13 @@ function DashboardContent() {
       uploadFirstLease: "Upload First Lease",
       noDataYet: "No Data Yet",
       getStartedDesc: "Start protecting your rental rights by uploading your lease agreement",
-      startNow: "Get Started"
+      startNow: "Get Started",
+      testReminders: "Test Notifications",
+      triggerNow: "Send Reminders Now",
+      triggering: "Sending..."
     },
     th: {
+      pageTitle: "บัญชีของฉัน",
       welcome: "ยินดีต้อนรับกลับมา",
       tagline: "ยุติธรรม โปร่งใส ปลอดภัย",
       subtitle: "ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น",
@@ -307,7 +343,10 @@ function DashboardContent() {
       uploadFirstLease: "อัปโหลดสัญญาแรก",
       noDataYet: "ยังไม่มีข้อมูล",
       getStartedDesc: "เริ่มปกป้องสิทธิ์การเช่าของคุณโดยการอัปโหลดสัญญาเช่า",
-      startNow: "เริ่มเลย"
+      startNow: "เริ่มเลย",
+      testReminders: "ทดสอบการแจ้งเตือน",
+      triggerNow: "ส่งการแจ้งเตือนทันที",
+      triggering: "กำลังส่ง..."
     }
   };
 
@@ -375,37 +414,84 @@ function DashboardContent() {
                 </div>
               </div>
 
-              {/* Focus Mode Toggle */}
-              <button
-                onClick={() => setFocusMode(!focusMode)}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: focusMode ? '#C7A338' : colors.cardBg,
-                  color: focusMode ? '#FFFFFF' : colors.textPrimary,
-                  border: `2px solid ${focusMode ? '#C7A338' : colors.borderColor}`,
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-                onMouseEnter={(e) => {
-                  if (!focusMode) {
-                    e.target.style.backgroundColor = colors.borderColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!focusMode) {
-                    e.target.style.backgroundColor = colors.cardBg;
-                  }
-                }}
-              >
-                <Target className="w-4 h-4" />
-                {focusMode ? strings.normalView : strings.focusMode}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Admin: Test Notification Button */}
+                {isAdmin && (
+                  <button
+                    onClick={triggerReminders}
+                    disabled={triggeringReminders}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: triggeringReminders ? '#9CA3AF' : '#3B82F6',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: triggeringReminders ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      opacity: triggeringReminders ? 0.7 : 1
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!triggeringReminders) {
+                        e.target.style.backgroundColor = '#2563EB';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!triggeringReminders) {
+                        e.target.style.backgroundColor = '#3B82F6';
+                      }
+                    }}
+                  >
+                    {triggeringReminders ? (
+                      <>
+                        <Zap className="w-4 h-4 animate-spin" />
+                        {strings.triggering}
+                      </>
+                    ) : (
+                      <>
+                        <Bell className="w-4 h-4" />
+                        {strings.triggerNow}
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {/* Focus Mode Toggle */}
+                <button
+                  onClick={() => setFocusMode(!focusMode)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: focusMode ? '#C7A338' : colors.cardBg,
+                    color: focusMode ? '#FFFFFF' : colors.textPrimary,
+                    border: `2px solid ${focusMode ? '#C7A338' : colors.borderColor}`,
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!focusMode) {
+                      e.target.style.backgroundColor = colors.borderColor;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!focusMode) {
+                      e.target.style.backgroundColor = colors.cardBg;
+                    }
+                  }}
+                >
+                  <Target className="w-4 h-4" />
+                  {focusMode ? strings.normalView : strings.focusMode}
+                </button>
+              </div>
             </div>
             
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ 
