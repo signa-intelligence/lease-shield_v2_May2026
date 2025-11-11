@@ -88,8 +88,7 @@ export default function Layout({ children, currentPageName }) {
       appName: "LEASE SHIELD",
       home: "Home",
       scan: "Scan",
-      repairs: "Repairs",
-      deposit: "Deposit",
+      property: "Property",
       evidence: "Evidence",
       admin: "Admin",
     },
@@ -97,8 +96,7 @@ export default function Layout({ children, currentPageName }) {
       appName: "ลีสชีลด์",
       home: "หน้าหลัก",
       scan: "สแกน",
-      repairs: "ซ่อมบำรุง",
-      deposit: "เงินมัดจำ",
+      property: "ทรัพย์สิน",
       evidence: "หลักฐาน",
       admin: "แอดมิน",
     }
@@ -120,15 +118,9 @@ export default function Layout({ children, currentPageName }) {
       icon: Upload,
     },
     {
-      key: "maintenance",
-      label: strings.repairs,
-      route: createPageUrl("MaintenanceTracker"),
-      icon: Wrench,
-    },
-    {
-      key: "deposit",
-      label: strings.deposit,
-      route: createPageUrl("DepositTracker"),
+      key: "property",
+      label: strings.property,
+      route: createPageUrl("PropertyTracker"),
       icon: Shield,
     },
     {

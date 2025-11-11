@@ -21,6 +21,7 @@ import CaseDetails from './pages/CaseDetails';
 import OpsConsole from './pages/OpsConsole';
 import AcknowledgeMaintenance from './pages/AcknowledgeMaintenance';
 import Acknowledge from './pages/Acknowledge';
+import PropertyTracker from './pages/PropertyTracker';
 import Layout from './Layout.jsx';
 
 
@@ -48,6 +49,7 @@ export const PAGES = {
     "OpsConsole": OpsConsole,
     "AcknowledgeMaintenance": AcknowledgeMaintenance,
     "Acknowledge": Acknowledge,
+    "PropertyTracker": PropertyTracker,
 }
 
 export const pagesConfig = {
