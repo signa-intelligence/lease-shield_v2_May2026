@@ -342,27 +342,37 @@ function DashboardContent() {
   const testRentReminder = async () => {
     setTestingRent(true);
     try {
-      const response = await base44.functions.invoke('testRentReminder');
-      console.log('💰 Rent reminder test:', response.data);
+      // Just use the scheduled reminder system instead
+      const response = await base44.functions.invoke('scheduledReminders');
+      console.log('📊 Scheduled reminders result:', response.data);
       
       if (response.data?.success) {
-        const { deposit, channels } = response.data;
-        toast.success(
-          language === 'th' 
-            ? `✅ ส่งการแจ้งเตือนค่าเช่าผ่าน ${channels.join(' & ')}` 
-            : `✅ Rent reminder sent via ${channels.join(' & ')}`
-        );
+        const { diagnostics } = response.data;
+        const rentSent = diagnostics.breakdown?.rent_reminder || 0;
+        
+        if (rentSent > 0) {
+          toast.success(
+            language === 'th' 
+              ? `✅ ส่งการแจ้งเตือนค่าเช่า ${rentSent} รายการ` 
+              : `✅ Sent ${rentSent} rent reminders`
+          );
+        } else {
+          toast.info(
+            language === 'th' 
+              ? 'ไม่มีการแจ้งเตือนค่าเช่าที่ต้องส่งในวันนี้' 
+              : 'No rent reminders due today'
+          );
+        }
         
         alert(
-          `💰 RENT REMINDER TEST\n\n` +
-          `✅ Sent via: ${channels.join(' & ')}\n\n` +
-          `Property: ${deposit.property}\n` +
-          `Amount: ฿${deposit.amount?.toLocaleString()}\n` +
-          `Due day: ${deposit.due_day} of the month\n\n` +
-          `Check your ${channels.includes('LINE') ? 'LINE' : 'email'}!`
+          `💰 RENT REMINDER CHECK\n\n` +
+          `Total notifications: ${diagnostics.notifications_sent}\n` +
+          `Rent reminders: ${rentSent}\n\n` +
+          `Users checked: ${diagnostics.users_checked}\n` +
+          `Deposits checked: ${diagnostics.deposits_checked}`
         );
       } else {
-        toast.error(response.data?.message || (language === 'th' ? 'การทดสอบล้มเหลว' : 'Test failed'));
+        toast.error(language === 'th' ? 'การตรวจสอบล้มเหลว' : 'Check failed');
       }
       
       queryClient.invalidateQueries({ queryKey: ['notificationLogs'] });
@@ -836,7 +846,7 @@ function DashboardContent() {
                       {testingRent ? (
                         <>
                           <Loader2 className="w-3 h-3 animate-spin" />
-                          {strings.sending}
+                          {strings.running}
                         </>
                       ) : (
                         <>
