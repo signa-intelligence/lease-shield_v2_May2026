@@ -36,53 +36,57 @@ export default function TrendChart({ title, data, dataKey, chartType = "line", c
   return (
     <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
       <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-        <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
+        <CardTitle className="flex items-center gap-2 text-base md:text-lg" style={{ color: colors.textPrimary }}>
           <TrendingUp className="w-5 h-5" style={{ color: color }} />
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-4 md:p-6">
         {data && data.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            {chartType === "line" ? (
-              <LineChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" stroke={colors.borderColor} />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fill: colors.textSecondary, fontSize: 12 }}
-                  stroke={colors.borderColor}
-                />
-                <YAxis
-                  tick={{ fill: colors.textSecondary, fontSize: 12 }}
-                  stroke={colors.borderColor}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Line
-                  type="monotone"
-                  dataKey={dataKey}
-                  stroke={color}
-                  strokeWidth={3}
-                  dot={{ fill: color, r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            ) : (
-              <BarChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" stroke={colors.borderColor} />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fill: colors.textSecondary, fontSize: 12 }}
-                  stroke={colors.borderColor}
-                />
-                <YAxis
-                  tick={{ fill: colors.textSecondary, fontSize: 12 }}
-                  stroke={colors.borderColor}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey={dataKey} fill={color} radius={[8, 8, 0, 0]} />
-              </BarChart>
-            )}
-          </ResponsiveContainer>
+          <div style={{ width: '100%', height: '300px', overflow: 'hidden' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              {chartType === "line" ? (
+                <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.borderColor} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: colors.textSecondary, fontSize: 11 }}
+                    stroke={colors.borderColor}
+                  />
+                  <YAxis
+                    tick={{ fill: colors.textSecondary, fontSize: 11 }}
+                    stroke={colors.borderColor}
+                    width={40}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line
+                    type="monotone"
+                    dataKey={dataKey}
+                    stroke={color}
+                    strokeWidth={3}
+                    dot={{ fill: color, r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              ) : (
+                <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.borderColor} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: colors.textSecondary, fontSize: 11 }}
+                    stroke={colors.borderColor}
+                  />
+                  <YAxis
+                    tick={{ fill: colors.textSecondary, fontSize: 11 }}
+                    stroke={colors.borderColor}
+                    width={40}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey={dataKey} fill={color} radius={[8, 8, 0, 0]} />
+                </BarChart>
+              )}
+            </ResponsiveContainer>
+          </div>
         ) : (
           <div className="flex items-center justify-center h-64">
             <p style={{ color: colors.textSecondary }}>{t.noData}</p>

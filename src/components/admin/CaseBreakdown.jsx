@@ -82,35 +82,36 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
   return (
     <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
       <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-        <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
+        <CardTitle className="flex items-center gap-2 text-base md:text-lg" style={{ color: colors.textPrimary }}>
           <Scale className="w-5 h-5 text-ls-forest" />
           {t.caseBreakdown}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6">
-        <div className="grid md:grid-cols-2 gap-6">
+      <CardContent className="p-4 md:p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Pie Chart */}
-          <div>
+          <div className="w-full overflow-hidden">
             {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div style={{ width: '100%', height: '250px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             ) : (
               <div className="flex items-center justify-center h-64">
                 <p style={{ color: colors.textSecondary }}>{language === 'th' ? 'ไม่มีข้อมูล' : 'No data'}</p>
@@ -182,13 +183,13 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
           </div>
         </div>
 
-        {/* Status Legend */}
+        {/* Status Legend - Mobile Friendly */}
         <div className="mt-6 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
           <div className="flex flex-wrap gap-2">
             {Object.entries(statusCounts).map(([status, count]) => (
               <Badge
                 key={status}
-                className="text-xs"
+                className="text-xs whitespace-nowrap"
                 style={{
                   backgroundColor: `${STATUS_COLORS[status]}20`,
                   color: STATUS_COLORS[status],

@@ -122,15 +122,15 @@ export default function AdminDashboardStats({ stats, language, colors }) {
               borderLeft: `4px solid ${kpi.color}`
             }}
           >
-            <CardContent className="p-4">
+            <CardContent className="p-3 md:p-4">
               <div className="flex items-start justify-between mb-3">
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{
                     backgroundColor: isDark ? kpi.bgDark : kpi.bgLight
                   }}
                 >
-                  <Icon className="w-6 h-6" style={{ color: kpi.color }} />
+                  <Icon className="w-5 h-5 md:w-6 md:h-6" style={{ color: kpi.color }} />
                 </div>
                 {kpi.trend !== 0 && (
                   <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
@@ -145,10 +145,10 @@ export default function AdminDashboardStats({ stats, language, colors }) {
                   </div>
                 )}
               </div>
-              <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+              <p className="text-xs font-semibold mb-1 truncate" style={{ color: colors.textSecondary }}>
                 {kpi.label}
               </p>
-              <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+              <p className="text-xl md:text-2xl font-bold truncate" style={{ color: colors.textPrimary }}>
                 {kpi.value}
               </p>
               {kpi.trend !== 0 && (

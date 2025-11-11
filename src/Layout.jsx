@@ -172,7 +172,14 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bg }}>
+    <div style={{ 
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      backgroundColor: colors.bg,
+      position: 'relative',
+      paddingBottom: 'env(safe-area-inset-bottom)'
+    }}>
       <style>{`
         :root {
           --ls-forest: #0C3B2E;
@@ -187,17 +194,16 @@ export default function Layout({ children, currentPageName }) {
           --accent-foreground: 0 0% 100%;
         }
         
-        html, body {
-          height: 100%;
-          width: 100%;
-          overflow-x: hidden;
-          position: fixed;
-          overscroll-behavior: none;
+        * {
+          box-sizing: border-box;
         }
 
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           background-color: ${colors.bg};
+          margin: 0;
+          padding: 0;
+          overflow-x: hidden;
         }
         
         h1, h2, h3, h4, h5, h6 {
@@ -218,13 +224,10 @@ export default function Layout({ children, currentPageName }) {
           overflow-y: auto;
           overflow-x: hidden;
           -webkit-overflow-scrolling: touch;
+          width: 100%;
         }
 
         @media (min-width: 768px) {
-          html, body {
-            position: static;
-          }
-          
           .bottom-tabs {
             max-width: 600px;
             left: 50%;
@@ -251,8 +254,6 @@ export default function Layout({ children, currentPageName }) {
             box-shadow: 0 6px 12px rgba(199, 163, 56, 0.6), 0 0 0 6px rgba(199, 163, 56, 0.2);
           }
         }
-
-        /* REMOVED: Global transition that might affect opacity */
         
         *:focus-visible {
           outline: 2px solid var(--ls-gold);
@@ -279,7 +280,8 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
+      {/* Top Bar */}
+      <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm z-50" style={{
         backgroundColor: colors.topBarBg,
         borderBottomColor: colors.borderColor
       }}>
@@ -349,19 +351,29 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      <main ref={mainContentRef} className="main-content flex-1" style={{
-        marginTop: 'calc(64px + env(safe-area-inset-top, 0px))',
-        marginBottom: 'calc(72px + max(env(safe-area-inset-bottom, 0px), 12px))',
-        height: 'calc(100vh - 64px - 72px - env(safe-area-inset-top, 0px) - max(env(safe-area-inset-bottom, 0px), 12px))'
-      }}>
+      {/* Main Content */}
+      <main 
+        ref={mainContentRef} 
+        className="main-content flex-1" 
+        style={{
+          marginTop: '64px',
+          paddingBottom: '80px',
+          width: '100%',
+          maxWidth: '100vw'
+        }}
+      >
         {children}
       </main>
 
-      <nav className="bottom-tabs fixed bottom-0 left-0 right-0 border-t shadow-2xl" style={{
-        backgroundColor: colors.bottomTabBg,
-        borderTopColor: colors.borderColor,
-        zIndex: 9999
-      }}>
+      {/* Bottom Navigation */}
+      <nav 
+        className="bottom-tabs fixed bottom-0 left-0 right-0 border-t shadow-2xl" 
+        style={{
+          backgroundColor: colors.bottomTabBg,
+          borderTopColor: colors.borderColor,
+          zIndex: 50
+        }}
+      >
         <div className="flex items-center justify-around px-2 py-2" style={{
           minHeight: '68px'
         }}>
