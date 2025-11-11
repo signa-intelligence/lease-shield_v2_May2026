@@ -49,8 +49,8 @@ Deno.serve(async (req) => {
         }, language);
         
         messageText = language === 'th' ?
-          `🔔 [ทดสอบ] แจ้งเตือน Lease Shield\n\nถึงกำหนดคืนเงินมัดจำในอีก 30 วัน\n\n💰 จำนวน: ฿15,000\n🏠 ทรัพย์สิน: คอนโด ABC ห้อง 101\n📅 กำหนดคืน: ${futureDate.toLocaleDateString('th-TH')}\n\nเปิดแอป → leaseshield.asia` :
-          `🔔 [Test] Lease Shield Reminder\n\nDeposit due in 30 days\n\n💰 Amount: ฿15,000\n🏠 Property: ABC Condo Room 101\n📅 Expected: ${futureDate.toLocaleDateString('en-US')}\n\nOpen app → leaseshield.asia`;
+          `🔔 [ทดสอบ] แจ้งเตือน Lease Shield\n\nถึงกำหนดคืนเงินมัดจำในอีก 30 วัน\n\n💰 จำนวน: ฿15,000\n🏠 ทรัพย์สิน: คอนโด ABC ห้อง 101\n📅 กำหนดคืน: ${futureDate.toLocaleDateString('th-TH')}\n\nเปิดแอป → app.leaseshield.asia` :
+          `🔔 [Test] Lease Shield Reminder\n\nDeposit due in 30 days\n\n💰 Amount: ฿15,000\n🏠 Property: ABC Condo Room 101\n📅 Expected: ${futureDate.toLocaleDateString('en-US')}\n\nOpen app → app.leaseshield.asia`;
         break;
 
       case 'deposit_7d':
@@ -64,8 +64,8 @@ Deno.serve(async (req) => {
         }, language);
         
         messageText = language === 'th' ?
-          `⚠️ [ทดสอบ] Lease Shield\n\nอีก 7 วัน\n\n💰 ฿15,000\n🏠 คอนโด ABC\n\nเปิดแอป → leaseshield.asia` :
-          `⚠️ [Test] Lease Shield\n\n7 days\n\n💰 ฿15,000\n🏠 ABC Condo\n\nOpen app → leaseshield.asia`;
+          `⚠️ [ทดสอบ] Lease Shield\n\nอีก 7 วัน\n\n💰 ฿15,000\n🏠 คอนโด ABC\n\nเปิดแอป → app.leaseshield.asia` :
+          `⚠️ [Test] Lease Shield\n\n7 days\n\n💰 ฿15,000\n🏠 ABC Condo\n\nOpen app → app.leaseshield.asia`;
         break;
 
       case 'deposit_3d':
@@ -79,8 +79,8 @@ Deno.serve(async (req) => {
         }, language);
         
         messageText = language === 'th' ?
-          `🚨 [ทดสอบ] เร่งด่วน!\n\nอีก 3 วัน!\n\n💰 ฿15,000\n\nเปิดแอป → leaseshield.asia` :
-          `🚨 [Test] Urgent!\n\n3 days!\n\n💰 ฿15,000\n\nOpen app → leaseshield.asia`;
+          `🚨 [ทดสอบ] เร่งด่วน!\n\nอีก 3 วัน!\n\n💰 ฿15,000\n\nเปิดแอป → app.leaseshield.asia` :
+          `🚨 [Test] Urgent!\n\n3 days!\n\n💰 ฿15,000\n\nOpen app → app.leaseshield.asia`;
         break;
 
       case 'deposit_overdue':
@@ -113,8 +113,8 @@ Deno.serve(async (req) => {
         }, language);
         
         messageText = language === 'th' ?
-          `📅 [ทดสอบ] เหลือ ${days} วัน\n\nต้องแจ้งสัญญา\n\nเปิดแอป → leaseshield.asia` :
-          `📅 [Test] ${days} days\n\nNotify landlord\n\nOpen app → leaseshield.asia`;
+          `📅 [ทดสอบ] เหลือ ${days} วัน\n\nต้องแจ้งสัญญา\n\nเปิดแอป → app.leaseshield.asia` :
+          `📅 [Test] ${days} days\n\nNotify landlord\n\nOpen app → app.leaseshield.asia`;
         break;
 
       case 'rent_reminder':
@@ -127,8 +127,8 @@ Deno.serve(async (req) => {
         }, language);
         
         messageText = language === 'th' ?
-          `💰 [ทดสอบ] เตือนค่าเช่า\n\nครบกำหนดใน 3 วัน\n\n฿12,000\n\nเปิดแอป → leaseshield.asia` :
-          `💰 [Test] Rent reminder\n\nDue in 3 days\n\n฿12,000\n\nOpen app → leaseshield.asia`;
+          `💰 [ทดสอบ] เตือนค่าเช่า\n\nครบกำหนดใน 3 วัน\n\n฿12,000\n\nเปิดแอป → app.leaseshield.asia` :
+          `💰 [Test] Rent reminder\n\nDue in 3 days\n\n฿12,000\n\nOpen app → app.leaseshield.asia`;
         break;
 
       default:
