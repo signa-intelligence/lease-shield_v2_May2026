@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
-import { transitions, borderRadius, shadows } from '@/utils/designSystem';
 
 const ToastContext = createContext();
 
@@ -114,11 +113,11 @@ const Toast = ({ toast, onRemove }) => {
         padding: '16px',
         backgroundColor: bgLight,
         borderLeft: `4px solid ${bg}`,
-        borderRadius: borderRadius.lg,
-        boxShadow: shadows.lg,
+        borderRadius: '12px',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
         transform: isExiting ? 'translateX(400px)' : 'translateX(0)',
         opacity: isExiting ? 0 : 1,
-        transition: `all ${transitions.base}`,
+        transition: 'all 0.2s ease',
         animation: isExiting ? 'none' : 'slideInRight 0.3s ease-out',
       }}
     >
@@ -175,7 +174,7 @@ const Toast = ({ toast, onRemove }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transition: transitions.fast,
+          transition: 'all 0.15s ease',
         }}
         onMouseEnter={(e) => {
           e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';

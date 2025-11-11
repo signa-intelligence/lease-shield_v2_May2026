@@ -1,7 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
-import { spacing, typography, borderRadius, transitions } from '@/utils/designSystem';
 
 const EmptyState = ({
   icon: Icon,
@@ -166,9 +165,9 @@ const EmptyState = ({
       <h3
         className="text-2xl font-bold mb-3"
         style={{
-          fontSize: typography['2xl'],
+          fontSize: '24px',
           fontWeight: '700',
-          marginBottom: spacing.md,
+          marginBottom: '12px',
         }}
       >
         {title}
@@ -177,9 +176,9 @@ const EmptyState = ({
       <p
         className="text-slate-600 mb-6 max-w-md mx-auto"
         style={{
-          fontSize: typography.base,
+          fontSize: '16px',
           lineHeight: '1.6',
-          marginBottom: spacing.lg,
+          marginBottom: '24px',
         }}
       >
         {description}
@@ -193,16 +192,16 @@ const EmptyState = ({
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: spacing.sm,
-              padding: `${spacing.md} ${spacing.xl}`,
+              gap: '8px',
+              padding: '12px 24px',
               backgroundColor: '#0C3B2E',
               color: '#FFFFFF',
-              borderRadius: borderRadius.lg,
-              fontSize: typography.base,
+              borderRadius: '12px',
+              fontSize: '16px',
               fontWeight: '600',
               border: 'none',
               cursor: 'pointer',
-              transition: transitions.base,
+              transition: 'all 0.2s ease',
               boxShadow: '0 4px 6px rgba(12, 59, 46, 0.2)',
             }}
             onMouseEnter={(e) => {
@@ -227,16 +226,16 @@ const EmptyState = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: spacing.sm,
-                padding: `${spacing.md} ${spacing.xl}`,
+                gap: '8px',
+                padding: '12px 24px',
                 backgroundColor: 'transparent',
                 color: '#0C3B2E',
-                borderRadius: borderRadius.lg,
-                fontSize: typography.base,
+                borderRadius: '12px',
+                fontSize: '16px',
                 fontWeight: '600',
                 border: '2px solid #0C3B2E',
                 cursor: 'pointer',
-                transition: transitions.base,
+                transition: 'all 0.2s ease',
               }}
               onMouseEnter={(e) => {
                 e.target.style.backgroundColor = '#F8FAFC';
