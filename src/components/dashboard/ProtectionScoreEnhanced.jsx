@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Shield, TrendingUp, Award, Target, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { spacing, typography, borderRadius, shadows, transitions, brandColors } from '@/utils/designSystem';
 
 const ProtectionScoreEnhanced = ({ 
   score, 
@@ -208,10 +207,10 @@ const ProtectionScoreEnhanced = ({
                       width: '8px',
                       height: '8px',
                       borderRadius: '50%',
-                      backgroundColor: currentSlide === idx ? brandColors.gold : colors.borderColor,
+                      backgroundColor: currentSlide === idx ? '#C7A338' : colors.borderColor,
                       border: 'none',
                       cursor: 'pointer',
-                      transition: transitions.fast,
+                      transition: 'all 0.15s ease',
                     }}
                   />
                 ))}
@@ -221,7 +220,7 @@ const ProtectionScoreEnhanced = ({
             <div
               className="relative overflow-hidden"
               style={{
-                borderRadius: borderRadius.lg,
+                borderRadius: '12px',
               }}
             >
               <div
@@ -244,7 +243,7 @@ const ProtectionScoreEnhanced = ({
                         borderColor: colors.borderColor,
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = brandColors.gold;
+                        e.currentTarget.style.borderColor = '#C7A338';
                         e.currentTarget.style.transform = 'scale(1.02)';
                       }}
                       onMouseLeave={(e) => {
@@ -273,7 +272,7 @@ const ProtectionScoreEnhanced = ({
                         <p className="text-xs" style={{ color: colors.textSecondary }}>
                           {language === 'th' ? 'แตะเพื่อเริ่มต้น' : 'Tap to start'}
                         </p>
-                        <ChevronRight className="w-4 h-4" style={{ color: brandColors.gold }} />
+                        <ChevronRight className="w-4 h-4" style={{ color: '#C7A338' }} />
                       </div>
                     </div>
                   </Link>

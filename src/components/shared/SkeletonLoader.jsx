@@ -1,5 +1,4 @@
 import React from 'react';
-import { borderRadius } from '@/utils/designSystem';
 
 const SkeletonLoader = ({ variant = 'card', count = 1, colors }) => {
   const Skeleton = ({ width = '100%', height = '20px', className = '' }) => (
@@ -9,7 +8,7 @@ const SkeletonLoader = ({ variant = 'card', count = 1, colors }) => {
         width,
         height,
         backgroundColor: colors?.borderColor || '#E5E7EB',
-        borderRadius: borderRadius.md,
+        borderRadius: '8px',
       }}
     />
   );
@@ -20,7 +19,7 @@ const SkeletonLoader = ({ variant = 'card', count = 1, colors }) => {
         className="p-6 rounded-xl"
         style={{
           backgroundColor: colors?.cardBg || '#FFFFFF',
-          borderRadius: borderRadius.xl,
+          borderRadius: '16px',
         }}
       >
         <div className="flex items-center gap-3 mb-4">
@@ -42,7 +41,7 @@ const SkeletonLoader = ({ variant = 'card', count = 1, colors }) => {
         className="p-6 rounded-xl"
         style={{
           backgroundColor: colors?.cardBg || '#FFFFFF',
-          borderRadius: borderRadius.xl,
+          borderRadius: '16px',
         }}
       >
         <Skeleton width="60%" height="16px" className="mb-3" />
@@ -58,7 +57,7 @@ const SkeletonLoader = ({ variant = 'card', count = 1, colors }) => {
             className="p-4 rounded-lg"
             style={{
               backgroundColor: colors?.cardBg || '#FFFFFF',
-              borderRadius: borderRadius.lg,
+              borderRadius: '12px',
             }}
           >
             <div className="flex items-center gap-3">
@@ -77,7 +76,7 @@ const SkeletonLoader = ({ variant = 'card', count = 1, colors }) => {
         className="rounded-xl overflow-hidden"
         style={{
           backgroundColor: colors?.cardBg || '#FFFFFF',
-          borderRadius: borderRadius.xl,
+          borderRadius: '16px',
         }}
       >
         <div className="p-4 border-b" style={{ borderColor: colors?.borderColor || '#E5E7EB' }}>

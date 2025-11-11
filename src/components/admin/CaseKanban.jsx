@@ -5,7 +5,6 @@ import { Scale, User, DollarSign, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { borderRadius, shadows, transitions } from '@/utils/designSystem';
 
 const STATUS_COLUMNS = [
   { 
@@ -98,7 +97,7 @@ const CaseKanban = ({ cases = [], users = [], onUpdateStatus, language = 'en', c
             className="flex-shrink-0"
             style={{
               width: '320px',
-              transition: transitions.base,
+              transition: 'all 0.2s ease',
             }}
             onDragOver={(e) => handleDragOver(e, column.key)}
             onDragLeave={handleDragLeave}
@@ -139,7 +138,7 @@ const CaseKanban = ({ cases = [], users = [], onUpdateStatus, language = 'en', c
               style={{
                 backgroundColor: isDragOver ? `${column.color}10` : 'transparent',
                 border: isDragOver ? `2px dashed ${column.color}` : '2px dashed transparent',
-                transition: transitions.fast,
+                transition: 'all 0.15s ease',
               }}
             >
               {columnCases.map((caseItem) => {
@@ -158,8 +157,8 @@ const CaseKanban = ({ cases = [], users = [], onUpdateStatus, language = 'en', c
                       backgroundColor: colors.cardBg,
                       opacity: isDragging ? 0.5 : 1,
                       transform: isDragging ? 'rotate(3deg) scale(0.95)' : 'none',
-                      boxShadow: shadows.md,
-                      borderRadius: borderRadius.lg,
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                      borderRadius: '12px',
                     }}
                   >
                     <CardContent className="p-4">
