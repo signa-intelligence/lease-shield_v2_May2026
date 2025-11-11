@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
   Edit2, Save, X, Wrench, AlertCircle, CheckCircle2, Clock,
-  DollarSign, ArrowLeft, Shield, MessageSquare, User, Send, Camera, Loader2
+  DollarSign, ArrowLeft, Shield, MessageSquare, User, Send, Camera, Loader2, Image
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -317,7 +317,9 @@ export default function PropertyTracker() {
       attachPhoto: "Attach Photo",
       uploading: "Uploading...",
       addPhotos: "Add Photos",
-      photos: "photos"
+      photos: "photos",
+      takePhoto: "Take Photo",
+      uploadFromGallery: "Upload from Gallery"
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -364,7 +366,9 @@ export default function PropertyTracker() {
       attachPhoto: "แนบรูป",
       uploading: "กำลังอัปโหลด...",
       addPhotos: "เพิ่มรูปภาพ",
-      photos: "รูป"
+      photos: "รูป",
+      takePhoto: "ถ่ายรูป",
+      uploadFromGallery: "เลือกจากแกลเลอรี่"
     }
   };
 
@@ -844,7 +848,7 @@ export default function PropertyTracker() {
                       />
                     </div>
                     
-                    {/* NEW: Photo Upload Section */}
+                    {/* UPDATED: Photo Upload Section with Camera & Gallery Options */}
                     <div>
                       <Label style={{ color: colors.textPrimary }}>
                         <Camera className="w-4 h-4 inline mr-1" />
@@ -863,6 +867,7 @@ export default function PropertyTracker() {
                                 style={{ border: `1px solid ${colors.borderColor}` }}
                               />
                               <button
+                                type="button"
                                 onClick={() => handleRemoveNewRequestPhoto(index)}
                                 className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                               >
@@ -873,39 +878,75 @@ export default function PropertyTracker() {
                         </div>
                       )}
                       
-                      {/* Upload Button */}
-                      <label
-                        className="flex items-center justify-center gap-2 p-4 rounded-lg cursor-pointer transition-all border-2 border-dashed mt-2"
-                        style={{
-                          backgroundColor: colors.inputBg,
-                          borderColor: colors.borderColor,
-                          color: colors.textPrimary
-                        }}
-                      >
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleNewRequestPhotoUpload}
-                          className="hidden"
-                          disabled={uploadingNewRequestPhoto}
-                        />
-                        {uploadingNewRequestPhoto ? (
-                          <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            <span className="font-medium">{strings.uploading}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Camera className="w-5 h-5" />
-                            <span className="font-medium">
-                              {newRequestPhotos.length > 0 
-                                ? `${newRequestPhotos.length} ${strings.photos}` 
-                                : strings.attachPhoto}
-                            </span>
-                          </>
-                        )}
-                      </label>
+                      {/* Upload Buttons - Camera & Gallery */}
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {/* Take Photo Button */}
+                        <label
+                          className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
+                          style={{
+                            backgroundColor: colors.inputBg,
+                            borderColor: colors.borderColor,
+                            color: colors.textPrimary
+                          }}
+                        >
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            multiple
+                            onChange={handleNewRequestPhotoUpload}
+                            className="hidden"
+                            disabled={uploadingNewRequestPhoto}
+                          />
+                          {uploadingNewRequestPhoto ? (
+                            <>
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                              <span className="font-medium text-sm">{strings.uploading}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Camera className="w-5 h-5" />
+                              <span className="font-medium text-sm">{strings.takePhoto}</span>
+                            </>
+                          )}
+                        </label>
+
+                        {/* Upload from Gallery Button */}
+                        <label
+                          className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
+                          style={{
+                            backgroundColor: colors.inputBg,
+                            borderColor: colors.borderColor,
+                            color: colors.textPrimary
+                          }}
+                        >
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleNewRequestPhotoUpload}
+                            className="hidden"
+                            disabled={uploadingNewRequestPhoto}
+                          />
+                          {uploadingNewRequestPhoto ? (
+                            <>
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                              <span className="font-medium text-sm">{strings.uploading}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Image className="w-5 h-5" />
+                              <span className="font-medium text-sm">{strings.uploadFromGallery}</span>
+                            </>
+                          )}
+                        </label>
+                      </div>
+
+                      {newRequestPhotos.length > 0 && (
+                        <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                          {newRequestPhotos.length} {strings.photos}
+                        </p>
+                      )}
                     </div>
                     
                     <div className="grid md:grid-cols-2 gap-3">

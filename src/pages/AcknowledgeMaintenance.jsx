@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, Loader2, AlertTriangle, Wrench, Clock, MessageSquare, Camera, Receipt, X, ImageIcon, User, Send } from "lucide-react";
+import { CheckCircle2, Loader2, AlertTriangle, Wrench, Clock, MessageSquare, Camera, Receipt, X, ImageIcon, User, Send, Image } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
@@ -383,7 +383,7 @@ export default function AcknowledgeMaintenance() {
                 </div>
               )}
 
-              {/* Chat Input Area */}
+              {/* UPDATED: Chat Input Area with Camera & Gallery */}
               <div className="border-t pt-4" style={{ borderColor: colors.borderColor }}>
                 {/* Photo Preview */}
                 {chatPhotos.length > 0 && (
@@ -409,7 +409,37 @@ export default function AcknowledgeMaintenance() {
                 )}
 
                 <div className="flex gap-2 items-center">
-                  {/* Photo Upload Button */}
+                  {/* Take Photo Button */}
+                  <label
+                    className="flex-shrink-0 cursor-pointer"
+                    style={{
+                      padding: '10px',
+                      borderRadius: '8px',
+                      backgroundColor: uploadingPhotos ? colors.borderColor : colors.cardBg,
+                      border: `2px solid ${colors.borderColor}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      multiple
+                      onChange={handleChatPhotoUpload}
+                      className="hidden"
+                      disabled={uploadingPhotos}
+                    />
+                    {uploadingPhotos ? (
+                      <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
+                    ) : (
+                      <Camera className="w-5 h-5" style={{ color: colors.textPrimary }} />
+                    )}
+                  </label>
+
+                  {/* Upload from Gallery Button */}
                   <label
                     className="flex-shrink-0 cursor-pointer"
                     style={{
@@ -434,7 +464,7 @@ export default function AcknowledgeMaintenance() {
                     {uploadingPhotos ? (
                       <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
                     ) : (
-                      <Camera className="w-5 h-5" style={{ color: colors.textPrimary }} />
+                      <Image className="w-5 h-5" style={{ color: colors.textPrimary }} />
                     )}
                   </label>
 
@@ -451,7 +481,7 @@ export default function AcknowledgeMaintenance() {
                     }}
                     className="flex-1 p-3 border-2 rounded-lg"
                     style={{
-                      backgroundColor: colors.cardBg,
+                      backgroundColor: colors.cardBg, // Assuming colors.inputBg defaults to colors.cardBg as it's not defined
                       borderColor: colors.borderColor,
                       color: colors.textPrimary
                     }}
@@ -478,6 +508,7 @@ export default function AcknowledgeMaintenance() {
           </Card>
         )}
 
+        {/* Update Status Card - UPDATED WITH CAMERA & GALLERY OPTIONS */}
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
@@ -546,7 +577,7 @@ export default function AcknowledgeMaintenance() {
                 />
               </div>
 
-              {/* Completion Photos */}
+              {/* UPDATED: Completion Photos with Camera & Gallery */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Camera className="w-4 h-4 inline mr-1" />
@@ -578,45 +609,71 @@ export default function AcknowledgeMaintenance() {
                   </div>
                 )}
 
-                <label
-                  className="flex items-center justify-center gap-2 p-4 rounded-lg cursor-pointer transition-all border-2 border-dashed"
-                  style={{
-                    backgroundColor: '#F3F4F6',
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#0C3B2E';
-                    e.currentTarget.style.backgroundColor = '#ECEFED';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = '#F3F4F6';
-                  }}
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => handlePhotoUpload(e, 'completion')}
-                    className="hidden"
-                    disabled={uploadingPhotos}
-                  />
-                  {uploadingPhotos ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span className="font-medium">Uploading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="w-5 h-5" />
-                      <span className="font-medium">Add Completion Photos</span>
-                    </>
-                  )}
-                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Take Photo */}
+                  <label
+                    className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
+                    style={{
+                      backgroundColor: '#F3F4F6',
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      multiple
+                      onChange={(e) => handlePhotoUpload(e, 'completion')}
+                      className="hidden"
+                      disabled={uploadingPhotos}
+                    />
+                    {uploadingPhotos ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="font-medium text-sm">Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-5 h-5" />
+                        <span className="font-medium text-sm">Take Photo</span>
+                      </>
+                    )}
+                  </label>
+
+                  {/* Upload from Gallery */}
+                  <label
+                    className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
+                    style={{
+                      backgroundColor: '#F3F4F6',
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handlePhotoUpload(e, 'completion')}
+                      className="hidden"
+                      disabled={uploadingPhotos}
+                    />
+                    {uploadingPhotos ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="font-medium text-sm">Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Image className="w-5 h-5" />
+                        <span className="font-medium text-sm">From Gallery</span>
+                      </>
+                    )}
+                  </label>
+                </div>
               </div>
 
-              {/* Bill Photos */}
+              {/* UPDATED: Bill Photos with Camera & Gallery */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Receipt className="w-4 h-4 inline mr-1" />
@@ -648,42 +705,68 @@ export default function AcknowledgeMaintenance() {
                   </div>
                 )}
 
-                <label
-                  className="flex items-center justify-center gap-2 p-4 rounded-lg cursor-pointer transition-all border-2 border-dashed"
-                  style={{
-                    backgroundColor: '#F3F4F6',
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#C7A338';
-                    e.currentTarget.style.backgroundColor = '#ECEFED';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = '#F3F4F6';
-                  }}
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => handlePhotoUpload(e, 'bill')}
-                    className="hidden"
-                    disabled={uploadingPhotos}
-                  />
-                  {uploadingPhotos ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span className="font-medium">Uploading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Receipt className="w-5 h-5" />
-                      <span className="font-medium">Add Bill Photos</span>
-                    </>
-                  )}
-                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Take Photo */}
+                  <label
+                    className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
+                    style={{
+                      backgroundColor: '#F3F4F6',
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      multiple
+                      onChange={(e) => handlePhotoUpload(e, 'bill')}
+                      className="hidden"
+                      disabled={uploadingPhotos}
+                    />
+                    {uploadingPhotos ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="font-medium text-sm">Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-5 h-5" />
+                        <span className="font-medium text-sm">Take Photo</span>
+                      </>
+                    )}
+                  </label>
+
+                  {/* Upload from Gallery */}
+                  <label
+                    className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
+                    style={{
+                      backgroundColor: '#F3F4F6',
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handlePhotoUpload(e, 'bill')}
+                      className="hidden"
+                      disabled={uploadingPhotos}
+                    />
+                    {uploadingPhotos ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="font-medium text-sm">Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Image className="w-5 h-5" />
+                        <span className="font-medium text-sm">From Gallery</span>
+                      </>
+                    )}
+                  </label>
+                </div>
               </div>
 
               <Button
