@@ -34,13 +34,22 @@ const PLAN_DETAILS = [
     intervalMonthly: '',
     intervalAnnual: '',
     tagline: 'Try Before You Commit',
+    taglineTh: 'ทดลองก่อนตัดสินใจ',
     description: 'Experience our automated lease analysis',
+    descriptionTh: 'สัมผัสการวิเคราะห์สัญญาเช่าอัตโนมัติ',
     benefits: [
       '1 Lease Scan (lifetime)',
       'Basic Risk Score Preview',
       '3 Files (100MB storage)',
       'Read-only Deposit Tracker',
       'Basic Maintenance Tracker'
+    ],
+    benefitsTh: [
+      '1 การสแกนสัญญาเช่า (ตลอดชีพ)',
+      'ดูคะแนนความเสี่ยงเบื้องต้น',
+      '3 ไฟล์ (พื้นที่ 100MB)',
+      'ติดตามเงินมัดจำแบบอ่านอย่างเดียว',
+      'ติดตามการซ่อมบำรุงเบื้องต้น'
     ],
     bgColor: '#64748b',
     icon: Gift
@@ -56,7 +65,9 @@ const PLAN_DETAILS = [
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Essential Protection',
+    taglineTh: 'การป้องกันที่จำเป็น',
     description: 'Core prevention tools for individuals',
+    descriptionTh: 'เครื่องมือป้องกันหลักสำหรับบุคคล',
     benefits: [
       'Everything in Free',
       '6 Lease Scans per annum',
@@ -66,6 +77,16 @@ const PLAN_DETAILS = [
       '1GB Document Storage',
       'Maintenance Tracker',
       'Deposit Tracker'
+    ],
+    benefitsTh: [
+      'ทุกอย่างในแผน Free',
+      '6 การสแกนสัญญาต่อปี',
+      'รายงานความเสี่ยง 5 จุด',
+      'การแจ้งเตือนทางอีเมล',
+      'เครดิตจดหมาย 3 ใบ',
+      'พื้นที่จัดเก็บ 1GB',
+      'ติดตามการซ่อมบำรุง',
+      'ติดตามเงินมัดจำ'
     ],
     bgColor: '#0C3B2E',
     icon: Zap
@@ -81,7 +102,9 @@ const PLAN_DETAILS = [
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Complete Prevention Suite',
+    taglineTh: 'ชุดป้องกันครบครัน',
     description: 'Everything you need for full protection',
+    descriptionTh: 'ทุกสิ่งที่คุณต้องการสำหรับการป้องกันแบบเต็มรูปแบบ',
     benefits: [
       'Everything in Lite',
       '12 Lease Scans per annum',
@@ -92,6 +115,17 @@ const PLAN_DETAILS = [
       'Rent Payment Alerts',
       'Automated Reminders',
       'Deposit Shield Automation'
+    ],
+    benefitsTh: [
+      'ทุกอย่างในแผน Lite',
+      '12 การสแกนสัญญาต่อปี',
+      'รายงานความเสี่ยงฉบับเต็ม',
+      'การแจ้งเตือนทาง LINE',
+      'เครดิตจดหมาย 5 ใบ',
+      'พื้นที่จัดเก็บ 5GB',
+      'แจ้งเตือนการชำระค่าเช่า',
+      'การแจ้งเตือนอัตโนมัติ',
+      'ระบบอัตโนมัติป้องกันเงินมัดจำ'
     ],
     bgColor: '#C7A338',
     icon: Shield,
@@ -108,7 +142,9 @@ const PLAN_DETAILS = [
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Premium Protection',
+    taglineTh: 'การป้องกันระดับพรีเมียม',
     description: 'Maximum prevention with priority support',
+    descriptionTh: 'การป้องกันสูงสุดพร้อมการสนับสนุนลำดับความสำคัญ',
     benefits: [
       'Everything in Protect',
       'Unlimited Lease Scans',
@@ -119,6 +155,17 @@ const PLAN_DETAILS = [
       'Priority Case Queue',
       'Priority Scanning',
       'Premium Support'
+    ],
+    benefitsTh: [
+      'ทุกอย่างในแผน Protect',
+      'สแกนสัญญาได้ไม่จำกัด',
+      'การแจ้งเตือนขั้นสูง',
+      'เครดิตจดหมาย 10 ใบ',
+      'พื้นที่จัดเก็บ 20GB',
+      'ติดตามเงินมัดจำ',
+      'คิวคดีลำดับความสำคัญ',
+      'สแกนลำดับความสำคัญ',
+      'การสนับสนุนพรีเมียม'
     ],
     bgColor: '#1A1D1F',
     icon: Crown
@@ -824,7 +871,7 @@ export default function Account() {
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
   // Updated LINE QR Code URL - Kept as it might be used elsewhere or for future features, despite QR buttons being removed.
-  const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46470_M_gainfriends_2dbarcodes_GW.png";
+  const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46467_M_gainfriends_2dbarcodes_GW.png"; // Fixed typo in URL
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
@@ -2334,7 +2381,7 @@ export default function Account() {
                 }}>
                   <p className="font-semibold text-red-900 mb-3">{strings.whatYoullLose}:</p>
                   <ul className="space-y-2 text-sm text-red-800">
-                    {currentPlan.benefits.filter(b => !b.startsWith('Everything')).map((benefit, idx) => (
+                    {(language === 'th' ? currentPlan.benefitsTh : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน')).map((benefit, idx) => (
                       <li key={idx} className="flex items-start gap-2">
                         <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                         <span>{benefit}</span>
@@ -2537,7 +2584,7 @@ export default function Account() {
           <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
           <p className="mb-6 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
           
-          {/* Plans Grid - NEW LAYOUT */}
+          {/* Plans Grid - UPDATED WITH THAI TRANSLATIONS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
@@ -2546,7 +2593,7 @@ export default function Account() {
               const isSecureTier = plan.key === 'secure';
               const isLiteTier = plan.key === 'lite';
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
-              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? plan.intervalAnnual : plan.intervalMonthly);
+              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? (language === 'th' ? '/ปี' : plan.intervalAnnual) : (language === 'th' ? '/เดือน' : plan.intervalMonthly));
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
               const isSubscribing = subscribing[plan.key]; // Only check THIS plan's state
               
@@ -2577,12 +2624,12 @@ export default function Account() {
                   <div style={{ height: '24px', marginBottom: '12px' }}>
                     {plan.popular && (
                       <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                        ⭐ {strings.mostPopular}
+                        ⭐ {language === 'th' ? 'ได้รับความนิยมมากที่สุด' : strings.mostPopular}
                       </Badge>
                     )}
                     {billingInterval === 'annual' && !isFreeplan && !plan.popular && !isSecureTier && (
                       <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                        🏷️ {strings.monthsFree}
+                        🏷️ {language === 'th' ? 'ฟรี 2 เดือน' : strings.monthsFree}
                       </Badge>
                     )}
                     {isSecureTier && (
@@ -2593,7 +2640,7 @@ export default function Account() {
                   </div>
 
                   {/* Plan Name & Icon - Fixed Height */}
-                  <div className="text-center" style={{ height: '80px', marginBottom: '12px' }}>
+                  <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
                     <div className="flex items-center justify-center gap-2 mb-2">
                       <div style={{
                         width: '32px',
@@ -2610,8 +2657,11 @@ export default function Account() {
                         {plan.label}
                       </h3>
                     </div>
-                    <p className="text-xs" style={{ color: colors.textSecondary }}>
-                      {plan.tagline}
+                    <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                      {language === 'th' ? plan.taglineTh : plan.tagline}
+                    </p>
+                    <p className="text-xs line-clamp-2" style={{ color: colors.textSecondary }}>
+                      {language === 'th' ? plan.descriptionTh : plan.description}
                     </p>
                   </div>
 
@@ -2645,11 +2695,11 @@ export default function Account() {
                     </div>
                   </div>
 
-                  {/* Benefits List - Flexible Height - SHOW ALL */}
+                  {/* Benefits List - Flexible Height - SHOW ALL WITH THAI */}
                   <div style={{ flex: 1, marginBottom: '12px' }}>
                     <ul className="space-y-2">
-                      {plan.benefits.map((benefit, idx) => {
-                        const isBold = benefit.startsWith('Everything in');
+                      {(language === 'th' ? plan.benefitsTh : plan.benefits).map((benefit, idx) => {
+                        const isBold = benefit.startsWith('Everything in') || benefit.startsWith('ทุกอย่างใน');
                         return (
                           <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
                             <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: isSecureTier ? '#0C3B2E' : '#0C3B2E' }} />
@@ -2691,7 +2741,7 @@ export default function Account() {
                     ) : (
                       <Button
                         onClick={() => handleSubscribe(plan.key, billingInterval)}
-                        disabled={isSubscribing} // Only check THIS plan's state
+                        disabled={isSubscribing}
                         className="w-full h-10"
                         style={{
                           backgroundColor: isSubscribing ? '#9CA3AF' : (isSecureTier ? '#0C3B2E' : isLiteTier ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E'),
@@ -2727,7 +2777,7 @@ export default function Account() {
                   <p className="text-sm font-normal" style={{ color: colors.textSecondary }}>
                     {strings.oneLetterPerCredit}
                   </p>
-                </div>
+                </div >
               </div >
               <div className="text-right flex items-center gap-2">
                 <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
