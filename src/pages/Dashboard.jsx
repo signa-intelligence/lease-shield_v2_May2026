@@ -62,6 +62,12 @@ function DashboardContent() {
     enabled: !!user,
   });
 
+  const { data: maintenanceRequests = [] } = useQuery({
+    queryKey: ['maintenance'],
+    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
   const handleRefresh = async () => {
     await queryClient.invalidateQueries();
     toast.success(language === 'th' ? 'รีเฟรชสำเร็จ' : 'Refreshed successfully');
