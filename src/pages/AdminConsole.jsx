@@ -26,6 +26,7 @@ import CaseBreakdown from "../components/admin/CaseBreakdown";
 import ActivityTimeline from "../components/admin/ActivityTimeline";
 import TestNotifications from "../components/admin/TestNotifications";
 import ReminderControl from "../components/admin/ReminderControl";
+import NotificationHistory from "../components/admin/NotificationHistory";
 
 export default function AdminConsole() {
   const [seedingDemo, setSeedingDemo] = useState(false);
@@ -639,6 +640,10 @@ export default function AdminConsole() {
             </Button>
           </CardContent>
         </Card>
+
+        <div className="mb-6">
+          <NotificationHistory language={language} colors={colors} />
+        </div>
 
         <div className="mb-6">
           <ReminderControl language={language} colors={colors} />
