@@ -1,8 +1,7 @@
-
 import React, { useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target } from "lucide-react"; // Added Target icon
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, format } from "date-fns";
@@ -18,7 +17,6 @@ import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
-import { spacing, borderRadius, shadows, transitions, brandColors, typography } from "@/utils/designSystem";
 
 function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -359,7 +357,7 @@ function DashboardContent() {
             <div className="flex items-center justify-between mb-3">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
                 background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-                boxShadow: shadows.lg,
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
               }}>
                 <div className="w-5 h-5 flex-shrink-0">
                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
@@ -380,17 +378,17 @@ function DashboardContent() {
                 onClick={() => setFocusMode(!focusMode)}
                 style={{
                   padding: '8px 16px',
-                  backgroundColor: focusMode ? brandColors.gold : colors.cardBg,
+                  backgroundColor: focusMode ? '#C7A338' : colors.cardBg,
                   color: focusMode ? '#FFFFFF' : colors.textPrimary,
-                  border: `2px solid ${focusMode ? brandColors.gold : colors.borderColor}`,
-                  borderRadius: borderRadius.lg,
+                  border: `2px solid ${focusMode ? '#C7A338' : colors.borderColor}`,
+                  borderRadius: '12px',
                   fontSize: '14px',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  transition: transitions.base,
+                  transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: spacing.sm,
+                  gap: '8px',
                 }}
                 onMouseEnter={(e) => {
                   if (!focusMode) {
@@ -416,7 +414,7 @@ function DashboardContent() {
             </h1>
             <p style={{ 
               color: colors.textSecondary, 
-              fontSize: typography.base, 
+              fontSize: '16px', 
               lineHeight: '1.6',
               fontWeight: '500'
             }}>
@@ -552,10 +550,10 @@ function DashboardContent() {
               background: isDarkMode 
                 ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
                 : 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-              borderRadius: borderRadius['2xl'],
-              padding: spacing.xl,
-              marginBottom: spacing.xl,
-              boxShadow: shadows.xl,
+              borderRadius: '24px',
+              padding: '24px',
+              marginBottom: '24px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
               animation: 'scaleIn 0.3s ease-out',
             }}>
               <style>
@@ -576,20 +574,20 @@ function DashboardContent() {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'stretch',
-                gap: spacing.lg,
+                gap: '16px',
               }}>
                 <div style={{ flex: 1 }}>
                   <h2 style={{
-                    fontSize: typography['2xl'],
+                    fontSize: '24px',
                     fontWeight: 'bold',
                     color: '#FFFFFF',
-                    marginBottom: spacing.md,
+                    marginBottom: '12px',
                     letterSpacing: '-0.01em'
                   }}>
                     {strings.protectRights}
                   </h2>
                   <p style={{
-                    fontSize: typography.base,
+                    fontSize: '16px',
                     color: '#D1FAE5',
                     lineHeight: '1.6'
                   }}>
@@ -600,30 +598,30 @@ function DashboardContent() {
                   <button
                     style={{
                       width: '100%',
-                      backgroundColor: brandColors.gold,
-                      color: brandColors.charcoal,
-                      padding: `${spacing.md} ${spacing.xl}`,
-                      borderRadius: borderRadius.lg,
+                      backgroundColor: '#C7A338',
+                      color: '#1A1D1F',
+                      padding: '12px 24px',
+                      borderRadius: '12px',
                       fontWeight: 'bold',
-                      fontSize: typography.base,
+                      fontSize: '16px',
                       border: 'none',
                       cursor: 'pointer',
-                      boxShadow: shadows.lg,
-                      transition: transitions.slow,
+                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                      transition: 'all 0.3s ease',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: spacing.sm,
+                      gap: '8px',
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = brandColors.goldLight;
+                      e.target.style.backgroundColor = '#D4B451';
                       e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = shadows.xl;
+                      e.target.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = brandColors.gold;
+                      e.target.style.backgroundColor = '#C7A338';
                       e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = shadows.lg;
+                      e.target.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
                     }}
                   >
                     <Shield className="w-5 h-5" />
@@ -657,25 +655,25 @@ function DashboardContent() {
           {/* Upgrade Banner */}
           {user?.plan_tier === 'free' && !focusMode && (
             <div style={{
-              marginTop: spacing.xl,
+              marginTop: '24px',
               background: isDarkMode
                 ? 'linear-gradient(135deg, #C7A338 0%, #d97706 100%)'
                 : 'linear-gradient(135deg, #C7A338 0%, #d97706 100%)',
-              borderRadius: borderRadius['2xl'],
-              padding: spacing.xl,
-              boxShadow: shadows.xl,
+              borderRadius: '24px',
+              padding: '24px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
             }}>
               <div style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'stretch',
-                gap: spacing.lg,
+                gap: '16px',
               }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                     <TrendingUp style={{ width: '24px', height: '24px', color: '#1A1D1F' }} />
                     <h3 style={{
-                      fontSize: typography.xl,
+                      fontSize: '20px',
                       fontWeight: 'bold',
                       color: '#1A1D1F',
                       letterSpacing: '-0.01em'
@@ -684,7 +682,7 @@ function DashboardContent() {
                     </h3>
                   </div>
                   <p style={{
-                    fontSize: typography.sm,
+                    fontSize: '14px',
                     color: '#292524',
                     opacity: 0.9,
                     lineHeight: '1.5'
@@ -696,30 +694,30 @@ function DashboardContent() {
                   <button
                     style={{
                       width: '100%',
-                      backgroundColor: brandColors.forest,
+                      backgroundColor: '#0C3B2E',
                       color: '#FFFFFF',
-                      padding: `${spacing.md} ${spacing.xl}`,
-                      borderRadius: borderRadius.lg,
+                      padding: '12px 24px',
+                      borderRadius: '12px',
                       fontWeight: 'bold',
-                      fontSize: typography.base,
+                      fontSize: '16px',
                       border: 'none',
                       cursor: 'pointer',
-                      boxShadow: shadows.lg,
-                      transition: transitions.slow,
+                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                      transition: 'all 0.3s ease',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: spacing.sm,
+                      gap: '8px',
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#0a2f25';
                       e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = shadows.xl;
+                      e.target.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = brandColors.forest;
+                      e.target.style.backgroundColor = '#0C3B2E';
                       e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = shadows.lg;
+                      e.target.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
                     }}
                   >
                     <ArrowRight className="w-5 h-5" />
