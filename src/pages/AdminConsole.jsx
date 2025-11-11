@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +19,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-// Import admin dashboard components
 import AdminDashboardStats from "../components/admin/AdminDashboardStats";
 import TrendChart from "../components/admin/TrendChart";
 import CaseBreakdown from "../components/admin/CaseBreakdown";
@@ -149,7 +147,6 @@ export default function AdminConsole() {
     borderColor: '#E5E7EB',
   };
 
-  // Calculate admin statistics
   const calculateAdminStats = () => {
     const now = new Date();
     const lastMonth = subMonths(now, 1);
@@ -215,32 +212,26 @@ export default function AdminConsole() {
         )
       : 0;
 
-    const revenueTrend = 0; // Placeholder, requires more complex historical subscription data
-    const activeCaseTrend = 0; // Placeholder
-    const resolutionTrend = 0; // Placeholder
-    const urgentTrend = 0; // Placeholder
-
     return {
       totalUsers: users.length,
       userTrend,
       activeSubscribers,
-      subscriberTrend,
+      subscriberTrend: subscriberTrend,
       monthlyRevenue,
-      revenueTrend,
+      revenueTrend: 0,
       totalLeases: leases.length,
       leaseTrend,
       totalCases: allCases.length,
       caseTrend,
       activeCases,
-      activeCaseTrend,
+      activeCaseTrend: 0,
       avgResolutionDays,
-      resolutionTrend,
+      resolutionTrend: 0,
       urgentCases,
-      urgentTrend
+      urgentTrend: 0
     };
   };
 
-  // Generate trend data for charts
   const generateTrendData = () => {
     const last6Months = eachMonthOfInterval({
       start: subMonths(new Date(), 5),
@@ -278,7 +269,6 @@ export default function AdminConsole() {
     return { leaseTrend, depositTrend };
   };
 
-  // Generate recent activities
   const generateRecentActivities = () => {
     const activities = [];
 
@@ -358,13 +348,6 @@ export default function AdminConsole() {
       opsConsole: "Operations Console",
       opsConsoleDesc: "Manage cases and operations",
       goToOps: "Go to Ops Console",
-      testNotifications: "Test LINE Notifications",
-      selectUser: "Select User",
-      notificationType: "Notification Type",
-      sendTest: "Send Test",
-      sending: "Sending...",
-      lineNotConnected: "LINE Not Connected",
-      testSent: "Test notification sent!",
       editCredits: "Edit Credits",
       letterCredits: "Letter Credits",
       currentBalance: "Current Balance",
@@ -423,13 +406,6 @@ export default function AdminConsole() {
       opsConsole: "คอนโซลปฏิบัติการ",
       opsConsoleDesc: "จัดการคดีและการดำเนินงาน",
       goToOps: "ไปที่คอนโซลปฏิบัติการ",
-      testNotifications: "ทดสอบการแจ้งเตือน LINE",
-      selectUser: "เลือกผู้ใช้",
-      notificationType: "ประเภทการแจ้งเตือน",
-      sendTest: "ส่งทดสอบ",
-      sending: "กำลังส่ง...",
-      lineNotConnected: "ไม่ได้เชื่อมต่อ LINE",
-      testSent: "ส่งการแจ้งเตือนทดสอบแล้ว!",
       editCredits: "แก้ไขเครดิต",
       letterCredits: "เครดิตจดหมาย",
       currentBalance: "ยอดคงเหลือปัจจุบัน",
@@ -574,7 +550,6 @@ export default function AdminConsole() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        {/* Admin Header */}
         <div className="mb-6">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3" style={{
             background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
@@ -602,10 +577,8 @@ export default function AdminConsole() {
           </p>
         </div>
 
-        {/* KPI Stats */}
         <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
 
-        {/* Charts Grid */}
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           <TrendChart
             title={strings.leaseTrends}
@@ -627,7 +600,6 @@ export default function AdminConsole() {
           />
         </div>
 
-        {/* Case Breakdown & Activity */}
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-3 xl:col-span-2">
             <CaseBreakdown cases={allCases} colors={colors} language={language} />
@@ -637,7 +609,6 @@ export default function AdminConsole() {
           </div>
         </div>
 
-        {/* Demo Data Seeder */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
@@ -667,10 +638,10 @@ export default function AdminConsole() {
           </CardContent>
         </Card>
 
-        {/* Test LINE Notifications */}
-        <TestNotifications users={users} language={language} colors={colors} strings={strings} />
+        <div className="mb-6">
+          <TestNotifications users={users} language={language} colors={colors} />
+        </div>
 
-        {/* Permissions Dialog */}
         <Dialog open={permissionsDialog} onOpenChange={setPermissionsDialog}>
           <DialogContent className="max-w-2xl" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
             <DialogHeader>
@@ -771,7 +742,6 @@ export default function AdminConsole() {
           </DialogContent>
         </Dialog>
 
-        {/* Edit Credits Dialog */}
         <Dialog open={editCreditsDialog} onOpenChange={setEditCreditsDialog}>
           <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
             <DialogHeader>
@@ -847,7 +817,6 @@ export default function AdminConsole() {
           </DialogContent>
         </Dialog>
 
-        {/* User Management Table */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle style={{ color: colors.textPrimary }}>{strings.userManagement}</CardTitle>
@@ -857,30 +826,14 @@ export default function AdminConsole() {
               <table className="w-full">
                 <thead style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      {strings.user}
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      {strings.email}
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      {strings.accessLevel}
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      {strings.plan}
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      LINE
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      {strings.letterCredits}
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      {strings.actions}
-                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.letterCredits}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -898,9 +851,7 @@ export default function AdminConsole() {
                         }}
                       >
                         <td className="px-4 py-3">
-                          <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                            {u.full_name}
-                          </p>
+                          <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{u.full_name}</p>
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-xs" style={{ color: colors.textSecondary }}>{u.email}</p>
@@ -1015,7 +966,6 @@ export default function AdminConsole() {
           </CardContent>
         </Card>
 
-        {/* Recent Leases */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle style={{ color: colors.textPrimary }}>{strings.recentLeases}</CardTitle>
@@ -1045,7 +995,6 @@ export default function AdminConsole() {
           </CardContent>
         </Card>
 
-        {/* Operations Console Quick Access */}
         <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
