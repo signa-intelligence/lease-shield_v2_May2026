@@ -249,10 +249,93 @@ function DashboardContent() {
   const [testingSettings, setTestingSettings] = useState(false); // Kept, but button removed from UI
   const [testingEmail, setTestingEmail] = useState(false);
 
-  // Add Test Flex button state
-  // REMOVED: const [testingFlex, setTestingFlex] = React.useState(false);
-
-  // REMOVED: const testFlexMessage = async () => { ... };
+  // ADD NEW: Simple browser-based Flex test
+  const [testingBrowserFlex, setTestingBrowserFlex] = React.useState(false);
+  
+  const testFlexFromBrowser = async () => {
+    setTestingBrowserFlex(true);
+    try {
+      console.log('🧪 Testing Flex message from browser...');
+      
+      // Create a simple Flex message directly in browser
+      const testFlex = {
+        altText: '🧪 Test Flex Card',
+        contents: {
+          type: 'bubble',
+          size: 'mega',
+          header: {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'text',
+                text: '🧪 TEST CARD',
+                weight: 'bold',
+                size: 'lg',
+                color: '#FFFFFF'
+              }
+            ],
+            backgroundColor: '#DC2626',
+            paddingAll: '20px'
+          },
+          body: {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'text',
+                text: 'This is a test Flex message sent from the Dashboard.',
+                wrap: true
+              }
+            ],
+            paddingAll: '20px'
+          }
+        }
+      };
+      
+      console.log('📦 Test Flex structure:', JSON.stringify(testFlex, null, 2));
+      
+      if (!user.line_messaging_token) {
+        alert('No LINE token found. Please connect LINE first.');
+        setTestingBrowserFlex(false);
+        return;
+      }
+      
+      console.log('📤 Sending to sendLineMessage...');
+      const response = await base44.functions.invoke('sendLineMessage', {
+        userId: user.line_messaging_token,
+        flexMessage: testFlex
+      });
+      
+      console.log('✅ Response from sendLineMessage:', response.data);
+      
+      if (response.data?.success) {
+        toast.success(
+          language === 'th' 
+            ? '✅ ส่ง Flex Card สำเร็จ! ตรวจสอบ LINE' 
+            : '✅ Flex Card sent! Check your LINE'
+        );
+        
+        alert(
+          `✅ TEST FLEX SENT!\n\n` +
+          `Check your LINE now.\n\n` +
+          `Message type: ${response.data.messageType}\n` +
+          `Sent as Flex: ${response.data.sentFlexMessage}\n\n` +
+          `Open browser console (F12) to see detailed logs.`
+        );
+      } else {
+        toast.error(language === 'th' ? 'ส่งไม่สำเร็จ' : 'Failed to send');
+      }
+    } catch (error) {
+      console.error('❌ Test failed:', error);
+      alert(
+        `❌ TEST FAILED:\n\n${error.message}\n\nCheck browser console for details.`
+      );
+      toast.error(language === 'th' ? 'เกิดข้อผิดพลาด' : 'Error occurred');
+    } finally {
+      setTestingBrowserFlex(false);
+    }
+  };
 
 
   const testOverdueCheck = async () => { // Kept, but button removed from UI
@@ -529,8 +612,7 @@ function DashboardContent() {
       running: "Running...",
       scheduledSystem: "Scheduled System",
       checkAllUsers: "Check all users for reminders",
-      // REMOVED: testFlex: "Test Flex Card",
-      // REMOVED: testingFlex: "Sending...",
+      testBrowserFlex: "Test Flex (Browser)",
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -567,8 +649,7 @@ function DashboardContent() {
       running: "กำลังตรวจสอบ...",
       scheduledSystem: "ระบบตรวจสอบอัตโนมัติ",
       checkAllUsers: "ตรวจสอบการแจ้งเตือนของผู้ใช้ทั้งหมด",
-      // REMOVED: testFlex: "ทดสอบ Flex",
-      // REMOVED: testingFlex: "กำลังส่ง...",
+      testBrowserFlex: "ทดสอบ Flex",
     }
   };
 
@@ -640,7 +721,48 @@ function DashboardContent() {
                 {/* Admin: Comprehensive test buttons */}
                 {isAdmin && (
                   <>
-                    {/* REMOVED: testFlexMessage button */}
+                    <button
+                      onClick={testFlexFromBrowser}
+                      disabled={testingBrowserFlex}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: testingBrowserFlex ? '#9CA3AF' : '#8B5CF6',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: testingBrowserFlex ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        opacity: testingBrowserFlex ? 0.7 : 1,
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!testingBrowserFlex) {
+                          e.target.style.backgroundColor = '#7C3AED';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!testingBrowserFlex) {
+                          e.target.style.backgroundColor = '#8B5CF6';
+                        }
+                      }}
+                    >
+                      {testingBrowserFlex ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          {strings.sending}
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-3 h-3" />
+                          {strings.testBrowserFlex}
+                        </>
+                      )}
+                    </button>
 
                     <button
                       onClick={testDirectEmail}
