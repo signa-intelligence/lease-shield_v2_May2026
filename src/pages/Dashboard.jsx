@@ -19,6 +19,7 @@ import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import { createRentReminderFlex } from '../functions/lineFlexTemplates';
 
 function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -339,52 +340,118 @@ function DashboardContent() {
 
   const [testingRent, setTestingRent] = React.useState(false);
 
+  // FORCE SEND rent reminder for testing - IGNORES SCHEDULE
   const testRentReminder = async () => {
     setTestingRent(true);
     try {
-      // Use the DEPLOYED scheduledReminders and filter for rent only
-      const response = await base44.functions.invoke('scheduledReminders');
-      console.log('💰 Rent check:', response.data);
+      // Find deposit with rent settings
+      const rentDeposit = deposits.find(d => d.rent_amount && d.rent_due_day);
       
-      if (response.data?.success) {
-        const { diagnostics } = response.data;
-        const rentSent = diagnostics.breakdown?.rent_reminder || 0;
-        const totalSent = diagnostics.notifications_sent || 0;
-        
-        // Show results
+      if (!rentDeposit) {
         alert(
-          `💰 RENT REMINDER CHECK\n\n` +
-          `Rent reminders sent: ${rentSent}\n` +
-          `Total notifications: ${totalSent}\n` +
-          `Users checked: ${diagnostics.users_checked}\n` +
-          `Deposits checked: ${diagnostics.deposits_checked}\n\n` +
-          `${rentSent > 0 ? '✅ Check your LINE/email!' : 'ℹ️ No rent reminders due today'}\n\n` +
-          `This checks if TODAY is your alert day based on:\n` +
-          `- Your rent_due_day setting\n` +
-          `- Your rent_alert_days_before setting`
+          `❌ NO RENT CONFIGURED\n\n` +
+          `Please set up a deposit with:\n` +
+          `- Rent Amount\n` +
+          `- Rent Due Day\n\n` +
+          `Go to: Deposit Tracker → Add/Edit Deposit`
+        );
+        setTestingRent(false);
+        return;
+      }
+
+      console.log('💰 FORCING rent reminder:', rentDeposit);
+
+      // Create Flex message
+      const flexMessage = createRentReminderFlex({
+        rentAmount: rentDeposit.rent_amount,
+        propertyAddress: rentDeposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A'),
+        dueDay: rentDeposit.rent_due_day,
+        daysUntilDue: rentDeposit.rent_alert_days_before || 3
+      }, language);
+
+      const channels = [];
+
+      // Send LINE
+      if (user.line_messaging_token && user.line_notifications) {
+        try {
+          await base44.functions.invoke('sendLineMessage', {
+            userId: user.line_messaging_token,
+            flexMessage: flexMessage
+          });
+          channels.push('LINE');
+          console.log('✅ LINE rent reminder sent');
+        } catch (err) {
+          console.error('❌ LINE failed:', err);
+        }
+      }
+
+      // Send Email
+      if (user.email_notifications) {
+        const subject = language === 'th' 
+          ? '💰 เตือนชำระค่าเช่า - Lease Shield' 
+          : '💰 Rent Payment Reminder - Lease Shield';
+        
+        const body = language === 'th'
+          ? `💰 เตือนชำระค่าเช่า\n\n🏠 ทรัพย์สิน: ${rentDeposit.property_address || 'ไม่ระบุ'}\n💵 จำนวน: ฿${rentDeposit.rent_amount.toLocaleString()}\n📅 ครบกำหนด: วันที่ ${rentDeposit.rent_due_day} ของเดือน\n⏰ เหลืออีก ${rentDeposit.rent_alert_days_before || 3} วัน\n\nเปิดแอป → https://app.leaseshield.asia/DepositTracker`
+          : `💰 Rent Payment Reminder\n\n🏠 Property: ${rentDeposit.property_address || 'N/A'}\n💵 Amount: ฿${rentDeposit.rent_amount.toLocaleString()}\n📅 Due: Day ${rentDeposit.rent_due_day} of the month\n⏰ ${rentDeposit.rent_alert_days_before || 3} days until due\n\nOpen app → https://app.leaseshield.asia/DepositTracker`;
+
+        try {
+          await base44.integrations.Core.SendEmail({
+            from_name: 'Lease Shield',
+            to: user.email,
+            subject: subject,
+            body: body
+          });
+          channels.push('Email');
+          console.log('✅ Email rent reminder sent');
+        } catch (err) {
+          console.error('❌ Email failed:', err);
+        }
+      }
+
+      // Log
+      for (const channel of channels) {
+        await base44.entities.NotificationLog.create({
+          user_email: user.email,
+          notification_type: 'rent_reminder',
+          channel: channel,
+          status: 'sent',
+          related_entity_type: 'deposit',
+          related_entity_id: rentDeposit.id,
+          message_preview: `Test: ฿${rentDeposit.rent_amount} due day ${rentDeposit.rent_due_day}`
+        });
+      }
+
+      if (channels.length > 0) {
+        toast.success(
+          language === 'th' 
+            ? `✅ ส่งการแจ้งเตือนค่าเช่าผ่าน ${channels.join(' & ')}` 
+            : `✅ Rent reminder sent via ${channels.join(' & ')}`
         );
         
-        if (rentSent > 0) {
-          toast.success(
-            language === 'th' 
-              ? `✅ ส่งการแจ้งเตือนค่าเช่า ${rentSent} รายการ` 
-              : `✅ Sent ${rentSent} rent reminders`
-          );
-        } else {
-          toast.info(
-            language === 'th' 
-              ? 'วันนี้ไม่ใช่วันแจ้งเตือนค่าเช่า' 
-              : 'Not a rent alert day today'
-          );
-        }
+        alert(
+          `💰 RENT REMINDER SENT!\n\n` +
+          `✅ Channels: ${channels.join(' & ')}\n\n` +
+          `Property: ${rentDeposit.property_address || 'N/A'}\n` +
+          `Amount: ฿${rentDeposit.rent_amount.toLocaleString()}\n` +
+          `Due day: ${rentDeposit.rent_due_day} of month\n` +
+          `Alert: ${rentDeposit.rent_alert_days_before || 3} days before\n\n` +
+          `🎯 FORCED TEST - Ignores schedule!\n` +
+          `Check your ${channels.includes('LINE') ? 'LINE' : 'email'} now!`
+        );
       } else {
-        toast.error(language === 'th' ? 'การตรวจสอบล้มเหลว' : 'Check failed');
+        alert(
+          `⚠️ NO CHANNELS ENABLED\n\n` +
+          `Please enable LINE or Email notifications in:\n` +
+          `Account → Notification Settings`
+        );
       }
       
       queryClient.invalidateQueries({ queryKey: ['notificationLogs'] });
     } catch (error) {
-      console.error('Rent check failed:', error);
+      console.error('Rent test failed:', error);
       toast.error(language === 'th' ? 'เกิดข้อผิดพลาด' : 'Error occurred');
+      alert(`❌ ERROR:\n\n${error.message}`);
     } finally {
       setTestingRent(false);
     }
@@ -666,7 +733,7 @@ function DashboardContent() {
       scheduledSystem: "Scheduled System",
       checkAllUsers: "Check all users for reminders",
       testBrowserFlex: "Test Flex (Browser)",
-      testRent: "Check Rent",
+      testRent: "Force Rent Test",
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -704,7 +771,7 @@ function DashboardContent() {
       scheduledSystem: "ระบบตรวจสอบอัตโนมัติ",
       checkAllUsers: "ตรวจสอบการแจ้งเตือนของผู้ใช้ทั้งหมด",
       testBrowserFlex: "ทดสอบ Flex",
-      testRent: "ตรวจสอบค่าเช่า",
+      testRent: "ทดสอบค่าเช่า",
     }
   };
 
