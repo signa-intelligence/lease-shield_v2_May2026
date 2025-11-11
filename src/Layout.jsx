@@ -191,6 +191,7 @@ export default function Layout({ children, currentPageName }) {
           height: 100%;
           width: 100%;
           overflow-x: hidden;
+          overscroll-behavior: none;
         }
 
         body {
@@ -208,13 +209,11 @@ export default function Layout({ children, currentPageName }) {
           -webkit-overflow-scrolling: touch;
         }
 
-        @media (min-width: 768px) {
-          .bottom-tabs {
-            max-width: 600px;
-            left: 50% !important;
-            transform: translateX(-50%);
-            border-radius: 24px;
-            margin-bottom: 16px;
+        @media (display-mode: standalone) {
+          body {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
           }
         }
 
@@ -252,10 +251,11 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
+      <div className="fixed top-0 left-0 right-0 border-b shadow-sm z-40" style={{
         backgroundColor: colors.topBarBg,
         borderBottomColor: colors.borderColor,
-        paddingTop: 'env(safe-area-inset-top, 0px)'
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        minHeight: '64px'
       }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -326,24 +326,22 @@ export default function Layout({ children, currentPageName }) {
       <main ref={mainContentRef} className="main-content flex-1" style={{
         marginTop: 'calc(64px + env(safe-area-inset-top, 0px))',
         marginBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
-        minHeight: 'calc(100vh - 144px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))'
+        height: 'calc(100vh - 64px - 80px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))'
       }}>
         {children}
       </main>
 
-      <nav 
-        className="bottom-tabs border-t shadow-2xl" 
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 99999,
-          backgroundColor: colors.bottomTabBg,
-          borderTopColor: colors.borderColor,
-          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)'
-        }}
-      >
+      <nav style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 99999,
+        backgroundColor: colors.bottomTabBg,
+        borderTop: `1px solid ${colors.borderColor}`,
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
+        boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)'
+      }}>
         <div className="flex items-center justify-around px-2 py-2" style={{
           minHeight: '68px'
         }}>
