@@ -3,7 +3,7 @@ import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap } from "lucide-react";
-import { Link, useNavigate } => "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
