@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, Loader2, AlertTriangle, Wrench, Clock, MessageSquare, Camera, Receipt, X, ImageIcon, User } from "lucide-react";
+import { CheckCircle2, Loader2, AlertTriangle, Wrench, Clock, MessageSquare, Camera, Receipt, X, ImageIcon, User, Send } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
@@ -20,6 +20,9 @@ export default function AcknowledgeMaintenance() {
   const [completionPhotos, setCompletionPhotos] = useState([]);
   const [billPhotos, setBillPhotos] = useState([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatPhotos, setChatPhotos] = useState([]);
+  const [sendingChat, setSendingChat] = useState(false);
 
   useEffect(() => {
     loadMaintenanceRequest();
@@ -124,6 +127,63 @@ export default function AcknowledgeMaintenance() {
       setError(err.message || 'Failed to update');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleChatPhotoUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setUploadingPhotos(true); // Reusing this state for both types of uploads
+    try {
+      const uploadPromises = files.map(file => 
+        base44.integrations.Core.UploadFile({ file })
+      );
+      
+      const uploadResults = await Promise.all(uploadPromises);
+      const photoUrls = uploadResults.map(result => result.file_url);
+      
+      setChatPhotos(prev => [...prev, ...photoUrls]);
+    } catch (error) {
+      console.error('Chat photo upload failed:', error);
+      alert('Failed to upload chat photos. Please try again.');
+    } finally {
+      setUploadingPhotos(false);
+      e.target.value = ''; // Clear input field
+    }
+  };
+
+  const handleRemoveChatPhoto = (index) => {
+    setChatPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSendChatMessage = async () => {
+    if (!chatMessage.trim() && chatPhotos.length === 0) return;
+
+    setSendingChat(true);
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      const response = await base44.functions.invoke('addMaintenanceComment', {
+        maintenanceId: maintenanceRequest.id,
+        message: chatMessage.trim() || '[Photo sent]',
+        photoUrls: chatPhotos,
+        senderType: 'Landlord/Juristic',
+        token: token
+      });
+
+      if (response.data?.success) {
+        // Reload maintenance request to show new message
+        await loadMaintenanceRequest();
+        setChatMessage('');
+        setChatPhotos([]);
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      alert('Failed to send message. Please try again.');
+    } finally {
+      setSendingChat(false);
     }
   };
 
@@ -261,48 +321,162 @@ export default function AcknowledgeMaintenance() {
                   </div>
                 </div>
               )}
-
-              {/* Communication History */}
-              {maintenanceRequest?.communication_log && maintenanceRequest.communication_log.length > 0 && (
-                <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <MessageSquare className="w-4 h-4 text-ls-forest" />
-                    <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>Communication History:</p>
-                  </div>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {maintenanceRequest.communication_log.map((entry, index) => {
-                      const isTenant = entry.sender?.toLowerCase().includes('tenant');
-                      
-                      return (
-                        <div
-                          key={index}
-                          className="p-3 rounded-lg border-l-4 text-sm"
-                          style={{
-                            backgroundColor: isTenant ? '#EFF6FF' : '#FEF3C7',
-                            borderLeftColor: isTenant ? '#3B82F6' : '#F59E0B'
-                          }}
-                        >
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <div className="flex items-center gap-2">
-                              <User className="w-3 h-3" style={{ color: isTenant ? '#3B82F6' : '#F59E0B' }} />
-                              <span className="font-bold text-xs" style={{ color: colors.textPrimary }}>
-                                {entry.sender}
-                              </span>
-                            </div>
-                            <span className="text-xs" style={{ color: colors.textSecondary }}>
-                              {new Date(entry.date).toLocaleString()}
-                            </span>
-                          </div>
-                          <p style={{ color: colors.textPrimary }}>{entry.message}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Communication History Card - UPDATED WITH CHAT INPUT */}
+        {maintenanceRequest?.communication_log && (
+          <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <MessageSquare className="w-5 h-5 text-ls-forest" />
+                Communication History
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {/* Chat Messages */}
+              {maintenanceRequest.communication_log.length > 0 && (
+                <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
+                  {maintenanceRequest.communication_log.map((entry, index) => {
+                    const isTenant = entry.sender?.toLowerCase().includes('tenant');
+                    
+                    return (
+                      <div
+                        key={index}
+                        className="p-4 rounded-lg border-l-4"
+                        style={{
+                          backgroundColor: isTenant ? '#EFF6FF' : '#FEF3C7',
+                          borderLeftColor: isTenant ? '#3B82F6' : '#F59E0B'
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4" style={{ color: isTenant ? '#3B82F6' : '#F59E0B' }} />
+                            <span className="font-bold text-sm" style={{ color: colors.textPrimary }}>
+                              {entry.sender}
+                            </span>
+                          </div>
+                          <span className="text-xs" style={{ color: colors.textSecondary }}>
+                            {new Date(entry.date).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm" style={{ color: colors.textPrimary }}>
+                          {entry.message}
+                        </p>
+                        {entry.photo_urls && entry.photo_urls.length > 0 && (
+                          <div className="grid grid-cols-3 gap-1 mt-2">
+                            {entry.photo_urls.map((url, photoIndex) => (
+                              <img
+                                key={photoIndex}
+                                src={url}
+                                alt={`Photo ${photoIndex + 1}`}
+                                className="w-full h-16 object-cover rounded cursor-pointer hover:opacity-80"
+                                onClick={() => window.open(url, '_blank')}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Chat Input Area */}
+              <div className="border-t pt-4" style={{ borderColor: colors.borderColor }}>
+                {/* Photo Preview */}
+                {chatPhotos.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 mb-3">
+                    {chatPhotos.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Attachment ${index + 1}`}
+                          className="w-full h-16 object-cover rounded"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveChatPhoto(index)}
+                          className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ transform: 'translate(25%, -25%)' }}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2 items-center">
+                  {/* Photo Upload Button */}
+                  <label
+                    className="flex-shrink-0 cursor-pointer"
+                    style={{
+                      padding: '10px',
+                      borderRadius: '8px',
+                      backgroundColor: uploadingPhotos ? colors.borderColor : colors.cardBg,
+                      border: `2px solid ${colors.borderColor}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleChatPhotoUpload}
+                      className="hidden"
+                      disabled={uploadingPhotos}
+                    />
+                    {uploadingPhotos ? (
+                      <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
+                    ) : (
+                      <Camera className="w-5 h-5" style={{ color: colors.textPrimary }} />
+                    )}
+                  </label>
+
+                  {/* Message Input */}
+                  <Input
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendChatMessage();
+                      }
+                    }}
+                    className="flex-1 p-3 border-2 rounded-lg"
+                    style={{
+                      backgroundColor: colors.cardBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+
+                  {/* Send Button */}
+                  <Button
+                    onClick={handleSendChatMessage}
+                    disabled={sendingChat || (!chatMessage.trim() && chatPhotos.length === 0)}
+                    className="bg-ls-forest hover:bg-ls-forest/90 text-white p-3 h-auto"
+                    style={{
+                      opacity: (sendingChat || (!chatMessage.trim() && chatPhotos.length === 0)) ? 0.5 : 1
+                    }}
+                  >
+                    {sendingChat ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
@@ -532,51 +706,6 @@ export default function AcknowledgeMaintenance() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Communication History Card */}
-        {maintenanceRequest?.communication_log && maintenanceRequest.communication_log.length > 0 && (
-          <Card className="border-none shadow-xl mt-6" style={{ backgroundColor: colors.cardBg }}>
-            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <MessageSquare className="w-5 h-5 text-ls-forest" />
-                Communication History
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-3">
-                {maintenanceRequest.communication_log.map((entry, index) => {
-                  const isTenant = entry.sender?.toLowerCase().includes('tenant');
-                  
-                  return (
-                    <div
-                      key={index}
-                      className="p-4 rounded-lg border-l-4"
-                      style={{
-                        backgroundColor: isTenant ? '#EFF6FF' : '#FEF3C7',
-                        borderLeftColor: isTenant ? '#3B82F6' : '#F59E0B'
-                      }}
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4" style={{ color: isTenant ? '#3B82F6' : '#F59E0B' }} />
-                          <span className="font-bold text-sm" style={{ color: colors.textPrimary }}>
-                            {entry.sender}
-                          </span>
-                        </div>
-                        <span className="text-xs" style={{ color: colors.textSecondary }}>
-                          {new Date(entry.date).toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-sm" style={{ color: colors.textPrimary }}>
-                        {entry.message}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );

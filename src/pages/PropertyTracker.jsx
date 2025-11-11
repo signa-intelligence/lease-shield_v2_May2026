@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
   Edit2, Save, X, Wrench, AlertCircle, CheckCircle2, Clock,
-  DollarSign, ArrowLeft, Shield, MessageSquare, User
+  DollarSign, ArrowLeft, Shield, MessageSquare, User, Send, Camera, Loader2
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +31,10 @@ export default function PropertyTracker() {
   const [editingRent, setEditingRent] = useState(false);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
   const [expandedRequests, setExpandedRequests] = useState({});
+  const [chatMessages, setChatMessages] = useState({}); // {requestId: message}
+  const [chatPhotos, setChatPhotos] = useState({}); // {requestId: [urls]}
+  const [sendingChat, setSendingChat] = useState({}); // {requestId: boolean}
+  const [uploadingChatPhoto, setUploadingChatPhoto] = useState({}); // {requestId: boolean}
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -102,7 +107,8 @@ export default function PropertyTracker() {
       const initialLog = [{
         date: new Date().toISOString(),
         sender: 'Tenant',
-        message: `Issue reported: ${data.issue_title}`
+        message: `Issue reported: ${data.issue_title}`,
+        photo_urls: []
       }];
       
       const requestData = {
@@ -160,6 +166,65 @@ export default function PropertyTracker() {
     },
   });
 
+  const handleChatPhotoUpload = async (e, requestId) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setUploadingChatPhoto(prev => ({ ...prev, [requestId]: true }));
+    try {
+      const uploadPromises = files.map(file => 
+        base44.integrations.Core.UploadFile({ file })
+      );
+      
+      const uploadResults = await Promise.all(uploadPromises);
+      const photoUrls = uploadResults.map(result => result.file_url);
+      
+      setChatPhotos(prev => ({
+        ...prev,
+        [requestId]: [...(prev[requestId] || []), ...photoUrls]
+      }));
+    } catch (error) {
+      console.error('Photo upload failed:', error);
+      alert(user?.language === 'th' ? 'อัปโหลดไม่สำเร็จ' : 'Upload failed');
+    } finally {
+      setUploadingChatPhoto(prev => ({ ...prev, [requestId]: false }));
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveChatPhoto = (requestId, index) => {
+    setChatPhotos(prev => ({
+      ...prev,
+      [requestId]: (prev[requestId] || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSendChatMessage = async (requestId) => {
+    const message = chatMessages[requestId]?.trim();
+    if (!message && (!chatPhotos[requestId] || chatPhotos[requestId].length === 0)) return;
+
+    setSendingChat(prev => ({ ...prev, [requestId]: true }));
+    try {
+      const response = await base44.functions.invoke('addMaintenanceComment', {
+        maintenanceId: requestId,
+        message: message || (user?.language === 'th' ? '[ส่งรูปภาพ]' : '[Photo sent]'),
+        photoUrls: chatPhotos[requestId] || [],
+        senderType: 'Tenant'
+      });
+
+      if (response.data?.success) {
+        queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+        setChatMessages(prev => ({ ...prev, [requestId]: '' }));
+        setChatPhotos(prev => ({ ...prev, [requestId]: [] }));
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      alert(user?.language === 'th' ? 'ส่งข้อความไม่สำเร็จ' : 'Failed to send message');
+    } finally {
+      setSendingChat(prev => ({ ...prev, [requestId]: false }));
+    }
+  };
+
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
@@ -213,7 +278,11 @@ export default function PropertyTracker() {
       viewChat: "View Chat",
       hideChat: "Hide Chat",
       tenant: "Tenant",
-      landlord: "Landlord/Juristic"
+      landlord: "Landlord/Juristic",
+      typeMessage: "Type your message...",
+      send: "Send",
+      attachPhoto: "Attach Photo",
+      uploading: "Uploading..."
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -254,7 +323,11 @@ export default function PropertyTracker() {
       viewChat: "ดูแชท",
       hideChat: "ซ่อนแชท",
       tenant: "ผู้เช่า",
-      landlord: "เจ้าของบ้าน/นิติ"
+      landlord: "เจ้าของบ้าน/นิติ",
+      typeMessage: "พิมพ์ข้อความ...",
+      send: "ส่ง",
+      attachPhoto: "แนบรูป",
+      uploading: "กำลังอัปโหลด..."
     }
   };
 
@@ -303,7 +376,6 @@ export default function PropertyTracker() {
     if (deposits.length > 0) {
       updateDepositMutation.mutate({ id: deposits[0].id, data });
     } else {
-      // Create deposit with minimal data + rent info
       const minimalDeposit = {
         deposit_amount: 0,
         deposit_paid_date: new Date().toISOString().split('T')[0],
@@ -825,59 +897,160 @@ export default function PropertyTracker() {
                           </div>
 
                           {/* Chat Log Toggle */}
-                          {chatLog.length > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleRequestChat(request.id)}
-                              className="w-full justify-center text-xs mt-2"
-                            >
-                              <MessageSquare className="w-3 h-3 mr-1" />
-                              {isChatExpanded ? strings.hideChat : strings.viewChat}
-                              <ChevronDown className={`w-3 h-3 ml-1 transition-transform ${isChatExpanded ? 'rotate-180' : ''}`} />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleRequestChat(request.id)}
+                            className="w-full justify-center text-xs mt-2"
+                          >
+                            <MessageSquare className="w-3 h-3 mr-1" />
+                            {isChatExpanded ? strings.hideChat : strings.viewChat}
+                            <ChevronDown className={`w-3 h-3 ml-1 transition-transform ${isChatExpanded ? 'rotate-180' : ''}`} />
+                          </Button>
                         </div>
 
-                        {/* Communication Log */}
-                        {isChatExpanded && chatLog.length > 0 && (
-                          <div className="border-t p-4 space-y-3" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF' }}>
-                            <div className="flex items-center gap-2 mb-3">
-                              <MessageSquare className="w-4 h-4 text-ls-forest" />
-                              <h5 className="font-bold text-sm" style={{ color: colors.textPrimary }}>{strings.chatLog}</h5>
-                            </div>
-                            {chatLog.map((entry, index) => {
-                              const isTenant = entry.sender?.toLowerCase().includes('tenant');
-                              const isLandlord = entry.sender?.toLowerCase().includes('landlord') || entry.sender?.toLowerCase().includes('juristic');
-                              
-                              return (
-                                <div
-                                  key={index}
-                                  className="p-3 rounded-lg border-l-4"
-                                  style={{
-                                    backgroundColor: isTenant 
-                                      ? (isDarkMode ? '#1E3A5F' : '#EFF6FF')
-                                      : (isDarkMode ? '#1F2937' : '#F9FAFB'),
-                                    borderLeftColor: isTenant ? '#3B82F6' : '#F59E0B'
-                                  }}
-                                >
-                                  <div className="flex items-start justify-between gap-2 mb-1">
-                                    <div className="flex items-center gap-2">
-                                      <User className="w-3 h-3" style={{ color: isTenant ? '#3B82F6' : '#F59E0B' }} />
-                                      <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>
-                                        {isTenant ? strings.tenant : isLandlord ? strings.landlord : entry.sender}
+                        {/* Communication Log + Chat Input */}
+                        {isChatExpanded && (
+                          <div className="border-t" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF' }}>
+                            {/* Chat Messages */}
+                            <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
+                              {chatLog.map((entry, index) => {
+                                const isTenant = entry.sender?.toLowerCase().includes('tenant');
+                                const isLandlord = entry.sender?.toLowerCase().includes('landlord') || entry.sender?.toLowerCase().includes('juristic');
+                                
+                                return (
+                                  <div
+                                    key={index}
+                                    className="p-3 rounded-lg border-l-4"
+                                    style={{
+                                      backgroundColor: isTenant 
+                                        ? (isDarkMode ? '#1E3A5F' : '#EFF6FF')
+                                        : (isDarkMode ? '#1F2937' : '#FEF3C7'),
+                                      borderLeftColor: isTenant ? '#3B82F6' : '#F59E0B'
+                                    }}
+                                  >
+                                    <div className="flex items-start justify-between gap-2 mb-1">
+                                      <div className="flex items-center gap-2">
+                                        <User className="w-3 h-3" style={{ color: isTenant ? '#3B82F6' : '#F59E0B' }} />
+                                        <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>
+                                          {isTenant ? strings.tenant : isLandlord ? strings.landlord : entry.sender}
+                                        </span>
+                                      </div>
+                                      <span className="text-xs" style={{ color: colors.textSecondary }}>
+                                        {format(new Date(entry.date), 'MMM d, h:mm a')}
                                       </span>
                                     </div>
-                                    <span className="text-xs" style={{ color: colors.textSecondary }}>
-                                      {format(new Date(entry.date), 'MMM d, h:mm a')}
-                                    </span>
+                                    <p className="text-sm mb-2" style={{ color: colors.textPrimary }}>
+                                      {entry.message}
+                                    </p>
+                                    {entry.photo_urls && entry.photo_urls.length > 0 && (
+                                      <div className="grid grid-cols-3 gap-1 mt-2">
+                                        {entry.photo_urls.map((url, photoIndex) => (
+                                          <img
+                                            key={photoIndex}
+                                            src={url}
+                                            alt={`Photo ${photoIndex + 1}`}
+                                            className="w-full h-16 object-cover rounded cursor-pointer hover:opacity-80"
+                                            onClick={() => window.open(url, '_blank')}
+                                          />
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                  <p className="text-sm" style={{ color: colors.textPrimary }}>
-                                    {entry.message}
-                                  </p>
+                                );
+                              })}
+                            </div>
+
+                            {/* Chat Input */}
+                            <div className="p-4 border-t" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
+                              {/* Photo Preview */}
+                              {chatPhotos[request.id] && chatPhotos[request.id].length > 0 && (
+                                <div className="grid grid-cols-4 gap-2 mb-3">
+                                  {chatPhotos[request.id].map((url, index) => (
+                                    <div key={index} className="relative group">
+                                      <img
+                                        src={url}
+                                        alt={`Attachment ${index + 1}`}
+                                        className="w-full h-16 object-cover rounded"
+                                      />
+                                      <button
+                                        onClick={() => handleRemoveChatPhoto(request.id, index)}
+                                        className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        style={{ transform: 'translate(25%, -25%)' }}
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ))}
                                 </div>
-                              );
-                            })}
+                              )}
+
+                              <div className="flex gap-2">
+                                {/* Photo Upload Button */}
+                                <label
+                                  className="flex-shrink-0 cursor-pointer"
+                                  style={{
+                                    padding: '10px',
+                                    borderRadius: '8px',
+                                    backgroundColor: uploadingChatPhoto[request.id] ? colors.borderColor : colors.inputBg,
+                                    border: `2px solid ${colors.borderColor}`,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={(e) => handleChatPhotoUpload(e, request.id)}
+                                    className="hidden"
+                                    disabled={uploadingChatPhoto[request.id]}
+                                  />
+                                  {uploadingChatPhoto[request.id] ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
+                                  ) : (
+                                    <Camera className="w-5 h-5" style={{ color: colors.textPrimary }} />
+                                  )}
+                                </label>
+
+                                {/* Message Input */}
+                                <Input
+                                  value={chatMessages[request.id] || ''}
+                                  onChange={(e) => setChatMessages(prev => ({ ...prev, [request.id]: e.target.value }))}
+                                  placeholder={strings.typeMessage}
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                      e.preventDefault();
+                                      handleSendChatMessage(request.id);
+                                    }
+                                  }}
+                                  className="flex-1"
+                                  style={{
+                                    backgroundColor: colors.inputBg,
+                                    borderColor: colors.borderColor,
+                                    color: colors.textPrimary
+                                  }}
+                                />
+
+                                {/* Send Button */}
+                                <Button
+                                  onClick={() => handleSendChatMessage(request.id)}
+                                  disabled={sendingChat[request.id] || (!chatMessages[request.id]?.trim() && (!chatPhotos[request.id] || chatPhotos[request.id].length === 0))}
+                                  className="bg-ls-forest hover:bg-ls-forest/90"
+                                  style={{
+                                    opacity: (sendingChat[request.id] || (!chatMessages[request.id]?.trim() && (!chatPhotos[request.id] || chatPhotos[request.id].length === 0))) ? 0.5 : 1
+                                  }}
+                                >
+                                  {sendingChat[request.id] ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Send className="w-4 h-4" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
