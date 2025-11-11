@@ -1,5 +1,4 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -29,7 +28,6 @@ export default function StatsCard({
 
   const isDarkMode = user?.theme === 'dark';
 
-  // FIXED: Ensure completely opaque colors
   const colors = {
     cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
     textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
@@ -37,15 +35,21 @@ export default function StatsCard({
     miniStatBg: isDarkMode ? '#353A3D' : '#F8FAFC'
   };
 
+  // Convert bgGradient class to actual background style
+  let gradientStyle = null;
+  if (bgGradient === 'bg-gradient-to-br from-ls-gold to-amber-600') {
+    gradientStyle = 'linear-gradient(135deg, #C7A338 0%, #D97706 100%)';
+  } else if (bgGradient === 'bg-gradient-to-br from-ls-charcoal to-slate-700') {
+    gradientStyle = 'linear-gradient(135deg, #1A1D1F 0%, #334155 100%)';
+  }
+
   return (
     <div
-      className={bgGradient || ''}
       style={{
-        backgroundColor: bgGradient ? 'transparent' : colors.cardBg,
+        background: gradientStyle || colors.cardBg,
         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
         borderRadius: '16px',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        opacity: '1 !important', // FIXED: Force full opacity with !important
         padding: '24px',
         position: 'relative'
       }}
@@ -58,8 +62,7 @@ export default function StatsCard({
         e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
-      {/* Background Circle Effect */}
-      {!bgGradient && (
+      {!gradientStyle && (
         <div style={{
           position: 'absolute',
           top: '-20px',
@@ -72,18 +75,17 @@ export default function StatsCard({
         }} />
       )}
 
-      {/* Icon & Value */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <p className="text-sm font-semibold mb-2" style={{ 
-            color: bgGradient ? '#FFFFFF' : colors.textSecondary,
+            color: gradientStyle ? '#FFFFFF' : colors.textSecondary,
             letterSpacing: '0.02em',
             textTransform: 'uppercase'
           }}>
             {title}
           </p>
           <p className="text-3xl font-bold" style={{ 
-            color: bgGradient ? '#FFFFFF' : (scoreColor || colors.textPrimary),
+            color: gradientStyle ? '#FFFFFF' : (scoreColor || colors.textPrimary),
             letterSpacing: '-0.02em'
           }}>
             {value}
@@ -93,7 +95,7 @@ export default function StatsCard({
           width: '56px',
           height: '56px',
           borderRadius: '14px',
-          background: bgGradient 
+          background: gradientStyle 
             ? 'rgba(255, 255, 255, 0.2)' 
             : scoreColor 
               ? `linear-gradient(135deg, ${scoreColor}20 0%, ${scoreColor}10 100%)`
@@ -104,12 +106,11 @@ export default function StatsCard({
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
         }}>
           <Icon className="w-7 h-7" style={{ 
-            color: bgGradient ? '#FFFFFF' : (scoreColor || '#0C3B2E')
+            color: gradientStyle ? '#FFFFFF' : (scoreColor || '#0C3B2E')
           }} />
         </div>
       </div>
 
-      {/* Trend Badge */}
       {trend && (
         <Badge className={`${trend > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'} text-xs font-semibold`}>
           {trend > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
@@ -117,7 +118,6 @@ export default function StatsCard({
         </Badge>
       )}
 
-      {/* Protection Score Gauge */}
       {showGauge && (
         <div className="mt-4">
           <ProtectionScoreGauge score={scoreValue} />
@@ -129,21 +129,20 @@ export default function StatsCard({
         </div>
       )}
 
-      {/* Mini Stats */}
       {miniStats && miniStats.length > 0 && (
         <div className="grid grid-cols-2 gap-2 mt-4">
           {miniStats.map((stat, idx) => (
             <div key={idx} className="p-3 rounded-xl" style={{ 
-              backgroundColor: bgGradient ? 'rgba(255, 255, 255, 0.15)' : colors.miniStatBg,
-              backdropFilter: bgGradient ? 'blur(10px)' : 'none'
+              backgroundColor: gradientStyle ? 'rgba(255, 255, 255, 0.2)' : colors.miniStatBg,
+              backdropFilter: gradientStyle ? 'blur(10px)' : 'none'
             }}>
               <p className="text-xs font-semibold mb-1" style={{ 
-                color: bgGradient ? '#FFFFFF' : colors.textSecondary
+                color: gradientStyle ? '#FFFFFF' : colors.textSecondary
               }}>
                 {stat.label}
               </p>
               <p className="text-lg font-bold" style={{ 
-                color: bgGradient ? '#FFFFFF' : colors.textPrimary
+                color: gradientStyle ? '#FFFFFF' : colors.textPrimary
               }}>
                 {stat.value}
               </p>
@@ -152,7 +151,6 @@ export default function StatsCard({
         </div>
       )}
 
-      {/* CTA Button */}
       {ctaText && onCtaClick && (
         <button
           onClick={onCtaClick}
@@ -183,25 +181,24 @@ export default function StatsCard({
         </button>
       )}
 
-      {/* Action Button */}
       {actionButton && (
         <Link to={actionButton.link} className="block mt-4">
           <button
             style={{
               width: '100%',
               padding: '10px 20px',
-              backgroundColor: bgGradient ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-              color: bgGradient ? '#FFFFFF' : '#0C3B2E',
+              backgroundColor: gradientStyle ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+              color: gradientStyle ? '#FFFFFF' : '#0C3B2E',
               borderRadius: '10px',
               fontWeight: '600',
               fontSize: '14px',
-              border: bgGradient ? '1px solid rgba(255, 255, 255, 0.3)' : '2px solid #0C3B2E',
+              border: gradientStyle ? '1px solid rgba(255, 255, 255, 0.3)' : '2px solid #0C3B2E',
               cursor: 'pointer',
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              backdropFilter: bgGradient ? 'blur(10px)' : 'none'
+              backdropFilter: gradientStyle ? 'blur(10px)' : 'none'
             }}
             onMouseEnter={(e) => {
-              if (bgGradient) {
+              if (gradientStyle) {
                 e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
               } else {
                 e.target.style.backgroundColor = '#0C3B2E';
@@ -209,7 +206,7 @@ export default function StatsCard({
               }
             }}
             onMouseLeave={(e) => {
-              if (bgGradient) {
+              if (gradientStyle) {
                 e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
               } else {
                 e.target.style.backgroundColor = 'transparent';
