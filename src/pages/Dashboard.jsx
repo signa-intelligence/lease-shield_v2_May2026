@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,10 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import StatsCard from "../components/dashboard/StatsCard";
 import DepositAlert from "../components/dashboard/DepositAlert";
 import RecentLeases from "../components/dashboard/RecentLeases";
-import AdminDashboardStats from "../components/admin/AdminDashboardStats";
-import TrendChart from "../components/admin/TrendChart";
-import CaseBreakdown from "../components/admin/CaseBreakdown";
-import ActivityTimeline from "../components/admin/ActivityTimeline";
 
 export default function Dashboard() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -28,63 +23,35 @@ export default function Dashboard() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Check if user has admin/VA access
-  const isAdminUser = user && ['admin', 'super_admin', 'va'].includes(user.access_level);
-
-  // Admin queries - fetch ALL data
-  const { data: allUsers = [] } = useQuery({
-    queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list(),
-    enabled: isAdminUser,
-  });
-
-  const { data: allLeases = [] } = useQuery({
-    queryKey: ['allLeases'],
-    queryFn: () => base44.entities.Lease.list('-created_date'),
-    enabled: isAdminUser,
-  });
-
-  const { data: allCases = [] } = useQuery({
-    queryKey: ['allCases'],
-    queryFn: () => base44.entities.Case.list('-created_date'),
-    enabled: isAdminUser,
-  });
-
-  const { data: allDeposits = [] } = useQuery({
-    queryKey: ['allDeposits'],
-    queryFn: () => base44.entities.DepositTracker.list('-created_date'),
-    enabled: isAdminUser,
-  });
-
   // Regular user queries
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
-    enabled: !!user && !isAdminUser,
+    enabled: !!user,
   });
 
   const { data: deposits = [] } = useQuery({
     queryKey: ['deposits'],
     queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
-    enabled: !!user && !isAdminUser,
+    enabled: !!user,
   });
 
   const { data: cases = [] } = useQuery({
     queryKey: ['cases'],
     queryFn: () => base44.entities.Case.filter({ user_email: user?.email }),
-    enabled: !!user && !isAdminUser,
+    enabled: !!user,
   });
 
   const { data: documents = [] } = useQuery({
     queryKey: ['documents'],
     queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
-    enabled: !!user && !isAdminUser,
+    enabled: !!user,
   });
 
   const { data: maintenanceRequests = [] } = useQuery({
     queryKey: ['maintenance'],
     queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
-    enabled: !!user && !isAdminUser,
+    enabled: !!user,
   });
 
   // Auto-refresh logic
@@ -92,7 +59,7 @@ export default function Dashboard() {
     const urlParams = new URLSearchParams(window.location.search);
     const subscriptionStatus = urlParams.get('subscription');
     
-    if (subscriptionStatus === 'success') {
+    if (subscriptionStatus === 'success' && user) {
       console.log('💳 Subscription success detected - starting refresh...');
       window.history.replaceState({}, '', window.location.pathname);
       
@@ -173,191 +140,7 @@ export default function Dashboard() {
     borderColor: '#E5E7EB'
   };
 
-  // Calculate admin statistics
-  const calculateAdminStats = () => {
-    if (!isAdminUser) return {};
-
-    const now = new Date();
-    const lastMonth = subMonths(now, 1);
-    const startOfLastMonth = startOfMonth(lastMonth);
-    const endOfLastMonth = endOfMonth(lastMonth);
-    const startOfCurrentMonth = startOfMonth(now);
-
-    // Current month data
-    const currentMonthUsers = allUsers.filter(u => new Date(u.created_date) >= startOfCurrentMonth).length;
-    const lastMonthUsers = allUsers.filter(u => {
-      const date = new Date(u.created_date);
-      return date >= startOfLastMonth && date <= endOfLastMonth;
-    }).length;
-
-    const currentMonthLeases = allLeases.filter(l => new Date(l.created_date) >= startOfCurrentMonth).length;
-    const lastMonthLeases = allLeases.filter(l => {
-      const date = new Date(l.created_date);
-      return date >= startOfLastMonth && date <= endOfLastMonth;
-    }).length;
-
-    const currentMonthCases = allCases.filter(c => new Date(c.created_date) >= startOfCurrentMonth).length;
-    const lastMonthCases = allCases.filter(c => {
-      const date = new Date(c.created_date);
-      return date >= startOfLastMonth && date <= endOfLastMonth;
-    }).length;
-
-    // Calculate trends
-    const userTrend = lastMonthUsers > 0 ? Math.round(((currentMonthUsers - lastMonthUsers) / lastMonthUsers) * 100) : 0;
-    const leaseTrend = lastMonthLeases > 0 ? Math.round(((currentMonthLeases - lastMonthLeases) / lastMonthLeases) * 100) : 0;
-    const caseTrend = lastMonthCases > 0 ? Math.round(((currentMonthCases - lastMonthCases) / lastMonthCases) * 100) : 0;
-
-    const activeSubscribers = allUsers.filter(u => 
-      u.subscription_status === 'active' && u.plan_tier && u.plan_tier !== 'free'
-    ).length;
-
-    const lastMonthSubscribers = allUsers.filter(u => {
-      const subDate = u.subscription_start_date ? new Date(u.subscription_start_date) : null;
-      return subDate && subDate >= startOfLastMonth && subDate <= endOfLastMonth;
-    }).length;
-
-    const subscriberTrend = lastMonthSubscribers > 0 ? Math.round(((activeSubscribers - lastMonthSubscribers) / lastMonthSubscribers) * 100) : 0;
-
-    // Revenue calculation
-    const monthlyRevenue = allUsers.reduce((sum, u) => {
-      if (u.subscription_status === 'active' && u.plan_tier !== 'free') {
-        const planPrices = { lite: 390, protect: 690, secure: 1290 };
-        return sum + (planPrices[u.plan_tier] || 0);
-      }
-      return sum;
-    }, 0);
-
-    // Case metrics
-    const activeCases = allCases.filter(c => !['closed', 'resolved'].includes(c.status)).length;
-    const urgentCases = allCases.filter(c => c.flags?.urgent || c.fast_track).length;
-    
-    // Calculate average resolution time
-    const resolvedCases = allCases.filter(c => c.status === 'closed' && c.timeline?.length > 0);
-    const avgResolutionDays = resolvedCases.length > 0
-      ? Math.round(
-          resolvedCases.reduce((sum, c) => {
-            const opened = new Date(c.created_date);
-            const closed = c.timeline.find(t => t.event.includes('closed'))?.timestamp;
-            if (closed) {
-              return sum + differenceInDays(new Date(closed), opened);
-            }
-            return sum;
-          }, 0) / resolvedCases.length
-        )
-      : 0;
-
-    return {
-      totalUsers: allUsers.length,
-      userTrend,
-      activeSubscribers,
-      subscriberTrend,
-      monthlyRevenue,
-      revenueTrend: 0, // Could calculate based on historical data
-      totalLeases: allLeases.length,
-      leaseTrend,
-      totalCases: allCases.length,
-      caseTrend,
-      activeCases,
-      activeCaseTrend: 0,
-      avgResolutionDays,
-      resolutionTrend: 0,
-      urgentCases,
-      urgentTrend: 0
-    };
-  };
-
-  // Generate trend data for charts
-  const generateTrendData = () => {
-    if (!isAdminUser) return { leaseTrend: [], depositTrend: [] };
-
-    const last6Months = eachMonthOfInterval({
-      start: subMonths(new Date(), 5),
-      end: new Date()
-    });
-
-    const leaseTrend = last6Months.map(month => {
-      const monthStart = startOfMonth(month);
-      const monthEnd = endOfMonth(month);
-      const count = allLeases.filter(l => {
-        const date = new Date(l.created_date);
-        return date >= monthStart && date <= monthEnd;
-      }).length;
-
-      return {
-        name: format(month, 'MMM'),
-        value: count
-      };
-    });
-
-    const depositTrend = last6Months.map(month => {
-      const monthStart = startOfMonth(month);
-      const monthEnd = endOfMonth(month);
-      const count = allDeposits.filter(d => {
-        const date = new Date(d.created_date);
-        return date >= monthStart && date <= monthEnd;
-      }).length;
-
-      return {
-        name: format(month, 'MMM'),
-        value: count
-      };
-    });
-
-    return { leaseTrend, depositTrend };
-  };
-
-  // Generate recent activities
-  const generateRecentActivities = () => {
-    if (!isAdminUser) return [];
-
-    const activities = [];
-
-    // Recent users
-    allUsers.slice(0, 3).forEach(u => {
-      activities.push({
-        type: 'user_registered',
-        description: u.email,
-        timestamp: u.created_date
-      });
-    });
-
-    // Recent leases
-    allLeases.slice(0, 3).forEach(l => {
-      activities.push({
-        type: 'lease_uploaded',
-        description: l.property_address || l.created_by,
-        timestamp: l.created_date
-      });
-    });
-
-    // Recent cases
-    allCases.slice(0, 3).forEach(c => {
-      if (c.status === 'closed' || c.status === 'resolved') {
-        activities.push({
-          type: 'case_resolved',
-          description: c.case_number || `Case #${c.id.slice(0, 8)}`,
-          timestamp: c.updated_date || c.created_date
-        });
-      } else {
-        activities.push({
-          type: 'case_opened',
-          description: c.case_number || `Case #${c.id.slice(0, 8)}`,
-          timestamp: c.created_date
-        });
-      }
-    });
-
-    // Sort by timestamp and take top 10
-    return activities
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 10);
-  };
-
-  const adminStats = isAdminUser ? calculateAdminStats() : {};
-  const { leaseTrend, depositTrend } = isAdminUser ? generateTrendData() : { leaseTrend: [], depositTrend: [] };
-  const recentActivities = isAdminUser ? generateRecentActivities() : [];
-
-  // Regular user protection score calculation
+  // Calculate protection score
   const calculateProtectionScore = () => {
     let score = 0;
     let breakdown = {
@@ -433,8 +216,7 @@ export default function Dashboard() {
     return { score, breakdown, recommendations: recommendations.slice(0, 5) };
   };
 
-  // Only calculate for regular users
-  const protectionData = !isAdminUser ? calculateProtectionScore() : { score: 0, recommendations: [] };
+  const protectionData = calculateProtectionScore();
   const { score: protectionScore, recommendations } = protectionData;
 
   const getProtectionScoreColor = (score) => {
@@ -471,19 +253,19 @@ export default function Dashboard() {
   const protectionScoreColor = getProtectionScoreColor(protectionScore);
   const protectionScoreStatus = getProtectionScoreStatus(protectionScore);
 
-  const activeDeposits = !isAdminUser ? deposits.filter(d => d.status === 'tracking' || d.status === 'dispute') : [];
-  const activeCases = !isAdminUser ? cases.filter(c => !['closed'].includes(c.status)) : [];
+  const activeDeposits = deposits.filter(d => d.status === 'tracking' || d.status === 'dispute');
+  const activeCases = cases.filter(c => !['closed'].includes(c.status));
 
-  const scannedLeases = !isAdminUser ? leases.filter(l => l.status === 'scanned' || l.status === 'paid') : [];
-  const totalDepositValue = !isAdminUser ? activeDeposits.reduce((sum, d) => sum + (d.deposit_amount || 0), 0) : 0;
-  const avgDeposit = !isAdminUser && activeDeposits.length > 0 ? Math.round(totalDepositValue / activeDeposits.length) : 0;
+  const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
+  const totalDepositValue = activeDeposits.reduce((sum, d) => sum + (d.deposit_amount || 0), 0);
+  const avgDeposit = activeDeposits.length > 0 ? Math.round(totalDepositValue / activeDeposits.length) : 0;
   const now = new Date();
-  const urgentDeposits = !isAdminUser ? activeDeposits.filter(d => {
+  const urgentDeposits = activeDeposits.filter(d => {
     if (!d.expected_return_date) return false;
     const daysRemaining = differenceInDays(new Date(d.expected_return_date), now);
     return daysRemaining <= 30 && daysRemaining > 0;
-  }).length : 0;
-  const resolvedCases = !isAdminUser ? cases.filter(c => c.status === 'closed').length : 0;
+  }).length;
+  const resolvedCases = cases.filter(c => c.status === 'closed').length;
 
   const handleImproveScoreClick = () => {
     setShowImprovementDialog(true);
@@ -492,8 +274,6 @@ export default function Dashboard() {
   const t = {
     en: {
       welcome: "Welcome back",
-      adminDashboard: "Admin Dashboard",
-      adminSubtitle: "Monitor system performance and user activity",
       tagline: "Fair. Transparent. Protected.",
       subtitle: "Prevent rental problems before they happen.",
       activeLeases: "Active Leases",
@@ -521,14 +301,10 @@ export default function Dashboard() {
       manageLeases: "Manage Leases",
       alertsEnabled: "Alerts Enabled",
       uploadFirstLease: "Upload First Lease",
-      scannedLeases: "Scanned",
-      leaseTrends: "Lease Upload Trends",
-      depositTrends: "Deposit Tracking Trends"
+      scannedLeases: "Scanned"
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
-      adminDashboard: "แดชบอร์ดผู้ดูแล",
-      adminSubtitle: "ติดตามประสิทธิภาพระบบและกิจกรรมผู้ใช้",
       tagline: "ยุติธรรม โปร่งใส ปลอดภัย",
       subtitle: "ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น",
       activeLeases: "สัญญาเช่าที่ใช้งาน",
@@ -556,9 +332,7 @@ export default function Dashboard() {
       manageLeases: "จัดการสัญญา",
       alertsEnabled: "การแจ้งเตือนเปิดอยู่",
       uploadFirstLease: "อัปโหลดสัญญาแรก",
-      scannedLeases: "สัญญาที่สแกนแล้ว",
-      leaseTrends: "แนวโน้มการอัปโหลดสัญญา",
-      depositTrends: "แนวโน้มการติดตามเงินมัดจำ"
+      scannedLeases: "สัญญาที่สแกนแล้ว"
     }
   };
 
@@ -571,79 +345,6 @@ export default function Dashboard() {
     Wrench: Wrench
   };
 
-  // ADMIN VIEW
-  if (isAdminUser) {
-    return (
-      <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
-          {/* Admin Header */}
-          <div className="mb-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3" style={{
-              background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-              boxShadow: '0 8px 16px rgba(12, 59, 46, 0.25)'
-            }}>
-              <Shield className="w-5 h-5 text-white" />
-              <span className="text-sm font-semibold text-white">
-                {user?.access_level?.toUpperCase() || 'ADMIN'}
-              </span>
-            </div>
-            
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ 
-              color: colors.textPrimary,
-              letterSpacing: '-0.02em'
-            }}>
-              {strings.adminDashboard}
-            </h1>
-            <p style={{ 
-              color: colors.textSecondary, 
-              fontSize: '16px', 
-              lineHeight: '1.6',
-              fontWeight: '500'
-            }}>
-              {strings.adminSubtitle}
-            </p>
-          </div>
-
-          {/* KPI Stats */}
-          <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
-
-          {/* Charts Grid */}
-          <div className="grid lg:grid-cols-2 gap-6 mb-8">
-            <TrendChart
-              title={strings.leaseTrends}
-              data={leaseTrend}
-              dataKey="value"
-              chartType="bar"
-              color="#8B5CF6"
-              colors={colors}
-              language={language}
-            />
-            <TrendChart
-              title={strings.depositTrends}
-              data={depositTrend}
-              dataKey="value"
-              chartType="line"
-              color="#C7A338"
-              colors={colors}
-              language={language}
-            />
-          </div>
-
-          {/* Case Breakdown & Activity */}
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <CaseBreakdown cases={allCases} colors={colors} language={language} />
-            </div>
-            <div>
-              <ActivityTimeline activities={recentActivities} colors={colors} language={language} />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // REGULAR USER VIEW
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
