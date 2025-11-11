@@ -2,7 +2,7 @@
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Settings } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, format } from "date-fns";
@@ -148,6 +148,7 @@ function DashboardContent() {
   // Admin: Manual reminder trigger
   const [triggeringReminders, setTriggeringReminders] = useState(false);
   const [testingOverdue, setTestingOverdue] = useState(false);
+  const [testingSettings, setTestingSettings] = useState(false);
   
   const triggerReminders = async () => {
     setTriggeringReminders(true);
@@ -178,11 +179,10 @@ function DashboardContent() {
       if (overdueCount > 0) {
         toast.success(
           language === 'th' 
-            ? `พบเงินมัดจำเกินกำหนด ${overdueCount} รายการ! ตรวจสอบ Console` 
-            : `Found ${overdueCount} overdue deposits! Check logs below`
+            ? `พบเงินมัดจำเกินกำหนด ${overdueCount} รายการ!` 
+            : `Found ${overdueCount} overdue deposits!`
         );
         
-        // Show alert with details
         alert(
           `🔍 OVERDUE CHECK RESULTS:\n\n` +
           `Total deposits: ${response.data.total_deposits}\n` +
@@ -197,6 +197,62 @@ function DashboardContent() {
       toast.error(language === 'th' ? 'การทดสอบล้มเหลว' : 'Test failed');
     } finally {
       setTestingOverdue(false);
+    }
+  };
+
+  const testUserSettings = async () => {
+    setTestingSettings(true);
+    try {
+      const response = await base44.functions.invoke('testUserSettings');
+      console.log('🔍 User settings:', response.data);
+      
+      const settings = response.data;
+      
+      // Build readable message
+      let message = `📧 YOUR NOTIFICATION SETTINGS:\n\n`;
+      message += `Email: ${settings.notification_settings?.email_notifications ? '✅ ON' : '❌ OFF'}\n`;
+      message += `LINE: ${settings.notification_settings?.line_notifications ? '✅ ON' : '❌ OFF'}\n`;
+      message += `LINE Token: ${settings.notification_settings?.line_messaging_token || 'N/A'}\n\n`;
+      
+      message += `🔕 Notification Preferences:\n`;
+      const prefs = settings.notification_preferences || {};
+      message += `Overdue Deposit Alerts: ${prefs.deposit_overdue === false ? '❌ DISABLED' : '✅ Enabled'}\n`;
+      message += `30d Deposit: ${prefs.deposit_30d === false ? '❌ OFF' : '✅ ON'}\n`;
+      message += `7d Deposit: ${prefs.deposit_7d === false ? '❌ OFF' : '✅ ON'}\n`;
+      message += `3d Deposit: ${prefs.deposit_3d === false ? '❌ OFF' : '✅ ON'}\n\n`;
+      
+      message += `🌙 Quiet Hours: ${settings.quiet_hours?.enabled ? '✅ ON' : '❌ OFF'}\n`;
+      if (settings.quiet_hours?.enabled) {
+        message += `Time: ${settings.quiet_hours.start} - ${settings.quiet_hours.end}\n`;
+      }
+      message += `Timezone: ${settings.notification_timezone || 'N/A'}\n\n`;
+      
+      message += `🚨 YOUR OVERDUE DEPOSITS: ${settings.overdue_deposits?.count || 0}\n`;
+      if (settings.overdue_deposits?.deposits?.length > 0) {
+        settings.overdue_deposits.deposits.forEach(d => {
+          message += `\n- ฿${d.amount?.toLocaleString()} at ${d.property}\n`;
+          message += `  ${d.days_overdue} days overdue\n`;
+        });
+      }
+      
+      alert(message);
+      
+      // Check for issues
+      if (!settings.notification_settings?.email_notifications && !settings.notification_settings?.line_notifications) {
+        toast.error('❌ Both email and LINE are OFF!');
+      } else if (prefs.deposit_overdue === false) {
+        toast.error('❌ Overdue deposit alerts are DISABLED!');
+      } else if (settings.quiet_hours?.enabled) {
+        toast.warning('🌙 Quiet hours might be blocking notifications');
+      } else {
+        toast.success('✅ Settings look good!');
+      }
+      
+    } catch (error) {
+      console.error('Failed to test settings:', error);
+      toast.error(language === 'th' ? 'การทดสอบล้มเหลว' : 'Test failed');
+    } finally {
+      setTestingSettings(false);
     }
   };
 
@@ -431,7 +487,7 @@ function DashboardContent() {
         <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
           {/* Header with Focus Mode Toggle */}
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
                 background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
                 boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
@@ -450,7 +506,7 @@ function DashboardContent() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {/* Admin: Test Buttons */}
                 {isAdmin && (
                   <>
@@ -458,19 +514,20 @@ function DashboardContent() {
                       onClick={testOverdueCheck}
                       disabled={testingOverdue}
                       style={{
-                        padding: '8px 16px',
+                        padding: '6px 12px',
                         backgroundColor: testingOverdue ? '#9CA3AF' : '#10B981',
                         color: '#FFFFFF',
                         border: 'none',
-                        borderRadius: '12px',
-                        fontSize: '14px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
                         fontWeight: '600',
                         cursor: testingOverdue ? 'not-allowed' : 'pointer',
                         transition: 'all 0.2s ease',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        opacity: testingOverdue ? 0.7 : 1
+                        gap: '4px',
+                        opacity: testingOverdue ? 0.7 : 1,
+                        whiteSpace: 'nowrap'
                       }}
                       onMouseEnter={(e) => {
                         if (!testingOverdue) {
@@ -485,34 +542,78 @@ function DashboardContent() {
                     >
                       {testingOverdue ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          {strings.testing}
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Testing...
                         </>
                       ) : (
                         <>
-                          <AlertCircle className="w-4 h-4" />
-                          {strings.testOverdue}
+                          <AlertCircle className="w-3 h-3" />
+                          Test Overdue
                         </>
                       )}
                     </button>
                     
                     <button
+                      onClick={testUserSettings}
+                      disabled={testingSettings}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: testingSettings ? '#9CA3AF' : '#F59E0B',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: testingSettings ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        opacity: testingSettings ? 0.7 : 1,
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!testingSettings) {
+                          e.target.style.backgroundColor = '#D97706';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!testingSettings) {
+                          e.target.style.backgroundColor = '#F59E0B';
+                        }
+                      }}
+                    >
+                      {testingSettings ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Checking...
+                        </>
+                      ) : (
+                        <>
+                          <Settings className="w-3 h-3" />
+                          Check Settings
+                        </>
+                      )}
+                    </button>
+
+                    <button
                       onClick={triggerReminders}
                       disabled={triggeringReminders}
                       style={{
-                        padding: '8px 16px',
+                        padding: '6px 12px',
                         backgroundColor: triggeringReminders ? '#9CA3AF' : '#3B82F6',
                         color: '#FFFFFF',
                         border: 'none',
-                        borderRadius: '12px',
-                        fontSize: '14px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
                         fontWeight: '600',
                         cursor: triggeringReminders ? 'not-allowed' : 'pointer',
                         transition: 'all 0.2s ease',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        opacity: triggeringReminders ? 0.7 : 1
+                        gap: '4px',
+                        opacity: triggeringReminders ? 0.7 : 1,
+                        whiteSpace: 'nowrap'
                       }}
                       onMouseEnter={(e) => {
                         if (!triggeringReminders) {
@@ -527,13 +628,13 @@ function DashboardContent() {
                     >
                       {triggeringReminders ? (
                         <>
-                          <Zap className="w-4 h-4 animate-spin" />
+                          <Zap className="w-3 h-3 animate-spin" />
                           {strings.triggering}
                         </>
                       ) : (
                         <>
-                          <Bell className="w-4 h-4" />
-                          {strings.triggerNow}
+                          <Bell className="w-3 h-3" />
+                          Send Now
                         </>
                       )}
                     </button>
