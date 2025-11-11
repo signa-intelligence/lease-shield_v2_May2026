@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -18,11 +17,9 @@ export default function Layout({ children, currentPageName }) {
   });
 
   React.useEffect(() => {
-    // Scroll main content container to top on route change
     if (mainContentRef.current) {
       mainContentRef.current.scrollTo(0, 0);
     }
-    // Also scroll window for desktop
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
@@ -83,7 +80,6 @@ export default function Layout({ children, currentPageName }) {
   const language = user?.language || 'en';
   const accessLevel = user?.access_level || 'user';
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
-  // Removed isVAOrHigher as per instructions
   const isDarkMode = user?.theme === 'dark';
 
   const t = {
@@ -95,7 +91,6 @@ export default function Layout({ children, currentPageName }) {
       deposit: "Deposit",
       evidence: "Evidence",
       admin: "Admin",
-      ops: "Ops",
     },
     th: {
       appName: "ลีสชีลด์",
@@ -105,7 +100,6 @@ export default function Layout({ children, currentPageName }) {
       deposit: "เงินมัดจำ",
       evidence: "หลักฐาน",
       admin: "แอดมิน",
-      // Removed ops translation
     }
   };
 
@@ -144,7 +138,6 @@ export default function Layout({ children, currentPageName }) {
     },
   ];
 
-  // Only add Admin Console for Admin and Super Admin (Ops is accessible from within Admin)
   if (isAdmin) {
     navTabs.push({
       key: "admin",
@@ -170,12 +163,12 @@ export default function Layout({ children, currentPageName }) {
   } : {
     bg: '#ECEFED',
     cardBg: '#FFFFFF',
-    borderColor: '#E5E7EB', // Changed from '#ECEFED'
+    borderColor: '#E5E7EB',
     textPrimary: '#1A1D1F',
     textSecondary: '#64748b',
     topBarBg: '#FFFFFF',
     bottomTabBg: '#FFFFFF',
-    hoverBg: '#F3F4F6' // Changed from '#ECEFED'
+    hoverBg: '#F3F4F6'
   };
 
   return (
@@ -259,20 +252,8 @@ export default function Layout({ children, currentPageName }) {
           }
         }
 
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-          20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-
-        .animate-shake {
-          animation: shake 0.5s ease-in-out;
-        }
-
-        * {
-          transition: background-color 0.2s ease, border-color 0.2s ease;
-        }
-
+        /* REMOVED: Global transition that might affect opacity */
+        
         *:focus-visible {
           outline: 2px solid var(--ls-gold);
           outline-offset: 2px;
@@ -285,12 +266,12 @@ export default function Layout({ children, currentPageName }) {
 
         ::-webkit-scrollbar-track {
           background: ${isDarkMode ? '#2A2D30' : '#F3F4F6'};
-          border-radius: 4px;
+          borderRadius: 4px;
         }
 
         ::-webkit-scrollbar-thumb {
           background: ${isDarkMode ? '#4B5563' : '#D1D5DB'};
-          border-radius: 4px;
+          borderRadius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -304,13 +285,11 @@ export default function Layout({ children, currentPageName }) {
       }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            {/* Mobile Logo - Full LEASE SHIELD text logo */}
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
               alt="Lease Shield"
               className="h-6 w-auto md:hidden flex-shrink-0"
             />
-            {/* Desktop Logo - Crest only */}
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
               alt="Lease Shield"
@@ -372,20 +351,19 @@ export default function Layout({ children, currentPageName }) {
 
       <main ref={mainContentRef} className="main-content flex-1" style={{
         marginTop: 'calc(64px + env(safe-area-inset-top, 0px))',
-        marginBottom: 'calc(72px + max(env(safe-area-inset-bottom, 0px), 12px))', // Changed from 68px to 72px
-        height: 'calc(100vh - 64px - 72px - env(safe-area-inset-top, 0px) - max(env(safe-area-inset-bottom, 0px), 12px))' // Changed from 68px to 72px
+        marginBottom: 'calc(72px + max(env(safe-area-inset-bottom, 0px), 12px))',
+        height: 'calc(100vh - 64px - 72px - env(safe-area-inset-top, 0px) - max(env(safe-area-inset-bottom, 0px), 12px))'
       }}>
         {children}
       </main>
 
-      {/* FIXED: Ensure navigation is always visible with higher z-index and proper styling */}
       <nav className="bottom-tabs fixed bottom-0 left-0 right-0 border-t shadow-2xl" style={{
         backgroundColor: colors.bottomTabBg,
         borderTopColor: colors.borderColor,
-        zIndex: 9999 // FIXED: Increased z-index
+        zIndex: 9999
       }}>
-        <div className="flex items-center justify-around px-2 py-2" style={{ // Changed px-1 to px-2, removed conditional overflow-x-auto
-          minHeight: '68px' // FIXED: Increased minimum height
+        <div className="flex items-center justify-around px-2 py-2" style={{
+          minHeight: '68px'
         }}>
           {navTabs.map((tab) => {
             const Icon = tab.icon;
@@ -400,16 +378,14 @@ export default function Layout({ children, currentPageName }) {
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '8px 10px', // Changed from 6px 8px
+                  padding: '8px 10px',
                   borderRadius: '12px',
                   transition: 'all 0.2s',
                   flex: 1,
-                  minWidth: '60px', // Changed from 56px
-                  maxWidth: '90px', // Changed from 80px
+                  minWidth: '60px',
+                  maxWidth: '90px',
                   backgroundColor: isActive ? '#0C3B2E' : 'transparent',
-                  color: isActive ? '#FFFFFF' : colors.textPrimary,
-                  textDecoration: 'none',
-                  opacity: 1 // FIXED: Force full opacity
+                  textDecoration: 'none'
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
@@ -422,8 +398,18 @@ export default function Layout({ children, currentPageName }) {
                   }
                 }}
               >
-                <Icon className="w-5 h-5 mb-1" style={{ animation: isActive ? 'pulse 2s infinite' : 'none', opacity: 1 }} /> {/* Changed mb-0.5 to mb-1, added opacity */}
-                <span style={{ fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap', opacity: 1 }}>{tab.label}</span> {/* Changed font-weight to 600, fixed whiteWhiteSpace to whiteSpace, added opacity */}
+                <Icon className="w-5 h-5 mb-1" style={{ 
+                  animation: isActive ? 'pulse 2s infinite' : 'none',
+                  color: isActive ? '#FFFFFF' : colors.textPrimary
+                }} />
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: '600', 
+                  whiteSpace: 'nowrap',
+                  color: isActive ? '#FFFFFF' : colors.textPrimary
+                }}>
+                  {tab.label}
+                </span>
               </Link>
             );
           })}
