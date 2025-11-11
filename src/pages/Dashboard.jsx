@@ -62,12 +62,6 @@ function DashboardContent() {
     enabled: !!user,
   });
 
-  const { data: maintenanceRequests = [] } = useQuery({
-    queryKey: ['maintenance'],
-    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
-
   const handleRefresh = async () => {
     await queryClient.invalidateQueries();
     toast.success(language === 'th' ? 'รีเฟรชสำเร็จ' : 'Refreshed successfully');
@@ -155,7 +149,44 @@ function DashboardContent() {
     setTriggeringReminders(true);
     try {
       const response = await base44.functions.invoke('checkAllReminders');
-      console.log('✅ Reminders triggered:', response);
+      console.log('✅ Full response:', response.data);
+      
+      const diag = response.data?.diagnostics || {};
+      
+      // Show detailed diagnostic alert
+      let message = `📊 DIAGNOSTIC REPORT\n\n`;
+      message += `✅ Notifications Sent: ${response.data?.notifications_sent || 0}\n\n`;
+      message += `📋 Deposits Checked: ${diag.deposits_checked || 0}\n`;
+      message += `🚨 Overdue Found: ${diag.overdue_found || 0}\n`;
+      message += `📤 Notifications Attempted: ${diag.notifications_attempted || 0}\n\n`;
+      
+      if (diag.overdue_details?.length > 0) {
+        message += `🔴 OVERDUE DEPOSITS:\n`;
+        diag.overdue_details.forEach(d => {
+          message += `\n- ฿${d.amount?.toLocaleString()} at ${d.property}\n`;
+          message += `  ${d.days_overdue} days overdue\n`;
+          message += `  User: ${d.user}\n`;
+        });
+        message += `\n`;
+      }
+      
+      if (diag.skipped_reasons?.length > 0) {
+        message += `⏭️ SKIPPED (first 5):\n`;
+        diag.skipped_reasons.slice(0, 5).forEach(reason => {
+          message += `\n- ${reason}`;
+        });
+        message += `\n\n`;
+      }
+      
+      if (diag.errors?.length > 0) {
+        message += `❌ ERRORS:\n`;
+        diag.errors.forEach(err => {
+          message += `\n- ${err}`;
+        });
+      }
+      
+      alert(message);
+      
       toast.success(
         language === 'th' 
           ? `ส่งการแจ้งเตือน ${response.data?.notifications_sent || 0} รายการ` 

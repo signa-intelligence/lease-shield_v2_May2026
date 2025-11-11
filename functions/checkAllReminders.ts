@@ -10,6 +10,17 @@ import { createDepositReminderFlex, createLeaseNoticeFlex, createRentReminderFle
  */
 
 Deno.serve(async (req) => {
+  const diagnostics = {
+    deposits_checked: 0,
+    overdue_found: 0,
+    overdue_details: [],
+    users_checked: 0,
+    skipped_reasons: [],
+    notifications_attempted: 0,
+    notifications_sent: 0,
+    errors: []
+  };
+
   try {
     const base44 = createClientFromRequest(req);
     
@@ -20,9 +31,11 @@ Deno.serve(async (req) => {
     const now = new Date();
     const notifications = [];
     
-    // 🔍 DEBUG MODE - Log what we're checking
     console.log('🔍 DEBUG: Total deposits found:', deposits.length);
     console.log('🔍 DEBUG: Total users found:', users.length);
+    
+    diagnostics.deposits_checked = deposits.length;
+    diagnostics.users_checked = users.length;
 
     const getUserByEmail = (email) => users.find(u => u.email === email);
 
@@ -30,11 +43,9 @@ Deno.serve(async (req) => {
     const isNotificationAllowed = (user, notificationType) => {
       console.log(`🔍 Checking notification allowed for ${user.email}, type: ${notificationType}`);
       
-      // Check if user has disabled this specific notification type
       const prefs = user.notification_preferences || {};
       console.log(`🔍 User preferences:`, JSON.stringify(prefs));
       
-      // Map notification types to preference keys
       const typeMap = {
         '30d_deposit': 'deposit_30d',
         '7d_deposit': 'deposit_7d',
@@ -51,6 +62,7 @@ Deno.serve(async (req) => {
       const prefKey = typeMap[notificationType];
       if (prefKey && prefs[prefKey] === false) {
         console.log(`🔕 User ${user.email} disabled ${notificationType} (prefKey: ${prefKey} = false)`);
+        diagnostics.skipped_reasons.push(`${user.email}: ${notificationType} disabled in preferences`);
         return false;
       }
 
@@ -69,7 +81,6 @@ Deno.serve(async (req) => {
 
         let inQuietHours = false;
         if (startTimeInMinutes > endTimeInMinutes) {
-          // Crosses midnight
           inQuietHours = currentTimeInMinutes >= startTimeInMinutes || currentTimeInMinutes < endTimeInMinutes;
         } else {
           inQuietHours = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes < endTimeInMinutes;
@@ -77,6 +88,7 @@ Deno.serve(async (req) => {
 
         if (inQuietHours) {
           console.log(`🌙 User ${user.email} in quiet hours, skipping ${notificationType}`);
+          diagnostics.skipped_reasons.push(`${user.email}: in quiet hours`);
           return false;
         }
       }
@@ -88,9 +100,11 @@ Deno.serve(async (req) => {
     // Helper to send notification with logging
     const sendNotification = async (user, messageText, subject, flexMessage = null, notificationType = '', relatedEntityType = '', relatedEntityId = '') => {
       console.log(`📤 Attempting to send notification to ${user?.email}, type: ${notificationType}`);
+      diagnostics.notifications_attempted++;
       
       if (!user) {
         console.log(`❌ No user provided`);
+        diagnostics.errors.push('No user provided for notification');
         return false;
       }
 
@@ -124,6 +138,7 @@ Deno.serve(async (req) => {
         } catch (lineError) {
           console.error(`❌ LINE failed for ${user.email}:`, lineError);
           errorMsg = lineError.message;
+          diagnostics.errors.push(`LINE failed for ${user.email}: ${lineError.message}`);
         }
       } else {
         console.log(`⏭️ Skipping LINE (token: ${user.line_messaging_token ? 'SET' : 'NOT SET'}, notifications: ${user.line_notifications}, flexMessage: ${flexMessage ? 'YES' : 'NO'})`);
@@ -145,6 +160,7 @@ Deno.serve(async (req) => {
         } catch (emailError) {
           console.error(`❌ Email failed for ${user.email}:`, emailError);
           errorMsg = errorMsg ? `${errorMsg}; Email: ${emailError.message}` : emailError.message;
+          diagnostics.errors.push(`Email failed for ${user.email}: ${emailError.message}`);
         }
       } else if (!success) {
         console.log(`⏭️ Skipping email (email_notifications: ${user.email_notifications})`);
@@ -164,6 +180,11 @@ Deno.serve(async (req) => {
         });
       } catch (logError) {
         console.error('Failed to log notification:', logError);
+        diagnostics.errors.push(`Failed to log: ${logError.message}`);
+      }
+
+      if (success) {
+        diagnostics.notifications_sent++;
       }
 
       console.log(`📊 Notification result: ${success ? 'SUCCESS' : 'FAILED'} (channel: ${channel || 'none'})`);
@@ -183,16 +204,19 @@ Deno.serve(async (req) => {
       
       if (deposit.status !== 'tracking') {
         console.log(`⏭️ Skipping deposit ${deposit.id} - status is ${deposit.status}, not "tracking"`);
+        diagnostics.skipped_reasons.push(`Deposit ${deposit.id}: status is ${deposit.status}`);
         continue;
       }
       if (!deposit.expected_return_date) {
         console.log(`⏭️ Skipping deposit ${deposit.id} - no expected_return_date`);
+        diagnostics.skipped_reasons.push(`Deposit ${deposit.id}: no expected_return_date`);
         continue;
       }
 
       const user = getUserByEmail(deposit.created_by);
       if (!user) {
         console.log(`⏭️ Skipping deposit ${deposit.id} - user not found for ${deposit.created_by}`);
+        diagnostics.skipped_reasons.push(`Deposit ${deposit.id}: user not found (${deposit.created_by})`);
         continue;
       }
 
@@ -200,6 +224,18 @@ Deno.serve(async (req) => {
       const daysDiff = Math.floor((expectedDate - now) / (1000 * 60 * 60 * 24));
       
       console.log(`🔍 DEBUG: Deposit ${deposit.id} daysDiff: ${daysDiff}`);
+      
+      // Track overdue deposits
+      if (daysDiff < 0) {
+        diagnostics.overdue_found++;
+        diagnostics.overdue_details.push({
+          deposit_id: deposit.id,
+          user: deposit.created_by,
+          days_overdue: Math.abs(daysDiff),
+          amount: deposit.deposit_amount,
+          property: deposit.property_address
+        });
+      }
       
       const language = user.language || 'en';
       const depositAmount = deposit.deposit_amount || 0;
@@ -549,7 +585,7 @@ Deno.serve(async (req) => {
           days: 3,
           propertyAddress,
           leaseEndDate,
-          noticeDeadline: noticeDeadlineStr,
+          noticeDeadlineStr,
           noticePeriod
         }, language);
 
@@ -633,11 +669,16 @@ Deno.serve(async (req) => {
       success: true, 
       notifications_sent: notifications.length,
       details: notifications,
+      diagnostics: diagnostics,
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('❌ Reminder check error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    diagnostics.errors.push(`System error: ${error.message}`);
+    return Response.json({ 
+      error: error.message,
+      diagnostics: diagnostics
+    }, { status: 500 });
   }
 });
