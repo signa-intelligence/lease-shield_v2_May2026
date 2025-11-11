@@ -5,7 +5,7 @@ import { createDepositReminderFlex } from './lineFlexTemplates.js';
  * Simple notification sender for overdue deposits with Rich Flex Messages
  * Called from frontend with deposit details
  * 
- * ENHANCED DEBUG VERSION - Shows exactly what's being created and sent
+ * ENHANCED DEBUG VERSION v2 - Shows exactly what's being created and sent
  */
 
 Deno.serve(async (req) => {
@@ -19,7 +19,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('=== OVERDUE NOTIFICATION START ===');
     console.log('👤 User:', user.email, 'Language:', user.language);
+    console.log('LINE enabled:', user.line_notifications, 'Has token:', !!user.line_messaging_token);
 
     const { deposit } = await req.json();
     
@@ -58,7 +60,8 @@ Deno.serve(async (req) => {
       urgency: 'critical'
     }, language);
     
-    console.log('📦 Flex message created:', JSON.stringify(flexMessage, null, 2));
+    console.log('📦 FLEX MESSAGE STRUCTURE:');
+    console.log(JSON.stringify(flexMessage, null, 2));
     
     // Fallback plain text for email
     const messageText = language === 'th' ?
@@ -70,35 +73,37 @@ Deno.serve(async (req) => {
 
     // Send to LINE with Flex Message if enabled
     if (user.line_messaging_token && user.line_notifications) {
-      console.log('📱 LINE notifications enabled for user');
-      console.log('📤 Sending Flex message to LINE...');
-      console.log('🔑 LINE token:', user.line_messaging_token.substring(0, 10) + '...');
+      console.log('📱 LINE notifications ENABLED');
+      console.log('📤 Sending Flex message to sendLineMessage...');
       
       try {
+        console.log('🔑 Calling sendLineMessage with userId:', user.line_messaging_token.substring(0, 10) + '...');
+        
         const lineResponse = await base44.functions.invoke('sendLineMessage', {
           userId: user.line_messaging_token,
           flexMessage: flexMessage
         });
         
-        console.log('✅ LINE response:', JSON.stringify(lineResponse.data, null, 2));
+        console.log('✅ LINE API RESPONSE:');
+        console.log(JSON.stringify(lineResponse.data, null, 2));
         
         channels.push('LINE');
         anySuccess = true;
-        console.log(`✅ LINE Flex sent to ${user.email}`);
+        console.log(`✅ LINE Flex sent successfully to ${user.email}`);
       } catch (lineError) {
-        console.error(`❌ LINE failed:`, lineError);
-        console.error('LINE error details:', lineError.message);
+        console.error(`❌ LINE FAILED:`, lineError);
+        console.error('Error message:', lineError.message);
+        console.error('Error stack:', lineError.stack);
       }
     } else {
-      console.log('⚠️ LINE notifications NOT enabled:', {
-        hasToken: !!user.line_messaging_token,
-        notificationsEnabled: user.line_notifications
-      });
+      console.log('⚠️ LINE notifications NOT enabled');
+      console.log('Has token:', !!user.line_messaging_token);
+      console.log('Notifications enabled:', user.line_notifications);
     }
 
     // Send to Email if enabled (independently)
     if (user.email_notifications) {
-      console.log('📧 Email notifications enabled for user');
+      console.log('📧 Email notifications enabled');
       try {
         await base44.integrations.Core.SendEmail({
           from_name: 'Lease Shield',
@@ -140,13 +145,15 @@ Deno.serve(async (req) => {
         : 'No notification channels enabled'
     };
     
-    console.log('🎯 Final result:', JSON.stringify(result, null, 2));
+    console.log('🎯 FINAL RESULT:', JSON.stringify(result, null, 2));
+    console.log('=== OVERDUE NOTIFICATION END ===');
 
     return Response.json(result);
 
   } catch (error) {
-    console.error('❌ Notification error:', error);
-    console.error('Stack:', error.stack);
+    console.error('❌ CRITICAL ERROR:', error);
+    console.error('Error message:', error.message);
+    console.error('Stack trace:', error.stack);
     return Response.json({ 
       success: false,
       error: error.message 
