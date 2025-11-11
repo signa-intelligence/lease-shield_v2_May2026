@@ -1,11 +1,10 @@
-
 import React, { useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import StatsCard from "../components/dashboard/StatsCard";
 import DepositAlert from "../components/dashboard/DepositAlert";
 import RecentLeases from "../components/dashboard/RecentLeases";
+import AdminDashboardStats from "../components/admin/AdminDashboardStats";
+import TrendChart from "../components/admin/TrendChart";
+import CaseBreakdown from "../components/admin/CaseBreakdown";
+import ActivityTimeline from "../components/admin/ActivityTimeline";
 
 export default function Dashboard() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -24,20 +27,76 @@ export default function Dashboard() {
     queryFn: () => base44.auth.me(),
   });
 
-  // ✅ ADD: Auto-refresh after successful subscription
+  // Check if user has admin/VA access
+  const isAdminUser = user && ['admin', 'super_admin', 'va'].includes(user.access_level);
+
+  // Admin queries - fetch ALL data
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: isAdminUser,
+  });
+
+  const { data: allLeases = [] } = useQuery({
+    queryKey: ['allLeases'],
+    queryFn: () => base44.entities.Lease.list('-created_date'),
+    enabled: isAdminUser,
+  });
+
+  const { data: allCases = [] } = useQuery({
+    queryKey: ['allCases'],
+    queryFn: () => base44.entities.Case.list('-created_date'),
+    enabled: isAdminUser,
+  });
+
+  const { data: allDeposits = [] } = useQuery({
+    queryKey: ['allDeposits'],
+    queryFn: () => base44.entities.DepositTracker.list('-created_date'),
+    enabled: isAdminUser,
+  });
+
+  // Regular user queries
+  const { data: leases = [] } = useQuery({
+    queryKey: ['leases'],
+    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
+    enabled: !!user && !isAdminUser,
+  });
+
+  const { data: deposits = [] } = useQuery({
+    queryKey: ['deposits'],
+    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
+    enabled: !!user && !isAdminUser,
+  });
+
+  const { data: cases = [] } = useQuery({
+    queryKey: ['cases'],
+    queryFn: () => base44.entities.Case.filter({ user_email: user?.email }),
+    enabled: !!user && !isAdminUser,
+  });
+
+  const { data: documents = [] } = useQuery({
+    queryKey: ['documents'],
+    queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
+    enabled: !!user && !isAdminUser,
+  });
+
+  const { data: maintenanceRequests = [] } = useQuery({
+    queryKey: ['maintenance'],
+    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
+    enabled: !!user && !isAdminUser,
+  });
+
+  // Auto-refresh logic
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const subscriptionStatus = urlParams.get('subscription');
     
     if (subscriptionStatus === 'success') {
       console.log('💳 Subscription success detected - starting refresh...');
-      
-      // Clean URL immediately
       window.history.replaceState({}, '', window.location.pathname);
       
-      // Aggressive polling for 60 seconds to catch webhook update
       let pollCount = 0;
-      const maxPolls = 12; // 60 seconds total (5s intervals)
+      const maxPolls = 12;
       
       const pollInterval = setInterval(() => {
         pollCount++;
@@ -48,34 +107,29 @@ export default function Dashboard() {
           clearInterval(pollInterval);
           console.log('✅ User data refresh polling complete');
         }
-      }, 5000); // Every 5 seconds
+      }, 5000);
       
-      // Cleanup on unmount
       return () => clearInterval(pollInterval);
     }
   }, [queryClient]);
 
-  // ✅ ADD: Auto-refresh when window regains focus
   React.useEffect(() => {
     let intervalId;
     
     const handleFocus = () => {
-      // Immediate refresh
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       
-      // Clear any existing interval
       if (intervalId) {
         clearInterval(intervalId);
         intervalId = null;
       }
 
-      // Then refresh every 5 seconds for 30 seconds
       let count = 0;
       intervalId = setInterval(() => {
         count++;
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         
-        if (count >= 6) { // Stop after 30 seconds (6 * 5s)
+        if (count >= 6) {
           clearInterval(intervalId);
           intervalId = null;
         }
@@ -104,37 +158,205 @@ export default function Dashboard() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
-  const { data: leases = [] } = useQuery({
-    queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
-    enabled: !!user,
-  });
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40'
+  } : {
+    bg: '#ECEFED',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB'
+  };
 
-  const { data: deposits = [] } = useQuery({
-    queryKey: ['deposits'],
-    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
-    enabled: !!user,
-  });
+  // Calculate admin statistics
+  const calculateAdminStats = () => {
+    if (!isAdminUser) return {};
 
-  const { data: cases = [] } = useQuery({
-    queryKey: ['cases'],
-    queryFn: () => base44.entities.Case.filter({ user_email: user?.email }),
-    enabled: !!user,
-  });
+    const now = new Date();
+    const lastMonth = subMonths(now, 1);
+    const startOfLastMonth = startOfMonth(lastMonth);
+    const endOfLastMonth = endOfMonth(lastMonth);
+    const startOfCurrentMonth = startOfMonth(now);
 
-  const { data: documents = [] } = useQuery({
-    queryKey: ['documents'],
-    queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
+    // Current month data
+    const currentMonthUsers = allUsers.filter(u => new Date(u.created_date) >= startOfCurrentMonth).length;
+    const lastMonthUsers = allUsers.filter(u => {
+      const date = new Date(u.created_date);
+      return date >= startOfLastMonth && date <= endOfLastMonth;
+    }).length;
 
-  const { data: maintenanceRequests = [] } = useQuery({
-    queryKey: ['maintenance'],
-    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
+    const currentMonthLeases = allLeases.filter(l => new Date(l.created_date) >= startOfCurrentMonth).length;
+    const lastMonthLeases = allLeases.filter(l => {
+      const date = new Date(l.created_date);
+      return date >= startOfLastMonth && date <= endOfLastMonth;
+    }).length;
 
-  // Calculate Protection Score
+    const currentMonthCases = allCases.filter(c => new Date(c.created_date) >= startOfCurrentMonth).length;
+    const lastMonthCases = allCases.filter(c => {
+      const date = new Date(c.created_date);
+      return date >= startOfLastMonth && date <= endOfLastMonth;
+    }).length;
+
+    // Calculate trends
+    const userTrend = lastMonthUsers > 0 ? Math.round(((currentMonthUsers - lastMonthUsers) / lastMonthUsers) * 100) : 0;
+    const leaseTrend = lastMonthLeases > 0 ? Math.round(((currentMonthLeases - lastMonthLeases) / lastMonthLeases) * 100) : 0;
+    const caseTrend = lastMonthCases > 0 ? Math.round(((currentMonthCases - lastMonthCases) / lastMonthCases) * 100) : 0;
+
+    const activeSubscribers = allUsers.filter(u => 
+      u.subscription_status === 'active' && u.plan_tier && u.plan_tier !== 'free'
+    ).length;
+
+    const lastMonthSubscribers = allUsers.filter(u => {
+      const subDate = u.subscription_start_date ? new Date(u.subscription_start_date) : null;
+      return subDate && subDate >= startOfLastMonth && subDate <= endOfLastMonth;
+    }).length;
+
+    const subscriberTrend = lastMonthSubscribers > 0 ? Math.round(((activeSubscribers - lastMonthSubscribers) / lastMonthSubscribers) * 100) : 0;
+
+    // Revenue calculation
+    const monthlyRevenue = allUsers.reduce((sum, u) => {
+      if (u.subscription_status === 'active' && u.plan_tier !== 'free') {
+        const planPrices = { lite: 390, protect: 690, secure: 1290 };
+        return sum + (planPrices[u.plan_tier] || 0);
+      }
+      return sum;
+    }, 0);
+
+    // Case metrics
+    const activeCases = allCases.filter(c => !['closed', 'resolved'].includes(c.status)).length;
+    const urgentCases = allCases.filter(c => c.flags?.urgent || c.fast_track).length;
+    
+    // Calculate average resolution time
+    const resolvedCases = allCases.filter(c => c.status === 'closed' && c.timeline?.length > 0);
+    const avgResolutionDays = resolvedCases.length > 0
+      ? Math.round(
+          resolvedCases.reduce((sum, c) => {
+            const opened = new Date(c.created_date);
+            const closed = c.timeline.find(t => t.event.includes('closed'))?.timestamp;
+            if (closed) {
+              return sum + differenceInDays(new Date(closed), opened);
+            }
+            return sum;
+          }, 0) / resolvedCases.length
+        )
+      : 0;
+
+    return {
+      totalUsers: allUsers.length,
+      userTrend,
+      activeSubscribers,
+      subscriberTrend,
+      monthlyRevenue,
+      revenueTrend: 0, // Could calculate based on historical data
+      totalLeases: allLeases.length,
+      leaseTrend,
+      totalCases: allCases.length,
+      caseTrend,
+      activeCases,
+      activeCaseTrend: 0,
+      avgResolutionDays,
+      resolutionTrend: 0,
+      urgentCases,
+      urgentTrend: 0
+    };
+  };
+
+  // Generate trend data for charts
+  const generateTrendData = () => {
+    if (!isAdminUser) return { leaseTrend: [], depositTrend: [] };
+
+    const last6Months = eachMonthOfInterval({
+      start: subMonths(new Date(), 5),
+      end: new Date()
+    });
+
+    const leaseTrend = last6Months.map(month => {
+      const monthStart = startOfMonth(month);
+      const monthEnd = endOfMonth(month);
+      const count = allLeases.filter(l => {
+        const date = new Date(l.created_date);
+        return date >= monthStart && date <= monthEnd;
+      }).length;
+
+      return {
+        name: format(month, 'MMM'),
+        value: count
+      };
+    });
+
+    const depositTrend = last6Months.map(month => {
+      const monthStart = startOfMonth(month);
+      const monthEnd = endOfMonth(month);
+      const count = allDeposits.filter(d => {
+        const date = new Date(d.created_date);
+        return date >= monthStart && date <= monthEnd;
+      }).length;
+
+      return {
+        name: format(month, 'MMM'),
+        value: count
+      };
+    });
+
+    return { leaseTrend, depositTrend };
+  };
+
+  // Generate recent activities
+  const generateRecentActivities = () => {
+    if (!isAdminUser) return [];
+
+    const activities = [];
+
+    // Recent users
+    allUsers.slice(0, 3).forEach(u => {
+      activities.push({
+        type: 'user_registered',
+        description: u.email,
+        timestamp: u.created_date
+      });
+    });
+
+    // Recent leases
+    allLeases.slice(0, 3).forEach(l => {
+      activities.push({
+        type: 'lease_uploaded',
+        description: l.property_address || l.created_by,
+        timestamp: l.created_date
+      });
+    });
+
+    // Recent cases
+    allCases.slice(0, 3).forEach(c => {
+      if (c.status === 'closed' || c.status === 'resolved') {
+        activities.push({
+          type: 'case_resolved',
+          description: c.case_number || `Case #${c.id.slice(0, 8)}`,
+          timestamp: c.updated_date || c.created_date
+        });
+      } else {
+        activities.push({
+          type: 'case_opened',
+          description: c.case_number || `Case #${c.id.slice(0, 8)}`,
+          timestamp: c.created_date
+        });
+      }
+    });
+
+    // Sort by timestamp and take top 10
+    return activities
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .slice(0, 10);
+  };
+
+  const adminStats = isAdminUser ? calculateAdminStats() : {};
+  const { leaseTrend, depositTrend } = isAdminUser ? generateTrendData() : { leaseTrend: [], depositTrend: [] };
+  const recentActivities = isAdminUser ? generateRecentActivities() : [];
+
+  // Regular user protection score calculation
   const calculateProtectionScore = () => {
     let score = 0;
     let breakdown = {
@@ -143,19 +365,16 @@ export default function Dashboard() {
       proactiveActions: 0
     };
 
-    // Check if user has deposit shield access
     const hasDepositShield = user?.plan_tier === 'protect' || user?.plan_tier === 'secure';
     const hasLineNotify = user?.plan_tier === 'protect' || user?.plan_tier === 'secure';
 
-    // 1. Documentation Completeness (40 points max)
     const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
     if (scannedLeases.length > 0) breakdown.documentation += 15;
     if (deposits.length > 0) breakdown.documentation += 10;
     if (documents.length > 0) breakdown.documentation += 10;
-    if (documents.length >= 5) breakdown.documentation += 5; // Bonus for thorough documentation
+    if (documents.length >= 5) breakdown.documentation += 5;
 
-    // 2. Active Protections (30 points max)
-    const activeDepositsForProtectionScore = deposits.filter(d => d.status === 'tracking'); // Use a specific variable for protection score logic
+    const activeDepositsForProtectionScore = deposits.filter(d => d.status === 'tracking');
     if (activeDepositsForProtectionScore.length > 0) breakdown.activeProtections += 10;
     
     const rentAlertsEnabled = deposits.some(d => d.rent_alerts_enabled);
@@ -165,7 +384,6 @@ export default function Dashboard() {
     
     if (user?.email_notifications || user?.line_notifications) breakdown.activeProtections += 7;
 
-    // 3. Proactive Actions (30 points max)
     const now = new Date();
     const recentLeases = leases.filter(l => {
       const leaseDate = new Date(l.created_date);
@@ -188,14 +406,12 @@ export default function Dashboard() {
     });
     if (recentDocuments.length > 0) breakdown.proactiveActions += 7;
 
-    if (recentDocuments.length >= 3) breakdown.proactiveActions += 5; // Bonus for regular updates
+    if (recentDocuments.length >= 3) breakdown.proactiveActions += 5;
 
     score = breakdown.documentation + breakdown.activeProtections + breakdown.proactiveActions;
     
-    // Calculate recommendations based on what's missing
     const recommendations = [];
     
-    // Documentation recommendations
     if (scannedLeases.length === 0) {
       recommendations.push({
         action: language === 'th' ? 'สแกนสัญญาเช่า' : 'Scan your lease',
@@ -212,92 +428,19 @@ export default function Dashboard() {
         icon: 'Shield'
       });
     }
-    if (documents.length === 0) {
-      recommendations.push({
-        action: language === 'th' ? 'อัปโหลดหลักฐาน' : 'Upload evidence files',
-        points: 10,
-        route: 'DocumentVault',
-        icon: 'FileText'
-      });
-    } else if (documents.length > 0 && documents.length < 5) {
-      recommendations.push({
-        action: language === 'th' ? 'อัปโหลดหลักฐานเพิ่มเติม' : 'Upload more evidence',
-        points: 5,
-        route: 'DocumentVault',
-        icon: 'FileText'
-      });
-    }
     
-    // Active Protections recommendations
-    // Only suggest upgrading to Deposit Shield if they don't have it AND have deposits
-    if (!hasDepositShield && deposits.length > 0) {
-      recommendations.push({
-        action: language === 'th' ? 'อัปเกรดเพื่อเปิดใช้งาน Deposit Shield' : 'Upgrade for Deposit Shield',
-        points: 10,
-        route: 'Account',
-        icon: 'Shield'
-      });
-    }
-    
-    if (!rentAlertsEnabled && deposits.length > 0 && hasDepositShield) {
-      recommendations.push({
-        action: language === 'th' ? 'เปิดการแจ้งเตือนค่าเช่า' : 'Enable rent alerts',
-        points: 7,
-        route: 'DepositTracker',
-        icon: 'Bell'
-      });
-    }
-    if (maintenanceRequests.length === 0) {
-      recommendations.push({
-        action: language === 'th' ? 'บันทึกการซ่อมบำรุง' : 'Log maintenance requests',
-        points: 6,
-        route: 'MaintenanceTracker',
-        icon: 'Wrench'
-      });
-    }
-    if (!user?.email_notifications && !user?.line_notifications) {
-      recommendations.push({
-        action: language === 'th' ? 'เปิดการแจ้งเตือน' : 'Enable notifications',
-        points: 7,
-        route: 'Account',
-        icon: 'Bell'
-      });
-    }
-    
-    // Proactive Actions recommendations
-    if (recentLeases.length === 0 && leases.length > 0) {
-      recommendations.push({
-        action: language === 'th' ? 'สแกนสัญญาเช่าใหม่' : 'Scan a recent lease',
-        points: 10,
-        route: 'UploadScan',
-        icon: 'FileText'
-      });
-    }
-    if (recentDocuments.length === 0 && documents.length > 0) {
-      recommendations.push({
-        action: language === 'th' ? 'อัปเดตหลักฐาน' : 'Update evidence files',
-        points: 7,
-        route: 'DocumentVault',
-        icon: 'FileText'
-      });
-    } else if (recentDocuments.length > 0 && recentDocuments.length < 3) {
-      recommendations.push({
-        action: language === 'th' ? 'เพิ่มหลักฐานเป็นประจำ' : 'Add regular evidence',
-        points: 5,
-        route: 'DocumentVault',
-        icon: 'FileText'
-      });
-    }
-    
-    return { score, breakdown, recommendations: recommendations.slice(0, 5) }; // Top 5 recommendations
+    return { score, breakdown, recommendations: recommendations.slice(0, 5) };
   };
 
-  // Get color and status based on protection score
+  // Only calculate for regular users
+  const protectionData = !isAdminUser ? calculateProtectionScore() : { score: 0, recommendations: [] };
+  const { score: protectionScore, recommendations } = protectionData;
+
   const getProtectionScoreColor = (score) => {
-    if (score >= 85) return '#10B981'; // Green - Excellent
-    if (score >= 70) return '#EAB308'; // Yellow - Good
-    if (score >= 50) return '#F59E0B'; // Orange - Fair
-    return '#EF4444'; // Red - Needs improvement
+    if (score >= 85) return '#10B981';
+    if (score >= 70) return '#EAB308';
+    if (score >= 50) return '#F59E0B';
+    return '#EF4444';
   };
 
   const getProtectionScoreStatus = (score) => {
@@ -324,30 +467,22 @@ export default function Dashboard() {
     return lang.poor;
   };
 
-  const { score: protectionScore, breakdown, recommendations } = calculateProtectionScore();
   const protectionScoreColor = getProtectionScoreColor(protectionScore);
   const protectionScoreStatus = getProtectionScoreStatus(protectionScore);
 
-  const activeDeposits = deposits.filter(d => d.status === 'tracking' || d.status === 'dispute');
-  const activeCases = cases.filter(c => !['closed'].includes(c.status));
+  const activeDeposits = !isAdminUser ? deposits.filter(d => d.status === 'tracking' || d.status === 'dispute') : [];
+  const activeCases = !isAdminUser ? cases.filter(c => !['closed'].includes(c.status)) : [];
 
-  // Calculate trend for this month vs last month
+  const scannedLeases = !isAdminUser ? leases.filter(l => l.status === 'scanned' || l.status === 'paid') : [];
+  const totalDepositValue = !isAdminUser ? activeDeposits.reduce((sum, d) => sum + (d.deposit_amount || 0), 0) : 0;
+  const avgDeposit = !isAdminUser && activeDeposits.length > 0 ? Math.round(totalDepositValue / activeDeposits.length) : 0;
   const now = new Date();
-  const thisMonthLeases = leases.filter(l => {
-    const leaseDate = new Date(l.created_date);
-    return leaseDate.getMonth() === now.getMonth() && leaseDate.getFullYear() === now.getFullYear();
-  });
-
-  // Calculate additional stats for mini info
-  const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
-  const totalDepositValue = activeDeposits.reduce((sum, d) => sum + (d.deposit_amount || 0), 0);
-  const avgDeposit = activeDeposits.length > 0 ? Math.round(totalDepositValue / activeDeposits.length) : 0;
-  const urgentDeposits = activeDeposits.filter(d => {
+  const urgentDeposits = !isAdminUser ? activeDeposits.filter(d => {
     if (!d.expected_return_date) return false;
     const daysRemaining = differenceInDays(new Date(d.expected_return_date), now);
     return daysRemaining <= 30 && daysRemaining > 0;
-  }).length;
-  const resolvedCases = cases.filter(c => c.status === 'closed').length;
+  }).length : 0;
+  const resolvedCases = !isAdminUser ? cases.filter(c => c.status === 'closed').length : 0;
 
   const handleImproveScoreClick = () => {
     setShowImprovementDialog(true);
@@ -356,6 +491,8 @@ export default function Dashboard() {
   const t = {
     en: {
       welcome: "Welcome back",
+      adminDashboard: "Admin Dashboard",
+      adminSubtitle: "Monitor system performance and user activity",
       tagline: "Fair. Transparent. Protected.",
       subtitle: "Prevent rental problems before they happen.",
       activeLeases: "Active Leases",
@@ -383,10 +520,14 @@ export default function Dashboard() {
       manageLeases: "Manage Leases",
       alertsEnabled: "Alerts Enabled",
       uploadFirstLease: "Upload First Lease",
-      scannedLeases: "Scanned"
+      scannedLeases: "Scanned",
+      leaseTrends: "Lease Upload Trends",
+      depositTrends: "Deposit Tracking Trends"
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
+      adminDashboard: "แดชบอร์ดผู้ดูแล",
+      adminSubtitle: "ติดตามประสิทธิภาพระบบและกิจกรรมผู้ใช้",
       tagline: "ยุติธรรม โปร่งใส ปลอดภัย",
       subtitle: "ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น",
       activeLeases: "สัญญาเช่าที่ใช้งาน",
@@ -414,7 +555,9 @@ export default function Dashboard() {
       manageLeases: "จัดการสัญญา",
       alertsEnabled: "การแจ้งเตือนเปิดอยู่",
       uploadFirstLease: "อัปโหลดสัญญาแรก",
-      scannedLeases: "สัญญาที่สแกนแล้ว"
+      scannedLeases: "สัญญาที่สแกนแล้ว",
+      leaseTrends: "แนวโน้มการอัปโหลดสัญญา",
+      depositTrends: "แนวโน้มการติดตามเงินมัดจำ"
     }
   };
 
@@ -427,27 +570,84 @@ export default function Dashboard() {
     Wrench: Wrench
   };
 
-  // Dark mode colors
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40'
-  } : {
-    bg: '#ECEFED',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB'
-  };
+  // ADMIN VIEW
+  if (isAdminUser) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
+          {/* Admin Header */}
+          <div className="mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3" style={{
+              background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+              boxShadow: '0 8px 16px rgba(12, 59, 46, 0.25)'
+            }}>
+              <Shield className="w-5 h-5 text-white" />
+              <span className="text-sm font-semibold text-white">
+                {user?.access_level?.toUpperCase() || 'ADMIN'}
+              </span>
+            </div>
+            
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ 
+              color: colors.textPrimary,
+              letterSpacing: '-0.02em'
+            }}>
+              {strings.adminDashboard}
+            </h1>
+            <p style={{ 
+              color: colors.textSecondary, 
+              fontSize: '16px', 
+              lineHeight: '1.6',
+              fontWeight: '500'
+            }}>
+              {strings.adminSubtitle}
+            </p>
+          </div>
 
+          {/* KPI Stats */}
+          <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
+
+          {/* Charts Grid */}
+          <div className="grid lg:grid-cols-2 gap-6 mb-8">
+            <TrendChart
+              title={strings.leaseTrends}
+              data={leaseTrend}
+              dataKey="value"
+              chartType="bar"
+              color="#8B5CF6"
+              colors={colors}
+              language={language}
+            />
+            <TrendChart
+              title={strings.depositTrends}
+              data={depositTrend}
+              dataKey="value"
+              chartType="line"
+              color="#C7A338"
+              colors={colors}
+              language={language}
+            />
+          </div>
+
+          {/* Case Breakdown & Activity */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <CaseBreakdown cases={allCases} colors={colors} language={language} />
+            </div>
+            <div>
+              <ActivityTimeline activities={recentActivities} colors={colors} language={language} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // REGULAR USER VIEW
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
-        {/* Header - MODERNIZED */}
+        {/* Header */}
         <div className="mb-6">
-          {/* Enhanced Motto Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3" style={{
             background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
             boxShadow: '0 8px 16px rgba(12, 59, 46, 0.25)'
@@ -482,9 +682,8 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Stats Grid - Single column on mobile, 2 on tablet, 4 on desktop */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* Active Leases with mini stats */}
           <StatsCard
             title={strings.activeLeases}
             value={leases.length.toString()}
@@ -502,13 +701,12 @@ export default function Dashboard() {
             ] : undefined}
             actionButton={leases.length > 0 ? {
               label: language === 'th' ? 'จัดการสัญญา' : 'Manage Leases',
-              link: createPageUrl("UploadScan") // Following outline, though "Leases" page might be more fitting
+              link: createPageUrl("UploadScan")
             } : undefined}
             ctaText={leases.length === 0 ? (language === 'th' ? 'อัปโหลดสัญญาแรก' : 'Upload First Lease') : undefined}
             onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
           />
           
-          {/* Deposits Tracked with mini stats */}
           <StatsCard
             title={strings.depositsTracked}
             value={`฿${totalDepositValue.toLocaleString()}`}
@@ -524,7 +722,6 @@ export default function Dashboard() {
             }}
           />
           
-          {/* Active Cases with mini stats */}
           <StatsCard
             title={strings.activeCases}
             value={activeCases.length}
@@ -539,7 +736,6 @@ export default function Dashboard() {
             }}
           />
           
-          {/* Protection Score with gauge - NO CHANGES TO THIS CARD */}
           <StatsCard
             title={strings.protectionScore}
             value={`${protectionScore}%`}
@@ -642,7 +838,7 @@ export default function Dashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* Quick Actions - MODERNIZED */}
+        {/* Quick Actions */}
         <div style={{
           background: isDarkMode 
             ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
@@ -723,7 +919,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Upgrade Banner - MODERNIZED */}
+        {/* Upgrade Banner */}
         {user?.plan_tier === 'free' && (
           <div style={{
             marginTop: '32px',
