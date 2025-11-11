@@ -28,11 +28,13 @@ Deno.serve(async (req) => {
     const messages = [];
     
     if (flexMessage) {
+      console.log('📦 Flex message received:', JSON.stringify(flexMessage, null, 2));
       messages.push({
         type: 'flex',
         altText: flexMessage.altText || 'Lease Shield Notification',
         contents: flexMessage.contents
       });
+      console.log('📤 Sending to LINE:', JSON.stringify(messages[0], null, 2));
     } else {
       messages.push({
         type: 'text',
@@ -41,29 +43,35 @@ Deno.serve(async (req) => {
     }
 
     // Send via LINE Messaging API
+    const linePayload = {
+      to: userId,
+      messages: messages
+    };
+    
+    console.log('🚀 LINE API payload:', JSON.stringify(linePayload, null, 2));
+    
     const response = await fetch('https://api.line.me/v2/bot/message/push', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${channelAccessToken}`
       },
-      body: JSON.stringify({
-        to: userId,
-        messages: messages
-      })
+      body: JSON.stringify(linePayload)
     });
 
+    const responseText = await response.text();
+    
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ LINE API error:', errorText);
-      throw new Error(`LINE API error: ${errorText}`);
+      console.error('❌ LINE API error:', response.status, responseText);
+      throw new Error(`LINE API error ${response.status}: ${responseText}`);
     }
 
-    console.log(`✅ LINE message sent to ${userId}`);
+    console.log(`✅ LINE message sent successfully. Response:`, responseText);
 
     return Response.json({ 
       success: true,
-      sentAt: new Date().toISOString()
+      sentAt: new Date().toISOString(),
+      lineResponse: responseText
     });
 
   } catch (error) {
