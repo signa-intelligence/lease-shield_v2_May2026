@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -290,12 +291,12 @@ export default function Layout({ children, currentPageName }) {
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
               alt="Lease Shield"
-              className="h-6 w-auto md:hidden flex-shrink-0"
+              className="h-10 w-auto md:hidden flex-shrink-0"
             />
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
               alt="Lease Shield"
-              className="hidden md:block h-8 w-8 flex-shrink-0"
+              className="hidden md:block h-12 w-12 flex-shrink-0"
             />
             <span className="font-bold text-ls-forest text-base sm:text-lg truncate hidden md:block" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
               {strings.appName}
