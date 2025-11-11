@@ -27,6 +27,7 @@ export default function PropertyTracker() {
     maintenance: true
   });
   const [editingDeposit, setEditingDeposit] = useState(false);
+  const [editingRent, setEditingRent] = useState(false);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
 
   const { data: user } = useQuery({
@@ -51,11 +52,14 @@ export default function PropertyTracker() {
     deposit_paid_date: '',
     expected_return_date: '',
     property_address: '',
+    notes: ''
+  });
+
+  const [rentForm, setRentForm] = useState({
     rent_amount: '',
     rent_due_day: '',
     rent_alerts_enabled: false,
-    rent_alert_days_before: 3,
-    notes: ''
+    rent_alert_days_before: 3
   });
 
   const [maintenanceForm, setMaintenanceForm] = useState({
@@ -77,10 +81,6 @@ export default function PropertyTracker() {
         deposit_paid_date: '',
         expected_return_date: '',
         property_address: '',
-        rent_amount: '',
-        rent_due_day: '',
-        rent_alerts_enabled: false,
-        rent_alert_days_before: 3,
         notes: ''
       });
     },
@@ -90,6 +90,8 @@ export default function PropertyTracker() {
     mutationFn: ({ id, data }) => base44.entities.DepositTracker.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
+      setEditingDeposit(false);
+      setEditingRent(false);
     },
   });
 
@@ -134,7 +136,7 @@ export default function PropertyTracker() {
       expectedReturn: "Expected Return Date",
       propertyAddress: "Property Address",
       rentAmount: "Monthly Rent (฿)",
-      rentDueDay: "Rent Due Day",
+      rentDueDay: "Rent Due Day (1-31)",
       alertDaysBefore: "Alert Days Before",
       rentAlertsEnabled: "Enable Rent Alerts",
       notes: "Notes",
@@ -142,8 +144,11 @@ export default function PropertyTracker() {
       cancel: "Cancel",
       edit: "Edit",
       addDeposit: "Add Deposit",
+      addRent: "Add Rent Schedule",
       noDeposit: "No deposit tracked yet",
       addDepositDesc: "Start tracking your security deposit",
+      noRent: "No rent schedule set",
+      addRentDesc: "Set up monthly rent reminders",
       daysRemaining: "days remaining",
       overdue: "OVERDUE",
       addMaintenance: "New Request",
@@ -164,10 +169,10 @@ export default function PropertyTracker() {
       maintenanceSection: "คำขอซ่อมบำรุง",
       depositAmount: "จำนวนเงินมัดจำ (฿)",
       paidDate: "วันที่จ่าย",
-      expectedReturn: "วันที่คาดว่าจะคืน",
+      expectedReturn: "วันที่คาดว่าจะได้รับคืน",
       propertyAddress: "ที่อยู่ทรัพย์สิน",
       rentAmount: "ค่าเช่ารายเดือน (฿)",
-      rentDueDay: "วันที่ครบกำหนดค่าเช่า",
+      rentDueDay: "วันที่ครบกำหนด (1-31)",
       alertDaysBefore: "แจ้งเตือนก่อน (วัน)",
       rentAlertsEnabled: "เปิดการแจ้งเตือนค่าเช่า",
       notes: "หมายเหตุ",
@@ -175,8 +180,11 @@ export default function PropertyTracker() {
       cancel: "ยกเลิก",
       edit: "แก้ไข",
       addDeposit: "เพิ่มเงินมัดจำ",
+      addRent: "เพิ่มกำหนดค่าเช่า",
       noDeposit: "ยังไม่มีการติดตามเงินมัดจำ",
       addDepositDesc: "เริ่มติดตามเงินมัดจำของคุณ",
+      noRent: "ยังไม่มีกำหนดการชำระค่าเช่า",
+      addRentDesc: "ตั้งค่าการแจ้งเตือนค่าเช่ารายเดือน",
       daysRemaining: "วันคงเหลือ",
       overdue: "เกินกำหนด",
       addMaintenance: "คำขอใหม่",
@@ -210,17 +218,34 @@ export default function PropertyTracker() {
 
     if (depositForm.property_address) data.property_address = depositForm.property_address;
     if (depositForm.notes) data.notes = depositForm.notes;
-    if (depositForm.rent_amount) {
-      data.rent_amount = parseFloat(depositForm.rent_amount);
-      if (depositForm.rent_due_day) data.rent_due_day = parseInt(depositForm.rent_due_day, 10);
-      data.rent_alerts_enabled = depositForm.rent_alerts_enabled;
-      if (depositForm.rent_alert_days_before) data.rent_alert_days_before = parseInt(depositForm.rent_alert_days_before, 10);
-    }
 
     if (deposits.length > 0) {
       updateDepositMutation.mutate({ id: deposits[0].id, data });
     } else {
       createDepositMutation.mutate(data);
+    }
+  };
+
+  const handleRentSubmit = () => {
+    const data = {
+      rent_amount: parseFloat(rentForm.rent_amount),
+      rent_due_day: parseInt(rentForm.rent_due_day, 10),
+      rent_alerts_enabled: rentForm.rent_alerts_enabled,
+      rent_alert_days_before: parseInt(rentForm.rent_alert_days_before, 10)
+    };
+
+    if (deposits.length > 0) {
+      updateDepositMutation.mutate({ id: deposits[0].id, data });
+    } else {
+      // Create deposit with minimal data + rent info
+      const minimalDeposit = {
+        deposit_amount: 0,
+        deposit_paid_date: new Date().toISOString().split('T')[0],
+        expected_return_date: new Date().toISOString().split('T')[0],
+        status: 'tracking',
+        ...data
+      };
+      createDepositMutation.mutate(minimalDeposit);
     }
   };
 
@@ -284,7 +309,7 @@ export default function PropertyTracker() {
               <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
                 <Wallet className="w-5 h-5 text-ls-gold" />
                 {strings.depositSection}
-                {deposit && (
+                {deposit && deposit.deposit_amount > 0 && (
                   <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>
                     {isOverdue 
                       ? `${strings.overdue} ${Math.abs(daysRemaining)} ${strings.daysRemaining}`
@@ -296,7 +321,7 @@ export default function PropertyTracker() {
                 )}
               </CardTitle>
               <div className="flex items-center gap-2">
-                {deposit && !editingDeposit && (
+                {deposit && deposit.deposit_amount > 0 && !editingDeposit && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -307,10 +332,6 @@ export default function PropertyTracker() {
                         deposit_paid_date: deposit.deposit_paid_date || '',
                         expected_return_date: deposit.expected_return_date || '',
                         property_address: deposit.property_address || '',
-                        rent_amount: deposit.rent_amount?.toString() || '',
-                        rent_due_day: deposit.rent_due_day?.toString() || '',
-                        rent_alerts_enabled: deposit.rent_alerts_enabled || false,
-                        rent_alert_days_before: deposit.rent_alert_days_before?.toString() || '3',
                         notes: deposit.notes || ''
                       });
                       setEditingDeposit(true);
@@ -326,7 +347,7 @@ export default function PropertyTracker() {
 
           {expandedSections.deposit && (
             <CardContent className="p-6">
-              {!deposit && !editingDeposit ? (
+              {(!deposit || deposit.deposit_amount === 0) && !editingDeposit ? (
                 <div className="text-center py-8">
                   <Wallet className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
                   <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noDeposit}</p>
@@ -448,21 +469,51 @@ export default function PropertyTracker() {
                   </Badge>
                 )}
               </CardTitle>
-              {expandedSections.rent ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+              <div className="flex items-center gap-2">
+                {deposit?.rent_amount && deposit?.rent_due_day && !editingRent && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRentForm({
+                        rent_amount: deposit.rent_amount?.toString() || '',
+                        rent_due_day: deposit.rent_due_day?.toString() || '',
+                        rent_alerts_enabled: deposit.rent_alerts_enabled || false,
+                        rent_alert_days_before: deposit.rent_alert_days_before?.toString() || '3'
+                      });
+                      setEditingRent(true);
+                    }}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                )}
+                {expandedSections.rent ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+              </div>
             </div>
           </CardHeader>
 
           {expandedSections.rent && (
             <CardContent className="p-6">
-              {editingDeposit ? (
+              {(!deposit?.rent_amount || !deposit?.rent_due_day) && !editingRent ? (
+                <div className="text-center py-8">
+                  <Calendar className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                  <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noRent}</p>
+                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addRentDesc}</p>
+                  <Button onClick={() => setEditingRent(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    {strings.addRent}
+                  </Button>
+                </div>
+              ) : editingRent ? (
                 <div className="space-y-4">
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
                       <Label style={{ color: colors.textPrimary }}>{strings.rentAmount}</Label>
                       <Input
                         type="number"
-                        value={depositForm.rent_amount}
-                        onChange={(e) => setDepositForm({...depositForm, rent_amount: e.target.value})}
+                        value={rentForm.rent_amount}
+                        onChange={(e) => setRentForm({...rentForm, rent_amount: e.target.value})}
                         className="mt-2"
                         style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
                       />
@@ -473,8 +524,9 @@ export default function PropertyTracker() {
                         type="number"
                         min="1"
                         max="31"
-                        value={depositForm.rent_due_day}
-                        onChange={(e) => setDepositForm({...depositForm, rent_due_day: e.target.value})}
+                        placeholder="e.g., 5"
+                        value={rentForm.rent_due_day}
+                        onChange={(e) => setRentForm({...rentForm, rent_due_day: e.target.value})}
                         className="mt-2"
                         style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
                       />
@@ -485,8 +537,8 @@ export default function PropertyTracker() {
                         type="number"
                         min="1"
                         max="14"
-                        value={depositForm.rent_alert_days_before}
-                        onChange={(e) => setDepositForm({...depositForm, rent_alert_days_before: e.target.value})}
+                        value={rentForm.rent_alert_days_before}
+                        onChange={(e) => setRentForm({...rentForm, rent_alert_days_before: e.target.value})}
                         className="mt-2"
                         style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
                       />
@@ -494,13 +546,23 @@ export default function PropertyTracker() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Checkbox
-                      checked={depositForm.rent_alerts_enabled}
-                      onCheckedChange={(checked) => setDepositForm({...depositForm, rent_alerts_enabled: checked})}
+                      checked={rentForm.rent_alerts_enabled}
+                      onCheckedChange={(checked) => setRentForm({...rentForm, rent_alerts_enabled: checked})}
                     />
                     <Label style={{ color: colors.textPrimary }}>{strings.rentAlertsEnabled}</Label>
                   </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={() => setEditingRent(false)}>
+                      <X className="w-4 h-4 mr-2" />
+                      {strings.cancel}
+                    </Button>
+                    <Button onClick={handleRentSubmit} className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Save className="w-4 h-4 mr-2" />
+                      {strings.save}
+                    </Button>
+                  </div>
                 </div>
-              ) : deposit?.rent_amount && deposit?.rent_due_day ? (
+              ) : (
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
                     <div className="flex items-center gap-2 mb-2">
@@ -535,13 +597,6 @@ export default function PropertyTracker() {
                       </Badge>
                     )}
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <Calendar className="w-10 h-10 mx-auto mb-2" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'เพิ่มข้อมูลค่าเช่าในส่วนเงินมัดจำ' : 'Add rent details in the deposit section'}
-                  </p>
                 </div>
               )}
             </CardContent>
