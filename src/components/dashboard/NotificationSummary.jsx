@@ -1,0 +1,154 @@
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Bell, MessageCircle, Mail, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { differenceInHours } from 'date-fns';
+
+export default function NotificationSummary({ language = 'en', colors }) {
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: myLogs = [] } = useQuery({
+    queryKey: ['myNotificationLogs'],
+    queryFn: () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 10),
+    enabled: !!user,
+  });
+
+  const strings = {
+    en: {
+      title: 'My Notifications',
+      recent: 'Recent Alerts',
+      allCaughtUp: 'All caught up!',
+      noNotifications: 'No notifications yet',
+      via: 'via',
+      hoursAgo: 'hours ago',
+      justNow: 'just now',
+      types: {
+        '30d_deposit': 'Deposit in 30 days',
+        '7d_deposit': 'Deposit in 7 days',
+        '3d_deposit': 'Deposit in 3 days',
+        'overdue_deposit': 'Deposit overdue',
+        '30d_notice': 'Notice in 30 days',
+        '7d_notice': 'Notice in 7 days',
+        '3d_notice': 'Notice in 3 days',
+        '0d_notice': 'Notice today',
+        'rent_reminder': 'Rent due soon'
+      }
+    },
+    th: {
+      title: 'การแจ้งเตือนของฉัน',
+      recent: 'การแจ้งเตือนล่าสุด',
+      allCaughtUp: 'อัปเดตแล้วทั้งหมด!',
+      noNotifications: 'ยังไม่มีการแจ้งเตือน',
+      via: 'ผ่าน',
+      hoursAgo: 'ชั่วโมงที่แล้ว',
+      justNow: 'เมื่อสักครู่',
+      types: {
+        '30d_deposit': 'มัดจำใน 30 วัน',
+        '7d_deposit': 'มัดจำใน 7 วัน',
+        '3d_deposit': 'มัดจำใน 3 วัน',
+        'overdue_deposit': 'มัดจำเกินกำหนด',
+        '30d_notice': 'แจ้งใน 30 วัน',
+        '7d_notice': 'แจ้งใน 7 วัน',
+        '3d_notice': 'แจ้งใน 3 วัน',
+        '0d_notice': 'แจ้งวันนี้',
+        'rent_reminder': 'ครบกำหนดเร็วๆ นี้'
+      }
+    }
+  };
+
+  const str = strings[language];
+
+  const getTypeColor = (type) => {
+    if (type.includes('overdue') || type === '0d_notice') return '#EF4444';
+    if (type.includes('3d')) return '#F59E0B';
+    if (type.includes('7d')) return '#EAB308';
+    if (type.includes('30d')) return '#10B981';
+    return '#3B82F6';
+  };
+
+  const getTimeAgo = (date) => {
+    const hours = differenceInHours(new Date(), new Date(date));
+    if (hours < 1) return str.justNow;
+    return `${hours} ${str.hoursAgo}`;
+  };
+
+  const recentLogs = myLogs.slice(0, 5);
+
+  return (
+    <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+      <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+        <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+          <Bell className="w-5 h-5 text-blue-600" />
+          {str.title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4">
+        {recentLogs.length === 0 ? (
+          <div className="text-center py-8">
+            <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-600" />
+            <p className="font-semibold" style={{ color: colors.textPrimary }}>
+              {str.allCaughtUp}
+            </p>
+            <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
+              {str.noNotifications}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {recentLogs.map((log) => (
+              <div
+                key={log.id}
+                className="p-3 rounded-lg border"
+                style={{
+                  backgroundColor: colors.bg,
+                  borderColor: colors.borderColor
+                }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{
+                        backgroundColor: `${getTypeColor(log.notification_type)}20`
+                      }}
+                    >
+                      {log.status === 'sent' ? (
+                        <CheckCircle2 className="w-4 h-4" style={{ color: getTypeColor(log.notification_type) }} />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-red-600" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                        {str.types[log.notification_type] || log.notification_type}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs flex items-center gap-1">
+                          {log.channel === 'LINE' ? (
+                            <MessageCircle className="w-3 h-3" />
+                          ) : (
+                            <Mail className="w-3 h-3" />
+                          )}
+                          {str.via} {log.channel}
+                        </Badge>
+                        <span className="text-xs flex items-center gap-1" style={{ color: colors.textSecondary }}>
+                          <Clock className="w-3 h-3" />
+                          {getTimeAgo(log.created_date)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
