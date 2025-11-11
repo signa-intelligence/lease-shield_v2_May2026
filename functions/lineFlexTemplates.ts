@@ -1,3 +1,4 @@
+
 /**
  * LINE Flex Message Templates for LeaseShield
  * Beautiful, interactive notification cards with proper branding
@@ -1073,6 +1074,271 @@ export const createMaintenanceStatusFlex = (data, language = 'en') => {
             cornerRadius: 'md'
           }
         ],
+        paddingAll: '20px'
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'button',
+            action: {
+              type: 'uri',
+              label: str.action,
+              uri: 'https://app.leaseshield.asia/PropertyTracker'
+            },
+            style: 'primary',
+            color: color,
+            height: 'sm'
+          }
+        ],
+        paddingAll: '12px'
+      },
+      styles: {
+        footer: {
+          separator: false
+        }
+      }
+    }
+  };
+};
+
+// ========================================
+// NEW: MAINTENANCE CHAT MESSAGE TEMPLATE
+// ========================================
+export const createMaintenanceChatFlex = (data, language = 'en') => {
+  const { issueTitle, message, senderName, senderType, propertyAddress, photoUrls, timestamp } = data;
+  
+  // Determine color based on sender
+  const senderColors = {
+    tenant: '#3B82F6',
+    landlord: '#F59E0B',
+    juristic: '#F59E0B'
+  };
+  
+  const senderTypeLower = senderType.toLowerCase();
+  const color = senderTypeLower.includes('tenant') ? senderColors.tenant : senderColors.landlord;
+  const senderIcon = senderTypeLower.includes('tenant') ? '👤' : '🏠';
+  
+  const strings = {
+    en: {
+      title: 'New Message',
+      subtitle: `From ${senderName}`,
+      on: 'On',
+      from: 'From',
+      property: 'Property',
+      sent: 'Sent',
+      action: 'View Conversation',
+      tip: 'Tap to see full chat history'
+    },
+    th: {
+      title: 'ข้อความใหม่',
+      subtitle: `จาก ${senderName}`,
+      on: 'ใน',
+      from: 'จาก',
+      property: 'ทรัพย์สิน',
+      sent: 'ส่งเมื่อ',
+      action: 'ดูการสนทนา',
+      tip: 'แตะเพื่อดูประวัติแชททั้งหมด'
+    }
+  };
+  
+  const str = strings[language];
+  
+  // Build body contents
+  const bodyContents = [
+    // Issue title
+    {
+      type: 'text',
+      text: str.on,
+      color: '#8B8B8B',
+      size: 'sm'
+    },
+    {
+      type: 'text',
+      text: issueTitle || (language === 'th' ? 'ไม่ระบุ' : 'N/A'),
+      weight: 'bold',
+      size: 'lg',
+      color: '#1A1D1F',
+      wrap: true,
+      margin: 'sm'
+    },
+    {
+      type: 'separator',
+      margin: 'lg'
+    },
+    // Message content
+    {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'text',
+          text: `${senderIcon} ${senderName}:`,
+          size: 'xs',
+          color: color,
+          weight: 'bold',
+          margin: 'none'
+        },
+        {
+          type: 'text',
+          text: message || (language === 'th' ? 'ไม่มีข้อความ' : 'No message'),
+          size: 'sm',
+          color: '#1A1D1F',
+          wrap: true,
+          margin: 'sm'
+        }
+      ],
+      backgroundColor: senderTypeLower.includes('tenant') ? '#EFF6FF' : '#FFFBEB',
+      cornerRadius: 'md',
+      paddingAll: '12px',
+      margin: 'lg'
+    }
+  ];
+  
+  // Add photos if present
+  if (photoUrls && photoUrls.length > 0) {
+    bodyContents.push({
+      type: 'text',
+      text: `📸 ${photoUrls.length} ${language === 'th' ? 'รูปภาพ' : 'photo(s)'}`,
+      size: 'xs',
+      color: '#6B7280',
+      margin: 'md'
+    });
+  }
+  
+  // Add property info
+  bodyContents.push(
+    {
+      type: 'separator',
+      margin: 'lg'
+    },
+    {
+      type: 'box',
+      layout: 'baseline',
+      contents: [
+        {
+          type: 'text',
+          text: str.property,
+          color: '#8B8B8B',
+          size: 'sm',
+          flex: 1
+        },
+        {
+          type: 'text',
+          text: propertyAddress || (language === 'th' ? 'ไม่ระบุ' : 'N/A'),
+          size: 'sm',
+          color: '#1A1D1F',
+          flex: 2,
+          align: 'end',
+          wrap: true
+        }
+      ],
+      margin: 'lg'
+    }
+  );
+  
+  // Add timestamp
+  if (timestamp) {
+    const timeStr = new Date(timestamp).toLocaleString(language === 'th' ? 'th-TH' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    bodyContents.push(
+      {
+        type: 'box',
+        layout: 'baseline',
+        contents: [
+          {
+            type: 'text',
+            text: str.sent,
+            color: '#8B8B8B',
+            size: 'xs',
+            flex: 1
+          },
+          {
+            type: 'text',
+            text: timeStr,
+            size: 'xs',
+            color: '#6B7280',
+            flex: 2,
+            align: 'end'
+          }
+        ],
+        margin: 'md'
+      }
+    );
+  }
+  
+  // Add tip box
+  bodyContents.push(
+    {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'text',
+          text: `💡 ${str.tip}`,
+          size: 'xs',
+          color: '#6B7280',
+          wrap: true
+        }
+      ],
+      margin: 'xl',
+      paddingAll: '12px',
+      backgroundColor: '#F9FAFB',
+      cornerRadius: 'md'
+    }
+  );
+  
+  return {
+    altText: `💬 ${str.title}: ${issueTitle}`,
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            contents: [
+              {
+                type: 'text',
+                text: '💬',
+                size: 'xl',
+                weight: 'bold'
+              },
+              {
+                type: 'text',
+                text: str.title,
+                weight: 'bold',
+                size: 'lg',
+                color: '#FFFFFF',
+                flex: 1,
+                margin: 'md'
+              }
+            ]
+          },
+          {
+            type: 'text',
+            text: str.subtitle,
+            color: '#FFFFFF',
+            size: 'sm',
+            margin: 'sm'
+          }
+        ],
+        backgroundColor: color,
+        paddingAll: '20px'
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: bodyContents,
         paddingAll: '20px'
       },
       footer: {

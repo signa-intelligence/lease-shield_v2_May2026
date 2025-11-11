@@ -1,9 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import { createMaintenanceEmail } from './emailTemplates.js';
+import { createMaintenanceChatFlex } from './lineFlexTemplates.js';
 
 /**
  * Add comment to maintenance request chat
  * Notifies all parties (Tenant, Landlord, Juristic) except the sender
+ * Sends Beautiful HTML Email + Rich LINE Flex for chat updates
  */
 
 Deno.serve(async (req) => {
@@ -84,9 +86,10 @@ Deno.serve(async (req) => {
     
     const language = tenant.language || 'en';
     const channels = [];
+    const propertyAddress = request.property_address || tenant.tenant_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
     
     // ==========================================
-    // NOTIFY OTHER PARTIES (not the sender)
+    // CREATE BEAUTIFUL NOTIFICATIONS
     // ==========================================
     
     const strings = {
@@ -110,7 +113,7 @@ Deno.serve(async (req) => {
       ? `💬 ${str.newComment}: ${request.issue_title}`
       : `💬 ${str.newComment}: ${request.issue_title}`;
     
-    // Simple HTML email for chat updates
+    // Beautiful HTML email for chat updates
     const createChatEmailHtml = (senderName, message, photoUrls) => {
       let photosHtml = '';
       if (photoUrls && photoUrls.length > 0) {
@@ -138,7 +141,7 @@ Deno.serve(async (req) => {
                 <p style="margin: 0; color: #1a1d1f; font-size: 15px;">${message}</p>
               </div>
               ${photosHtml}
-              <div style="text-align: center; margin-top: 25px;">
+              <div style="text-center; margin-top: 25px;">
                 <a href="https://app.leaseshield.asia/PropertyTracker" style="display: inline-block; padding: 12px 24px; background-color: #0C3B2E; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
                   ${str.viewConversation}
                 </a>
@@ -149,9 +152,23 @@ Deno.serve(async (req) => {
       `;
     };
     
+    // Rich LINE Flex Message for chat updates
+    const flexMessage = createMaintenanceChatFlex({
+      issueTitle: request.issue_title,
+      message: message,
+      senderName: sender,
+      senderType: sender,
+      propertyAddress: propertyAddress,
+      photoUrls: photoUrls || [],
+      timestamp: newEntry.date
+    }, language);
+    
     const emailHtml = createChatEmailHtml(sender, message, photoUrls);
     
-    // If sender is Tenant, notify Landlord & Juristic
+    // ==========================================
+    // NOTIFY OTHER PARTIES (not the sender)
+    // ==========================================
+    
     if (sender === 'Tenant') {
       // Notify Landlord via Email
       if (tenant.landlord_email) {
@@ -166,6 +183,20 @@ Deno.serve(async (req) => {
           console.log(`✅ Email sent to landlord: ${tenant.landlord_email}`);
         } catch (err) {
           console.error('❌ Failed to email landlord:', err);
+        }
+      }
+      
+      // Notify Landlord via LINE
+      if (tenant.landlord_line) {
+        try {
+          await base44.asServiceRole.functions.invoke('sendLineMessage', {
+            userId: tenant.landlord_line,
+            flexMessage: flexMessage
+          });
+          channels.push('Landlord LINE');
+          console.log(`✅ LINE sent to landlord: ${tenant.landlord_line}`);
+        } catch (err) {
+          console.error('❌ Failed to send LINE to landlord:', err);
         }
       }
       
@@ -184,8 +215,24 @@ Deno.serve(async (req) => {
           console.error('❌ Failed to email juristic:', err);
         }
       }
+      
+      // Notify Juristic via LINE
+      if (tenant.juristic_line) {
+        try {
+          await base44.asServiceRole.functions.invoke('sendLineMessage', {
+            userId: tenant.juristic_line,
+            flexMessage: flexMessage
+          });
+          channels.push('Juristic LINE');
+          console.log(`✅ LINE sent to juristic: ${tenant.juristic_line}`);
+        } catch (err) {
+          console.error('❌ Failed to send LINE to juristic:', err);
+        }
+      }
     } else {
       // If sender is Landlord/Juristic, notify Tenant
+      
+      // Notify Tenant via Email
       if (tenant.email_notifications) {
         try {
           await base44.integrations.Core.SendEmail({
@@ -200,6 +247,20 @@ Deno.serve(async (req) => {
           console.error('❌ Failed to email tenant:', err);
         }
       }
+      
+      // Notify Tenant via LINE
+      if (tenant.line_messaging_token && tenant.line_notifications) {
+        try {
+          await base44.asServiceRole.functions.invoke('sendLineMessage', {
+            userId: tenant.line_messaging_token,
+            flexMessage: flexMessage
+          });
+          channels.push('Tenant LINE');
+          console.log(`✅ LINE sent to tenant: ${tenant.email}`);
+        } catch (err) {
+          console.error('❌ Failed to send LINE to tenant:', err);
+        }
+      }
     }
     
     // Log notification
@@ -212,6 +273,8 @@ Deno.serve(async (req) => {
       related_entity_id: maintenanceId,
       message_preview: message.substring(0, 200)
     });
+    
+    console.log(`✅ Comment added and ${channels.length} notification(s) sent: ${channels.join(', ')}`);
     
     return Response.json({
       success: true,
