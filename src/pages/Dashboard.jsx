@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +23,9 @@ import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
+import OfflineDetector from "../components/shared/OfflineDetector";
+import SyncIndicator from "../components/shared/SyncIndicator";
+import { createOfflineQuery, prefetchCriticalData } from "../lib/queryClientConfig";
 
 function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -41,42 +45,61 @@ function DashboardContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Regular user queries
-  const { data: leases = [], isLoading: leasesLoading } = useQuery({
-    queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
-    enabled: !!user,
-  });
+  // Enhanced queries with offline support
+  const { data: leases = [], isLoading: leasesLoading } = useQuery(
+    createOfflineQuery(
+      ['leases', user?.email],
+      () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
+      { enabled: !!user }
+    )
+  );
 
-  const { data: deposits = [], isLoading: depositsLoading } = useQuery({
-    queryKey: ['deposits'],
-    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
-    enabled: !!user,
-  });
+  const { data: deposits = [], isLoading: depositsLoading } = useQuery(
+    createOfflineQuery(
+      ['deposits', user?.email],
+      () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
+      { enabled: !!user }
+    )
+  );
 
-  const { data: cases = [] } = useQuery({
-    queryKey: ['cases'],
-    queryFn: () => base44.entities.Case.filter({ user_email: user?.email }),
-    enabled: !!user,
-  });
+  const { data: cases = [] } = useQuery(
+    createOfflineQuery(
+      ['cases', user?.email],
+      () => base44.entities.Case.filter({ user_email: user?.email }),
+      { enabled: !!user }
+    )
+  );
 
-  const { data: documents = [] } = useQuery({
-    queryKey: ['documents'],
-    queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
+  const { data: documents = [] } = useQuery(
+    createOfflineQuery(
+      ['documents', user?.email],
+      () => base44.entities.Document.filter({ created_by: user?.email }),
+      { enabled: !!user }
+    )
+  );
 
-  const { data: maintenanceRequests = [] } = useQuery({
-    queryKey: ['maintenance'],
-    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
+  const { data: maintenanceRequests = [] } = useQuery(
+    createOfflineQuery(
+      ['maintenance', user?.email],
+      () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
+      { enabled: !!user }
+    )
+  );
 
-  const { data: notificationLogs = [] } = useQuery({
-    queryKey: ['notificationLogs'],
-    queryFn: () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 10),
-    enabled: !!user,
-  });
+  const { data: notificationLogs = [] } = useQuery(
+    createOfflineQuery(
+      ['notificationLogs', user?.email],
+      () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 10),
+      { enabled: !!user }
+    )
+  );
+
+  // Prefetch critical data on mount
+  React.useEffect(() => {
+    if (user) {
+      prefetchCriticalData(user);
+    }
+  }, [user]);
 
   const handleRefresh = async () => {
     haptic.light();
@@ -260,7 +283,7 @@ function DashboardContent() {
   const [testingSettings, setTestingSettings] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
 
-  // ADD NEW: Simple browser-based Flex test
+  // Simple browser-based Flex test
   const [testingBrowserFlex, setTestingBrowserFlex] = React.useState(false);
   
   const testFlexFromBrowser = async () => {
@@ -959,6 +982,9 @@ function DashboardContent() {
   return (
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
       <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
+        {/* Offline Detector Banner */}
+        <OfflineDetector language={language} colors={colors} />
+        
         <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
           <FloatingActionButton
             icon={Shield}
@@ -976,6 +1002,7 @@ function DashboardContent() {
             language={language}
           />
 
+          {/* Header with Focus Mode Toggle + Sync Indicator */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
@@ -997,6 +1024,9 @@ function DashboardContent() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
+                {/* Sync Indicator */}
+                <SyncIndicator language={language} colors={colors} />
+                
                 <Link to={createPageUrl("Analytics")}>
                   <button
                     onClick={() => haptic.light()}

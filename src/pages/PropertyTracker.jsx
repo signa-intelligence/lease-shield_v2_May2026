@@ -25,6 +25,8 @@ import SwipeToDelete from "../components/shared/SwipeToDelete";
 import BottomSheet from "../components/shared/BottomSheet";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import MobileFormInput from "../components/shared/MobileFormInput";
+import { useOptimisticCreate, useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
+import SmartImage from "../components/shared/SmartImage";
 
 export default function PropertyTracker() {
   const navigate = useNavigate();
@@ -86,60 +88,31 @@ export default function PropertyTracker() {
     reported_date: new Date().toISOString().split('T')[0]
   });
 
-  const createDepositMutation = useMutation({
-    mutationFn: (data) => base44.entities.DepositTracker.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deposits'] });
-      setEditingDeposit(false);
-      setDepositForm({
-        deposit_amount: '',
-        deposit_paid_date: '',
-        expected_return_date: '',
-        property_address: '',
-        notes: ''
-      });
-    },
+  const language = user?.language || 'en';
+
+  // Replace mutations with optimistic versions
+  const createDepositMutation = useOptimisticCreate({
+    entityName: 'DepositTracker',
+    queryKey: ['deposits'],
+    language
   });
 
-  const updateDepositMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.DepositTracker.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deposits'] });
-      setEditingDeposit(false);
-      setEditingRent(false);
-    },
+  const updateDepositMutation = useOptimisticUpdate({
+    entityName: 'DepositTracker',
+    queryKey: ['deposits'],
+    language
   });
 
-  const createMaintenanceMutation = useMutation({
-    mutationFn: (data) => base44.entities.MaintenanceRequest.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-      setShowAddMaintenance(false);
-      setPhotoFiles([]);
-      setPhotoPreviews([]);
-      setMaintenanceForm({
-        issue_title: '',
-        description: '',
-        category: 'other',
-        priority: 'medium',
-        property_address: '',
-        reported_date: new Date().toISOString().split('T')[0]
-      });
-    },
+  const createMaintenanceMutation = useOptimisticCreate({
+    entityName: 'MaintenanceRequest',
+    queryKey: ['maintenance'],
+    language
   });
 
-  const updateMaintenanceMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.MaintenanceRequest.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-      setEditingMaintenance(null);
-      setShowAddMaintenance(false);
-      setPhotoFiles([]);
-      setPhotoPreviews([]);
-      setMaintenanceForm({
-        issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
-      });
-    },
+  const updateMaintenanceMutation = useOptimisticUpdate({
+    entityName: 'MaintenanceRequest',
+    queryKey: ['maintenance'],
+    language
   });
 
   const deleteMaintenanceMutation = useMutation({
@@ -149,7 +122,6 @@ export default function PropertyTracker() {
     },
   });
 
-  const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
   const colors = {
@@ -347,7 +319,7 @@ export default function PropertyTracker() {
     const newPhotoFiles = photoFiles.filter((_, i) => {
       // Find its corresponding preview. If it was a data URL, it's a new file.
       // This is a simplified check. A more robust solution might involve unique IDs.
-      const isNewFile = photoPreviews[i] && photoPreviews[i].startsWith('data:image');
+      const isNewFile = photoPreviews[i] && (photoPreviews[i].startsWith('data:image') || photoPreviews[i].startsWith('blob:'));
       return i !== indexToRemove || !isNewFile;
     });
     setPhotoFiles(newPhotoFiles);
@@ -356,7 +328,7 @@ export default function PropertyTracker() {
   };
 
 
-  const handleDepositSubmit = () => {
+  const handleDepositSubmit = async () => {
     haptic.medium();
     const data = {
       deposit_amount: parseFloat(depositForm.deposit_amount),
@@ -368,14 +340,27 @@ export default function PropertyTracker() {
     if (depositForm.property_address) data.property_address = depositForm.property_address;
     if (depositForm.notes) data.notes = depositForm.notes;
 
-    if (deposits.length > 0) {
-      updateDepositMutation.mutate({ id: deposits[0].id, data });
-    } else {
-      createDepositMutation.mutate(data);
+    try {
+      if (deposits.length > 0) {
+        await updateDepositMutation.mutateAsync({ id: deposits[0].id, data });
+      } else {
+        await createDepositMutation.mutateAsync(data);
+      }
+      setEditingDeposit(false);
+      setDepositForm({
+        deposit_amount: '',
+        deposit_paid_date: '',
+        expected_return_date: '',
+        property_address: '',
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Failed to submit deposit:', error);
+      alert('Failed to save deposit. Please try again.');
     }
   };
 
-  const handleRentSubmit = () => {
+  const handleRentSubmit = async () => {
     haptic.medium();
     const data = {
       rent_amount: parseFloat(rentForm.rent_amount),
@@ -384,17 +369,24 @@ export default function PropertyTracker() {
       rent_alert_days_before: parseInt(rentForm.rent_alert_days_before, 10)
     };
 
-    if (deposits.length > 0) {
-      updateDepositMutation.mutate({ id: deposits[0].id, data });
-    } else {
-      const minimalDeposit = {
-        deposit_amount: 0,
-        deposit_paid_date: new Date().toISOString().split('T')[0],
-        expected_return_date: new Date().toISOString().split('T')[0],
-        status: 'tracking',
-        ...data
-      };
-      createDepositMutation.mutate(minimalDeposit);
+    try {
+      if (deposits.length > 0) {
+        await updateDepositMutation.mutateAsync({ id: deposits[0].id, data });
+      } else {
+        const minimalDeposit = {
+          deposit_amount: 0,
+          deposit_paid_date: new Date().toISOString().split('T')[0],
+          expected_return_date: new Date().toISOString().split('T')[0],
+          status: 'tracking',
+          ...data
+        };
+        await createDepositMutation.mutateAsync(minimalDeposit);
+      }
+      setEditingRent(false);
+      setEditingDeposit(false); // If rent is set, deposit might also be in an editing state
+    } catch (error) {
+      console.error('Failed to submit rent:', error);
+      alert('Failed to save rent schedule. Please try again.');
     }
   };
 
@@ -465,6 +457,19 @@ export default function PropertyTracker() {
       const createdRequest = await createMaintenanceMutation.mutateAsync(maintenanceData);
 
       console.log('✅ Maintenance request created successfully!');
+      // State reset from original onSuccess:
+      setShowAddMaintenance(false);
+      setPhotoFiles([]);
+      setPhotoPreviews([]);
+      setMaintenanceForm({
+        issue_title: '',
+        description: '',
+        category: 'other',
+        priority: 'medium',
+        property_address: '',
+        reported_date: new Date().toISOString().split('T')[0]
+      });
+
       setUploadingPhotos(false);
       setPhotoUploadStage('');
       setPhotoUploadProgress(0);
@@ -573,6 +578,15 @@ export default function PropertyTracker() {
       await updateMaintenanceMutation.mutateAsync({
         id: editingMaintenance.id,
         data: updatedData
+      });
+
+      // State reset from original onSuccess:
+      setEditingMaintenance(null);
+      setShowAddMaintenance(false);
+      setPhotoFiles([]);
+      setPhotoPreviews([]);
+      setMaintenanceForm({
+        issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
       });
 
       setUploadingPhotos(false);
@@ -1470,13 +1484,16 @@ export default function PropertyTracker() {
                                 <div className="mt-3 mb-2">
                                   <div className="grid grid-cols-4 gap-2">
                                     {request.photo_urls.map((url, index) => (
-                                      <img
+                                      <SmartImage
                                         key={index}
                                         src={url}
                                         alt={`Issue ${index + 1}`}
                                         className="w-full h-20 object-cover rounded-lg border"
-                                        style={{ borderColor: colors.borderColor, cursor: 'pointer' }}
-                                        onClick={() => { haptic.light(); window.open(url, '_blank')}}
+                                        style={{ borderColor: colors.borderColor }}
+                                        showActions={true}
+                                        enablePreview={true}
+                                        enableDownload={true}
+                                        colors={colors}
                                       />
                                     ))}
                                   </div>
@@ -1535,7 +1552,7 @@ export default function PropertyTracker() {
                                 )}
                               </div>
 
-                              <div className="flex items-center gap-2 flex-wrap mt-4 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
+                              <div className="flex items-center gap-2 flex-wrap mt-4 pt-3 border-t" style={{ borderColor: colors.borderColor }>
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -1595,7 +1612,7 @@ export default function PropertyTracker() {
                         {completedRequests.map((request) => (
                           <SwipeToDelete
                             key={request.id}
-                            onDelete={() => handleSwipeDelete(request)}
+                            onDelete={() => handleDeleteMaintenance(request)}
                             deleteLabel={strings.delete}
                             colors={colors}
                           >

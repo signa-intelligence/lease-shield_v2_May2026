@@ -11,6 +11,7 @@ import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckC
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationPreferences from "../components/settings/NotificationPreferences";
 import NotificationAnalytics from "../components/dashboard/NotificationAnalytics";
+import CacheManager from "../components/settings/CacheManager";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import LineConnectionStatus from "../components/shared/LineConnectionStatus"; // New import
+import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
 
 
@@ -562,7 +563,6 @@ export default function Account() {
 
   const handleShareLink = async (role) => {
     const language = user?.language || 'en'; // Declared here to ensure it's available for the alert
-    const link = generateLineOALink(role);
     const title = role === 'landlord' 
       ? (language === 'th' ? 'เชื่อมต่อกับ Lease Shield' : 'Connect to Lease Shield')
       : (language === 'th' ? 'เชื่อมต่อนิติบุคคลกับ Lease Shield' : 'Connect Juristic to Lease Shield');
@@ -574,7 +574,7 @@ export default function Account() {
           text: language === 'th' 
             ? 'คลิกเพื่อเพิ่มเพื่อน Lease Shield LINE Official Account' 
             : 'Click to add Lease Shield LINE Official Account',
-          url: link
+          url: generateLineOALink(role) // Use the generated link here
         });
       } catch (err) {
         console.error('Share failed:', err);
@@ -747,7 +747,11 @@ export default function Account() {
       bilingual: "Bilingual Templates",
       humanAndAiGeneration: "Human and AI generation",
       creditsNeverExpire: "Credits never expire",
-      purchaseCredits: "Purchase Credits"
+      purchaseCredits: "Purchase Credits",
+      cacheManagerTitle: "Cache Management",
+      cacheManagerDesc: "Clear local cache to refresh data or resolve display issues.",
+      clearCache: "Clear Cache",
+      clearingCache: "Clearing..."
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -884,7 +888,11 @@ export default function Account() {
       bilingual: "เทมเพลตสองภาษา",
       humanAndAiGeneration: "สร้างโดยมนุษย์และ AI",
       creditsNeverExpire: "เครดิตไม่หมดอายุ",
-      purchaseCredits: "ซื้อเครดิต"
+      purchaseCredits: "ซื้อเครดิต",
+      cacheManagerTitle: "การจัดการแคช",
+      cacheManagerDesc: "ล้างแคชในเครื่องเพื่อรีเฟรชข้อมูลหรือแก้ไขปัญหาการแสดงผล",
+      clearCache: "ล้างแคช",
+      clearingCache: "กำลังล้าง..."
     }
   };
 
@@ -1459,11 +1467,15 @@ export default function Account() {
                       }}
                       onMouseEnter={(e) => {
                         e.target.style.backgroundColor = '#C7A338';
+                        e.target.style.borderColor = '#C7A338';
+                        e.target.style.color = '#FFFFFF';
                         e.target.style.transform = 'translateY(-2px)';
                         e.target.style.boxShadow = '0 6px 8px rgba(199, 163, 56, 0.4)';
                       }}
                       onMouseLeave={(e) => {
                         e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.borderColor = '#0C3B2E';
+                        e.target.style.color = '#FFFFFF';
                         e.target.style.transform = 'translateY(0)';
                         e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
                       }}
@@ -2127,6 +2139,15 @@ export default function Account() {
           <NotificationAnalytics 
             language={language}
             colors={colors}
+          />
+        </div>
+
+        {/* NEW: Cache Manager - Insert before Help & Support */}
+        <div className="mb-6">
+          <CacheManager
+            language={language}
+            colors={colors}
+            onClear={() => queryClient.clear()}
           />
         </div>
 
