@@ -40,17 +40,31 @@ Deno.serve(async (req) => {
 
       console.log('📝 Updating maintenance request...');
 
-      // Get user data for sender name
+      // Get user data for sender name AND LINE notifications
       const users = await base44.asServiceRole.entities.User.filter({ 
         email: maintenanceRequest.created_by 
       });
       const tenant = users[0];
+      
+      if (!tenant) {
+        console.error('❌ Tenant user not found:', maintenanceRequest.created_by);
+        return Response.json({ error: 'Tenant not found' }, { status: 404 });
+      }
+
+      const language = tenant.language || 'en';
       const senderName = role === 'landlord' 
-        ? (tenant?.landlord_name || 'Landlord')
-        : (tenant?.juristic_name || 'Juristic Office');
+        ? (tenant.landlord_name || 'Landlord')
+        : (tenant.juristic_name || 'Juristic Office');
       const senderEmail = role === 'landlord'
-        ? (tenant?.landlord_email || '')
-        : (tenant?.juristic_email || '');
+        ? (tenant.landlord_email || '')
+        : (tenant.juristic_email || '');
+
+      console.log('👤 Tenant data loaded:', {
+        email: tenant.email,
+        lineToken: tenant.line_messaging_token || 'NOT SET',
+        lineEnabled: tenant.line_notifications !== false,
+        emailEnabled: tenant.email_notifications !== false
+      });
 
       // Build new log entry
       const newLogEntry = {
@@ -98,10 +112,8 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.MaintenanceRequest.update(maintenanceRequest.id, updateData);
       console.log('✅ Maintenance request updated');
 
-      // Send notification to tenant
-      if (tenant?.email && tenant.email_notifications !== false) {
-        const language = tenant.language || 'en';
-
+      // ✅ SEND EMAIL NOTIFICATION TO TENANT
+      if (tenant.email && tenant.email_notifications !== false) {
         const statusLabels = {
           en: {
             acknowledged: 'Acknowledged',
@@ -231,6 +243,246 @@ Deno.serve(async (req) => {
         } catch (emailError) {
           console.error('❌ Failed to send notification email:', emailError);
         }
+      }
+
+      // ✅ NEW: SEND LINE NOTIFICATION TO TENANT
+      if (tenant.line_messaging_token && tenant.line_notifications !== false) {
+        console.log('📱 Sending LINE notification to tenant...');
+        
+        try {
+          // Create Flex message for maintenance update
+          const statusEmoji = {
+            acknowledged: '👀',
+            in_progress: '⚙️',
+            completed: '✅',
+            rejected: '❌'
+          };
+
+          const statusColors = {
+            acknowledged: '#6366F1',
+            in_progress: '#F59E0B',
+            completed: '#10B981',
+            rejected: '#EF4444'
+          };
+
+          const emoji = statusEmoji[status] || '🔔';
+          const statusColor = statusColors[status] || '#6366F1';
+
+          const statusLabels = {
+            en: {
+              acknowledged: 'Acknowledged',
+              in_progress: 'In Progress',
+              completed: 'Completed',
+              rejected: 'Rejected'
+            },
+            th: {
+              acknowledged: 'รับทราบแล้ว',
+              in_progress: 'กำลังดำเนินการ',
+              completed: 'เสร็จสิ้น',
+              rejected: 'ถูกปฏิเสธ'
+            }
+          };
+
+          const statusLabel = statusLabels[language][status] || status;
+
+          const updateFlexMessage = {
+            altText: language === 'th' 
+              ? `🔔 อัปเดต: ${maintenanceRequest.issue_title}` 
+              : `🔔 Update: ${maintenanceRequest.issue_title}`,
+            contents: {
+              type: 'bubble',
+              size: 'mega',
+              header: {
+                type: 'box',
+                layout: 'vertical',
+                contents: [
+                  {
+                    type: 'box',
+                    layout: 'horizontal',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: emoji,
+                        size: 'xl',
+                        weight: 'bold'
+                      },
+                      {
+                        type: 'text',
+                        text: language === 'th' ? '🔔 อัปเดตคำขอซ่อม' : '🔔 Maintenance Update',
+                        weight: 'bold',
+                        size: 'lg',
+                        color: '#FFFFFF',
+                        flex: 1,
+                        margin: 'md'
+                      }
+                    ]
+                  },
+                  {
+                    type: 'text',
+                    text: language === 'th' ? `จาก${senderName}` : `From ${senderName}`,
+                    color: '#FFFFFF',
+                    size: 'sm',
+                    margin: 'sm'
+                  }
+                ],
+                backgroundColor: statusColor,
+                paddingAll: '20px'
+              },
+              body: {
+                type: 'box',
+                layout: 'vertical',
+                contents: [
+                  {
+                    type: 'box',
+                    layout: 'vertical',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: maintenanceRequest.issue_title,
+                        weight: 'bold',
+                        size: 'md',
+                        color: '#0C3B2E',
+                        wrap: true
+                      },
+                      {
+                        type: 'separator',
+                        margin: 'md'
+                      },
+                      {
+                        type: 'box',
+                        layout: 'baseline',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: language === 'th' ? 'สถานะใหม่:' : 'New Status:',
+                            color: '#8B8B8B',
+                            size: 'sm',
+                            flex: 0
+                          },
+                          {
+                            type: 'text',
+                            text: statusLabel,
+                            weight: 'bold',
+                            size: 'md',
+                            color: statusColor,
+                            flex: 1,
+                            margin: 'md'
+                          }
+                        ],
+                        margin: 'lg'
+                      }
+                    ]
+                  },
+                  {
+                    type: 'box',
+                    layout: 'vertical',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: message,
+                        size: 'sm',
+                        color: '#6B7280',
+                        wrap: true
+                      }
+                    ],
+                    margin: 'xl',
+                    paddingAll: '12px',
+                    backgroundColor: '#F9FAFB',
+                    cornerRadius: 'md'
+                  },
+                  ...(completionPhotoUrls && completionPhotoUrls.length > 0 ? [{
+                    type: 'box',
+                    layout: 'baseline',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: '📸',
+                        size: 'sm',
+                        flex: 0
+                      },
+                      {
+                        type: 'text',
+                        text: language === 'th' 
+                          ? `${completionPhotoUrls.length} รูปงานเสร็จแล้ว` 
+                          : `${completionPhotoUrls.length} completion photos`,
+                        size: 'sm',
+                        color: '#10B981',
+                        weight: 'bold',
+                        flex: 1,
+                        margin: 'sm'
+                      }
+                    ],
+                    margin: 'md'
+                  }] : []),
+                  ...(billPhotoUrls && billPhotoUrls.length > 0 ? [{
+                    type: 'box',
+                    layout: 'baseline',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: '🧾',
+                        size: 'sm',
+                        flex: 0
+                      },
+                      {
+                        type: 'text',
+                        text: language === 'th' 
+                          ? `${billPhotoUrls.length} ใบเสร็จ/บิล` 
+                          : `${billPhotoUrls.length} bills/receipts`,
+                        size: 'sm',
+                        color: '#3B82F6',
+                        weight: 'bold',
+                        flex: 1,
+                        margin: 'sm'
+                      }
+                    ],
+                    margin: 'md'
+                  }] : [])
+                ],
+                paddingAll: '20px'
+              },
+              footer: {
+                type: 'box',
+                layout: 'vertical',
+                contents: [
+                  {
+                    type: 'button',
+                    action: {
+                      type: 'uri',
+                      label: language === 'th' ? 'ดูรายละเอียดเต็ม' : 'View Full Details',
+                      uri: 'https://app.leaseshield.asia/MaintenanceTracker'
+                    },
+                    style: 'primary',
+                    color: '#0C3B2E',
+                    height: 'sm'
+                  }
+                ],
+                paddingAll: '12px'
+              },
+              styles: {
+                footer: {
+                  separator: false
+                }
+              }
+            }
+          };
+
+          console.log('📤 Sending Flex message to tenant LINE...');
+          const lineResponse = await base44.asServiceRole.functions.invoke('sendLineMessage', {
+            userId: tenant.line_messaging_token,
+            flexMessage: updateFlexMessage
+          });
+
+          console.log('✅ LINE notification sent to tenant:', lineResponse.data);
+        } catch (lineError) {
+          console.error('❌ Failed to send LINE notification to tenant:', lineError);
+          console.error('LINE Error stack:', lineError.stack);
+        }
+      } else {
+        console.log('⚠️ Tenant LINE not configured or disabled:', {
+          hasToken: !!tenant.line_messaging_token,
+          enabled: tenant.line_notifications !== false
+        });
       }
 
       return Response.json({ 
