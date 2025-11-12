@@ -27,10 +27,13 @@ import FloatingActionButton from "../components/shared/FloatingActionButton";
 import MobileFormInput from "../components/shared/MobileFormInput";
 import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 import LazyImage from "../components/shared/LazyImage";
+import PullToRefresh from "../components/shared/PullToRefresh";
+import { ToastProvider, useToast } from "../components/shared/Toast";
 
-export default function PropertyTracker() {
+function PropertyTrackerContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [expandedSections, setExpandedSections] = useState({
     deposit: true,
     rent: true,
@@ -102,6 +105,7 @@ export default function PropertyTracker() {
         property_address: '',
         notes: ''
       });
+      toast.success(language === 'th' ? 'บันทึกสำเร็จ' : 'Saved successfully');
     },
   });
 
@@ -110,7 +114,8 @@ export default function PropertyTracker() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
       setEditingDeposit(false);
-      // setEditingRent(false); // This line is for rent, not deposit, seems out of place
+      setEditingRent(false);
+      toast.success(language === 'th' ? 'อัปเดตสำเร็จ' : 'Updated successfully');
     },
   });
 
@@ -119,7 +124,7 @@ export default function PropertyTracker() {
       return await base44.entities.MaintenanceRequest.create(data);
     },
     onMutate: async (newRequestData) => {
-      haptic.medium(); // Haptic feedback when action is initiated
+      haptic.medium();
 
       const tempId = `optimistic-${Date.now()}-${Math.random()}`;
       
@@ -151,10 +156,10 @@ export default function PropertyTracker() {
           if (notificationResponse.data?.success) {
             const sentCount = notificationResponse.data.notifications?.filter(n => n.status === 'sent').length || 0;
             if (sentCount > 0) {
-              alert(
+              toast.success(
                 language === 'th'
-                  ? `✅ คำขอซ่อมถูกส่งแล้ว!\n\nเลขที่: ${data.request_number}\nแจ้งไปยัง: ${sentCount} ผู้รับ\n\nคุณจะได้รับการแจ้งเตือนเมื่อมีการตอบกลับ`
-                  : `✅ Maintenance request sent!\n\nRequest #: ${data.request_number}\nNotified: ${sentCount} recipient(s)\n\nYou'll be notified when they respond`
+                  ? `✅ คำขอส่งแล้ว! แจ้ง ${sentCount} ผู้รับ`
+                  : `✅ Request sent! Notified ${sentCount} recipient(s)`
               );
             }
           }
@@ -166,9 +171,9 @@ export default function PropertyTracker() {
       console.error('❌ createMaintenanceMutation error:', error);
       optimistic.revert(context.optimisticItem.id); 
       haptic.error();
-      alert(language === 'th'
-        ? 'ไม่สามารถสร้างคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง'
-        : 'Failed to create maintenance request. Please try again.');
+      toast.error(language === 'th'
+        ? 'ไม่สามารถสร้างคำขอได้'
+        : 'Failed to create request');
     }
   });
 
@@ -190,13 +195,13 @@ export default function PropertyTracker() {
         issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
       });
       haptic.success();
-      alert(language === 'th' ? 'อัปเดตสำเร็จ' : 'Updated successfully');
+      toast.success(language === 'th' ? 'อัปเดตสำเร็จ' : 'Updated successfully');
     },
     onError: (error, variables, context) => {
       console.error('❌ updateMaintenanceMutation error:', error);
       optimistic.revert(context.id); 
       haptic.error();
-      alert(language === 'th' ? 'ไม่สามารถอัปเดตคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง' : 'Failed to update maintenance request. Please try again.');
+      toast.error(language === 'th' ? 'อัปเดตไม่สำเร็จ' : 'Update failed');
     },
   });
 
@@ -210,13 +215,13 @@ export default function PropertyTracker() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       haptic.success();
-      alert(language === 'th' ? 'คำขอถูกลบแล้ว' : 'Request deleted successfully');
+      toast.success(language === 'th' ? 'ลบสำเร็จ' : 'Deleted successfully');
     },
     onError: (error, variables, context) => {
       console.error('❌ deleteMaintenanceMutation error:', error);
       optimistic.revert(context.idToDelete); 
       haptic.error();
-      alert(language === 'th' ? 'ไม่สามารถลบคำขอได้' : 'Failed to delete request');
+      toast.error(language === 'th' ? 'ลบไม่สำเร็จ' : 'Delete failed');
     },
   });
 
@@ -287,6 +292,8 @@ export default function PropertyTracker() {
       active: "Active",
       imagesOptimized: "Images Optimized",
       imagesOptimizedDesc: "images • Saved",
+      refreshed: "Refreshed successfully",
+      processingError: "An error occurred during processing. Please try again.",
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -337,11 +344,20 @@ export default function PropertyTracker() {
       archived: "เก็บถาวร",
       active: "ใช้งาน",
       imagesOptimized: "ปรับขนาดไฟล์แล้ว", 
-      imagesOptimizedDesc: "รูป • ประหยัด", 
+      imagesOptimizedDesc: "รูป • ประหยัด",
+      refreshed: "รีเฟรชสำเร็จ",
+      processingError: "เกิดข้อผิดพลาดในการดำเนินการ กรุณาลองอีกครั้ง",
     }
   };
 
   const strings = t[language];
+
+  const handleRefresh = async () => {
+    haptic.light();
+    await queryClient.invalidateQueries({ queryKey: ['deposits'] });
+    await queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+    toast.success(strings.refreshed);
+  };
 
   // Function to generate sequential request number
   const generateRequestNumber = () => {
@@ -466,7 +482,7 @@ export default function PropertyTracker() {
 
     if (!user?.email) {
       console.error('❌ No user email found!');
-      alert('Error: Unable to identify user. Please try refreshing the page.');
+      toast.error(language === 'th' ? 'กรุณาเข้าสู่ระบบใหม่' : 'Please log in again');
       return;
     }
 
@@ -536,9 +552,7 @@ export default function PropertyTracker() {
       setPhotoUploadStage('');
       setPhotoUploadProgress(0);
       setCompressionStats(null); 
-      alert(language === 'th'
-        ? 'เกิดข้อผิดพลาดในการดำเนินการสร้างคำขอ กรุณาลองอีกครั้ง'
-        : 'An error occurred during processing. Please try again.');
+      toast.error(strings.processingError);
     }
   };
 
@@ -624,7 +638,7 @@ export default function PropertyTracker() {
       setPhotoUploadStage('');
       setPhotoUploadProgress(0);
       setCompressionStats(null); 
-      alert(language === 'th' ? 'เกิดข้อผิดพลาดในการดำเนินการอัปเดตคำขอ กรุณาลองอีกครั้ง' : 'An error occurred during processing. Please try again.');
+      toast.error(strings.processingError);
     }
   };
 
@@ -655,7 +669,7 @@ export default function PropertyTracker() {
       });
     } catch (error) {
       console.error('❌ Failed to close maintenance request:', error);
-      alert(language === 'th' ? 'เกิดข้อผิดพลาดในการดำเนินการปิดคำขอ กรุณาลองอีกครั้ง' : 'An error occurred while closing the request. Please try again.');
+      toast.error(strings.processingError);
     }
   };
 
@@ -666,7 +680,7 @@ export default function PropertyTracker() {
       await deleteMaintenanceMutation.mutateAsync(request.id);
     } catch (error) {
       console.error('❌ Failed to delete maintenance request:', error);
-      alert(language === 'th' ? 'เกิดข้อผิดพลาดในการดำเนินการลบคำขอ กรุณาลองอีกครั้ง' : 'An error occurred while deleting the request. Please try again.');
+      toast.error(strings.processingError);
     }
   };
 
@@ -701,982 +715,992 @@ export default function PropertyTracker() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-5xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => {
-            haptic.light();
-            navigate(createPageUrl("Dashboard"))
-          }}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          {strings.back}
-        </Button>
-
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-            <Home className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
-            {strings.title}
-          </h1>
-          <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
-        </div>
-
-        {/* FAB for Adding Maintenance */}
-        {!showAddMaintenance && !editingMaintenance && (
-          <FloatingActionButton
-            icon={Plus}
-            label={strings.addMaintenance}
+    <PullToRefresh onRefresh={handleRefresh} colors={colors}>
+      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-5xl mx-auto">
+          <Button
+            variant="ghost"
             onClick={() => {
-              haptic.medium();
-              setShowAddMaintenance(true);
-              setEditingMaintenance(null);
-              setCompressionStats(null);
-              setMaintenanceForm({
-                issue_title: '', 
-                description: '', 
-                category: 'other', 
-                priority: 'medium', 
-                property_address: '', 
-                reported_date: new Date().toISOString().split('T')[0]
-              });
-              setPhotoFiles([]);
-              setPhotoPreviews([]);
+              haptic.light();
+              navigate(createPageUrl("Dashboard"))
             }}
-            color="#F59E0B"
-          />
-        )}
-
-        {/* DEPOSIT SECTION - Enhanced styling */}
-        <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
-          <CardHeader
-            className="cursor-pointer"
-            onClick={() => toggleSection('deposit')}
-            style={{
-              background: isDarkMode
-                ? `linear-gradient(to right, #2A2D30, #3A3420)`
-                : `linear-gradient(to right, #FFFBEB, #FEF3C7)`,
-              borderBottom: expandedSections.deposit ? `1px solid ${colors.borderColor}` : 'none'
-            }}
+            className="mb-4"
           >
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  backgroundColor: colors.depositAccent,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Wallet className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-lg font-bold">{strings.depositSection}</div>
-                  {deposit && deposit.deposit_amount > 0 && (
-                    <div className="text-sm font-normal flex items-center gap-2 mt-1">
-                      <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>
-                        {isOverdue
-                          ? `${Math.abs(daysRemaining)} ${strings.daysRemaining} ${strings.overdue}`
-                          : daysRemaining !== null
-                            ? `${daysRemaining} ${strings.daysRemaining}`
-                            : 'Active'
-                        }
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                {deposit && deposit.deposit_amount > 0 && !editingDeposit && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      haptic.light();
-                      setDepositForm({
-                        deposit_amount: deposit.deposit_amount?.toString() || '',
-                        deposit_paid_date: deposit.deposit_paid_date || '',
-                        expected_return_date: deposit.expected_return_date || '',
-                        property_address: deposit.property_address || '',
-                        notes: deposit.notes || ''
-                      });
-                      setEditingDeposit(true);
-                    }}
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                )}
-                {expandedSections.deposit ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-              </div>
-            </div>
-          </CardHeader>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {strings.back}
+          </Button>
 
-          {expandedSections.deposit && (
-            <CardContent className="p-6">
-              {(!deposit || deposit.deposit_amount === 0) && !editingDeposit ? (
-                <div className="text-center py-8">
-                  <Wallet className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                  <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noDeposit}</p>
-                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addDepositDesc}</p>
-                  <Button 
-                    onClick={() => {
-                      haptic.light();
-                      setEditingDeposit(true);
-                    }} 
-                    className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal"
-                    style={{ minHeight: '44px' }}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {strings.addDeposit}
-                  </Button>
-                </div>
-              ) : editingDeposit ? (
-                <div className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <MobileFormInput
-                      label={strings.depositAmount}
-                      type="number"
-                      value={depositForm.deposit_amount}
-                      onChange={(e) => setDepositForm({...depositForm, deposit_amount: e.target.value})}
-                      icon={DollarSign}
-                      colors={colors}
-                      inputMode="decimal"
-                      required
-                    />
-                    <MobileFormInput
-                      label={strings.propertyAddress}
-                      value={depositForm.property_address}
-                      onChange={(e) => setDepositForm({...depositForm, property_address: e.target.value})}
-                      icon={Home}
-                      colors={colors}
-                    />
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <MobileFormInput
-                      label={strings.paidDate}
-                      type="date"
-                      value={depositForm.deposit_paid_date}
-                      onChange={(e) => setDepositForm({...depositForm, deposit_paid_date: e.target.value})}
-                      icon={Calendar}
-                      colors={colors}
-                      required
-                    />
-                    <MobileFormInput
-                      label={strings.expectedReturn}
-                      type="date"
-                      value={depositForm.expected_return_date}
-                      onChange={(e) => setDepositForm({...depositForm, expected_return_date: e.target.value})}
-                      icon={Calendar}
-                      colors={colors}
-                      required
-                    />
-                  </div>
-                  <MobileFormInput
-                    label={strings.notes}
-                    value={depositForm.notes}
-                    onChange={(e) => setDepositForm({...depositForm, notes: e.target.value})}
-                    multiline
-                    rows={2}
-                    colors={colors}
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        haptic.light();
-                        setEditingDeposit(false);
-                      }}
-                      style={{ minHeight: '44px' }}
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      {strings.cancel}
-                    </Button>
-                    <Button 
-                      onClick={handleDepositSubmit} 
-                      className="bg-ls-forest hover:bg-ls-forest/90"
-                      style={{ minHeight: '44px' }}
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      {strings.save}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <DollarSign className="w-4 h-4 text-ls-gold" />
-                      <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.depositAmount}</p>
-                    </div>
-                    <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                      ฿{deposit.deposit_amount?.toLocaleString() || '0'}
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="w-4 h-4 text-ls-forest" />
-                      <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.expectedReturn}</p>
-                    </div>
-                    <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                      {deposit.expected_return_date ? format(new Date(deposit.expected_return_date), 'MMM d, yyyy') : 'N/A'}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
+          <div className="mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <Home className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
+              {strings.title}
+            </h1>
+            <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+          </div>
+
+          {/* FAB for Adding Maintenance */}
+          {!showAddMaintenance && !editingMaintenance && (
+            <FloatingActionButton
+              icon={Plus}
+              label={strings.addMaintenance}
+              onClick={() => {
+                haptic.medium();
+                setShowAddMaintenance(true);
+                setEditingMaintenance(null);
+                setCompressionStats(null);
+                setMaintenanceForm({
+                  issue_title: '', 
+                  description: '', 
+                  category: 'other', 
+                  priority: 'medium', 
+                  property_address: '', 
+                  reported_date: new Date().toISOString().split('T')[0]
+                });
+                setPhotoFiles([]);
+                setPhotoPreviews([]);
+              }}
+              color="#F59E0B"
+            />
           )}
-        </Card>
 
-        {/* RENT SECTION - Enhanced styling */}
-        <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.rentAccent}` }}>
-          <CardHeader
-            className="cursor-pointer"
-            onClick={() => toggleSection('rent')}
-            style={{
-              background: isDarkMode
-                ? `linear-gradient(to right, #2A2D30, #1E3A5F)`
-                : `linear-gradient(to right, #EFF6FF, #DBEAFE)`,
-              borderBottom: expandedSections.rent ? `1px solid ${colors.borderColor}` : 'none'
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  backgroundColor: colors.rentAccent,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Calendar className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-lg font-bold">{strings.rentSection}</div>
-                  {deposit?.rent_amount && deposit?.rent_due_day && (
-                    <div className="text-sm font-normal mt-1">
-                      <Badge className="bg-blue-100 text-blue-800">
-                        Day {deposit.rent_due_day} - ฿{deposit.rent_amount.toLocaleString()}
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                {deposit?.rent_amount && deposit?.rent_due_day && !editingRent && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      haptic.light();
-                      setRentForm({
-                        rent_amount: deposit.rent_amount?.toString() || '',
-                        rent_due_day: deposit.rent_due_day?.toString() || '',
-                        rent_alerts_enabled: deposit.rent_alerts_enabled || false,
-                        rent_alert_days_before: deposit.rent_alert_days_before?.toString() || '3'
-                      });
-                      setEditingRent(true);
-                    }}
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                )}
-                {expandedSections.rent ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-              </div>
-            </div>
-          </CardHeader>
-
-          {expandedSections.rent && (
-            <CardContent className="p-6">
-              {(!deposit?.rent_amount || !deposit?.rent_due_day) && !editingRent ? (
-                <div className="text-center py-8">
-                  <Calendar className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                  <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noRent}</p>
-                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addRentDesc}</p>
-                  <Button 
-                    onClick={() => {
-                      haptic.light();
-                      setEditingRent(true);
-                    }} 
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    style={{ minHeight: '44px' }}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {strings.addRent}
-                  </Button>
-                </div>
-              ) : editingRent ? (
-                <div className="space-y-4">
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <MobileFormInput
-                      label={strings.rentAmount}
-                      type="number"
-                      value={rentForm.rent_amount}
-                      onChange={(e) => setRentForm({...rentForm, rent_amount: e.target.value})}
-                      icon={DollarSign}
-                      colors={colors}
-                      inputMode="decimal"
-                      required
-                    />
-                    <MobileFormInput
-                      label={strings.rentDueDay}
-                      type="number"
-                      value={rentForm.rent_due_day}
-                      onChange={(e) => setRentForm({...rentForm, rent_due_day: e.target.value})}
-                      placeholder="e.g., 5"
-                      icon={Calendar}
-                      colors={colors}
-                      inputMode="numeric"
-                      min={1}
-                      max={31}
-                      required
-                    />
-                    <MobileFormInput
-                      label={strings.alertDaysBefore}
-                      type="number"
-                      value={rentForm.rent_alert_days_before}
-                      onChange={(e) => setRentForm({...rentForm, rent_alert_days_before: e.target.value})}
-                      icon={Bell}
-                      colors={colors}
-                      inputMode="numeric"
-                      min={1}
-                      max={14}
-                    />
+          {/* DEPOSIT SECTION - Enhanced styling */}
+          <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
+            <CardHeader
+              className="cursor-pointer"
+              onClick={() => toggleSection('deposit')}
+              style={{
+                background: isDarkMode
+                  ? `linear-gradient(to right, #2A2D30, #3A3420)`
+                  : `linear-gradient(to right, #FFFBEB, #FEF3C7)`,
+                borderBottom: expandedSections.deposit ? `1px solid ${colors.borderColor}` : 'none'
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    backgroundColor: colors.depositAccent,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Wallet className="w-6 h-6 text-white" />
                   </div>
-                  <div className="flex items-center gap-2" style={{ minHeight: '44px' }}>
-                    <Checkbox
-                      checked={rentForm.rent_alerts_enabled}
-                      onCheckedChange={(checked) => {
-                        haptic.light();
-                        setRentForm({...rentForm, rent_alerts_enabled: checked});
-                      }}
-                    />
-                    <Label style={{ color: colors.textPrimary }}>{strings.rentAlertsEnabled}</Label>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        haptic.light();
-                        setEditingRent(false);
-                      }}
-                      style={{ minHeight: '44px' }}
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      {strings.cancel}
-                    </Button>
-                    <Button 
-                      onClick={handleRentSubmit} 
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                      style={{ minHeight: '44px' }}
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      {strings.save}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <DollarSign className="w-4 h-4 text-blue-600" />
-                      <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentAmount}</p>
-                    </div>
-                    <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                      ฿{deposit.rent_amount.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="w-4 h-4 text-blue-600" />
-                      <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentDueDay}</p>
-                    </div>
-                    <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                      Day {deposit.rent_due_day}
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Bell className="w-4 h-4 text-blue-600" />
-                      <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.alertDaysBefore}</p>
-                    </div>
-                    <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                      {deposit.rent_alert_days_before || 3} days
-                    </p>
-                    {deposit.rent_alerts_enabled && (
-                      <Badge className="bg-emerald-100 text-emerald-800 mt-2">
-                        <Bell className="w-3 h-3 mr-1" />
-                        Alerts ON
-                      </Badge>
+                  <div>
+                    <div className="text-lg font-bold">{strings.depositSection}</div>
+                    {deposit && deposit.deposit_amount > 0 && (
+                      <div className="text-sm font-normal flex items-center gap-2 mt-1">
+                        <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>
+                          {isOverdue
+                            ? `${Math.abs(daysRemaining)} ${strings.daysRemaining} ${strings.overdue}`
+                            : daysRemaining !== null
+                              ? `${daysRemaining} ${strings.daysRemaining}`
+                              : 'Active'
+                          }
+                        </Badge>
+                      </div>
                     )}
                   </div>
-                </div>
-              )}
-            </CardContent>
-          )}
-        </Card>
-
-        {/* MAINTENANCE SECTION - Enhanced styling with actions */}
-        <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.maintenanceAccent}` }}>
-          <CardHeader
-            className="cursor-pointer"
-            onClick={() => toggleSection('maintenance')}
-            style={{
-              background: isDarkMode
-                ? `linear-gradient(to right, #2A2D30, #3A2D1C)`
-                : `linear-gradient(to right, #FFF7ED, #FFEDD5)`,
-              borderBottom: expandedSections.maintenance ? `1px solid ${colors.borderColor}` : 'none'
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  backgroundColor: colors.maintenanceAccent,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Wrench className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-lg font-bold">{strings.maintenanceSection}</div>
-                  {activeRequests.length > 0 && (
-                    <div className="text-sm font-normal mt-1">
-                      <Badge className="bg-orange-100 text-orange-800">
-                        {activeRequests.length} {strings.active}
-                      </Badge>
-                      {completedRequests.length > 0 && (
-                        <Badge className="bg-gray-100 text-gray-800 ml-2">
-                          {completedRequests.length} {strings.archived}
-                        </Badge>
-                      )}
-                    </div>
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  {deposit && deposit.deposit_amount > 0 && !editingDeposit && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        haptic.light();
+                        setDepositForm({
+                          deposit_amount: deposit.deposit_amount?.toString() || '',
+                          deposit_paid_date: deposit.deposit_paid_date || '',
+                          expected_return_date: deposit.expected_return_date || '',
+                          property_address: deposit.property_address || '',
+                          notes: deposit.notes || ''
+                        });
+                        setEditingDeposit(true);
+                      }}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
                   )}
+                  {expandedSections.deposit ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                 </div>
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    haptic.light();
-                    setShowAddMaintenance(true);
-                    setEditingMaintenance(null); 
-                    setCompressionStats(null); 
-                    setMaintenanceForm({ 
-                      issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
-                    });
-                    setPhotoFiles([]);
-                    setPhotoPreviews([]);
-                  }}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-                {expandedSections.maintenance ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
               </div>
-            </div>
-          </CardHeader>
+            </CardHeader>
 
-          {expandedSections.maintenance && (
-            <CardContent className="p-6">
-              {(showAddMaintenance || editingMaintenance) && (
-                <div className="mb-4 p-4 rounded-lg border-2 border-dashed" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
-                  <h3 className="font-bold mb-3" style={{ color: colors.textPrimary }}>
-                    {editingMaintenance ? strings.edit : strings.addMaintenance}
-                  </h3>
-                  
-                  {/* Upload Progress */}
-                  {uploadingPhotos && (
-                    <div className="mb-4">
-                      <UploadProgress
-                        currentStage={photoUploadStage}
-                        progress={photoUploadProgress}
-                        fileCount={photoFiles.length}
-                        primaryColor={colors.textPrimary}
-                        secondaryColor={colors.textSecondary}
-                        language={language}
+            {expandedSections.deposit && (
+              <CardContent className="p-6">
+                {(!deposit || deposit.deposit_amount === 0) && !editingDeposit ? (
+                  <div className="text-center py-8">
+                    <Wallet className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                    <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noDeposit}</p>
+                    <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addDepositDesc}</p>
+                    <Button 
+                      onClick={() => {
+                        haptic.light();
+                        setEditingDeposit(true);
+                      }} 
+                      className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal"
+                      style={{ minHeight: '44px' }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {strings.addDeposit}
+                    </Button>
+                  </div>
+                ) : editingDeposit ? (
+                  <div className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <MobileFormInput
+                        label={strings.depositAmount}
+                        type="number"
+                        value={depositForm.deposit_amount}
+                        onChange={(e) => setDepositForm({...depositForm, deposit_amount: e.target.value})}
+                        icon={DollarSign}
+                        colors={colors}
+                        inputMode="decimal"
+                        required
+                      />
+                      <MobileFormInput
+                        label={strings.propertyAddress}
+                        value={depositForm.property_address}
+                        onChange={(e) => setDepositForm({...depositForm, property_address: e.target.value})}
+                        icon={Home}
+                        colors={colors}
                       />
                     </div>
-                  )}
-
-                  {/* Compression Stats Notice */}
-                  {!uploadingPhotos && compressionStats && compressionStats.compressedCount > 0 && (
-                    <div className="mb-4 p-3 rounded-lg border-2" style={{
-                      backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-                      borderColor: '#3B82F6'
-                    }}>
-                      <div className="flex items-start gap-2">
-                        <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <CheckCircle2 className="w-3 h-3 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                            {strings.imagesOptimized}
-                          </p>
-                          <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
-                            {strings.imagesOptimizedDesc.split('•')[0].trim()} {compressionStats.compressedCount} {strings.imagesOptimizedDesc.split('•')[1].trim()} {compressionStats.savedMB} MB
-                          </p>
-                        </div>
-                      </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <MobileFormInput
+                        label={strings.paidDate}
+                        type="date"
+                        value={depositForm.deposit_paid_date}
+                        onChange={(e) => setDepositForm({...depositForm, deposit_paid_date: e.target.value})}
+                        icon={Calendar}
+                        colors={colors}
+                        required
+                      />
+                      <MobileFormInput
+                        label={strings.expectedReturn}
+                        type="date"
+                        value={depositForm.expected_return_date}
+                        onChange={(e) => setDepositForm({...depositForm, expected_return_date: e.target.value})}
+                        icon={Calendar}
+                        colors={colors}
+                        required
+                      />
                     </div>
-                  )}
-
-                  <div className="space-y-3">
                     <MobileFormInput
-                      label={strings.issueTitle}
-                      value={maintenanceForm.issue_title}
-                      onChange={(e) => setMaintenanceForm({...maintenanceForm, issue_title: e.target.value})}
-                      icon={Wrench}
-                      colors={colors}
-                      required
-                      autoFocus
-                    />
-                    
-                    <MobileFormInput
-                      label={strings.description}
-                      value={maintenanceForm.description}
-                      onChange={(e) => setMaintenanceForm({...maintenanceForm, description: e.target.value})}
+                      label={strings.notes}
+                      value={depositForm.notes}
+                      onChange={(e) => setDepositForm({...depositForm, notes: e.target.value})}
                       multiline
-                      rows={3}
+                      rows={2}
                       colors={colors}
                     />
-
-                    <div>
-                      <Label style={{ color: colors.textPrimary }}>{strings.addPhotos}</Label>
-                      <div className="mt-2 space-y-3">
-                        <div className="flex gap-2 flex-wrap">
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              capture="environment"
-                              multiple
-                              onChange={handlePhotoSelection}
-                              className="hidden"
-                            />
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all active:scale-95"
-                              style={{
-                                backgroundColor: colors.inputBg,
-                                borderColor: colors.borderColor,
-                                color: colors.textPrimary,
-                                minHeight: '44px'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
-                              onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
-                            >
-                              <Camera className="w-4 h-4" />
-                              <span className="text-sm font-semibold">{strings.takePhoto}</span>
-                            </div>
-                          </label>
-
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              onChange={handlePhotoSelection}
-                              className="hidden"
-                            />
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all active:scale-95"
-                              style={{
-                                backgroundColor: colors.inputBg,
-                                borderColor: colors.borderColor,
-                                color: colors.textPrimary,
-                                minHeight: '44px'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
-                              onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
-                            >
-                              <ImageIcon className="w-4 h-4" />
-                              <span className="text-sm font-semibold">{strings.chooseFiles}</span>
-                            </div>
-                          </label>
-                        </div>
-
-                        {photoPreviews.length > 0 && (
-                          <div>
-                            <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                              {photoPreviews.length} {strings.photosAdded}
-                            </p>
-                            <div className="grid grid-cols-3 gap-2">
-                              {photoPreviews.map((preview, index) => (
-                                <div key={index} className="relative group">
-                                  <LazyImage
-                                    src={preview}
-                                    alt={`Preview ${index + 1}`}
-                                    className="w-full h-24 object-cover rounded-lg border-2"
-                                    style={{ borderColor: colors.borderColor }}
-                                    loadingColor="#F59E0B"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemovePhoto(index)}
-                                    className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95"
-                                    style={{ minWidth: '28px', minHeight: '28px' }}
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-3">
-                      <div>
-                        <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
-                        <Select 
-                          value={maintenanceForm.category} 
-                          onValueChange={(value) => {
-                            haptic.light();
-                            setMaintenanceForm({...maintenanceForm, category: value});
-                          }}
-                        >
-                          <SelectTrigger className="mt-2" style={{ 
-                            backgroundColor: colors.inputBg, 
-                            borderColor: colors.borderColor,
-                            minHeight: '44px',
-                            fontSize: '16px'
-                          }}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="plumbing">Plumbing</SelectItem>
-                            <SelectItem value="electrical">Electrical</SelectItem>
-                            <SelectItem value="structural">Structural</SelectItem>
-                            <SelectItem value="appliance">Appliance</SelectItem>
-                            <SelectItem value="hvac">HVAC</SelectItem>
-                            <SelectItem value="pest">Pest</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label style={{ color: colors.textPrimary }}>{strings.priority}</Label>
-                        <Select 
-                          value={maintenanceForm.priority} 
-                          onValueChange={(value) => {
-                            haptic.light();
-                            setMaintenanceForm({...maintenanceForm, priority: value});
-                          }}
-                        >
-                          <SelectTrigger className="mt-2" style={{ 
-                            backgroundColor: colors.inputBg, 
-                            borderColor: colors.borderColor,
-                            minHeight: '44px',
-                            fontSize: '16px'
-                          }}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="low">Low</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
-                            <SelectItem value="urgent">Urgent</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
                     <div className="flex gap-2 justify-end">
-                      <Button
-                        variant="outline"
+                      <Button 
+                        variant="outline" 
                         onClick={() => {
                           haptic.light();
-                          setShowAddMaintenance(false);
-                          setEditingMaintenance(null);
-                          setPhotoFiles([]);
-                          setPhotoPreviews([]);
-                          setCompressionStats(null);
-                          setMaintenanceForm({
-                            issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
-                          });
+                          setEditingDeposit(false);
                         }}
-                        disabled={uploadingPhotos}
                         style={{ minHeight: '44px' }}
                       >
                         <X className="w-4 h-4 mr-2" />
                         {strings.cancel}
                       </Button>
-                      <Button
-                        onClick={editingMaintenance ? handleUpdateMaintenance : handleMaintenanceSubmit}
-                        className="bg-orange-600 hover:bg-orange-700"
-                        disabled={uploadingPhotos}
+                      <Button 
+                        onClick={handleDepositSubmit} 
+                        className="bg-ls-forest hover:bg-ls-forest/90"
                         style={{ minHeight: '44px' }}
                       >
-                        {uploadingPhotos ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            {strings.uploadingPhotos}
-                          </>
-                        ) : (
-                          <>
-                            <Save className="w-4 h-4 mr-2" />
-                            {strings.save}
-                          </>
-                        )}
+                        <Save className="w-4 h-4 mr-2" />
+                        {strings.save}
                       </Button>
                     </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <DollarSign className="w-4 h-4 text-ls-gold" />
+                        <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.depositAmount}</p>
+                      </div>
+                      <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                        ฿{deposit.deposit_amount?.toLocaleString() || '0'}
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="w-4 h-4 text-ls-forest" />
+                        <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.expectedReturn}</p>
+                      </div>
+                      <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+                        {deposit.expected_return_date ? format(new Date(deposit.expected_return_date), 'MMM d, yyyy') : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            )}
+          </Card>
 
-              {maintenanceRequests.length === 0 && !showAddMaintenance && (
-                <div className="text-center py-8">
-                  <Wrench className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                  <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noMaintenance}</p>
-                  <Button 
-                    onClick={() => {
+          {/* RENT SECTION - Enhanced styling */}
+          <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.rentAccent}` }}>
+            <CardHeader
+              className="cursor-pointer"
+              onClick={() => toggleSection('rent')}
+              style={{
+                background: isDarkMode
+                  ? `linear-gradient(to right, #2A2D30, #1E3A5F)`
+                  : `linear-gradient(to right, #EFF6FF, #DBEAFE)`,
+                borderBottom: expandedSections.rent ? `1px solid ${colors.borderColor}` : 'none'
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    backgroundColor: colors.rentAccent,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Calendar className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold">{strings.rentSection}</div>
+                    {deposit?.rent_amount && deposit?.rent_due_day && (
+                      <div className="text-sm font-normal mt-1">
+                        <Badge className="bg-blue-100 text-blue-800">
+                          Day {deposit.rent_due_day} - ฿{deposit.rent_amount.toLocaleString()}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  {deposit?.rent_amount && deposit?.rent_due_day && !editingRent && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        haptic.light();
+                        setRentForm({
+                          rent_amount: deposit.rent_amount?.toString() || '',
+                          rent_due_day: deposit.rent_due_day?.toString() || '',
+                          rent_alerts_enabled: deposit.rent_alerts_enabled || false,
+                          rent_alert_days_before: deposit.rent_alert_days_before?.toString() || '3'
+                        });
+                        setEditingRent(true);
+                      }}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {expandedSections.rent ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                </div>
+              </div>
+            </CardHeader>
+
+            {expandedSections.rent && (
+              <CardContent className="p-6">
+                {(!deposit?.rent_amount || !deposit?.rent_due_day) && !editingRent ? (
+                  <div className="text-center py-8">
+                    <Calendar className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                    <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noRent}</p>
+                    <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addRentDesc}</p>
+                    <Button 
+                      onClick={() => {
+                        haptic.light();
+                        setEditingRent(true);
+                      }} 
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      style={{ minHeight: '44px' }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {strings.addRent}
+                    </Button>
+                  </div>
+                ) : editingRent ? (
+                  <div className="space-y-4">
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <MobileFormInput
+                        label={strings.rentAmount}
+                        type="number"
+                        value={rentForm.rent_amount}
+                        onChange={(e) => setRentForm({...rentForm, rent_amount: e.target.value})}
+                        icon={DollarSign}
+                        colors={colors}
+                        inputMode="decimal"
+                        required
+                      />
+                      <MobileFormInput
+                        label={strings.rentDueDay}
+                        type="number"
+                        value={rentForm.rent_due_day}
+                        onChange={(e) => setRentForm({...rentForm, rent_due_day: e.target.value})}
+                        placeholder="e.g., 5"
+                        icon={Calendar}
+                        colors={colors}
+                        inputMode="numeric"
+                        min={1}
+                        max={31}
+                        required
+                      />
+                      <MobileFormInput
+                        label={strings.alertDaysBefore}
+                        type="number"
+                        value={rentForm.rent_alert_days_before}
+                        onChange={(e) => setRentForm({...rentForm, rent_alert_days_before: e.target.value})}
+                        icon={Bell}
+                        colors={colors}
+                        inputMode="numeric"
+                        min={1}
+                        max={14}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2" style={{ minHeight: '44px' }}>
+                      <Checkbox
+                        checked={rentForm.rent_alerts_enabled}
+                        onCheckedChange={(checked) => {
+                          haptic.light();
+                          setRentForm({...rentForm, rent_alerts_enabled: checked});
+                        }}
+                      />
+                      <Label style={{ color: colors.textPrimary }}>{strings.rentAlertsEnabled}</Label>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          haptic.light();
+                          setEditingRent(false);
+                        }}
+                        style={{ minHeight: '44px' }}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        {strings.cancel}
+                      </Button>
+                      <Button 
+                        onClick={handleRentSubmit} 
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        style={{ minHeight: '44px' }}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {strings.save}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <DollarSign className="w-4 h-4 text-blue-600" />
+                        <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentAmount}</p>
+                      </div>
+                      <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                        ฿{deposit.rent_amount.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="w-4 h-4 text-blue-600" />
+                        <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentDueDay}</p>
+                      </div>
+                      <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                        Day {deposit.rent_due_day}
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bell className="w-4 h-4 text-blue-600" />
+                        <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.alertDaysBefore}</p>
+                      </div>
+                      <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                        {deposit.rent_alert_days_before || 3} days
+                      </p>
+                      {deposit.rent_alerts_enabled && (
+                        <Badge className="bg-emerald-100 text-emerald-800 mt-2">
+                          <Bell className="w-3 h-3 mr-1" />
+                          Alerts ON
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            )}
+          </Card>
+
+          {/* MAINTENANCE SECTION - Enhanced styling with actions */}
+          <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.maintenanceAccent}` }}>
+            <CardHeader
+              className="cursor-pointer"
+              onClick={() => toggleSection('maintenance')}
+              style={{
+                background: isDarkMode
+                  ? `linear-gradient(to right, #2A2D30, #3A2D1C)`
+                  : `linear-gradient(to right, #FFF7ED, #FFEDD5)`,
+                borderBottom: expandedSections.maintenance ? `1px solid ${colors.borderColor}` : 'none'
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    backgroundColor: colors.maintenanceAccent,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Wrench className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold">{strings.maintenanceSection}</div>
+                    {activeRequests.length > 0 && (
+                      <div className="text-sm font-normal mt-1">
+                        <Badge className="bg-orange-100 text-orange-800">
+                          {activeRequests.length} {strings.active}
+                        </Badge>
+                        {completedRequests.length > 0 && (
+                          <Badge className="bg-gray-100 text-gray-800 ml-2">
+                            {completedRequests.length} {strings.archived}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
                       haptic.light();
                       setShowAddMaintenance(true);
-                    }} 
-                    className="bg-orange-600 hover:bg-orange-700 text-white"
-                    style={{ minHeight: '44px' }}
+                      setEditingMaintenance(null); 
+                      setCompressionStats(null); 
+                      setMaintenanceForm({ 
+                        issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
+                      });
+                      setPhotoFiles([]);
+                      setPhotoPreviews([]);
+                    }}
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {strings.addMaintenance}
+                    <Plus className="w-4 h-4" />
                   </Button>
+                  {expandedSections.maintenance ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                 </div>
-              )}
-              {(activeRequests.length > 0 || completedRequests.length > 0) && (
-                <div className="space-y-4">
-                  {/* Active Requests - WITH SWIPE */}
-                  {activeRequests.length > 0 && (
-                    <div>
-                      <h4 className="text-lg font-bold mb-3" style={{ color: colors.textPrimary }}>
-                        <span className="mr-2 inline-block">🛠️</span> {strings.active} ({activeRequests.length})
-                      </h4>
-                      <div className="space-y-3">
-                        {activeRequests.map((request) => (
-                          <SwipeToDelete
-                            key={request.id}
-                            onDelete={() => handleSwipeDelete(request)}
-                            onComplete={() => handleSwipeComplete(request)}
-                            deleteLabel={strings.delete}
-                            completeLabel={strings.close}
-                            colors={colors}
-                          >
-                            <div className="p-4 rounded-lg border-2" style={{ borderColor: colors.borderColor, backgroundColor: colors.cardBg }}>
-                              <div className="flex items-start justify-between gap-3 mb-3">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    {request.request_number && (
-                                      <Badge 
-                                        className="font-mono text-xs"
-                                        style={{
-                                          backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
-                                          color: colors.maintenanceAccent,
-                                          border: `1px solid ${colors.maintenanceAccent}`,
-                                          fontWeight: 'bold'
-                                        }}
-                                      >
-                                        <Hash className="w-3 h-3 mr-1" />
-                                        {request.request_number}
-                                      </Badge>
-                                    )}
-                                    <Badge className={getStatusColor(request.status)}>
-                                      {request.status}
-                                    </Badge>
-                                  </div>
-                                  <h4 className="font-bold text-lg" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
-                                  <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{request.description}</p>
-                                </div>
+              </div>
+            </CardHeader>
+
+            {expandedSections.maintenance && (
+              <CardContent className="p-6">
+                {(showAddMaintenance || editingMaintenance) && (
+                  <div className="mb-4 p-4 rounded-lg border-2 border-dashed" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
+                    <h3 className="font-bold mb-3" style={{ color: colors.textPrimary }}>
+                      {editingMaintenance ? strings.edit : strings.addMaintenance}
+                    </h3>
+                    
+                    {/* Upload Progress */}
+                    {uploadingPhotos && (
+                      <div className="mb-4">
+                        <UploadProgress
+                          currentStage={photoUploadStage}
+                          progress={photoUploadProgress}
+                          fileCount={photoFiles.length}
+                          primaryColor={colors.textPrimary}
+                          secondaryColor={colors.textSecondary}
+                          language={language}
+                        />
+                      </div>
+                    )}
+
+                    {/* Compression Stats Notice */}
+                    {!uploadingPhotos && compressionStats && compressionStats.compressedCount > 0 && (
+                      <div className="mb-4 p-3 rounded-lg border-2" style={{
+                        backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                        borderColor: '#3B82F6'
+                      }}>
+                        <div className="flex items-start gap-2">
+                          <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <CheckCircle2 className="w-3 h-3 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                              {strings.imagesOptimized}
+                            </p>
+                            <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                              {strings.imagesOptimizedDesc.split('•')[0].trim()} {compressionStats.compressedCount} {strings.imagesOptimizedDesc.split('•')[1].trim()} {compressionStats.savedMB} MB
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      <MobileFormInput
+                        label={strings.issueTitle}
+                        value={maintenanceForm.issue_title}
+                        onChange={(e) => setMaintenanceForm({...maintenanceForm, issue_title: e.target.value})}
+                        icon={Wrench}
+                        colors={colors}
+                        required
+                        autoFocus
+                      />
+                      
+                      <MobileFormInput
+                        label={strings.description}
+                        value={maintenanceForm.description}
+                        onChange={(e) => setMaintenanceForm({...maintenanceForm, description: e.target.value})}
+                        multiline
+                        rows={3}
+                        colors={colors}
+                      />
+
+                      <div>
+                        <Label style={{ color: colors.textPrimary }}>{strings.addPhotos}</Label>
+                        <div className="mt-2 space-y-3">
+                          <div className="flex gap-2 flex-wrap">
+                            <label className="cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                multiple
+                                onChange={handlePhotoSelection}
+                                className="hidden"
+                              />
+                              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all active:scale-95"
+                                style={{
+                                  backgroundColor: colors.inputBg,
+                                  borderColor: colors.borderColor,
+                                  color: colors.textPrimary,
+                                  minHeight: '44px'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
+                                onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
+                              >
+                                <Camera className="w-4 h-4" />
+                                <span className="text-sm font-semibold">{strings.takePhoto}</span>
                               </div>
+                            </label>
 
-                              {request.photo_urls && request.photo_urls.length > 0 && (
-                                <div className="mt-3 mb-2">
-                                  <div className="grid grid-cols-4 gap-2">
-                                    {request.photo_urls.map((url, index) => (
-                                      <LazyImage
-                                        key={index}
-                                        src={url}
-                                        alt={`Issue ${index + 1}`}
-                                        className="w-full h-20 object-cover rounded-lg border cursor-pointer"
-                                        style={{ borderColor: colors.borderColor }}
-                                        loadingColor="#F59E0B"
-                                        onClick={() => { haptic.light(); window.open(url, '_blank')}}
-                                      />
-                                    ))}
+                            <label className="cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handlePhotoSelection}
+                                className="hidden"
+                              />
+                              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all active:scale-95"
+                                style={{
+                                  backgroundColor: colors.inputBg,
+                                  borderColor: colors.borderColor,
+                                  color: colors.textPrimary,
+                                  minHeight: '44px'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
+                                onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
+                              >
+                                <ImageIcon className="w-4 h-4" />
+                                <span className="text-sm font-semibold">{strings.chooseFiles}</span>
+                              </div>
+                            </label>
+                          </div>
+
+                          {photoPreviews.length > 0 && (
+                            <div>
+                              <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                                {photoPreviews.length} {strings.photosAdded}
+                              </p>
+                              <div className="grid grid-cols-3 gap-2">
+                                {photoPreviews.map((preview, index) => (
+                                  <div key={index} className="relative group">
+                                    <LazyImage
+                                      src={preview}
+                                      alt={`Preview ${index + 1}`}
+                                      className="w-full h-24 object-cover rounded-lg border-2"
+                                      style={{ borderColor: colors.borderColor }}
+                                      loadingColor="#F59E0B"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemovePhoto(index)}
+                                      className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95"
+                                      style={{ minWidth: '28px', minHeight: '28px' }}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div>
+                          <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
+                          <Select 
+                            value={maintenanceForm.category} 
+                            onValueChange={(value) => {
+                              haptic.light();
+                              setMaintenanceForm({...maintenanceForm, category: value});
+                            }}
+                          >
+                            <SelectTrigger className="mt-2" style={{ 
+                              backgroundColor: colors.inputBg, 
+                              borderColor: colors.borderColor,
+                              minHeight: '44px',
+                              fontSize: '16px'
+                            }}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="plumbing">Plumbing</SelectItem>
+                              <SelectItem value="electrical">Electrical</SelectItem>
+                              <SelectItem value="structural">Structural</SelectItem>
+                              <SelectItem value="appliance">Appliance</SelectItem>
+                              <SelectItem value="hvac">HVAC</SelectItem>
+                              <SelectItem value="pest">Pest</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label style={{ color: colors.textPrimary }}>{strings.priority}</Label>
+                          <Select 
+                            value={maintenanceForm.priority} 
+                            onValueChange={(value) => {
+                              haptic.light();
+                              setMaintenanceForm({...maintenanceForm, priority: value});
+                            }}
+                          >
+                            <SelectTrigger className="mt-2" style={{ 
+                              backgroundColor: colors.inputBg, 
+                              borderColor: colors.borderColor,
+                              minHeight: '44px',
+                              fontSize: '16px'
+                            }}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="low">Low</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="high">High</SelectItem>
+                              <SelectItem value="urgent">Urgent</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            haptic.light();
+                            setShowAddMaintenance(false);
+                            setEditingMaintenance(null);
+                            setPhotoFiles([]);
+                            setPhotoPreviews([]);
+                            setCompressionStats(null);
+                            setMaintenanceForm({
+                              issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
+                            });
+                          }}
+                          disabled={uploadingPhotos}
+                          style={{ minHeight: '44px' }}
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          {strings.cancel}
+                        </Button>
+                        <Button
+                          onClick={editingMaintenance ? handleUpdateMaintenance : handleMaintenanceSubmit}
+                          className="bg-orange-600 hover:bg-orange-700"
+                          disabled={uploadingPhotos}
+                          style={{ minHeight: '44px' }}
+                        >
+                          {uploadingPhotos ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              {strings.uploadingPhotos}
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4 mr-2" />
+                              {strings.save}
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {maintenanceRequests.length === 0 && !showAddMaintenance && (
+                  <div className="text-center py-8">
+                    <Wrench className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                    <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noMaintenance}</p>
+                    <Button 
+                      onClick={() => {
+                        haptic.light();
+                        setShowAddMaintenance(true);
+                      }} 
+                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                      style={{ minHeight: '44px' }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {strings.addMaintenance}
+                    </Button>
+                  </div>
+                )}
+                {(activeRequests.length > 0 || completedRequests.length > 0) && (
+                  <div className="space-y-4">
+                    {/* Active Requests - WITH SWIPE */}
+                    {activeRequests.length > 0 && (
+                      <div>
+                        <h4 className="text-lg font-bold mb-3" style={{ color: colors.textPrimary }}>
+                          <span className="mr-2 inline-block">🛠️</span> {strings.active} ({activeRequests.length})
+                        </h4>
+                        <div className="space-y-3">
+                          {activeRequests.map((request) => (
+                            <SwipeToDelete
+                              key={request.id}
+                              onDelete={() => handleSwipeDelete(request)}
+                              onComplete={() => handleSwipeComplete(request)}
+                              deleteLabel={strings.delete}
+                              completeLabel={strings.close}
+                              colors={colors}
+                            >
+                              <div className="p-4 rounded-lg border-2" style={{ borderColor: colors.borderColor, backgroundColor: colors.cardBg }}>
+                                <div className="flex items-start justify-between gap-3 mb-3">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      {request.request_number && (
+                                        <Badge 
+                                          className="font-mono text-xs"
+                                          style={{
+                                            backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
+                                            color: colors.maintenanceAccent,
+                                            border: `1px solid ${colors.maintenanceAccent}`,
+                                            fontWeight: 'bold'
+                                          }}
+                                        >
+                                          <Hash className="w-3 h-3 mr-1" />
+                                          {request.request_number}
+                                        </Badge>
+                                      )}
+                                      <Badge className={getStatusColor(request.status)}>
+                                        {request.status}
+                                      </Badge>
+                                    </div>
+                                    <h4 className="font-bold text-lg" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
+                                    <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{request.description}</p>
                                   </div>
                                 </div>
-                              )}
 
-                              {request.communication_log && request.communication_log.length > 0 && (
-                                <div className="mt-3 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
-                                  <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
-                                    {strings.communicationLog}
-                                  </p>
-                                  <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
-                                    {request.communication_log.map((log, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="p-2 rounded-lg text-xs"
-                                        style={{
-                                          backgroundColor: log.sender === 'tenant' ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') :
-                                                           log.sender === 'landlord' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
-                                                           log.sender === 'juristic' ? (isDarkMode ? '#2D1C3A' : '#FAF5FF') :
-                                                           (isDarkMode ? '#2A2D30' : '#F3F4F6'),
-                                          borderLeft: `3px solid ${
-                                            log.sender === 'tenant' ? '#3B82F6' :
-                                            log.sender === 'landlord' ? '#F59E0B' :
-                                            log.sender === 'juristic' ? '#8B5CF6' :
-                                            '#6B7280'
-                                          }`
-                                        }}
-                                      >
-                                        <div className="flex items-start justify-between gap-2 mb-1">
-                                          <span className="font-semibold" style={{ color: colors.textPrimary }}>
-                                            {log.sender === 'tenant' ? '👤' : log.sender === 'landlord' ? '🏠' : log.sender === 'juristic' ? '🏢' : '⚙️'} {log.sender_name || log.sender}
-                                          </span>
-                                          <span style={{ color: colors.textSecondary, fontSize: '10px' }}>
-                                            {new Date(log.timestamp).toLocaleString(language === 'th' ? 'th-TH' : 'en-US', {
-                                              month: 'short',
-                                              day: 'numeric',
-                                              hour: '2-digit',
-                                              minute: '2-digit'
-                                            })}
-                                          </span>
-                                        </div>
-                                        <p style={{ color: colors.textPrimary }}>{log.message}</p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="flex items-center gap-4 text-xs mt-3" style={{ color: colors.textSecondary }}>
-                                <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
-                                <span>🏷️ {request.category}</span>
-                                <span>⚡ {request.priority}</span>
                                 {request.photo_urls && request.photo_urls.length > 0 && (
-                                  <span>📸 {request.photo_urls.length} {strings.photosAdded}</span>
+                                  <div className="mt-3 mb-2">
+                                    <div className="grid grid-cols-4 gap-2">
+                                      {request.photo_urls.map((url, index) => (
+                                        <LazyImage
+                                          key={index}
+                                          src={url}
+                                          alt={`Issue ${index + 1}`}
+                                          className="w-full h-20 object-cover rounded-lg border cursor-pointer"
+                                          style={{ borderColor: colors.borderColor }}
+                                          loadingColor="#F59E0B"
+                                          onClick={() => { haptic.light(); window.open(url, '_blank')}}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
                                 )}
-                              </div>
 
-                              <div className="flex items-center gap-2 flex-wrap mt-4 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    haptic.light();
-                                    handleEditMaintenance(request);
-                                  }}
-                                  style={{ minHeight: '36px' }}
-                                >
-                                  <Edit2 className="w-3 h-3 mr-1" />
-                                  {strings.edit}
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCloseMaintenance(request);
-                                  }}
-                                  className="text-emerald-600 border-emerald-600 hover:bg-emerald-50"
-                                  style={{ minHeight: '36px' }}
-                                >
-                                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  {strings.close}
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteMaintenance(request);
-                                  }}
-                                  className="text-red-600 border-red-600 hover:bg-red-50"
-                                  style={{ minHeight: '36px' }}
-                                >
-                                  <Trash2 className="w-3 h-3 mr-1" />
-                                  {strings.delete}
-                                </Button>
-                              </div>
-                            </div>
-                          </SwipeToDelete>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                                {request.communication_log && request.communication_log.length > 0 && (
+                                  <div className="mt-3 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
+                                    <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                                      {strings.communicationLog}
+                                    </p>
+                                    <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                                      {request.communication_log.map((log, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="p-2 rounded-lg text-xs"
+                                          style={{
+                                            backgroundColor: log.sender === 'tenant' ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') :
+                                                             log.sender === 'landlord' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
+                                                             log.sender === 'juristic' ? (isDarkMode ? '#2D1C3A' : '#FAF5FF') :
+                                                             (isDarkMode ? '#2A2D30' : '#F3F4F6'),
+                                            borderLeft: `3px solid ${
+                                              log.sender === 'tenant' ? '#3B82F6' :
+                                              log.sender === 'landlord' ? '#F59E0B' :
+                                              log.sender === 'juristic' ? '#8B5CF6' :
+                                              '#6B7280'
+                                            }`
+                                          }}
+                                        >
+                                          <div className="flex items-start justify-between gap-2 mb-1">
+                                            <span className="font-semibold" style={{ color: colors.textPrimary }}>
+                                              {log.sender === 'tenant' ? '👤' : log.sender === 'landlord' ? '🏠' : log.sender === 'juristic' ? '🏢' : '⚙️'} {log.sender_name || log.sender}
+                                            </span>
+                                            <span style={{ color: colors.textSecondary, fontSize: '10px' }}>
+                                              {new Date(log.timestamp).toLocaleString(language === 'th' ? 'th-TH' : 'en-US', {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                              })}
+                                            </span>
+                                          </div>
+                                          <p style={{ color: colors.textPrimary }}>{log.message}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
 
-                  {/* Completed Requests */}
-                  {completedRequests.length > 0 && (
-                    <div>
-                      <h4 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: colors.textSecondary }}>
-                        <Archive className="w-5 h-5" />
-                        {strings.archived} ({completedRequests.length})
-                      </h4>
-                      <div className="space-y-2">
-                        {completedRequests.map((request) => (
-                          <SwipeToDelete
-                            key={request.id}
-                            onDelete={() => handleDeleteMaintenance(request)}
-                            deleteLabel={strings.delete}
-                            colors={colors}
-                          >
-                            <div className="p-3 rounded-lg border opacity-60" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    {request.request_number && (
-                                      <Badge 
-                                        className="font-mono text-xs"
-                                        style={{
-                                          backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
-                                          color: colors.textSecondary,
-                                          border: `1px solid ${colors.borderColor}`
-                                        }}
-                                      >
-                                        {request.request_number}
-                                      </Badge>
-                                    )}
-                                    <Badge className={getStatusColor(request.status)} style={{ fontSize: '10px' }}>
-                                      {request.status}
-                                    </Badge>
-                                  </div>
-                                  <h4 className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
-                                  <div className="flex items-center gap-3 text-xs mt-1" style={{ color: colors.textSecondary }}>
-                                    <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
-                                  </div>
+                                <div className="flex items-center gap-4 text-xs mt-3" style={{ color: colors.textSecondary }}>
+                                  <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
+                                  <span>🏷️ {request.category}</span>
+                                  <span>⚡ {request.priority}</span>
+                                  {request.photo_urls && request.photo_urls.length > 0 && (
+                                    <span>📸 {request.photo_urls.length} {strings.photosAdded}</span>
+                                  )}
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteMaintenance(request);
-                                  }}
-                                  className="text-red-600"
-                                  style={{ minHeight: '36px' }}
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
+
+                                <div className="flex items-center gap-2 flex-wrap mt-4 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      haptic.light();
+                                      handleEditMaintenance(request);
+                                    }}
+                                    style={{ minHeight: '36px' }}
+                                  >
+                                    <Edit2 className="w-3 h-3 mr-1" />
+                                    {strings.edit}
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCloseMaintenance(request);
+                                    }}
+                                    className="text-emerald-600 border-emerald-600 hover:bg-emerald-50"
+                                    style={{ minHeight: '36px' }}
+                                  >
+                                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                                    {strings.close}
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteMaintenance(request);
+                                    }}
+                                    className="text-red-600 border-red-600 hover:bg-red-50"
+                                    style={{ minHeight: '36px' }}
+                                  >
+                                    <Trash2 className="w-3 h-3 mr-1" />
+                                    {strings.delete}
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                          </SwipeToDelete>
-                        ))}
+                            </SwipeToDelete>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          )}
-        </Card>
+                    )}
+
+                    {/* Completed Requests */}
+                    {completedRequests.length > 0 && (
+                      <div>
+                        <h4 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: colors.textSecondary }}>
+                          <Archive className="w-5 h-5" />
+                          {strings.archived} ({completedRequests.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {completedRequests.map((request) => (
+                            <SwipeToDelete
+                              key={request.id}
+                              onDelete={() => handleDeleteMaintenance(request)}
+                              deleteLabel={strings.delete}
+                              colors={colors}
+                            >
+                              <div className="p-3 rounded-lg border opacity-60" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      {request.request_number && (
+                                        <Badge 
+                                          className="font-mono text-xs"
+                                          style={{
+                                            backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
+                                            color: colors.textSecondary,
+                                            border: `1px solid ${colors.borderColor}`
+                                          }}
+                                        >
+                                          {request.request_number}
+                                        </Badge>
+                                      )}
+                                      <Badge className={getStatusColor(request.status)} style={{ fontSize: '10px' }}>
+                                        {request.status}
+                                      </Badge>
+                                    </div>
+                                    <h4 className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
+                                    <div className="flex items-center gap-3 text-xs mt-1" style={{ color: colors.textSecondary }}>
+                                      <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteMaintenance(request);
+                                    }}
+                                    className="text-red-600"
+                                    style={{ minHeight: '36px' }}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </SwipeToDelete>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            )}
+          </Card>
+        </div>
       </div>
-    </div>
+    </PullToRefresh>
+  );
+}
+
+export default function PropertyTracker() {
+  return (
+    <ToastProvider>
+      <PropertyTrackerContent />
+    </ToastProvider>
   );
 }

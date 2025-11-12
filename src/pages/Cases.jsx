@@ -1,14 +1,13 @@
-
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Scale, Plus, Crown, Calendar, DollarSign, Zap, FileText, Loader2,
+  Scale, Plus, Crown, Calendar, Zap, FileText, Loader2,
   CheckCircle2, Eye, Download, ChevronDown, ChevronUp, ArrowLeft, Clock, AlertCircle
 } from "lucide-react";
 import { format } from "date-fns";
@@ -20,20 +19,23 @@ import SkeletonLoader from "../components/shared/SkeletonLoader";
 import EmptyState from "../components/shared/EmptyState";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import LazyImage from "../components/shared/LazyImage";
+import PullToRefresh from "../components/shared/PullToRefresh";
+import { ToastProvider, useToast } from "../components/shared/Toast";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
-  pending: { label: 'Pending', color: 'bg-amber-100 text-amber-800', icon: Clock }, // Changed to Clock icon
+  pending: { label: 'Pending', color: 'bg-amber-100 text-amber-800', icon: Clock },
   active: { label: 'Active', color: 'bg-blue-100 text-blue-800', icon: Scale },
   waiting: { label: 'Waiting', color: 'bg-purple-100 text-purple-800', icon: Calendar },
-  user_action: { label: 'Action Required', color: 'bg-red-100 text-red-800', icon: AlertCircle }, // Changed to AlertCircle icon
+  user_action: { label: 'Action Required', color: 'bg-red-100 text-red-800', icon: AlertCircle },
   closed: { label: 'Closed', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 }
 };
 
-export default function CasesPage() {
+function CasesContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const { hasAccess: hasPriorityQueue } = useFeatureAccess('priority_queue');
   const { hasAccess: hasMemberPrice } = useFeatureAccess('resolve_member_price');
 
@@ -154,7 +156,11 @@ export default function CasesPage() {
       preview: "Preview",
       download: "Download",
       delete: "Delete",
-      back: "Back", // Added translation
+      back: "Back",
+      refreshed: "Refreshed successfully",
+      downloadSuccess: "Download started",
+      downloadFailed: "Download failed",
+      previewError: "No file found for this letter",
     },
     th: {
       title: "คดีของฉัน",
@@ -179,11 +185,21 @@ export default function CasesPage() {
       preview: "ดูตัวอย่าง",
       download: "ดาวน์โหลด",
       delete: "ลบ",
-      back: "ย้อนกลับ", // Added translation
+      back: "ย้อนกลับ",
+      refreshed: "รีเฟรชสำเร็จ",
+      downloadSuccess: "เริ่มดาวน์โหลดแล้ว",
+      downloadFailed: "ดาวน์โหลดไม่สำเร็จ",
+      previewError: "ไม่พบไฟล์สำหรับจดหมายนี้",
     }
   };
 
   const strings = t[language];
+
+  const handleRefresh = async () => {
+    haptic.light();
+    await queryClient.invalidateQueries({ queryKey: ['cases'] });
+    toast.success(strings.refreshed);
+  };
 
   const getLetterTitle = (subject) => {
     const titles = {
@@ -210,10 +226,11 @@ export default function CasesPage() {
       window.URL.revokeObjectURL(url);
       a.remove();
       haptic.success();
+      toast.success(strings.downloadSuccess);
     } catch (err) {
       console.error('Download failed:', err);
       haptic.error();
-      alert(language === 'th' ? 'ไม่สามารถดาวน์โหลดได้' : 'Download failed');
+      toast.error(strings.downloadFailed);
     }
   };
 
@@ -226,9 +243,7 @@ export default function CasesPage() {
     const docUrl = caseItem?.letters?.[docKey];
 
     if (!htmlUrl && !docUrl) {
-      alert(language === 'th'
-        ? `ไม่พบไฟล์สำหรับ ${getLetterTitle(subject)}`
-        : `No file found for ${getLetterTitle(subject)}`);
+      toast.error(strings.previewError);
       return;
     }
 
@@ -252,309 +267,310 @@ export default function CasesPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-7xl mx-auto">
-        {/* Letter Preview Modal */}
-        {previewLetter && (
-          <LetterPreview
-            open={!!previewLetter}
-            onOpenChange={() => setPreviewLetter(null)}
-            htmlUrl={previewLetter.htmlUrl}
-            docUrl={previewLetter.docUrl}
-            title={getLetterTitle(previewLetter.subject)}
+    <PullToRefresh onRefresh={handleRefresh} colors={colors}>
+      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-7xl mx-auto">
+          {previewLetter && (
+            <LetterPreview
+              open={!!previewLetter}
+              onOpenChange={() => setPreviewLetter(null)}
+              htmlUrl={previewLetter.htmlUrl}
+              docUrl={previewLetter.docUrl}
+              title={getLetterTitle(previewLetter.subject)}
+            />
+          )}
+
+          <FloatingActionButton
+            icon={Plus}
+            label={strings.openNewCase}
+            onClick={() => navigate(createPageUrl("ResolveCase"))}
+            color="#C7A338"
           />
-        )}
 
-        {/* FAB for Opening New Case */}
-        <FloatingActionButton
-          icon={Plus}
-          label={strings.openNewCase}
-          onClick={() => navigate(createPageUrl("ResolveCase"))}
-          color="#C7A338"
-        />
+          <Button
+            variant="ghost"
+            onClick={() => {
+              haptic.light();
+              navigate(createPageUrl("Dashboard"));
+            }}
+            className="mb-4"
+            style={{ color: colors.textSecondary, minHeight: '44px' }}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {strings.back}
+          </Button>
 
-        <Button
-          variant="ghost"
-          onClick={() => {
-            haptic.light();
-            navigate(createPageUrl("Dashboard"));
-          }}
-          className="mb-4"
-          style={{ color: colors.textSecondary, minHeight: '44px' }}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          {strings.back}
-        </Button>
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <Scale className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
+              {strings.title}
+            </h1>
+            <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>
+              {strings.subtitle}
+            </p>
+          </div>
 
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-            <Scale className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
-            {strings.title}
-          </h1>
-          <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>
-            {strings.subtitle}
-          </p>
-        </div>
-
-        {/* Premium Benefits */}
-        <Card className="mb-6 mt-6 border-none shadow-lg bg-gradient-to-br from-purple-600 to-blue-600">
-          <CardContent className="p-4 md:p-6">
-            <div className="flex items-start gap-3">
-              <Crown className="w-6 h-6 text-yellow-300 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-white mb-2">{strings.premiumBenefits}</h3>
-                <ul className="space-y-1 text-sm text-white/90">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                    <span>{strings.memberRate}</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                    <span>{strings.priorityHandling}</span>
-                  </li>
-                </ul>
+          <Card className="mb-6 mt-6 border-none shadow-lg bg-gradient-to-br from-purple-600 to-blue-600">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex items-start gap-3">
+                <Crown className="w-6 h-6 text-yellow-300 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-white mb-2">{strings.premiumBenefits}</h3>
+                  <ul className="space-y-1 text-sm text-white/90">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                      <span>{strings.memberRate}</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                      <span>{strings.priorityHandling}</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Cases List */}
-        {isLoading ? (
-          <SkeletonLoader variant="card" count={3} colors={colors} />
-        ) : cases.length === 0 ? (
-          <EmptyState
-            icon={Scale}
-            title={strings.noCases}
-            description={strings.noCasesDesc}
-            illustration="cases"
-            actionLabel={strings.openNewCase}
-            onAction={() => navigate(createPageUrl("ResolveCase"))}
-          />
-        ) : (
-          <div className="grid gap-4">
-            {cases.map((caseItem) => {
-              const statusConfig = STATUS_CONFIG[caseItem.status] || STATUS_CONFIG.intake;
-              const StatusIcon = statusConfig.icon;
-              const availableLetters = getGeneratedLetters(caseItem);
-              const hasLetters = availableLetters.length > 0;
-              const isExpanded = expandedCase === caseItem.id;
-              const hasEvidence = caseItem.evidence && caseItem.evidence.length > 0;
+          {isLoading ? (
+            <SkeletonLoader variant="card" count={3} colors={colors} />
+          ) : cases.length === 0 ? (
+            <EmptyState
+              icon={Scale}
+              title={strings.noCases}
+              description={strings.noCasesDesc}
+              illustration="cases"
+              actionLabel={strings.openNewCase}
+              onAction={() => navigate(createPageUrl("ResolveCase"))}
+            />
+          ) : (
+            <div className="grid gap-4">
+              {cases.map((caseItem) => {
+                const statusConfig = STATUS_CONFIG[caseItem.status] || STATUS_CONFIG.intake;
+                const StatusIcon = statusConfig.icon;
+                const availableLetters = getGeneratedLetters(caseItem);
+                const hasLetters = availableLetters.length > 0;
+                const isExpanded = expandedCase === caseItem.id;
+                const hasEvidence = caseItem.evidence && caseItem.evidence.length > 0;
 
-              return (
-                <SwipeToDelete
-                  key={caseItem.id}
-                  deleteLabel={strings.delete || (language === 'th' ? 'ลบ' : 'Delete')}
-                  colors={colors}
-                // onDelete={() => handleDelete(caseItem.id)} // Assuming a handleDelete function would be added later
-                >
-                  <Card
-                    className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
-                    style={{ backgroundColor: colors.cardBg }}
-                    onClick={() => {
-                      haptic.light();
-                      navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`);
-                    }}
+                return (
+                  <SwipeToDelete
+                    key={caseItem.id}
+                    deleteLabel={strings.delete}
+                    colors={colors}
                   >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div
-                          className="flex items-center gap-2 min-w-0 flex-1"
-                        >
-                          <Scale className="w-5 h-5 text-ls-forest flex-shrink-0" />
-                          <CardTitle className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-                            {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
-                          </CardTitle>
+                    <Card
+                      className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                      style={{ backgroundColor: colors.cardBg }}
+                      onClick={() => {
+                        haptic.light();
+                        navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`);
+                      }}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <Scale className="w-5 h-5 text-ls-forest flex-shrink-0" />
+                            <CardTitle className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                              {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
+                            </CardTitle>
+                          </div>
+                          <Badge className={`${statusConfig.color} border whitespace-nowrap`}>
+                            <StatusIcon className="w-3 h-3 mr-1" />
+                            {statusConfig.label}
+                          </Badge>
                         </div>
-                        <Badge className={`${statusConfig.color} border whitespace-nowrap`}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
-                          {statusConfig.label}
-                        </Badge>
-                      </div>
-                      <p className="text-xs md:text-sm mt-2" style={{ color: colors.textSecondary }}>
-                        {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
-                      </p>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
-                          {strings.disputeAmount}
+                        <p className="text-xs md:text-sm mt-2" style={{ color: colors.textSecondary }}>
+                          {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
                         </p>
-                        <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                          ฿{caseItem.dispute_amount?.toLocaleString() || '0'}
-                        </p>
-                      </div>
-
-                      {(caseItem.fast_track || caseItem.letter_pack || caseItem.is_member_at_creation) && (
+                      </CardHeader>
+                      <CardContent className="space-y-3">
                         <div>
-                          <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
-                            {strings.features}
+                          <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                            {strings.disputeAmount}
                           </p>
-                          <div className="flex flex-wrap gap-2">
-                            {caseItem.fast_track && (
-                              <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
-                                <Zap className="w-3 h-3 mr-1" />
-                                {strings.fastTrack}
-                              </Badge>
-                            )}
-                            {caseItem.letter_pack && (
-                              <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
-                                <FileText className="w-3 h-3 mr-1" />
-                                {strings.letterPack}
-                              </Badge>
-                            )}
-                            {caseItem.is_member_at_creation && (
-                              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                                {strings.memberRateBadge}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {caseItem.summary && (
-                        <p className="text-sm line-clamp-2" style={{ color: colors.textSecondary }}>
-                          {caseItem.summary}
-                        </p>
-                      )}
-
-                      {/* Evidence Photos Preview */}
-                      {hasEvidence && (
-                        <div className="mt-3">
-                          <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
-                            {language === 'th' ? 'หลักฐาน' : 'Evidence'} ({caseItem.evidence.length})
+                          <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                            ฿{caseItem.dispute_amount?.toLocaleString() || '0'}
                           </p>
-                          <div className="grid grid-cols-4 gap-2">
-                            {caseItem.evidence.slice(0, 4).map((evidence, idx) => (
-                              <LazyImage
-                                key={idx}
-                                src={evidence.url}
-                                alt={evidence.label || `Evidence ${idx + 1}`}
-                                className="w-full h-16 object-cover rounded-lg border"
-                                style={{ borderColor: colors.borderColor }}
-                                loadingColor="#C7A338"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  haptic.light();
-                                  window.open(evidence.url, '_blank');
-                                }}
-                                fallback={
-                                  <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-                                    <FileText className="w-6 h-6 text-gray-400" />
-                                  </div>
-                                }
-                              />
-                            ))}
-                          </div>
                         </div>
-                      )}
 
-                      {/* Generated Letters Section */}
-                      {hasLetters && (
-                        <div className="border-t pt-3" style={{ borderColor: colors.borderColor }}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setExpandedCase(isExpanded ? null : caseItem.id);
-                            }}
-                            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-opacity-80 transition-all"
-                            style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4" style={{ color: colors.textPrimary }} />
-                              <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                                {strings.generatedLetters} ({availableLetters.length})
-                              </span>
+                        {(caseItem.fast_track || caseItem.letter_pack || caseItem.is_member_at_creation) && (
+                          <div>
+                            <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                              {strings.features}
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {caseItem.fast_track && (
+                                <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
+                                  <Zap className="w-3 h-3 mr-1" />
+                                  {strings.fastTrack}
+                                </Badge>
+                              )}
+                              {caseItem.letter_pack && (
+                                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                                  <FileText className="w-3 h-3 mr-1" />
+                                  {strings.letterPack}
+                                </Badge>
+                              )}
+                              {caseItem.is_member_at_creation && (
+                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  {strings.memberRateBadge}
+                                </Badge>
+                              )}
                             </div>
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4" style={{ color: colors.textSecondary }} />
-                            ) : (
-                              <ChevronDown className="w-4 h-4" style={{ color: colors.textSecondary }} />
-                            )}
-                          </button>
+                          </div>
+                        )}
 
-                          {isExpanded && (
-                            <div className="mt-3 space-y-2">
-                              {availableLetters.map((subject) => (
-                                <div
-                                  key={subject}
-                                  className="flex items-center justify-between p-3 rounded-lg"
-                                  style={{
-                                    backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
-                                    border: `1px solid ${colors.borderColor}`
+                        {caseItem.summary && (
+                          <p className="text-sm line-clamp-2" style={{ color: colors.textSecondary }}>
+                            {caseItem.summary}
+                          </p>
+                        )}
+
+                        {hasEvidence && (
+                          <div className="mt-3">
+                            <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                              {language === 'th' ? 'หลักฐาน' : 'Evidence'} ({caseItem.evidence.length})
+                            </p>
+                            <div className="grid grid-cols-4 gap-2">
+                              {caseItem.evidence.slice(0, 4).map((evidence, idx) => (
+                                <LazyImage
+                                  key={idx}
+                                  src={evidence.url}
+                                  alt={evidence.label || `Evidence ${idx + 1}`}
+                                  className="w-full h-16 object-cover rounded-lg border"
+                                  style={{ borderColor: colors.borderColor }}
+                                  loadingColor="#C7A338"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    haptic.light();
+                                    window.open(evidence.url, '_blank');
                                   }}
-                                >
-                                  <div className="flex-1 min-w-0 mr-3">
-                                    <p className="text-sm font-semibold truncate" style={{ color: colors.textPrimary }}>
-                                      {getLetterTitle(subject)}
-                                    </p>
-                                  </div>
-                                  <div className="flex gap-2 flex-shrink-0">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handlePreviewHtml(caseItem, subject);
-                                      }}
-                                      className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
-                                      style={{
-                                        backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                                        color: colors.textPrimary,
-                                        border: `1px solid ${colors.borderColor}`
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        e.target.style.backgroundColor = isDarkMode ? '#4A4D50' : '#EEF2FF';
-                                        e.target.style.borderColor = '#6366F1';
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
-                                        e.target.style.borderColor = colors.borderColor;
-                                      }}
-                                    >
-                                      <Eye className="w-3 h-3" />
-                                      {strings.preview}
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDownloadDocx(caseItem.letters[`${subject}_url`], subject);
-                                      }}
-                                      className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
-                                      style={{
-                                        backgroundColor: '#0C3B2E',
-                                        color: '#FFFFFF'
-                                      }}
-                                      onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                                      onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-                                    >
-                                      <Download className="w-3 h-3" />
-                                      {strings.download}
-                                    </button>
-                                  </div>
-                                </div>
+                                  fallback={
+                                    <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                                      <FileText className="w-6 h-6 text-gray-400" />
+                                    </div>
+                                  }
+                                />
                               ))}
                             </div>
-                          )}
-                        </div>
-                      )}
+                          </div>
+                        )}
 
-                      <Button
-                        variant="outline"
-                        className="w-full mt-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`);
-                        }}
-                      >
-                        {strings.viewDetails}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </SwipeToDelete>
-              );
-            })}
-          </div>
-        )}
+                        {hasLetters && (
+                          <div className="border-t pt-3" style={{ borderColor: colors.borderColor }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedCase(isExpanded ? null : caseItem.id);
+                              }}
+                              className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-opacity-80 transition-all"
+                              style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}
+                            >
+                              <div className="flex items-center gap-2">
+                                <FileText className="w-4 h-4" style={{ color: colors.textPrimary }} />
+                                <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                                  {strings.generatedLetters} ({availableLetters.length})
+                                </span>
+                              </div>
+                              {isExpanded ? (
+                                <ChevronUp className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                              )}
+                            </button>
+
+                            {isExpanded && (
+                              <div className="mt-3 space-y-2">
+                                {availableLetters.map((subject) => (
+                                  <div
+                                    key={subject}
+                                    className="flex items-center justify-between p-3 rounded-lg"
+                                    style={{
+                                      backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                                      border: `1px solid ${colors.borderColor}`
+                                    }}
+                                  >
+                                    <div className="flex-1 min-w-0 mr-3">
+                                      <p className="text-sm font-semibold truncate" style={{ color: colors.textPrimary }}>
+                                        {getLetterTitle(subject)}
+                                      </p>
+                                    </div>
+                                    <div className="flex gap-2 flex-shrink-0">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handlePreviewHtml(caseItem, subject);
+                                        }}
+                                        className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
+                                        style={{
+                                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                                          color: colors.textPrimary,
+                                          border: `1px solid ${colors.borderColor}`
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          e.target.style.backgroundColor = isDarkMode ? '#4A4D50' : '#EEF2FF';
+                                          e.target.style.borderColor = '#6366F1';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                                          e.target.style.borderColor = colors.borderColor;
+                                        }}
+                                      >
+                                        <Eye className="w-3 h-3" />
+                                        {strings.preview}
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDownloadDocx(caseItem.letters[`${subject}_url`], subject);
+                                        }}
+                                        className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
+                                        style={{
+                                          backgroundColor: '#0C3B2E',
+                                          color: '#FFFFFF'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                                      >
+                                        <Download className="w-3 h-3" />
+                                        {strings.download}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <Button
+                          variant="outline"
+                          className="w-full mt-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`);
+                          }}
+                        >
+                          {strings.viewDetails}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </SwipeToDelete>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </PullToRefresh>
+  );
+}
+
+export default function CasesPage() {
+  return (
+    <ToastProvider>
+      <CasesContent />
+    </ToastProvider>
   );
 }
