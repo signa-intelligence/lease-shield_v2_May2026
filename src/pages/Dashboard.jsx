@@ -25,7 +25,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import OfflineDetector from "../components/shared/OfflineDetector";
 import SyncIndicator from "../components/shared/SyncIndicator";
-import { createOfflineQuery, prefetchCriticalData } from "../lib/queryClientConfig";
+
 
 function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -43,62 +43,63 @@ function DashboardContent() {
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Enhanced queries with offline support
-  const { data: leases = [], isLoading: leasesLoading } = useQuery(
-    createOfflineQuery(
-      ['leases', user?.email],
-      () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
-      { enabled: !!user }
-    )
-  );
+  // Enhanced queries with offline support (inline options)
+  const { data: leases = [], isLoading: leasesLoading } = useQuery({
+    queryKey: ['leases', user?.email],
+    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+  });
 
-  const { data: deposits = [], isLoading: depositsLoading } = useQuery(
-    createOfflineQuery(
-      ['deposits', user?.email],
-      () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
-      { enabled: !!user }
-    )
-  );
+  const { data: deposits = [], isLoading: depositsLoading } = useQuery({
+    queryKey: ['deposits', user?.email],
+    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+  });
 
-  const { data: cases = [] } = useQuery(
-    createOfflineQuery(
-      ['cases', user?.email],
-      () => base44.entities.Case.filter({ user_email: user?.email }),
-      { enabled: !!user }
-    )
-  );
+  const { data: cases = [] } = useQuery({
+    queryKey: ['cases', user?.email],
+    queryFn: () => base44.entities.Case.filter({ user_email: user?.email }),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+  });
 
-  const { data: documents = [] } = useQuery(
-    createOfflineQuery(
-      ['documents', user?.email],
-      () => base44.entities.Document.filter({ created_by: user?.email }),
-      { enabled: !!user }
-    )
-  );
+  const { data: documents = [] } = useQuery({
+    queryKey: ['documents', user?.email],
+    queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+  });
 
-  const { data: maintenanceRequests = [] } = useQuery(
-    createOfflineQuery(
-      ['maintenance', user?.email],
-      () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
-      { enabled: !!user }
-    )
-  );
+  const { data: maintenanceRequests = [] } = useQuery({
+    queryKey: ['maintenance', user?.email],
+    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+  });
 
-  const { data: notificationLogs = [] } = useQuery(
-    createOfflineQuery(
-      ['notificationLogs', user?.email],
-      () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 10),
-      { enabled: !!user }
-    )
-  );
+  const { data: notificationLogs = [] } = useQuery({
+    queryKey: ['notificationLogs', user?.email],
+    queryFn: () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 10),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+  });
 
   // Prefetch critical data on mount
   React.useEffect(() => {
-    if (user) {
-      prefetchCriticalData(user);
-    }
+    // This prefetchCriticalData call was removed as createOfflineQuery no longer exists.
+    // If prefetching logic is still desired, it needs to be reimplemented without createOfflineQuery.
+    // For now, the prefetch effect is removed entirely as per the prompt's implied change.
   }, [user]);
 
   const handleRefresh = async () => {
@@ -1592,10 +1593,10 @@ function DashboardContent() {
                             icon={Calendar}
                             scoreColor="#3B82F6"
                             miniStats={rentTrackedCount > 0 ? [
-                              {
-                                label: language === 'th' ? 'เตือน' : 'Alerts',
-                                value: deposits.filter(d => d.rent_alerts_enabled).length
-                              }
+                            {
+                              label: language === 'th' ? 'เตือน' : 'Alerts',
+                              value: deposits.filter(d => d.rent_alerts_enabled).length
+                            }
                             ] : undefined}
                             actionButton={rentTrackedCount > 0 ? {
                               label: language === 'th' ? 'จัดการ' : 'Manage',
