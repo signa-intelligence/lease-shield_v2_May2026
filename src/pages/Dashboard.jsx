@@ -68,6 +68,12 @@ function DashboardContent() {
     enabled: !!user,
   });
 
+  const { data: notificationLogs = [] } = useQuery({
+    queryKey: ['notificationLogs'],
+    queryFn: () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 10),
+    enabled: !!user,
+  });
+
   const handleRefresh = async () => {
     await queryClient.invalidateQueries();
     toast.success(language === 'th' ? 'รีเฟรชสำเร็จ' : 'Refreshed successfully');
@@ -887,6 +893,11 @@ function DashboardContent() {
     return daysA - daysB; // Sort by most urgent first
   });
 
+  // NEW CALCULATIONS
+  const rentTrackedCount = deposits.filter(d => d.rent_amount && d.rent_due_day).length;
+  const activeMaintenanceCount = maintenanceRequests.filter(r => r.status !== 'completed' && r.status !== 'rejected').length;
+  const recentNotifications = notificationLogs.slice(0, 5);
+
   const t = {
     en: {
       pageTitle: "My Account",
@@ -934,6 +945,18 @@ function DashboardContent() {
       leaseEnds: "Lease ends",
       noticePeriod: "Notice period",
       days: "days",
+      notifications: "Notifications",
+      recentActivity: "Recent Activity",
+      viewAll: "View All",
+      rentTracked: "Rent Tracked",
+      propertiesWithRent: "properties with rent",
+      setupRent: "Setup Rent",
+      maintenanceRequests: "Maintenance",
+      activeRequests: "active requests",
+      viewMaintenance: "View All",
+      noNotifications: "No notifications yet",
+      noRent: "No rent tracked",
+      noMaintenance: "No requests",
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -981,6 +1004,18 @@ function DashboardContent() {
       leaseEnds: "สัญญาสิ้นสุด",
       noticePeriod: "ระยะแจ้ง",
       days: "วัน",
+      notifications: "การแจ้งเตือน",
+      recentActivity: "กิจกรรมล่าสุด",
+      viewAll: "ดูทั้งหมด",
+      rentTracked: "ติดตามค่าเช่า",
+      propertiesWithRent: "ทรัพย์สินที่มีค่าเช่า",
+      setupRent: "ตั้งค่าเช่า",
+      maintenanceRequests: "การซ่อมบำรุง",
+      activeRequests: "คำขอที่ใช้งาน",
+      viewMaintenance: "ดูทั้งหมด",
+      noNotifications: "ยังไม่มีการแจ้งเตือน",
+      noRent: "ยังไม่ได้ติดตามค่าเช่า",
+      noMaintenance: "ไม่มีคำขอ",
     }
   };
 
@@ -1472,7 +1507,7 @@ function DashboardContent() {
 
               {expandedSections.stats && (
                 <div 
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
                   style={{
                     animation: 'slideDown 0.3s ease-out',
                   }}
@@ -1498,9 +1533,12 @@ function DashboardContent() {
                       <SkeletonLoader variant="stat" colors={colors} />
                       <SkeletonLoader variant="stat" colors={colors} />
                       <SkeletonLoader variant="stat" colors={colors} />
+                      <SkeletonLoader variant="stat" colors={colors} />
+                      <SkeletonLoader variant="stat" colors={colors} />
                     </>
                   ) : (
                     <>
+                      {/* Row 1 */}
                       <StatsCard
                         title={strings.activeLeases}
                         value={leases.length.toString()}
@@ -1523,7 +1561,31 @@ function DashboardContent() {
                         ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
                         onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
                       />
+
+                      {/* NEW: Notifications Card */}
+                      <StatsCard
+                        title={strings.notifications}
+                        value={notificationLogs.length.toString()}
+                        icon={Bell}
+                        scoreColor="#8B5CF6"
+                        miniStats={notificationLogs.length > 0 ? [
+                          {
+                            label: language === 'th' ? 'ส่งสำเร็จ' : 'Sent',
+                            value: notificationLogs.filter(n => n.status === 'sent').length
+                          },
+                          {
+                            label: language === 'th' ? 'ล้มเหลว' : 'Failed',
+                            value: notificationLogs.filter(n => n.status === 'failed').length
+                          }
+                        ] : undefined}
+                        actionButton={notificationLogs.length > 0 ? {
+                          label: strings.viewAll,
+                          link: createPageUrl("Account")
+                        } : undefined}
+                        ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
+                      />
                       
+                      {/* Row 2 */}
                       <StatsCard
                         title={strings.depositsTracked}
                         value={`฿${totalDepositValue.toLocaleString()}`}
@@ -1538,7 +1600,28 @@ function DashboardContent() {
                           link: createPageUrl("DepositTracker")
                         }}
                       />
+
+                      {/* NEW: Rent Tracked Card */}
+                      <StatsCard
+                        title={strings.rentTracked}
+                        value={rentTrackedCount.toString()}
+                        icon={Calendar}
+                        scoreColor="#3B82F6"
+                        miniStats={rentTrackedCount > 0 ? [
+                          {
+                            label: language === 'th' ? 'เปิดการแจ้งเตือน' : 'Alerts On',
+                            value: deposits.filter(d => d.rent_alerts_enabled).length
+                          }
+                        ] : undefined}
+                        actionButton={rentTrackedCount > 0 ? {
+                          label: language === 'th' ? 'จัดการ' : 'Manage',
+                          link: createPageUrl("PropertyTracker")
+                        } : undefined}
+                        ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
+                        onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                      />
                       
+                      {/* Row 3 */}
                       <StatsCard
                         title={strings.activeCases}
                         value={activeCases.length}
@@ -1551,6 +1634,26 @@ function DashboardContent() {
                           label: strings.openCase,
                           link: createPageUrl("Cases")
                         }}
+                      />
+
+                      {/* NEW: Maintenance Requests Card */}
+                      <StatsCard
+                        title={strings.maintenanceRequests}
+                        value={activeMaintenanceCount.toString()}
+                        icon={Wrench}
+                        scoreColor="#F59E0B"
+                        miniStats={activeMaintenanceCount > 0 ? [
+                          {
+                            label: language === 'th' ? 'เสร็จสิ้น' : 'Completed',
+                            value: maintenanceRequests.filter(r => r.status === 'completed').length
+                          }
+                        ] : undefined}
+                        actionButton={activeMaintenanceCount > 0 ? {
+                          label: strings.viewMaintenance,
+                          link: createPageUrl("PropertyTracker")
+                        } : undefined}
+                        ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
+                        onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
                       />
                       
                       {/* Enhanced Protection Score Card */}
