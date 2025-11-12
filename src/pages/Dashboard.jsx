@@ -1042,7 +1042,28 @@ function DashboardContent() {
 
   const isLoading = leasesLoading || depositsLoading;
 
-  // Check if user is new and should see onboarding
+  // FIXED: Better logic for showing onboarding checklist
+  // Show checklist until ALL tasks are complete OR user explicitly marks onboarding done
+  const calculateOnboardingProgress = () => {
+    const tasks = [
+      leases.length > 0, // Upload lease
+      deposits.length > 0, // Track deposit
+      maintenanceRequests.length > 0, // Report maintenance
+      documents.length >= 3, // Upload 3+ documents
+      user?.phone && user?.tenant_address, // Complete profile
+      user?.email_notifications || user?.line_notifications // Enable notifications
+    ];
+    
+    const completedCount = tasks.filter(Boolean).length;
+    const allTasksComplete = completedCount === tasks.length;
+    
+    return { completedCount, totalTasks: tasks.length, allTasksComplete };
+  };
+
+  const onboardingProgress = calculateOnboardingProgress();
+  const shouldShowOnboardingChecklist = !user?.onboarding_completed && !onboardingProgress.allTasksComplete;
+
+  // Check if user is new and should see onboarding wizard
   React.useEffect(() => {
     if (user && !user.onboarding_completed) {
       const hasAnyActivity = leases.length > 0 || deposits.length > 0 || documents.length > 0 || cases.length > 0;
@@ -1064,11 +1085,7 @@ function DashboardContent() {
   // Check if user has any data
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
 
-  // Calculate if user is still in onboarding phase
-  const isNewUser = !user?.onboarding_completed || 
-    (leases.length === 0 && deposits.length === 0 && documents.length === 0);
-
-  // Show empty state for completely new users
+  // Show empty state for completely new users (if wizard isn't currently open)
   if (!isLoading && !hasAnyData && !showOnboarding) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
@@ -1551,8 +1568,8 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* NEW: Onboarding Checklist for new users */}
-          {isNewUser && !showOnboarding && (
+          {/* FIXED: Onboarding Checklist - Shows until ALL tasks complete */}
+          {shouldShowOnboardingChecklist && !showOnboarding && (
             <div className="mb-6">
               <OnboardingChecklist
                 user={user}
