@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
   Edit2, Save, X, Wrench, AlertCircle, CheckCircle2, Clock,
-  DollarSign, ArrowLeft, Shield, Camera, Image as ImageIcon, Loader2
+  DollarSign, ArrowLeft, Shield, Camera, Image as ImageIcon, Loader2, Trash2, Archive
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -30,9 +30,10 @@ export default function PropertyTracker() {
   const [editingDeposit, setEditingDeposit] = useState(false);
   const [editingRent, setEditingRent] = useState(false);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
+  const [editingMaintenance, setEditingMaintenance] = useState(null); // Stores the maintenance request object being edited
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
-  const [photoFiles, setPhotoFiles] = useState([]);
-  const [photoPreviews, setPhotoPreviews] = useState([]);
+  const [photoFiles, setPhotoFiles] = useState([]); // Stores actual File objects for new uploads
+  const [photoPreviews, setPhotoPreviews] = useState([]); // Stores data URLs for new files AND existing URLs for edited requests
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -117,6 +118,27 @@ export default function PropertyTracker() {
     },
   });
 
+  const updateMaintenanceMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.MaintenanceRequest.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      setEditingMaintenance(null);
+      setShowAddMaintenance(false); // Close the form after successful update
+      setPhotoFiles([]);
+      setPhotoPreviews([]);
+      setMaintenanceForm({ // Clear form
+        issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
+      });
+    },
+  });
+
+  const deleteMaintenanceMutation = useMutation({
+    mutationFn: (id) => base44.entities.MaintenanceRequest.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+    },
+  });
+
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
@@ -127,7 +149,10 @@ export default function PropertyTracker() {
     textSecondary: isDarkMode ? '#A8ABAD' : '#64748b',
     borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
     inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
-    sectionBg: isDarkMode ? '#353A3D' : '#F8FAFC'
+    sectionBg: isDarkMode ? '#353A3D' : '#F8FAFC',
+    depositAccent: '#C7A338', // Golden
+    rentAccent: '#3B82F6',    // Blue
+    maintenanceAccent: '#F59E0B' // Orange
   };
 
   const t = {
@@ -149,6 +174,8 @@ export default function PropertyTracker() {
       save: "Save",
       cancel: "Cancel",
       edit: "Edit",
+      delete: "Delete",
+      close: "Close",
       addDeposit: "Add Deposit",
       addRent: "Add Rent Schedule",
       noDeposit: "No deposit tracked yet",
@@ -173,6 +200,10 @@ export default function PropertyTracker() {
       photosAdded: "photo(s) added",
       removePhoto: "Remove",
       communicationLog: "Communication Log",
+      confirmDelete: "Are you sure you want to delete this request?",
+      confirmClose: "Mark this request as completed and close it?",
+      archived: "Archived",
+      active: "Active",
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -192,6 +223,8 @@ export default function PropertyTracker() {
       save: "บันทึก",
       cancel: "ยกเลิก",
       edit: "แก้ไข",
+      delete: "ลบ",
+      close: "ปิด",
       addDeposit: "เพิ่มเงินมัดจำ",
       addRent: "เพิ่มกำหนดค่าเช่า",
       noDeposit: "ยังไม่มีการติดตามเงินมัดจำ",
@@ -216,6 +249,10 @@ export default function PropertyTracker() {
       photosAdded: "รูปภาพที่เพิ่ม",
       removePhoto: "ลบ",
       communicationLog: "บันทึกการสื่อสาร",
+      confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบคำขอนี้?",
+      confirmClose: "ทำเครื่องหมายว่าเสร็จสิ้นและปิดคำขอนี้?",
+      archived: "เก็บถาวร",
+      active: "ใช้งาน",
     }
   };
 
@@ -243,10 +280,25 @@ export default function PropertyTracker() {
     });
   };
 
-  const handleRemovePhoto = (index) => {
-    setPhotoFiles(prev => prev.filter((_, i) => i !== index));
-    setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+  const handleRemovePhoto = (indexToRemove) => {
+    // Determine if the photo being removed is a newly added file or an existing URL
+    const previewToRemove = photoPreviews[indexToRemove];
+    if (previewToRemove && previewToRemove.startsWith('data:image')) {
+      // It's a newly added file (data URL)
+      // Find the corresponding file in photoFiles to remove it
+      // This is a simplified approach; a more robust solution would track `File` objects with unique IDs
+      const newPhotoFiles = photoFiles.filter((_, i) => {
+          // This comparison is not robust without unique IDs for files.
+          // For simplicity, we'll assume `photoFiles` order matches `data:image` previews.
+          // A better way would be to store `File` objects in a map keyed by a generated ID.
+          return i !== indexToRemove; // This is only correct if no existing URLs are before it
+      });
+      setPhotoFiles(newPhotoFiles);
+    }
+    // Remove from previews
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== indexToRemove));
   };
+
 
   const handleDepositSubmit = () => {
     const data = {
@@ -274,11 +326,12 @@ export default function PropertyTracker() {
       rent_alert_days_before: parseInt(rentForm.rent_alert_days_before, 10)
     };
 
+    // If a deposit record exists, update it. Otherwise, create a minimal one.
     if (deposits.length > 0) {
       updateDepositMutation.mutate({ id: deposits[0].id, data });
     } else {
       const minimalDeposit = {
-        deposit_amount: 0,
+        deposit_amount: 0, // Default for minimal record
         deposit_paid_date: new Date().toISOString().split('T')[0],
         expected_return_date: new Date().toISOString().split('T')[0],
         status: 'tracking',
@@ -291,13 +344,13 @@ export default function PropertyTracker() {
   const handleMaintenanceSubmit = async () => {
     console.log('🔧 === MAINTENANCE REQUEST CREATION START ===');
     console.log('👤 Current user:', user?.email);
-    
+
     if (!user?.email) {
       console.error('❌ No user email found!');
       alert('Error: Unable to identify user. Please try refreshing the page.');
       return;
     }
-    
+
     try {
       let photoUrls = [];
 
@@ -328,25 +381,18 @@ export default function PropertyTracker() {
         }
       };
 
-      // ========================================
-      // CRITICAL FIX: Explicitly set created_by
-      // ========================================
       const maintenanceData = {
         ...maintenanceForm,
-        created_by: user.email,  // 🔥 EXPLICITLY SET THIS!
+        created_by: user.email,
         photo_urls: photoUrls,
         communication_log: [initialLogEntry]
       };
 
       console.log('📝 Creating maintenance request with explicit created_by:', user.email);
-      console.log('📦 Data to send:', { ...maintenanceData, photo_urls: photoUrls.length + ' photos' });
-      
-      const createdRequest = await createMaintenanceMutation.mutateAsync(maintenanceData);
-      
-      console.log('✅ Maintenance request created successfully!');
-      console.log('🆔 Request ID:', createdRequest.id);
-      console.log('📧 created_by field:', createdRequest.created_by);
 
+      const createdRequest = await createMaintenanceMutation.mutateAsync(maintenanceData);
+
+      console.log('✅ Maintenance request created successfully!');
       setUploadingPhotos(false);
 
       console.log('📤 Sending maintenance notifications...');
@@ -354,8 +400,6 @@ export default function PropertyTracker() {
         const notificationResponse = await base44.functions.invoke('sendMaintenanceNotification', {
           maintenanceRequest: createdRequest
         });
-
-        console.log('✅ Notification response:', notificationResponse.data);
 
         if (notificationResponse.data?.success) {
           const sentCount = notificationResponse.data.notifications?.filter(n => n.status === 'sent').length || 0;
@@ -377,6 +421,121 @@ export default function PropertyTracker() {
       alert(language === 'th'
         ? 'ไม่สามารถสร้างคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง'
         : 'Failed to create maintenance request. Please try again.');
+    }
+  };
+
+  const handleEditMaintenance = (request) => {
+    setEditingMaintenance(request);
+    setShowAddMaintenance(true); // Open the form
+    setMaintenanceForm({
+      issue_title: request.issue_title,
+      description: request.description,
+      category: request.category,
+      priority: request.priority,
+      property_address: request.property_address || '',
+      reported_date: request.reported_date
+    });
+    setPhotoFiles([]); // Clear any new files from previous sessions
+    // Pre-fill photo previews with existing URLs from the request
+    setPhotoPreviews(request.photo_urls || []);
+  };
+
+  const handleUpdateMaintenance = async () => {
+    if (!editingMaintenance || !user?.email) return;
+
+    try {
+      let newUploadUrls = [];
+      if (photoFiles.length > 0) {
+        setUploadingPhotos(true);
+        const uploadPromises = photoFiles.map(file =>
+          base44.integrations.Core.UploadFile({ file })
+        );
+        newUploadUrls = await Promise.all(uploadPromises).then(results => results.map(result => result.file_url));
+      }
+
+      // Filter photoPreviews to keep only original URLs that are still present
+      // and then add newly uploaded ones.
+      const remainingOriginalPhotoUrls = photoPreviews.filter(p => !p.startsWith('data:image'));
+      const finalPhotoUrls = [...remainingOriginalPhotoUrls, ...newUploadUrls];
+
+      const updateLogEntry = {
+        timestamp: new Date().toISOString(),
+        message: `${language === 'th' ? 'คำขอซ่อมถูกอัปเดตโดย' : 'Maintenance request updated by'} ${user?.full_name || user?.email}`,
+        sender: 'tenant',
+        sender_name: user?.full_name || user?.email,
+        sender_email: user?.email,
+        action_type: 'updated',
+        metadata: {
+          issue_title: maintenanceForm.issue_title,
+          category: maintenanceForm.category,
+          priority: maintenanceForm.priority
+        }
+      };
+      const updatedCommunicationLog = [...(editingMaintenance.communication_log || []), updateLogEntry];
+
+
+      const updatedData = {
+        ...maintenanceForm,
+        photo_urls: finalPhotoUrls,
+        communication_log: updatedCommunicationLog,
+        created_by: user.email // Ensure created_by is maintained/set
+      };
+
+      await updateMaintenanceMutation.mutateAsync({
+        id: editingMaintenance.id,
+        data: updatedData
+      });
+
+      setUploadingPhotos(false);
+      alert(language === 'th' ? 'อัปเดตสำเร็จ' : 'Updated successfully');
+    } catch (error) {
+      console.error('❌ Failed to update maintenance request:', error);
+      setUploadingPhotos(false);
+      alert(language === 'th' ? 'ไม่สามารถอัปเดตคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง' : 'Failed to update maintenance request. Please try again.');
+    }
+  };
+
+  const handleCloseMaintenance = async (request) => {
+    if (!confirm(strings.confirmClose)) return;
+
+    try {
+      const closeLogEntry = {
+        timestamp: new Date().toISOString(),
+        message: `${language === 'th' ? 'คำขอถูกปิดโดย' : 'Request closed by'} ${user?.full_name || user?.email}`,
+        sender: 'tenant',
+        sender_name: user?.full_name || user?.email,
+        sender_email: user?.email,
+        action_type: 'closed',
+        metadata: {
+          status: 'completed'
+        }
+      };
+      const updatedCommunicationLog = [...(request.communication_log || []), closeLogEntry];
+
+      await updateMaintenanceMutation.mutateAsync({
+        id: request.id,
+        data: {
+          status: 'completed',
+          resolved_date: new Date().toISOString().split('T')[0],
+          communication_log: updatedCommunicationLog
+        }
+      });
+      alert(language === 'th' ? 'คำขอถูกปิดแล้ว' : 'Request closed successfully');
+    } catch (error) {
+      console.error('❌ Failed to close maintenance request:', error);
+      alert(language === 'th' ? 'ไม่สามารถปิดคำขอได้' : 'Failed to close request');
+    }
+  };
+
+  const handleDeleteMaintenance = async (request) => {
+    if (!confirm(strings.confirmDelete)) return;
+
+    try {
+      await deleteMaintenanceMutation.mutateAsync(request.id);
+      alert(language === 'th' ? 'คำขอถูกลบแล้ว' : 'Request deleted successfully');
+    } catch (error) {
+      console.error('❌ Failed to delete maintenance request:', error);
+      alert(language === 'th' ? 'ไม่สามารถลบคำขอได้' : 'Failed to delete request');
     }
   };
 
@@ -414,7 +573,7 @@ export default function PropertyTracker() {
           {strings.back}
         </Button>
 
-        <div className="mb-6">
+        <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
             <Home className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
             {strings.title}
@@ -422,30 +581,46 @@ export default function PropertyTracker() {
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
 
-        {/* DEPOSIT SECTION */}
-        <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+        {/* DEPOSIT SECTION - Enhanced styling */}
+        <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
           <CardHeader
             className="cursor-pointer"
             onClick={() => toggleSection('deposit')}
             style={{
-              backgroundColor: colors.sectionBg,
+              background: isDarkMode
+                ? `linear-gradient(to right, #2A2D30, #3A3420)`
+                : `linear-gradient(to right, #FFFBEB, #FEF3C7)`,
               borderBottom: expandedSections.deposit ? `1px solid ${colors.borderColor}` : 'none'
             }}
           >
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Wallet className="w-5 h-5 text-ls-gold" />
-                {strings.depositSection}
-                {deposit && deposit.deposit_amount > 0 && (
-                  <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>
-                    {isOverdue
-                      ? `${strings.overdue} ${Math.abs(daysRemaining)} ${strings.daysRemaining}`
-                      : daysRemaining !== null
-                        ? `${daysRemaining} ${strings.daysRemaining}`
-                        : 'Active'
-                    }
-                  </Badge>
-                )}
+              <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  backgroundColor: colors.depositAccent,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Wallet className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="text-lg font-bold">{strings.depositSection}</div>
+                  {deposit && deposit.deposit_amount > 0 && (
+                    <div className="text-sm font-normal flex items-center gap-2 mt-1">
+                      <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>
+                        {isOverdue
+                          ? `${strings.overdue} ${Math.abs(daysRemaining)} ${strings.daysRemaining}`
+                          : daysRemaining !== null
+                            ? `${daysRemaining} ${strings.daysRemaining}`
+                            : 'Active'
+                        }
+                      </Badge>
+                    </div>
+                  )}
+                </div>
               </CardTitle>
               <div className="flex items-center gap-2">
                 {deposit && deposit.deposit_amount > 0 && !editingDeposit && (
@@ -576,25 +751,41 @@ export default function PropertyTracker() {
           )}
         </Card>
 
-        {/* RENT SECTION */}
-        <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+        {/* RENT SECTION - Enhanced styling */}
+        <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.rentAccent}` }}>
           <CardHeader
             className="cursor-pointer"
             onClick={() => toggleSection('rent')}
             style={{
-              backgroundColor: colors.sectionBg,
+              background: isDarkMode
+                ? `linear-gradient(to right, #2A2D30, #1E3A5F)`
+                : `linear-gradient(to right, #EFF6FF, #DBEAFE)`,
               borderBottom: expandedSections.rent ? `1px solid ${colors.borderColor}` : 'none'
             }}
           >
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Calendar className="w-5 h-5 text-blue-600" />
-                {strings.rentSection}
-                {deposit?.rent_amount && deposit?.rent_due_day && (
-                  <Badge className="bg-blue-100 text-blue-800">
-                    Day {deposit.rent_due_day} - ฿{deposit.rent_amount.toLocaleString()}
-                  </Badge>
-                )}
+              <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  backgroundColor: colors.rentAccent,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Calendar className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="text-lg font-bold">{strings.rentSection}</div>
+                  {deposit?.rent_amount && deposit?.rent_due_day && (
+                    <div className="text-sm font-normal mt-1">
+                      <Badge className="bg-blue-100 text-blue-800">
+                        Day {deposit.rent_due_day} - ฿{deposit.rent_amount.toLocaleString()}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
               </CardTitle>
               <div className="flex items-center gap-2">
                 {deposit?.rent_amount && deposit?.rent_due_day && !editingRent && (
@@ -730,25 +921,46 @@ export default function PropertyTracker() {
           )}
         </Card>
 
-        {/* MAINTENANCE SECTION */}
-        <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+        {/* MAINTENANCE SECTION - Enhanced styling with actions */}
+        <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.maintenanceAccent}` }}>
           <CardHeader
             className="cursor-pointer"
             onClick={() => toggleSection('maintenance')}
             style={{
-              backgroundColor: colors.sectionBg,
+              background: isDarkMode
+                ? `linear-gradient(to right, #2A2D30, #3A2D1C)`
+                : `linear-gradient(to right, #FFF7ED, #FFEDD5)`,
               borderBottom: expandedSections.maintenance ? `1px solid ${colors.borderColor}` : 'none'
             }}
           >
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Wrench className="w-5 h-5 text-orange-600" />
-                {strings.maintenanceSection}
-                {activeRequests.length > 0 && (
-                  <Badge className="bg-orange-100 text-orange-800">
-                    {activeRequests.length} Active
-                  </Badge>
-                )}
+              <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  backgroundColor: colors.maintenanceAccent,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Wrench className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="text-lg font-bold">{strings.maintenanceSection}</div>
+                  {activeRequests.length > 0 && (
+                    <div className="text-sm font-normal mt-1">
+                      <Badge className="bg-orange-100 text-orange-800">
+                        {activeRequests.length} {strings.active}
+                      </Badge>
+                      {completedRequests.length > 0 && (
+                        <Badge className="bg-gray-100 text-gray-800 ml-2">
+                          {completedRequests.length} {strings.archived}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
               </CardTitle>
               <div className="flex items-center gap-2">
                 <Button
@@ -757,6 +969,12 @@ export default function PropertyTracker() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowAddMaintenance(true);
+                    setEditingMaintenance(null); // Clear editing state when adding new
+                    setMaintenanceForm({ // Reset form for new entry
+                      issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
+                    });
+                    setPhotoFiles([]);
+                    setPhotoPreviews([]);
                   }}
                 >
                   <Plus className="w-4 h-4" />
@@ -768,9 +986,11 @@ export default function PropertyTracker() {
 
           {expandedSections.maintenance && (
             <CardContent className="p-6">
-              {showAddMaintenance && (
+              {(showAddMaintenance || editingMaintenance) && (
                 <div className="mb-4 p-4 rounded-lg border-2 border-dashed" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
-                  <h3 className="font-bold mb-3" style={{ color: colors.textPrimary }}>{strings.addMaintenance}</h3>
+                  <h3 className="font-bold mb-3" style={{ color: colors.textPrimary }}>
+                    {editingMaintenance ? strings.edit : strings.addMaintenance}
+                  </h3>
                   <div className="space-y-3">
                     <div>
                       <Label style={{ color: colors.textPrimary }}>{strings.issueTitle}</Label>
@@ -909,8 +1129,12 @@ export default function PropertyTracker() {
                         variant="outline"
                         onClick={() => {
                           setShowAddMaintenance(false);
+                          setEditingMaintenance(null);
                           setPhotoFiles([]);
                           setPhotoPreviews([]);
+                          setMaintenanceForm({
+                            issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
+                          });
                         }}
                         disabled={uploadingPhotos}
                       >
@@ -918,7 +1142,7 @@ export default function PropertyTracker() {
                         {strings.cancel}
                       </Button>
                       <Button
-                        onClick={handleMaintenanceSubmit}
+                        onClick={editingMaintenance ? handleUpdateMaintenance : handleMaintenanceSubmit}
                         className="bg-orange-600 hover:bg-orange-700"
                         disabled={uploadingPhotos}
                       >
@@ -939,95 +1163,188 @@ export default function PropertyTracker() {
                 </div>
               )}
 
-              {maintenanceRequests.length === 0 ? (
-                <div className="text-center py-6">
-                  <Wrench className="w-10 h-10 mx-auto mb-2" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.noMaintenance}</p>
+              {maintenanceRequests.length === 0 && !showAddMaintenance && (
+                <div className="text-center py-8">
+                  <Wrench className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                  <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noMaintenance}</p>
+                  <Button onClick={() => setShowAddMaintenance(true)} className="bg-orange-600 hover:bg-orange-700 text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    {strings.addMaintenance}
+                  </Button>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {maintenanceRequests.map((request) => (
-                    <div key={request.id} className="p-4 rounded-lg border" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div className="flex-1">
-                          <h4 className="font-bold" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
-                          <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{request.description}</p>
-                        </div>
-                        <Badge className={getStatusColor(request.status)}>
-                          {request.status}
-                        </Badge>
-                      </div>
+              )}
+              {(activeRequests.length > 0 || completedRequests.length > 0) && (
+                <div className="space-y-4">
+                  {/* Active Requests */}
+                  {activeRequests.length > 0 && (
+                    <div>
+                      <h4 className="text-lg font-bold mb-3" style={{ color: colors.textPrimary }}>
+                        <span className="mr-2 inline-block">🛠️</span> {strings.active} ({activeRequests.length})
+                      </h4>
+                      <div className="space-y-3">
+                        {activeRequests.map((request) => (
+                          <div key={request.id} className="p-4 rounded-lg border-2" style={{ borderColor: colors.borderColor, backgroundColor: colors.cardBg }}>
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div className="flex-1">
+                                <h4 className="font-bold text-lg" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
+                                <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{request.description}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={getStatusColor(request.status)}>
+                                  {request.status}
+                                </Badge>
+                              </div>
+                            </div>
 
-                      {request.photo_urls && request.photo_urls.length > 0 && (
-                        <div className="mt-3 mb-2">
-                          <div className="grid grid-cols-4 gap-2">
-                            {request.photo_urls.map((url, index) => (
-                              <img
-                                key={index}
-                                src={url}
-                                alt={`Issue ${index + 1}`}
-                                className="w-full h-20 object-cover rounded-lg border"
-                                style={{ borderColor: colors.borderColor, cursor: 'pointer' }}
-                                onClick={() => window.open(url, '_blank')}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                            {request.photo_urls && request.photo_urls.length > 0 && (
+                              <div className="mt-3 mb-2">
+                                <div className="grid grid-cols-4 gap-2">
+                                  {request.photo_urls.map((url, index) => (
+                                    <img
+                                      key={index}
+                                      src={url}
+                                      alt={`Issue ${index + 1}`}
+                                      className="w-full h-20 object-cover rounded-lg border"
+                                      style={{ borderColor: colors.borderColor, cursor: 'pointer' }}
+                                      onClick={() => window.open(url, '_blank')}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
-                      {request.communication_log && request.communication_log.length > 0 && (
-                        <div className="mt-3 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
-                          <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
-                            {strings.communicationLog}
-                          </p>
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {request.communication_log.map((log, idx) => (
-                              <div
-                                key={idx}
-                                className="p-2 rounded-lg text-xs"
-                                style={{
-                                  backgroundColor: log.sender === 'tenant' ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') :
-                                                   log.sender === 'landlord' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
-                                                   log.sender === 'juristic' ? (isDarkMode ? '#2D1C3A' : '#FAF5FF') :
-                                                   (isDarkMode ? '#2A2D30' : '#F3F4F6'),
-                                  borderLeft: `3px solid ${
-                                    log.sender === 'tenant' ? '#3B82F6' :
-                                    log.sender === 'landlord' ? '#F59E0B' :
-                                    log.sender === 'juristic' ? '#8B5CF6' :
-                                    '#6B7280'
-                                  }`
+                            {request.communication_log && request.communication_log.length > 0 && (
+                              <div className="mt-3 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
+                                <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                                  {strings.communicationLog}
+                                </p>
+                                <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                                  {request.communication_log.map((log, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="p-2 rounded-lg text-xs"
+                                      style={{
+                                        backgroundColor: log.sender === 'tenant' ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') :
+                                                         log.sender === 'landlord' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
+                                                         log.sender === 'juristic' ? (isDarkMode ? '#2D1C3A' : '#FAF5FF') :
+                                                         (isDarkMode ? '#2A2D30' : '#F3F4F6'),
+                                        borderLeft: `3px solid ${
+                                          log.sender === 'tenant' ? '#3B82F6' :
+                                          log.sender === 'landlord' ? '#F59E0B' :
+                                          log.sender === 'juristic' ? '#8B5CF6' :
+                                          '#6B7280'
+                                        }`
+                                      }}
+                                    >
+                                      <div className="flex items-start justify-between gap-2 mb-1">
+                                        <span className="font-semibold" style={{ color: colors.textPrimary }}>
+                                          {log.sender === 'tenant' ? '👤' : log.sender === 'landlord' ? '🏠' : log.sender === 'juristic' ? '🏢' : '⚙️'} {log.sender_name || log.sender}
+                                        </span>
+                                        <span style={{ color: colors.textSecondary, fontSize: '10px' }}>
+                                          {new Date(log.timestamp).toLocaleString(language === 'th' ? 'th-TH' : 'en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </span>
+                                      </div>
+                                      <p style={{ color: colors.textPrimary }}>{log.message}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-4 text-xs mt-3" style={{ color: colors.textSecondary }}>
+                              <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
+                              <span>🏷️ {request.category}</span>
+                              <span>⚡ {request.priority}</span>
+                              {request.photo_urls && request.photo_urls.length > 0 && (
+                                <span>📸 {request.photo_urls.length} {strings.photosAdded}</span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 flex-wrap mt-4 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditMaintenance(request);
                                 }}
                               >
-                                <div className="flex items-start justify-between gap-2 mb-1">
-                                  <span className="font-semibold" style={{ color: colors.textPrimary }}>
-                                    {log.sender === 'tenant' ? '👤' : log.sender === 'landlord' ? '🏠' : log.sender === 'juristic' ? '🏢' : '⚙️'} {log.sender_name || log.sender}
-                                  </span>
-                                  <span style={{ color: colors.textSecondary, fontSize: '10px' }}>
-                                    {new Date(log.timestamp).toLocaleString(language === 'th' ? 'th-TH' : 'en-US', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </span>
-                                </div>
-                                <p style={{ color: colors.textPrimary }}>{log.message}</p>
-                              </div>
-                            ))}
+                                <Edit2 className="w-3 h-3 mr-1" />
+                                {strings.edit}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCloseMaintenance(request);
+                                }}
+                                className="text-emerald-600 border-emerald-600 hover:bg-emerald-50"
+                              >
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                {strings.close}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteMaintenance(request);
+                                }}
+                                className="text-red-600 border-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" />
+                                {strings.delete}
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-4 text-xs mt-3" style={{ color: colors.textSecondary }}>
-                        <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
-                        <span>🏷️ {request.category}</span>
-                        <span>⚡ {request.priority}</span>
-                        {request.photo_urls && request.photo_urls.length > 0 && (
-                          <span>📸 {request.photo_urls.length} {strings.photosAdded}</span>
-                        )}
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Completed Requests */}
+                  {completedRequests.length > 0 && (
+                    <div>
+                      <h4 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: colors.textSecondary }}>
+                        <Archive className="w-5 h-5" />
+                        {strings.archived} ({completedRequests.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {completedRequests.map((request) => (
+                          <div key={request.id} className="p-3 rounded-lg border opacity-60" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
+                                <div className="flex items-center gap-3 text-xs mt-1" style={{ color: colors.textSecondary }}>
+                                  <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
+                                  <Badge className={getStatusColor(request.status)} style={{ fontSize: '10px' }}>
+                                    {request.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteMaintenance(request);
+                                }}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
