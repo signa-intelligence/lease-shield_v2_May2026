@@ -1483,7 +1483,7 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Stats Grid - Collapsible */}
+          {/* Stats Grid - COMPACT SINGLE ROW */}
           {(!focusMode || urgentDeposits > 0 || activeCases.length > 0) && (
             <div className="mb-6">
               <button
@@ -1507,7 +1507,7 @@ function DashboardContent() {
 
               {expandedSections.stats && (
                 <div 
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3"
                   style={{
                     animation: 'slideDown 0.3s ease-out',
                   }}
@@ -1535,10 +1535,10 @@ function DashboardContent() {
                       <SkeletonLoader variant="stat" colors={colors} />
                       <SkeletonLoader variant="stat" colors={colors} />
                       <SkeletonLoader variant="stat" colors={colors} />
+                      <SkeletonLoader variant="stat" colors={colors} />
                     </>
                   ) : (
                     <>
-                      {/* Row 1 */}
                       <StatsCard
                         title={strings.activeLeases}
                         value={leases.length.toString()}
@@ -1560,9 +1560,9 @@ function DashboardContent() {
                         } : undefined}
                         ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
                         onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
+                        compact
                       />
 
-                      {/* NEW: Notifications Card */}
                       <StatsCard
                         title={strings.notifications}
                         value={notificationLogs.length.toString()}
@@ -1583,9 +1583,9 @@ function DashboardContent() {
                           link: createPageUrl("Account")
                         } : undefined}
                         ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
+                        compact
                       />
                       
-                      {/* Row 2 */}
                       <StatsCard
                         title={strings.depositsTracked}
                         value={`฿${totalDepositValue.toLocaleString()}`}
@@ -1599,9 +1599,9 @@ function DashboardContent() {
                           label: strings.addDeposit,
                           link: createPageUrl("DepositTracker")
                         }}
+                        compact
                       />
 
-                      {/* NEW: Rent Tracked Card */}
                       <StatsCard
                         title={strings.rentTracked}
                         value={rentTrackedCount.toString()}
@@ -1619,9 +1619,9 @@ function DashboardContent() {
                         } : undefined}
                         ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
                         onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                        compact
                       />
                       
-                      {/* Row 3 */}
                       <StatsCard
                         title={strings.activeCases}
                         value={activeCases.length}
@@ -1634,9 +1634,9 @@ function DashboardContent() {
                           label: strings.openCase,
                           link: createPageUrl("Cases")
                         }}
+                        compact
                       />
 
-                      {/* NEW: Maintenance Requests Card */}
                       <StatsCard
                         title={strings.maintenanceRequests}
                         value={activeMaintenanceCount.toString()}
@@ -1654,18 +1654,17 @@ function DashboardContent() {
                         } : undefined}
                         ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
                         onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                        compact
                       />
                       
-                      {/* Enhanced Protection Score Card */}
-                      <div className="sm:col-span-2 lg:col-span-1">
-                        <ProtectionScoreEnhanced
-                          score={protectionScore}
-                          breakdown={breakdown}
-                          recommendations={recommendations}
-                          language={language}
-                          colors={colors}
-                        />
-                      </div>
+                      <ProtectionScoreEnhanced
+                        score={protectionScore}
+                        breakdown={breakdown}
+                        recommendations={recommendations}
+                        language={language}
+                        colors={colors}
+                        compact
+                      />
                     </>
                   )}
                 </div>
