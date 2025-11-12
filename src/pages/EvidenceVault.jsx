@@ -24,6 +24,9 @@ import SwipeToDelete from "../components/shared/SwipeToDelete";
 import BottomSheet from "../components/shared/BottomSheet";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import MobileFormInput from "../components/shared/MobileFormInput";
+import LazyImage from "../components/shared/LazyImage";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
+import EmptyState from "../components/shared/EmptyState";
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -69,6 +72,9 @@ export default function EvidenceVault() {
     queryFn: () => base44.entities.Document.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
+
+  // For now, no filtering logic provided, so filteredDocuments is all documents
+  const filteredDocuments = documents;
 
   const getStorageLimits = () => {
     const tier = user?.plan_tier || 'free';
@@ -218,10 +224,10 @@ export default function EvidenceVault() {
 
   const handleSelectAll = () => {
     haptic.light();
-    if (selectedDocs.length === documents.length) {
+    if (selectedDocs.length === filteredDocuments.length) {
       setSelectedDocs([]);
     } else {
-      setSelectedDocs(documents.map(doc => doc.id));
+      setSelectedDocs(filteredDocuments.map(doc => doc.id));
     }
   };
 
@@ -1035,10 +1041,10 @@ export default function EvidenceVault() {
 
       <div className="max-w-7xl mx-auto">
         {/* Recent Uploads Header and Bulk Actions */}
-        {documents.length > 0 && (
+        {(isLoadingDocuments || filteredDocuments.length > 0) && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                    {strings.recentUploads} ({documents.length})
+                    {strings.recentUploads} ({filteredDocuments.length})
                 </h2>
                 <div className="flex items-center gap-2 flex-wrap">
                     {/* Bulk Actions */}
@@ -1074,7 +1080,7 @@ export default function EvidenceVault() {
                     >
                         {exportingPdf ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{strings.exporting}</>) : (<><FileText className="w-4 h-4 mr-2" />{strings.exportReport}</>)}
                     </Button>
-                    {documents.length > 0 && (
+                    {filteredDocuments.length > 0 && (
                         <button
                             onClick={handleSelectAll}
                             className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm"
@@ -1083,7 +1089,7 @@ export default function EvidenceVault() {
                                 color: colors.textPrimary
                             }}
                         >
-                            {selectedDocs.length === documents.length ? (
+                            {selectedDocs.length === filteredDocuments.length ? (
                                 <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4 text-ls-forest" />
                             ) : (
                                 <Square className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1097,56 +1103,81 @@ export default function EvidenceVault() {
 
         {/* Documents Grid */}
         {isLoadingDocuments ? (
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-8 text-center text-ls-forest">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-              <p>{strings.loadingDocuments}</p>
-            </CardContent>
-          </Card>
-        ) : documents.length === 0 ? (
-          <div className="text-center py-12 md:py-20">
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style={{
-              backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6'
-            }}>
-              <FileText className="w-10 h-10 md:w-12 md:h-12" style={{ color: colors.textSecondary, opacity: 0.5 }} />
-            </div>
-            <h2 className="text-xl md:text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {strings.noDocuments}
-            </h2>
-            <p className="mb-6 max-w-md mx-auto text-sm md:text-base px-4" style={{ color: colors.textSecondary }}>
-              {strings.noDocumentsDesc}
-            </p>
-            <Button
-              onClick={() => {
-                haptic.light();
-                setShowUploadDialog(true);
-              }}
-              className="bg-ls-forest hover:bg-ls-forest/90"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {strings.uploadFirst}
-            </Button>
-          </div>
+          <SkeletonLoader variant="card" count={6} colors={colors} />
+        ) : filteredDocuments.length === 0 ? (
+          <EmptyState
+            icon={FileText}
+            title={strings.noDocuments}
+            description={strings.noDocumentsDesc}
+            illustration="documents"
+            actionLabel={strings.uploadFirst}
+            onAction={() => setShowUploadDialog(true)}
+            colors={colors}
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {documents.map((doc) => {
+            {filteredDocuments.map((doc) => {
               const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
-              const Icon = config.icon;
               const isSelected = selectedDocs.includes(doc.id);
-
+              const isImage = doc.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+              const isVideo = doc.file_url?.match(/\.(mp4|mov|avi)$/i);
+              
               return (
                 <SwipeToDelete
                   key={doc.id}
-                  onDelete={() => handleSwipeDelete(doc.id)}
+                  onDelete={() => handleSwipeDelete(doc.id)} // Kept original handleSwipeDelete
                   deleteLabel={strings.delete}
                   colors={colors}
                 >
                   <Card
-                    className={`border-none shadow-lg hover:shadow-xl transition-all ${isSelected ? 'ring-2 ring-ls-forest' : ''}`}
+                    className={`overflow-hidden border-none shadow-lg hover:shadow-xl transition-all relative ${isSelected ? 'ring-2 ring-ls-forest' : ''}`}
                     style={{ backgroundColor: colors.cardBg, borderColor: isSelected ? '#0C3B2E' : colors.borderColor }}
                     onClick={() => handleCardClick(doc)}
                   >
-                    <div className={`h-2 rounded-t-xl`} style={{ backgroundColor: config.bgColor }} />
+                    {isImage ? (
+                      <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
+                        <LazyImage
+                          src={doc.file_url}
+                          alt={doc.label || doc.type}
+                          className="w-full h-full object-cover"
+                          loadingColor="#C7A338"
+                          fallback={
+                            <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                              <FileText className="w-12 h-12 text-gray-400" />
+                            </div>
+                          }
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleView(doc);
+                          }}
+                          className="absolute top-2 right-2 p-2 bg-black/50 rounded-lg backdrop-blur-sm hover:bg-black/70 transition-colors"
+                        >
+                          <Eye className="w-4 h-4 text-white" />
+                        </button>
+                      </div>
+                    ) : isVideo ? (
+                      <div className="aspect-video bg-gray-900 relative">
+                        <video 
+                          src={doc.file_url} 
+                          className="w-full h-full object-cover"
+                          controls
+                          preload="metadata"
+                        />
+                      </div>
+                    ) : (
+                      <div 
+                        className="aspect-video flex flex-col items-center justify-center p-4"
+                        style={{ backgroundColor: config.bgColor, color: 'white' }}
+                      >
+                        {React.createElement(config.icon, { className: "w-12 h-12 mb-2" })}
+                        <span className="text-sm font-semibold text-center break-words">
+                          {doc.label || (language === 'th' ? config.label_th : config.label_en)}
+                        </span>
+                      </div>
+                    )}
+
                     <CardContent className="p-4">
                       {bulkMode && (
                         <div className="absolute top-4 right-4 z-10">
@@ -1160,7 +1191,7 @@ export default function EvidenceVault() {
 
                       <div className="flex items-start gap-3 mb-3">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0`} style={{ backgroundColor: config.bgColor }}>
-                          <Icon className="w-6 h-6 text-white" />
+                          {React.createElement(config.icon, { className: "w-6 h-6 text-white" })}
                         </div>
                         <div className="flex-1 min-w-0">
                           <Badge className="mb-2" style={{

@@ -25,6 +25,7 @@ import SwipeToDelete from "../components/shared/SwipeToDelete";
 import BottomSheet from "../components/shared/BottomSheet";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import MobileFormInput from "../components/shared/MobileFormInput";
+import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 
 export default function PropertyTracker() {
   const navigate = useNavigate();
@@ -61,6 +62,8 @@ export default function PropertyTracker() {
     queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
+
+  const optimistic = useOptimisticUpdate(['maintenance'], 'MaintenanceRequest');
 
   const [depositForm, setDepositForm] = useState({
     deposit_amount: '',
@@ -106,46 +109,113 @@ export default function PropertyTracker() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
       setEditingDeposit(false);
-      setEditingRent(false);
+      // setEditingRent(false); // This line is for rent, not deposit, seems out of place
     },
   });
 
   const createMaintenanceMutation = useMutation({
-    mutationFn: (data) => base44.entities.MaintenanceRequest.create(data),
-    onSuccess: () => {
+    mutationFn: async (data) => {
+      return await base44.entities.MaintenanceRequest.create(data);
+    },
+    onMutate: async (newRequestData) => {
+      haptic.medium(); // Haptic feedback when action is initiated
+
+      const tempId = `optimistic-${Date.now()}-${Math.random()}`;
+      
+      const optimisticItem = {
+        ...newRequestData,
+        id: tempId, 
+        status: newRequestData.status || 'reported', 
+        __optimistic: true, 
+      };
+
+      optimistic.optimisticCreate(optimisticItem);
+      return { optimisticItem }; 
+    },
+    onSuccess: (data, variables, context) => { 
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       setShowAddMaintenance(false);
       setPhotoFiles([]);
       setPhotoPreviews([]);
-      setMaintenanceForm({
-        issue_title: '',
-        description: '',
-        category: 'other',
-        priority: 'medium',
-        property_address: '',
-        reported_date: new Date().toISOString().split('T')[0]
+      setCompressionStats(null);
+      setMaintenanceForm({ 
+        issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
       });
+      haptic.success();
+
+      console.log('📤 Sending maintenance notifications...');
+      base44.functions.invoke('sendMaintenanceNotification', {
+          maintenanceRequest: data 
+        }).then(notificationResponse => {
+          if (notificationResponse.data?.success) {
+            const sentCount = notificationResponse.data.notifications?.filter(n => n.status === 'sent').length || 0;
+            if (sentCount > 0) {
+              alert(
+                language === 'th'
+                  ? `✅ คำขอซ่อมถูกส่งแล้ว!\n\nเลขที่: ${data.request_number}\nแจ้งไปยัง: ${sentCount} ผู้รับ\n\nคุณจะได้รับการแจ้งเตือนเมื่อมีการตอบกลับ`
+                  : `✅ Maintenance request sent!\n\nRequest #: ${data.request_number}\nNotified: ${sentCount} recipient(s)\n\nYou'll be notified when they respond`
+              );
+            }
+          }
+        }).catch(notifError => {
+          console.error('❌ Failed to send notifications:', notifError);
+        });
     },
+    onError: (error, variables, context) => {
+      console.error('❌ createMaintenanceMutation error:', error);
+      optimistic.revert(context.optimisticItem.id); 
+      haptic.error();
+      alert(language === 'th'
+        ? 'ไม่สามารถสร้างคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง'
+        : 'Failed to create maintenance request. Please try again.');
+    }
   });
 
   const updateMaintenanceMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.MaintenanceRequest.update(id, data),
+    onMutate: async ({ id, data }) => {
+      haptic.medium();
+      optimistic.optimisticUpdate(id, data);
+      return { id }; 
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       setEditingMaintenance(null);
       setShowAddMaintenance(false);
       setPhotoFiles([]);
       setPhotoPreviews([]);
+      setCompressionStats(null);
       setMaintenanceForm({
         issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
       });
+      haptic.success();
+      alert(language === 'th' ? 'อัปเดตสำเร็จ' : 'Updated successfully');
+    },
+    onError: (error, variables, context) => {
+      console.error('❌ updateMaintenanceMutation error:', error);
+      optimistic.revert(context.id); 
+      haptic.error();
+      alert(language === 'th' ? 'ไม่สามารถอัปเดตคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง' : 'Failed to update maintenance request. Please try again.');
     },
   });
 
   const deleteMaintenanceMutation = useMutation({
     mutationFn: (id) => base44.entities.MaintenanceRequest.delete(id),
+    onMutate: async (idToDelete) => {
+      haptic.heavy();
+      optimistic.optimisticDelete(idToDelete);
+      return { idToDelete }; 
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      haptic.success();
+      alert(language === 'th' ? 'คำขอถูกลบแล้ว' : 'Request deleted successfully');
+    },
+    onError: (error, variables, context) => {
+      console.error('❌ deleteMaintenanceMutation error:', error);
+      optimistic.revert(context.idToDelete); 
+      haptic.error();
+      alert(language === 'th' ? 'ไม่สามารถลบคำขอได้' : 'Failed to delete request');
     },
   });
 
@@ -265,8 +335,8 @@ export default function PropertyTracker() {
       confirmClose: "ทำเครื่องหมายว่าเสร็จสิ้นและปิดคำขอนี้?",
       archived: "เก็บถาวร",
       active: "ใช้งาน",
-      imagesOptimized: "ปรับขนาดไฟล์แล้ว", // Original: "ปรับขนาดไฟล์แล้ว"
-      imagesOptimizedDesc: "รูป • ประหยัด", // Original: "รูป • ประหยัด"
+      imagesOptimized: "ปรับขนาดไฟล์แล้ว", 
+      imagesOptimizedDesc: "รูป • ประหยัด", 
     }
   };
 
@@ -278,12 +348,13 @@ export default function PropertyTracker() {
       return 'MR-001';
     }
     
-    // Find highest existing number
+    // Find highest existing number, excluding optimistic items for number generation
     const existingNumbers = maintenanceRequests
+      .filter(r => !r.__optimistic) // Exclude optimistic items from number generation
       .map(r => r.request_number)
-      .filter(num => num && typeof num === 'string' && num.startsWith('MR-')) // Ensure it's a string starting with 'MR-'
+      .filter(num => num && typeof num === 'string' && num.startsWith('MR-')) 
       .map(num => parseInt(num.split('-')[1]))
-      .filter(num => !isNaN(num)); // Filter out any non-numeric results after parsing
+      .filter(num => !isNaN(num)); 
     
     const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
     const nextNumber = maxNumber + 1;
@@ -329,7 +400,6 @@ export default function PropertyTracker() {
         };
         reader.readAsDataURL(file);
       } else {
-        // For non-image files, you might want a placeholder or just their name
         setPhotoPreviews(prev => [...prev, URL.createObjectURL(file)]);
       }
     });
@@ -337,18 +407,9 @@ export default function PropertyTracker() {
 
   const handleRemovePhoto = (indexToRemove) => {
     haptic.light();
-    // The photoFiles array contains the actual File objects, while photoPreviews contains data URLs or blob URLs.
-    // When removing, we need to make sure we remove the correct File object if it was a newly added one.
-    // If it was an original URL from editingMaintenance, it's not in photoFiles, so we just remove from previews.
-
-    // Filter out the file from photoFiles based on index, but only if it's a 'new' file.
-    // This logic assumes photoPreviews and photoFiles are kept in sync for new uploads.
-    // For existing `photo_urls` from `editingMaintenance`, they are only in `photoPreviews`.
     const newPhotoFiles = photoFiles.filter((_, i) => {
-      // Find its corresponding preview. If it was a data URL, it's a new file.
-      // This is a simplified check. A more robust solution might involve unique IDs.
-      const isNewFile = photoPreviews[i] && photoPreviews[i].startsWith('data:image');
-      return i !== indexToRemove || !isNewFile;
+      const isNewFile = photoPreviews[i] && (photoPreviews[i].startsWith('data:image') || photoPreviews[i].startsWith('blob:'));
+      return !(i === indexToRemove && isNewFile);
     });
     setPhotoFiles(newPhotoFiles);
     
@@ -462,44 +523,21 @@ export default function PropertyTracker() {
 
       console.log('📝 Creating maintenance request with number:', requestNumber);
 
-      const createdRequest = await createMaintenanceMutation.mutateAsync(maintenanceData);
+      await createMaintenanceMutation.mutateAsync(maintenanceData);
 
-      console.log('✅ Maintenance request created successfully!');
       setUploadingPhotos(false);
       setPhotoUploadStage('');
       setPhotoUploadProgress(0);
-      setCompressionStats(null);
-      haptic.success();
-
-      console.log('📤 Sending maintenance notifications...');
-      try {
-        const notificationResponse = await base44.functions.invoke('sendMaintenanceNotification', {
-          maintenanceRequest: createdRequest
-        });
-
-        if (notificationResponse.data?.success) {
-          const sentCount = notificationResponse.data.notifications?.filter(n => n.status === 'sent').length || 0;
-          if (sentCount > 0) {
-            alert(
-              language === 'th'
-                ? `✅ คำขอซ่อมถูกส่งแล้ว!\n\nเลขที่: ${requestNumber}\nแจ้งไปยัง: ${sentCount} ผู้รับ\n\nคุณจะได้รับการแจ้งเตือนเมื่อมีการตอบกลับ`
-                : `✅ Maintenance request sent!\n\nRequest #: ${requestNumber}\nNotified: ${sentCount} recipient(s)\n\nYou'll be notified when they respond`
-            );
-          }
-        }
-      } catch (notifError) {
-        console.error('❌ Failed to send notifications:', notifError);
-      }
 
     } catch (error) {
       console.error('❌ Failed to create maintenance request:', error);
       setUploadingPhotos(false);
       setPhotoUploadStage('');
       setPhotoUploadProgress(0);
-      haptic.error();
+      setCompressionStats(null); 
       alert(language === 'th'
-        ? 'ไม่สามารถสร้างคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง'
-        : 'Failed to create maintenance request. Please try again.');
+        ? 'เกิดข้อผิดพลาดในการดำเนินการสร้างคำขอ กรุณาลองอีกครั้ง'
+        : 'An error occurred during processing. Please try again.');
     }
   };
 
@@ -517,10 +555,10 @@ export default function PropertyTracker() {
     });
     setPhotoFiles([]);
     setPhotoPreviews(request.photo_urls || []);
+    setCompressionStats(null);
   };
 
   const handleUpdateMaintenance = async () => {
-    haptic.medium();
     if (!editingMaintenance || !user?.email) return;
 
     try {
@@ -529,6 +567,7 @@ export default function PropertyTracker() {
         setUploadingPhotos(true);
         setPhotoUploadStage('compressing');
         setPhotoUploadProgress(10);
+        haptic.medium(); 
 
         setPhotoUploadStage('uploading');
         setPhotoUploadProgress(30);
@@ -543,7 +582,6 @@ export default function PropertyTracker() {
         setPhotoUploadProgress(100);
       }
 
-      // Filter out temporary data URLs from photoPreviews, keeping only existing URLs
       const remainingOriginalPhotoUrls = photoPreviews.filter(p => !p.startsWith('data:image') && !p.startsWith('blob:'));
       const finalPhotoUrls = [...remainingOriginalPhotoUrls, ...newUploadUrls];
 
@@ -567,7 +605,7 @@ export default function PropertyTracker() {
         ...maintenanceForm,
         photo_urls: finalPhotoUrls,
         communication_log: updatedCommunicationLog,
-        created_by: user.email // Ensure created_by is maintained/set
+        created_by: user.email 
       };
 
       await updateMaintenanceMutation.mutateAsync({
@@ -578,22 +616,19 @@ export default function PropertyTracker() {
       setUploadingPhotos(false);
       setPhotoUploadStage('');
       setPhotoUploadProgress(0);
-      haptic.success();
-      alert(language === 'th' ? 'อัปเดตสำเร็จ' : 'Updated successfully');
+
     } catch (error) {
       console.error('❌ Failed to update maintenance request:', error);
       setUploadingPhotos(false);
       setPhotoUploadStage('');
       setPhotoUploadProgress(0);
-      haptic.error();
-      alert(language === 'th' ? 'ไม่สามารถอัปเดตคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง' : 'Failed to update maintenance request. Please try again.');
+      setCompressionStats(null); 
+      alert(language === 'th' ? 'เกิดข้อผิดพลาดในการดำเนินการอัปเดตคำขอ กรุณาลองอีกครั้ง' : 'An error occurred during processing. Please try again.');
     }
   };
 
   const handleCloseMaintenance = async (request) => {
-    haptic.medium();
     if (!confirm(strings.confirmClose)) return;
-
 
     try {
       const closeLogEntry = {
@@ -617,37 +652,28 @@ export default function PropertyTracker() {
           communication_log: updatedCommunicationLog
         }
       });
-      haptic.success();
-      alert(language === 'th' ? 'คำขอถูกปิดแล้ว' : 'Request closed successfully');
     } catch (error) {
       console.error('❌ Failed to close maintenance request:', error);
-      haptic.error();
-      alert(language === 'th' ? 'ไม่สามารถปิดคำขอได้' : 'Failed to close request');
+      alert(language === 'th' ? 'เกิดข้อผิดพลาดในการดำเนินการปิดคำขอ กรุณาลองอีกครั้ง' : 'An error occurred while closing the request. Please try again.');
     }
   };
 
   const handleDeleteMaintenance = async (request) => {
-    haptic.heavy();
     if (!confirm(strings.confirmDelete)) return;
 
     try {
       await deleteMaintenanceMutation.mutateAsync(request.id);
-      haptic.success();
-      alert(language === 'th' ? 'คำขอถูกลบแล้ว' : 'Request deleted successfully');
     } catch (error) {
       console.error('❌ Failed to delete maintenance request:', error);
-      haptic.error();
-      alert(language === 'th' ? 'ไม่สามารถลบคำขอได้' : 'Failed to delete request');
+      alert(language === 'th' ? 'เกิดข้อผิดพลาดในการดำเนินการลบคำขอ กรุณาลองอีกครั้ง' : 'An error occurred while deleting the request. Please try again.');
     }
   };
 
   const handleSwipeDelete = (request) => {
-    haptic.heavy();
     handleDeleteMaintenance(request);
   };
 
   const handleSwipeComplete = (request) => {
-    haptic.medium();
     handleCloseMaintenance(request);
   };
 
@@ -1144,9 +1170,9 @@ export default function PropertyTracker() {
                     e.stopPropagation();
                     haptic.light();
                     setShowAddMaintenance(true);
-                    setEditingMaintenance(null); // Clear editing state when adding new
-                    setCompressionStats(null); // Clear compression stats
-                    setMaintenanceForm({ // Reset form for new entry
+                    setEditingMaintenance(null); 
+                    setCompressionStats(null); 
+                    setMaintenanceForm({ 
                       issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
                     });
                     setPhotoFiles([]);
@@ -1549,7 +1575,6 @@ export default function PropertyTracker() {
                                   <Edit2 className="w-3 h-3 mr-1" />
                                   {strings.edit}
                                 </Button>
-                                {/* The Close and Delete buttons are now handled by swipe, but kept for non-swipe interactions */}
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -1595,7 +1620,7 @@ export default function PropertyTracker() {
                         {completedRequests.map((request) => (
                           <SwipeToDelete
                             key={request.id}
-                            onDelete={() => handleSwipeDelete(request)}
+                            onDelete={() => handleDeleteMaintenance(request)}
                             deleteLabel={strings.delete}
                             colors={colors}
                           >
@@ -1624,7 +1649,6 @@ export default function PropertyTracker() {
                                     <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
                                   </div>
                                 </div>
-                                {/* Delete button kept for non-swipe interactions */}
                                 <Button
                                   variant="ghost"
                                   size="sm"
