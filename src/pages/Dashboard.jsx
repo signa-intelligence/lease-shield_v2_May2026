@@ -2,7 +2,7 @@
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Settings, Mail, Calendar } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Settings, Mail, Calendar, BarChart3 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, format } from "date-fns";
@@ -957,6 +957,7 @@ function DashboardContent() {
       noNotifications: "No notifications yet",
       noRent: "No rent tracked",
       noMaintenance: "No requests",
+      analytics: "Analytics",
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -1016,6 +1017,7 @@ function DashboardContent() {
       noNotifications: "ยังไม่มีการแจ้งเตือน",
       noRent: "ยังไม่ได้ติดตามค่าเช่า",
       noMaintenance: "ไม่มีคำขอ",
+      analytics: "วิเคราะห์",
     }
   };
 
@@ -1084,6 +1086,37 @@ function DashboardContent() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
+                {/* NEW: Analytics Button */}
+                <Link to={createPageUrl("Analytics")}>
+                  <button
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
+                      color: '#0C3B2E',
+                      border: `2px solid #0C3B2E`,
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#0C3B2E';
+                      e.target.style.color = '#FFFFFF';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#FFFFFF';
+                      e.target.style.color = '#0C3B2E';
+                    }}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    {strings.analytics}
+                  </button>
+                </Link>
+
                 {/* Admin: Comprehensive test buttons */}
                 {isAdmin && (
                   <>
