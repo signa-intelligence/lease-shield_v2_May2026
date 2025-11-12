@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { compressMultipleImages } from "../components/shared/ImageCompression";
 import { haptic } from "../components/shared/HapticFeedback";
+import UploadProgress from "../components/shared/UploadProgress";
 
 export default function PropertyTracker() {
   const navigate = useNavigate();
@@ -34,6 +35,8 @@ export default function PropertyTracker() {
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
   const [editingMaintenance, setEditingMaintenance] = useState(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [photoUploadStage, setPhotoUploadStage] = useState('');
+  const [photoUploadProgress, setPhotoUploadProgress] = useState(0);
   const [photoFiles, setPhotoFiles] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
   const [compressionStats, setCompressionStats] = useState(null);
@@ -258,8 +261,8 @@ export default function PropertyTracker() {
       confirmClose: "ทำเครื่องหมายว่าเสร็จสิ้นและปิดคำขอนี้?",
       archived: "เก็บถาวร",
       active: "ใช้งาน",
-      imagesOptimized: "ปรับขนาดไฟล์แล้ว",
-      imagesOptimizedDesc: "รูป • ประหยัด",
+      imagesOptimized: "ปรับขนาดไฟล์แล้ว", // Original: "ปรับขนาดไฟล์แล้ว"
+      imagesOptimizedDesc: "รูป • ประหยัด", // Original: "รูป • ประหยัด"
     }
   };
 
@@ -392,8 +395,13 @@ export default function PropertyTracker() {
 
       if (photoFiles.length > 0) {
         setUploadingPhotos(true);
+        setPhotoUploadStage('compressing');
+        setPhotoUploadProgress(10);
         haptic.medium();
         console.log('📸 Uploading', photoFiles.length, 'photos...');
+
+        setPhotoUploadProgress(30);
+        setPhotoUploadStage('uploading');
 
         const uploadPromises = photoFiles.map(file =>
           base44.integrations.Core.UploadFile({ file })
@@ -401,7 +409,11 @@ export default function PropertyTracker() {
 
         const uploadResults = await Promise.all(uploadPromises);
         photoUrls = uploadResults.map(result => result.file_url);
+        setPhotoUploadProgress(80);
         console.log('✅ Photos uploaded:', photoUrls.length);
+
+        setPhotoUploadStage('finalizing');
+        setPhotoUploadProgress(100);
       }
 
       const requestNumber = generateRequestNumber();
@@ -436,6 +448,8 @@ export default function PropertyTracker() {
 
       console.log('✅ Maintenance request created successfully!');
       setUploadingPhotos(false);
+      setPhotoUploadStage('');
+      setPhotoUploadProgress(0);
       setCompressionStats(null);
       haptic.success();
 
@@ -462,6 +476,8 @@ export default function PropertyTracker() {
     } catch (error) {
       console.error('❌ Failed to create maintenance request:', error);
       setUploadingPhotos(false);
+      setPhotoUploadStage('');
+      setPhotoUploadProgress(0);
       haptic.error();
       alert(language === 'th'
         ? 'ไม่สามารถสร้างคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง'
@@ -491,10 +507,20 @@ export default function PropertyTracker() {
       let newUploadUrls = [];
       if (photoFiles.length > 0) {
         setUploadingPhotos(true);
+        setPhotoUploadStage('compressing');
+        setPhotoUploadProgress(10);
+
+        setPhotoUploadStage('uploading');
+        setPhotoUploadProgress(30);
+
         const uploadPromises = photoFiles.map(file =>
           base44.integrations.Core.UploadFile({ file })
         );
         newUploadUrls = await Promise.all(uploadPromises).then(results => results.map(result => result.file_url));
+        setPhotoUploadProgress(80);
+        
+        setPhotoUploadStage('finalizing');
+        setPhotoUploadProgress(100);
       }
 
       const remainingOriginalPhotoUrls = photoPreviews.filter(p => !p.startsWith('data:image'));
@@ -529,10 +555,14 @@ export default function PropertyTracker() {
       });
 
       setUploadingPhotos(false);
+      setPhotoUploadStage('');
+      setPhotoUploadProgress(0);
       alert(language === 'th' ? 'อัปเดตสำเร็จ' : 'Updated successfully');
     } catch (error) {
       console.error('❌ Failed to update maintenance request:', error);
       setUploadingPhotos(false);
+      setPhotoUploadStage('');
+      setPhotoUploadProgress(0);
       alert(language === 'th' ? 'ไม่สามารถอัปเดตคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง' : 'Failed to update maintenance request. Please try again.');
     }
   };
@@ -1035,8 +1065,22 @@ export default function PropertyTracker() {
                     {editingMaintenance ? strings.edit : strings.addMaintenance}
                   </h3>
                   
+                  {/* Upload Progress */}
+                  {uploadingPhotos && (
+                    <div className="mb-4">
+                      <UploadProgress
+                        currentStage={photoUploadStage}
+                        progress={photoUploadProgress}
+                        fileCount={photoFiles.length}
+                        primaryColor={colors.textPrimary}
+                        secondaryColor={colors.textSecondary}
+                        language={language}
+                      />
+                    </div>
+                  )}
+
                   {/* Compression Stats Notice */}
-                  {compressionStats && compressionStats.compressedCount > 0 && (
+                  {!uploadingPhotos && compressionStats && compressionStats.compressedCount > 0 && (
                     <div className="mb-4 p-3 rounded-lg border-2" style={{
                       backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
                       borderColor: '#3B82F6'
@@ -1051,8 +1095,8 @@ export default function PropertyTracker() {
                           </p>
                           <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
                             {language === 'th' 
-                              ? `${compressionStats.compressedCount} ${strings.imagesOptimizedDesc} ${compressionStats.savedMB} MB`
-                              : `${compressionStats.compressedCount} ${strings.imagesOptimizedDesc} ${compressionStats.savedMB} MB`
+                              ? `${compressionStats.compressedCount} รูป • ประหยัด ${compressionStats.savedMB} MB`
+                              : `${compressionStats.compressedCount} images • Saved ${compressionStats.savedMB} MB`
                             }
                           </p>
                         </div>

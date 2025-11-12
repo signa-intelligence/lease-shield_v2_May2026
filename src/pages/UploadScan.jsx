@@ -29,6 +29,7 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ProgressBreadcrumb from "../components/shared/ProgressBreadcrumb";
+import UploadProgress from "../components/shared/UploadProgress";
 
 export default function UploadScanPage() {
   const navigate = useNavigate();
@@ -1094,45 +1095,18 @@ export default function UploadScanPage() {
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <div className="p-6 md:p-8">
             {uploading || analyzing ? (
-              <div className="text-center py-12">
-                <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                  {analyzing ? strings.analyzingTitle : strings.uploading}
-                </h3>
-                <p className="mb-4" style={{ color: colors.textSecondary }}>
-                  {analyzing ? strings.analyzingDesc : (language === 'th' ? 'กรุณารอสักครู่' : 'Please wait')}
-                </p>
-
-                {/* Current Stage Indicator */}
-                {analysisStage && (
-                  <p className="text-sm font-medium mb-4" style={{ color: '#3B82F6' }}>
-                    {strings.analyzing?.[analysisStage] || analysisStage}
-                  </p>
-                )}
-
-                {/* Progress Bar */}
-                {uploadProgress > 0 && (
-                  <div className="mt-6 max-w-md mx-auto">
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div
-                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                    <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
-                      {uploadProgress}%
-                    </p>
-                  </div>
-                )}
-
-                {retryCount > 0 && (
-                  <p className="text-sm mt-4 text-amber-600">
-                    {language === 'th'
-                      ? `กำลังลองอีกครั้ง... (ครั้งที่ ${retryCount}/3)`
-                      : `Retrying... (Attempt ${retryCount}/3)`}
-                  </p>
-                )}
-              </div>
+              <UploadProgress
+                currentStage={analysisStage}
+                progress={uploadProgress}
+                fileCount={selectedFiles.length}
+                primaryColor={colors.textPrimary}
+                secondaryColor={colors.textSecondary}
+                language={language}
+                isAnalyzing={analyzing}
+                isUploading={uploading}
+                strings={strings}
+                retryCount={retryCount}
+              />
             ) : (
               <>
                 {/* ✅ SHOW UPGRADE BANNER IF LIMIT REACHED */}

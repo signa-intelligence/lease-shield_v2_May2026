@@ -19,6 +19,7 @@ import LetterPreview from "../components/shared/LetterPreview";
 import DocumentAnnotation from "../components/documents/DocumentAnnotation";
 import { compressMultipleImages } from "../components/shared/ImageCompression";
 import { haptic } from "../components/shared/HapticFeedback";
+import UploadProgress from "../components/shared/UploadProgress"; // Added import
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -39,6 +40,8 @@ export default function EvidenceVault() {
   const [uploadFiles, setUploadFiles] = useState([]); // Renamed from selectedFiles
   const [error, setError] = useState(null); // For upload errors
   const [compressionStats, setCompressionStats] = useState(null); // New state
+  const [uploadStage, setUploadStage] = useState(''); // New state
+  const [uploadProgressPercent, setUploadProgressPercent] = useState(0); // New state
 
   // Existing states for document management
   const [selectedDocs, setSelectedDocs] = useState([]);
@@ -143,7 +146,7 @@ export default function EvidenceVault() {
 
   const handleUpload = async () => {
     if (uploadFiles.length === 0) {
-      setError(language === 'th' ? 'โปรดเลือกไฟล์ที่จะอัปโหลด' : 'Please select files to upload.');
+      setError(strings.selectFile);
       return;
     }
 
@@ -163,12 +166,16 @@ export default function EvidenceVault() {
     setUploading(true);
     setError(null);
     setCompressionStats(null);
+    setUploadStage('preparing');
+    setUploadProgressPercent(0);
     haptic.medium();
 
     try {
       // Compress images
+      setUploadProgressPercent(10);
+      setUploadStage('compressing');
       const { files: compressedFiles, stats } = await compressMultipleImages(uploadFiles, (progress) => {
-        // console.log(`Compression progress: ${progress}%`); // For logging compression progress
+        setUploadProgressPercent(10 + Math.round(progress * 0.3)); // 10-40%
       });
       
       if (stats.compressedCount > 0) {
@@ -176,12 +183,17 @@ export default function EvidenceVault() {
       }
 
       // Upload compressed files
+      setUploadStage('uploadingFiles');
+      setUploadProgressPercent(40);
+
       const uploadPromises = compressedFiles.map(file =>
         base44.integrations.Core.UploadFile({ file })
       );
 
       const results = await Promise.all(uploadPromises);
+      setUploadProgressPercent(70);
 
+      setUploadStage('savingDocuments');
       const createPromises = results.map((result, index) =>
         base44.entities.Document.create({
           type: uploadType,
@@ -191,19 +203,22 @@ export default function EvidenceVault() {
       );
 
       await Promise.all(createPromises);
+      setUploadProgressPercent(100);
       haptic.success();
 
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       setShowUploadDialog(false);
       setUploadFiles([]);
-      setUploadType('photo'); // Reset to default
+      setUploadType('other'); // Reset to default
       setUploadLabel(''); // Clear custom label
     } catch (err) {
       console.error('Upload failed:', err);
-      setError(language === 'th' ? 'อัปโหลดไม่สำเร็จ โปรดลองอีกครั้ง' : 'Upload failed. Please try again.');
+      setError(strings.uploadFailed);
       haptic.error();
     } finally {
       setUploading(false);
+      setUploadStage('');
+      setUploadProgressPercent(0);
     }
   };
 
@@ -504,7 +519,13 @@ export default function EvidenceVault() {
       annotate: "Annotate",
       selectFile: "Please select files to upload.",
       uploadFailed: "Upload failed. Please try again.",
-      error: "Error"
+      error: "Error",
+      fileSelected: "file selected", // Added
+      filesSelected: "files selected", // Added
+      preparing: "Preparing upload...", // Added
+      compressing: "Compressing images...", // Added
+      uploadingFiles: "Uploading files...", // Added
+      savingDocuments: "Saving documents...", // Added
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -549,7 +570,13 @@ export default function EvidenceVault() {
       annotate: "เขียนบันทึก",
       selectFile: "โปรดเลือกไฟล์ที่จะอัปโหลด",
       uploadFailed: "อัปโหลดไม่สำเร็จ โปรดลองอีกครั้ง",
-      error: "ข้อผิดพลาด"
+      error: "ข้อผิดพลาด",
+      fileSelected: "ไฟล์ที่เลือก", // Added
+      filesSelected: "ไฟล์ที่เลือก", // Added
+      preparing: "กำลังเตรียมการอัปโหลด...", // Added
+      compressing: "กำลังบีบอัดรูปภาพ...", // Added
+      uploadingFiles: "กำลังอัปโหลดไฟล์...", // Added
+      savingDocuments: "กำลังบันทึกเอกสาร...", // Added
     }
   };
 
@@ -581,7 +608,7 @@ export default function EvidenceVault() {
                 <SelectTrigger id="edit_doc_type" className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
                   {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
                     <SelectItem key={key} value={key}>
                       {language === 'th' ? config.label_th : config.label_en}
@@ -758,141 +785,158 @@ export default function EvidenceVault() {
           </DialogHeader>
           
           <div className="space-y-4">
-            {error && (
-              <div className="p-3 rounded-lg border-2 border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-100">
-                <p className="text-sm font-semibold">{strings.error}:</p>
-                <p className="text-xs">{error}</p>
-              </div>
-            )}
-
-            {/* Compression Notice */}
-            {compressionStats && compressionStats.compressedCount > 0 && (
-              <div className="p-3 rounded-lg border-2" style={{
-                backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-                borderColor: '#3B82F6'
-              }}>
-                <div className="flex items-start gap-2">
-                  <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-3 h-3 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                      {language === 'th' ? 'ปรับขนาดไฟล์แล้ว' : 'Images Optimized'}
-                    </p>
-                    <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
-                      {language === 'th' 
-                        ? `${compressionStats.compressedCount} รูป • ประหยัด ${compressionStats.savedMB} MB (${compressionStats.savingsPercent}%)`
-                        : `${compressionStats.compressedCount} images • Saved ${compressionStats.savedMB} MB (${compressionStats.savingsPercent}%)`
-                      }
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="dialog_doc_type" style={{ color: colors.textPrimary }}>{strings.documentType}</Label>
-              <Select value={uploadType} onValueChange={setUploadType}>
-                <SelectTrigger id="dialog_doc_type" className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
-                  {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>
-                      {language === 'th' ? config.label_th : config.label_en}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="dialog_custom_label" style={{ color: colors.textPrimary }}>{strings.customLabel}</Label>
-              <Input
-                id="dialog_custom_label"
-                type="text"
-                value={uploadLabel}
-                onChange={(e) => setUploadLabel(e.target.value)}
-                placeholder={strings.customLabelPlaceholder}
-                className="mt-2"
-                style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
+            {uploading ? (
+              <UploadProgress
+                currentStage={uploadStage}
+                progress={uploadProgressPercent}
+                fileCount={uploadFiles.length}
+                primaryColor={colors.textPrimary}
+                secondaryColor={colors.textSecondary}
+                language={language}
               />
-            </div>
-
-            <div>
-              <input
-                type="file"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-                id="dialog-file-upload"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mov,.avi"
-                disabled={uploading}
-              />
-              <label htmlFor="dialog-file-upload" className={uploading ? 'cursor-not-allowed opacity-70' : ''}>
-                <div
-                  className="border-2 border-dashed rounded-xl p-6 md:p-8 text-center transition-colors"
-                  style={{
-                    borderColor: colors.borderColor,
-                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                    cursor: uploading ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <Upload className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3" style={{ color: colors.textSecondary }} />
-                  <p className="font-semibold mb-1 text-sm md:text-base" style={{ color: colors.textPrimary }}>{strings.selectFiles}</p>
-                  <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>{strings.supportedFormats}</p>
-                </div>
-              </label>
-            </div>
-
-            {/* Selected Files List */}
-            {uploadFiles.length > 0 && (
-              <div>
-                <p className="font-semibold mb-2 text-sm" style={{ color: colors.textPrimary }}>
-                  {strings.selectedFiles} ({uploadFiles.length})
-                </p>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                  {uploadFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <FileText className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
-                        <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
-                      </div>
-                      <button
-                        onClick={() => setUploadFiles(uploadFiles.filter((_, i) => i !== index))}
-                        className="p-1 hover:bg-red-100 rounded flex-shrink-0 ml-2"
-                        disabled={uploading}
-                      >
-                        <X className="w-4 h-4 text-red-600" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-3 justify-end mt-4">
-              <Button variant="outline" onClick={() => setShowUploadDialog(false)} disabled={uploading}>
-                {strings.cancel}
-              </Button>
-              <Button
-                onClick={handleUpload}
-                disabled={uploading || uploadFiles.length === 0}
-                className="bg-ls-forest hover:bg-ls-forest/90"
-              >
-                {uploading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {strings.uploading}
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4 mr-2" />
-                    {strings.uploadButton}
-                  </>
+            ) : (
+              <>
+                {error && (
+                  <div className="p-3 rounded-lg border-2 border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-100">
+                    <p className="text-sm font-semibold">{strings.error}:</p>
+                    <p className="text-xs">{error}</p>
+                  </div>
                 )}
-              </Button>
-            </div>
+
+                {/* Compression Notice */}
+                {compressionStats && compressionStats.compressedCount > 0 && (
+                  <div className="p-3 rounded-lg border-2" style={{
+                    backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                    borderColor: '#3B82F6'
+                  }}>
+                    <div className="flex items-start gap-2">
+                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <CheckCircle2 className="w-3 h-3 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                          {language === 'th' ? 'ปรับขนาดไฟล์แล้ว' : 'Images Optimized'}
+                        </p>
+                        <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                          {language === 'th' 
+                            ? `${compressionStats.compressedCount} รูป • ประหยัด ${compressionStats.savedMB} MB (${compressionStats.savingsPercent}%)`
+                            : `${compressionStats.compressedCount} images • Saved ${compressionStats.savedMB} MB (${compressionStats.savingsPercent}%)`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="dialog_doc_type" style={{ color: colors.textPrimary }}>{strings.documentType}</Label>
+                  <Select value={uploadType} onValueChange={setUploadType}>
+                    <SelectTrigger id="dialog_doc_type" className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                      {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
+                        <SelectItem key={key} value={key}>
+                          {language === 'th' ? config.label_th : config.label_en}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="dialog_custom_label" style={{ color: colors.textPrimary }}>{strings.customLabel}</Label>
+                  <Input
+                    id="dialog_custom_label"
+                    type="text"
+                    value={uploadLabel}
+                    onChange={(e) => setUploadLabel(e.target.value)}
+                    placeholder={strings.customLabelPlaceholder}
+                    className="mt-2"
+                    style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
+                  />
+                </div>
+
+                <div>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="dialog-file-upload"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mov,.avi"
+                    disabled={uploading}
+                  />
+                  <label htmlFor="dialog-file-upload" className={uploading ? 'cursor-not-allowed opacity-70' : ''}>
+                    <div
+                      className="border-2 border-dashed rounded-xl p-6 md:p-8 text-center transition-colors"
+                      style={{
+                        borderColor: colors.borderColor,
+                        backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                        cursor: uploading ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      <Upload className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3" style={{ color: colors.textSecondary }} />
+                      <p className="font-semibold mb-1 text-sm md:text-base" style={{ color: colors.textPrimary }}>{strings.selectFiles}</p>
+                      <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>{strings.supportedFormats}</p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Selected Files List */}
+                {uploadFiles.length > 0 && (
+                  <div>
+                    <p className="font-semibold mb-2 text-sm" style={{ color: colors.textPrimary }}>
+                      {strings.selectedFiles} ({uploadFiles.length})
+                    </p>
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                      {uploadFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <FileText className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                            <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
+                          </div>
+                          <button
+                            onClick={() => setUploadFiles(uploadFiles.filter((_, i) => i !== index))}
+                            className="p-1 hover:bg-red-100 rounded flex-shrink-0 ml-2"
+                            disabled={uploading}
+                          >
+                            <X className="w-4 h-4 text-red-600" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 justify-end mt-4">
+                  <Button variant="outline" onClick={() => {
+                    setShowUploadDialog(false);
+                    setUploadFiles([]);
+                    setCompressionStats(null);
+                  }} disabled={uploading}>
+                    {strings.cancel}
+                  </Button>
+                  <Button
+                    onClick={handleUpload}
+                    disabled={uploading || uploadFiles.length === 0}
+                    className="bg-ls-forest hover:bg-ls-forest/90"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {strings.uploading}
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        {strings.uploadButton}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
