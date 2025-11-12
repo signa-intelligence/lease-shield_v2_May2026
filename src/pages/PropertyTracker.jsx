@@ -10,9 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus, 
-  Edit2, Save, X, Wrench, AlertCircle, CheckCircle2, Clock, 
+import {
+  Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
+  Edit2, Save, X, Wrench, AlertCircle, CheckCircle2, Clock,
   DollarSign, ArrowLeft, Shield, Camera, Image as ImageIcon, Loader2
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
@@ -172,6 +172,7 @@ export default function PropertyTracker() {
       uploadingPhotos: "Uploading photos...",
       photosAdded: "photo(s) added",
       removePhoto: "Remove",
+      communicationLog: "Communication Log",
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -214,6 +215,7 @@ export default function PropertyTracker() {
       uploadingPhotos: "กำลังอัปโหลดรูปภาพ...",
       photosAdded: "รูปภาพที่เพิ่ม",
       removePhoto: "ลบ",
+      communicationLog: "บันทึกการสื่อสาร",
     }
   };
 
@@ -296,37 +298,78 @@ export default function PropertyTracker() {
       // Upload photos if any
       if (photoFiles.length > 0) {
         setUploadingPhotos(true);
-        
-        const uploadPromises = photoFiles.map(file => 
+
+        const uploadPromises = photoFiles.map(file =>
           base44.integrations.Core.UploadFile({ file })
         );
-        
+
         const uploadResults = await Promise.all(uploadPromises);
         photoUrls = uploadResults.map(result => result.file_url);
       }
 
-      // Create maintenance request with photo URLs
-      const maintenanceData = {
-        ...maintenanceForm,
-        photo_urls: photoUrls
+      // Create initial communication log entry
+      const initialLogEntry = {
+        timestamp: new Date().toISOString(),
+        message: `${language === 'th' ? 'คำขอซ่อมถูกสร้างโดย' : 'Maintenance request created by'} ${user?.full_name || user?.email}`,
+        sender: 'tenant',
+        sender_name: user?.full_name || user?.email,
+        sender_email: user?.email,
+        action_type: 'created',
+        metadata: {
+          issue_title: maintenanceForm.issue_title,
+          category: maintenanceForm.category,
+          priority: maintenanceForm.priority
+        }
       };
 
-      await createMaintenanceMutation.mutateAsync(maintenanceData);
-      
+      // Create maintenance request with photo URLs and log
+      const maintenanceData = {
+        ...maintenanceForm,
+        photo_urls: photoUrls,
+        communication_log: [initialLogEntry]
+      };
+
+      const createdRequest = await createMaintenanceMutation.mutateAsync(maintenanceData);
+
       setUploadingPhotos(false);
+
+      // Send notifications to landlord/juristic
+      console.log('📤 Sending maintenance notifications...');
+      try {
+        const notificationResponse = await base44.functions.invoke('sendMaintenanceNotification', {
+          maintenanceRequest: createdRequest
+        });
+
+        console.log('✅ Notification response:', notificationResponse.data);
+
+        if (notificationResponse.data?.success) {
+          const sentCount = notificationResponse.data.notifications?.filter(n => n.status === 'sent').length || 0;
+          if (sentCount > 0) {
+            alert(
+              language === 'th'
+                ? `✅ คำขอซ่อมถูกส่งแล้ว!\n\nแจ้งไปยัง: ${sentCount} ผู้รับ\n\nคุณจะได้รับการแจ้งเตือนเมื่อมีการตอบกลับ`
+                : `✅ Maintenance request sent!\n\nNotified: ${sentCount} recipient(s)\n\nYou'll be notified when they respond`
+            );
+          }
+        }
+      } catch (notifError) {
+        console.error('❌ Failed to send notifications:', notifError);
+        // Don't fail the whole operation if notifications fail
+      }
+
     } catch (error) {
       console.error('Failed to create maintenance request:', error);
       setUploadingPhotos(false);
-      alert(language === 'th' 
-        ? 'ไม่สามารถสร้างคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง' 
+      alert(language === 'th'
+        ? 'ไม่สามารถสร้างคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง'
         : 'Failed to create maintenance request. Please try again.');
     }
   };
 
   const deposit = deposits[0];
   const now = new Date();
-  const daysRemaining = deposit?.expected_return_date 
-    ? differenceInDays(new Date(deposit.expected_return_date), now) 
+  const daysRemaining = deposit?.expected_return_date
+    ? differenceInDays(new Date(deposit.expected_return_date), now)
     : null;
   const isOverdue = daysRemaining !== null && daysRemaining < 0;
   const isUrgent = daysRemaining !== null && daysRemaining <= 30 && daysRemaining > 0;
@@ -367,10 +410,10 @@ export default function PropertyTracker() {
 
         {/* DEPOSIT SECTION */}
         <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader 
+          <CardHeader
             className="cursor-pointer"
             onClick={() => toggleSection('deposit')}
-            style={{ 
+            style={{
               backgroundColor: colors.sectionBg,
               borderBottom: expandedSections.deposit ? `1px solid ${colors.borderColor}` : 'none'
             }}
@@ -381,9 +424,9 @@ export default function PropertyTracker() {
                 {strings.depositSection}
                 {deposit && deposit.deposit_amount > 0 && (
                   <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>
-                    {isOverdue 
+                    {isOverdue
                       ? `${strings.overdue} ${Math.abs(daysRemaining)} ${strings.daysRemaining}`
-                      : daysRemaining !== null 
+                      : daysRemaining !== null
                         ? `${daysRemaining} ${strings.daysRemaining}`
                         : 'Active'
                     }
@@ -521,10 +564,10 @@ export default function PropertyTracker() {
 
         {/* RENT SECTION */}
         <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader 
+          <CardHeader
             className="cursor-pointer"
             onClick={() => toggleSection('rent')}
-            style={{ 
+            style={{
               backgroundColor: colors.sectionBg,
               borderBottom: expandedSections.rent ? `1px solid ${colors.borderColor}` : 'none'
             }}
@@ -675,10 +718,10 @@ export default function PropertyTracker() {
 
         {/* MAINTENANCE SECTION */}
         <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader 
+          <CardHeader
             className="cursor-pointer"
             onClick={() => toggleSection('maintenance')}
-            style={{ 
+            style={{
               backgroundColor: colors.sectionBg,
               borderBottom: expandedSections.maintenance ? `1px solid ${colors.borderColor}` : 'none'
             }}
@@ -739,7 +782,6 @@ export default function PropertyTracker() {
                     <div>
                       <Label style={{ color: colors.textPrimary }}>{strings.addPhotos}</Label>
                       <div className="mt-2 space-y-3">
-                        {/* Photo Upload Buttons */}
                         <div className="flex gap-2 flex-wrap">
                           <label className="cursor-pointer">
                             <input
@@ -787,9 +829,8 @@ export default function PropertyTracker() {
                           </label>
                         </div>
 
-                        {/* Photo Previews */}
                         {photoPreviews.length > 0 && (
-                          <div className="mt-2">
+                          <div>
                             <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
                               {photoPreviews.length} {strings.photosAdded}
                             </p>
@@ -851,8 +892,8 @@ export default function PropertyTracker() {
                       </div>
                     </div>
                     <div className="flex gap-2 justify-end">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => {
                           setShowAddMaintenance(false);
                           setPhotoFiles([]);
@@ -863,8 +904,8 @@ export default function PropertyTracker() {
                         <X className="w-4 h-4 mr-2" />
                         {strings.cancel}
                       </Button>
-                      <Button 
-                        onClick={handleMaintenanceSubmit} 
+                      <Button
+                        onClick={handleMaintenanceSubmit}
                         className="bg-orange-600 hover:bg-orange-700"
                         disabled={uploadingPhotos}
                       >
@@ -903,7 +944,7 @@ export default function PropertyTracker() {
                           {request.status}
                         </Badge>
                       </div>
-                      
+
                       {/* Show photos if available */}
                       {request.photo_urls && request.photo_urls.length > 0 && (
                         <div className="mt-3 mb-2">
@@ -921,8 +962,52 @@ export default function PropertyTracker() {
                           </div>
                         </div>
                       )}
-                      
-                      <div className="flex items-center gap-4 text-xs" style={{ color: colors.textSecondary }}>
+
+                      {/* Communication Log */}
+                      {request.communication_log && request.communication_log.length > 0 && (
+                        <div className="mt-3 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
+                          <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                            {strings.communicationLog}
+                          </p>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {request.communication_log.map((log, idx) => (
+                              <div
+                                key={idx}
+                                className="p-2 rounded-lg text-xs"
+                                style={{
+                                  backgroundColor: log.sender === 'tenant' ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') :
+                                                   log.sender === 'landlord' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
+                                                   log.sender === 'juristic' ? (isDarkMode ? '#2D1C3A' : '#FAF5FF') :
+                                                   (isDarkMode ? '#2A2D30' : '#F3F4F6'),
+                                  borderLeft: `3px solid ${
+                                    log.sender === 'tenant' ? '#3B82F6' :
+                                    log.sender === 'landlord' ? '#F59E0B' :
+                                    log.sender === 'juristic' ? '#8B5CF6' :
+                                    '#6B7280'
+                                  }`
+                                }}
+                              >
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <span className="font-semibold" style={{ color: colors.textPrimary }}>
+                                    {log.sender === 'tenant' ? '👤' : log.sender === 'landlord' ? '🏠' : log.sender === 'juristic' ? '🏢' : '⚙️'} {log.sender_name || log.sender}
+                                  </span>
+                                  <span style={{ color: colors.textSecondary, fontSize: '10px' }}>
+                                    {new Date(log.timestamp).toLocaleString(language === 'th' ? 'th-TH' : 'en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </span>
+                                </div>
+                                <p style={{ color: colors.textPrimary }}>{log.message}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-4 text-xs mt-3" style={{ color: colors.textSecondary }}>
                         <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
                         <span>🏷️ {request.category}</span>
                         <span>⚡ {request.priority}</span>
