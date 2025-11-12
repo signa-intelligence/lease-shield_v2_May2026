@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -888,7 +889,7 @@ export default function PropertyTracker() {
                       
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
-                          <input type="file" accept="image/*,video/*" capture multiple onChange={handleNewRequestPhotoUpload} className="hidden" disabled={uploadingNewRequestPhoto} />
+                          <input type="file" accept="image/*,video/*" capture="environment" multiple onChange={handleNewRequestPhotoUpload} className="hidden" disabled={uploadingNewRequestPhoto} />
                           {uploadingNewRequestPhoto ? (
                             <>
                               <Loader2 className="w-5 h-5 animate-spin" />
@@ -1137,7 +1138,7 @@ export default function PropertyTracker() {
 
                               <div className="flex gap-2">
                                 <label className="flex-shrink-0 cursor-pointer" style={{ padding: '10px', borderRadius: '8px', backgroundColor: uploadingChatPhoto[request.id] ? colors.borderColor : colors.inputBg, border: `2px solid ${colors.borderColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
-                                  <input type="file" accept="image/*,video/*" capture multiple onChange={(e) => handleChatPhotoUpload(e, request.id)} className="hidden" disabled={uploadingChatPhoto[request.id]} />
+                                  <input type="file" accept="image/*,video/*" capture="environment" multiple onChange={(e) => handleChatPhotoUpload(e, request.id)} className="hidden" disabled={uploadingChatPhoto[request.id]} />
                                   {uploadingChatPhoto[request.id] ? (
                                     <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
                                   ) : (

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -425,7 +426,7 @@ export default function AcknowledgeMaintenance() {
 
                 <div className="flex gap-2 items-center">
                   <label className="flex-shrink-0 cursor-pointer" style={{ padding: '10px', borderRadius: '8px', backgroundColor: uploadingPhotos ? colors.borderColor : colors.cardBg, border: `2px solid ${colors.borderColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
-                    <input type="file" accept="image/*,video/*" capture multiple onChange={handleChatPhotoUpload} className="hidden" disabled={uploadingPhotos} />
+                    <input type="file" accept="image/*,video/*" capture="environment" multiple onChange={handleChatPhotoUpload} className="hidden" disabled={uploadingPhotos} />
                     {uploadingPhotos ? (
                       <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
                     ) : (
@@ -593,7 +594,7 @@ export default function AcknowledgeMaintenance() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: '#F3F4F6', borderColor: colors.borderColor, color: colors.textPrimary }}>
-                    <input type="file" accept="image/*,video/*" capture multiple onChange={(e) => handlePhotoUpload(e, 'completion')} className="hidden" disabled={uploadingPhotos} />
+                    <input type="file" accept="image/*,video/*" capture="environment" multiple onChange={(e) => handlePhotoUpload(e, 'completion')} className="hidden" disabled={uploadingPhotos} />
                     {uploadingPhotos ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -669,7 +670,7 @@ export default function AcknowledgeMaintenance() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: '#F3F4F6', borderColor: colors.borderColor, color: colors.textPrimary }}>
-                    <input type="file" accept="image/*,video/*" capture multiple onChange={(e) => handlePhotoUpload(e, 'bill')} className="hidden" disabled={uploadingPhotos} />
+                    <input type="file" accept="image/*,video/*" capture="environment" multiple onChange={(e) => handlePhotoUpload(e, 'bill')} className="hidden" disabled={uploadingPhotos} />
                     {uploadingPhotos ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
