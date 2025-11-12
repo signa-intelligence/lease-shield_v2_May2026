@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -245,7 +246,7 @@ export default function Search() {
         status: doc.type,
         created_date: doc.created_date,
         searchText: `${doc.label || ''} ${doc.type || ''}`.toLowerCase(),
-        route: createPageUrl("DocumentVault")
+        route: createPageUrl("EvidenceVault")
       });
     });
 

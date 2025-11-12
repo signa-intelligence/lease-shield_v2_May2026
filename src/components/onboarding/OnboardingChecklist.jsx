@@ -123,7 +123,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       icon: FileText,
       color: '#10B981',
       completed: documents.length >= 3,
-      route: "DocumentVault",
+      route: "EvidenceVault",
       points: 15
     },
     {
