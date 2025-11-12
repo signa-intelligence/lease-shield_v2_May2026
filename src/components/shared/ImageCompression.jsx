@@ -1,9 +1,16 @@
 /**
  * Image Compression Utility
- * Compresses images before upload to save bandwidth and storage
+ * Light compression to optimize storage while maintaining quality
  */
 
-export const compressImage = async (file, maxSizeMB = 1, maxWidthOrHeight = 1920) => {
+export const compressImage = async (file, maxSizeMB = 2, maxWidthOrHeight = 2560, quality = 0.85) => {
+  // Skip if not an image
+  if (!file.type.startsWith('image/')) {
+    return { file, compressed: false, originalSize: file.size, newSize: file.size };
+  }
+
+  const originalSize = file.size;
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
@@ -15,14 +22,12 @@ export const compressImage = async (file, maxSizeMB = 1, maxWidthOrHeight = 1920
         let width = img.width;
         let height = img.height;
 
-        // Calculate new dimensions
-        if (width > height) {
-          if (width > maxWidthOrHeight) {
+        // Only resize if image is too large
+        if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
+          if (width > height) {
             height = height * (maxWidthOrHeight / width);
             width = maxWidthOrHeight;
-          }
-        } else {
-          if (height > maxWidthOrHeight) {
+          } else {
             width = width * (maxWidthOrHeight / height);
             height = maxWidthOrHeight;
           }
@@ -34,30 +39,24 @@ export const compressImage = async (file, maxSizeMB = 1, maxWidthOrHeight = 1920
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Try different quality levels until under target size
-        let quality = 0.9;
-        const tryCompress = () => {
-          canvas.toBlob(
-            (blob) => {
-              if (blob.size / 1024 / 1024 <= maxSizeMB || quality <= 0.5) {
-                // Success or reached minimum quality
-                const compressedFile = new File([blob], file.name, {
-                  type: 'image/jpeg',
-                  lastModified: Date.now(),
-                });
-                resolve(compressedFile);
-              } else {
-                // Try again with lower quality
-                quality -= 0.1;
-                tryCompress();
-              }
-            },
-            'image/jpeg',
-            quality
-          );
-        };
-
-        tryCompress();
+        canvas.toBlob(
+          (blob) => {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            
+            resolve({ 
+              file: compressedFile, 
+              compressed: blob.size < originalSize,
+              originalSize,
+              newSize: blob.size,
+              savingsPercent: Math.round(((originalSize - blob.size) / originalSize) * 100)
+            });
+          },
+          'image/jpeg',
+          quality
+        );
       };
 
       img.onerror = () => reject(new Error('Failed to load image'));
@@ -70,17 +69,24 @@ export const compressImage = async (file, maxSizeMB = 1, maxWidthOrHeight = 1920
 };
 
 export const compressMultipleImages = async (files, onProgress) => {
-  const compressed = [];
+  const results = [];
+  let totalOriginal = 0;
+  let totalCompressed = 0;
+  let compressedCount = 0;
   
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     
-    // Only compress images
     if (file.type.startsWith('image/')) {
-      const compressedFile = await compressImage(file);
-      compressed.push(compressedFile);
+      const result = await compressImage(file);
+      results.push(result.file);
+      totalOriginal += result.originalSize;
+      totalCompressed += result.newSize;
+      if (result.compressed) compressedCount++;
     } else {
-      compressed.push(file);
+      results.push(file);
+      totalOriginal += file.size;
+      totalCompressed += file.size;
     }
     
     if (onProgress) {
@@ -88,5 +94,14 @@ export const compressMultipleImages = async (files, onProgress) => {
     }
   }
   
-  return compressed;
+  return { 
+    files: results,
+    stats: {
+      compressedCount,
+      totalOriginal,
+      totalCompressed,
+      savingsPercent: totalOriginal > 0 ? Math.round(((totalOriginal - totalCompressed) / totalOriginal) * 100) : 0,
+      savedMB: ((totalOriginal - totalCompressed) / 1024 / 1024).toFixed(2)
+    }
+  };
 };

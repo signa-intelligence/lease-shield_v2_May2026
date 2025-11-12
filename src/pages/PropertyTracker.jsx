@@ -18,6 +18,8 @@ import {
 import { format, differenceInDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { compressMultipleImages } from "../components/shared/ImageCompression";
+import { haptic } from "../components/shared/HapticFeedback";
 
 export default function PropertyTracker() {
   const navigate = useNavigate();
@@ -34,6 +36,7 @@ export default function PropertyTracker() {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [photoFiles, setPhotoFiles] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
+  const [compressionStats, setCompressionStats] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -204,6 +207,8 @@ export default function PropertyTracker() {
       confirmClose: "Mark this request as completed and close it?",
       archived: "Archived",
       active: "Active",
+      imagesOptimized: "Images Optimized",
+      imagesOptimizedDesc: "images • Saved",
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -253,6 +258,8 @@ export default function PropertyTracker() {
       confirmClose: "ทำเครื่องหมายว่าเสร็จสิ้นและปิดคำขอนี้?",
       archived: "เก็บถาวร",
       active: "ใช้งาน",
+      imagesOptimized: "ปรับขนาดไฟล์แล้ว",
+      imagesOptimizedDesc: "รูป • ประหยัด",
     }
   };
 
@@ -284,18 +291,39 @@ export default function PropertyTracker() {
     }));
   };
 
-  const handlePhotoSelection = (e) => {
+  const handlePhotoSelection = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    setPhotoFiles(prev => [...prev, ...files]);
+    haptic.light();
 
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreviews(prev => [...prev, reader.result]);
-      };
-      reader.readAsDataURL(file);
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    const nonImageFiles = files.filter(f => !f.type.startsWith('image/'));
+
+    let processedImageFiles = [];
+    if (imageFiles.length > 0) {
+      const { files: compressed, stats } = await compressMultipleImages(imageFiles);
+      
+      if (stats.compressedCount > 0) {
+        setCompressionStats(stats);
+      }
+      processedImageFiles = compressed;
+    }
+    
+    const filesToAdd = [...processedImageFiles, ...nonImageFiles];
+    setPhotoFiles(prev => [...prev, ...filesToAdd]);
+
+    filesToAdd.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPhotoPreviews(prev => [...prev, reader.result]);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // For non-image files, you might want a placeholder or just their name
+        setPhotoPreviews(prev => [...prev, URL.createObjectURL(file)]);
+      }
     });
   };
 
@@ -364,6 +392,7 @@ export default function PropertyTracker() {
 
       if (photoFiles.length > 0) {
         setUploadingPhotos(true);
+        haptic.medium();
         console.log('📸 Uploading', photoFiles.length, 'photos...');
 
         const uploadPromises = photoFiles.map(file =>
@@ -407,6 +436,8 @@ export default function PropertyTracker() {
 
       console.log('✅ Maintenance request created successfully!');
       setUploadingPhotos(false);
+      setCompressionStats(null);
+      haptic.success();
 
       console.log('📤 Sending maintenance notifications...');
       try {
@@ -431,6 +462,7 @@ export default function PropertyTracker() {
     } catch (error) {
       console.error('❌ Failed to create maintenance request:', error);
       setUploadingPhotos(false);
+      haptic.error();
       alert(language === 'th'
         ? 'ไม่สามารถสร้างคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง'
         : 'Failed to create maintenance request. Please try again.');
@@ -980,6 +1012,7 @@ export default function PropertyTracker() {
                     e.stopPropagation();
                     setShowAddMaintenance(true);
                     setEditingMaintenance(null); // Clear editing state when adding new
+                    setCompressionStats(null); // Clear compression stats
                     setMaintenanceForm({ // Reset form for new entry
                       issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
                     });
@@ -1001,6 +1034,32 @@ export default function PropertyTracker() {
                   <h3 className="font-bold mb-3" style={{ color: colors.textPrimary }}>
                     {editingMaintenance ? strings.edit : strings.addMaintenance}
                   </h3>
+                  
+                  {/* Compression Stats Notice */}
+                  {compressionStats && compressionStats.compressedCount > 0 && (
+                    <div className="mb-4 p-3 rounded-lg border-2" style={{
+                      backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                      borderColor: '#3B82F6'
+                    }}>
+                      <div className="flex items-start gap-2">
+                        <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <CheckCircle2 className="w-3 h-3 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                            {strings.imagesOptimized}
+                          </p>
+                          <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                            {language === 'th' 
+                              ? `${compressionStats.compressedCount} ${strings.imagesOptimizedDesc} ${compressionStats.savedMB} MB`
+                              : `${compressionStats.compressedCount} ${strings.imagesOptimizedDesc} ${compressionStats.savedMB} MB`
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-3">
                     <div>
                       <Label style={{ color: colors.textPrimary }}>{strings.issueTitle}</Label>
@@ -1142,6 +1201,7 @@ export default function PropertyTracker() {
                           setEditingMaintenance(null);
                           setPhotoFiles([]);
                           setPhotoPreviews([]);
+                          setCompressionStats(null); // Clear compression stats on cancel
                           setMaintenanceForm({
                             issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
                           });

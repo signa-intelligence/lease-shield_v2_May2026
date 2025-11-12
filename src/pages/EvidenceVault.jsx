@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye, Download, Edit2, Send } from "lucide-react";
+import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye, Download, Edit2, Send, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useNavigate, Link } from "react-router-dom";
@@ -17,6 +17,8 @@ import { createPageUrl } from "@/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LetterPreview from "../components/shared/LetterPreview";
 import DocumentAnnotation from "../components/documents/DocumentAnnotation";
+import { compressMultipleImages } from "../components/shared/ImageCompression";
+import { haptic } from "../components/shared/HapticFeedback";
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -29,11 +31,17 @@ const DOC_TYPE_CONFIG = {
 
 export default function EvidenceVault() {
   const navigate = useNavigate();
+  // Upload dialog states
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadType, setUploadType] = useState('photo');
-  const [customLabel, setCustomLabel] = useState('');
+  const [uploadLabel, setUploadLabel] = useState(''); // Renamed from customLabel
+  const [uploadFiles, setUploadFiles] = useState([]); // Renamed from selectedFiles
+  const [error, setError] = useState(null); // For upload errors
+  const [compressionStats, setCompressionStats] = useState(null); // New state
+
+  // Existing states for document management
   const [selectedDocs, setSelectedDocs] = useState([]);
-  const [selectedFiles, setSelectedFiles] = useState([]);
   const [editingDoc, setEditingDoc] = useState(null);
   const [editFormData, setEditFormData] = useState({ type: '', label: '' });
   const [viewingDoc, setViewingDoc] = useState(null);
@@ -97,9 +105,7 @@ export default function EvidenceVault() {
   const createDocumentMutation = useMutation({
     mutationFn: (data) => base44.entities.Document.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
-      setCustomLabel('');
-      setSelectedFiles([]);
+      // Query invalidation and state resets are handled by handleUpload's final logic
     },
   });
 
@@ -131,18 +137,21 @@ export default function EvidenceVault() {
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
-    setSelectedFiles(prev => [...prev, ...files]);
+    setUploadFiles(prev => [...prev, ...files]);
     e.target.value = null; // Clear input so same file can be selected again
   };
 
   const handleUpload = async () => {
-    if (selectedFiles.length === 0) return;
+    if (uploadFiles.length === 0) {
+      setError(language === 'th' ? 'โปรดเลือกไฟล์ที่จะอัปโหลด' : 'Please select files to upload.');
+      return;
+    }
 
     // CHECK STORAGE/FILE LIMITS
-    const uploadCheck = canUploadFiles(selectedFiles.length);
+    const uploadCheck = canUploadFiles(uploadFiles.length);
     if (!uploadCheck.allowed) {
       if (uploadCheck.reason === 'file_limit') {
-        alert(
+        setError(
           language === 'th'
             ? `ถึงขีดจำกัดไฟล์แล้ว (${uploadCheck.current}/${uploadCheck.limit} ไฟล์)\n\nอัปเกรดเพื่อจัดเก็บไฟล์เพิ่มเติม`
             : `File limit reached (${uploadCheck.current}/${uploadCheck.limit} files)\n\nUpgrade for more storage`
@@ -152,18 +161,47 @@ export default function EvidenceVault() {
     }
 
     setUploading(true);
+    setError(null);
+    setCompressionStats(null);
+    haptic.medium();
+
     try {
-      for (const file of selectedFiles) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        await createDocumentMutation.mutateAsync({
-          type: uploadType,
-          file_url,
-          label: customLabel || file.name
-        });
+      // Compress images
+      const { files: compressedFiles, stats } = await compressMultipleImages(uploadFiles, (progress) => {
+        // console.log(`Compression progress: ${progress}%`); // For logging compression progress
+      });
+      
+      if (stats.compressedCount > 0) {
+        setCompressionStats(stats);
       }
-    } catch (error) {
-      console.error('Upload failed:', error);
-      alert(language === 'th' ? 'อัปโหลดไม่สำเร็จ โปรดลองอีกครั้ง' : 'Upload failed. Please try again.');
+
+      // Upload compressed files
+      const uploadPromises = compressedFiles.map(file =>
+        base44.integrations.Core.UploadFile({ file })
+      );
+
+      const results = await Promise.all(uploadPromises);
+
+      const createPromises = results.map((result, index) =>
+        base44.entities.Document.create({
+          type: uploadType,
+          file_url: result.file_url,
+          label: uploadLabel || `${uploadType} - ${new Date().toLocaleDateString()}`,
+        })
+      );
+
+      await Promise.all(createPromises);
+      haptic.success();
+
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setShowUploadDialog(false);
+      setUploadFiles([]);
+      setUploadType('photo'); // Reset to default
+      setUploadLabel(''); // Clear custom label
+    } catch (err) {
+      console.error('Upload failed:', err);
+      setError(language === 'th' ? 'อัปโหลดไม่สำเร็จ โปรดลองอีกครั้ง' : 'Upload failed. Please try again.');
+      haptic.error();
     } finally {
       setUploading(false);
     }
@@ -266,10 +304,6 @@ export default function EvidenceVault() {
     if (doc.type === 'letter' && doc.html_content) {
       setViewingDoc(doc);
     } else {
-      // For all other document types, open in new tab
-      // However, if we're showing a modal for photos/videos/others, we need to show the modal first
-      // The current implementation is a bit ambiguous here.
-      // Let's refine it: only letters use LetterPreview, all others use the general viewingDoc dialog for consistency.
       setViewingDoc(doc);
     }
   };
@@ -432,6 +466,7 @@ export default function EvidenceVault() {
       title: "Evidence Vault",
       subtitle: "Secure storage for all your rental documentation",
       uploadFiles: "Upload Files",
+      uploadDocument: "Upload Document",
       documentType: "Document Type",
       customLabel: "Custom Label",
       customLabelPlaceholder: "e.g., Move-in photos",
@@ -466,13 +501,17 @@ export default function EvidenceVault() {
       exportReport: "Export Full Report",
       exporting: "Exporting...",
       bulkActions: "Bulk Actions",
-      annotate: "Annotate"
+      annotate: "Annotate",
+      selectFile: "Please select files to upload.",
+      uploadFailed: "Upload failed. Please try again.",
+      error: "Error"
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
       title: "คลังหลักฐาน",
       subtitle: "จัดเก็บเอกสารการเช่าทั้งหมดของคุณอย่างปลอดภัย",
       uploadFiles: "อัปโหลดไฟล์",
+      uploadDocument: "อัปโหลดเอกสาร",
       documentType: "ประเภทเอกสาร",
       customLabel: "ป้ายกำกับที่กำหนดเอง",
       customLabelPlaceholder: "เช่น รูปภาพตอนย้ายเข้า",
@@ -507,7 +546,10 @@ export default function EvidenceVault() {
       exportReport: "ส่งออกรายงานฉบับเต็ม",
       exporting: "กำลังส่งออก...",
       bulkActions: "การดำเนินการจำนวนมาก",
-      annotate: "เขียนบันทึก"
+      annotate: "เขียนบันทึก",
+      selectFile: "โปรดเลือกไฟล์ที่จะอัปโหลด",
+      uploadFailed: "อัปโหลดไม่สำเร็จ โปรดลองอีกครั้ง",
+      error: "ข้อผิดพลาด"
     }
   };
 
@@ -681,20 +723,77 @@ export default function EvidenceVault() {
         </div>
       </div>
 
-      {/* Upload Section */}
+      {/* Simplified Upload Section Card - now acts as a trigger for the dialog */}
       <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
         <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-          <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-            <Upload className="w-5 h-5 text-ls-forest" />
-            {strings.uploadFiles}
+          <CardTitle className="flex items-center justify-between gap-2" style={{ color: colors.textPrimary }}>
+            <span className="flex items-center gap-2">
+              <Upload className="w-5 h-5 text-ls-forest" />
+              {strings.uploadFiles}
+            </span>
+            <Button onClick={() => {
+              setShowUploadDialog(true);
+              // Reset dialog states when opening
+              setUploadFiles([]);
+              setUploadType('photo');
+              setUploadLabel('');
+              setError(null);
+              setCompressionStats(null);
+            }} className="bg-ls-forest hover:bg-ls-forest/90">
+              <Upload className="w-4 h-4 mr-2" />
+              {strings.uploadFiles}
+            </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 md:p-6">
+        <CardContent className="p-4 md:p-6" style={{ color: colors.textSecondary }}>
+            {strings.uploadFirst}
+        </CardContent>
+      </Card>
+
+      {/* Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="sm:max-w-md" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+          <DialogHeader>
+            <DialogTitle style={{ color: colors.textPrimary }}>{strings.uploadDocument}</DialogTitle>
+          </DialogHeader>
+          
           <div className="space-y-4">
+            {error && (
+              <div className="p-3 rounded-lg border-2 border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-100">
+                <p className="text-sm font-semibold">{strings.error}:</p>
+                <p className="text-xs">{error}</p>
+              </div>
+            )}
+
+            {/* Compression Notice */}
+            {compressionStats && compressionStats.compressedCount > 0 && (
+              <div className="p-3 rounded-lg border-2" style={{
+                backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                borderColor: '#3B82F6'
+              }}>
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-3 h-3 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                      {language === 'th' ? 'ปรับขนาดไฟล์แล้ว' : 'Images Optimized'}
+                    </p>
+                    <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                      {language === 'th' 
+                        ? `${compressionStats.compressedCount} รูป • ประหยัด ${compressionStats.savedMB} MB (${compressionStats.savingsPercent}%)`
+                        : `${compressionStats.compressedCount} images • Saved ${compressionStats.savedMB} MB (${compressionStats.savingsPercent}%)`
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
-              <Label htmlFor="doc_type" style={{ color: colors.textPrimary }}>{strings.documentType}</Label>
+              <Label htmlFor="dialog_doc_type" style={{ color: colors.textPrimary }}>{strings.documentType}</Label>
               <Select value={uploadType} onValueChange={setUploadType}>
-                <SelectTrigger id="doc_type" className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                <SelectTrigger id="dialog_doc_type" className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
@@ -708,12 +807,12 @@ export default function EvidenceVault() {
             </div>
 
             <div>
-              <Label htmlFor="custom_label" style={{ color: colors.textPrimary }}>{strings.customLabel}</Label>
+              <Label htmlFor="dialog_custom_label" style={{ color: colors.textPrimary }}>{strings.customLabel}</Label>
               <Input
-                id="custom_label"
+                id="dialog_custom_label"
                 type="text"
-                value={customLabel}
-                onChange={(e) => setCustomLabel(e.target.value)}
+                value={uploadLabel}
+                onChange={(e) => setUploadLabel(e.target.value)}
                 placeholder={strings.customLabelPlaceholder}
                 className="mt-2"
                 style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
@@ -726,11 +825,11 @@ export default function EvidenceVault() {
                 multiple
                 onChange={handleFileSelect}
                 className="hidden"
-                id="file-upload"
+                id="dialog-file-upload"
                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mov,.avi"
                 disabled={uploading}
               />
-              <label htmlFor="file-upload" className={uploading ? 'cursor-not-allowed opacity-70' : ''}>
+              <label htmlFor="dialog-file-upload" className={uploading ? 'cursor-not-allowed opacity-70' : ''}>
                 <div
                   className="border-2 border-dashed rounded-xl p-6 md:p-8 text-center transition-colors"
                   style={{
@@ -746,98 +845,85 @@ export default function EvidenceVault() {
               </label>
             </div>
 
-            {/* Selected Files List + Upload Button */}
-            {selectedFiles.length > 0 && (
-              <>
-                <div>
-                  <p className="font-semibold mb-2 text-sm" style={{ color: colors.textPrimary }}>
-                    {strings.selectedFiles} ({selectedFiles.length})
-                  </p>
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <FileText className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
-                          <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
-                        </div>
-                        <button
-                          onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
-                          className="p-1 hover:bg-red-100 rounded flex-shrink-0 ml-2"
-                          disabled={uploading}
-                        >
-                          <X className="w-4 h-4 text-red-600" />
-                        </button>
+            {/* Selected Files List */}
+            {uploadFiles.length > 0 && (
+              <div>
+                <p className="font-semibold mb-2 text-sm" style={{ color: colors.textPrimary }}>
+                  {strings.selectedFiles} ({uploadFiles.length})
+                </p>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                  {uploadFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <FileText className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                        <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* UPLOAD BUTTON - Fixed with explicit white text color */}
-                <button
-                  onClick={handleUpload}
-                  disabled={uploading}
-                  className="w-full py-6 text-base font-bold rounded-lg transition-all flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: uploading ? '#9CA3AF' : '#0C3B2E',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    cursor: uploading ? 'not-allowed' : 'pointer',
-                    opacity: uploading ? 0.7 : 1
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!uploading) {
-                      e.target.style.backgroundColor = '#0a2f25';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!uploading) {
-                      e.target.style.backgroundColor = '#0C3B2E';
-                    }
-                  }}
-                >
-                  {uploading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>{strings.uploading}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-5 h-5" />
-                      <span>{strings.uploadButton}</span>
-                    </>
-                  )}
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Templates Link */}
-          <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
-            <Link to={createPageUrl("Templates")}>
-              <div
-                className="p-4 rounded-lg border-2 hover:shadow-md transition-all cursor-pointer"
-                style={{
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  borderColor: '#0C3B2E'
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-ls-forest flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm md:text-base" style={{ color: colors.textPrimary }}>
-                      {strings.viewTemplates}
-                    </p>
-                    <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>
-                      {strings.viewTemplatesDesc}
-                    </p>
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-ls-forest flex-shrink-0" />
+                      <button
+                        onClick={() => setUploadFiles(uploadFiles.filter((_, i) => i !== index))}
+                        className="p-1 hover:bg-red-100 rounded flex-shrink-0 ml-2"
+                        disabled={uploading}
+                      >
+                        <X className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </Link>
+            )}
+
+            <div className="flex gap-3 justify-end mt-4">
+              <Button variant="outline" onClick={() => setShowUploadDialog(false)} disabled={uploading}>
+                {strings.cancel}
+              </Button>
+              <Button
+                onClick={handleUpload}
+                disabled={uploading || uploadFiles.length === 0}
+                className="bg-ls-forest hover:bg-ls-forest/90"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {strings.uploading}
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    {strings.uploadButton}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Templates Link - now a separate card */}
+      <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+        <CardContent className="p-0">
+          <Link to={createPageUrl("Templates")}>
+            <div
+              className="p-4 rounded-lg border-2 hover:shadow-md transition-all cursor-pointer"
+              style={{
+                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                borderColor: '#0C3B2E'
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-ls-forest flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm md:text-base" style={{ color: colors.textPrimary }}>
+                    {strings.viewTemplates}
+                  </p>
+                  <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>
+                    {strings.viewTemplatesDesc}
+                  </p>
+                </div>
+                <ArrowRight className="w-5 h-5 text-ls-forest flex-shrink-0" />
+              </div>
+            </div>
+          </Link>
         </CardContent>
       </Card>
 
