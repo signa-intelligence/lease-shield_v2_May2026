@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -257,8 +256,8 @@ function DashboardContent() {
     }
   };
 
-  const [testingOverdue, setTestingOverdue] = useState(false); // Kept, but button removed from UI
-  const [testingSettings, setTestingSettings] = useState(false); // Kept, but button removed from UI
+  const [testingOverdue, setTestingOverdue] = useState(false);
+  const [testingSettings, setTestingSettings] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
 
   // ADD NEW: Simple browser-based Flex test
@@ -269,7 +268,6 @@ function DashboardContent() {
     try {
       console.log('🧪 Testing Flex message from browser...');
       
-      // Create a simple Flex message directly in browser
       const testFlex = {
         altText: '🧪 Test Flex Card',
         contents: {
@@ -351,11 +349,9 @@ function DashboardContent() {
 
   const [testingRent, setTestingRent] = React.useState(false);
 
-  // FORCE SEND rent reminder for testing - IGNORES SCHEDULE
   const testRentReminder = async () => {
     setTestingRent(true);
     try {
-      // Find deposit with rent settings
       const rentDeposit = deposits.find(d => d.rent_amount && d.rent_due_day);
       
       if (!rentDeposit) {
@@ -377,7 +373,6 @@ function DashboardContent() {
       const rentAmount = rentDeposit.rent_amount;
       const dueDay = rentDeposit.rent_due_day;
 
-      // Create Flex message inline
       const flexMessage = {
         altText: language === 'th' 
           ? `💰 เตือนชำระค่าเช่า: ฿${rentAmount.toLocaleString()}` 
@@ -562,7 +557,6 @@ function DashboardContent() {
 
       const channels = [];
 
-      // Send LINE
       if (user.line_messaging_token && user.line_notifications) {
         try {
           await base44.functions.invoke('sendLineMessage', {
@@ -576,7 +570,6 @@ function DashboardContent() {
         }
       }
 
-      // Send Email
       if (user.email_notifications) {
         const subject = language === 'th' 
           ? '💰 เตือนชำระค่าเช่า - Lease Shield' 
@@ -600,7 +593,6 @@ function DashboardContent() {
         }
       }
 
-      // Log
       for (const channel of channels) {
         await base44.entities.NotificationLog.create({
           user_email: user.email,
@@ -645,94 +637,6 @@ function DashboardContent() {
       alert(`❌ ERROR:\n\n${error.message}`);
     } finally {
       setTestingRent(false);
-    }
-  };
-
-
-  const testOverdueCheck = async () => { // Kept, but button removed from UI
-    setTestingOverdue(true);
-    try {
-      const response = await base44.functions.invoke('testOverdueCheck');
-      console.log('🔍 Overdue test results:', response.data);
-      
-      const overdueCount = response.data?.overdue_deposits || 0;
-      if (overdueCount > 0) {
-        toast.success(
-          language === 'th' 
-            ? `พบเงินมัดจำเกินกำหนด ${overdueCount} รายการ!` 
-            : `Found ${overdueCount} overdue deposits!`
-        );
-        
-        alert(
-          `🔍 OVERDUE CHECK RESULTS:\n\n` +
-          `Total deposits: ${response.data.total_deposits}\n` +
-          `Overdue deposits: ${overdueCount}\n` +
-          `Details:\n${JSON.stringify(response.data.overdue_list, null, 2)}`
-        );
-      } else {
-        toast.info(language === 'th' ? 'ไม่พบเงินมัดจำที่เกินกำหนด' : 'No overdue deposits found');
-      }
-    } catch (error) {
-      console.error('Failed to test overdue:', error);
-      toast.error(language === 'th' ? 'การทดสอบล้มเหลว' : 'Test failed');
-    } finally {
-      setTestingOverdue(false);
-    }
-  };
-
-  const testUserSettings = async () => { // Kept, but button removed from UI
-    setTestingSettings(true);
-    try {
-      const response = await base44.functions.invoke('testUserSettings');
-      console.log('🔍 User settings:', response.data);
-      
-      const settings = response.data;
-      
-      // Build readable message
-      let message = `📧 YOUR NOTIFICATION SETTINGS:\n\n`;
-      message += `Email: ${settings.notification_settings?.email_notifications ? '✅ ON' : '❌ OFF'}\n`;
-      message += `LINE: ${settings.notification_settings?.line_notifications ? '✅ ON' : '❌ OFF'}\n`;
-      message += `LINE Token: ${settings.notification_settings?.line_messaging_token || 'N/A'}\n\n`;
-      
-      message += `🔕 Notification Preferences:\n`;
-      const prefs = settings.notification_preferences || {};
-      message += `Overdue Deposit Alerts: ${prefs.deposit_overdue === false ? '❌ DISABLED' : '✅ Enabled'}\n`;
-      message += `30d Deposit: ${prefs.deposit_30d === false ? '❌ OFF' : '✅ ON'}\n`;
-      message += `7d Deposit: ${prefs.deposit_7d === false ? '❌ OFF' : '✅ ON'}\n`;
-      message += `3d Deposit: ${prefs.deposit_3d === false ? '❌ OFF' : '✅ ON'}\n\n`;
-      
-      message += `🌙 Quiet Hours: ${settings.quiet_hours?.enabled ? '✅ ON' : '❌ OFF'}\n`;
-      if (settings.quiet_hours?.enabled) {
-        message += `Time: ${settings.quiet_hours.start} - ${settings.quiet_hours.end}\n`;
-      }
-      message += `Timezone: ${settings.notification_timezone || 'N/A'}\n\n`;
-      
-      message += `🚨 YOUR OVERDUE DEPOSITS: ${settings.overdue_deposits?.count || 0}\n`;
-      if (settings.overdue_deposits?.deposits?.length > 0) {
-        settings.overdue_deposits.deposits.forEach(d => {
-          message += `\n- ฿${d.amount?.toLocaleString()} at ${d.property}\n`;
-          message += `  ${d.days_overdue} days overdue\n`;
-        });
-      }
-      
-      alert(message);
-      
-      // Check for issues
-      if (!settings.notification_settings?.email_notifications && !settings.notification_settings?.line_notifications) {
-        toast.error('❌ Both email and LINE are OFF!');
-      } else if (prefs.deposit_overdue === false) {
-        toast.error('❌ Overdue deposit alerts are DISABLED!');
-      } else if (settings.quiet_hours?.enabled) {
-        toast.warning('🌙 Quiet hours might be blocking notifications');
-      } else {
-        toast.success('✅ Settings look good!');
-      }
-      
-    } catch (error) {
-      console.error('Failed to test settings:', error);
-      toast.error(language === 'th' ? 'การทดสอบล้มเหลว' : 'Test failed');
-    } finally {
-      setTestingSettings(false);
     }
   };
 
@@ -794,7 +698,6 @@ function DashboardContent() {
     hoverBg: '#F8FAFC'
   };
 
-  // Calculate protection score
   const calculateProtectionScore = () => {
     let score = 0;
     let breakdown = {
@@ -802,9 +705,6 @@ function DashboardContent() {
       activeProtections: 0,
       proactiveActions: 0
     };
-
-    const hasDepositShield = user?.plan_tier === 'protect' || user?.plan_tier === 'secure';
-    const hasLineNotify = user?.plan_tier === 'protect' || user?.plan_tier === 'secure';
 
     const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
     if (scannedLeases.length > 0) breakdown.documentation += 15;
@@ -887,34 +787,28 @@ function DashboardContent() {
   }).length;
   const resolvedCases = cases.filter(c => c.status === 'closed').length;
 
-  // NEW: Calculate urgent lease notice deadlines
   const urgentLeaseNotices = leases.filter(lease => {
     if (!lease.notice_deadline || !lease.notice_alerts_enabled) return false;
     const noticeDeadline = new Date(lease.notice_deadline);
     const daysUntil = differenceInDays(noticeDeadline, now);
-    return daysUntil >= 0 && daysUntil <= 30; // Show if 30 days or less
+    return daysUntil >= 0 && daysUntil <= 30;
   }).sort((a, b) => {
     const daysA = differenceInDays(new Date(a.notice_deadline), now);
     const daysB = differenceInDays(new Date(b.notice_deadline), now);
-    return daysA - daysB; // Sort by most urgent first
+    return daysA - daysB;
   });
 
-  // NEW CALCULATIONS
   const rentTrackedCount = deposits.filter(d => d.rent_amount && d.rent_due_day).length;
   const activeMaintenanceCount = maintenanceRequests.filter(r => r.status !== 'completed' && r.status !== 'rejected').length;
-  const recentNotifications = notificationLogs.slice(0, 5);
 
   const t = {
     en: {
-      pageTitle: "My Account",
       welcome: "Welcome back",
-      tagline: "Fair. Transparent. Protected.",
       subtitle: "Prevent rental problems before they happen.",
       activeLeases: "Active Leases",
       depositsTracked: "Deposits Tracked",
       activeCases: "Active Cases",
       protectionScore: "Protection Score",
-      improveScoreCta: "Improve Score",
       protectRights: "Protect Your Rights",
       uploadCta: "Upload your lease for instant automated analysis and risk assessment",
       uploadLease: "Upload Lease",
@@ -923,22 +817,13 @@ function DashboardContent() {
       viewPlans: "View Plans",
       focusMode: "Focus Mode",
       normalView: "Normal View",
-      scanned: "Scanned",
-      avgDeposit: "Avg Deposit",
-      urgentReturns: "Due Soon",
-      resolved: "Resolved",
-      addDeposit: "Add Deposit",
-      openCase: "Open Case",
-      manageLeases: "Manage Leases",
       uploadFirstLease: "Upload First Lease",
       noDataYet: "No Data Yet",
       getStartedDesc: "Start protecting your rental rights by uploading your lease agreement",
-      startNow: "Get Started",
       testEmail: "Test Email",
       sending: "Sending...",
       runFullCheck: "Run Full Check",
       running: "Running...",
-      scheduledSystem: "Scheduled System",
       checkAllUsers: "Check all users for reminders",
       testBrowserFlex: "Test Flex (Browser)",
       testRent: "Force Rent Test",
@@ -952,29 +837,21 @@ function DashboardContent() {
       noticePeriod: "Notice period",
       days: "days",
       notifications: "Notifications",
-      recentActivity: "Recent Activity",
       viewAll: "View All",
       rentTracked: "Rent Tracked",
-      propertiesWithRent: "properties with rent",
       setupRent: "Setup Rent",
       maintenanceRequests: "Maintenance",
-      activeRequests: "active requests",
-      viewMaintenance: "View All",
       noNotifications: "No notifications yet",
-      noRent: "No rent tracked",
       noMaintenance: "No requests",
       analytics: "Analytics",
     },
     th: {
-      pageTitle: "บัญชีของฉัน",
       welcome: "ยินดีต้อนรับกลับมา",
-      tagline: "ยุติธรรม โปร่งใส ปลอดภัย",
       subtitle: "ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น",
       activeLeases: "สัญญาเช่าที่ใช้งาน",
       depositsTracked: "เงินมัดจำที่ติดตาม",
       activeCases: "คดีที่ดำเนินการ",
       protectionScore: "คะแนนการป้องกัน",
-      improveScoreCta: "เพิ่มคะแนน",
       protectRights: "ปกป้องสิทธิ์ของคุณ",
       uploadCta: "อัปโหลดสัญญาเช่าเพื่อรับการวิเคราะห์และประเมินความเสี่ยงอัตโนมัติทันที",
       uploadLease: "อัปโหลดสัญญาเช่า",
@@ -983,22 +860,13 @@ function DashboardContent() {
       viewPlans: "ดูแผน",
       focusMode: "โหมดโฟกัส",
       normalView: "มุมมองปกติ",
-      scanned: "สแกนแล้ว",
-      avgDeposit: "มัดจำเฉลี่ย",
-      urgentReturns: "ครบกำหนดเร็วๆ นี้",
-      resolved: "แก้ไขแล้ว",
-      addDeposit: "เพิ่มมัดจำ",
-      openCase: "เปิดคดี",
-      manageLeases: "จัดการสัญญา",
       uploadFirstLease: "อัปโหลดสัญญาแรก",
       noDataYet: "ยังไม่มีข้อมูล",
       getStartedDesc: "เริ่มปกป้องสิทธิ์การเช่าของคุณโดยการอัปโหลดสัญญาเช่า",
-      startNow: "เริ่มเลย",
       testEmail: "ทดสอบอีเมล",
       sending: "กำลังส่ง...",
       runFullCheck: "ตรวจสอบทั้งหมด",
       running: "กำลังตรวจสอบ...",
-      scheduledSystem: "ระบบตรวจสอบอัตโนมัติ",
       checkAllUsers: "ตรวจสอบการแจ้งเตือนของผู้ใช้ทั้งหมด",
       testBrowserFlex: "ทดสอบ Flex",
       testRent: "ทดสอบค่าเช่า",
@@ -1012,29 +880,17 @@ function DashboardContent() {
       noticePeriod: "ระยะแจ้ง",
       days: "วัน",
       notifications: "การแจ้งเตือน",
-      recentActivity: "กิจกรรมล่าสุด",
       viewAll: "ดูทั้งหมด",
       rentTracked: "ติดตามค่าเช่า",
-      propertiesWithRent: "ทรัพย์สินที่มีค่าเช่า",
       setupRent: "ตั้งค่าเช่า",
       maintenanceRequests: "การซ่อมบำรุง",
-      activeRequests: "คำขอที่ใช้งาน",
-      viewMaintenance: "ดูทั้งหมด",
       noNotifications: "ยังไม่มีการแจ้งเตือน",
-      noRent: "ยังไม่ได้ติดตามค่าเช่า",
       noMaintenance: "ไม่มีคำขอ",
       analytics: "วิเคราะห์",
     }
   };
 
   const strings = t[language];
-
-  const iconMap = {
-    FileText: FileText,
-    Shield: Shield,
-    Bell: Bell,
-    Wrench: Wrench
-  };
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -1045,18 +901,14 @@ function DashboardContent() {
 
   const isLoading = leasesLoading || depositsLoading;
 
-  // FIXED: Better logic for showing onboarding checklist
-  // Show checklist if:
-  // 1. User hasn't explicitly completed onboarding AND
-  // 2. Either they have no data OR not all tasks are complete
   const calculateOnboardingProgress = () => {
     const tasks = [
-      leases.length > 0, // Upload lease
-      deposits.length > 0, // Track deposit
-      maintenanceRequests.length > 0, // Report maintenance
-      documents.length >= 3, // Upload 3+ documents
-      user?.phone && user?.tenant_address, // Complete profile
-      user?.email_notifications || user?.line_notifications // Enable notifications
+      leases.length > 0,
+      deposits.length > 0,
+      maintenanceRequests.length > 0,
+      documents.length >= 3,
+      user?.phone && user?.tenant_address,
+      user?.email_notifications || user?.line_notifications
     ];
     
     const completedCount = tasks.filter(Boolean).length;
@@ -1067,36 +919,27 @@ function DashboardContent() {
 
   const onboardingProgress = calculateOnboardingProgress();
   
-  // Show checklist if:
-  // - User hasn't marked onboarding as complete
-  // - AND (has no data at all OR has incomplete tasks)
   const hasNoData = leases.length === 0 && deposits.length === 0 && documents.length === 0 && maintenanceRequests.length === 0;
   const shouldShowOnboardingChecklist = !user?.onboarding_completed && (hasNoData || !onboardingProgress.allTasksComplete);
 
-  // Check if user is new and should see onboarding wizard
   React.useEffect(() => {
     if (user && !user.onboarding_completed) {
       const hasAnyActivity = leases.length > 0 || deposits.length > 0 || documents.length > 0 || cases.length > 0;
       
       if (!hasAnyActivity) {
-        // Don't auto-show wizard if they're already looking at checklist
-        // setShowOnboarding(true); // REMOVED: Let checklist guide them instead
       }
     }
   }, [user, leases, deposits, documents, cases]);
 
   const handleOnboardingComplete = async () => {
     setShowOnboarding(false);
-    // Mark onboarding as completed
     await base44.auth.updateMe({ onboarding_completed: true });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
   };
 
-  // Check if user has any data
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
 
-  // Show empty state for completely new users (if wizard isn't currently open)
-  if (!isLoading && !hasAnyData && !showOnboarding && !shouldShowOnboardingChecklist) { // Added shouldShowOnboardingChecklist here
+  if (!isLoading && !hasAnyData && !showOnboarding && !shouldShowOnboardingChecklist) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
         <EmptyState
@@ -1117,7 +960,6 @@ function DashboardContent() {
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
       <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
-          {/* FAB - Quick Upload */}
           <FloatingActionButton
             icon={Shield}
             label={strings.uploadLease}
@@ -1126,7 +968,6 @@ function DashboardContent() {
             position="bottom-right"
           />
 
-          {/* Onboarding Wizard */}
           <OnboardingWizard
             open={showOnboarding}
             onClose={handleOnboardingComplete}
@@ -1135,7 +976,6 @@ function DashboardContent() {
             language={language}
           />
 
-          {/* Header with Focus Mode Toggle */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
@@ -1157,7 +997,6 @@ function DashboardContent() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                {/* NEW: Analytics Button */}
                 <Link to={createPageUrl("Analytics")}>
                   <button
                     onClick={() => haptic.light()}
@@ -1424,7 +1263,6 @@ function DashboardContent() {
                   </>
                 )}
 
-                {/* Focus Mode Toggle */}
                 <button
                   onClick={() => {
                     haptic.light();
@@ -1477,7 +1315,6 @@ function DashboardContent() {
             </p>
           </div>
 
-          {/* NEW: Urgent Lease Notice Deadline Alert */}
           {urgentLeaseNotices.length > 0 && (
             <div className="mb-6">
               {urgentLeaseNotices.slice(0, 1).map((lease) => {
@@ -1605,7 +1442,6 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* FIXED: Onboarding Checklist - Shows until ALL tasks complete */}
           {shouldShowOnboardingChecklist && !showOnboarding && (
             <div className="mb-6">
               <OnboardingChecklist
@@ -1621,7 +1457,6 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Stats Grid - MOBILE-OPTIMIZED: Protection Score First */}
           {(!focusMode || urgentDeposits > 0 || activeCases.length > 0) && (
             <div className="mb-6">
               <button
@@ -1671,9 +1506,7 @@ function DashboardContent() {
                     </div>
                   ) : (
                     <>
-                      {/* MOBILE: Protection Score first, then 2-column grid */}
                       <div className="lg:hidden space-y-3" style={{ animation: 'slideDown 0.3s ease-out' }}>
-                        {/* Protection Score - Full Width at Top */}
                         <ProtectionScoreEnhanced
                           score={protectionScore}
                           breakdown={breakdown}
@@ -1682,7 +1515,6 @@ function DashboardContent() {
                           colors={colors}
                         />
 
-                        {/* Other Stats - 2 Columns */}
                         <div className="grid grid-cols-2 gap-3">
                           <StatsCard
                             title={strings.activeLeases}
@@ -1804,7 +1636,6 @@ function DashboardContent() {
                         </div>
                       </div>
 
-                      {/* DESKTOP: 4-column grid with Protection Score spanning 2 rows */}
                       <div className="hidden lg:grid lg:grid-cols-4 gap-3" style={{ animation: 'slideDown 0.3s ease-out', gridAutoRows: 'minmax(0, 1fr)' }}>
                         <StatsCard
                           title={strings.activeLeases}
@@ -1894,7 +1725,7 @@ function DashboardContent() {
                           actionButton={notificationLogs.length > 0 ? {
                             label: strings.viewAll,
                             link: createPageUrl("Account")
-                          }}
+                          } : undefined}
                           ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
                           compact
                         />
@@ -1926,8 +1757,8 @@ function DashboardContent() {
                             }
                           ] : undefined}
                           actionButton={activeMaintenanceCount > 0 ? {
-                              label: language === 'th' ? 'ดู' : 'View',
-                              link: createPageUrl("PropertyTracker")
+                            label: language === 'th' ? 'ดู' : 'View',
+                            link: createPageUrl("PropertyTracker")
                           } : undefined}
                           ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
                           onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
@@ -1941,7 +1772,6 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Quick Actions - Priority in Focus Mode */}
           {expandedSections.quickActions && (
             <div style={{
               background: isDarkMode 
@@ -2030,7 +1860,6 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Main Content Grid - Collapsible in Focus Mode */}
           {(!focusMode || expandedSections.content) && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               <div className="lg:col-span-2 space-y-4 sm:space-y-6">
@@ -2053,7 +1882,6 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Upgrade Banner */}
           {user?.plan_tier === 'free' && !focusMode && (
             <div style={{
               marginTop: '24px',
