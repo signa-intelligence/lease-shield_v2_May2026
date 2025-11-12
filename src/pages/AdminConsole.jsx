@@ -27,6 +27,8 @@ import ActivityTimeline from "../components/admin/ActivityTimeline";
 import TestNotifications from "../components/admin/TestNotifications";
 import ReminderControl from "../components/admin/ReminderControl";
 import NotificationHistory from "../components/admin/NotificationHistory";
+import CaseKanban from "../components/admin/CaseKanban";
+import UserImpersonation from "../components/admin/UserImpersonation";
 
 export default function AdminConsole() {
   const [seedingDemo, setSeedingDemo] = useState(false);
@@ -38,6 +40,7 @@ export default function AdminConsole() {
   const [permissionsDialog, setPermissionsDialog] = useState(false);
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState(null);
   const [permissionsFormData, setPermissionsFormData] = useState({});
+  const [showKanban, setShowKanban] = useState(false); // NEW
 
   const queryClient = useQueryClient();
 
@@ -131,6 +134,15 @@ export default function AdminConsole() {
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });
     },
   });
+
+  const handleCaseStatusChange = async (caseId, newStatus) => {
+    try {
+      await base44.asServiceRole.entities.Case.update(caseId, { status: newStatus });
+      queryClient.invalidateQueries({ queryKey: ['allCases'] });
+    } catch (error) {
+      console.error('Failed to update case status:', error);
+    }
+  };
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
@@ -373,7 +385,10 @@ export default function AdminConsole() {
       deleteData: "Delete Data",
       accessOpsConsole: "Access Ops Console",
       leaseTrends: "Lease Upload Trends",
-      depositTrends: "Deposit Tracking Trends"
+      depositTrends: "Deposit Tracking Trends",
+      caseManagement: "Case Management", // NEW
+      hideKanban: "Hide Kanban", // NEW
+      showKanban: "Show Kanban", // NEW
     },
     th: {
       adminConsole: "คอนโซลผู้ดูแล",
@@ -431,7 +446,10 @@ export default function AdminConsole() {
       deleteData: "ลบข้อมูล",
       accessOpsConsole: "เข้าถึงคอนโซลปฏิบัติการ",
       leaseTrends: "แนวโน้มการอัปโหลดสัญญา",
-      depositTrends: "แนวโน้มการติดตามเงินมัดจำ"
+      depositTrends: "แนวโน้มการติดตามเงินมัดจำ",
+      caseManagement: "จัดการคดี", // NEW
+      hideKanban: "ซ่อน Kanban", // NEW
+      showKanban: "แสดง Kanban", // NEW
     }
   };
 
@@ -581,6 +599,44 @@ export default function AdminConsole() {
         </div>
 
         <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
+
+        {/* NEW: Kanban Board Toggle */}
+        <div className="mb-6">
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <Shield className="w-5 h-5 text-ls-forest" />
+                  {strings.caseManagement}
+                </CardTitle>
+                <Button
+                  onClick={() => setShowKanban(!showKanban)}
+                  variant={showKanban ? "default" : "outline"}
+                  className={showKanban ? "bg-ls-forest hover:bg-ls-forest/90 text-white" : ""}
+                >
+                  {showKanban 
+                    ? strings.hideKanban
+                    : strings.showKanban}
+                </Button>
+              </div>
+            </CardHeader>
+            {showKanban && (
+              <CardContent className="p-6">
+                <CaseKanban
+                  cases={allCases}
+                  onStatusChange={handleCaseStatusChange}
+                  colors={colors}
+                  language={language}
+                />
+              </CardContent>
+            )}
+          </Card>
+        </div>
+
+        {/* NEW: User Impersonation Section */}
+        <div className="mb-6">
+          <UserImpersonation colors={colors} language={language} />
+        </div>
 
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           <TrendChart
