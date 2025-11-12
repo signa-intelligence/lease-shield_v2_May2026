@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import ProtectionScoreGauge from "./ProtectionScoreGauge";
-import { useAnimatedNumber, createRipple } from "@/utils/animations";
+import { useAnimatedNumber, createRipple } from "../../utils/animations";
 
 export default function StatsCard({ 
   title, 
