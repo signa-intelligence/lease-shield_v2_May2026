@@ -24,8 +24,6 @@ import SwipeToDelete from "../components/shared/SwipeToDelete";
 import BottomSheet from "../components/shared/BottomSheet";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import MobileFormInput from "../components/shared/MobileFormInput";
-import SmartImage from "../components/shared/SmartImage";
-import { useOptimisticCreate, useOptimisticDelete, useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -66,11 +64,10 @@ export default function EvidenceVault() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: documents = [] } = useQuery({
-    queryKey: ['documents', user?.email],
-    queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
+  const { data: documents = [], isLoading: isLoadingDocuments } = useQuery({
+    queryKey: ['documents'],
+    queryFn: () => base44.entities.Document.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   const getStorageLimits = () => {
@@ -113,23 +110,27 @@ export default function EvidenceVault() {
     };
   };
 
-  // Optimistic mutations for instant feedback
-  const createDocumentMutation = useOptimisticCreate({
-    entityName: 'Document',
-    queryKey: ['documents', user?.email],
-    language
+  const createDocumentMutation = useMutation({
+    mutationFn: (data) => base44.entities.Document.create(data),
+    onSuccess: () => {
+      // Query invalidation and state resets are handled by handleUpload's final logic
+    },
   });
 
-  const deleteDocumentMutation = useOptimisticDelete({
-    entityName: 'Document',
-    queryKey: ['documents', user?.email],
-    language
+  const updateDocumentMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Document.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setEditingDoc(null);
+    },
   });
 
-  const updateDocumentMutation = useOptimisticUpdate({
-    entityName: 'Document',
-    queryKey: ['documents', user?.email],
-    language
+  const deleteDocumentMutation = useMutation({
+    mutationFn: (id) => base44.entities.Document.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setSelectedDocs([]); // Clear selection in case a selected item was deleted
+    },
   });
 
   const handleFileSelect = (e) => {
@@ -182,25 +183,24 @@ export default function EvidenceVault() {
         base44.integrations.Core.UploadFile({ file })
       );
 
-      const uploadResults = await Promise.all(uploadPromises);
+      const results = await Promise.all(uploadPromises);
       setUploadProgressPercent(70); // After all files uploaded
 
       // Save documents (70-100%)
       setUploadStage('savingDocuments');
-      // Iterate over results to create a document for each uploaded file optimistically
-      for (const result of uploadResults) {
-        await createDocumentMutation.mutateAsync({
+      const createPromises = results.map((result, index) =>
+        base44.entities.Document.create({
           type: uploadType,
           file_url: result.file_url,
           label: uploadLabel || `${uploadType} - ${new Date().toLocaleDateString()}`,
-          created_by: user?.email // Ensure created_by matches the queryKey for optimistic update
-        });
-      }
+        })
+      );
 
+      await Promise.all(createPromises);
       setUploadProgressPercent(100);
       haptic.success();
 
-      // Invalidation and state resets are now handled by the optimistic mutation hook
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
       setShowUploadDialog(false);
       setUploadFiles([]);
       setUploadType('other'); // Reset to default
@@ -237,7 +237,6 @@ export default function EvidenceVault() {
   const handleDelete = (docId) => {
     if (confirm(strings.confirmDelete)) { // Using new string
       haptic.heavy();
-      // Optimistic delete - instant UI update
       deleteDocumentMutation.mutate(docId);
     }
   };
@@ -254,12 +253,10 @@ export default function EvidenceVault() {
       haptic.heavy();
       try {
         for (const docId of selectedDocs) {
-          // Use optimistic delete for each item
-          deleteDocumentMutation.mutate(docId);
+          await deleteDocumentMutation.mutateAsync(docId); // Changed to use individual mutation and await
         }
-        // No need for queryClient.invalidateQueries here as optimistic hook handles it on success/error
+        queryClient.invalidateQueries({ queryKey: ['documents'] }); // Invalidate once after all deletes
         setSelectedDocs([]);
-        setBulkMode(false); // Exit bulk mode after deletion
         haptic.success();
       } catch (error) {
         console.error("Bulk delete failed:", error);
@@ -369,7 +366,6 @@ export default function EvidenceVault() {
     
     haptic.medium();
     try {
-      // Optimistic update
       await updateDocumentMutation.mutateAsync({
         id: editingDoc.id,
         data: {
@@ -378,7 +374,6 @@ export default function EvidenceVault() {
         }
       });
       haptic.success();
-      setEditingDoc(null); // Close the dialog
     } catch (error) {
       console.error('Failed to save document edit:', error);
       alert(language === 'th' ? 'ไม่สามารถบันทึกการแก้ไขได้ โปรดลองอีกครั้ง' : 'Failed to save edits. Please try again.');
@@ -461,14 +456,12 @@ export default function EvidenceVault() {
       // Upload annotated version
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      // Update document with new URL using optimistic update
-      await updateDocumentMutation.mutateAsync({
-        id: annotatingDocument.id,
-        data: {
-          file_url: file_url
-        }
+      // Update document with new URL
+      await base44.entities.Document.update(annotatingDocument.id, {
+        file_url: file_url
       });
-      
+
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
       setAnnotatingDocument(null);
       
       alert(language === 'th' ? 'บันทึกคำอธิบายประกอบสำเร็จ' : 'Annotation saved successfully');
@@ -1154,25 +1147,6 @@ export default function EvidenceVault() {
                     onClick={() => handleCardClick(doc)}
                   >
                     <div className={`h-2 rounded-t-xl`} style={{ backgroundColor: config.bgColor }} />
-                    
-                    {(doc.type === 'photo' || doc.type === 'receipt') && doc.file_url ? (
-                      <div className="relative">
-                        <SmartImage
-                          src={doc.file_url}
-                          alt={doc.label || doc.type}
-                          className="w-full h-48 object-cover rounded-b-none" // Adjust rounding to flow into CardContent
-                          showActions={true}
-                          enablePreview={true}
-                          enableDownload={true}
-                          colors={colors}
-                        />
-                      </div>
-                    ) : (
-                      // For non-image types (or images without file_url), no specific display here
-                      // The CardContent below handles the icon, label, date.
-                      null
-                    )}
-
                     <CardContent className="p-4">
                       {bulkMode && (
                         <div className="absolute top-4 right-4 z-10">

@@ -1,5 +1,4 @@
-
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Settings, Mail, Calendar, BarChart3 } from "lucide-react";
@@ -23,19 +22,16 @@ import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
-import OfflineDetector from "../components/shared/OfflineDetector";
-import SyncIndicator from "../components/shared/SyncIndicator";
-
 
 function DashboardContent() {
-  const [showImprovementDialog, setShowImprovementDialog] = useState(false);
-  const [focusMode, setFocusMode] = useState(false);
-  const [expandedSections, setExpandedSections] = useState({
+  const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
+  const [focusMode, setFocusMode] = React.useState(false);
+  const [expandedSections, setExpandedSections] = React.useState({
     stats: true,
     quickActions: true,
     content: true,
   });
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOnboarding, setShowOnboarding] = React.useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -43,64 +39,44 @@ function DashboardContent() {
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    staleTime: 5 * 60 * 1000,
   });
 
-  // Enhanced queries with offline support (inline options)
+  // Regular user queries
   const { data: leases = [], isLoading: leasesLoading } = useQuery({
-    queryKey: ['leases', user?.email],
+    queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
   });
 
   const { data: deposits = [], isLoading: depositsLoading } = useQuery({
-    queryKey: ['deposits', user?.email],
+    queryKey: ['deposits'],
     queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
   });
 
   const { data: cases = [] } = useQuery({
-    queryKey: ['cases', user?.email],
+    queryKey: ['cases'],
     queryFn: () => base44.entities.Case.filter({ user_email: user?.email }),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
   });
 
   const { data: documents = [] } = useQuery({
-    queryKey: ['documents', user?.email],
+    queryKey: ['documents'],
     queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
   });
 
   const { data: maintenanceRequests = [] } = useQuery({
-    queryKey: ['maintenance', user?.email],
+    queryKey: ['maintenance'],
     queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
   });
 
   const { data: notificationLogs = [] } = useQuery({
-    queryKey: ['notificationLogs', user?.email],
+    queryKey: ['notificationLogs'],
     queryFn: () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 10),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
   });
-
-  // Prefetch critical data on mount
-  useEffect(() => {
-    // This prefetchCriticalData call was removed as createOfflineQuery no longer exists.
-    // If prefetching logic is still desired, it needs to be reimplemented without createOfflineQuery.
-    // For now, the prefetch effect is removed entirely as per the prompt's implied change.
-  }, [user]);
 
   const handleRefresh = async () => {
     haptic.light();
@@ -109,7 +85,7 @@ function DashboardContent() {
   };
 
   // Auto-refresh logic
-  useEffect(() => {
+  React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const subscriptionStatus = urlParams.get('subscription');
     
@@ -133,7 +109,7 @@ function DashboardContent() {
     }
   }, [queryClient, user, toast]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     let intervalId;
     
     const handleFocus = () => {
@@ -181,9 +157,9 @@ function DashboardContent() {
   const isDarkMode = user?.theme === 'dark';
 
   // Client-side overdue deposit checker
-  const [checkingOverdue, setCheckingOverdue] = useState(false);
+  const [checkingOverdue, setCheckingOverdue] = React.useState(false);
   
-  const checkAndNotifyOverdue = useCallback(async () => {
+  const checkAndNotifyOverdue = React.useCallback(async () => {
     if (!deposits || deposits.length === 0) return;
     
     setCheckingOverdue(true);
@@ -284,8 +260,8 @@ function DashboardContent() {
   const [testingSettings, setTestingSettings] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
 
-  // Simple browser-based Flex test
-  const [testingBrowserFlex, setTestingBrowserFlex] = useState(false);
+  // ADD NEW: Simple browser-based Flex test
+  const [testingBrowserFlex, setTestingBrowserFlex] = React.useState(false);
   
   const testFlexFromBrowser = async () => {
     setTestingBrowserFlex(true);
@@ -371,7 +347,7 @@ function DashboardContent() {
     }
   };
 
-  const [testingRent, setTestingRent] = useState(false);
+  const [testingRent, setTestingRent] = React.useState(false);
 
   const testRentReminder = async () => {
     setTestingRent(true);
@@ -946,7 +922,7 @@ function DashboardContent() {
   const hasNoData = leases.length === 0 && deposits.length === 0 && documents.length === 0 && maintenanceRequests.length === 0;
   const shouldShowOnboardingChecklist = !user?.onboarding_completed && (hasNoData || !onboardingProgress.allTasksComplete);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (user && !user.onboarding_completed) {
       const hasAnyActivity = leases.length > 0 || deposits.length > 0 || documents.length > 0 || cases.length > 0;
       
@@ -983,9 +959,6 @@ function DashboardContent() {
   return (
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
       <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
-        {/* Offline Detector Banner */}
-        <OfflineDetector language={language} colors={colors} />
-        
         <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
           <FloatingActionButton
             icon={Shield}
@@ -1003,7 +976,6 @@ function DashboardContent() {
             language={language}
           />
 
-          {/* Header with Focus Mode Toggle + Sync Indicator */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
@@ -1025,9 +997,6 @@ function DashboardContent() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Sync Indicator */}
-                <SyncIndicator language={language} colors={colors} />
-                
                 <Link to={createPageUrl("Analytics")}>
                   <button
                     onClick={() => haptic.light()}
@@ -1593,10 +1562,10 @@ function DashboardContent() {
                             icon={Calendar}
                             scoreColor="#3B82F6"
                             miniStats={rentTrackedCount > 0 ? [
-                            {
-                              label: language === 'th' ? 'เตือน' : 'Alerts',
-                              value: deposits.filter(d => d.rent_alerts_enabled).length
-                            }
+                              {
+                                label: language === 'th' ? 'เตือน' : 'Alerts',
+                                value: deposits.filter(d => d.rent_alerts_enabled).length
+                              }
                             ] : undefined}
                             actionButton={rentTrackedCount > 0 ? {
                               label: language === 'th' ? 'จัดการ' : 'Manage',
@@ -1651,10 +1620,10 @@ function DashboardContent() {
                             icon={Wrench}
                             scoreColor="#F59E0B"
                             miniStats={activeMaintenanceCount > 0 ? [
-                            {
-                              label: language === 'th' ? 'เสร็จ' : 'Done',
-                              value: maintenanceRequests.filter(r => r.status === 'completed').length
-                            }
+                              {
+                                label: language === 'th' ? 'เสร็จ' : 'Done',
+                                value: maintenanceRequests.filter(r => r.status === 'completed').length
+                              }
                             ] : undefined}
                             actionButton={activeMaintenanceCount > 0 ? {
                               label: language === 'th' ? 'ดู' : 'View',
@@ -1758,7 +1727,6 @@ function DashboardContent() {
                             link: createPageUrl("Account")
                           } : undefined}
                           ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
-                          onCtaClick={notificationLogs.length === 0 ? () => navigate(createPageUrl("Account")) : undefined}
                           compact
                         />
                         
