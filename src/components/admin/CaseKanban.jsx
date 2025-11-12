@@ -1,240 +1,313 @@
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Scale, User, DollarSign, Clock } from 'lucide-react';
-import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import React, { useState } from "react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  GripVertical, 
+  DollarSign, 
+  Calendar, 
+  User, 
+  Mail, 
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  MessageSquare,
+  Edit2,
+  Search,
+  Filter,
+  X
+} from "lucide-react";
+import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 const STATUS_COLUMNS = [
-  { 
-    key: 'pending_review', 
-    label: 'Pending Review',
-    labelTh: 'รอตรวจสอบ',
-    color: '#F59E0B',
-    bgColor: '#FEF3C7'
-  },
-  { 
-    key: 'under_review', 
-    label: 'Under Review',
-    labelTh: 'กำลังตรวจสอบ',
-    color: '#3B82F6',
-    bgColor: '#DBEAFE'
-  },
-  { 
-    key: 'ready_drafts', 
-    label: 'Drafts Ready',
-    labelTh: 'ร่างพร้อม',
-    color: '#8B5CF6',
-    bgColor: '#EDE9FE'
-  },
-  { 
-    key: 'client_review', 
-    label: 'Client Review',
-    labelTh: 'ลูกค้าตรวจสอบ',
-    color: '#6366F1',
-    bgColor: '#E0E7FF'
-  },
-  { 
-    key: 'in_progress', 
-    label: 'In Progress',
-    labelTh: 'ดำเนินการ',
-    color: '#0EA5E9',
-    bgColor: '#E0F2FE'
-  },
-  { 
-    key: 'resolved', 
-    label: 'Resolved',
-    labelTh: 'แก้ไขแล้ว',
-    color: '#10B981',
-    bgColor: '#D1FAE5'
-  },
+  { id: 'intake', label: 'Intake', labelTh: 'รับเรื่อง', color: '#64748b', icon: Clock },
+  { id: 'pending_review', label: 'Pending Review', labelTh: 'รอตรวจสอบ', color: '#F59E0B', icon: AlertCircle },
+  { id: 'under_review', label: 'Under Review', labelTh: 'กำลังตรวจสอบ', color: '#3B82F6', icon: MessageSquare },
+  { id: 'ready_drafts', label: 'Ready Drafts', labelTh: 'ร่างพร้อม', color: '#8B5CF6', icon: Edit2 },
+  { id: 'client_review', label: 'Client Review', labelTh: 'ลูกค้าตรวจสอบ', color: '#EC4899', icon: User },
+  { id: 'in_progress', label: 'In Progress', labelTh: 'ดำเนินการ', color: '#10B981', icon: CheckCircle2 },
+  { id: 'resolved', label: 'Resolved', labelTh: 'แก้ไขแล้ว', color: '#059669', icon: CheckCircle2 },
 ];
 
-const CaseKanban = ({ cases = [], users = [], onUpdateStatus, language = 'en', colors }) => {
+export default function CaseKanban({ cases = [], onStatusChange, colors, language = 'en', onCaseClick }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all');
   const navigate = useNavigate();
-  const [draggedCase, setDraggedCase] = useState(null);
-  const [dragOverColumn, setDragOverColumn] = useState(null);
 
-  const handleDragStart = (e, caseItem) => {
-    setDraggedCase(caseItem);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e, columnKey) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverColumn(columnKey);
-  };
-
-  const handleDragLeave = () => {
-    setDragOverColumn(null);
-  };
-
-  const handleDrop = (e, columnKey) => {
-    e.preventDefault();
-    setDragOverColumn(null);
-
-    if (draggedCase && draggedCase.status !== columnKey) {
-      onUpdateStatus(draggedCase.id, columnKey);
+  const t = {
+    en: {
+      searchPlaceholder: "Search cases...",
+      filterAll: "All Types",
+      noCases: "No cases in this column",
+      dragToMove: "Drag to move status",
+    },
+    th: {
+      searchPlaceholder: "ค้นหาคดี...",
+      filterAll: "ทุกประเภท",
+      noCases: "ไม่มีคดีในคอลัมน์นี้",
+      dragToMove: "ลากเพื่อเปลี่ยนสถานะ",
     }
-    setDraggedCase(null);
   };
 
-  const getCasesByStatus = (status) => {
-    return cases.filter(c => c.status === status);
+  const strings = t[language];
+
+  // Filter cases
+  const filteredCases = cases.filter(c => {
+    const matchesSearch = !searchQuery || 
+      c.case_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.landlord_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.summary?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesType = filterType === 'all' || c.type === filterType;
+    
+    return matchesSearch && matchesType;
+  });
+
+  // Group cases by status
+  const casesByStatus = STATUS_COLUMNS.reduce((acc, column) => {
+    acc[column.id] = filteredCases.filter(c => c.status === column.id);
+    return acc;
+  }, {});
+
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    
+    const { draggableId, destination } = result;
+    const newStatus = destination.droppableId;
+    const caseId = draggableId;
+    
+    if (onStatusChange) {
+      onStatusChange(caseId, newStatus);
+    }
+  };
+
+  const getCaseTypeColor = (type) => {
+    switch (type) {
+      case 'deposit': return 'bg-blue-100 text-blue-800';
+      case 'early_termination': return 'bg-purple-100 text-purple-800';
+      case 'damages': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityIndicator = (caseItem) => {
+    if (caseItem.flags?.urgent) return '🔥';
+    if (caseItem.flags?.high_risk) return '⚠️';
+    return null;
   };
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4" style={{ minHeight: '600px' }}>
-      {STATUS_COLUMNS.map((column) => {
-        const columnCases = getCasesByStatus(column.key);
-        const isDragOver = dragOverColumn === column.key;
-
-        return (
-          <div
-            key={column.key}
-            className="flex-shrink-0"
+    <div className="h-full flex flex-col">
+      {/* Search & Filter Bar */}
+      <div className="mb-4 flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: colors.textSecondary }} />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={strings.searchPlaceholder}
+            className="pl-10"
             style={{
-              width: '320px',
-              transition: 'all 0.2s ease',
+              backgroundColor: colors.inputBg,
+              borderColor: colors.borderColor,
+              color: colors.textPrimary
             }}
-            onDragOver={(e) => handleDragOver(e, column.key)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, column.key)}
-          >
-            {/* Column Header */}
-            <div
-              className="sticky top-0 z-10 p-4 rounded-t-xl mb-2"
-              style={{
-                backgroundColor: column.bgColor,
-                borderBottom: `3px solid ${column.color}`,
-              }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2"
             >
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-sm" style={{ color: column.color }}>
-                  {language === 'th' ? column.labelTh : column.label}
-                </h3>
-                <Badge
-                  style={{
-                    backgroundColor: column.color,
-                    color: '#FFFFFF',
-                    minWidth: '24px',
-                    height: '24px',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+              <X className="w-4 h-4" style={{ color: colors.textSecondary }} />
+            </button>
+          )}
+        </div>
+        
+        <select
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          className="px-4 py-2 rounded-lg border-2"
+          style={{
+            backgroundColor: colors.inputBg,
+            borderColor: colors.borderColor,
+            color: colors.textPrimary
+          }}
+        >
+          <option value="all">{strings.filterAll}</option>
+          <option value="deposit">Deposit</option>
+          <option value="early_termination">Early Termination</option>
+          <option value="damages">Damages</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      {/* Kanban Board */}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="flex-1 overflow-x-auto pb-4">
+          <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
+            {STATUS_COLUMNS.map((column) => {
+              const ColumnIcon = column.icon;
+              const columnCases = casesByStatus[column.id] || [];
+              
+              return (
+                <div
+                  key={column.id}
+                  className="flex-shrink-0"
+                  style={{ width: '320px' }}
                 >
-                  {columnCases.length}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Drop Zone */}
-            <div
-              className="space-y-3 p-2 rounded-b-xl min-h-[500px]"
-              style={{
-                backgroundColor: isDragOver ? `${column.color}10` : 'transparent',
-                border: isDragOver ? `2px dashed ${column.color}` : '2px dashed transparent',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {columnCases.map((caseItem) => {
-                const tenant = users.find(u => u.email === caseItem.user_email);
-                const assignee = users.find(u => u.email === caseItem.assignee_id);
-                const isDragging = draggedCase?.id === caseItem.id;
-
-                return (
-                  <Card
-                    key={caseItem.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, caseItem)}
-                    onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
-                    className="cursor-move hover:shadow-lg transition-all border-none"
+                  {/* Column Header */}
+                  <div
+                    className="p-3 rounded-t-xl mb-2"
                     style={{
-                      backgroundColor: colors.cardBg,
-                      opacity: isDragging ? 0.5 : 1,
-                      transform: isDragging ? 'rotate(3deg) scale(0.95)' : 'none',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                      borderRadius: '12px',
+                      backgroundColor: column.color,
                     }}
                   >
-                    <CardContent className="p-4">
-                      {/* Case Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Scale className="w-4 h-4 flex-shrink-0" style={{ color: column.color }} />
-                          <h4 className="font-bold text-sm" style={{ color: colors.textPrimary }}>
-                            {caseItem.case_number || `#${caseItem.id.slice(0, 8)}`}
-                          </h4>
-                        </div>
-                        {caseItem.flags?.urgent && (
-                          <Badge className="bg-red-100 text-red-700 text-xs">
-                            {language === 'th' ? 'ด่วน' : 'URGENT'}
-                          </Badge>
-                        )}
+                    <div className="flex items-center justify-between text-white">
+                      <div className="flex items-center gap-2">
+                        <ColumnIcon className="w-4 h-4" />
+                        <h3 className="font-bold text-sm">
+                          {language === 'th' ? column.labelTh : column.label}
+                        </h3>
                       </div>
+                      <Badge 
+                        className="bg-white/20 text-white border-white/30"
+                        style={{ fontSize: '11px' }}
+                      >
+                        {columnCases.length}
+                      </Badge>
+                    </div>
+                  </div>
 
-                      {/* Tenant */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <User className="w-3 h-3 text-slate-400" />
-                        <p className="text-xs truncate" style={{ color: colors.textSecondary }}>
-                          {tenant?.full_name || caseItem.user_email}
-                        </p>
-                      </div>
+                  {/* Droppable Area */}
+                  <Droppable droppableId={column.id}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className="rounded-b-xl p-2 min-h-[500px] transition-colors"
+                        style={{
+                          backgroundColor: snapshot.isDraggingOver 
+                            ? `${column.color}15`
+                            : colors.bg,
+                          border: `2px dashed ${snapshot.isDraggingOver ? column.color : colors.borderColor}`,
+                        }}
+                      >
+                        {columnCases.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <ColumnIcon 
+                              className="w-10 h-10 mb-2" 
+                              style={{ color: colors.textSecondary, opacity: 0.3 }} 
+                            />
+                            <p className="text-xs" style={{ color: colors.textSecondary }}>
+                              {strings.noCases}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {columnCases.map((caseItem, index) => (
+                              <Draggable
+                                key={caseItem.id}
+                                draggableId={caseItem.id}
+                                index={index}
+                              >
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    style={{
+                                      ...provided.draggableProps.style,
+                                      transform: snapshot.isDragging 
+                                        ? provided.draggableProps.style?.transform 
+                                        : 'none',
+                                    }}
+                                  >
+                                    <Card
+                                      className="cursor-pointer hover:shadow-lg transition-all border-none"
+                                      style={{
+                                        backgroundColor: colors.cardBg,
+                                        opacity: snapshot.isDragging ? 0.8 : 1,
+                                        transform: snapshot.isDragging ? 'rotate(2deg)' : 'none',
+                                      }}
+                                      onClick={() => onCaseClick ? onCaseClick(caseItem) : navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
+                                    >
+                                      <CardContent className="p-4">
+                                        {/* Drag Handle */}
+                                        <div
+                                          {...provided.dragHandleProps}
+                                          className="flex items-center justify-center mb-2 cursor-grab active:cursor-grabbing"
+                                        >
+                                          <GripVertical className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                                        </div>
 
-                      {/* Amount */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <DollarSign className="w-3 h-3 text-emerald-600" />
-                        <p className="text-sm font-bold text-emerald-600">
-                          ฿{caseItem.dispute_amount?.toLocaleString()}
-                        </p>
-                      </div>
+                                        {/* Case Number & Priority */}
+                                        <div className="flex items-center justify-between mb-3">
+                                          <span className="font-bold text-sm" style={{ color: colors.textPrimary }}>
+                                            {caseItem.case_number}
+                                          </span>
+                                          {getPriorityIndicator(caseItem) && (
+                                            <span className="text-lg">{getPriorityIndicator(caseItem)}</span>
+                                          )}
+                                        </div>
 
-                      {/* Footer */}
-                      <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: colors.borderColor }}>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-slate-400" />
-                          <span className="text-xs" style={{ color: colors.textSecondary }}>
-                            {format(new Date(caseItem.created_date), 'MMM d')}
-                          </span>
-                        </div>
-                        {assignee && (
-                          <div
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                            style={{ backgroundColor: column.color }}
-                            title={assignee.full_name}
-                          >
-                            {assignee.full_name?.charAt(0).toUpperCase()}
+                                        {/* Type Badge */}
+                                        <Badge className={`${getCaseTypeColor(caseItem.type)} mb-3 text-xs`}>
+                                          {caseItem.type}
+                                        </Badge>
+
+                                        {/* Landlord */}
+                                        {caseItem.landlord_name && (
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <User className="w-3 h-3 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                                            <p className="text-xs truncate" style={{ color: colors.textSecondary }}>
+                                              {caseItem.landlord_name}
+                                            </p>
+                                          </div>
+                                        )}
+
+                                        {/* Dispute Amount */}
+                                        {caseItem.dispute_amount > 0 && (
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <DollarSign className="w-3 h-3 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                                            <p className="text-xs font-semibold" style={{ color: '#C7A338' }}>
+                                              ฿{caseItem.dispute_amount.toLocaleString()}
+                                            </p>
+                                          </div>
+                                        )}
+
+                                        {/* Created Date */}
+                                        <div className="flex items-center gap-2 text-xs" style={{ color: colors.textSecondary }}>
+                                          <Calendar className="w-3 h-3 flex-shrink-0" />
+                                          <span>{format(new Date(caseItem.created_date), 'MMM d, yyyy')}</span>
+                                        </div>
+
+                                        {/* Summary Preview */}
+                                        {caseItem.summary && (
+                                          <p className="text-xs mt-2 line-clamp-2" style={{ color: colors.textSecondary }}>
+                                            {caseItem.summary}
+                                          </p>
+                                        )}
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
                           </div>
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-
-              {columnCases.length === 0 && (
-                <div
-                  className="p-8 text-center rounded-lg"
-                  style={{
-                    backgroundColor: `${column.color}05`,
-                    border: `1px dashed ${column.color}30`,
-                  }}
-                >
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'ไม่มีคดี' : 'No cases'}
-                  </p>
+                    )}
+                  </Droppable>
                 </div>
-              )}
-            </div>
+              );
+            })}
           </div>
-        );
-      })}
+        </div>
+      </DragDropContext>
     </div>
   );
-};
-
-export default CaseKanban;
+}

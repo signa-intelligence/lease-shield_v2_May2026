@@ -1,0 +1,299 @@
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Users,
+  Search,
+  Eye,
+  X,
+  Mail,
+  Calendar,
+  Shield,
+  FileText,
+  Wallet,
+  AlertCircle,
+  LogOut,
+  Activity
+} from "lucide-react";
+import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+
+export default function UserImpersonation({ colors, language = 'en' }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [impersonatedUser, setImpersonatedUser] = useState(null);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsersForImpersonation'],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getAllUsers');
+      return response.data?.users || [];
+    },
+  });
+
+  const { data: userStats } = useQuery({
+    queryKey: ['userStats', impersonatedUser?.email],
+    queryFn: async () => {
+      if (!impersonatedUser?.email) return null;
+      
+      const [leases, deposits, cases, documents] = await Promise.all([
+        base44.asServiceRole.entities.Lease.filter({ created_by: impersonatedUser.email }),
+        base44.asServiceRole.entities.DepositTracker.filter({ created_by: impersonatedUser.email }),
+        base44.asServiceRole.entities.Case.filter({ user_email: impersonatedUser.email }),
+        base44.asServiceRole.entities.Document.filter({ created_by: impersonatedUser.email }),
+      ]);
+      
+      return { leases, deposits, cases, documents };
+    },
+    enabled: !!impersonatedUser,
+  });
+
+  const t = {
+    en: {
+      title: "User Impersonation",
+      subtitle: "View app as any user for support & debugging",
+      searchPlaceholder: "Search by email or name...",
+      noUsers: "No users found",
+      viewAsUser: "View as User",
+      stopImpersonating: "Stop Viewing",
+      currentlyViewing: "Currently Viewing",
+      userEmail: "Email",
+      joinedOn: "Joined",
+      plan: "Plan",
+      activity: "Activity",
+      leases: "Leases",
+      deposits: "Deposits",
+      cases: "Cases",
+      documents: "Documents",
+      goToDashboard: "Go to Dashboard",
+      userTimeline: "User Timeline",
+      internalNotes: "Internal Notes",
+      quickActions: "Quick Actions",
+    },
+    th: {
+      title: "ดูในฐานะผู้ใช้",
+      subtitle: "ดูแอปในฐานะผู้ใช้รายใดก็ได้เพื่อการสนับสนุนและแก้ไขข้อบกพร่อง",
+      searchPlaceholder: "ค้นหาด้วยอีเมลหรือชื่อ...",
+      noUsers: "ไม่พบผู้ใช้",
+      viewAsUser: "ดูในฐานะผู้ใช้",
+      stopImpersonating: "หยุดดู",
+      currentlyViewing: "กำลังดูในฐานะ",
+      userEmail: "อีเมล",
+      joinedOn: "สมัครเมื่อ",
+      plan: "แผน",
+      activity: "กิจกรรม",
+      leases: "สัญญาเช่า",
+      deposits: "เงินมัดจำ",
+      cases: "คดี",
+      documents: "เอกสาร",
+      goToDashboard: "ไปที่แดชบอร์ด",
+      userTimeline: "ไทม์ไลน์ผู้ใช้",
+      internalNotes: "บันทึกภายใน",
+      quickActions: "การดำเนินการด่วน",
+    }
+  };
+
+  const strings = t[language];
+
+  const filteredUsers = allUsers.filter(u => 
+    u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleImpersonate = (user) => {
+    setImpersonatedUser(user);
+  };
+
+  const handleStopImpersonation = () => {
+    setImpersonatedUser(null);
+  };
+
+  const handleViewDashboard = () => {
+    // Store impersonation info in sessionStorage
+    sessionStorage.setItem('impersonating_user_email', impersonatedUser.email);
+    navigate(createPageUrl("Dashboard"));
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Active Impersonation Banner */}
+      {impersonatedUser && (
+        <Card className="border-none shadow-xl" style={{ 
+          backgroundColor: '#EF4444',
+          borderLeft: '6px solid #DC2626'
+        }}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-6 h-6 text-white" />
+                <div>
+                  <p className="font-bold text-white text-sm">{strings.currentlyViewing}</p>
+                  <p className="text-white/90 text-xs">{impersonatedUser.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleViewDashboard}
+                  size="sm"
+                  className="bg-white text-red-600 hover:bg-white/90"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  {strings.goToDashboard}
+                </Button>
+                <Button
+                  onClick={handleStopImpersonation}
+                  size="sm"
+                  variant="outline"
+                  className="border-white text-white hover:bg-white/20"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  {strings.stopImpersonating}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* User Stats Preview */}
+      {impersonatedUser && userStats && (
+        <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <Activity className="w-5 h-5 text-ls-forest" />
+              {strings.activity}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-3 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
+                <FileText className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                  {userStats.leases?.length || 0}
+                </p>
+                <p className="text-xs" style={{ color: colors.textSecondary }}>{strings.leases}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
+                <Wallet className="w-6 h-6 mx-auto mb-2 text-amber-600" />
+                <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                  {userStats.deposits?.length || 0}
+                </p>
+                <p className="text-xs" style={{ color: colors.textSecondary }}>{strings.deposits}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
+                <Shield className="w-6 h-6 mx-auto mb-2 text-emerald-600" />
+                <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                  {userStats.cases?.length || 0}
+                </p>
+                <p className="text-xs" style={{ color: colors.textSecondary }}>{strings.cases}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
+                <FileText className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+                <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                  {userStats.documents?.length || 0}
+                </p>
+                <p className="text-xs" style={{ color: colors.textSecondary }}>{strings.documents}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* User Search & List */}
+      <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+            <Users className="w-5 h-5 text-ls-forest" />
+            {strings.title}
+          </CardTitle>
+          <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+        </CardHeader>
+        <CardContent>
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: colors.textSecondary }} />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={strings.searchPlaceholder}
+              className="pl-10"
+              style={{
+                backgroundColor: colors.inputBg,
+                borderColor: colors.borderColor,
+                color: colors.textPrimary
+              }}
+            />
+          </div>
+
+          {/* User List */}
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {filteredUsers.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 mx-auto mb-2" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                <p style={{ color: colors.textSecondary }}>{strings.noUsers}</p>
+              </div>
+            ) : (
+              filteredUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="p-4 rounded-lg border-2 transition-all"
+                  style={{
+                    backgroundColor: impersonatedUser?.id === user.id ? '#3B82F615' : colors.fieldBg,
+                    borderColor: impersonatedUser?.id === user.id ? '#3B82F6' : colors.borderColor,
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm mb-1 truncate" style={{ color: colors.textPrimary }}>
+                        {user.full_name}
+                      </p>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Mail className="w-3 h-3 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                        <p className="text-xs truncate" style={{ color: colors.textSecondary }}>
+                          {user.email}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className="bg-blue-100 text-blue-800 text-xs">
+                          {user.plan_tier || 'free'}
+                        </Badge>
+                        <span className="text-xs" style={{ color: colors.textSecondary }}>
+                          <Calendar className="w-3 h-3 inline mr-1" />
+                          {format(new Date(user.created_date), 'MMM d, yyyy')}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => impersonatedUser?.id === user.id ? handleStopImpersonation() : handleImpersonate(user)}
+                      size="sm"
+                      variant={impersonatedUser?.id === user.id ? "destructive" : "default"}
+                      className={impersonatedUser?.id === user.id ? "" : "bg-ls-forest hover:bg-ls-forest/90"}
+                    >
+                      {impersonatedUser?.id === user.id ? (
+                        <>
+                          <X className="w-4 h-4 mr-2" />
+                          {strings.stopImpersonating}
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-4 h-4 mr-2" />
+                          {strings.viewAsUser}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
