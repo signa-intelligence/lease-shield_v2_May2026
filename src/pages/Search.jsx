@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search as SearchIcon, FileText, Shield, Wallet, Scale, Wrench, Filter, X } from "lucide-react";
+import { Search as SearchIcon, FileText, Shield, Wallet, Scale, Wrench, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -255,13 +255,12 @@ export default function Search() {
       });
     }
 
-    // Sort by match score (highest first)
     return results.sort((a, b) => b.matchScore - a.matchScore);
-  }, [searchQuery, filterType, leases, deposits, cases, documents, maintenance, strings, language]);
+  }, [searchQuery, filterType, leases, deposits, cases, documents, maintenance, strings]);
 
   const isLoading = leasesLoading || depositsLoading || casesLoading || documentsLoading || maintenanceLoading;
 
-  const getStatusBadge = (status, type) => {
+  const getStatusBadge = (status) => {
     const statusMap = {
       scanned: { bg: '#ECFDF5', text: '#059669', label: strings.scanned },
       uploaded: { bg: '#FEF3C7', text: '#D97706', label: strings.uploaded },
@@ -285,7 +284,6 @@ export default function Search() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <div style={{
@@ -308,7 +306,6 @@ export default function Search() {
           </div>
         </div>
 
-        {/* Search Bar with Debounce */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardContent className="p-4">
             <DebouncedSearch
@@ -322,7 +319,6 @@ export default function Search() {
           </CardContent>
         </Card>
 
-        {/* Filters */}
         <div className="mb-6 flex items-center gap-3">
           <Filter className="w-5 h-5" style={{ color: colors.textSecondary }} />
           <Select value={filterType} onValueChange={setFilterType}>
@@ -349,7 +345,6 @@ export default function Search() {
           )}
         </div>
 
-        {/* Results */}
         {isLoading ? (
           <SkeletonLoader variant="card" count={5} colors={colors} />
         ) : searchResults.length === 0 ? (
@@ -388,7 +383,7 @@ export default function Search() {
                           <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
                             {result.title}
                           </h3>
-                          {getStatusBadge(result.status, result.type)}
+                          {getStatusBadge(result.status)}
                         </div>
                         
                         <p className="text-sm mb-2" style={{ color: colors.textSecondary }}>
