@@ -26,6 +26,7 @@ import BottomSheet from "../components/shared/BottomSheet";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import MobileFormInput from "../components/shared/MobileFormInput";
 import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
+import LazyImage from "../components/shared/LazyImage";
 
 export default function PropertyTracker() {
   const navigate = useNavigate();
@@ -1310,11 +1311,12 @@ export default function PropertyTracker() {
                             <div className="grid grid-cols-3 gap-2">
                               {photoPreviews.map((preview, index) => (
                                 <div key={index} className="relative group">
-                                  <img
+                                  <LazyImage
                                     src={preview}
                                     alt={`Preview ${index + 1}`}
                                     className="w-full h-24 object-cover rounded-lg border-2"
                                     style={{ borderColor: colors.borderColor }}
+                                    loadingColor="#F59E0B"
                                   />
                                   <button
                                     type="button"
@@ -1496,12 +1498,13 @@ export default function PropertyTracker() {
                                 <div className="mt-3 mb-2">
                                   <div className="grid grid-cols-4 gap-2">
                                     {request.photo_urls.map((url, index) => (
-                                      <img
+                                      <LazyImage
                                         key={index}
                                         src={url}
                                         alt={`Issue ${index + 1}`}
-                                        className="w-full h-20 object-cover rounded-lg border"
-                                        style={{ borderColor: colors.borderColor, cursor: 'pointer' }}
+                                        className="w-full h-20 object-cover rounded-lg border cursor-pointer"
+                                        style={{ borderColor: colors.borderColor }}
+                                        loadingColor="#F59E0B"
                                         onClick={() => { haptic.light(); window.open(url, '_blank')}}
                                       />
                                     ))}
