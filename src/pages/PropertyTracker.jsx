@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus, 
   Edit2, Save, X, Wrench, AlertCircle, CheckCircle2, Clock, 
-  DollarSign, ArrowLeft, Shield
+  DollarSign, ArrowLeft, Shield, Camera, Image as ImageIcon, Loader2
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +30,9 @@ export default function PropertyTracker() {
   const [editingDeposit, setEditingDeposit] = useState(false);
   const [editingRent, setEditingRent] = useState(false);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [photoFiles, setPhotoFiles] = useState([]);
+  const [photoPreviews, setPhotoPreviews] = useState([]);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -100,6 +104,8 @@ export default function PropertyTracker() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       setShowAddMaintenance(false);
+      setPhotoFiles([]);
+      setPhotoPreviews([]);
       setMaintenanceForm({
         issue_title: '',
         description: '',
@@ -159,7 +165,13 @@ export default function PropertyTracker() {
       reportedDate: "Reported Date",
       noMaintenance: "No maintenance requests",
       status: "Status",
-      back: "Back"
+      back: "Back",
+      addPhotos: "Add Photos",
+      takePhoto: "Take Photo",
+      chooseFiles: "Choose Files",
+      uploadingPhotos: "Uploading photos...",
+      photosAdded: "photo(s) added",
+      removePhoto: "Remove",
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -195,7 +207,13 @@ export default function PropertyTracker() {
       reportedDate: "วันที่รายงาน",
       noMaintenance: "ไม่มีคำขอซ่อมบำรุง",
       status: "สถานะ",
-      back: "กลับ"
+      back: "กลับ",
+      addPhotos: "เพิ่มรูปภาพ",
+      takePhoto: "ถ่ายรูป",
+      chooseFiles: "เลือกไฟล์",
+      uploadingPhotos: "กำลังอัปโหลดรูปภาพ...",
+      photosAdded: "รูปภาพที่เพิ่ม",
+      removePhoto: "ลบ",
     }
   };
 
@@ -206,6 +224,28 @@ export default function PropertyTracker() {
       ...prev,
       [section]: !prev[section]
     }));
+  };
+
+  const handlePhotoSelection = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    // Add to photo files array
+    setPhotoFiles(prev => [...prev, ...files]);
+
+    // Create previews
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreviews(prev => [...prev, reader.result]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemovePhoto = (index) => {
+    setPhotoFiles(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDepositSubmit = () => {
@@ -249,8 +289,38 @@ export default function PropertyTracker() {
     }
   };
 
-  const handleMaintenanceSubmit = () => {
-    createMaintenanceMutation.mutate(maintenanceForm);
+  const handleMaintenanceSubmit = async () => {
+    try {
+      let photoUrls = [];
+
+      // Upload photos if any
+      if (photoFiles.length > 0) {
+        setUploadingPhotos(true);
+        
+        const uploadPromises = photoFiles.map(file => 
+          base44.integrations.Core.UploadFile({ file })
+        );
+        
+        const uploadResults = await Promise.all(uploadPromises);
+        photoUrls = uploadResults.map(result => result.file_url);
+      }
+
+      // Create maintenance request with photo URLs
+      const maintenanceData = {
+        ...maintenanceForm,
+        photo_urls: photoUrls
+      };
+
+      await createMaintenanceMutation.mutateAsync(maintenanceData);
+      
+      setUploadingPhotos(false);
+    } catch (error) {
+      console.error('Failed to create maintenance request:', error);
+      setUploadingPhotos(false);
+      alert(language === 'th' 
+        ? 'ไม่สามารถสร้างคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง' 
+        : 'Failed to create maintenance request. Please try again.');
+    }
   };
 
   const deposit = deposits[0];
@@ -664,6 +734,89 @@ export default function PropertyTracker() {
                         style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
                       />
                     </div>
+
+                    {/* Photo Upload Section */}
+                    <div>
+                      <Label style={{ color: colors.textPrimary }}>{strings.addPhotos}</Label>
+                      <div className="mt-2 space-y-3">
+                        {/* Photo Upload Buttons */}
+                        <div className="flex gap-2 flex-wrap">
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              multiple
+                              onChange={handlePhotoSelection}
+                              className="hidden"
+                            />
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all"
+                              style={{
+                                backgroundColor: colors.inputBg,
+                                borderColor: colors.borderColor,
+                                color: colors.textPrimary
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
+                              onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
+                            >
+                              <Camera className="w-4 h-4" />
+                              <span className="text-sm font-semibold">{strings.takePhoto}</span>
+                            </div>
+                          </label>
+
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={handlePhotoSelection}
+                              className="hidden"
+                            />
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all"
+                              style={{
+                                backgroundColor: colors.inputBg,
+                                borderColor: colors.borderColor,
+                                color: colors.textPrimary
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
+                              onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
+                            >
+                              <ImageIcon className="w-4 h-4" />
+                              <span className="text-sm font-semibold">{strings.chooseFiles}</span>
+                            </div>
+                          </label>
+                        </div>
+
+                        {/* Photo Previews */}
+                        {photoPreviews.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                              {photoPreviews.length} {strings.photosAdded}
+                            </p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {photoPreviews.map((preview, index) => (
+                                <div key={index} className="relative group">
+                                  <img
+                                    src={preview}
+                                    alt={`Preview ${index + 1}`}
+                                    className="w-full h-24 object-cover rounded-lg border-2"
+                                    style={{ borderColor: colors.borderColor }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemovePhoto(index)}
+                                    className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="grid md:grid-cols-2 gap-3">
                       <div>
                         <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
@@ -698,13 +851,34 @@ export default function PropertyTracker() {
                       </div>
                     </div>
                     <div className="flex gap-2 justify-end">
-                      <Button variant="outline" onClick={() => setShowAddMaintenance(false)}>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowAddMaintenance(false);
+                          setPhotoFiles([]);
+                          setPhotoPreviews([]);
+                        }}
+                        disabled={uploadingPhotos}
+                      >
                         <X className="w-4 h-4 mr-2" />
                         {strings.cancel}
                       </Button>
-                      <Button onClick={handleMaintenanceSubmit} className="bg-orange-600 hover:bg-orange-700">
-                        <Save className="w-4 h-4 mr-2" />
-                        {strings.save}
+                      <Button 
+                        onClick={handleMaintenanceSubmit} 
+                        className="bg-orange-600 hover:bg-orange-700"
+                        disabled={uploadingPhotos}
+                      >
+                        {uploadingPhotos ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            {strings.uploadingPhotos}
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4 mr-2" />
+                            {strings.save}
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -729,10 +903,32 @@ export default function PropertyTracker() {
                           {request.status}
                         </Badge>
                       </div>
+                      
+                      {/* Show photos if available */}
+                      {request.photo_urls && request.photo_urls.length > 0 && (
+                        <div className="mt-3 mb-2">
+                          <div className="grid grid-cols-4 gap-2">
+                            {request.photo_urls.map((url, index) => (
+                              <img
+                                key={index}
+                                src={url}
+                                alt={`Issue ${index + 1}`}
+                                className="w-full h-20 object-cover rounded-lg border"
+                                style={{ borderColor: colors.borderColor, cursor: 'pointer' }}
+                                onClick={() => window.open(url, '_blank')}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="flex items-center gap-4 text-xs" style={{ color: colors.textSecondary }}>
                         <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
                         <span>🏷️ {request.category}</span>
                         <span>⚡ {request.priority}</span>
+                        {request.photo_urls && request.photo_urls.length > 0 && (
+                          <span>📸 {request.photo_urls.length} {strings.photosAdded}</span>
+                        )}
                       </div>
                     </div>
                   ))}
