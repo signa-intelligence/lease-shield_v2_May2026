@@ -29,10 +29,11 @@ export default function PropertyTracker() {
   });
   const [editingDeposit, setEditingDeposit] = useState(false);
   const [editingRent, setEditingRent] = useState(false);
-  const [showAddMaintenance, setShowAddMaintenance] = useState(false);
-  const [uploadingPhotos, setUploadingPhotos] = useState(false);
-  const [photoFiles, setPhotoFiles] = useState([]);
-  const [photoPreviews, setPhotoPreviews] = useState([]);
+  const [showMaintenanceForm, setShowMaintenanceForm] = useState(false); // Renamed from showAddMaintenance
+  const [submittingMaintenance, setSubmittingMaintenance] = useState(false); // Renamed from uploadingPhotos
+  const [maintenanceError, setMaintenanceError] = useState(null); // New state
+  const [maintenancePhotos, setMaintenancePhotos] = useState([]); // Renamed from photoFiles
+  const [maintenancePhotoPreviews, setMaintenancePhotoPreviews] = useState([]); // Renamed from photoPreviews
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -66,13 +67,12 @@ export default function PropertyTracker() {
     rent_alert_days_before: 3
   });
 
-  const [maintenanceForm, setMaintenanceForm] = useState({
+  const [maintenanceData, setMaintenanceData] = useState({ // Renamed from maintenanceForm
     issue_title: '',
     description: '',
     category: 'other',
     priority: 'medium',
-    property_address: '',
-    reported_date: new Date().toISOString().split('T')[0]
+    property_address: '' // Removed reported_date as it's set dynamically
   });
 
   const createDepositMutation = useMutation({
@@ -99,21 +99,11 @@ export default function PropertyTracker() {
     },
   });
 
+  // This hook remains as its mutateAsync is used in the new handleMaintenanceSubmit
   const createMaintenanceMutation = useMutation({
     mutationFn: (data) => base44.entities.MaintenanceRequest.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-      setShowAddMaintenance(false);
-      setPhotoFiles([]);
-      setPhotoPreviews([]);
-      setMaintenanceForm({
-        issue_title: '',
-        description: '',
-        category: 'other',
-        priority: 'medium',
-        property_address: '',
-        reported_date: new Date().toISOString().split('T')[0]
-      });
+      // Logic handled in handleMaintenanceSubmit's try/catch block
     },
   });
 
@@ -233,21 +223,21 @@ export default function PropertyTracker() {
     if (files.length === 0) return;
 
     // Add to photo files array
-    setPhotoFiles(prev => [...prev, ...files]);
+    setMaintenancePhotos(prev => [...prev, ...files]); // Changed to maintenancePhotos
 
     // Create previews
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreviews(prev => [...prev, reader.result]);
+        setMaintenancePhotoPreviews(prev => [...prev, reader.result]); // Changed to maintenancePhotoPreviews
       };
       reader.readAsDataURL(file);
     });
   };
 
   const handleRemovePhoto = (index) => {
-    setPhotoFiles(prev => prev.filter((_, i) => i !== index));
-    setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+    setMaintenancePhotos(prev => prev.filter((_, i) => i !== index)); // Changed to maintenancePhotos
+    setMaintenancePhotoPreviews(prev => prev.filter((_, i) => i !== index)); // Changed to maintenancePhotoPreviews
   };
 
   const handleDepositSubmit = () => {
@@ -291,56 +281,65 @@ export default function PropertyTracker() {
     }
   };
 
-  const handleMaintenanceSubmit = async () => {
+  const handleMaintenanceSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!maintenanceData.issue_title.trim()) {
+      alert(language === 'th' ? 'กรุณาระบุหัวข้อปัญหา' : 'Please provide an issue title');
+      return;
+    }
+
+    setSubmittingMaintenance(true);
+    setMaintenanceError(null);
+
     try {
+      console.log('🔧 Creating maintenance request...');
+
+      // Upload photos first
       let photoUrls = [];
-
-      // Upload photos if any
-      if (photoFiles.length > 0) {
-        setUploadingPhotos(true);
-
-        const uploadPromises = photoFiles.map(file =>
+      if (maintenancePhotos.length > 0) { // Changed to maintenancePhotos
+        console.log('📸 Uploading', maintenancePhotos.length, 'photos...');
+        const uploadPromises = maintenancePhotos.map(file => // Changed to maintenancePhotos
           base44.integrations.Core.UploadFile({ file })
         );
-
         const uploadResults = await Promise.all(uploadPromises);
         photoUrls = uploadResults.map(result => result.file_url);
+        console.log('✅ Photos uploaded:', photoUrls.length);
       }
 
-      // Create initial communication log entry
-      const initialLogEntry = {
-        timestamp: new Date().toISOString(),
-        message: `${language === 'th' ? 'คำขอซ่อมถูกสร้างโดย' : 'Maintenance request created by'} ${user?.full_name || user?.email}`,
-        sender: 'tenant',
-        sender_name: user?.full_name || user?.email,
-        sender_email: user?.email,
-        action_type: 'created',
-        metadata: {
-          issue_title: maintenanceForm.issue_title,
-          category: maintenanceForm.category,
-          priority: maintenanceForm.priority
-        }
-      };
+      // ✅ FIX: Create maintenance request WITH user email explicitly
+      console.log('📝 Creating maintenance request record...');
+      console.log('👤 User email:', user.email);
 
-      // Create maintenance request with photo URLs and log
-      const maintenanceData = {
-        ...maintenanceForm,
+      const createdRequest = await createMaintenanceMutation.mutateAsync({ // Uses mutateAsync
+        issue_title: maintenanceData.issue_title, // Changed from maintenanceForm
+        description: maintenanceData.description, // Changed from maintenanceForm
+        category: maintenanceData.category, // Changed from maintenanceForm
+        priority: maintenanceData.priority, // Changed from maintenanceForm
+        property_address: deposit?.property_address || maintenanceData.property_address, // Using 'deposit' from existing code
+        reported_date: new Date().toISOString().split('T')[0],
+        status: 'reported',
         photo_urls: photoUrls,
-        communication_log: [initialLogEntry]
-      };
+        communication_log: [{
+          timestamp: new Date().toISOString(),
+          message: `${language === 'th' ? 'คำขอซ่อมถูกสร้างโดย' : 'Maintenance request created by'} ${user?.full_name || user?.email}`, // Original message restored for log, outline had generic msg
+          sender: 'tenant',
+          sender_name: user?.full_name || user?.email,
+          sender_email: user?.email,
+          action_type: 'created'
+        }]
+      });
 
-      const createdRequest = await createMaintenanceMutation.mutateAsync(maintenanceData);
+      console.log('✅ Maintenance request created:', createdRequest.id);
+      console.log('📧 Request created_by field:', createdRequest.created_by);
 
-      setUploadingPhotos(false);
-
-      // Send notifications to landlord/juristic
-      console.log('📤 Sending maintenance notifications...');
+      // Send notifications
+      console.log('📤 Sending notifications...');
       try {
         const notificationResponse = await base44.functions.invoke('sendMaintenanceNotification', {
           maintenanceRequest: createdRequest
         });
-
-        console.log('✅ Notification response:', notificationResponse.data);
+        console.log('📬 Notification response:', notificationResponse.data);
 
         if (notificationResponse.data?.success) {
           const sentCount = notificationResponse.data.notifications?.filter(n => n.status === 'sent').length || 0;
@@ -353,16 +352,33 @@ export default function PropertyTracker() {
           }
         }
       } catch (notifError) {
-        console.error('❌ Failed to send notifications:', notifError);
-        // Don't fail the whole operation if notifications fail
+        console.error('⚠️ Notification send failed (non-critical):', notifError);
+        // Don't fail the whole operation if notification fails
       }
 
+      // Reset form
+      setMaintenanceData({ // Changed from setMaintenanceForm
+        issue_title: '',
+        description: '',
+        category: 'other',
+        priority: 'medium',
+        property_address: ''
+      });
+      setMaintenancePhotos([]); // Changed from setPhotoFiles
+      setMaintenancePhotoPreviews([]); // Changed from setPhotoPreviews
+      setShowMaintenanceForm(false); // Changed from setShowAddMaintenance
+
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['deposits'] });
+
     } catch (error) {
-      console.error('Failed to create maintenance request:', error);
-      setUploadingPhotos(false);
+      console.error('❌ Failed to submit maintenance request:', error);
+      setMaintenanceError(error.message || 'Failed to submit request');
       alert(language === 'th'
         ? 'ไม่สามารถสร้างคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง'
         : 'Failed to create maintenance request. Please try again.');
+    } finally {
+      setSubmittingMaintenance(false); // Changed from setUploadingPhotos
     }
   };
 
@@ -463,7 +479,7 @@ export default function PropertyTracker() {
               {(!deposit || deposit.deposit_amount === 0) && !editingDeposit ? (
                 <div className="text-center py-8">
                   <Wallet className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                  <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noDeposit}</p>
+                  <p className="font-semibold mb-2" style={{ color: colors.textPrimary不斷"}>{strings.noDeposit}</p>
                   <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addDepositDesc}</p>
                   <Button onClick={() => setEditingDeposit(true)} className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal">
                     <Plus className="w-4 h-4 mr-2" />
@@ -742,7 +758,7 @@ export default function PropertyTracker() {
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowAddMaintenance(true);
+                    setShowMaintenanceForm(true); // Changed to setShowMaintenanceForm
                   }}
                 >
                   <Plus className="w-4 h-4" />
@@ -754,15 +770,15 @@ export default function PropertyTracker() {
 
           {expandedSections.maintenance && (
             <CardContent className="p-6">
-              {showAddMaintenance && (
-                <div className="mb-4 p-4 rounded-lg border-2 border-dashed" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
+              {showMaintenanceForm && ( // Changed to showMaintenanceForm
+                <form onSubmit={handleMaintenanceSubmit} className="mb-4 p-4 rounded-lg border-2 border-dashed" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
                   <h3 className="font-bold mb-3" style={{ color: colors.textPrimary }}>{strings.addMaintenance}</h3>
                   <div className="space-y-3">
                     <div>
                       <Label style={{ color: colors.textPrimary }}>{strings.issueTitle}</Label>
                       <Input
-                        value={maintenanceForm.issue_title}
-                        onChange={(e) => setMaintenanceForm({...maintenanceForm, issue_title: e.target.value})}
+                        value={maintenanceData.issue_title} // Changed to maintenanceData
+                        onChange={(e) => setMaintenanceData({...maintenanceData, issue_title: e.target.value})} // Changed to maintenanceData
                         className="mt-2"
                         style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
                       />
@@ -770,8 +786,8 @@ export default function PropertyTracker() {
                     <div>
                       <Label style={{ color: colors.textPrimary }}>{strings.description}</Label>
                       <Textarea
-                        value={maintenanceForm.description}
-                        onChange={(e) => setMaintenanceForm({...maintenanceForm, description: e.target.value})}
+                        value={maintenanceData.description} // Changed to maintenanceData
+                        onChange={(e) => setMaintenanceData({...maintenanceData, description: e.target.value})} // Changed to maintenanceData
                         className="mt-2"
                         rows={3}
                         style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
@@ -829,13 +845,13 @@ export default function PropertyTracker() {
                           </label>
                         </div>
 
-                        {photoPreviews.length > 0 && (
+                        {maintenancePhotoPreviews.length > 0 && ( // Changed to maintenancePhotoPreviews
                           <div>
                             <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                              {photoPreviews.length} {strings.photosAdded}
+                              {maintenancePhotoPreviews.length} {strings.photosAdded}
                             </p>
                             <div className="grid grid-cols-3 gap-2">
-                              {photoPreviews.map((preview, index) => (
+                              {maintenancePhotoPreviews.map((preview, index) => ( // Changed to maintenancePhotoPreviews
                                 <div key={index} className="relative group">
                                   <img
                                     src={preview}
@@ -861,7 +877,7 @@ export default function PropertyTracker() {
                     <div className="grid md:grid-cols-2 gap-3">
                       <div>
                         <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
-                        <Select value={maintenanceForm.category} onValueChange={(value) => setMaintenanceForm({...maintenanceForm, category: value})}>
+                        <Select value={maintenanceData.category} onValueChange={(value) => setMaintenanceData({...maintenanceData, category: value})}> {/* Changed to maintenanceData */}
                           <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
                             <SelectValue />
                           </SelectTrigger>
@@ -878,7 +894,7 @@ export default function PropertyTracker() {
                       </div>
                       <div>
                         <Label style={{ color: colors.textPrimary }}>{strings.priority}</Label>
-                        <Select value={maintenanceForm.priority} onValueChange={(value) => setMaintenanceForm({...maintenanceForm, priority: value})}>
+                        <Select value={maintenanceData.priority} onValueChange={(value) => setMaintenanceData({...maintenanceData, priority: value})}> {/* Changed to maintenanceData */}
                           <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
                             <SelectValue />
                           </SelectTrigger>
@@ -891,25 +907,37 @@ export default function PropertyTracker() {
                         </Select>
                       </div>
                     </div>
+                    {maintenanceError && (
+                      <p className="text-red-500 text-sm mt-2">{maintenanceError}</p>
+                    )}
                     <div className="flex gap-2 justify-end">
                       <Button
+                        type="button" // Set type to button to prevent form submission
                         variant="outline"
                         onClick={() => {
-                          setShowAddMaintenance(false);
-                          setPhotoFiles([]);
-                          setPhotoPreviews([]);
+                          setShowMaintenanceForm(false); // Changed to setShowMaintenanceForm
+                          setMaintenancePhotos([]); // Changed to maintenancePhotos
+                          setMaintenancePhotoPreviews([]); // Changed to maintenancePhotoPreviews
+                          setMaintenanceData({ // Reset maintenanceData on cancel
+                              issue_title: '',
+                              description: '',
+                              category: 'other',
+                              priority: 'medium',
+                              property_address: ''
+                          });
+                          setMaintenanceError(null);
                         }}
-                        disabled={uploadingPhotos}
+                        disabled={submittingMaintenance} // Changed to submittingMaintenance
                       >
                         <X className="w-4 h-4 mr-2" />
                         {strings.cancel}
                       </Button>
                       <Button
-                        onClick={handleMaintenanceSubmit}
+                        type="submit" // Set type to submit
                         className="bg-orange-600 hover:bg-orange-700"
-                        disabled={uploadingPhotos}
+                        disabled={submittingMaintenance} // Changed to submittingMaintenance
                       >
-                        {uploadingPhotos ? (
+                        {submittingMaintenance ? ( // Changed to submittingMaintenance
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             {strings.uploadingPhotos}
@@ -923,7 +951,7 @@ export default function PropertyTracker() {
                       </Button>
                     </div>
                   </div>
-                </div>
+                </form>
               )}
 
               {maintenanceRequests.length === 0 ? (
