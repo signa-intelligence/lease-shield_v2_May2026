@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -288,8 +289,14 @@ export default function PropertyTracker() {
   };
 
   const handleMaintenanceSubmit = async () => {
-    console.log('🔧 Creating maintenance request...');
-    console.log('👤 User email:', user?.email);
+    console.log('🔧 === MAINTENANCE REQUEST CREATION START ===');
+    console.log('👤 Current user:', user?.email);
+    
+    if (!user?.email) {
+      console.error('❌ No user email found!');
+      alert('Error: Unable to identify user. Please try refreshing the page.');
+      return;
+    }
     
     try {
       let photoUrls = [];
@@ -321,16 +328,24 @@ export default function PropertyTracker() {
         }
       };
 
+      // ========================================
+      // CRITICAL FIX: Explicitly set created_by
+      // ========================================
       const maintenanceData = {
         ...maintenanceForm,
+        created_by: user.email,  // 🔥 EXPLICITLY SET THIS!
         photo_urls: photoUrls,
         communication_log: [initialLogEntry]
       };
 
-      console.log('📝 Creating maintenance request with data:', { ...maintenanceData, photo_urls: photoUrls.length + ' photos' });
+      console.log('📝 Creating maintenance request with explicit created_by:', user.email);
+      console.log('📦 Data to send:', { ...maintenanceData, photo_urls: photoUrls.length + ' photos' });
+      
       const createdRequest = await createMaintenanceMutation.mutateAsync(maintenanceData);
-      console.log('✅ Maintenance request created:', createdRequest.id);
-      console.log('📧 Request created_by field:', createdRequest.created_by);
+      
+      console.log('✅ Maintenance request created successfully!');
+      console.log('🆔 Request ID:', createdRequest.id);
+      console.log('📧 created_by field:', createdRequest.created_by);
 
       setUploadingPhotos(false);
 
@@ -357,7 +372,7 @@ export default function PropertyTracker() {
       }
 
     } catch (error) {
-      console.error('Failed to create maintenance request:', error);
+      console.error('❌ Failed to create maintenance request:', error);
       setUploadingPhotos(false);
       alert(language === 'th'
         ? 'ไม่สามารถสร้างคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง'
