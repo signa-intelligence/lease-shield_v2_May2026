@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Settings, Mail, Calendar, BarChart3 } from "lucide-react";
@@ -28,14 +28,14 @@ import SyncIndicator from "../components/shared/SyncIndicator";
 
 
 function DashboardContent() {
-  const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
-  const [focusMode, setFocusMode] = React.useState(false);
-  const [expandedSections, setExpandedSections] = React.useState({
+  const [showImprovementDialog, setShowImprovementDialog] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
     stats: true,
     quickActions: true,
     content: true,
   });
-  const [showOnboarding, setShowOnboarding] = React.useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -96,7 +96,7 @@ function DashboardContent() {
   });
 
   // Prefetch critical data on mount
-  React.useEffect(() => {
+  useEffect(() => {
     // This prefetchCriticalData call was removed as createOfflineQuery no longer exists.
     // If prefetching logic is still desired, it needs to be reimplemented without createOfflineQuery.
     // For now, the prefetch effect is removed entirely as per the prompt's implied change.
@@ -109,7 +109,7 @@ function DashboardContent() {
   };
 
   // Auto-refresh logic
-  React.useEffect(() => {
+  useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const subscriptionStatus = urlParams.get('subscription');
     
@@ -133,7 +133,7 @@ function DashboardContent() {
     }
   }, [queryClient, user, toast]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     let intervalId;
     
     const handleFocus = () => {
@@ -181,9 +181,9 @@ function DashboardContent() {
   const isDarkMode = user?.theme === 'dark';
 
   // Client-side overdue deposit checker
-  const [checkingOverdue, setCheckingOverdue] = React.useState(false);
+  const [checkingOverdue, setCheckingOverdue] = useState(false);
   
-  const checkAndNotifyOverdue = React.useCallback(async () => {
+  const checkAndNotifyOverdue = useCallback(async () => {
     if (!deposits || deposits.length === 0) return;
     
     setCheckingOverdue(true);
@@ -285,7 +285,7 @@ function DashboardContent() {
   const [testingEmail, setTestingEmail] = useState(false);
 
   // Simple browser-based Flex test
-  const [testingBrowserFlex, setTestingBrowserFlex] = React.useState(false);
+  const [testingBrowserFlex, setTestingBrowserFlex] = useState(false);
   
   const testFlexFromBrowser = async () => {
     setTestingBrowserFlex(true);
@@ -371,7 +371,7 @@ function DashboardContent() {
     }
   };
 
-  const [testingRent, setTestingRent] = React.useState(false);
+  const [testingRent, setTestingRent] = useState(false);
 
   const testRentReminder = async () => {
     setTestingRent(true);
@@ -946,7 +946,7 @@ function DashboardContent() {
   const hasNoData = leases.length === 0 && deposits.length === 0 && documents.length === 0 && maintenanceRequests.length === 0;
   const shouldShowOnboardingChecklist = !user?.onboarding_completed && (hasNoData || !onboardingProgress.allTasksComplete);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (user && !user.onboarding_completed) {
       const hasAnyActivity = leases.length > 0 || deposits.length > 0 || documents.length > 0 || cases.length > 0;
       
@@ -1651,10 +1651,10 @@ function DashboardContent() {
                             icon={Wrench}
                             scoreColor="#F59E0B"
                             miniStats={activeMaintenanceCount > 0 ? [
-                              {
-                                label: language === 'th' ? 'เสร็จ' : 'Done',
-                                value: maintenanceRequests.filter(r => r.status === 'completed').length
-                              }
+                            {
+                              label: language === 'th' ? 'เสร็จ' : 'Done',
+                              value: maintenanceRequests.filter(r => r.status === 'completed').length
+                            }
                             ] : undefined}
                             actionButton={activeMaintenanceCount > 0 ? {
                               label: language === 'th' ? 'ดู' : 'View',
