@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, Loader2, AlertTriangle, Wrench, Clock, MessageSquare, Camera, Receipt, X, ImageIcon, User, Send, Image } from "lucide-react";
+import { CheckCircle2, Loader2, AlertTriangle, Wrench, Clock, MessageSquare, Camera, Receipt, X, ImageIcon } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
@@ -20,9 +19,6 @@ export default function AcknowledgeMaintenance() {
   const [completionPhotos, setCompletionPhotos] = useState([]);
   const [billPhotos, setBillPhotos] = useState([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
-  const [chatMessage, setChatMessage] = useState('');
-  const [chatPhotos, setChatPhotos] = useState([]);
-  const [sendingChat, setSendingChat] = useState(false);
 
   useEffect(() => {
     loadMaintenanceRequest();
@@ -51,6 +47,7 @@ export default function AcknowledgeMaintenance() {
         } else {
           setNewStatus(response.data.maintenanceRequest.status);
         }
+        // Load existing photos if any
         setCompletionPhotos(response.data.maintenanceRequest.completion_photo_urls || []);
         setBillPhotos(response.data.maintenanceRequest.bill_photo_urls || []);
         setActualCost(response.data.maintenanceRequest.actual_cost?.toString() || '');
@@ -84,8 +81,8 @@ export default function AcknowledgeMaintenance() {
         setBillPhotos(prev => [...prev, ...photoUrls]);
       }
     } catch (error) {
-      console.error('Photo/video upload failed:', error);
-      alert('Failed to upload files. Please try again.');
+      console.error('Photo upload failed:', error);
+      alert('Failed to upload photos. Please try again.');
     } finally {
       setUploadingPhotos(false);
       e.target.value = '';
@@ -126,62 +123,6 @@ export default function AcknowledgeMaintenance() {
       setError(err.message || 'Failed to update');
     } finally {
       setUpdating(false);
-    }
-  };
-
-  const handleChatPhotoUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    setUploadingPhotos(true);
-    try {
-      const uploadPromises = files.map(file => 
-        base44.integrations.Core.UploadFile({ file })
-      );
-      
-      const uploadResults = await Promise.all(uploadPromises);
-      const photoUrls = uploadResults.map(result => result.file_url);
-      
-      setChatPhotos(prev => [...prev, ...photoUrls]);
-    } catch (error) {
-      console.error('Chat media upload failed:', error);
-      alert('Failed to upload files. Please try again.');
-    } finally {
-      setUploadingPhotos(false);
-      e.target.value = '';
-    }
-  };
-
-  const handleRemoveChatPhoto = (index) => {
-    setChatPhotos(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSendChatMessage = async () => {
-    if (!chatMessage.trim() && chatPhotos.length === 0) return;
-
-    setSendingChat(true);
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-
-      const response = await base44.functions.invoke('addMaintenanceComment', {
-        maintenanceId: maintenanceRequest.id,
-        message: chatMessage.trim() || '[Photo sent]',
-        photoUrls: chatPhotos,
-        senderType: 'Landlord/Juristic',
-        token: token
-      });
-
-      if (response.data?.success) {
-        await loadMaintenanceRequest();
-        setChatMessage('');
-        setChatPhotos([]);
-      }
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      alert('Failed to send message. Please try again.');
-    } finally {
-      setSendingChat(false);
     }
   };
 
@@ -323,165 +264,7 @@ export default function AcknowledgeMaintenance() {
           </CardContent>
         </Card>
 
-        {maintenanceRequest?.communication_log && (
-          <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
-            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <MessageSquare className="w-5 h-5 text-ls-forest" />
-                Communication History
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {maintenanceRequest.communication_log.length > 0 && (
-                <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
-                  {maintenanceRequest.communication_log.map((entry, index) => {
-                    const isTenant = entry.sender?.toLowerCase().includes('tenant');
-                    
-                    return (
-                      <div
-                        key={index}
-                        className="p-4 rounded-lg border-l-4"
-                        style={{
-                          backgroundColor: isTenant ? '#EFF6FF' : '#FEF3C7',
-                          borderLeftColor: isTenant ? '#3B82F6' : '#F59E0B'
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4" style={{ color: isTenant ? '#3B82F6' : '#F59E0B' }} />
-                            <span className="font-bold text-sm" style={{ color: colors.textPrimary }}>
-                              {entry.sender}
-                            </span>
-                          </div>
-                          <span className="text-xs" style={{ color: colors.textSecondary }}>
-                            {new Date(entry.date).toLocaleString()}
-                          </span>
-                        </div>
-                        <p className="text-sm" style={{ color: colors.textPrimary }}>
-                          {entry.message}
-                        </p>
-                        {entry.photo_urls && entry.photo_urls.length > 0 && (
-                          <div className="grid grid-cols-3 gap-1 mt-2">
-                            {entry.photo_urls.map((url, photoIndex) => {
-                              const isVideo = url.match(/\.(mp4|mov|avi|webm)$/i);
-                              return isVideo ? (
-                                <video
-                                  key={photoIndex}
-                                  src={url}
-                                  className="w-full h-16 object-cover rounded cursor-pointer hover:opacity-80"
-                                  onClick={() => window.open(url, '_blank')}
-                                  controls
-                                />
-                              ) : (
-                                <img
-                                  key={photoIndex}
-                                  src={url}
-                                  alt={`Media ${photoIndex + 1}`}
-                                  className="w-full h-16 object-cover rounded cursor-pointer hover:opacity-80"
-                                  onClick={() => window.open(url, '_blank')}
-                                />
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="border-t pt-4" style={{ borderColor: colors.borderColor }}>
-                {chatPhotos.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2 mb-3">
-                    {chatPhotos.map((url, index) => {
-                      const isVideo = url.match(/\.(mp4|mov|avi|webm)$/i);
-                      return (
-                        <div key={index} className="relative group">
-                          {isVideo ? (
-                            <video
-                              src={url}
-                              className="w-full h-16 object-cover rounded"
-                              controls={false}
-                            />
-                          ) : (
-                            <img
-                              src={url}
-                              alt={`Attachment ${index + 1}`}
-                              className="w-full h-16 object-cover rounded"
-                            />
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveChatPhoto(index)}
-                            className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{ transform: 'translate(25%, -25%)' }}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <div className="flex gap-2 items-center">
-                  <label className="flex-shrink-0 cursor-pointer" style={{ padding: '10px', borderRadius: '8px', backgroundColor: uploadingPhotos ? colors.borderColor : colors.cardBg, border: `2px solid ${colors.borderColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
-                    <input type="file" accept="image/*,video/*" capture="environment" multiple onChange={handleChatPhotoUpload} className="hidden" disabled={uploadingPhotos} />
-                    {uploadingPhotos ? (
-                      <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
-                    ) : (
-                      <Camera className="w-5 h-5" style={{ color: colors.textPrimary }} />
-                    )}
-                  </label>
-
-                  <label className="flex-shrink-0 cursor-pointer" style={{ padding: '10px', borderRadius: '8px', backgroundColor: uploadingPhotos ? colors.borderColor : colors.cardBg, border: `2px solid ${colors.borderColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
-                    <input type="file" accept="image/*,video/*" multiple onChange={handleChatPhotoUpload} className="hidden" disabled={uploadingPhotos} />
-                    {uploadingPhotos ? (
-                      <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
-                    ) : (
-                      <Image className="w-5 h-5" style={{ color: colors.textPrimary }} />
-                    )}
-                  </label>
-
-                  <Input
-                    value={chatMessage}
-                    onChange={(e) => setChatMessage(e.target.value)}
-                    placeholder="Type your message..."
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendChatMessage();
-                      }
-                    }}
-                    className="flex-1 p-3 border-2 rounded-lg"
-                    style={{
-                      backgroundColor: colors.cardBg,
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}
-                  />
-
-                  <Button
-                    onClick={handleSendChatMessage}
-                    disabled={sendingChat || (!chatMessage.trim() && chatPhotos.length === 0)}
-                    className="bg-ls-forest hover:bg-ls-forest/90 text-white p-3 h-auto"
-                    style={{
-                      opacity: (sendingChat || (!chatMessage.trim() && chatPhotos.length === 0)) ? 0.5 : 1
-                    }}
-                  >
-                    {sendingChat ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
+        <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <Clock className="w-5 h-5 text-ls-gold" />
@@ -549,156 +332,144 @@ export default function AcknowledgeMaintenance() {
                 />
               </div>
 
+              {/* Completion Photos */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Camera className="w-4 h-4 inline mr-1" />
-                  Completion Photos/Videos (Optional):
+                  Completion Photos (Optional):
                 </Label>
                 <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
-                  Upload photos or videos showing the completed repair
+                  Upload photos showing the completed repair
                 </p>
 
                 {completionPhotos.length > 0 && (
                   <div className="grid grid-cols-3 gap-2 mb-3">
-                    {completionPhotos.map((url, index) => {
-                      const isVideo = url.match(/\.(mp4|mov|avi|webm)$/i);
-                      return (
-                        <div key={index} className="relative group">
-                          {isVideo ? (
-                            <video
-                              src={url}
-                              className="w-full h-24 object-cover rounded-lg"
-                              style={{ border: `1px solid ${colors.borderColor}` }}
-                              controls
-                            />
-                          ) : (
-                            <img
-                              src={url}
-                              alt={`Completion ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
-                              style={{ border: `1px solid ${colors.borderColor}` }}
-                            />
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePhoto(index, 'completion')}
-                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      );
-                    })}
+                    {completionPhotos.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Completion ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg"
+                          style={{ border: `1px solid ${colors.borderColor}` }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(index, 'completion')}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: '#F3F4F6', borderColor: colors.borderColor, color: colors.textPrimary }}>
-                    <input type="file" accept="image/*,video/*" capture="environment" multiple onChange={(e) => handlePhotoUpload(e, 'completion')} className="hidden" disabled={uploadingPhotos} />
-                    {uploadingPhotos ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="font-medium text-sm">Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Camera className="w-5 h-5" />
-                        <span className="font-medium text-sm">Take Photo/Video</span>
-                      </>
-                    )}
-                  </label>
-
-                  <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: '#F3F4F6', borderColor: colors.borderColor, color: colors.textPrimary }}>
-                    <input type="file" accept="image/*,video/*" multiple onChange={(e) => handlePhotoUpload(e, 'completion')} className="hidden" disabled={uploadingPhotos} />
-                    {uploadingPhotos ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="font-medium text-sm">Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Image className="w-5 h-5" />
-                        <span className="font-medium text-sm">From Gallery</span>
-                      </>
-                    )}
-                  </label>
-                </div>
+                <label
+                  className="flex items-center justify-center gap-2 p-4 rounded-lg cursor-pointer transition-all border-2 border-dashed"
+                  style={{
+                    backgroundColor: '#F3F4F6',
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#0C3B2E';
+                    e.currentTarget.style.backgroundColor = '#ECEFED';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = colors.borderColor;
+                    e.currentTarget.style.backgroundColor = '#F3F4F6';
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handlePhotoUpload(e, 'completion')}
+                    className="hidden"
+                    disabled={uploadingPhotos}
+                  />
+                  {uploadingPhotos ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span className="font-medium">Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-5 h-5" />
+                      <span className="font-medium">Add Completion Photos</span>
+                    </>
+                  )}
+                </label>
               </div>
 
+              {/* Bill Photos */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Receipt className="w-4 h-4 inline mr-1" />
-                  Bill/Receipt Photos/Videos (Optional):
+                  Bill/Receipt Photos (Optional):
                 </Label>
                 <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
-                  Upload photos or videos of repair bills or receipts
+                  Upload photos of repair bills or receipts
                 </p>
 
                 {billPhotos.length > 0 && (
                   <div className="grid grid-cols-3 gap-2 mb-3">
-                    {billPhotos.map((url, index) => {
-                      const isVideo = url.match(/\.(mp4|mov|avi|webm)$/i);
-                      return (
-                        <div key={index} className="relative group">
-                          {isVideo ? (
-                            <video
-                              src={url}
-                              className="w-full h-24 object-cover rounded-lg"
-                              style={{ border: `1px solid ${colors.borderColor}` }}
-                              controls
-                            />
-                          ) : (
-                            <img
-                              src={url}
-                              alt={`Bill ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
-                              style={{ border: `1px solid ${colors.borderColor}` }}
-                            />
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePhoto(index, 'bill')}
-                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      );
-                    })}
+                    {billPhotos.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Bill ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg"
+                          style={{ border: `1px solid ${colors.borderColor}` }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(index, 'bill')}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: '#F3F4F6', borderColor: colors.borderColor, color: colors.textPrimary }}>
-                    <input type="file" accept="image/*,video/*" capture="environment" multiple onChange={(e) => handlePhotoUpload(e, 'bill')} className="hidden" disabled={uploadingPhotos} />
-                    {uploadingPhotos ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="font-medium text-sm">Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Camera className="w-5 h-5" />
-                        <span className="font-medium text-sm">Take Photo/Video</span>
-                      </>
-                    )}
-                  </label>
-
-                  <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: '#F3F4F6', borderColor: colors.borderColor, color: colors.textPrimary }}>
-                    <input type="file" accept="image/*,video/*" multiple onChange={(e) => handlePhotoUpload(e, 'bill')} className="hidden" disabled={uploadingPhotos} />
-                    {uploadingPhotos ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="font-medium text-sm">Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Image className="w-5 h-5" />
-                        <span className="font-medium text-sm">From Gallery</span>
-                      </>
-                    )}
-                  </label>
-                </div>
+                <label
+                  className="flex items-center justify-center gap-2 p-4 rounded-lg cursor-pointer transition-all border-2 border-dashed"
+                  style={{
+                    backgroundColor: '#F3F4F6',
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#C7A338';
+                    e.currentTarget.style.backgroundColor = '#ECEFED';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = colors.borderColor;
+                    e.currentTarget.style.backgroundColor = '#F3F4F6';
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handlePhotoUpload(e, 'bill')}
+                    className="hidden"
+                    disabled={uploadingPhotos}
+                  />
+                  {uploadingPhotos ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span className="font-medium">Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Receipt className="w-5 h-5" />
+                      <span className="font-medium">Add Bill Photos</span>
+                    </>
+                  )}
+                </label>
               </div>
 
               <Button
