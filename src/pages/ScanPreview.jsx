@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, FileText, ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, ArrowLeft, ExternalLink, Loader2, Wallet, ArrowRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
@@ -40,7 +40,13 @@ export default function ScanPreview() {
     enabled: !!user && leases.length > 0,
   });
 
-  // Check if user has access to full report
+  // NEW: Check if user has deposits tracked
+  const { data: deposits = [], isLoading: depositsLoading } = useQuery({
+    queryKey: ['deposits'],
+    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
   const { hasAccess: hasFullReportAccess } = useFeatureAccess('full_report');
 
   // Find the specific scan and lease
@@ -60,6 +66,12 @@ export default function ScanPreview() {
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
 
+  // NEW: Check if this lease has a tracked deposit
+  const hasDepositForLease = deposits.some(d => 
+    d.property_address && lease?.property_address && 
+    d.property_address === lease.property_address
+  );
+
   const t = {
     en: {
       backToScans: "Back to Scans",
@@ -75,7 +87,13 @@ export default function ScanPreview() {
       criticalRisk: "Critical Risk",
       loading: "Loading scan results...",
       noScanFound: "Scan not found",
-      noScanDesc: "The scan you're looking for could not be found."
+      noScanDesc: "The scan you're looking for could not be found.",
+      nextStep: "✅ Next Step",
+      nextStepTitle: "Protect Your Deposit",
+      nextStepDesc: "Now that your lease is scanned, track your security deposit to ensure it's returned on time.",
+      trackDeposit: "Track Deposit Now",
+      depositTracked: "Deposit Already Tracked",
+      viewDeposits: "View Deposits"
     },
     th: {
       backToScans: "กลับไปที่การสแกน",
@@ -91,7 +109,13 @@ export default function ScanPreview() {
       criticalRisk: "ความเสี่ยงวิกฤต",
       loading: "กำลังโหลดผลการสแกน...",
       noScanFound: "ไม่พบการสแกน",
-      noScanDesc: "ไม่พบการสแกนที่คุณกำลังมองหา"
+      noScanDesc: "ไม่พบการสแกนที่คุณกำลังมองหา",
+      nextStep: "✅ ขั้นตอนถัดไป",
+      nextStepTitle: "ปกป้องเงินมัดจำ",
+      nextStepDesc: "ตอนนี้สัญญาเช่าของคุณสแกนแล้ว ติดตามเงินมัดจำเพื่อให้แน่ใจว่าจะได้รับคืนตรงเวลา",
+      trackDeposit: "ติดตามเงินมัดจำตอนนี้",
+      depositTracked: "ติดตามเงินมัดจำแล้ว",
+      viewDeposits: "ดูเงินมัดจำ"
     }
   };
 
@@ -147,7 +171,7 @@ export default function ScanPreview() {
   const hiddenCount = totalFlags - displayFlags.length;
 
   // Loading state
-  if (userLoading || leasesLoading || scansLoading) {
+  if (userLoading || leasesLoading || scansLoading || depositsLoading) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
@@ -194,13 +218,124 @@ export default function ScanPreview() {
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '180px' }}>
       <div className="max-w-4xl mx-auto">
         <Button
-          variant="outline"
+          variant="ghost"
           onClick={() => navigate(createPageUrl("UploadScan"))}
           className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           {strings.backToScans}
         </Button>
+
+        {/* NEW: Next Step Guidance Card */}
+        {!hasDepositForLease && lease?.deposit_amount && (
+          <Card 
+            className="mb-6 border-none shadow-xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              animation: 'slideDown 0.5s ease-out'
+            }}
+          >
+            <style>
+              {`
+                @keyframes slideDown {
+                  from {
+                    opacity: 0;
+                    transform: translateY(-20px);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+                }
+              `}
+            </style>
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-xl font-bold text-white">{strings.nextStep}</h3>
+                  </div>
+                  <p className="text-white/90 mb-4 text-base">
+                    {strings.nextStepDesc}
+                  </p>
+                  <button
+                    onClick={() => navigate(createPageUrl("PropertyTracker"))}
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#FFFFFF',
+                      color: '#10B981',
+                      padding: '14px 24px',
+                      borderRadius: '10px',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 6px 10px rgba(0, 0, 0, 0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                    }}
+                  >
+                    <Wallet className="w-5 h-5" />
+                    <span>{strings.trackDeposit}</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Show alternative if deposit already tracked */}
+        {hasDepositForLease && (
+          <Card 
+            className="mb-6 border-none shadow-xl"
+            style={{
+              backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5',
+              borderLeft: '4px solid #10B981'
+            }}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0" />
+                  <div>
+                    <p className="font-bold text-sm" style={{ color: colors.textPrimary }}>
+                      {strings.depositTracked}
+                    </p>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>
+                      {language === 'th' ? 'คุณกำลังติดตามเงินมัดจำสำหรับทรัพย์สินนี้แล้ว' : 'You\'re already tracking the deposit for this property'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(createPageUrl("PropertyTracker"))}
+                  style={{
+                    borderColor: '#10B981',
+                    color: '#10B981'
+                  }}
+                >
+                  {strings.viewDeposits}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b" style={{ backgroundColor: riskColor }}>
