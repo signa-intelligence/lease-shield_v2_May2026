@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -679,46 +680,51 @@ export default function EvidenceVault() {
                 </label>
               </div>
 
+              {/* FIXED: Selected Files List + Upload Button */}
               {selectedFiles.length > 0 && (
-                <div>
-                  <p className="font-semibold mb-2 text-sm" style={{ color: colors.textPrimary }}>
-                    {strings.selectedFiles} ({selectedFiles.length})
-                  </p>
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <FileText className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
-                          <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
+                <>
+                  <div>
+                    <p className="font-semibold mb-2 text-sm" style={{ color: colors.textPrimary }}>
+                      {strings.selectedFiles} ({selectedFiles.length})
+                    </p>
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <FileText className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                            <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
+                          </div>
+                          <button
+                            onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
+                            className="p-1 hover:bg-red-100 rounded flex-shrink-0 ml-2"
+                            disabled={uploading}
+                          >
+                            <X className="w-4 h-4 text-red-600" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
-                          className="p-1 hover:bg-red-100 rounded flex-shrink-0 ml-2"
-                          disabled={uploading}
-                        >
-                          <X className="w-4 h-4 text-red-600" />
-                        </button>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
+
+                  {/* UPLOAD BUTTON - Now properly outside the file list div */}
                   <Button
                     onClick={handleUpload}
                     disabled={uploading}
-                    className="w-full mt-4 bg-ls-forest hover:bg-ls-forest-dark"
+                    className="w-full bg-ls-forest hover:bg-ls-forest/90 py-6 text-base font-bold"
                   >
                     {uploading ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                         {strings.uploading}
                       </>
                     ) : (
                       <>
-                        <Upload className="w-4 h-4 mr-2" />
+                        <Upload className="w-5 h-5 mr-2" />
                         {strings.uploadButton}
                       </>
                     )}
                   </Button>
-                </div>
+                </>
               )}
             </div>
 
