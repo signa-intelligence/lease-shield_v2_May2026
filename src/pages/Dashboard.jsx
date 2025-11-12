@@ -1483,7 +1483,7 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Stats Grid - COMPACT SINGLE ROW */}
+          {/* Stats Grid - 2x4 LAYOUT WITH PROTECTION SCORE SPANNING 2 ROWS */}
           {(!focusMode || urgentDeposits > 0 || activeCases.length > 0) && (
             <div className="mb-6">
               <button
@@ -1507,9 +1507,10 @@ function DashboardContent() {
 
               {expandedSections.stats && (
                 <div 
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
                   style={{
                     animation: 'slideDown 0.3s ease-out',
+                    gridAutoRows: 'minmax(0, 1fr)'
                   }}
                 >
                   <style>
@@ -1535,10 +1536,10 @@ function DashboardContent() {
                       <SkeletonLoader variant="stat" colors={colors} />
                       <SkeletonLoader variant="stat" colors={colors} />
                       <SkeletonLoader variant="stat" colors={colors} />
-                      <SkeletonLoader variant="stat" colors={colors} />
                     </>
                   ) : (
                     <>
+                      {/* Row 1 - Col 1 */}
                       <StatsCard
                         title={strings.activeLeases}
                         value={leases.length.toString()}
@@ -1546,16 +1547,16 @@ function DashboardContent() {
                         scoreColor="#3B82F6"
                         miniStats={leases.length > 0 ? [
                           {
-                            label: language === 'th' ? 'สัญญาที่สแกนแล้ว' : 'Scanned',
+                            label: language === 'th' ? 'สแกนแล้ว' : 'Scanned',
                             value: scannedLeases.length
                           },
                           {
-                            label: language === 'th' ? 'การแจ้งเตือนเปิดอยู่' : 'Alerts Enabled',
+                            label: language === 'th' ? 'เตือน' : 'Alerts',
                             value: leases.filter(l => l.notice_alerts_enabled).length
                           }
                         ] : undefined}
                         actionButton={leases.length > 0 ? {
-                          label: language === 'th' ? 'จัดการสัญญา' : 'Manage Leases',
+                          label: language === 'th' ? 'จัดการ' : 'Manage',
                           link: createPageUrl("UploadScan")
                         } : undefined}
                         ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
@@ -1563,6 +1564,7 @@ function DashboardContent() {
                         compact
                       />
 
+                      {/* Row 1 - Col 2 */}
                       <StatsCard
                         title={strings.notifications}
                         value={notificationLogs.length.toString()}
@@ -1570,7 +1572,7 @@ function DashboardContent() {
                         scoreColor="#8B5CF6"
                         miniStats={notificationLogs.length > 0 ? [
                           {
-                            label: language === 'th' ? 'ส่งสำเร็จ' : 'Sent',
+                            label: language === 'th' ? 'ส่งแล้ว' : 'Sent',
                             value: notificationLogs.filter(n => n.status === 'sent').length
                           },
                           {
@@ -1586,22 +1588,35 @@ function DashboardContent() {
                         compact
                       />
                       
+                      {/* Row 1 - Col 3 */}
                       <StatsCard
                         title={strings.depositsTracked}
                         value={`฿${totalDepositValue.toLocaleString()}`}
                         icon={Wallet}
                         bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
                         miniStats={[
-                          { label: strings.avgDeposit, value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
-                          { label: strings.urgentReturns, value: urgentDeposits }
+                          { label: language === 'th' ? 'เฉลี่ย' : 'Avg', value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
+                          { label: language === 'th' ? 'เร็วๆนี้' : 'Soon', value: urgentDeposits }
                         ]}
                         actionButton={{
-                          label: strings.addDeposit,
+                          label: language === 'th' ? 'เพิ่ม' : 'Add',
                           link: createPageUrl("DepositTracker")
                         }}
                         compact
                       />
 
+                      {/* Row 1 - Col 4 (Protection Score - SPANS 2 ROWS) */}
+                      <div className="sm:col-span-2 lg:col-span-1 lg:row-span-2">
+                        <ProtectionScoreEnhanced
+                          score={protectionScore}
+                          breakdown={breakdown}
+                          recommendations={recommendations}
+                          language={language}
+                          colors={colors}
+                        />
+                      </div>
+
+                      {/* Row 2 - Col 1 */}
                       <StatsCard
                         title={strings.rentTracked}
                         value={rentTrackedCount.toString()}
@@ -1609,7 +1624,7 @@ function DashboardContent() {
                         scoreColor="#3B82F6"
                         miniStats={rentTrackedCount > 0 ? [
                           {
-                            label: language === 'th' ? 'เปิดการแจ้งเตือน' : 'Alerts On',
+                            label: language === 'th' ? 'เตือน' : 'Alerts',
                             value: deposits.filter(d => d.rent_alerts_enabled).length
                           }
                         ] : undefined}
@@ -1622,21 +1637,23 @@ function DashboardContent() {
                         compact
                       />
                       
+                      {/* Row 2 - Col 2 */}
                       <StatsCard
                         title={strings.activeCases}
                         value={activeCases.length}
                         icon={Scale}
                         bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
                         miniStats={[
-                          { label: strings.resolved, value: resolvedCases }
+                          { label: language === 'th' ? 'แก้ไข' : 'Resolved', value: resolvedCases }
                         ]}
                         actionButton={{
-                          label: strings.openCase,
+                          label: language === 'th' ? 'เปิด' : 'Open',
                           link: createPageUrl("Cases")
                         }}
                         compact
                       />
 
+                      {/* Row 2 - Col 3 */}
                       <StatsCard
                         title={strings.maintenanceRequests}
                         value={activeMaintenanceCount.toString()}
@@ -1644,25 +1661,16 @@ function DashboardContent() {
                         scoreColor="#F59E0B"
                         miniStats={activeMaintenanceCount > 0 ? [
                           {
-                            label: language === 'th' ? 'เสร็จสิ้น' : 'Completed',
+                            label: language === 'th' ? 'เสร็จ' : 'Done',
                             value: maintenanceRequests.filter(r => r.status === 'completed').length
                           }
                         ] : undefined}
                         actionButton={activeMaintenanceCount > 0 ? {
-                          label: strings.viewMaintenance,
+                          label: language === 'th' ? 'ดู' : 'View',
                           link: createPageUrl("PropertyTracker")
                         } : undefined}
                         ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
                         onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
-                        compact
-                      />
-                      
-                      <ProtectionScoreEnhanced
-                        score={protectionScore}
-                        breakdown={breakdown}
-                        recommendations={recommendations}
-                        language={language}
-                        colors={colors}
                         compact
                       />
                     </>

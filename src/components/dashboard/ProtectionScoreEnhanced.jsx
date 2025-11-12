@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -70,124 +69,31 @@ const ProtectionScoreEnhanced = ({
     Wrench: '🔧',
   };
 
-  if (compact) {
-    return (
-      <div 
-        className="border-none shadow-xl overflow-hidden" 
-        style={{ 
-          backgroundColor: colors.cardBg,
-          borderLeft: `4px solid ${scoreColor}`,
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-          borderRadius: '12px',
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          padding: '12px',
-          position: 'relative'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)';
-          e.currentTarget.style.transform = 'translateY(0)';
-        }}
-      >
-        {/* Compact Header */}
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <p className="text-[10px]" style={{ 
-              color: colors.textSecondary,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              fontWeight: 'bold',
-              marginBottom: '4px'
-            }}>
-              {language === 'th' ? 'คะแนนการป้องกัน' : 'PROTECTION SCORE'}
-            </p>
-            <p className="text-xl" style={{ 
-              color: scoreColor,
-              letterSpacing: '-0.02em',
-              fontWeight: 'bold'
-            }}>
-              {score}%
-            </p>
-          </div>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
-            backgroundColor: `${scoreColor}15`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Shield className="w-4 h-4" style={{ color: scoreColor }} />
-          </div>
-        </div>
-
-        {/* Compact Stats */}
-        <div className="grid grid-cols-2 gap-2 mt-2">
-          <div className="p-2" style={{ 
-            backgroundColor: colors.borderColor,
-            borderRadius: '8px'
-          }}>
-            <p className="text-[9px]" style={{ 
-              color: colors.textSecondary,
-              fontWeight: '600',
-              marginBottom: '2px'
-            }}>
-              {language === 'th' ? 'เกรด' : 'Grade'}
-            </p>
-            <p className="text-sm" style={{ 
-              color: scoreColor,
-              fontWeight: 'bold'
-            }}>
-              {grade}
-            </p>
-          </div>
-          <div className="p-2" style={{ 
-            backgroundColor: colors.borderColor,
-            borderRadius: '8px'
-          }}>
-            <p className="text-[9px]" style={{ 
-              color: colors.textSecondary,
-              fontWeight: '600',
-              marginBottom: '2px'
-            }}>
-              {language === 'th' ? 'อันดับ' : 'Rank'}
-            </p>
-            <p className="text-sm" style={{ 
-              color: colors.textPrimary,
-              fontWeight: 'bold'
-            }}>
-              Top {percentile}%
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // FULL-SIZE VERSION (no compact prop or compact=false)
   return (
-    <Card className="border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
+    <Card className="border-none shadow-xl overflow-hidden h-full" style={{ backgroundColor: colors.cardBg }}>
       <CardHeader
+        className="pb-3"
         style={{
           background: `linear-gradient(135deg, ${scoreColor}20 0%, ${scoreColor}40 100%)`,
           borderBottom: `1px solid ${colors.borderColor}`,
+          padding: '12px'
         }}
       >
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-            <Shield className="w-6 h-6" style={{ color: scoreColor }} />
-            {language === 'th' ? 'คะแนนการป้องกัน' : 'Protection Score'}
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5" style={{ color: scoreColor }} />
+            <span className="text-sm font-bold" style={{ color: colors.textPrimary }}>
+              {language === 'th' ? 'คะแนนการป้องกัน' : 'Protection Score'}
+            </span>
+          </div>
           <Badge
             style={{
               backgroundColor: `${scoreColor}20`,
               color: scoreColor,
               border: `1px solid ${scoreColor}40`,
-              padding: '4px 12px',
-              fontSize: '14px',
+              padding: '2px 8px',
+              fontSize: '12px',
               fontWeight: 'bold',
             }}
           >
@@ -196,32 +102,32 @@ const ProtectionScoreEnhanced = ({
         </div>
       </CardHeader>
 
-      <CardContent className="p-6">
-        {/* Score Circle */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="relative w-48 h-48 mb-4">
+      <CardContent className="p-4">
+        {/* Compact Score Circle */}
+        <div className="flex flex-col items-center mb-4">
+          <div className="relative w-32 h-32 mb-3">
             {/* Background circle */}
             <svg className="w-full h-full transform -rotate-90">
               <circle
-                cx="96"
-                cy="96"
-                r="88"
+                cx="64"
+                cy="64"
+                r="56"
                 stroke={colors.borderColor}
-                strokeWidth="12"
+                strokeWidth="8"
                 fill="none"
               />
               <circle
-                cx="96"
-                cy="96"
-                r="88"
+                cx="64"
+                cy="64"
+                r="56"
                 stroke={scoreColor}
-                strokeWidth="12"
+                strokeWidth="8"
                 fill="none"
-                strokeDasharray={`${score * 5.53} 553`}
+                strokeDasharray={`${score * 3.52} 352`}
                 strokeLinecap="round"
                 style={{
                   transition: 'stroke-dasharray 1s ease-out',
-                  filter: `drop-shadow(0 0 8px ${scoreColor}40)`,
+                  filter: `drop-shadow(0 0 6px ${scoreColor}40)`,
                 }}
               />
             </svg>
@@ -229,7 +135,7 @@ const ProtectionScoreEnhanced = ({
             {/* Score text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <div
-                className="text-5xl font-bold"
+                className="text-3xl font-bold"
                 style={{
                   color: scoreColor,
                   textShadow: `0 2px 8px ${scoreColor}30`,
@@ -237,7 +143,7 @@ const ProtectionScoreEnhanced = ({
               >
                 {score}%
               </div>
-              <div className="text-sm font-semibold mt-1" style={{ color: colors.textSecondary }}>
+              <div className="text-xs font-semibold mt-1" style={{ color: colors.textSecondary }}>
                 {label}
               </div>
             </div>
@@ -245,36 +151,36 @@ const ProtectionScoreEnhanced = ({
 
           {/* Percentile badge */}
           <div
-            className="flex items-center gap-2 px-4 py-2 rounded-full"
+            className="flex items-center gap-1 px-3 py-1 rounded-full"
             style={{
               backgroundColor: `${scoreColor}10`,
               border: `1px solid ${scoreColor}30`,
             }}
           >
-            <TrendingUp className="w-4 h-4" style={{ color: scoreColor }} />
-            <span className="text-sm font-semibold" style={{ color: scoreColor }}>
-              {language === 'th' ? `ท็อป ${percentile}% ของผู้ใช้` : `Top ${percentile}% of users`}
+            <TrendingUp className="w-3 h-3" style={{ color: scoreColor }} />
+            <span className="text-xs font-semibold" style={{ color: scoreColor }}>
+              {language === 'th' ? `ท็อป ${percentile}%` : `Top ${percentile}%`}
             </span>
           </div>
         </div>
 
-        {/* Breakdown bars */}
-        <div className="space-y-4 mb-6">
+        {/* Compact Breakdown bars */}
+        <div className="space-y-3">
           {categoryData.map((cat) => (
             <div key={cat.key}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{cat.icon}</span>
-                  <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">{cat.icon}</span>
+                  <span className="text-xs font-semibold" style={{ color: colors.textPrimary }}>
                     {cat.label}
                   </span>
                 </div>
-                <span className="text-sm font-bold" style={{ color: cat.color }}>
+                <span className="text-xs font-bold" style={{ color: cat.color }}>
                   {cat.score}/{cat.maxScore}
                 </span>
               </div>
               <div
-                className="h-3 rounded-full overflow-hidden"
+                className="h-2 rounded-full overflow-hidden"
                 style={{ backgroundColor: colors.borderColor }}
               >
                 <div
@@ -282,126 +188,13 @@ const ProtectionScoreEnhanced = ({
                   style={{
                     width: `${(cat.score / cat.maxScore) * 100}%`,
                     background: `linear-gradient(90deg, ${cat.color} 0%, ${cat.color}cc 100%)`,
-                    boxShadow: `0 0 8px ${cat.color}40`,
+                    boxShadow: `0 0 6px ${cat.color}40`,
                   }}
                 />
               </div>
             </div>
           ))}
         </div>
-
-        {/* Recommendations Carousel */}
-        {recommendations.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Target className="w-4 h-4 text-amber-600" />
-                {language === 'th' ? 'วิธีเพิ่มคะแนน' : 'Quick Wins'}
-              </h4>
-              <div className="flex gap-1">
-                {recommendations.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentSlide(idx)}
-                    style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      backgroundColor: currentSlide === idx ? '#C7A338' : colors.borderColor,
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div
-              className="relative overflow-hidden"
-              style={{
-                borderRadius: '12px',
-              }}
-            >
-              <div
-                className="flex transition-transform duration-300 ease-out"
-                style={{
-                  transform: `translateX(-${currentSlide * 100}%)`,
-                }}
-              >
-                {recommendations.map((rec, idx) => (
-                  <Link
-                    key={idx}
-                    to={createPageUrl(rec.route)}
-                    className="min-w-full"
-                    style={{ textDecoration: 'none' }}
-                  >
-                    <div
-                      className="p-4 rounded-lg border-2 cursor-pointer transition-all"
-                      style={{
-                        backgroundColor: colors.cardBg,
-                        borderColor: colors.borderColor,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#C7A338';
-                        e.currentTarget.style.transform = 'scale(1.02)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = colors.borderColor;
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">{iconMap[rec.icon] || '✨'}</span>
-                          <span className="font-bold text-sm" style={{ color: colors.textPrimary }}>
-                            {rec.action}
-                          </span>
-                        </div>
-                        <Badge
-                          style={{
-                            backgroundColor: '#10B98120',
-                            color: '#10B981',
-                            border: '1px solid #10B98140',
-                          }}
-                        >
-                          +{rec.points}%
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs" style={{ color: colors.textSecondary }}>
-                          {language === 'th' ? 'แตะเพื่อเริ่มต้น' : 'Tap to start'}
-                        </p>
-                        <ChevronRight className="w-4 h-4" style={{ color: '#C7A338' }} />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Perfect score celebration */}
-        {score === 100 && (
-          <div
-            className="mt-6 p-4 rounded-xl text-center"
-            style={{
-              background: 'linear-gradient(135deg, #10B98120 0%, #3B82F620 100%)',
-              border: '2px solid #10B98140',
-            }}
-          >
-            <Award className="w-12 h-12 mx-auto mb-2 text-emerald-600" />
-            <p className="font-bold text-lg mb-1" style={{ color: colors.textPrimary }}>
-              {language === 'th' ? '🎉 สมบูรณ์แบบ!' : '🎉 Perfect Score!'}
-            </p>
-            <p className="text-sm" style={{ color: colors.textSecondary }}>
-              {language === 'th' 
-                ? 'คุณมีการป้องกันที่ดีที่สุด!' 
-                : 'You have maximum protection!'}
-            </p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
