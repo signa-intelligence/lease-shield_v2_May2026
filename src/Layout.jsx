@@ -6,6 +6,7 @@ import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale } from "l
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
+import { animationKeyframes, createRipple } from "./utils/animations";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -271,6 +272,9 @@ export default function Layout({ children, currentPageName }) {
         ::-webkit-scrollbar-thumb:hover {
           background: ${isDarkMode ? '#6B7280' : '#9CA3AF'};
         }
+
+        /* Import animation utilities */
+        ${animationKeyframes}
       `}</style>
 
       {/* Top Bar */}
@@ -378,6 +382,7 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={tab.key}
                 to={tab.route}
+                className="ripple-container btn-press-feedback"
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -385,13 +390,16 @@ export default function Layout({ children, currentPageName }) {
                   justifyContent: 'center',
                   padding: '8px 10px',
                   borderRadius: '12px',
-                  transition: 'all 0.2s',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   flex: 1,
                   minWidth: '60px',
                   maxWidth: '90px',
                   backgroundColor: isActive ? '#0C3B2E' : 'transparent',
-                  textDecoration: 'none'
+                  textDecoration: 'none',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
+                onClick={(e) => createRipple(e, e.currentTarget)}
                 onMouseEnter={(e) => {
                   if (!isActive) {
                     e.currentTarget.style.backgroundColor = colors.hoverBg;
@@ -405,13 +413,15 @@ export default function Layout({ children, currentPageName }) {
               >
                 <Icon className="w-5 h-5 mb-1" style={{ 
                   animation: isActive ? 'pulse 2s infinite' : 'none',
-                  color: isActive ? '#FFFFFF' : colors.textPrimary
+                  color: isActive ? '#FFFFFF' : colors.textPrimary,
+                  transition: 'all 0.2s ease'
                 }} />
                 <span style={{ 
                   fontSize: '11px', 
                   fontWeight: '600', 
                   whiteSpace: 'nowrap',
-                  color: isActive ? '#FFFFFF' : colors.textPrimary
+                  color: isActive ? '#FFFFFF' : colors.textPrimary,
+                  transition: 'all 0.2s ease'
                 }}>
                   {tab.label}
                 </span>

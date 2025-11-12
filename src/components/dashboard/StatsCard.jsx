@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import ProtectionScoreGauge from "./ProtectionScoreGauge";
+import { useAnimatedNumber, createRipple } from "@/utils/animations";
 
 export default function StatsCard({ 
   title, 
@@ -28,6 +29,10 @@ export default function StatsCard({
   });
 
   const isDarkMode = user?.theme === 'dark';
+
+  // Animate number values
+  const numericValue = typeof value === 'string' ? parseInt(value.replace(/[^0-9]/g, '')) : value;
+  const animatedValue = useAnimatedNumber(numericValue || 0);
 
   // Brand colors
   const brandColors = {
@@ -53,24 +58,30 @@ export default function StatsCard({
     accentColor = brandColors.charcoal;
   }
 
+  const handleCardClick = (e) => {
+    if (!e.target.closest('button') && !e.target.closest('a')) {
+      createRipple(e, e.currentTarget);
+    }
+  };
+
+  // Format the display value (preserve currency symbol if present)
+  const displayValue = typeof value === 'string' && value.includes('฿')
+    ? `฿${animatedValue.toLocaleString()}`
+    : animatedValue.toString();
+
   return (
     <div
+      className="ripple-container card-hover-lift"
+      onClick={handleCardClick}
       style={{
         backgroundColor: colors.cardBg,
         borderLeft: `4px solid ${accentColor}`,
         boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
         borderRadius: compact ? '12px' : '16px',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         padding: compact ? '12px' : '24px',
-        position: 'relative'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-        e.currentTarget.style.transform = 'translateY(-2px)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)';
-        e.currentTarget.style.transform = 'translateY(0)';
+        position: 'relative',
+        cursor: 'pointer'
       }}
     >
       {/* Header: Title & Icon */}
@@ -85,26 +96,49 @@ export default function StatsCard({
           }}>
             {title}
           </p>
-          <p className={compact ? "text-xl" : "text-3xl"} style={{ 
-            color: accentColor,
-            letterSpacing: '-0.02em',
-            fontWeight: 'bold'
-          }}>
-            {value}
+          <p 
+            className={compact ? "text-xl" : "text-3xl"} 
+            style={{ 
+              color: accentColor,
+              letterSpacing: '-0.02em',
+              fontWeight: 'bold',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            {typeof value === 'string' && value.includes('฿') ? displayValue : value}
           </p>
         </div>
-        <div style={{
-          width: compact ? '32px' : '48px',
-          height: compact ? '32px' : '48px',
-          borderRadius: compact ? '8px' : '12px',
-          backgroundColor: `${accentColor}15`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
+        <div 
+          className="icon-bounce"
+          style={{
+            width: compact ? '32px' : '48px',
+            height: compact ? '32px' : '48px',
+            borderRadius: compact ? '8px' : '12px',
+            backgroundColor: `${accentColor}15`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+        >
           <Icon className={compact ? "w-4 h-4" : "w-6 h-6"} style={{ color: accentColor }} />
         </div>
       </div>
+
+      <style jsx>{`
+        .icon-bounce:hover {
+          animation: iconBounce 0.5s ease-in-out;
+        }
+
+        @keyframes iconBounce {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-4px);
+          }
+        }
+      `}</style>
 
       {trend && (
         <Badge className={`${trend > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'} text-xs font-semibold`}>
@@ -134,10 +168,24 @@ export default function StatsCard({
       {miniStats && miniStats.length > 0 && (
         <div className="grid grid-cols-2 gap-2" style={{ marginTop: compact ? '8px' : '16px' }}>
           {miniStats.map((stat, idx) => (
-            <div key={idx} className={compact ? "p-2" : "p-3"} style={{ 
-              backgroundColor: colors.miniStatBg,
-              borderRadius: '8px'
-            }}>
+            <div 
+              key={idx} 
+              className={compact ? "p-2" : "p-3"}
+              style={{ 
+                backgroundColor: colors.miniStatBg,
+                borderRadius: '8px',
+                transition: 'all 0.2s ease',
+                animation: `fadeIn 0.4s ease-out ${idx * 0.1}s backwards`
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#E5E7EB';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.backgroundColor = colors.miniStatBg;
+              }}
+            >
               <p className={compact ? "text-[9px]" : "text-xs"} style={{ 
                 color: colors.textSecondary,
                 fontWeight: '600',
@@ -158,7 +206,11 @@ export default function StatsCard({
 
       {ctaText && onCtaClick && (
         <button
-          onClick={onCtaClick}
+          onClick={(e) => {
+            createRipple(e, e.currentTarget);
+            onCtaClick();
+          }}
+          className="ripple-container btn-press-feedback"
           style={{
             width: '100%',
             marginTop: compact ? '8px' : '16px',
@@ -171,11 +223,13 @@ export default function StatsCard({
             border: 'none',
             cursor: 'pointer',
             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            position: 'relative',
+            overflow: 'hidden'
           }}
           onMouseEnter={(e) => {
             e.target.style.transform = 'translateY(-1px)';
-            e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.15)';
+            e.target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
             e.target.style.opacity = '0.9';
           }}
           onMouseLeave={(e) => {
@@ -191,6 +245,7 @@ export default function StatsCard({
       {actionButton && (
         <Link to={actionButton.link} className="block" style={{ marginTop: compact ? '8px' : '16px' }}>
           <button
+            className="ripple-container btn-press-feedback"
             style={{
               width: '100%',
               padding: compact ? '8px 12px' : '12px 20px',
@@ -201,15 +256,20 @@ export default function StatsCard({
               fontSize: compact ? '12px' : '14px',
               border: `2px solid ${accentColor}`,
               cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              position: 'relative',
+              overflow: 'hidden'
             }}
+            onClick={(e) => createRipple(e, e.currentTarget)}
             onMouseEnter={(e) => {
               e.target.style.backgroundColor = accentColor;
               e.target.style.color = brandColors.white;
+              e.target.style.transform = 'scale(1.02)';
             }}
             onMouseLeave={(e) => {
               e.target.style.backgroundColor = 'transparent';
               e.target.style.color = accentColor;
+              e.target.style.transform = 'scale(1)';
             }}
           >
             {actionButton.label}
