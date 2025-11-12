@@ -38,6 +38,9 @@ export default function DocumentVault() {
   const [viewingDoc, setViewingDoc] = useState(null);
   const queryClient = useQueryClient();
 
+  const [exportingZip, setExportingZip] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -199,6 +202,60 @@ export default function DocumentVault() {
     
     if (confirm(confirmMessage)) {
       deleteBulkMutation.mutate(selectedDocs);
+    }
+  };
+
+  const handleBulkExportZip = async () => {
+    if (selectedDocs.length === 0) {
+      alert(language === 'th' ? 'กรุณาเลือกเอกสารอย่างน้อย 1 ไฟล์' : 'Please select at least 1 document');
+      return;
+    }
+
+    setExportingZip(true);
+    try {
+      const response = await base44.functions.invoke('bulkExportDocuments', {
+        documentIds: selectedDocs
+      });
+
+      // Create blob from response
+      const blob = new Blob([response.data], { type: 'application/zip' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `LeaseShield_Documents_${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+
+      setSelectedDocs([]);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert(language === 'th' ? 'ไม่สามารถส่งออกได้' : 'Export failed');
+    } finally {
+      setExportingZip(false);
+    }
+  };
+
+  const handleExportAllReport = async () => {
+    setExportingPdf(true);
+    try {
+      const response = await base44.functions.invoke('generateDataReport');
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `LeaseShield_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert(language === 'th' ? 'ไม่สามารถส่งออกได้' : 'Export failed');
+    } finally {
+      setExportingPdf(false);
     }
   };
 
@@ -372,7 +429,11 @@ export default function DocumentVault() {
       save: "Save",
       cancel: "Cancel",
       saving: "Saving...",
-      loadingDocuments: "Loading documents..."
+      loadingDocuments: "Loading documents...",
+      exportZip: "Export as ZIP",
+      exportReport: "Export Full Report",
+      exporting: "Exporting...",
+      bulkActions: "Bulk Actions"
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -408,7 +469,11 @@ export default function DocumentVault() {
       save: "บันทึก",
       cancel: "ยกเลิก",
       saving: "กำลังบันทึก...",
-      loadingDocuments: "กำลังโหลดเอกสาร..."
+      loadingDocuments: "กำลังโหลดเอกสาร...",
+      exportZip: "ส่งออกเป็น ZIP",
+      exportReport: "ส่งออกรายงานฉบับเต็ม",
+      exporting: "กำลังส่งออก...",
+      bulkActions: "การดำเนินการจำนวนมาก"
     }
   };
 
@@ -705,6 +770,71 @@ export default function DocumentVault() {
                   {strings.recentUploads} ({documents.length})
                 </CardTitle>
                 <div className="flex items-center gap-2 flex-wrap">
+                  {/* Bulk Actions */}
+                  {selectedDocs.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleBulkExportZip}
+                        disabled={exportingZip}
+                        className="text-xs h-8"
+                      >
+                        {exportingZip ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            {strings.exporting}
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            {strings.exportZip}
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleBulkDelete}
+                        disabled={deleteBulkMutation.isPending}
+                        className="text-xs h-8"
+                      >
+                        {deleteBulkMutation.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            {strings.deleting}
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            {strings.deleteSelected} ({selectedDocs.length})
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Export Full Report */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportAllReport}
+                    disabled={exportingPdf}
+                    className="text-xs h-8"
+                  >
+                    {exportingPdf ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {strings.exporting}
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-4 h-4 mr-2" />
+                        {strings.exportReport}
+                      </>
+                    )}
+                  </Button>
+
                   {documents.length > 0 && (
                     <button
                       onClick={handleSelectAll}
@@ -721,27 +851,6 @@ export default function DocumentVault() {
                       )}
                       <span className="font-medium">{language === 'th' ? 'เลือกทั้งหมด' : 'Select All'}</span>
                     </button>
-                  )}
-                  {selectedDocs.length > 0 && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleBulkDelete}
-                      disabled={deleteBulkMutation.isPending}
-                      className="w-full sm:w-auto text-xs h-8"
-                    >
-                      {deleteBulkMutation.isPending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {strings.deleting}
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          {strings.deleteSelected} ({selectedDocs.length})
-                        </>
-                      )}
-                    </Button>
                   )}
                 </div>
               </div>

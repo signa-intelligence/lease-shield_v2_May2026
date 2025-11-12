@@ -42,6 +42,9 @@ export default function UploadScanPage() {
   const [leaseDetails, setLeaseDetails] = useState(null);
   const [pendingLeaseId, setPendingLeaseId] = useState(null);
   const [analysisStage, setAnalysisStage] = useState('');
+  // New state variables for batch mode
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchResults, setBatchResults] = useState([]); // To store results of each file in batch
 
   // New state for viewing lease details
   const [selectedLease, setSelectedLease] = useState(null);
@@ -184,7 +187,10 @@ export default function UploadScanPage() {
       scansRemaining: "{remaining} scan(s) remaining {periodText}",
       unlimitedScans: "Unlimited Scans",
       browseDocuments: "Browse Documents",
-      takePhotos: "Take Photos"
+      takePhotos: "Take Photos",
+      batchUpload: "Batch Upload",
+      singleUpload: "Single Upload",
+      filesWillBeSeparate: "Each file will be uploaded as a separate lease"
     },
     th: {
       title: "สแกนสัญญาเช่า",
@@ -249,7 +255,10 @@ export default function UploadScanPage() {
       scansRemaining: "เหลืออีก {remaining} การสแกน{periodText}",
       unlimitedScans: "สแกนได้ไม่จำกัด",
       browseDocuments: "เลือกเอกสาร",
-      takePhotos: "ถ่ายรูป"
+      takePhotos: "ถ่ายรูป",
+      batchUpload: "อัปโหลดแบบกลุ่ม",
+      singleUpload: "อัปโหลดแบบเดี่ยว",
+      filesWillBeSeparate: "แต่ละไฟล์จะถูกอัปโหลดเป็นสัญญาเช่าแยกกัน"
     }
   }[language];
 
@@ -282,6 +291,56 @@ export default function UploadScanPage() {
       return;
     }
 
+    // BATCH MODE: Upload multiple leases separately
+    if (selectedFiles.length > 1) {
+      setBatchMode(true);
+      setUploading(true);
+      setAnalyzing(false); // Batch upload is just uploading, not analyzing immediately
+      setError(null);
+      setUploadProgress(0); // Reset progress for batch
+      const batchResultsTemp = []; // Use a temporary array to store results for this batch operation
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        try {
+          setAnalysisStage(language === 'th' ? `กำลังอัปโหลดไฟล์ ${i + 1}/${selectedFiles.length}` : `Uploading file ${i + 1}/${selectedFiles.length}`);
+          setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
+
+          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          
+          const lease = await base44.entities.Lease.create({
+            file_url: file_url,
+            file_urls: [file_url], // Assuming each file is a single lease document
+            status: 'uploaded', // Leases created in batch mode are 'uploaded', not yet 'scanned'
+            created_by: user?.email // Ensure created_by is set
+          });
+          batchResultsTemp.push({ file: file.name, leaseId: lease.id, success: true });
+        } catch (err) {
+          console.error(`Batch upload error for file ${file.name}:`, err);
+          batchResultsTemp.push({ file: file.name, success: false, error: err.message });
+          // If one file fails, continue with others in the batch
+        }
+      }
+
+      setBatchResults(batchResultsTemp); // Store all batch results
+      setUploading(false);
+      setBatchMode(false); // Exit batch mode
+      setSelectedFiles([]); // Clear selected files after batch upload attempt
+      setUploadProgress(0);
+      setAnalysisStage(''); // Clear stage
+      queryClient.invalidateQueries({ queryKey: ['leases'] }); // Invalidate to show new 'uploaded' leases
+
+      const successCount = batchResultsTemp.filter(r => r.success).length;
+      // Provide a summary alert
+      alert(
+        language === 'th'
+          ? `อัปโหลดสำเร็จ ${successCount}/${batchResultsTemp.length} ไฟล์\n\nไฟล์ที่อัปโหลดสำเร็จแล้วจะปรากฏในรายการ "สัญญาเช่าทั้งหมด" และคุณสามารถเริ่มการวิเคราะห์ได้จากที่นั่น`
+          : `Successfully uploaded ${successCount}/${batchResultsTemp.length} files.\n\nSuccessfully uploaded files will appear in "All Leases" list, where you can initiate analysis.`
+      );
+      return; // Crucially, exit here for batch mode
+    }
+
+    // SINGLE MODE: Keep existing logic
     setUploading(true);
     setError(null);
     setUploadProgress(0);
@@ -311,7 +370,8 @@ export default function UploadScanPage() {
         const lease = await base44.entities.Lease.create({
           file_url: fileUrls[0],
           file_urls: fileUrls,
-          status: 'uploaded'
+          status: 'uploaded',
+          created_by: user?.email // Ensure created_by is set
         });
         createdLeaseId = lease.id;
         setUploadProgress(50);
@@ -457,7 +517,7 @@ export default function UploadScanPage() {
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       setShowConfirmation(false);
 
-      // Open in modal instead of navigate
+      // Open in modal instead of navigating
       const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
       const updatedLease = updatedLeases.find(l => l.id === pendingLeaseId);
       setSelectedLease(updatedLease);
@@ -600,7 +660,7 @@ export default function UploadScanPage() {
         window.history.replaceState({}, '', createPageUrl("UploadScan"));
       }
     }
-  }, [leases]);
+  }, [leases, createPageUrl]);
 
   const getPeriodText = (period) => {
     if (period === 'year') {
@@ -678,7 +738,7 @@ export default function UploadScanPage() {
               </DialogHeader>
               <div className="space-y-4">
                 <p style={{ color: colors.textSecondary }}>
-                  {strings.confirmNoticeDesc}: <strong>{leaseDetails.end_date ? format(new Date(leaseDetails.end_date), 'MMM d, yyyy') : 'N/A'}</strong>
+                  {leaseDetails.end_date ? `${strings.confirmNoticeDesc}: ${format(new Date(leaseDetails.end_date), 'MMM d, yyyy')}` : `${strings.confirmNoticeDesc}: N/A`}
                 </p>
                 <div>
                   <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
@@ -990,7 +1050,7 @@ export default function UploadScanPage() {
                 {/* Current Stage Indicator */}
                 {analysisStage && (
                   <p className="text-sm font-medium mb-4" style={{ color: '#3B82F6' }}>
-                    {strings.analyzing[analysisStage] || analysisStage}
+                    {strings.analyzing?.[analysisStage] || analysisStage}
                   </p>
                 )}
 
@@ -1050,6 +1110,22 @@ export default function UploadScanPage() {
                   </div>
                 )}
 
+                {/* Batch Mode Info */}
+                {selectedFiles.length > 1 && (
+                  <div className="mb-4 p-4 rounded-lg" style={{
+                    backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                    border: '2px solid #3B82F6'
+                  }}>
+                    <div className="flex items-center gap-3">
+                      <Upload className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <p className="font-bold text-sm" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>{strings.batchUpload}</p>
+                        <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>{strings.filesWillBeSeparate}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div
                   className={`border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all ${dragActive ? 'border-blue-500 bg-blue-50' : ''} ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
                   style={{
@@ -1073,7 +1149,7 @@ export default function UploadScanPage() {
                       <input
                         type="file"
                         multiple
-                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg" // Added image/* explicit types
                         onChange={handleFileSelect}
                         className="hidden"
                         disabled={!scanStatus.allowed}
@@ -1197,6 +1273,13 @@ export default function UploadScanPage() {
                           <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
                             <CheckCircle2 className="w-3 h-3 mr-1" />
                             {language === 'th' ? 'วิเคราะห์แล้ว' : 'Analyzed'}
+                          </Badge>
+                        )}
+                        {/* If lease status is 'uploaded' from batch mode, show a different badge (e.g., 'Awaiting Analysis') */}
+                        {lease.status === 'uploaded' && (
+                          <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            {language === 'th' ? 'รอการวิเคราะห์' : 'Awaiting Analysis'}
                           </Badge>
                         )}
                         <button
