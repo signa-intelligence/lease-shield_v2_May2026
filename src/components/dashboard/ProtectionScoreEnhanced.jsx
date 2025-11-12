@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Shield, TrendingUp, Award, Target, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Shield, TrendingUp, Award, Target, ChevronRight, CheckCircle2, ChevronLeft, Star, Trophy, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
@@ -15,6 +15,8 @@ const ProtectionScoreEnhanced = ({
   compact = false
 }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
 
   const getScoreColor = (score) => {
     if (score >= 85) return '#10B981';
@@ -62,14 +64,83 @@ const ProtectionScoreEnhanced = ({
 
   const percentile = Math.min(95, Math.floor(score * 0.9 + 10));
 
-  const iconMap = {
-    FileText: '📄',
-    Shield: '🛡️',
-    Bell: '🔔',
-    Wrench: '🔧',
+  // Achievement Badges Logic
+  const getAchievements = () => {
+    const achievements = [];
+    
+    if (score >= 85) {
+      achievements.push({
+        icon: Trophy,
+        label: language === 'th' ? 'ผู้เชี่ยวชาญ' : 'Expert',
+        color: '#FFD700'
+      });
+    }
+    if (score >= 70) {
+      achievements.push({
+        icon: Star,
+        label: language === 'th' ? 'ผู้ป้องกันตัวเอง' : 'Self-Protector',
+        color: '#C7A338'
+      });
+    }
+    if (breakdown.documentation >= 30) {
+      achievements.push({
+        icon: CheckCircle2,
+        label: language === 'th' ? 'นักจัดเก็บเอกสาร' : 'Documenter',
+        color: '#3B82F6'
+      });
+    }
+    if (breakdown.proactiveActions >= 20) {
+      achievements.push({
+        icon: Zap,
+        label: language === 'th' ? 'นักดำเนินการ' : 'Action Taker',
+        color: '#10B981'
+      });
+    }
+    
+    return achievements;
   };
 
-  // FULL-SIZE VERSION (no compact prop or compact=false)
+  const achievements = getAchievements();
+
+  // Swipe Handlers
+  const handleTouchStart = (e) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    
+    if (isLeftSwipe && currentSlide < recommendations.length - 1) {
+      setCurrentSlide(currentSlide + 1);
+    }
+    if (isRightSwipe && currentSlide > 0) {
+      setCurrentSlide(currentSlide - 1);
+    }
+    
+    setTouchStart(0);
+    setTouchEnd(0);
+  };
+
+  const nextSlide = () => {
+    if (currentSlide < recommendations.length - 1) {
+      setCurrentSlide(currentSlide + 1);
+    }
+  };
+
+  const prevSlide = () => {
+    if (currentSlide > 0) {
+      setCurrentSlide(currentSlide - 1);
+    }
+  };
+
   return (
     <Card className="border-none shadow-xl overflow-hidden h-full" style={{ backgroundColor: colors.cardBg }}>
       <CardHeader
@@ -149,9 +220,9 @@ const ProtectionScoreEnhanced = ({
             </div>
           </div>
 
-          {/* Percentile badge */}
+          {/* Percentile badge with animation */}
           <div
-            className="flex items-center gap-1 px-3 py-1 rounded-full"
+            className="flex items-center gap-1 px-3 py-1 rounded-full animate-pulse"
             style={{
               backgroundColor: `${scoreColor}10`,
               border: `1px solid ${scoreColor}30`,
@@ -162,12 +233,47 @@ const ProtectionScoreEnhanced = ({
               {language === 'th' ? `ท็อป ${percentile}%` : `Top ${percentile}%`}
             </span>
           </div>
+
+          {/* Achievement Badges */}
+          {achievements.length > 0 && (
+            <div className="flex items-center gap-1 mt-2 flex-wrap justify-center">
+              {achievements.map((achievement, idx) => {
+                const Icon = achievement.icon;
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-1 px-2 py-1 rounded-full"
+                    style={{
+                      backgroundColor: `${achievement.color}15`,
+                      border: `1px solid ${achievement.color}30`,
+                      animation: 'fadeIn 0.5s ease-out',
+                      animationDelay: `${idx * 0.1}s`,
+                      animationFillMode: 'backwards'
+                    }}
+                    title={achievement.label}
+                  >
+                    <Icon className="w-3 h-3" style={{ color: achievement.color }} />
+                    <span className="text-[10px] font-bold" style={{ color: achievement.color }}>
+                      {achievement.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Compact Breakdown bars */}
-        <div className="space-y-3">
-          {categoryData.map((cat) => (
-            <div key={cat.key}>
+        {/* Compact Breakdown bars with progress rings */}
+        <div className="space-y-3 mb-4">
+          {categoryData.map((cat, idx) => (
+            <div 
+              key={cat.key}
+              style={{
+                animation: 'slideInRight 0.5s ease-out',
+                animationDelay: `${idx * 0.1}s`,
+                animationFillMode: 'backwards'
+              }}
+            >
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1">
                   <span className="text-sm">{cat.icon}</span>
@@ -195,7 +301,153 @@ const ProtectionScoreEnhanced = ({
             </div>
           ))}
         </div>
+
+        {/* Swipeable Recommendation Cards */}
+        {recommendations && recommendations.length > 0 && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'คำแนะนำ' : 'Quick Wins'}
+              </span>
+              {recommendations.length > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={prevSlide}
+                    disabled={currentSlide === 0}
+                    style={{
+                      padding: '4px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      backgroundColor: currentSlide === 0 ? colors.borderColor : colors.textPrimary,
+                      color: currentSlide === 0 ? colors.textSecondary : colors.cardBg,
+                      cursor: currentSlide === 0 ? 'not-allowed' : 'pointer',
+                      opacity: currentSlide === 0 ? 0.5 : 1,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                  </button>
+                  <span className="text-[10px]" style={{ color: colors.textSecondary }}>
+                    {currentSlide + 1}/{recommendations.length}
+                  </span>
+                  <button
+                    onClick={nextSlide}
+                    disabled={currentSlide === recommendations.length - 1}
+                    style={{
+                      padding: '4px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      backgroundColor: currentSlide === recommendations.length - 1 ? colors.borderColor : colors.textPrimary,
+                      color: currentSlide === recommendations.length - 1 ? colors.textSecondary : colors.cardBg,
+                      cursor: currentSlide === recommendations.length - 1 ? 'not-allowed' : 'pointer',
+                      opacity: currentSlide === recommendations.length - 1 ? 0.5 : 1,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            <div 
+              className="overflow-hidden"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div 
+                className="flex transition-transform duration-300 ease-out"
+                style={{
+                  transform: `translateX(-${currentSlide * 100}%)`
+                }}
+              >
+                {recommendations.map((rec, idx) => (
+                  <div 
+                    key={idx}
+                    className="min-w-full px-1"
+                  >
+                    <Link to={createPageUrl(rec.route)}>
+                      <div
+                        className="p-3 rounded-lg cursor-pointer transition-all duration-200 hover:scale-105"
+                        style={{
+                          backgroundColor: `${scoreColor}10`,
+                          border: `1px solid ${scoreColor}30`,
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>
+                            {rec.action}
+                          </span>
+                          <Badge
+                            style={{
+                              backgroundColor: scoreColor,
+                              color: '#FFFFFF',
+                              fontSize: '10px',
+                              padding: '2px 6px'
+                            }}
+                          >
+                            +{rec.points}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-end">
+                          <ChevronRight className="w-4 h-4" style={{ color: scoreColor }} />
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Dot indicators */}
+            {recommendations.length > 1 && (
+              <div className="flex justify-center gap-1 mt-2">
+                {recommendations.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentSlide(idx)}
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      border: 'none',
+                      backgroundColor: idx === currentSlide ? scoreColor : colors.borderColor,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      padding: 0
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.8);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      `}</style>
     </Card>
   );
 };
