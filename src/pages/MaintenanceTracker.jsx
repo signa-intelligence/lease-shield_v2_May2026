@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,46 +6,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Plus, Clock, CheckCircle2, AlertTriangle, Home, Zap, Droplet, Hammer, Thermometer, Bug, Package, Loader2, Camera, X, Image as ImageIcon, Pencil, Trash2, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Wrench, Plus, Camera, Image as ImageIcon, X, Loader2, ArrowLeft, Save, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import ChatLog from "../components/maintenance/ChatLog";
 
 export default function MaintenanceTracker() {
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingRequest, setEditingRequest] = useState(null);
-  const [deletingRequest, setDeletingRequest] = useState(null);
-  const [addingMessageToRequest, setAddingMessageToRequest] = useState(null);
-  const [tenantMessage, setTenantMessage] = useState('');
-  const [sendingMessage, setSendingMessage] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [expandedRequest, setExpandedRequest] = useState(null);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [photoFiles, setPhotoFiles] = useState([]);
+  const [photoPreviews, setPhotoPreviews] = useState([]);
+  
   const [formData, setFormData] = useState({
     issue_title: '',
     description: '',
     category: 'other',
     priority: 'medium',
     property_address: '',
-    reported_date: new Date().toISOString().split('T')[0],
-    photo_urls: []
+    reported_date: new Date().toISOString().split('T')[0]
   });
-  const [formErrors, setFormErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
-  const [uploadingPhotos, setUploadingPhotos] = useState(false);
-  const [filter, setFilter] = useState('all');
-
-  const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: maintenanceRequests = [] } = useQuery({
+  const { data: requests = [], isLoading } = useQuery({
     queryKey: ['maintenance'],
     queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
@@ -54,998 +45,431 @@ export default function MaintenanceTracker() {
 
   const createRequestMutation = useMutation({
     mutationFn: (data) => base44.entities.MaintenanceRequest.create(data),
-    onSuccess: () => {
+    onSuccess: async (createdRequest) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-    },
-  });
-
-  const updateRequestMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.MaintenanceRequest.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-    },
-  });
-
-  const deleteRequestMutation = useMutation({
-    mutationFn: (id) => base44.entities.MaintenanceRequest.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-      setDeletingRequest(null);
-    },
-  });
-
-  const language = user?.language || 'en';
-  const isDarkMode = user?.theme === 'dark';
-
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D'
-  } : {
-    bg: '#F8FAFC',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    inputBg: '#FFFFFF'
-  };
-
-  const validateForm = () => {
-    const errors = {};
-    
-    if (!formData.issue_title || formData.issue_title.trim().length === 0) {
-      errors.issue_title = language === 'th' ? 'กรุณาระบุหัวข้อปัญหา' : 'Please enter issue title';
-    } else if (formData.issue_title.length > 200) {
-      errors.issue_title = language === 'th' ? 'หัวข้อยาวเกินไป (สูงสุด 200 ตัวอักษร)' : 'Title too long (max 200 characters)';
-    }
-    
-    if (!formData.description || formData.description.trim().length === 0) {
-      errors.description = language === 'th' ? 'กรุณาอธิบายปัญหา' : 'Please describe the issue';
-    } else if (formData.description.length > 2000) {
-      errors.description = language === 'th' ? 'คำอธิบายยาวเกินไป (สูงสุด 2000 ตัวอักษร)' : 'Description too long (max 2000 characters)';
-    }
-    
-    if (!formData.reported_date) {
-      errors.reported_date = language === 'th' ? 'กรุณาระบุวันที่พบปัญหา' : 'Please enter reported date';
-    }
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handlePhotoUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    setUploadingPhotos(true);
-    // Clear previous photo errors
-    setFormErrors(prev => ({...prev, photos: undefined})); 
-
-    try {
-      const uploadPromises = files.map(file => 
-        base44.integrations.Core.UploadFile({ file })
-      );
-      
-      const uploadResults = await Promise.all(uploadPromises);
-      const photoUrls = uploadResults.map(result => result.file_url);
-      
-      setFormData(prev => ({
-        ...prev,
-        photo_urls: [...prev.photo_urls, ...photoUrls]
-      }));
-    } catch (error) {
-      console.error('Photo upload failed:', error);
-      setFormErrors(prev => ({
-        ...prev,
-        photos: language === 'th' 
-          ? 'ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองอีกครั้ง' 
-          : 'Failed to upload photos. Please try again.'
-      }));
-    } finally {
-      setUploadingPhotos(false);
-      // Reset the file input to allow uploading the same file again if needed
-      e.target.value = '';
-    }
-  };
-
-  const handleRemovePhoto = (indexToRemove) => {
-    setFormData(prev => ({
-      ...prev,
-      photo_urls: prev.photo_urls.filter((_, index) => index !== indexToRemove)
-    }));
-  };
-
-  const handleEdit = (request) => {
-    setEditingRequest(request);
-    setFormData({
-      issue_title: request.issue_title,
-      description: request.description,
-      category: request.category,
-      priority: request.priority,
-      property_address: request.property_address || '',
-      reported_date: request.reported_date,
-      photo_urls: request.photo_urls || []
-    });
-    setShowAddDialog(true);
-  };
-
-  const handleDelete = async () => {
-    if (!deletingRequest) return;
-    
-    try {
-      await deleteRequestMutation.mutateAsync(deletingRequest.id);
-    } catch (error) {
-      console.error('Delete failed:', error);
-      alert(language === 'th' 
-        ? 'ไม่สามารถลบได้ กรุณาลองอีกครั้ง' 
-        : 'Failed to delete. Please try again.');
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
-    setSubmitting(true);
-    
-    try {
-      const requestData = {
-        issue_title: formData.issue_title.trim(),
-        description: formData.description.trim(),
-        category: formData.category,
-        priority: formData.priority,
-        property_address: formData.property_address.trim() || undefined,
-        reported_date: formData.reported_date,
-        status: editingRequest ? editingRequest.status : 'reported'
-      };
-
-      if (formData.photo_urls.length > 0) {
-        requestData.photo_urls = formData.photo_urls;
-      }
-
-      if (editingRequest) {
-        await updateRequestMutation.mutateAsync({
-          id: editingRequest.id,
-          data: requestData
-        });
-      } else {
-        // Create new request
-        const createdRequest = await createRequestMutation.mutateAsync(requestData);
-        
-        console.log('📧 Attempting to send maintenance notifications...');
-        console.log('🔍 User data:', {
-          email: user.email,
-          landlord_email: user.landlord_email,
-          juristic_email: user.juristic_email
-        });
-        
-        // Send notifications after successful creation - with detailed error tracking
-        try {
-          const notificationResponse = await base44.functions.invoke('sendMaintenanceNotification', {
-            maintenanceRequest: createdRequest
-          });
-          
-          console.log('✅ Notification response:', notificationResponse.data);
-          
-          // Check if emails were actually sent
-          const notifications = notificationResponse.data?.notifications || [];
-          const landlordSent = notifications.find(n => n.recipient === 'landlord' && n.status === 'sent');
-          const juristicSent = notifications.find(n => n.recipient === 'juristic' && n.status === 'sent');
-          
-          if (!user.landlord_email && !user.juristic_email) {
-            console.warn('⚠️ No landlord or juristic email configured');
-            if (language === 'th') {
-              alert('⚠️ คำเตือน: ยังไม่ได้ตั้งค่าอีเมลเจ้าของบ้านหรือนิติบุคคล\nกรุณาไปที่หน้าบัญชีเพื่อเพิ่มข้อมูลติดต่อ');
-            } else {
-              alert('⚠️ Warning: No landlord or juristic email configured\nPlease add contact info in Account page');
-            }
-          } else {
-            // Show success message with details
-            let message = language === 'th' 
-              ? '✅ คำขอซ่อมถูกส่งแล้ว\n\n' 
-              : '✅ Maintenance request sent\n\n';
-            
-            if (user.landlord_email) {
-              message += landlordSent 
-                ? (language === 'th' ? '✓ ส่งอีเมลถึงเจ้าของบ้านแล้ว\n' : '✓ Landlord email sent\n')
-                : (language === 'th' ? '✗ ส่งอีเมลถึงเจ้าของบ้านไม่สำเร็จ\n' : '✗ Landlord email failed\n');
-            }
-            
-            if (user.juristic_email) {
-              message += juristicSent 
-                ? (language === 'th' ? '✓ ส่งอีเมลถึงนิติบุคคลแล้ว' : '✓ Juristic email sent')
-                : (language === 'th' ? '✗ ส่งอีเมลถึงนิติบุคคลไม่สำเร็จ' : '✗ Juristic email failed');
-            }
-            
-            alert(message);
-          }
-          
-        } catch (notificationError) {
-          console.error('❌ Failed to send notifications:', notificationError);
-          alert(language === 'th' 
-            ? '⚠️ คำขอซ่อมถูกบันทึกแล้ว แต่ไม่สามารถส่งการแจ้งเตือนได้' 
-            : '⚠️ Request saved but failed to send notifications');
-        }
-      }
-      
-      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-      setShowAddDialog(false);
-      setEditingRequest(null);
+      setShowAddForm(false);
+      setPhotoFiles([]);
+      setPhotoPreviews([]);
       setFormData({
         issue_title: '',
         description: '',
         category: 'other',
         priority: 'medium',
         property_address: '',
-        reported_date: new Date().toISOString().split('T')[0],
-        photo_urls: []
-      });
-      setFormErrors({});
-    } catch (error) {
-      console.error('Failed to save request:', error);
-      setFormErrors({ 
-        submit: language === 'th' 
-          ? 'ไม่สามารถบันทึกรายการได้ กรุณาลองอีกครั้ง' 
-          : 'Failed to save request. Please try again.' 
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleAddMessage = async (request) => {
-    if (!tenantMessage.trim()) {
-      alert(language === 'th' ? 'กรุณาใส่ข้อความ' : 'Please enter a message');
-      return;
-    }
-
-    setSendingMessage(true);
-    try {
-      const communicationLog = request.communication_log ? [...request.communication_log] : [];
-      communicationLog.push({
-        date: new Date().toISOString(),
-        message: tenantMessage.trim(),
-        sender: 'Tenant'
+        reported_date: new Date().toISOString().split('T')[0]
       });
 
-      await updateRequestMutation.mutateAsync({
-        id: request.id,
-        data: { communication_log: communicationLog }
-      });
+      // Send notifications
+      try {
+        const notificationResponse = await base44.functions.invoke('sendMaintenanceNotification', {
+          maintenanceRequest: createdRequest
+        });
+        
+        if (notificationResponse.data?.success) {
+          const sentCount = notificationResponse.data.notifications?.filter(n => n.status === 'sent').length || 0;
+          if (sentCount > 0) {
+            alert(
+              language === 'th'
+                ? `✅ คำขอซ่อมถูกส่งแล้ว!\n\nแจ้งไปยัง: ${sentCount} ผู้รับ`
+                : `✅ Request sent to ${sentCount} recipient(s)!`
+            );
+          }
+        }
+      } catch (notifError) {
+        console.error('Failed to send notifications:', notifError);
+      }
+    },
+  });
 
-      setAddingMessageToRequest(null);
-      setTenantMessage('');
-    } catch (error) {
-      console.error('Failed to add message:', error);
-      alert(language === 'th' ? 'ไม่สามารถส่งข้อความได้ กรุณาลองอีกครั้ง' : 'Failed to send message. Please try again.');
-    } finally {
-      setSendingMessage(false);
-    }
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = {
+    bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
+    cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
+    textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
+    textSecondary: isDarkMode ? '#A8ABAD' : '#64748b',
+    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
+    inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
+    sectionBg: isDarkMode ? '#353A3D' : '#F8FAFC'
   };
 
   const t = {
     en: {
       title: "Maintenance Tracker",
-      subtitle: "Document and track all repair requests",
-      reportIssue: "Report Issue",
-      reportFirst: "Report First Request",
-      dialogTitle: "New Maintenance Request", 
-      newRequest: "New Maintenance Request", 
+      subtitle: "Track repair requests and communicate with property management",
+      addRequest: "New Request",
       issueTitle: "Issue Title",
-      issueTitlePlaceholder: "e.g., Leaking faucet", 
       description: "Description",
-      descriptionPlaceholder: "Describe the issue in detail...", 
       category: "Category",
       priority: "Priority",
       propertyAddress: "Property Address",
-      propertyAddressPlaceholder: "Property address", 
       reportedDate: "Reported Date",
-      save: "Save", 
-      saving: "Saving...", 
-      noRequests: "No Maintenance Requests",
-      noRequestsSub: "Track repair requests and communications",
-      reported: "Reported",
-      acknowledged: "Acknowledged",
-      completed: "Mark Completed",
-      inProgress: "Mark In Progress",
-      estCost: "Est. Cost",
-      filters: {
-        all: "All",
-        reported: "Reported",
-        acknowledged: "Acknowledged",
-        in_progress: "In Progress",
-        completed: "Completed"
-      },
-      status: {
-        reported: "Reported",
-        acknowledged: "Acknowledged",
-        in_progress: "In Progress",
-        completed: "Completed",
-        rejected: "Rejected"
-      },
-      categories: {
-        plumbing: "Plumbing",
-        electrical: "Electrical",
-        structural: "Structural",
-        appliance: "Appliance",
-        hvac: "HVAC",
-        pest: "Pest",
-        other: "Other"
-      },
-      priorities: {
-        low: "Low",
-        medium: "Medium",
-        high: "High",
-        urgent: "Urgent"
-      },
-      addPhotosHint: "Click or tap to add photos", 
+      addPhotos: "Add Photos",
       takePhoto: "Take Photo",
-      uploadPhoto: "Upload Photo",
-      photos: "Photos", 
-      uploading: "Uploading...",
-      editRequest: "Edit Request",
-      deleteRequest: "Delete Request",
-      confirmDelete: "Are you sure?",
-      confirmDeleteDesc: "This will permanently delete this maintenance request. This action cannot be undone.",
-      cancelDelete: "Cancel",
-      confirmDeleteBtn: "Delete",
-      updateButton: "Update", // Still used in the card edit button
-      issuePhotos: "Issue Photos:",
-      completionPhotos: "Completion Photos:",
-      billsReceipts: "Bills/Receipts:",
-      landlordResponse: "Landlord Response:",
-      cost: "Cost:",
-      messages: "Messages",
-      reply: "Reply",
-      yourMessage: "Your Message",
-      typeMessage: "Type your message...",
-      sendMessage: "Send Message",
-      sending: "Sending...",
+      chooseFiles: "Choose Files",
+      uploadingPhotos: "Uploading photos...",
+      photosAdded: "photo(s) added",
+      save: "Save & Send",
       cancel: "Cancel",
+      noRequests: "No Maintenance Requests",
+      noRequestsDesc: "Report issues to keep records and notify your landlord",
+      status: "Status",
+      back: "Back",
+      viewChat: "View Chat",
+      hideChat: "Hide Chat",
     },
     th: {
       title: "ติดตามการซ่อมบำรุง",
-      subtitle: "บันทึกและติดตามคำขอซ่อมทั้งหมด",
-      reportIssue: "แจ้งปัญหา",
-      reportFirst: "แจ้งปัญหาแรก",
-      dialogTitle: "คำขอซ่อมบำรุงใหม่", 
-      newRequest: "คำขอซ่อมบำรุงใหม่", 
+      subtitle: "ติดตามคำขอซ่อมและสื่อสารกับผู้จัดการทรัพย์สิน",
+      addRequest: "คำขอใหม่",
       issueTitle: "หัวข้อปัญหา",
-      issueTitlePlaceholder: "เช่น: ก๊อกน้ำรั่ว", 
       description: "รายละเอียด",
-      descriptionPlaceholder: "อธิบายปัญหาโดยละเอียด...", 
-      category: "หมวดหมู่",
-      priority: "ลำดับความสำคัญ",
+      category: "ประเภท",
+      priority: "ความสำคัญ",
       propertyAddress: "ที่อยู่ทรัพย์สิน",
-      propertyAddressPlaceholder: "ที่อยู่ทรัพย์สิน", 
       reportedDate: "วันที่รายงาน",
-      save: "บันทึก", 
-      saving: "กำลังบันทึก...", 
-      noRequests: "ไม่มีคำขอซ่อมบำรุง",
-      noRequestsSub: "ติดตามคำขอซ่อมและการติดต่อสื่อสาร",
-      reported: "รายงานแล้ว",
-      acknowledged: "รับทราบแล้ว",
-      completed: "ทำเครื่องหมายเสร็จสิ้น",
-      inProgress: "ทำเครื่องหมายกำลังดำเนินการ",
-      estCost: "ต้นทุนโดยประมาณ",
-      filters: {
-        all: "ทั้งหมด",
-        reported: "แจ้งแล้ว",
-        acknowledged: "รับทราบแล้ว",
-        in_progress: "กำลังดำเนินการ",
-        completed: "เสร็จสิ้น"
-      },
-      status: {
-        reported: "แจ้งแล้ว",
-        acknowledged: "รับทราบแล้ว",
-        in_progress: "กำลังดำเนินการ",
-        completed: "เสร็จสิ้น",
-        rejected: "ถูกปฏิเสธ"
-      },
-      categories: {
-        plumbing: "ประปา",
-        electrical: "ไฟฟ้า",
-        structural: "โครงสร้าง",
-        appliance: "เครื่องใช้ไฟฟ้า",
-        hvac: "เครื่องปรับอากาศ/ระบายอากาศ",
-        pest: "สัตว์รบกวน",
-        other: "อื่น ๆ"
-      },
-      priorities: {
-        low: "ต่ำ",
-        medium: "ปานกลาง",
-        high: "สูง",
-        urgent: "เร่งด่วน"
-      },
-      addPhotosHint: "คลิกหรือแตะเพื่อเพิ่มรูปภาพ", 
+      addPhotos: "เพิ่มรูปภาพ",
       takePhoto: "ถ่ายรูป",
-      uploadPhoto: "อัปโหลดรูป",
-      photos: "รูปภาพ", 
-      uploading: "กำลังอัปโหลด...",
-      editRequest: "แก้ไขคำขอ",
-      deleteRequest: "ลบคำขอ",
-      confirmDelete: "คุณแน่ใจหรือไม่?",
-      confirmDeleteDesc: "การดำเนินการนี้จะลบคำขอซ่อมบำรุงนี้อย่างถาวร และไม่สามารถยกเลิกได้",
-      cancelDelete: "ยกเลิก",
-      confirmDeleteBtn: "ลบ",
-      updateButton: "อัปเดต", // Still used in the card edit button
-      issuePhotos: "รูปภาพปัญหา:",
-      completionPhotos: "รูปงานเสร็จ:",
-      billsReceipts: "ใบเสร็จ/บิล:",
-      landlordResponse: "ข้อความจากเจ้าของบ้าน:",
-      cost: "ค่าใช้จ่าย:",
-      messages: "ข้อความ",
-      reply: "ตอบกลับ",
-      yourMessage: "ข้อความของคุณ",
-      typeMessage: "พิมพ์ข้อความ...",
-      sendMessage: "ส่งข้อความ",
-      sending: "กำลังส่ง...",
+      chooseFiles: "เลือกไฟล์",
+      uploadingPhotos: "กำลังอัปโหลดรูปภาพ...",
+      photosAdded: "รูปภาพที่เพิ่ม",
+      save: "บันทึกและส่ง",
       cancel: "ยกเลิก",
+      noRequests: "ไม่มีคำขอซ่อมบำรุง",
+      noRequestsDesc: "รายงานปัญหาเพื่อเก็บบันทึกและแจ้งเจ้าของบ้าน",
+      status: "สถานะ",
+      back: "กลับ",
+      viewChat: "ดูแชท",
+      hideChat: "ซ่อนแชท",
     }
   };
 
   const strings = t[language];
 
+  const handlePhotoSelection = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setPhotoFiles(prev => [...prev, ...files]);
+
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreviews(prev => [...prev, reader.result]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemovePhoto = (index) => {
+    setPhotoFiles(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      let photoUrls = [];
+
+      if (photoFiles.length > 0) {
+        setUploadingPhotos(true);
+        const uploadPromises = photoFiles.map(file => 
+          base44.integrations.Core.UploadFile({ file })
+        );
+        const uploadResults = await Promise.all(uploadPromises);
+        photoUrls = uploadResults.map(result => result.file_url);
+      }
+
+      const initialLogEntry = {
+        timestamp: new Date().toISOString(),
+        message: `${language === 'th' ? 'คำขอซ่อมถูกสร้างโดย' : 'Maintenance request created by'} ${user?.full_name || user?.email}`,
+        sender: 'tenant',
+        sender_name: user?.full_name || user?.email,
+        sender_email: user?.email,
+        action_type: 'created',
+        metadata: {
+          issue_title: formData.issue_title,
+          category: formData.category,
+          priority: formData.priority
+        }
+      };
+
+      const requestData = {
+        ...formData,
+        photo_urls: photoUrls,
+        communication_log: [initialLogEntry]
+      };
+
+      await createRequestMutation.mutateAsync(requestData);
+      setUploadingPhotos(false);
+    } catch (error) {
+      console.error('Failed to create request:', error);
+      setUploadingPhotos(false);
+      alert(language === 'th' 
+        ? 'ไม่สามารถสร้างคำขอได้ กรุณาลองอีกครั้ง' 
+        : 'Failed to create request. Please try again.');
+    }
+  };
+
   const getStatusColor = (status) => {
-    const colors = {
-      reported: "bg-blue-100 text-blue-800 border-blue-200",
-      acknowledged: "bg-purple-100 text-purple-800 border-purple-200",
-      in_progress: "bg-amber-100 text-amber-800 border-amber-200",
-      completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      rejected: "bg-red-100 text-red-800 border-red-200"
-    };
-    return colors[status] || "bg-slate-100 text-slate-800";
-  };
-
-  const getPriorityColor = (priority) => {
-    const colors = {
-      low: "bg-blue-100 text-blue-800",
-      medium: "bg-amber-100 text-amber-800",
-      high: "bg-orange-100 text-orange-800",
-      urgent: "bg-red-100 text-red-800"
-    };
-    return colors[priority] || "bg-slate-100 text-slate-800";
-  };
-
-  const getStatusLabel = (status) => {
-    return strings.status[status] || status.replace('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-  };
-
-  const getCategoryIcon = (category) => {
-    const iconProps = { className: "w-5 h-5 flex-shrink-0", style: { color: colors.textSecondary } };
-    switch (category) {
-      case 'plumbing': return <Droplet {...iconProps} />;
-      case 'electrical': return <Zap {...iconProps} />;
-      case 'structural': return <Hammer {...iconProps} />;
-      case 'appliance': return <Package {...iconProps} />;
-      case 'hvac': return <Thermometer {...iconProps} />;
-      case 'pest': return <Bug {...iconProps} />;
-      case 'other': return <Wrench {...iconProps} />;
-      default: return <Wrench {...iconProps} />;
+    switch (status) {
+      case 'reported': return 'bg-blue-100 text-blue-800';
+      case 'acknowledged': return 'bg-yellow-100 text-yellow-800';
+      case 'in_progress': return 'bg-purple-100 text-purple-800';
+      case 'completed': return 'bg-emerald-100 text-emerald-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      default: return 'bg-slate-100 text-slate-800';
     }
   };
-
-  const filteredRequests = maintenanceRequests.filter(request => {
-    if (filter === 'all') {
-      return true;
-    }
-    return request.status === filter;
-  });
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
-          <div>
-            <div className="flex items-center gap-2 sm:gap-3 mb-2">
-              <Wrench className="w-6 h-6 sm:w-8 sm:h-8 text-ls-forest" />
-              <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
-            </div>
-            <p className="text-sm sm:text-base" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
-          </div>
-          
-          {maintenanceRequests.length > 0 && (
-            <button 
-              onClick={() => setShowAddDialog(true)} 
-              className="w-full sm:w-auto"
-              style={{
-                backgroundColor: '#0C3B2E',
-                color: '#FFFFFF',
-                padding: '12px 20px',
-                borderRadius: '8px',
-                fontWeight: 'bold',
-                fontSize: '15px',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-            >
-              <Plus style={{ width: '18px', height: '18px' }} />
-              <span className="text-sm sm:text-base">{strings.reportIssue}</span>
-            </button>
-          )}
+      <div className="max-w-4xl mx-auto">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(createPageUrl("Dashboard"))}
+          className="mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          {strings.back}
+        </Button>
+
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+            <Wrench className="w-7 h-7 md:w-8 md:h-8 text-orange-600" />
+            {strings.title}
+          </h1>
+          <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
 
-        {/* Add/Edit Dialog - FIXED MOBILE OVERFLOW */}
-        <Dialog open={showAddDialog} onOpenChange={(open) => {
-          setShowAddDialog(open);
-          if (!open) {
-            setEditingRequest(null); // Reset editing request when dialog closes
-            setFormErrors({});
-            setFormData({
-              issue_title: '',
-              description: '',
-              category: 'other',
-              priority: 'medium',
-              property_address: '',
-              reported_date: new Date().toISOString().split('T')[0],
-              photo_urls: []
-            });
-          }
-        }}>
-          <DialogContent 
-            className="max-w-2xl w-[95vw] max-h-[90vh] flex flex-col p-0"
-            style={{
-              backgroundColor: colors.cardBg,
-              borderColor: colors.borderColor
-            }}
-          >
-            <DialogHeader className="px-4 py-4 border-b flex-shrink-0" style={{ 
-              borderBottom: `1px solid ${colors.borderColor}`,
-              backgroundColor: colors.cardBg
-            }}>
-              <div className="flex items-center justify-between">
-                <DialogTitle style={{ color: colors.textPrimary }}>
-                  {editingRequest ? strings.editRequest : strings.newRequest}
-                </DialogTitle>
-                <button
-                  onClick={() => setShowAddDialog(false)}
-                  className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                  style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}
-                >
-                  <X className="w-5 h-5" style={{ color: colors.textPrimary }} />
-                </button>
-              </div>
-            </DialogHeader>
+        <Button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="w-full mb-6 bg-orange-600 hover:bg-orange-700"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          {strings.addRequest}
+        </Button>
 
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1">
-              <div className="flex-1 overflow-y-auto px-4 py-4">
-                
-                {formErrors.submit && (
-                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm mb-4">
-                    <span className="mr-2">❌</span>{formErrors.submit}
-                  </div>
-                )}
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="issue_title" style={{ color: colors.textPrimary }}>
-                      {strings.issueTitle} <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="issue_title"
-                      value={formData.issue_title}
-                      onChange={(e) => {
-                        setFormData({...formData, issue_title: e.target.value});
-                        setFormErrors(prev => ({...prev, issue_title: null}));
-                      }}
-                      placeholder={strings.issueTitlePlaceholder}
-                      maxLength={200}
-                      required
-                      className={`mt-2 ${formErrors.issue_title ? 'border-red-500' : ''}`}
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: formErrors.issue_title ? '#EF4444' : colors.borderColor,
-                        color: colors.textPrimary
-                      }}
-                    />
-                    {formErrors.issue_title && (
-                      <p className="text-xs text-red-600 mt-1">{formErrors.issue_title}</p>
-                    )}
-                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                      {formData.issue_title.length}/200
-                    </p>
-                  </div>
+        {showAddForm && (
+          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label style={{ color: colors.textPrimary }}>{strings.issueTitle}</Label>
+                  <Input
+                    required
+                    value={formData.issue_title}
+                    onChange={(e) => setFormData({...formData, issue_title: e.target.value})}
+                    className="mt-2"
+                    style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
+                  />
+                </div>
 
-                  <div>
-                    <Label htmlFor="description" style={{ color: colors.textPrimary }}>
-                      {strings.description} <span className="text-red-500">*</span>
-                    </Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => {
-                        setFormData({...formData, description: e.target.value});
-                        setFormErrors(prev => ({...prev, description: null}));
-                      }}
-                      placeholder={strings.descriptionPlaceholder}
-                      maxLength={2000}
-                      required
-                      rows={4}
-                      className={`mt-2 ${formErrors.description ? 'border-red-500' : ''}`}
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: formErrors.description ? '#EF4444' : colors.borderColor,
-                        color: colors.textPrimary
-                      }}
-                    />
-                    {formErrors.description && (
-                      <p className="text-xs text-red-600 mt-1">{formErrors.description}</p>
-                    )}
-                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                      {formData.description.length}/2000
-                    </p>
-                  </div>
+                <div>
+                  <Label style={{ color: colors.textPrimary }}>{strings.description}</Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="mt-2"
+                    rows={4}
+                    style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
+                  />
+                </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="category" style={{ color: colors.textPrimary }}>{strings.category}</Label>
-                      <Select
-                        value={formData.category}
-                        onValueChange={(value) => setFormData({...formData, category: value})}
-                      >
-                        <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-                          <SelectItem value="plumbing" style={{ color: colors.textPrimary }}>{strings.categories.plumbing}</SelectItem>
-                          <SelectItem value="electrical" style={{ color: colors.textPrimary }}>{strings.categories.electrical}</SelectItem>
-                          <SelectItem value="structural" style={{ color: colors.textPrimary }}>{strings.categories.structural}</SelectItem>
-                          <SelectItem value="appliance" style={{ color: colors.textPrimary }}>{strings.categories.appliance}</SelectItem>
-                          <SelectItem value="hvac" style={{ color: colors.textPrimary }}>{strings.categories.hvac}</SelectItem>
-                          <SelectItem value="pest" style={{ color: colors.textPrimary }}>{strings.categories.pest}</SelectItem>
-                          <SelectItem value="other" style={{ color: colors.textPrimary }}>{strings.categories.other}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="priority" style={{ color: colors.textPrimary }}>{strings.priority}</Label>
-                      <Select
-                        value={formData.priority}
-                        onValueChange={(value) => setFormData({...formData, priority: value})}
-                      >
-                        <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-                          <SelectItem value="low" style={{ color: colors.textPrimary }}>{strings.priorities.low}</SelectItem>
-                          <SelectItem value="medium" style={{ color: colors.textPrimary }}>{strings.priorities.medium}</SelectItem>
-                          <SelectItem value="high" style={{ color: colors.textPrimary }}>{strings.priorities.high}</SelectItem>
-                          <SelectItem value="urgent" style={{ color: colors.textPrimary }}>{strings.priorities.urgent}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="property_address" style={{ color: colors.textPrimary }}>{strings.propertyAddress}</Label>
-                    <Input
-                      id="property_address"
-                      type="text"
-                      value={formData.property_address}
-                      onChange={(e) => setFormData({...formData, property_address: e.target.value})}
-                      placeholder={strings.propertyAddressPlaceholder}
-                      className="mt-2"
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.borderColor,
-                        color: colors.textPrimary
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="reported_date" style={{ color: colors.textPrimary }}>
-                      {strings.reportedDate} <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="reported_date"
-                      type="date"
-                      value={formData.reported_date}
-                      onChange={(e) => {
-                        setFormData({...formData, reported_date: e.target.value});
-                        setFormErrors(prev => ({...prev, reported_date: null}));
-                      }}
-                      required
-                      className={`mt-2 ${formErrors.reported_date ? 'border-red-500' : ''}`}
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: formErrors.reported_date ? '#EF4444' : colors.borderColor,
-                        color: colors.textPrimary
-                      }}
-                    />
-                    {formErrors.reported_date && (
-                      <p className="text-xs text-red-600 mt-1">{formErrors.reported_date}</p>
-                    )}
-                  </div>
-
-                  {/* Photo Upload Section */}
-                  <div>
-                    <Label style={{ color: colors.textPrimary }}>{strings.photos}</Label>
-                    <p className="text-xs mt-1 mb-3" style={{ color: colors.textSecondary }}>
-                      {strings.addPhotosHint}
-                    </p>
-
-                    {/* Photo Preview Grid */}
-                    {formData.photo_urls.length > 0 && (
-                      <div className="grid grid-cols-3 gap-2 mb-3">
-                        {formData.photo_urls.map((url, index) => (
-                          <div key={index} className="relative group">
-                            <img
-                              src={url}
-                              alt={`Photo ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
-                              style={{ border: `1px solid ${colors.borderColor}` }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemovePhoto(index)}
-                              className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Upload Buttons */}
-                    <div className="flex gap-2">
-                      {/* Take Photo Button */}
-                      <label
-                        className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg cursor-pointer transition-all text-center"
-                        style={{
-                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                          border: `2px dashed ${colors.borderColor}`,
-                          color: colors.textPrimary
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = '#0C3B2E';
-                          e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#ECEFED';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = colors.borderColor;
-                          e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
-                        }}
-                      >
+                <div>
+                  <Label style={{ color: colors.textPrimary }}>{strings.addPhotos}</Label>
+                  <div className="mt-2 space-y-3">
+                    <div className="flex gap-2 flex-wrap">
+                      <label className="cursor-pointer">
                         <input
                           type="file"
                           accept="image/*"
                           capture="environment"
                           multiple
-                          onChange={handlePhotoUpload}
+                          onChange={handlePhotoSelection}
                           className="hidden"
-                          disabled={uploadingPhotos}
                         />
-                        {uploadingPhotos ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span className="text-sm font-medium">{strings.uploading}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Camera className="w-4 h-4" />
-                            <span className="text-sm font-medium">{strings.takePhoto}</span>
-                          </>
-                        )}
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all"
+                          style={{
+                            backgroundColor: colors.inputBg,
+                            borderColor: colors.borderColor,
+                            color: colors.textPrimary
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
+                          onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
+                        >
+                          <Camera className="w-4 h-4" />
+                          <span className="text-sm font-semibold">{strings.takePhoto}</span>
+                        </div>
                       </label>
 
-                      {/* Upload Photo Button */}
-                      <label
-                        className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg cursor-pointer transition-all text-center"
-                        style={{
-                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                          border: `2px dashed ${colors.borderColor}`,
-                          color: colors.textPrimary
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = '#0C3B2E';
-                          e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#ECEFED';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = colors.borderColor;
-                          e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
-                        }}
-                      >
+                      <label className="cursor-pointer">
                         <input
                           type="file"
                           accept="image/*"
                           multiple
-                          onChange={handlePhotoUpload}
+                          onChange={handlePhotoSelection}
                           className="hidden"
-                          disabled={uploadingPhotos}
                         />
-                        {uploadingPhotos ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span className="text-sm font-medium">{strings.uploading}</span>
-                          </>
-                        ) : (
-                          <>
-                            <ImageIcon className="w-4 h-4" />
-                            <span className="text-sm font-medium">{strings.uploadPhoto}</span>
-                          </>
-                        )}
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all"
+                          style={{
+                            backgroundColor: colors.inputBg,
+                            borderColor: colors.borderColor,
+                            color: colors.textPrimary
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
+                          onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                          <span className="text-sm font-semibold">{strings.chooseFiles}</span>
+                        </div>
                       </label>
                     </div>
 
-                    {formData.photo_urls.length > 0 && (
-                      <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
-                        {formData.photo_urls.length} {strings.photos}
-                      </p>
-                    )}
-
-                    {formErrors.photos && (
-                      <p className="text-xs text-red-600 mt-1">{formErrors.photos}</p>
+                    {photoPreviews.length > 0 && (
+                      <div>
+                        <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                          {photoPreviews.length} {strings.photosAdded}
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {photoPreviews.map((preview, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={preview}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border-2"
+                                style={{ borderColor: colors.borderColor }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePhoto(index)}
+                                className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
-              </div>
 
-              <div className="flex gap-3 justify-end px-4 py-4 border-t flex-shrink-0" style={{ borderColor: colors.borderColor }}>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowAddDialog(false)}
-                  disabled={createRequestMutation.isPending || updateRequestMutation.isPending || submitting || uploadingPhotos}
-                  style={{ borderColor: colors.borderColor, backgroundColor: colors.inputBg, color: colors.textPrimary }}
-                >
-                  {strings.cancel}
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createRequestMutation.isPending || updateRequestMutation.isPending || submitting || uploadingPhotos}
-                  className="bg-[#0C3B2E] hover:bg-[#0a2f25]"
-                >
-                  {(createRequestMutation.isPending || updateRequestMutation.isPending || submitting || uploadingPhotos) ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {strings.saving}
-                    </>
-                  ) : (
-                    strings.save
-                  )}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
+                    <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                      <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="plumbing">Plumbing</SelectItem>
+                        <SelectItem value="electrical">Electrical</SelectItem>
+                        <SelectItem value="structural">Structural</SelectItem>
+                        <SelectItem value="appliance">Appliance</SelectItem>
+                        <SelectItem value="hvac">HVAC</SelectItem>
+                        <SelectItem value="pest">Pest</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-        {/* Filter Tabs - Only show when there are requests */}
-        {maintenanceRequests.length > 0 && (
-          <div className="mb-6 overflow-x-auto">
-            <div className="flex gap-2 min-w-max pb-2">
-              {['all', 'reported', 'acknowledged', 'in_progress', 'completed'].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setFilter(status)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    backgroundColor: filter === status ? '#0C3B2E' : colors.cardBg,
-                    color: filter === status ? '#FFFFFF' : colors.textPrimary,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {strings.filters[status]}
-                </button>
-              ))}
-            </div>
-          </div>
+                  <div>
+                    <Label style={{ color: colors.textPrimary }}>{strings.priority}</Label>
+                    <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
+                      <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setPhotoFiles([]);
+                      setPhotoPreviews([]);
+                    }}
+                    disabled={uploadingPhotos}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    {strings.cancel}
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-orange-600 hover:bg-orange-700"
+                    disabled={uploadingPhotos}
+                  >
+                    {uploadingPhotos ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {strings.uploadingPhotos}
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        {strings.save}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         )}
 
-        {/* Requests Grid - Single column on mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredRequests.length === 0 ? (
-            <Card className="border-none shadow-xl md:col-span-2" style={{ backgroundColor: colors.cardBg }}>
-              <CardContent className="p-8 sm:p-12 text-center">
-                <Wrench className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.5 }} />
-                <h3 className="text-lg sm:text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.noRequests}</h3>
-                <p className="mb-6 text-sm sm:text-base" style={{ color: colors.textSecondary }}>{strings.noRequestsSub}</p>
-                <button 
-                  onClick={() => setShowAddDialog(true)}
-                  className="w-full sm:w-auto"
-                  style={{
-                    backgroundColor: '#0C3B2E',
-                    color: '#FFFFFF',
-                    padding: '12px 24px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '15px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-                >
-                  <Plus style={{ width: '18px', height: '18px' }} />
-                  {strings.reportFirst}
-                </button>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredRequests.map((request) => {
-              const showInProgressButton = request.status === 'acknowledged';
-              const showCompletedButton = request.status === 'acknowledged' || request.status === 'in_progress';
-              const showDeleteIconOnly = showInProgressButton || showCompletedButton;
-
-              return (
-              <Card key={request.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300" style={{
-                backgroundColor: colors.cardBg
-              }}>
-                <CardHeader className="pb-3 sm:pb-4" style={{
-                  borderBottom: `1px solid ${colors.borderColor}`
-                }}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
-                      <div className="flex-shrink-0">
-                        {getCategoryIcon(request.category)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-base sm:text-lg font-bold break-words mb-1" style={{ color: colors.textPrimary }}>
-                          {request.issue_title}
-                        </CardTitle>
-                        {request.property_address && (
-                          <p className="text-xs sm:text-sm break-words" style={{ color: colors.textSecondary }}>
-                            {request.property_address}
-                          </p>
-                        )}
-                      </div>
+        {requests.length === 0 ? (
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-12 text-center">
+              <Wrench className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+              <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                {strings.noRequests}
+              </h3>
+              <p style={{ color: colors.textSecondary }}>{strings.noRequestsDesc}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {requests.map((request) => (
+              <Card key={request.id} className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg mb-2" style={{ color: colors.textPrimary }}>
+                        {request.issue_title}
+                      </CardTitle>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                        {request.description}
+                      </p>
                     </div>
-                    <div className="flex flex-col gap-2 items-end flex-shrink-0">
-                      <Badge className={`${getStatusColor(request.status)} text-xs whitespace-nowrap`}>
-                        {getStatusLabel(request.status)}
-                      </Badge>
-                      <Badge className={`${getPriorityColor(request.priority)} text-xs whitespace-nowrap`}>
-                        {request.priority.toUpperCase()}
-                      </Badge>
-                    </div>
+                    <Badge className={getStatusColor(request.status)}>
+                      {request.status}
+                    </Badge>
                   </div>
                 </CardHeader>
 
-                <CardContent className="p-3 sm:p-4">
-                  {request.description && (
-                    <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>{request.description}</p>
-                  )}
-
+                <CardContent>
                   {request.photo_urls && request.photo_urls.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
-                        {strings.issuePhotos}
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
+                    <div className="mb-4">
+                      <div className="grid grid-cols-4 gap-2">
                         {request.photo_urls.map((url, index) => (
                           <img
                             key={index}
                             src={url}
-                            alt={`Issue Photo ${index + 1}`}
-                            className="w-full h-20 object-cover rounded-md cursor-pointer hover:opacity-80"
-                            style={{ border: `1px solid ${colors.borderColor}` }}
+                            alt={`Issue ${index + 1}`}
+                            className="w-full h-20 object-cover rounded-lg border cursor-pointer"
+                            style={{ borderColor: colors.borderColor }}
                             onClick={() => window.open(url, '_blank')}
                           />
                         ))}
@@ -1053,444 +477,38 @@ export default function MaintenanceTracker() {
                     </div>
                   )}
 
-                  {/* Communication Log Display */}
+                  <div className="flex items-center gap-4 text-xs mb-3" style={{ color: colors.textSecondary }}>
+                    <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
+                    <span>🏷️ {request.category}</span>
+                    <span>⚡ {request.priority}</span>
+                  </div>
+
                   {request.communication_log && request.communication_log.length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold flex items-center gap-1" style={{ color: colors.textSecondary }}>
-                          <MessageCircle className="w-3 h-3" />
-                          {strings.messages}
-                        </p>
-                        <button
-                          onClick={() => setAddingMessageToRequest(request)}
-                          style={{
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            border: `1px solid ${colors.borderColor}`,
-                            backgroundColor: colors.inputBg,
-                            color: colors.textPrimary,
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.borderColor = '#3B82F6';
-                            e.target.style.color = '#3B82F6';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.borderColor = colors.borderColor;
-                            e.target.style.color = colors.textPrimary;
-                          }}
-                        >
-                          + {strings.reply}
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        {request.communication_log.map((msg, index) => {
-                          const isLandlord = msg.sender === 'Landlord';
-                          const isJuristic = msg.sender === 'Juristic';
-                          const isTenant = msg.sender === 'Tenant';
-                          
-                          return (
-                            <div 
-                              key={index} 
-                              className="p-2 rounded-lg border-l-4"
-                              style={{
-                                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                                borderLeftColor: isLandlord ? '#3B82F6' : isJuristic ? '#8B5CF6' : (isTenant ? '#10B981' : '#A8ABAD')
-                              }}
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-xs font-semibold flex items-center gap-1" style={{ color: colors.textPrimary }}>
-                                  {isLandlord && '🏠'} {isJuristic && '🏢'} {isTenant && '👤'} {msg.sender}
-                                </p>
-                                <p className="text-xs" style={{ color: colors.textSecondary }}>
-                                  {format(new Date(msg.date), 'MMM d, h:mm a')}
-                                </p>
-                              </div>
-                              <p className="text-sm" style={{ color: colors.textPrimary }}>{msg.message}</p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Add Message Dialog */}
-                  {addingMessageToRequest?.id === request.id && (
-                    <div className="mb-3 p-3 rounded-lg" style={{
-                      backgroundColor: isDarkMode ? '#2A2D30' : '#F0FDF4',
-                      border: `2px solid #10B981`
-                    }}>
-                      <Label className="text-xs font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
-                        {strings.yourMessage}
-                      </Label>
-                      <Textarea
-                        value={tenantMessage}
-                        onChange={(e) => setTenantMessage(e.target.value)}
-                        placeholder={strings.typeMessage}
-                        rows={3}
-                        className="mb-2"
-                        style={{
-                          backgroundColor: colors.inputBg,
-                          borderColor: colors.borderColor,
-                          color: colors.textPrimary,
-                          fontSize: '13px'
-                        }}
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleAddMessage(request)}
-                          disabled={sendingMessage}
-                          style={{
-                            flex: 1,
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            border: 'none',
-                            backgroundColor: sendingMessage ? '#9CA3AF' : '#10B981',
-                            color: '#FFFFFF',
-                            cursor: sendingMessage ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          {sendingMessage ? (
-                            <>
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                              {strings.sending}
-                            </>
-                          ) : (
-                            <>
-                              <MessageCircle className="w-3 h-3" />
-                              {strings.sendMessage}
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setAddingMessageToRequest(null);
-                            setTenantMessage('');
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            border: `1px solid ${colors.borderColor}`,
-                            backgroundColor: colors.cardBg,
-                            color: colors.textPrimary,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          {strings.cancel}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {request.completion_photo_urls && request.completion_photo_urls.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: colors.textSecondary }}>
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        {strings.completionPhotos}
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {request.completion_photo_urls.map((url, index) => (
-                          <img
-                            key={index}
-                            src={url}
-                            alt={`Completion ${index + 1}`}
-                            className="w-full h-20 object-cover rounded-md cursor-pointer hover:opacity-80"
-                            style={{ border: `2px solid #10B981` }}
-                            onClick={() => window.open(url, '_blank')}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {request.bill_photo_urls && request.bill_photo_urls.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: colors.textSecondary }}>
-                        <Package className="w-3 h-3 text-amber-600" />
-                        {strings.billsReceipts}
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {request.bill_photo_urls.map((url, index) => (
-                          <img
-                            key={index}
-                            src={url}
-                            alt={`Bill ${index + 1}`}
-                            className="w-full h-20 object-cover rounded-md cursor-pointer hover:opacity-80"
-                            style={{ border: `2px solid #C7A338` }}
-                            onClick={() => window.open(url, '_blank')}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {request.landlord_response && (
-                    <div className="mb-3 p-3 rounded-lg" style={{
-                      backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                      border: `1px solid ${colors.borderColor}`
-                    }}>
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
-                        {strings.landlordResponse}
-                      </p>
-                      <p className="text-sm" style={{ color: colors.textPrimary }}>{request.landlord_response}</p>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between text-xs mb-3" style={{ color: colors.textSecondary }}>
-                    <span>
-                      <Clock className="w-3 h-3 inline mr-1" />
-                      {strings.reported}: {format(new Date(request.reported_date), 'MMM d, yyyy')}
-                    </span>
-                    {request.actual_cost && (
-                      <span className="font-semibold" style={{ color: colors.textPrimary }}>
-                        {strings.cost} ฿{request.actual_cost.toLocaleString()}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                    <button
-                      onClick={() => handleEdit(request)}
-                      style={{
-                        flex: 1,
-                        backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                        color: colors.textPrimary,
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        border: `2px solid ${colors.borderColor}`,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.borderColor = '#0C3B2E';
-                        e.target.style.backgroundColor = '#0C3B2E';
-                        e.target.style.color = '#FFFFFF';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.borderColor = colors.borderColor;
-                        e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
-                        e.target.style.color = colors.textPrimary;
-                      }}
-                    >
-                      <Pencil style={{ width: '14px', height: '14px' }} />
-                      {language === 'th' ? 'แก้ไข' : 'Edit'}
-                    </button>
-
-                    {/* Show "In Progress" button only when status is "acknowledged" */}
-                    {showInProgressButton && (
-                      <button
-                        onClick={() => updateRequestMutation.mutate({ 
-                          id: request.id, 
-                          data: { status: 'in_progress' } 
-                        })}
-                        style={{
-                          flex: 1,
-                          backgroundColor: '#3B82F6',
-                          color: '#FFFFFF',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          fontWeight: 'bold',
-                          fontSize: '13px',
-                          border: 'none',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
+                    <div className="mt-4 pt-4 border-t" style={{ borderColor: colors.borderColor }}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setExpandedRequest(expandedRequest === request.id ? null : request.id)}
+                        className="mb-3"
                       >
-                        <Clock style={{ width: '14px', height: '14px' }} />
-                        {strings.inProgress}
-                      </button>
-                    )}
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        {expandedRequest === request.id ? strings.hideChat : strings.viewChat} ({request.communication_log.length})
+                      </Button>
 
-                    {/* Show "Mark Completed" button when status is "acknowledged" or "in_progress" */}
-                    {showCompletedButton && (
-                      <button
-                        onClick={() => updateRequestMutation.mutate({ 
-                          id: request.id, 
-                          data: { status: 'completed' } 
-                        })}
-                        style={{
-                          flex: 1,
-                          backgroundColor: '#10B981',
-                          color: '#FFFFFF',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          fontWeight: 'bold',
-                          fontSize: '13px',
-                          border: 'none',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#059669'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#10B981'}
-                      >
-                        <CheckCircle2 style={{ width: '14px', height: '14px' }} />
-                        {strings.completed}
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => setDeletingRequest(request)}
-                      style={{
-                        flex: showDeleteIconOnly ? 0 : 1,
-                        minWidth: showDeleteIconOnly ? '44px' : 'auto',
-                        backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                        color: '#EF4444',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        border: '2px solid #FCA5A5',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#EF4444';
-                        e.target.style.color = '#FFFFFF';
-                        e.target.style.borderColor = '#EF4444';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
-                        e.target.style.color = '#EF4444';
-                        e.target.style.borderColor = '#FCA5A5';
-                      }}
-                    >
-                      <Trash2 style={{ width: '14px', height: '14px' }} />
-                      {showDeleteIconOnly ? '' : (language === 'th' ? 'ลบ' : 'Delete')}
-                    </button>
-                  </div>
+                      {expandedRequest === request.id && (
+                        <ChatLog 
+                          communicationLog={request.communication_log}
+                          language={language}
+                          colors={colors}
+                        />
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            )})
-          )}
-        </div>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={!!deletingRequest} onOpenChange={(open) => !open && setDeletingRequest(null)}>
-          <DialogContent style={{
-            backgroundColor: colors.cardBg,
-            borderColor: colors.borderColor
-          }}>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
-                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
-                </div>
-                <div>
-                  {strings.confirmDelete}
-                  <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
-                    {strings.confirmDeleteDesc}
-                  </p>
-                </div>
-              </DialogTitle>
-            </DialogHeader>
-
-            {deletingRequest && (
-              <div className="p-4 rounded-lg" style={{
-                backgroundColor: isDarkMode ? '#2A2D30' : '#F9FAFB',
-                border: `1px solid ${colors.borderColor}`
-              }}>
-                <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
-                  {deletingRequest.issue_title}
-                </p>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>
-                  {deletingRequest.description}
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={() => setDeletingRequest(null)}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  border: `2px solid ${colors.borderColor}`,
-                  backgroundColor: colors.cardBg,
-                  color: colors.textPrimary,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F9FAFB';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = colors.cardBg;
-                }}
-              >
-                {strings.cancelDelete}
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteRequestMutation.isLoading}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  border: 'none',
-                  backgroundColor: '#EF4444',
-                  color: '#FFFFFF',
-                  cursor: deleteRequestMutation.isLoading ? 'not-allowed' : 'pointer',
-                  opacity: deleteRequestMutation.isLoading ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-                onMouseEnter={(e) => !deleteRequestMutation.isLoading && (e.target.style.backgroundColor = '#DC2626')}
-                onMouseLeave={(e) => !deleteRequestMutation.isLoading && (e.target.style.backgroundColor = '#EF4444')}
-              >
-                {deleteRequestMutation.isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {language === 'th' ? 'กำลังลบ...' : 'Deleting...'}
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4" />
-                    {strings.confirmDeleteBtn}
-                  </>
-                )}
-              </button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
