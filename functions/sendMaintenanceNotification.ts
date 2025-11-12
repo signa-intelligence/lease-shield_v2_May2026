@@ -1,4 +1,5 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createMaintenanceRequestFlex } from './lineFlexTemplates.js';
 
 Deno.serve(async (req) => {
   try {
@@ -36,7 +37,9 @@ Deno.serve(async (req) => {
     console.log('👤 Full user data loaded');
     console.log('📧 Landlord email:', user.landlord_email || 'NOT SET');
     console.log('📧 Juristic email:', user.juristic_email || 'NOT SET');
-    console.log('📧 User email notifications enabled:', user.email_notifications);
+    console.log('📱 User LINE token:', user.line_messaging_token || 'NOT SET');
+    console.log('📱 Landlord LINE:', user.landlord_line || 'NOT SET');
+    console.log('📱 Juristic LINE:', user.juristic_line || 'NOT SET');
 
     // Get Resend API key for external emails
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
@@ -109,6 +112,19 @@ Deno.serve(async (req) => {
       user.tenant_state,
       user.tenant_zip
     ].filter(Boolean).join(', ') || (language === 'th' ? 'ไม่ได้ระบุ' : 'Not provided');
+
+    // Create Flex message data
+    const flexData = {
+      issueTitle: maintenanceRequest.issue_title,
+      description: maintenanceRequest.description || '',
+      category: maintenanceRequest.category,
+      priority: maintenanceRequest.priority,
+      propertyAddress: maintenanceRequest.property_address || '',
+      reportedDate: new Date(maintenanceRequest.reported_date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US'),
+      photoCount: maintenanceRequest.photo_urls?.length || 0,
+      tenantName: user.full_name || user.email,
+      token: acknowledgmentToken
+    };
 
     // HTML body for landlord with acknowledgment button
     const landlordHtmlBody = language === 'th'
@@ -253,14 +269,38 @@ Deno.serve(async (req) => {
           body: tenantHtmlBody
         });
         console.log('✅ Tenant email sent successfully to:', user.email);
-        notifications.push({ recipient: 'user', method: 'email', status: 'sent', to: user.email });
+        notifications.push({ recipient: 'tenant', method: 'email', status: 'sent', to: user.email });
       } catch (error) {
         console.error('❌ Failed to send tenant email:', error.message);
-        notifications.push({ recipient: 'user', method: 'email', status: 'failed', error: error.message, to: user.email });
+        notifications.push({ recipient: 'tenant', method: 'email', status: 'failed', error: error.message, to: user.email });
       }
     } else {
       console.log('⚠️ Tenant email notifications disabled or no email');
-      notifications.push({ recipient: 'user', method: 'email', status: 'skipped', reason: 'notifications_disabled' });
+      notifications.push({ recipient: 'tenant', method: 'email', status: 'skipped', reason: 'notifications_disabled' });
+    }
+
+    // Send to tenant via LINE (confirmation)
+    console.log('📤 Attempting to send tenant LINE notification...');
+    if (user.line_messaging_token && user.line_notifications !== false) {
+      try {
+        const tenantFlexMessage = createMaintenanceRequestFlex({
+          ...flexData,
+          role: 'tenant'
+        }, language);
+        
+        await base44.asServiceRole.functions.invoke('sendLineMessage', {
+          userId: user.line_messaging_token,
+          flexMessage: tenantFlexMessage
+        });
+        console.log('✅ Tenant LINE notification sent');
+        notifications.push({ recipient: 'tenant', method: 'LINE', status: 'sent' });
+      } catch (error) {
+        console.error('❌ Failed to send tenant LINE:', error.message);
+        notifications.push({ recipient: 'tenant', method: 'LINE', status: 'failed', error: error.message });
+      }
+    } else {
+      console.log('⚠️ Tenant LINE not configured or disabled');
+      notifications.push({ recipient: 'tenant', method: 'LINE', status: 'skipped', reason: 'not_configured' });
     }
 
     // Send to landlord (email) using Resend directly
@@ -278,13 +318,36 @@ Deno.serve(async (req) => {
         notifications.push({ recipient: 'landlord', method: 'email', status: 'sent', to: user.landlord_email, messageId: result.id });
       } catch (error) {
         console.error('❌ Failed to send landlord email to', user.landlord_email, ':', error.message);
-        console.error('❌ Full error:', error);
         notifications.push({ recipient: 'landlord', method: 'email', status: 'failed', error: error.message, to: user.landlord_email });
       }
     } else {
-      console.log('⚠️ No valid landlord email configured for user:', user.email);
-      console.log('⚠️ Landlord email value:', user.landlord_email);
+      console.log('⚠️ No valid landlord email configured');
       notifications.push({ recipient: 'landlord', method: 'email', status: 'skipped', reason: 'invalid_or_missing_email' });
+    }
+
+    // Send to landlord via LINE (if they have LINE ID stored)
+    console.log('📤 Attempting to send landlord LINE notification...');
+    if (user.landlord_line && user.landlord_line.trim()) {
+      try {
+        const landlordFlexMessage = createMaintenanceRequestFlex({
+          ...flexData,
+          role: 'landlord'
+        }, language);
+        
+        // Try to send via LINE ID (this assumes landlord has added the OA)
+        await base44.asServiceRole.functions.invoke('sendLineMessage', {
+          userId: user.landlord_line.trim(),
+          flexMessage: landlordFlexMessage
+        });
+        console.log('✅ Landlord LINE notification sent');
+        notifications.push({ recipient: 'landlord', method: 'LINE', status: 'sent', to: user.landlord_line });
+      } catch (error) {
+        console.error('❌ Failed to send landlord LINE:', error.message);
+        notifications.push({ recipient: 'landlord', method: 'LINE', status: 'failed', error: error.message });
+      }
+    } else {
+      console.log('⚠️ Landlord LINE ID not configured');
+      notifications.push({ recipient: 'landlord', method: 'LINE', status: 'skipped', reason: 'not_configured' });
     }
 
     // Send to juristic (email) using Resend directly
@@ -302,13 +365,35 @@ Deno.serve(async (req) => {
         notifications.push({ recipient: 'juristic', method: 'email', status: 'sent', to: user.juristic_email, messageId: result.id });
       } catch (error) {
         console.error('❌ Failed to send juristic email to', user.juristic_email, ':', error.message);
-        console.error('❌ Full error:', error);
         notifications.push({ recipient: 'juristic', method: 'email', status: 'failed', error: error.message, to: user.juristic_email });
       }
     } else {
-      console.log('⚠️ No valid juristic email configured for user:', user.email);
-      console.log('⚠️ Juristic email value:', user.juristic_email);
+      console.log('⚠️ No valid juristic email configured');
       notifications.push({ recipient: 'juristic', method: 'email', status: 'skipped', reason: 'invalid_or_missing_email' });
+    }
+
+    // Send to juristic via LINE (if they have LINE ID stored)
+    console.log('📤 Attempting to send juristic LINE notification...');
+    if (user.juristic_line && user.juristic_line.trim()) {
+      try {
+        const juristicFlexMessage = createMaintenanceRequestFlex({
+          ...flexData,
+          role: 'juristic'
+        }, language);
+        
+        await base44.asServiceRole.functions.invoke('sendLineMessage', {
+          userId: user.juristic_line.trim(),
+          flexMessage: juristicFlexMessage
+        });
+        console.log('✅ Juristic LINE notification sent');
+        notifications.push({ recipient: 'juristic', method: 'LINE', status: 'sent', to: user.juristic_line });
+      } catch (error) {
+        console.error('❌ Failed to send juristic LINE:', error.message);
+        notifications.push({ recipient: 'juristic', method: 'LINE', status: 'failed', error: error.message });
+      }
+    } else {
+      console.log('⚠️ Juristic LINE ID not configured');
+      notifications.push({ recipient: 'juristic', method: 'LINE', status: 'skipped', reason: 'not_configured' });
     }
 
     console.log('📊 Final notification summary:', JSON.stringify(notifications, null, 2));
@@ -324,12 +409,17 @@ Deno.serve(async (req) => {
         userEmail: user.email,
         landlordEmail: user.landlord_email || 'not_set',
         juristicEmail: user.juristic_email || 'not_set',
+        landlordLine: user.landlord_line || 'not_set',
+        juristicLine: user.juristic_line || 'not_set',
+        userLineToken: user.line_messaging_token || 'not_set',
+        lineNotificationsEnabled: user.line_notifications !== false,
         landlordEmailValid: isValidEmail(user.landlord_email),
         juristicEmailValid: isValidEmail(user.juristic_email),
         resendConfigured: !!RESEND_API_KEY,
-        emailsSent: notifications.filter(n => n.status === 'sent').length,
-        emailsFailed: notifications.filter(n => n.status === 'failed').length,
-        emailsSkipped: notifications.filter(n => n.status === 'skipped').length
+        emailsSent: notifications.filter(n => n.method === 'email' && n.status === 'sent').length,
+        linesSent: notifications.filter(n => n.method === 'LINE' && n.status === 'sent').length,
+        totalFailed: notifications.filter(n => n.status === 'failed').length,
+        totalSkipped: notifications.filter(n => n.status === 'skipped').length
       }
     });
 

@@ -1,3 +1,4 @@
+
 /**
  * LINE Flex Message Templates for LeaseShield
  * Beautiful, interactive notification cards with proper branding
@@ -632,6 +633,310 @@ export const createRentReminderFlex = (data, language = 'en') => {
             },
             style: 'primary',
             color: '#C7A338',
+            height: 'sm'
+          }
+        ],
+        paddingAll: '12px'
+      },
+      styles: {
+        footer: {
+          separator: false
+        }
+      }
+    }
+  };
+};
+
+export const createMaintenanceRequestFlex = (data, language = 'en') => {
+  const { issueTitle, description, category, priority, propertyAddress, reportedDate, photoCount, tenantName, role } = data;
+  
+  const priorityColors = {
+    urgent: '#DC2626',
+    high: '#EF4444',
+    medium: '#F59E0B',
+    low: '#3B82F6'
+  };
+  
+  const color = priorityColors[priority] || '#F59E0B';
+  
+  const strings = {
+    en: {
+      title: role === 'landlord' ? '🔧 Maintenance Request' : '🔧 Maintenance Request', // Titles are currently the same for landlord/tenant, but allows for future differentiation
+      subtitle: role === 'landlord' ? `From your tenant` : 'New request submitted',
+      issue: 'Issue',
+      category: 'Category',
+      priority: 'Priority',
+      property: 'Property',
+      reported: 'Reported',
+      tenant: 'Tenant',
+      photos: 'Photos attached',
+      action: role === 'landlord' ? 'View & Respond' : 'View Request',
+      tip: priority === 'urgent' ? 'Urgent - Please respond ASAP' : priority === 'high' ? 'High priority - respond soon' : 'Please review and respond'
+    },
+    th: {
+      title: role === 'landlord' ? '🔧 แจ้งซ่อม' : '🔧 แจ้งซ่อม', // Titles are currently the same for landlord/tenant, but allows for future differentiation
+      subtitle: role === 'landlord' ? `จากผู้เช่าของคุณ` : 'ส่งคำขอใหม่แล้ว',
+      issue: 'ปัญหา',
+      category: 'ประเภท',
+      priority: 'ความสำคัญ',
+      property: 'ทรัพย์สิน',
+      reported: 'รายงานเมื่อ',
+      tenant: 'ผู้เช่า',
+      photos: 'มีรูปภาพ',
+      action: role === 'landlord' ? 'ดูและตอบกลับ' : 'ดูคำขอ',
+      tip: priority === 'urgent' ? 'เร่งด่วน - กรุณาตอบกลับด่วน' : priority === 'high' ? 'ความสำคัญสูง - ตอบกลับเร็วๆ นี้' : 'กรุณาตรวจสอบและตอบกลับ'
+    }
+  };
+  
+  const str = strings[language];
+  
+  return {
+    altText: `🔧 ${issueTitle}`,
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            contents: [
+              {
+                type: 'text',
+                text: '🔧',
+                size: 'xl',
+                weight: 'bold'
+              },
+              {
+                type: 'text',
+                text: str.title,
+                weight: 'bold',
+                size: 'lg',
+                color: '#FFFFFF',
+                flex: 1,
+                margin: 'md'
+              }
+            ]
+          },
+          {
+            type: 'text',
+            text: str.subtitle,
+            color: '#FFFFFF',
+            size: 'sm',
+            margin: 'sm'
+          }
+        ],
+        backgroundColor: color,
+        paddingAll: '20px'
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'box',
+                layout: 'baseline',
+                contents: [
+                  {
+                    type: 'text',
+                    text: str.issue,
+                    color: '#8B8B8B',
+                    size: 'sm',
+                    flex: 1
+                  },
+                  {
+                    type: 'text',
+                    text: issueTitle,
+                    weight: 'bold',
+                    size: 'md',
+                    color: '#0C3B2E',
+                    flex: 3,
+                    align: 'end',
+                    wrap: true
+                  }
+                ],
+                spacing: 'sm'
+              },
+              {
+                type: 'separator',
+                margin: 'lg'
+              },
+              {
+                type: 'box',
+                layout: 'baseline',
+                contents: [
+                  {
+                    type: 'text',
+                    text: str.category,
+                    color: '#8B8B8B',
+                    size: 'sm',
+                    flex: 1
+                  },
+                  {
+                    type: 'text',
+                    text: category || (language === 'th' ? 'ไม่ระบุ' : 'N/A'),
+                    size: 'sm',
+                    color: '#1A1D1F',
+                    flex: 2,
+                    align: 'end'
+                  }
+                ],
+                spacing: 'sm',
+                margin: 'lg'
+              },
+              {
+                type: 'box',
+                layout: 'baseline',
+                contents: [
+                  {
+                    type: 'text',
+                    text: str.priority,
+                    color: '#8B8B8B',
+                    size: 'sm',
+                    flex: 1
+                  },
+                  {
+                    type: 'text',
+                    text: priority.toUpperCase(),
+                    size: 'sm',
+                    color: color,
+                    weight: 'bold',
+                    flex: 2,
+                    align: 'end'
+                  }
+                ],
+                spacing: 'sm',
+                margin: 'md'
+              },
+              {
+                type: 'box',
+                layout: 'baseline',
+                contents: [
+                  {
+                    type: 'text',
+                    text: str.tenant,
+                    color: '#8B8B8B',
+                    size: 'sm',
+                    flex: 1
+                  },
+                  {
+                    type: 'text',
+                    text: tenantName || (language === 'th' ? 'ไม่ระบุ' : 'N/A'),
+                    size: 'sm',
+                    color: '#1A1D1F',
+                    flex: 2,
+                    align: 'end'
+                  }
+                ],
+                spacing: 'sm',
+                margin: 'md'
+              },
+              ...(propertyAddress ? [{
+                type: 'box',
+                layout: 'baseline',
+                contents: [
+                  {
+                    type: 'text',
+                    text: str.property,
+                    color: '#8B8B8B',
+                    size: 'sm',
+                    flex: 1
+                  },
+                  {
+                    type: 'text',
+                    text: propertyAddress,
+                    size: 'sm',
+                    color: '#1A1D1F',
+                    flex: 2,
+                    align: 'end',
+                    wrap: true
+                  }
+                ],
+                spacing: 'sm',
+                margin: 'md'
+              }] : []),
+              ...(photoCount > 0 ? [{
+                type: 'box',
+                layout: 'baseline',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '📸',
+                    size: 'sm',
+                    flex: 0
+                  },
+                  {
+                    type: 'text',
+                    text: `${photoCount} ${str.photos}`,
+                    size: 'sm',
+                    color: '#6366F1',
+                    weight: 'bold',
+                    flex: 1,
+                    margin: 'sm'
+                  }
+                ],
+                margin: 'lg'
+              }] : [])
+            ],
+            margin: 'lg'
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'text',
+                text: description.length > 100 ? description.substring(0, 100) + '...' : description,
+                size: 'xs',
+                color: '#6B7280',
+                wrap: true
+              }
+            ],
+            margin: 'xl',
+            paddingAll: '12px',
+            backgroundColor: '#F9FAFB',
+            cornerRadius: 'md'
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'text',
+                text: `💡 ${str.tip}`,
+                size: 'xs',
+                color: '#DC2626',
+                wrap: true,
+                weight: 'bold'
+              }
+            ],
+            margin: 'md',
+            paddingAll: '12px',
+            backgroundColor: priority === 'urgent' || priority === 'high' ? '#FEE2E2' : '#FEF3C7',
+            cornerRadius: 'md'
+          }
+        ],
+        paddingAll: '20px'
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'button',
+            action: {
+              type: 'uri',
+              label: str.action,
+              uri: `https://app.leaseshield.asia/acknowledge?token=${data.token}&role=${role}`
+            },
+            style: 'primary',
+            color: '#0C3B2E',
             height: 'sm'
           }
         ],
