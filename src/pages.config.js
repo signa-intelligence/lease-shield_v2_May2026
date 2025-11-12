@@ -7,7 +7,6 @@ import Welcome from './pages/Welcome';
 import UploadScan from './pages/UploadScan';
 import ScanPreview from './pages/ScanPreview';
 import ReportFull from './pages/ReportFull';
-import DocumentVault from './pages/DocumentVault';
 import Templates from './pages/Templates';
 import TemplateForm from './pages/TemplateForm';
 import ResolveCase from './pages/ResolveCase';
@@ -25,6 +24,7 @@ import PropertyTracker from './pages/PropertyTracker';
 import Analytics from './pages/Analytics';
 import Search from './pages/Search';
 import Timeline from './pages/Timeline';
+import EvidenceVault from './pages/EvidenceVault';
 import Layout from './Layout.jsx';
 
 
@@ -38,7 +38,6 @@ export const PAGES = {
     "UploadScan": UploadScan,
     "ScanPreview": ScanPreview,
     "ReportFull": ReportFull,
-    "DocumentVault": DocumentVault,
     "Templates": Templates,
     "TemplateForm": TemplateForm,
     "ResolveCase": ResolveCase,
@@ -56,6 +55,7 @@ export const PAGES = {
     "Analytics": Analytics,
     "Search": Search,
     "Timeline": Timeline,
+    "EvidenceVault": EvidenceVault,
 }
 
 export const pagesConfig = {

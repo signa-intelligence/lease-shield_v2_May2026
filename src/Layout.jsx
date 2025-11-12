@@ -2,7 +2,7 @@
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar } from "lucide-react"; // Added Calendar import
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -144,8 +144,8 @@ export default function Layout({ children, currentPageName }) {
       property: "Property",
       evidence: "Evidence",
       admin: "Admin",
-      search: "Search", // Added search
-      timeline: "Timeline" // Added timeline
+      search: "Search",
+      timeline: "Timeline"
     },
     th: {
       appName: "ลีสชีลด์",
@@ -154,8 +154,8 @@ export default function Layout({ children, currentPageName }) {
       property: "ทรัพย์สิน",
       evidence: "หลักฐาน",
       admin: "แอดมิน",
-      search: "ค้นหา", // Added search
-      timeline: "ไทม์ไลน์" // Added timeline
+      search: "ค้นหา",
+      timeline: "ไทม์ไลน์"
     }
   };
 
@@ -169,7 +169,7 @@ export default function Layout({ children, currentPageName }) {
       icon: Home,
     },
     {
-      key: "timeline", // New timeline tab
+      key: "timeline",
       label: strings.timeline,
       route: createPageUrl("Timeline"),
       icon: Calendar,
@@ -183,7 +183,7 @@ export default function Layout({ children, currentPageName }) {
     {
       key: "docs",
       label: strings.evidence,
-      route: createPageUrl("DocumentVault"),
+      route: createPageUrl("EvidenceVault"), // Changed from DocumentVault to EvidenceVault
       icon: FileText,
     },
   ];
