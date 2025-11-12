@@ -6,7 +6,7 @@ import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale } from "l
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
-import { animationKeyframes, createRipple } from "./utils/animations";
+import { animationKeyframes, createRipple } from "@/utils/animations";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
