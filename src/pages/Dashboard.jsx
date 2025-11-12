@@ -2,7 +2,7 @@
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Settings, Mail } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Settings, Mail, Calendar } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, format } from "date-fns";
@@ -19,7 +19,6 @@ import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
-// REMOVED: createRentReminderFlex is now defined inline
 
 function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -876,6 +875,18 @@ function DashboardContent() {
   }).length;
   const resolvedCases = cases.filter(c => c.status === 'closed').length;
 
+  // NEW: Calculate urgent lease notice deadlines
+  const urgentLeaseNotices = leases.filter(lease => {
+    if (!lease.notice_deadline || !lease.notice_alerts_enabled) return false;
+    const noticeDeadline = new Date(lease.notice_deadline);
+    const daysUntil = differenceInDays(noticeDeadline, now);
+    return daysUntil >= 0 && daysUntil <= 30; // Show if 30 days or less
+  }).sort((a, b) => {
+    const daysA = differenceInDays(new Date(a.notice_deadline), now);
+    const daysB = differenceInDays(new Date(b.notice_deadline), now);
+    return daysA - daysB; // Sort by most urgent first
+  });
+
   const t = {
     en: {
       pageTitle: "My Account",
@@ -914,6 +925,15 @@ function DashboardContent() {
       checkAllUsers: "Check all users for reminders",
       testBrowserFlex: "Test Flex (Browser)",
       testRent: "Force Rent Test",
+      leaseNoticeAlert: "Lease Notice Deadline",
+      mustNotifyBy: "Must notify by",
+      daysLeft: "days left",
+      finalDay: "FINAL DAY",
+      viewTemplates: "View Templates",
+      notifyLandlord: "Notify Landlord",
+      leaseEnds: "Lease ends",
+      noticePeriod: "Notice period",
+      days: "days",
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -952,6 +972,15 @@ function DashboardContent() {
       checkAllUsers: "ตรวจสอบการแจ้งเตือนของผู้ใช้ทั้งหมด",
       testBrowserFlex: "ทดสอบ Flex",
       testRent: "ทดสอบค่าเช่า",
+      leaseNoticeAlert: "กำหนดแจ้งสัญญาเช่า",
+      mustNotifyBy: "ต้องแจ้งภายใน",
+      daysLeft: "วันเหลือ",
+      finalDay: "วันสุดท้าย",
+      viewTemplates: "ดูเทมเพลต",
+      notifyLandlord: "แจ้งเจ้าของบ้าน",
+      leaseEnds: "สัญญาสิ้นสุด",
+      noticePeriod: "ระยะแจ้ง",
+      days: "วัน",
     }
   };
 
@@ -1290,6 +1319,134 @@ function DashboardContent() {
               {strings.subtitle}
             </p>
           </div>
+
+          {/* NEW: Urgent Lease Notice Deadline Alert */}
+          {urgentLeaseNotices.length > 0 && (
+            <div className="mb-6">
+              {urgentLeaseNotices.slice(0, 1).map((lease) => {
+                const daysUntil = differenceInDays(new Date(lease.notice_deadline), now);
+                const isCritical = daysUntil <= 3;
+                const isUrgent = daysUntil <= 7;
+                
+                return (
+                  <Card 
+                    key={lease.id}
+                    className="border-none shadow-xl overflow-hidden"
+                    style={{
+                      background: isCritical 
+                        ? 'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)'
+                        : isUrgent
+                          ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
+                          : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+                    }}
+                  >
+                    <CardContent className="p-4 md:p-6">
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                          <Calendar className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-bold text-white">
+                              {strings.leaseNoticeAlert}
+                            </h3>
+                            <Badge 
+                              className="text-xs font-bold"
+                              style={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                                color: '#FFFFFF',
+                                border: '1px solid rgba(255, 255, 255, 0.5)'
+                              }}
+                            >
+                              {daysUntil === 0 ? strings.finalDay : `${daysUntil} ${strings.daysLeft}`}
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-2 mb-4">
+                            <div className="flex items-center gap-2 text-white/90 text-sm">
+                              <span className="font-semibold">{strings.mustNotifyBy}:</span>
+                              <span>{format(new Date(lease.notice_deadline), 'MMM d, yyyy')}</span>
+                            </div>
+                            {lease.property_address && (
+                              <div className="flex items-center gap-2 text-white/80 text-xs">
+                                <span>🏠</span>
+                                <span className="truncate">{lease.property_address}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-3 text-white/80 text-xs">
+                              {lease.end_date && (
+                                <span>{strings.leaseEnds}: {format(new Date(lease.end_date), 'MMM d, yyyy')}</span>
+                              )}
+                              {lease.notice_period_days && (
+                                <span>{strings.noticePeriod}: {lease.notice_period_days} {strings.days}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => navigate(createPageUrl("Templates"))}
+                              style={{
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                color: '#FFFFFF',
+                                border: '1px solid rgba(255, 255, 255, 0.3)',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                              }}
+                            >
+                              <FileText className="w-4 h-4" />
+                              {strings.viewTemplates}
+                            </button>
+                            <button
+                              onClick={() => navigate(createPageUrl("UploadScan") + `?leaseId=${lease.id}`)}
+                              style={{
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                backgroundColor: '#FFFFFF',
+                                color: isCritical ? '#DC2626' : isUrgent ? '#F59E0B' : '#3B82F6',
+                                border: 'none',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.transform = 'translateY(-1px)';
+                                e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.transform = 'translateY(0)';
+                                e.target.style.boxShadow = 'none';
+                              }}
+                            >
+                              <Bell className="w-4 h-4" />
+                              {strings.notifyLandlord}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
 
           {/* Stats Grid - Collapsible */}
           {(!focusMode || urgentDeposits > 0 || activeCases.length > 0) && (
