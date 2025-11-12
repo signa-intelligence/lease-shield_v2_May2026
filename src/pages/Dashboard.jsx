@@ -1483,7 +1483,7 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Stats Grid - 2x4 LAYOUT WITH PROTECTION SCORE SPANNING 2 ROWS */}
+          {/* Stats Grid - MOBILE-OPTIMIZED 2x4 LAYOUT */}
           {(!focusMode || urgentDeposits > 0 || activeCases.length > 0) && (
             <div className="mb-6">
               <button
@@ -1506,13 +1506,7 @@ function DashboardContent() {
               </button>
 
               {expandedSections.stats && (
-                <div 
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
-                  style={{
-                    animation: 'slideDown 0.3s ease-out',
-                    gridAutoRows: 'minmax(0, 1fr)'
-                  }}
-                >
+                <>
                   <style>
                     {`
                       @keyframes slideDown {
@@ -1525,157 +1519,292 @@ function DashboardContent() {
                           transform: translateY(0);
                         }
                       }
+                      
+                      /* Mobile: Stack Protection Score last */
+                      @media (max-width: 1023px) {
+                        .protection-score-mobile {
+                          order: 999;
+                        }
+                      }
                     `}
                   </style>
-                  
+
                   {isLoading ? (
-                    <>
+                    <div className="grid grid-cols-2 gap-3" style={{ animation: 'slideDown 0.3s ease-out' }}>
                       <SkeletonLoader variant="stat" colors={colors} />
                       <SkeletonLoader variant="stat" colors={colors} />
                       <SkeletonLoader variant="stat" colors={colors} />
                       <SkeletonLoader variant="stat" colors={colors} />
                       <SkeletonLoader variant="stat" colors={colors} />
                       <SkeletonLoader variant="stat" colors={colors} />
-                    </>
+                    </div>
                   ) : (
                     <>
-                      {/* Row 1 - Col 1: Active Leases */}
-                      <StatsCard
-                        title={strings.activeLeases}
-                        value={leases.length.toString()}
-                        icon={FileText}
-                        scoreColor="#3B82F6"
-                        miniStats={leases.length > 0 ? [
-                          {
-                            label: language === 'th' ? 'สแกนแล้ว' : 'Scanned',
-                            value: scannedLeases.length
-                          },
-                          {
-                            label: language === 'th' ? 'เตือน' : 'Alerts',
-                            value: leases.filter(l => l.notice_alerts_enabled).length
-                          }
-                        ] : undefined}
-                        actionButton={leases.length > 0 ? {
-                          label: language === 'th' ? 'จัดการ' : 'Manage',
-                          link: createPageUrl("UploadScan")
-                        } : undefined}
-                        ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
-                        onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
-                        compact
-                      />
-
-                      {/* Row 1 - Col 2: Deposits Tracked */}
-                      <StatsCard
-                        title={strings.depositsTracked}
-                        value={`฿${totalDepositValue.toLocaleString()}`}
-                        icon={Wallet}
-                        bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
-                        miniStats={[
-                          { label: language === 'th' ? 'เฉลี่ย' : 'Avg', value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
-                          { label: language === 'th' ? 'เร็วๆนี้' : 'Soon', value: urgentDeposits }
-                        ]}
-                        actionButton={{
-                          label: language === 'th' ? 'เพิ่ม' : 'Add',
-                          link: createPageUrl("DepositTracker")
-                        }}
-                        compact
-                      />
-                      
-                      {/* Row 1 - Col 3: Rent Tracked */}
-                      <StatsCard
-                        title={strings.rentTracked}
-                        value={rentTrackedCount.toString()}
-                        icon={Calendar}
-                        scoreColor="#3B82F6"
-                        miniStats={rentTrackedCount > 0 ? [
-                          {
-                            label: language === 'th' ? 'เตือน' : 'Alerts',
-                            value: deposits.filter(d => d.rent_alerts_enabled).length
-                          }
-                        ] : undefined}
-                        actionButton={rentTrackedCount > 0 ? {
-                          label: language === 'th' ? 'จัดการ' : 'Manage',
-                          link: createPageUrl("PropertyTracker")
-                        } : undefined}
-                        ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
-                        onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
-                        compact
-                      />
-
-                      {/* Row 1 - Col 4 (Protection Score - SPANS 2 ROWS) */}
-                      <div className="sm:col-span-2 lg:col-span-1 lg:row-span-2">
-                        <ProtectionScoreEnhanced
-                          score={protectionScore}
-                          breakdown={breakdown}
-                          recommendations={recommendations}
-                          language={language}
-                          colors={colors}
+                      {/* MOBILE: 2-column grid, Protection Score at bottom */}
+                      <div className="grid grid-cols-2 gap-3 lg:hidden" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                        <StatsCard
+                          title={strings.activeLeases}
+                          value={leases.length.toString()}
+                          icon={FileText}
+                          scoreColor="#3B82F6"
+                          miniStats={leases.length > 0 ? [
+                            {
+                              label: language === 'th' ? 'สแกนแล้ว' : 'Scanned',
+                              value: scannedLeases.length
+                            },
+                            {
+                              label: language === 'th' ? 'เตือน' : 'Alerts',
+                              value: leases.filter(l => l.notice_alerts_enabled).length
+                            }
+                          ] : undefined}
+                          actionButton={leases.length > 0 ? {
+                            label: language === 'th' ? 'จัดการ' : 'Manage',
+                            link: createPageUrl("UploadScan")
+                          } : undefined}
+                          ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
+                          onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
+                          compact
                         />
+
+                        <StatsCard
+                          title={strings.depositsTracked}
+                          value={`฿${totalDepositValue.toLocaleString()}`}
+                          icon={Wallet}
+                          bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
+                          miniStats={[
+                            { label: language === 'th' ? 'เฉลี่ย' : 'Avg', value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
+                            { label: language === 'th' ? 'เร็วๆนี้' : 'Soon', value: urgentDeposits }
+                          ]}
+                          actionButton={{
+                            label: language === 'th' ? 'เพิ่ม' : 'Add',
+                            link: createPageUrl("DepositTracker")
+                          }}
+                          compact
+                        />
+                        
+                        <StatsCard
+                          title={strings.rentTracked}
+                          value={rentTrackedCount.toString()}
+                          icon={Calendar}
+                          scoreColor="#3B82F6"
+                          miniStats={rentTrackedCount > 0 ? [
+                            {
+                              label: language === 'th' ? 'เตือน' : 'Alerts',
+                              value: deposits.filter(d => d.rent_alerts_enabled).length
+                            }
+                          ] : undefined}
+                          actionButton={rentTrackedCount > 0 ? {
+                            label: language === 'th' ? 'จัดการ' : 'Manage',
+                            link: createPageUrl("PropertyTracker")
+                          } : undefined}
+                          ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
+                          onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                          compact
+                        />
+
+                        <StatsCard
+                          title={strings.notifications}
+                          value={notificationLogs.length.toString()}
+                          icon={Bell}
+                          scoreColor="#8B5CF6"
+                          miniStats={notificationLogs.length > 0 ? [
+                            {
+                              label: language === 'th' ? 'ส่งแล้ว' : 'Sent',
+                              value: notificationLogs.filter(n => n.status === 'sent').length
+                            },
+                            {
+                              label: language === 'th' ? 'ล้มเหลว' : 'Failed',
+                              value: notificationLogs.filter(n => n.status === 'failed').length
+                            }
+                          ] : undefined}
+                          actionButton={notificationLogs.length > 0 ? {
+                            label: strings.viewAll,
+                            link: createPageUrl("Account")
+                          } : undefined}
+                          ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
+                          compact
+                        />
+                        
+                        <StatsCard
+                          title={strings.activeCases}
+                          value={activeCases.length}
+                          icon={Scale}
+                          bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
+                          miniStats={[
+                            { label: language === 'th' ? 'แก้ไข' : 'Resolved', value: resolvedCases }
+                          ]}
+                          actionButton={{
+                            label: language === 'th' ? 'เปิด' : 'Open',
+                            link: createPageUrl("Cases")
+                          }}
+                          compact
+                        />
+
+                        <StatsCard
+                          title={strings.maintenanceRequests}
+                          value={activeMaintenanceCount.toString()}
+                          icon={Wrench}
+                          scoreColor="#F59E0B"
+                          miniStats={activeMaintenanceCount > 0 ? [
+                            {
+                              label: language === 'th' ? 'เสร็จ' : 'Done',
+                              value: maintenanceRequests.filter(r => r.status === 'completed').length
+                            }
+                          ] : undefined}
+                          actionButton={activeMaintenanceCount > 0 ? {
+                            label: language === 'th' ? 'ดู' : 'View',
+                            link: createPageUrl("PropertyTracker")
+                          } : undefined}
+                          ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
+                          onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                          compact
+                        />
+
+                        {/* Protection Score - Full Width on Mobile */}
+                        <div className="col-span-2 protection-score-mobile">
+                          <ProtectionScoreEnhanced
+                            score={protectionScore}
+                            breakdown={breakdown}
+                            recommendations={recommendations}
+                            language={language}
+                            colors={colors}
+                          />
+                        </div>
                       </div>
 
-                      {/* Row 2 - Col 1: Notifications */}
-                      <StatsCard
-                        title={strings.notifications}
-                        value={notificationLogs.length.toString()}
-                        icon={Bell}
-                        scoreColor="#8B5CF6"
-                        miniStats={notificationLogs.length > 0 ? [
-                          {
-                            label: language === 'th' ? 'ส่งแล้ว' : 'Sent',
-                            value: notificationLogs.filter(n => n.status === 'sent').length
-                          },
-                          {
-                            label: language === 'th' ? 'ล้มเหลว' : 'Failed',
-                            value: notificationLogs.filter(n => n.status === 'failed').length
-                          }
-                        ] : undefined}
-                        actionButton={notificationLogs.length > 0 ? {
-                          label: strings.viewAll,
-                          link: createPageUrl("Account")
-                        } : undefined}
-                        ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
-                        compact
-                      />
-                      
-                      {/* Row 2 - Col 2: Active Cases */}
-                      <StatsCard
-                        title={strings.activeCases}
-                        value={activeCases.length}
-                        icon={Scale}
-                        bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
-                        miniStats={[
-                          { label: language === 'th' ? 'แก้ไข' : 'Resolved', value: resolvedCases }
-                        ]}
-                        actionButton={{
-                          label: language === 'th' ? 'เปิด' : 'Open',
-                          link: createPageUrl("Cases")
-                        }}
-                        compact
-                      />
+                      {/* DESKTOP: 4-column grid with Protection Score spanning 2 rows */}
+                      <div className="hidden lg:grid lg:grid-cols-4 gap-3" style={{ animation: 'slideDown 0.3s ease-out', gridAutoRows: 'minmax(0, 1fr)' }}>
+                        <StatsCard
+                          title={strings.activeLeases}
+                          value={leases.length.toString()}
+                          icon={FileText}
+                          scoreColor="#3B82F6"
+                          miniStats={leases.length > 0 ? [
+                            {
+                              label: language === 'th' ? 'สแกนแล้ว' : 'Scanned',
+                              value: scannedLeases.length
+                            },
+                            {
+                              label: language === 'th' ? 'เตือน' : 'Alerts',
+                              value: leases.filter(l => l.notice_alerts_enabled).length
+                            }
+                          ] : undefined}
+                          actionButton={leases.length > 0 ? {
+                            label: language === 'th' ? 'จัดการ' : 'Manage',
+                            link: createPageUrl("UploadScan")
+                          } : undefined}
+                          ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
+                          onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
+                          compact
+                        />
 
-                      {/* Row 2 - Col 3: Maintenance Requests */}
-                      <StatsCard
-                        title={strings.maintenanceRequests}
-                        value={activeMaintenanceCount.toString()}
-                        icon={Wrench}
-                        scoreColor="#F59E0B"
-                        miniStats={activeMaintenanceCount > 0 ? [
-                          {
-                            label: language === 'th' ? 'เสร็จ' : 'Done',
-                            value: maintenanceRequests.filter(r => r.status === 'completed').length
-                          }
-                        ] : undefined}
-                        actionButton={activeMaintenanceCount > 0 ? {
-                          label: language === 'th' ? 'ดู' : 'View',
-                          link: createPageUrl("PropertyTracker")
-                        } : undefined}
-                        ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
-                        onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
-                        compact
-                      />
+                        <StatsCard
+                          title={strings.depositsTracked}
+                          value={`฿${totalDepositValue.toLocaleString()}`}
+                          icon={Wallet}
+                          bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
+                          miniStats={[
+                            { label: language === 'th' ? 'เฉลี่ย' : 'Avg', value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
+                            { label: language === 'th' ? 'เร็วๆนี้' : 'Soon', value: urgentDeposits }
+                          ]}
+                          actionButton={{
+                            label: language === 'th' ? 'เพิ่ม' : 'Add',
+                            link: createPageUrl("DepositTracker")
+                          }}
+                          compact
+                        />
+                        
+                        <StatsCard
+                          title={strings.rentTracked}
+                          value={rentTrackedCount.toString()}
+                          icon={Calendar}
+                          scoreColor="#3B82F6"
+                          miniStats={rentTrackedCount > 0 ? [
+                            {
+                              label: language === 'th' ? 'เตือน' : 'Alerts',
+                              value: deposits.filter(d => d.rent_alerts_enabled).length
+                            }
+                          ] : undefined}
+                          actionButton={rentTrackedCount > 0 ? {
+                            label: language === 'th' ? 'จัดการ' : 'Manage',
+                            link: createPageUrl("PropertyTracker")
+                          } : undefined}
+                          ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
+                          onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                          compact
+                        />
+
+                        <div className="row-span-2">
+                          <ProtectionScoreEnhanced
+                            score={protectionScore}
+                            breakdown={breakdown}
+                            recommendations={recommendations}
+                            language={language}
+                            colors={colors}
+                          />
+                        </div>
+
+                        <StatsCard
+                          title={strings.notifications}
+                          value={notificationLogs.length.toString()}
+                          icon={Bell}
+                          scoreColor="#8B5CF6"
+                          miniStats={notificationLogs.length > 0 ? [
+                            {
+                              label: language === 'th' ? 'ส่งแล้ว' : 'Sent',
+                              value: notificationLogs.filter(n => n.status === 'sent').length
+                            },
+                            {
+                              label: language === 'th' ? 'ล้มเหลว' : 'Failed',
+                              value: notificationLogs.filter(n => n.status === 'failed').length
+                            }
+                          ] : undefined}
+                          actionButton={notificationLogs.length > 0 ? {
+                            label: strings.viewAll,
+                            link: createPageUrl("Account")
+                          } : undefined}
+                          ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
+                          compact
+                        />
+                        
+                        <StatsCard
+                          title={strings.activeCases}
+                          value={activeCases.length}
+                          icon={Scale}
+                          bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
+                          miniStats={[
+                            { label: language === 'th' ? 'แก้ไข' : 'Resolved', value: resolvedCases }
+                          ]}
+                          actionButton={{
+                            label: language === 'th' ? 'เปิด' : 'Open',
+                            link: createPageUrl("Cases")
+                          }}
+                          compact
+                        />
+
+                        <StatsCard
+                          title={strings.maintenanceRequests}
+                          value={activeMaintenanceCount.toString()}
+                          icon={Wrench}
+                          scoreColor="#F59E0B"
+                          miniStats={activeMaintenanceCount > 0 ? [
+                            {
+                              label: language === 'th' ? 'เสร็จ' : 'Done',
+                              value: maintenanceRequests.filter(r => r.status === 'completed').length
+                            }
+                          ] : undefined}
+                          actionButton={activeMaintenanceCount > 0 ? {
+                            label: language === 'th' ? 'ดู' : 'View',
+                            link: createPageUrl("PropertyTracker")
+                          } : undefined}
+                          ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
+                          onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                          compact
+                        />
+                      </div>
                     </>
                   )}
-                </div>
+                </>
               )}
             </div>
           )}
