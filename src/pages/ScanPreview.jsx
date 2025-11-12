@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, FileText, ArrowLeft, ExternalLink, Loader2, Wallet, ArrowRight, Sparkles } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } => "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
 
@@ -40,8 +40,8 @@ export default function ScanPreview() {
     enabled: !!user && leases.length > 0,
   });
 
-  // NEW: Check if user has deposits tracked
-  const { data: deposits = [], isLoading: depositsLoading } = useQuery({
+  // Check if user has deposits tracked
+  const { data: deposits = [] } = useQuery({
     queryKey: ['deposits'],
     queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }),
     enabled: !!user,
@@ -49,7 +49,6 @@ export default function ScanPreview() {
 
   const { hasAccess: hasFullReportAccess } = useFeatureAccess('full_report');
 
-  // Find the specific scan and lease
   const scan = allScans.find(s => {
     if (scanId) return s.id === scanId;
     if (leaseId) return s.lease_id === leaseId;
@@ -66,11 +65,25 @@ export default function ScanPreview() {
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
 
-  // NEW: Check if this lease has a tracked deposit
-  const hasDepositForLease = deposits.some(d => 
-    d.property_address && lease?.property_address && 
-    d.property_address === lease.property_address
-  );
+  // FIXED: Better logic to check if deposit is tracked
+  // Check by: 1) matching property address (if exists), OR 2) deposit amount matches
+  const hasDepositForLease = deposits.some(d => {
+    // Match by property address if both exist and are not "N/A"
+    if (d.property_address && lease?.property_address &&
+        d.property_address !== 'N/A' && lease.property_address !== 'N/A') {
+      return d.property_address === lease.property_address;
+    }
+
+    // Fallback: Match by deposit amount if lease has one
+    if (lease?.deposit_amount && d.deposit_amount === lease.deposit_amount) {
+      return true;
+    }
+
+    return false;
+  });
+
+  // Show the card if lease has a deposit amount and it's not tracked
+  const shouldShowTrackDepositCard = lease?.deposit_amount && lease.deposit_amount > 0 && !hasDepositForLease;
 
   const t = {
     en: {
@@ -93,7 +106,9 @@ export default function ScanPreview() {
       nextStepDesc: "Now that your lease is scanned, track your security deposit to ensure it's returned on time.",
       trackDeposit: "Track Deposit Now",
       depositTracked: "Deposit Already Tracked",
-      viewDeposits: "View Deposits"
+      viewDeposits: "View Deposits",
+      depositAmount: "Security Deposit",
+      leaseScanned: "Lease Analyzed Successfully!"
     },
     th: {
       backToScans: "กลับไปที่การสแกน",
@@ -115,7 +130,9 @@ export default function ScanPreview() {
       nextStepDesc: "ตอนนี้สัญญาเช่าของคุณสแกนแล้ว ติดตามเงินมัดจำเพื่อให้แน่ใจว่าจะได้รับคืนตรงเวลา",
       trackDeposit: "ติดตามเงินมัดจำตอนนี้",
       depositTracked: "ติดตามเงินมัดจำแล้ว",
-      viewDeposits: "ดูเงินมัดจำ"
+      viewDeposits: "ดูเงินมัดจำ",
+      depositAmount: "เงินมัดจำ",
+      leaseScanned: "วิเคราะห์สัญญาเช่าสำเร็จ!"
     }
   };
 
@@ -147,21 +164,17 @@ export default function ScanPreview() {
     textSecondary: '#64748b'
   };
 
-  // ✅ LIMIT FLAGS BASED ON TIER
   const getDisplayFlags = () => {
     const allFlags = scan?.flags || [];
-    
-    // Lite tier: Show max 5 flags
+
     if (userTier === 'lite') {
       return allFlags.slice(0, 5);
     }
-    
-    // Free tier: Show max 4 flags (original preview behavior)
+
     if (userTier === 'free') {
       return allFlags.slice(0, 4);
     }
-    
-    // Protect and Secure: Show all flags
+
     return allFlags;
   };
 
@@ -170,8 +183,7 @@ export default function ScanPreview() {
   const hasMoreIssues = displayFlags.length < totalFlags;
   const hiddenCount = totalFlags - displayFlags.length;
 
-  // Loading state
-  if (userLoading || leasesLoading || scansLoading || depositsLoading) {
+  if (userLoading || leasesLoading || scansLoading) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
@@ -184,7 +196,6 @@ export default function ScanPreview() {
     );
   }
 
-  // Not found state
   if (!scan || !lease) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
@@ -226,9 +237,9 @@ export default function ScanPreview() {
           {strings.backToScans}
         </Button>
 
-        {/* NEW: Next Step Guidance Card */}
-        {!hasDepositForLease && lease?.deposit_amount && (
-          <Card 
+        {/* IMPROVED: Next Step Guidance Card - Now shows for all deposits with amount */}
+        {shouldShowTrackDepositCard && (
+          <Card
             className="mb-6 border-none shadow-xl overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
@@ -258,9 +269,14 @@ export default function ScanPreview() {
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="text-xl font-bold text-white">{strings.nextStep}</h3>
                   </div>
-                  <p className="text-white/90 mb-4 text-base">
+                  <p className="text-white/90 mb-2 text-base">
                     {strings.nextStepDesc}
                   </p>
+                  <div className="flex items-center gap-2 text-white/80 text-sm mb-4">
+                    <Wallet className="w-4 h-4" />
+                    <span className="font-semibold">{strings.depositAmount}:</span>
+                    <span className="text-lg font-bold">฿{lease.deposit_amount.toLocaleString()}</span>
+                  </div>
                   <button
                     onClick={() => navigate(createPageUrl("PropertyTracker"))}
                     style={{
@@ -300,8 +316,8 @@ export default function ScanPreview() {
         )}
 
         {/* Show alternative if deposit already tracked */}
-        {hasDepositForLease && (
-          <Card 
+        {hasDepositForLease && lease?.deposit_amount > 0 && (
+          <Card
             className="mb-6 border-none shadow-xl"
             style={{
               backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5',
@@ -357,9 +373,9 @@ export default function ScanPreview() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="w-6 h-6 text-orange-600" />
-              {userTier === 'lite' 
+              {userTier === 'lite'
                 ? `${language === 'th' ? 'ปัญหาสำคัญ 5 อันดับแรก' : 'Top 5 Issues'} (${Math.min(5, totalFlags)})`
-                : (hasFullReportAccess 
+                : (hasFullReportAccess
                     ? `${strings.allIssues} (${displayFlags.length})`
                     : `${strings.topIssues} (${displayFlags.length})`)}
             </CardTitle>
@@ -380,7 +396,7 @@ export default function ScanPreview() {
                       <Badge variant="outline">{flag.category}</Badge>
                     )}
                   </div>
-                  <p className="text-base font-semibold" style={{ 
+                  <p className="text-base font-semibold" style={{
                     color: colors.textPrimary,
                     wordBreak: 'break-word'
                   }}>{flag.description}</p>
@@ -399,16 +415,16 @@ export default function ScanPreview() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
-                      {language === 'th' 
-                        ? `เหลืออีก ${hiddenCount} ปัญหา${userTier === 'lite' ? ' (อัปเกรดเป็น Protect/Secure เพื่อดูทั้งหมด)' : ''}` 
+                      {language === 'th'
+                        ? `เหลืออีก ${hiddenCount} ปัญหา${userTier === 'lite' ? ' (อัปเกรดเป็น Protect/Secure เพื่อดูทั้งหมด)' : ''}`
                         : `${hiddenCount} More Issue${hiddenCount > 1 ? 's' : ''} Found${userTier === 'lite' ? ' (Upgrade to Protect/Secure)' : ''}`}
                     </h4>
                     <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
                       {userTier === 'lite'
-                        ? (language === 'th' 
+                        ? (language === 'th'
                             ? 'อัปเกรดเป็น Protect หรือ Secure เพื่อดูปัญหาทั้งหมดพร้อมคำแนะนำโดยละเอียด'
                             : 'Upgrade to Protect or Secure to view all issues with detailed recommendations')
-                        : (language === 'th' 
+                        : (language === 'th'
                             ? 'อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อดูรายงานฉบับเต็มพร้อมคำแนะนำโดยละเอียด'
                             : 'Upgrade to Lite, Protect, or Secure to view full report with detailed recommendations')}
                     </p>
