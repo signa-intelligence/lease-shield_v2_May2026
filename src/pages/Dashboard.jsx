@@ -1043,7 +1043,9 @@ function DashboardContent() {
   const isLoading = leasesLoading || depositsLoading;
 
   // FIXED: Better logic for showing onboarding checklist
-  // Show checklist until ALL tasks are complete OR user explicitly marks onboarding done
+  // Show checklist if:
+  // 1. User hasn't explicitly completed onboarding AND
+  // 2. Either they have no data OR not all tasks are complete
   const calculateOnboardingProgress = () => {
     const tasks = [
       leases.length > 0, // Upload lease
@@ -1061,7 +1063,12 @@ function DashboardContent() {
   };
 
   const onboardingProgress = calculateOnboardingProgress();
-  const shouldShowOnboardingChecklist = !user?.onboarding_completed && !onboardingProgress.allTasksComplete;
+  
+  // Show checklist if:
+  // - User hasn't marked onboarding as complete
+  // - AND (has no data at all OR has incomplete tasks)
+  const hasNoData = leases.length === 0 && deposits.length === 0 && documents.length === 0 && maintenanceRequests.length === 0;
+  const shouldShowOnboardingChecklist = !user?.onboarding_completed && (hasNoData || !onboardingProgress.allTasksComplete);
 
   // Check if user is new and should see onboarding wizard
   React.useEffect(() => {
@@ -1069,8 +1076,8 @@ function DashboardContent() {
       const hasAnyActivity = leases.length > 0 || deposits.length > 0 || documents.length > 0 || cases.length > 0;
       
       if (!hasAnyActivity) {
-        // Show onboarding wizard for brand new users
-        setShowOnboarding(true);
+        // Don't auto-show wizard if they're already looking at checklist
+        // setShowOnboarding(true); // REMOVED: Let checklist guide them instead
       }
     }
   }, [user, leases, deposits, documents, cases]);
@@ -1086,7 +1093,7 @@ function DashboardContent() {
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
 
   // Show empty state for completely new users (if wizard isn't currently open)
-  if (!isLoading && !hasAnyData && !showOnboarding) {
+  if (!isLoading && !hasAnyData && !showOnboarding && !shouldShowOnboardingChecklist) { // Added shouldShowOnboardingChecklist here
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
         <EmptyState
@@ -1169,7 +1176,6 @@ function DashboardContent() {
                   </button>
                 </Link>
 
-                {/* Admin: Comprehensive test buttons */}
                 {isAdmin && (
                   <>
                     <button
