@@ -32,7 +32,7 @@ export default function LazyImage({
         }
       },
       {
-        rootMargin: '50px', // Start loading 50px before visible
+        rootMargin: '50px',
         threshold: 0.01
       }
     );
@@ -76,7 +76,7 @@ export default function LazyImage({
       ) : error ? (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="text-center p-4">
-            <p className="text-sm text-gray-500">Failed to load image</p>
+            <p className="text-sm text-gray-500">Failed to load</p>
           </div>
         </div>
       ) : null}
