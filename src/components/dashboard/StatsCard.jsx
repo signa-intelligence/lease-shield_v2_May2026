@@ -19,7 +19,8 @@ export default function StatsCard({
   ctaText,
   onCtaClick,
   miniStats,
-  actionButton
+  actionButton,
+  compact = false
 }) {
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -58,9 +59,9 @@ export default function StatsCard({
         backgroundColor: colors.cardBg,
         borderLeft: `4px solid ${accentColor}`,
         boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-        borderRadius: '16px',
+        borderRadius: compact ? '12px' : '16px',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        padding: '24px',
+        padding: compact ? '12px' : '24px',
         position: 'relative'
       }}
       onMouseEnter={(e) => {
@@ -73,32 +74,35 @@ export default function StatsCard({
       }}
     >
       {/* Header: Title & Icon */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between" style={{ marginBottom: compact ? '8px' : '16px' }}>
         <div className="flex-1">
-          <p className="text-xs font-bold mb-2" style={{ 
+          <p className={compact ? "text-[10px]" : "text-xs"} style={{ 
             color: colors.textSecondary,
             letterSpacing: '0.05em',
-            textTransform: 'uppercase'
+            textTransform: 'uppercase',
+            fontWeight: 'bold',
+            marginBottom: compact ? '4px' : '8px'
           }}>
             {title}
           </p>
-          <p className="text-3xl font-bold" style={{ 
+          <p className={compact ? "text-xl" : "text-3xl"} style={{ 
             color: accentColor,
-            letterSpacing: '-0.02em'
+            letterSpacing: '-0.02em',
+            fontWeight: 'bold'
           }}>
             {value}
           </p>
         </div>
         <div style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '12px',
+          width: compact ? '32px' : '48px',
+          height: compact ? '32px' : '48px',
+          borderRadius: compact ? '8px' : '12px',
           backgroundColor: `${accentColor}15`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <Icon className="w-6 h-6" style={{ color: accentColor }} />
+          <Icon className={compact ? "w-4 h-4" : "w-6 h-6"} style={{ color: accentColor }} />
         </div>
       </div>
 
@@ -110,12 +114,16 @@ export default function StatsCard({
       )}
 
       {showGauge && (
-        <div className="mt-4">
+        <div style={{ marginTop: compact ? '8px' : '16px' }}>
           <ProtectionScoreGauge score={scoreValue} />
           {scoreStatus && (
-            <Badge className="mt-3 w-full justify-center border-none text-xs font-bold" style={{ 
+            <Badge className={compact ? "mt-2 text-[10px]" : "mt-3 text-xs"} style={{ 
               backgroundColor: colors.miniStatBg,
-              color: accentColor 
+              color: accentColor,
+              width: '100%',
+              justifyContent: 'center',
+              border: 'none',
+              fontWeight: 'bold'
             }}>
               {scoreStatus}
             </Badge>
@@ -124,18 +132,22 @@ export default function StatsCard({
       )}
 
       {miniStats && miniStats.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 mt-4">
+        <div className="grid grid-cols-2 gap-2" style={{ marginTop: compact ? '8px' : '16px' }}>
           {miniStats.map((stat, idx) => (
-            <div key={idx} className="p-3 rounded-lg" style={{ 
-              backgroundColor: colors.miniStatBg
+            <div key={idx} className={compact ? "p-2" : "p-3"} style={{ 
+              backgroundColor: colors.miniStatBg,
+              borderRadius: '8px'
             }}>
-              <p className="text-xs font-semibold mb-1" style={{ 
-                color: colors.textSecondary
+              <p className={compact ? "text-[9px]" : "text-xs"} style={{ 
+                color: colors.textSecondary,
+                fontWeight: '600',
+                marginBottom: compact ? '2px' : '4px'
               }}>
                 {stat.label}
               </p>
-              <p className="text-lg font-bold" style={{ 
-                color: colors.textPrimary
+              <p className={compact ? "text-sm" : "text-lg"} style={{ 
+                color: colors.textPrimary,
+                fontWeight: 'bold'
               }}>
                 {stat.value}
               </p>
@@ -149,13 +161,13 @@ export default function StatsCard({
           onClick={onCtaClick}
           style={{
             width: '100%',
-            marginTop: '16px',
-            padding: '12px 20px',
+            marginTop: compact ? '8px' : '16px',
+            padding: compact ? '8px 12px' : '12px 20px',
             backgroundColor: accentColor,
             color: brandColors.white,
-            borderRadius: '10px',
+            borderRadius: compact ? '8px' : '10px',
             fontWeight: '600',
-            fontSize: '14px',
+            fontSize: compact ? '12px' : '14px',
             border: 'none',
             cursor: 'pointer',
             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -177,16 +189,16 @@ export default function StatsCard({
       )}
 
       {actionButton && (
-        <Link to={actionButton.link} className="block mt-4">
+        <Link to={actionButton.link} className="block" style={{ marginTop: compact ? '8px' : '16px' }}>
           <button
             style={{
               width: '100%',
-              padding: '12px 20px',
+              padding: compact ? '8px 12px' : '12px 20px',
               backgroundColor: 'transparent',
               color: accentColor,
-              borderRadius: '10px',
+              borderRadius: compact ? '8px' : '10px',
               fontWeight: '600',
-              fontSize: '14px',
+              fontSize: compact ? '12px' : '14px',
               border: `2px solid ${accentColor}`,
               cursor: 'pointer',
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
