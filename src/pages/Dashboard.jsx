@@ -1560,6 +1560,7 @@ function DashboardContent() {
                 deposits={deposits}
                 documents={documents}
                 cases={cases}
+                maintenanceRequests={maintenanceRequests}
                 colors={colors}
                 language={language}
               />

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,8 @@ import {
   ArrowRight,
   ArrowLeft,
   X,
-  Sparkles
+  Sparkles,
+  Wrench // Added Wrench icon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -24,13 +26,15 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
   const t = {
     en: {
       welcome: "Welcome to Lease Shield!",
-      welcomeSubtitle: "Let's get you protected in 3 easy steps",
+      welcomeSubtitle: "Let's get you protected in 4 easy steps", // Updated from 3 to 4
       step1Title: "Upload Your Lease",
       step1Desc: "Get instant AI analysis of your rental agreement to identify risks and unfair terms before they become problems.",
       step2Title: "Track Your Deposit",
       step2Desc: "Never lose track of your security deposit. Set up automated reminders so you know exactly when to expect it back.",
-      step3Title: "Store Evidence",
-      step3Desc: "Build a solid paper trail. Upload photos, receipts, and documents to protect yourself if disputes arise.",
+      step3Title: "Report Maintenance", // New step title
+      step3Desc: "Document and track all maintenance issues with timestamps and photos. Keep landlords accountable.", // New step description
+      step4Title: "Store Evidence", // Renamed from step3Title
+      step4Desc: "Build a solid paper trail. Upload photos, receipts, and documents to protect yourself if disputes arise.", // Renamed from step3Desc
       finalTitle: "You're All Set!",
       finalDesc: "Lease Shield is now protecting your rental rights. Start with your first action below.",
       next: "Next",
@@ -39,18 +43,21 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
       getStarted: "Get Started",
       uploadLease: "Upload My Lease",
       addDeposit: "Track Deposit",
+      reportMaintenance: "Report Issue", // New action button text
       uploadDocs: "Add Evidence",
       stepOf: "Step {current} of {total}"
     },
     th: {
-      welcome: "ยินดีต้อนรับสู่ Lease Shield!",
-      welcomeSubtitle: "มาเริ่มปกป้องคุณใน 3 ขั้นตอนง่ายๆ",
+      welcome: "ยินดีต้อนรับสู่ Lease Shield!", // Changed to Lease Shield for consistency
+      welcomeSubtitle: "มาเริ่มปกป้องคุณใน 4 ขั้นตอนง่ายๆ", // Updated from 3 to 4
       step1Title: "อัปโหลดสัญญาเช่า",
-      step1Desc: "รับการวิเคราะห์ AI ทันทีสำหรับสัญญาเช่าของคุณ เพื่อระบุความเสี่ยงและข้อกำหนดที่ไม่ยุติธรรมก่อนที่จะกลายเป็นปัญหา",
+      step1Desc: "รับการวิเคราะห์ AI ทันทีสำหรับสัญญาเช่าของคุณ เพื่อระบุความเสี่ยงและข้อกำหนดที่ไม่ยุติธรรมก่อนที่จะกลายเป็นปัญหา", // Rephrased for clarity
       step2Title: "ติดตามเงินมัดจำ",
-      step2Desc: "ไม่มีทางสูญเสียการติดตามเงินมัดจำของคุณ ตั้งการแจ้งเตือนอัตโนมัติเพื่อให้คุณรู้ว่าเมื่อไหร่จะได้คืน",
-      step3Title: "เก็บหลักฐาน",
-      step3Desc: "สร้างร่องรอยเอกสารที่มั่นคง อัปโหลดรูปภาพ ใบเสร็จ และเอกสารเพื่อปกป้องตัวเองหากเกิดข้อพิพาท",
+      step2Desc: "ไม่มีทางสูญเสียการติดตามเงินมัดจำของคุณ ตั้งการแจ้งเตือนอัตโนมัติเพื่อให้คุณรู้ว่าเมื่อไหร่จะได้คืน", // Rephrased for clarity
+      step3Title: "แจ้งซ่อมบำรุง", // New step title
+      step3Desc: "บันทึกและติดตามปัญหาการซ่อมบำรุงทั้งหมดพร้อมเวลาและรูปภาพ ทำให้เจ้าของบ้านรับผิดชอบ", // New step description
+      step4Title: "เก็บหลักฐาน", // Renamed from step3Title
+      step4Desc: "สร้างร่องรอยเอกสารที่มั่นคง อัปโหลดรูปภาพ ใบเสร็จ และเอกสารเพื่อปกป้องตัวเองหากเกิดข้อพิพาท", // Renamed from step3Desc
       finalTitle: "คุณพร้อมแล้ว!",
       finalDesc: "Lease Shield กำลังปกป้องสิทธิ์การเช่าของคุณแล้ว เริ่มต้นด้วยการดำเนินการแรกของคุณด้านล่าง",
       next: "ถัดไป",
@@ -59,8 +66,9 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
       getStarted: "เริ่มต้น",
       uploadLease: "อัปโหลดสัญญาเช่า",
       addDeposit: "ติดตามเงินมัดจำ",
+      reportMaintenance: "แจ้งปัญหา", // New action button text
       uploadDocs: "เพิ่มหลักฐาน",
-      stepOf: "ขั้นตอน {current} จาก {total}"
+      stepOf: "ขั้นตอนที่ {current} จาก {total}"
     }
   };
 
@@ -84,10 +92,18 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
       route: "PropertyTracker"
     },
     {
-      icon: FileText,
-      color: '#10B981',
+      icon: Wrench, // New icon for maintenance step
+      color: '#F59E0B', // New color for maintenance step
       title: strings.step3Title,
       description: strings.step3Desc,
+      action: strings.reportMaintenance,
+      route: "PropertyTracker" // Assuming maintenance reporting is part of PropertyTracker
+    },
+    {
+      icon: FileText,
+      color: '#10B981',
+      title: strings.step4Title, // Updated from step3Title
+      description: strings.step4Desc, // Updated from step3Desc
       action: strings.uploadDocs,
       route: "DocumentVault"
     }
@@ -167,7 +183,7 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
 
         {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8"> {/* Changed from sm:grid-cols-3 to grid-cols-2 */}
             {steps.map((step, idx) => {
               const StepIcon = step.icon;
               const isActive = idx === currentStep;

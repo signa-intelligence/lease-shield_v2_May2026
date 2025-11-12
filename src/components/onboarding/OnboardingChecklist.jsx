@@ -13,12 +13,13 @@ import {
   User,
   Sparkles,
   Trophy,
-  ChevronRight
+  ChevronRight,
+  Wrench
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-const OnboardingChecklist = ({ user, leases, deposits, documents, cases, colors, language = 'en' }) => {
+const OnboardingChecklist = ({ user, leases, deposits, documents, cases, maintenanceRequests = [], colors, language = 'en' }) => {
   const t = {
     en: {
       title: "Getting Started",
@@ -30,6 +31,8 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, colors,
         uploadLeaseDesc: "Get AI risk analysis",
         trackDeposit: "Track a security deposit",
         trackDepositDesc: "Never lose your money",
+        reportMaintenance: "Report a maintenance issue",
+        reportMaintenanceDesc: "Track repairs and hold landlords accountable",
         uploadDoc: "Upload evidence",
         uploadDocDesc: "Build your paper trail",
         setupProfile: "Complete your profile",
@@ -57,13 +60,15 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, colors,
         uploadLease: "อัปโหลดสัญญาเช่าแรก",
         uploadLeaseDesc: "รับการวิเคราะห์ความเสี่ยงจาก AI",
         trackDeposit: "ติดตามเงินมัดจำ",
-        trackDepositDesc: "ไม่มีทางเสียเงิน",
+        trackDepositDesc: "ไม่พลาดเงินของคุณ",
+        reportMaintenance: "แจ้งปัญหาการซ่อมบำรุง",
+        reportMaintenanceDesc: "ติดตามการซ่อมและทำให้เจ้าของบ้านรับผิดชอบ",
         uploadDoc: "อัปโหลดหลักฐาน",
-        uploadDocDesc: "สร้างร่องรอยเอกสาร",
+        uploadDocDesc: "สร้างหลักฐานที่แข็งแกร่ง",
         setupProfile: "กรอกโปรไฟล์ให้ครบ",
-        setupProfileDesc: "เพิ่มรายละเอียดการติดต่อ",
+        setupProfileDesc: "เพิ่มข้อมูลติดต่อ",
         enableNotifications: "เปิดการแจ้งเตือน",
-        enableNotificationsDesc: "รับข้อมูลอยู่เสมอ",
+        enableNotificationsDesc: "รับข้อมูลตลอดเวลา",
         openCase: "เปิดคดีแรก",
         openCaseDesc: "รับความช่วยเหลือจากผู้เชี่ยวชาญ"
       },
@@ -73,8 +78,8 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, colors,
         done: "เสร็จแล้ว"
       },
       allDone: "พร้อมแล้ว!",
-      allDoneDesc: "คุณทำสิ่งสำคัญเสร็จแล้ว! เพิ่มเติมต่อไปเพื่อเพิ่มคะแนนการป้องกัน!",
-      earnedBadge: "คุณได้รับตรา!"
+      allDoneDesc: "คุณทำสิ่งสำคัญเสร็จแล้ว เพิ่มเติมต่อไปเพื่อเพิ่มคะแนนการป้องกัน!",
+      earnedBadge: "คุณได้รับตราแล้ว!"
     }
   };
 
@@ -102,6 +107,16 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, colors,
       points: 20
     },
     {
+      id: 'report_maintenance',
+      label: strings.tasks.reportMaintenance,
+      description: strings.tasks.reportMaintenanceDesc,
+      icon: Wrench,
+      color: '#F59E0B',
+      completed: maintenanceRequests.length > 0,
+      route: "PropertyTracker",
+      points: 15
+    },
+    {
       id: 'upload_doc',
       label: strings.tasks.uploadDoc,
       description: strings.tasks.uploadDocDesc,
@@ -126,7 +141,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, colors,
       label: strings.tasks.enableNotifications,
       description: strings.tasks.enableNotificationsDesc,
       icon: Bell,
-      color: '#F59E0B',
+      color: '#06B6D4',
       completed: user?.email_notifications || user?.line_notifications,
       route: "Account",
       points: 10
