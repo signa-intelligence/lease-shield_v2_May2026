@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from "@/components/ui/select";
+import { haptic } from "../components/shared/HapticFeedback";
 
 const TEMPLATES = [
   {
@@ -294,6 +296,26 @@ export default function Templates() {
     }
   };
 
+  const handleTemplateClick = (template) => {
+    haptic.medium();
+    
+    // For built-in templates, check credits and navigate to form
+    if (template.id) {
+      if (userCredits >= template.creditCost) {
+        navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`);
+      } else {
+        haptic.error();
+      }
+    } else {
+      // For custom uploaded templates, open the file directly
+      if (userCredits >= template.credit_cost) {
+        window.open(template.file_url, '_blank');
+      } else {
+        haptic.error();
+      }
+    }
+  };
+
   const handleUploadTemplate = async () => {
     if (!uploadFormData.file || !uploadFormData.title_en || !uploadFormData.title_th) {
       alert(language === 'th' 
@@ -302,6 +324,7 @@ export default function Templates() {
       return;
     }
 
+    haptic.medium();
     setUploadingFile(true);
     try {
       // Upload file first
@@ -319,9 +342,11 @@ export default function Templates() {
         is_active: true
       });
 
+      haptic.success();
       alert(language === 'th' ? 'อัปโหลดเทมเพลตสำเร็จ!' : 'Template uploaded successfully!');
     } catch (error) {
       console.error('Upload failed:', error);
+      haptic.error();
       alert(language === 'th' ? 'อัปโหลดล้มเหลว กรุณาลองอีกครั้ง' : 'Upload failed. Please try again.');
     } finally {
       setUploadingFile(false);
@@ -333,20 +358,6 @@ export default function Templates() {
   const liteTemplates = [...TEMPLATES.filter(t => ['deposit', 'deductions', 'reminder'].includes(t.id)), ...customTemplates.filter(t => t.category === 'friendly')];
   const protectTemplates = [...TEMPLATES.filter(t => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(t.id)), ...customTemplates.filter(t => t.category === 'professional')];
   const secureTemplates = [...TEMPLATES.filter(t => ['final_opportunity', 'non_compliance', 'settlement'].includes(t.id)), ...customTemplates.filter(t => t.category === 'final')];
-
-  const handleTemplateClick = (template) => {
-    // For built-in templates, check credits and navigate to form
-    if (template.id) {
-      if (userCredits >= template.creditCost) {
-        navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`);
-      }
-    } else {
-      // For custom uploaded templates, open the file directly
-      if (userCredits >= template.credit_cost) {
-        window.open(template.file_url, '_blank');
-      }
-    }
-  };
 
   const renderTemplateCard = (template, isCustom = false) => {
     const Icon = isCustom ? FileText : template.icon;

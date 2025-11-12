@@ -6,6 +6,7 @@ import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, 
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
+import { haptic } from "./components/shared/HapticFeedback";
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -183,7 +184,7 @@ export default function Layout({ children, currentPageName }) {
     {
       key: "docs",
       label: strings.evidence,
-      route: createPageUrl("EvidenceVault"), // Changed from DocumentVault to EvidenceVault
+      route: createPageUrl("EvidenceVault"),
       icon: FileText,
     },
   ];
@@ -363,6 +364,7 @@ export default function Layout({ children, currentPageName }) {
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search}
+                onClick={() => haptic.light()}
                 style={{
                   width: '36px',
                   height: '36px',
@@ -404,6 +406,7 @@ export default function Layout({ children, currentPageName }) {
             <Link to={createPageUrl("Account")}>
               <button
                 aria-label="Account Settings"
+                onClick={() => haptic.light()}
                 style={{
                   width: '36px',
                   height: '36px',
@@ -480,6 +483,10 @@ export default function Layout({ children, currentPageName }) {
                 key={tab.key}
                 to={tab.route}
                 className="ripple-container btn-press-feedback"
+                onClick={(e) => {
+                  haptic.light();
+                  createRipple(e, e.currentTarget);
+                }}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -496,7 +503,6 @@ export default function Layout({ children, currentPageName }) {
                   position: 'relative',
                   overflow: 'hidden'
                 }}
-                onClick={(e) => createRipple(e, e.currentTarget)}
                 onMouseEnter={(e) => {
                   if (!isActive) {
                     e.currentTarget.style.backgroundColor = colors.hoverBg;

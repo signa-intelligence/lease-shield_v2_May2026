@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus"; // New import
+import { haptic } from "../components/shared/HapticFeedback";
 
 
 const PLAN_DETAILS = [
@@ -367,6 +368,7 @@ export default function Account() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    haptic.medium();
     updateProfileMutation.mutate(formData);
   };
 
@@ -375,6 +377,7 @@ export default function Account() {
   };
 
   const handleThemeToggle = (newTheme) => {
+    haptic.light();
     setFormData({...formData, theme: newTheme});
     updateProfileMutation.mutate({ theme: newTheme });
   };
@@ -382,6 +385,8 @@ export default function Account() {
   const handleSubscribe = async (planKey, interval) => {
     const plan = PLAN_DETAILS.find(p => p.key === planKey);
     if (!plan) return;
+
+    haptic.medium();
 
     const amount = interval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
     const intervalType = interval === 'annual' ? 'year' : 'month';
@@ -410,11 +415,13 @@ export default function Account() {
         window.location.href = response.data.url;
       } else {
         console.error('❌ No URL in response:', response);
+        haptic.error();
         throw new Error('No checkout URL returned from server');
       }
     } catch (error) {
       console.error('❌ Subscription error:', error);
       console.error('Error details:', error.response?.data || error);
+      haptic.error();
       const language = user?.language || 'en';
       
       const errorMsg = error.response?.data?.details || error.response?.data?.error || error.message;
@@ -425,6 +432,7 @@ export default function Account() {
   };
 
   const handleBuyCredits = async (pkg) => {
+    haptic.medium();
     setBuyingCredits(prev => ({ ...prev, [pkg.id]: true }));
     try {
       console.log('🔍 Sending to createCheckout:', { amount: pkg.price, packageId: pkg.id });
@@ -450,6 +458,7 @@ export default function Account() {
       }
     } catch (error) {
       console.error('Failed to create checkout:', error);
+      haptic.error();
       const language = user?.language || 'en'; // Declared here to ensure it's available for the alert
       alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
     } finally {
@@ -458,6 +467,7 @@ export default function Account() {
   };
 
   const handleExportData = async () => {
+    haptic.light();
     setExporting(true);
     try {
       const response = await base44.functions.invoke('exportUserData');
@@ -471,8 +481,10 @@ export default function Account() {
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
+      haptic.success();
     } catch (error) {
       console.error('Export failed:', error);
+      haptic.error();
       alert('Failed to export data. Please try again or contact support.');
     } finally {
       setExporting(false);
@@ -486,6 +498,7 @@ export default function Account() {
       return;
     }
 
+    haptic.medium();
     setCancelling(true);
     try {
       const response = await base44.functions.invoke('cancelSubscription', {
@@ -498,12 +511,14 @@ export default function Account() {
         setShowCancelDialog(false);
         setCancelReason('');
         setCancelFeedback('');
+        haptic.success();
         alert(language === 'th' 
           ? 'การยกเลิกสำเร็จ คุณจะยังคงสามารถเข้าถึงฟีเจอร์ได้จนถึงวันที่ต่ออายุ' 
           : 'Cancellation successful. You\'ll keep access until your renewal date.');
       }
     } catch (error) {
       console.error('Cancellation error:', error);
+      haptic.error();
       alert(language === 'th' 
         ? 'ไม่สามารถยกเลิกได้ กรุณาลองอีกครั้งหรือติดต่อฝ่ายสนับสนุน' 
         : 'Failed to cancel. Please try again or contact support.');
@@ -513,10 +528,12 @@ export default function Account() {
   };
 
   const handleLandlordUpdate = () => {
+    haptic.medium();
     updateProfileMutation.mutate(landlordData);
   };
 
   const handleJuristicUpdate = () => {
+    haptic.medium();
     updateProfileMutation.mutate(juristicData);
   };
 
@@ -530,13 +547,16 @@ export default function Account() {
   };
 
   const handleCopyLink = async (role) => {
+    haptic.light();
     const link = generateLineOALink(role);
     try {
       await navigator.clipboard.writeText(link);
       setCopiedLink(role);
+      haptic.success();
       setTimeout(() => setCopiedLink(null), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
+      haptic.error();
     }
   };
 

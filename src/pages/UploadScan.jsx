@@ -30,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ProgressBreadcrumb from "../components/shared/ProgressBreadcrumb";
 import UploadProgress from "../components/shared/UploadProgress";
+import { haptic } from "../components/shared/HapticFeedback";
 
 export default function UploadScanPage() {
   const navigate = useNavigate();
@@ -326,6 +327,8 @@ export default function UploadScanPage() {
       return;
     }
 
+    haptic.medium();
+
     // BATCH MODE: Upload multiple leases separately
     if (selectedFiles.length > 1) {
       setBatchMode(true);
@@ -544,6 +547,8 @@ export default function UploadScanPage() {
   const handleConfirmLeaseDetails = async () => {
     if (!pendingLeaseId || !leaseDetails) return;
 
+    haptic.medium();
+
     try {
       const endDate = new Date(leaseDetails.end_date);
       const deadline = new Date(endDate);
@@ -563,6 +568,7 @@ export default function UploadScanPage() {
       const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
       const updatedLease = updatedLeases.find(l => l.id === pendingLeaseId);
       setSelectedLease(updatedLease);
+      haptic.success();
     } catch (err) {
       console.error('Failed to update lease details:', err);
       // Still open the modal even if update fails
@@ -570,10 +576,12 @@ export default function UploadScanPage() {
       const updatedLease = updatedLeases.find(l => l.id === pendingLeaseId);
       setSelectedLease(updatedLease);
       setCurrentStep(3); // Even on error, we attempted to set it, so move to track
+      haptic.error();
     }
   };
 
   const handleSkipConfirmation = async () => {
+    haptic.light();
     setShowConfirmation(false);
     setCurrentStep(2); // Stay on results step
     if (pendingLeaseId) {
@@ -608,6 +616,7 @@ export default function UploadScanPage() {
     const userConfirmed = window.confirm(confirmMessage);
 
     if (userConfirmed) {
+      haptic.heavy();
       deleteLeaseWithScanMutation.mutate(leaseId);
     }
   };
@@ -649,6 +658,7 @@ export default function UploadScanPage() {
   };
 
   const handleToggleAlerts = async (enabled) => {
+    haptic.light();
     await updateLeaseMutation.mutateAsync({
       id: selectedLease.id,
       data: { notice_alerts_enabled: enabled }
@@ -661,6 +671,8 @@ export default function UploadScanPage() {
       alert(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : 'Please fill in all fields');
       return;
     }
+
+    haptic.medium();
 
     const endDate = new Date(selectedLease.end_date);
     const deadline = new Date(endDate);
@@ -680,6 +692,7 @@ export default function UploadScanPage() {
       notice_deadline: deadline.toISOString().split('T')[0]
     });
     setEditingNotice(false);
+    haptic.success();
   };
 
   const getRiskColor = (score) => {
@@ -1249,7 +1262,10 @@ export default function UploadScanPage() {
                       ))}
                     </div>
                     <button
-                      onClick={handleUploadAll}
+                      onClick={() => {
+                        haptic.medium();
+                        handleUploadAll();
+                      }}
                       disabled={uploading || !scanStatus.allowed}
                       className={`w-full mt-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
                       style={{

@@ -21,6 +21,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
+import { haptic } from "../components/shared/HapticFeedback";
 
 function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -78,6 +79,7 @@ function DashboardContent() {
   });
 
   const handleRefresh = async () => {
+    haptic.light();
     await queryClient.invalidateQueries();
     toast.success(language === 'th' ? 'รีเฟรชสำเร็จ' : 'Refreshed successfully');
   };
@@ -1148,6 +1150,7 @@ function DashboardContent() {
                 {/* NEW: Analytics Button */}
                 <Link to={createPageUrl("Analytics")}>
                   <button
+                    onClick={() => haptic.light()}
                     style={{
                       padding: '8px 16px',
                       backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
@@ -1179,7 +1182,10 @@ function DashboardContent() {
                 {isAdmin && (
                   <>
                     <button
-                      onClick={testFlexFromBrowser}
+                      onClick={() => {
+                        haptic.medium();
+                        testFlexFromBrowser();
+                      }}
                       disabled={testingBrowserFlex}
                       style={{
                         padding: '6px 12px',
@@ -1222,7 +1228,10 @@ function DashboardContent() {
                     </button>
 
                     <button
-                      onClick={testRentReminder}
+                      onClick={() => {
+                        haptic.medium();
+                        testRentReminder();
+                      }}
                       disabled={testingRent}
                       style={{
                         padding: '6px 12px',
@@ -1265,7 +1274,10 @@ function DashboardContent() {
                     </button>
 
                     <button
-                      onClick={testDirectEmail}
+                      onClick={() => {
+                        haptic.medium();
+                        testDirectEmail();
+                      }}
                       disabled={testingEmail}
                       style={{
                         padding: '6px 12px',
@@ -1308,7 +1320,10 @@ function DashboardContent() {
                     </button>
 
                     <button
-                      onClick={checkAndNotifyOverdue}
+                      onClick={() => {
+                        haptic.medium();
+                        checkAndNotifyOverdue();
+                      }}
                       disabled={checkingOverdue}
                       style={{
                         padding: '6px 12px',
@@ -1351,7 +1366,10 @@ function DashboardContent() {
                     </button>
 
                     <button
-                      onClick={runScheduledReminders}
+                      onClick={() => {
+                        haptic.medium();
+                        runScheduledReminders();
+                      }}
                       disabled={runningScheduled}
                       style={{
                         padding: '6px 12px',
@@ -1398,7 +1416,10 @@ function DashboardContent() {
 
                 {/* Focus Mode Toggle */}
                 <button
-                  onClick={() => setFocusMode(!focusMode)}
+                  onClick={() => {
+                    haptic.light();
+                    setFocusMode(!focusMode);
+                  }}
                   style={{
                     padding: '8px 16px',
                     backgroundColor: focusMode ? '#C7A338' : colors.cardBg,
@@ -1962,6 +1983,7 @@ function DashboardContent() {
                 </div>
                 <Link to={createPageUrl("UploadScan")} className="w-full">
                   <button
+                    onClick={() => haptic.medium()}
                     style={{
                       width: '100%',
                       backgroundColor: '#C7A338',
@@ -2061,6 +2083,7 @@ function DashboardContent() {
                 </div>
                 <Link to={createPageUrl("Account")} className="w-full">
                   <button
+                    onClick={() => haptic.medium()}
                     style={{
                       width: '100%',
                       backgroundColor: '#0C3B2E',

@@ -19,7 +19,7 @@ import LetterPreview from "../components/shared/LetterPreview";
 import DocumentAnnotation from "../components/documents/DocumentAnnotation";
 import { compressMultipleImages } from "../components/shared/ImageCompression";
 import { haptic } from "../components/shared/HapticFeedback";
-import UploadProgress from "../components/shared/UploadProgress"; // Added import
+import UploadProgress from "../components/shared/UploadProgress";
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -124,19 +124,11 @@ export default function EvidenceVault() {
     mutationFn: (id) => base44.entities.Document.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
-      setSelectedDocs([]);
+      setSelectedDocs([]); // Clear selection in case a selected item was deleted
     },
   });
 
-  const deleteBulkMutation = useMutation({
-    mutationFn: async (ids) => {
-      await Promise.all(ids.map(id => base44.entities.Document.delete(id)));
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
-      setSelectedDocs([]);
-    },
-  });
+  // Removed deleteBulkMutation as per outline, will use deleteDocumentMutation in a loop
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -163,26 +155,24 @@ export default function EvidenceVault() {
       }
     }
 
+    haptic.medium();
     setUploading(true);
     setError(null);
     setCompressionStats(null);
-    setUploadStage('preparing');
+    setUploadStage('compressing'); // Following outline: set compressing stage here
     setUploadProgressPercent(0);
-    haptic.medium();
 
     try {
-      // Compress images
-      setUploadProgressPercent(10);
-      setUploadStage('compressing');
+      // Compress images (0-40%)
       const { files: compressedFiles, stats } = await compressMultipleImages(uploadFiles, (progress) => {
-        setUploadProgressPercent(10 + Math.round(progress * 0.3)); // 10-40%
+        setUploadProgressPercent(Math.round(progress * 40)); // 0-40% for compression
       });
       
       if (stats.compressedCount > 0) {
         setCompressionStats(stats);
       }
 
-      // Upload compressed files
+      // Upload compressed files (40-70%)
       setUploadStage('uploadingFiles');
       setUploadProgressPercent(40);
 
@@ -191,8 +181,9 @@ export default function EvidenceVault() {
       );
 
       const results = await Promise.all(uploadPromises);
-      setUploadProgressPercent(70);
+      setUploadProgressPercent(70); // After all files uploaded
 
+      // Save documents (70-100%)
       setUploadStage('savingDocuments');
       const createPromises = results.map((result, index) =>
         base44.entities.Document.create({
@@ -223,6 +214,7 @@ export default function EvidenceVault() {
   };
 
   const handleSelectAll = () => {
+    haptic.light();
     if (selectedDocs.length === documents.length) {
       setSelectedDocs([]);
     } else {
@@ -231,6 +223,7 @@ export default function EvidenceVault() {
   };
 
   const handleToggleSelect = (docId) => {
+    haptic.light();
     setSelectedDocs(prev => 
       prev.includes(docId) 
         ? prev.filter(id => id !== docId)
@@ -239,24 +232,29 @@ export default function EvidenceVault() {
   };
 
   const handleDelete = (docId) => {
-    const confirmMessage = language === 'th' 
-      ? `คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์นี้?`
-      : `Are you sure you want to delete this file?`;
-    
-    if (confirm(confirmMessage)) {
+    if (confirm(strings.confirmDelete)) { // Using new string
+      haptic.heavy();
       deleteDocumentMutation.mutate(docId);
     }
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedDocs.length === 0) return;
     
-    const confirmMessage = language === 'th' 
-      ? `ลบไฟล์ ${selectedDocs.length} ไฟล์ใช่หรือไม่?`
-      : `Delete ${selectedDocs.length} file(s)?`;
-    
-    if (confirm(confirmMessage)) {
-      deleteBulkMutation.mutate(selectedDocs);
+    if (confirm(strings.confirmBulkDelete.replace('{count}', selectedDocs.length))) { // Using new string
+      haptic.heavy();
+      try {
+        for (const docId of selectedDocs) {
+          await deleteDocumentMutation.mutateAsync(docId); // Changed to use individual mutation and await
+        }
+        queryClient.invalidateQueries({ queryKey: ['documents'] }); // Invalidate once after all deletes
+        setSelectedDocs([]);
+        haptic.success();
+      } catch (error) {
+        console.error("Bulk delete failed:", error);
+        alert(language === 'th' ? 'การลบจำนวนมากล้มเหลว' : 'Bulk deletion failed');
+        haptic.error();
+      }
     }
   };
 
@@ -265,7 +263,7 @@ export default function EvidenceVault() {
       alert(language === 'th' ? 'กรุณาเลือกเอกสารอย่างน้อย 1 ไฟล์' : 'Please select at least 1 document');
       return;
     }
-
+    haptic.light();
     setExportingZip(true);
     try {
       const response = await base44.functions.invoke('bulkExportDocuments', {
@@ -284,15 +282,18 @@ export default function EvidenceVault() {
       a.remove();
 
       setSelectedDocs([]);
+      haptic.success();
     } catch (error) {
       console.error('Export failed:', error);
       alert(language === 'th' ? 'ไม่สามารถส่งออกได้' : 'Export failed');
+      haptic.error();
     } finally {
       setExportingZip(false);
     }
   };
 
   const handleExportAllReport = async () => {
+    haptic.light();
     setExportingPdf(true);
     try {
       const response = await base44.functions.invoke('generateDataReport');
@@ -306,15 +307,18 @@ export default function EvidenceVault() {
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
+      haptic.success();
     } catch (error) {
       console.error('Export failed:', error);
       alert(language === 'th' ? 'ไม่สามารถส่งออกได้' : 'Export failed');
+      haptic.error();
     } finally {
       setExportingPdf(false);
     }
   };
 
   const handleView = (doc) => {
+    haptic.light();
     // For letter type with html_content, use LetterPreview component
     if (doc.type === 'letter' && doc.html_content) {
       setViewingDoc(doc);
@@ -324,9 +328,11 @@ export default function EvidenceVault() {
   };
 
   const handleDownload = (doc) => {
+    haptic.light();
     if (!doc.file_url) {
       console.error("Document has no file_url to download:", doc);
       alert(language === 'th' ? 'ไม่พบไฟล์ที่จะดาวน์โหลด' : 'No file found to download.');
+      haptic.error();
       return;
     }
 
@@ -338,9 +344,11 @@ export default function EvidenceVault() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    haptic.success();
   };
 
   const handleEdit = (doc) => {
+    haptic.light();
     setEditingDoc(doc);
     setEditFormData({ type: doc.type, label: doc.label || '' });
   };
@@ -348,6 +356,7 @@ export default function EvidenceVault() {
   const handleSaveEdit = async () => {
     if (!editingDoc) return;
     
+    haptic.medium();
     try {
       await updateDocumentMutation.mutateAsync({
         id: editingDoc.id,
@@ -356,13 +365,16 @@ export default function EvidenceVault() {
           label: editFormData.label
         }
       });
+      haptic.success();
     } catch (error) {
       console.error('Failed to save document edit:', error);
       alert(language === 'th' ? 'ไม่สามารถบันทึกการแก้ไขได้ โปรดลองอีกครั้ง' : 'Failed to save edits. Please try again.');
+      haptic.error();
     }
   };
 
   const handleSendEmail = (doc) => {
+    haptic.light();
     const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
     const docLabel = doc.label || (language === 'th' ? config.label_th : config.label_en);
     
@@ -426,7 +438,7 @@ export default function EvidenceVault() {
 
   const handleSaveAnnotation = async (annotatedDataUrl) => {
     if (!annotatingDocument) return;
-
+    haptic.medium();
     try {
       // Convert data URL to blob
       const response = await fetch(annotatedDataUrl);
@@ -445,9 +457,11 @@ export default function EvidenceVault() {
       setAnnotatingDocument(null);
       
       alert(language === 'th' ? 'บันทึกคำอธิบายประกอบสำเร็จ' : 'Annotation saved successfully');
+      haptic.success();
     } catch (error) {
       console.error('Failed to save annotation:', error);
       alert(language === 'th' ? 'ไม่สามารถบันทึกได้' : 'Failed to save annotation');
+      haptic.error();
     }
   };
 
@@ -496,7 +510,9 @@ export default function EvidenceVault() {
       noDocuments: "No Documents Yet",
       noDocumentsDesc: "Start building your evidence vault for better protection. All your uploaded documents are securely stored here.",
       uploadFirst: "Upload First Document",
-      deleteConfirm: "Are you sure?",
+      deleteConfirm: "Are you sure?", // Existing
+      confirmDelete: "Are you sure you want to delete this file?", // Added for haptic-enabled delete
+      confirmBulkDelete: "Are you sure you want to delete {count} file(s)?", // Added for haptic-enabled bulk delete
       view: "View",
       download: "Download",
       sendEmail: "Send Email",
@@ -520,12 +536,12 @@ export default function EvidenceVault() {
       selectFile: "Please select files to upload.",
       uploadFailed: "Upload failed. Please try again.",
       error: "Error",
-      fileSelected: "file selected", // Added
-      filesSelected: "files selected", // Added
-      preparing: "Preparing upload...", // Added
-      compressing: "Compressing images...", // Added
-      uploadingFiles: "Uploading files...", // Added
-      savingDocuments: "Saving documents...", // Added
+      fileSelected: "file selected",
+      filesSelected: "files selected",
+      preparing: "Preparing upload...",
+      compressing: "Compressing images...",
+      uploadingFiles: "Uploading files...",
+      savingDocuments: "Saving documents...",
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -547,7 +563,9 @@ export default function EvidenceVault() {
       noDocuments: "ยังไม่มีเอกสาร",
       noDocumentsDesc: "เริ่มสร้างคลังหลักฐานเพื่อการป้องกันที่ดีขึ้น เอกสารทั้งหมดที่คุณอัปโหลดจะถูกจัดเก็บอย่างปลอดภัยที่นี่",
       uploadFirst: "อัปโหลดเอกสารแรก",
-      deleteConfirm: "คุณแน่ใจหรือไม่?",
+      deleteConfirm: "คุณแน่ใจหรือไม่?", // Existing
+      confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์นี้?", // Added
+      confirmBulkDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์ {count} ไฟล์?", // Added
       view: "ดู",
       download: "ดาวน์โหลด",
       sendEmail: "ส่งอีเมล",
@@ -571,12 +589,12 @@ export default function EvidenceVault() {
       selectFile: "โปรดเลือกไฟล์ที่จะอัปโหลด",
       uploadFailed: "อัปโหลดไม่สำเร็จ โปรดลองอีกครั้ง",
       error: "ข้อผิดพลาด",
-      fileSelected: "ไฟล์ที่เลือก", // Added
-      filesSelected: "ไฟล์ที่เลือก", // Added
-      preparing: "กำลังเตรียมการอัปโหลด...", // Added
-      compressing: "กำลังบีบอัดรูปภาพ...", // Added
-      uploadingFiles: "กำลังอัปโหลดไฟล์...", // Added
-      savingDocuments: "กำลังบันทึกเอกสาร...", // Added
+      fileSelected: "ไฟล์ที่เลือก",
+      filesSelected: "ไฟล์ที่เลือก",
+      preparing: "กำลังเตรียมการอัปโหลด...",
+      compressing: "กำลังบีบอัดรูปภาพ...",
+      uploadingFiles: "กำลังอัปโหลดไฟล์...",
+      savingDocuments: "กำลังบันทึกเอกสาร...",
     }
   };
 
@@ -589,14 +607,20 @@ export default function EvidenceVault() {
         <DocumentAnnotation
           imageUrl={annotatingDocument.file_url}
           onSave={handleSaveAnnotation}
-          onClose={() => setAnnotatingDocument(null)}
+          onClose={() => {
+            haptic.light();
+            setAnnotatingDocument(null);
+          }}
           colors={colors}
           language={language}
         />
       )}
 
       {/* Edit Document Metadata Dialog */}
-      <Dialog open={!!editingDoc} onOpenChange={() => setEditingDoc(null)}>
+      <Dialog open={!!editingDoc} onOpenChange={() => {
+        haptic.light();
+        setEditingDoc(null);
+      }}>
         <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
           <DialogHeader>
             <DialogTitle style={{ color: colors.textPrimary }}>{strings.editDocument}</DialogTitle>
@@ -629,7 +653,10 @@ export default function EvidenceVault() {
               />
             </div>
             <div className="flex gap-3 justify-end">
-              <Button variant="outline" onClick={() => setEditingDoc(null)}>
+              <Button variant="outline" onClick={() => {
+                haptic.light();
+                setEditingDoc(null);
+              }}>
                 {strings.cancel}
               </Button>
               <Button 
@@ -652,7 +679,10 @@ export default function EvidenceVault() {
       </Dialog>
 
       {/* View Document Dialog (for non-letter types or letters without html content) */}
-      <Dialog open={!!viewingDoc && viewingDoc?.type !== 'letter'} onOpenChange={() => setViewingDoc(null)}>
+      <Dialog open={!!viewingDoc && viewingDoc?.type !== 'letter'} onOpenChange={() => {
+        haptic.light();
+        setViewingDoc(null);
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh]" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
           <DialogHeader>
             <DialogTitle style={{ color: colors.textPrimary }}>
@@ -686,6 +716,7 @@ export default function EvidenceVault() {
             <div className="mt-4">
               <Button
                 onClick={() => {
+                  haptic.light();
                   setAnnotatingDocument(viewingDoc);
                   setViewingDoc(null);
                 }}
@@ -709,7 +740,10 @@ export default function EvidenceVault() {
       {viewingDoc?.type === 'letter' && viewingDoc?.html_content && (
         <LetterPreview
           open={!!viewingDoc}
-          onOpenChange={() => setViewingDoc(null)}
+          onOpenChange={() => {
+            haptic.light();
+            setViewingDoc(null);
+          }}
           htmlContent={viewingDoc.html_content}
           docUrl={viewingDoc.file_url}
           title={viewingDoc.label || (language === 'th' ? 'จดหมาย' : 'Letter')}
@@ -718,7 +752,10 @@ export default function EvidenceVault() {
 
       <Button
         variant="ghost"
-        onClick={() => navigate(createPageUrl("Dashboard"))}
+        onClick={() => {
+          haptic.light();
+          navigate(createPageUrl("Dashboard"));
+        }}
         className="mb-4"
         style={{ color: colors.textSecondary }}
       >
@@ -750,26 +787,50 @@ export default function EvidenceVault() {
         </div>
       </div>
 
+      {/* Action Buttons */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <button
+          onClick={() => {
+            haptic.light();
+            setShowUploadDialog(true);
+          }}
+          style={{
+            padding: '12px 24px',
+            backgroundColor: '#0C3B2E',
+            color: '#FFFFFF',
+            borderRadius: '12px',
+            fontWeight: 'bold',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#0a2f25';
+            e.target.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#0C3B2E';
+            e.target.style.transform = 'translateY(0)';
+          }}
+        >
+          <Upload className="w-5 h-5" />
+          {strings.uploadDocument}
+        </button>
+        {/* Other action buttons, if any, could be added here following the same style */}
+      </div>
+
       {/* Simplified Upload Section Card - now acts as a trigger for the dialog */}
+      {/* The Upload Files button previously in CardHeader is now replaced by the above "Action Buttons" section */}
       <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
         <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-          <CardTitle className="flex items-center justify-between gap-2" style={{ color: colors.textPrimary }}>
+          <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
             <span className="flex items-center gap-2">
-              <Upload className="w-5 h-5 text-ls-forest" />
-              {strings.uploadFiles}
+              <FileText className="w-5 h-5 text-ls-forest" /> {/* Changed to FileText, as Upload is in action button now */}
+              {strings.uploadFiles} {/* Text remains as is, just indicating the section */}
             </span>
-            <Button onClick={() => {
-              setShowUploadDialog(true);
-              // Reset dialog states when opening
-              setUploadFiles([]);
-              setUploadType('photo');
-              setUploadLabel('');
-              setError(null);
-              setCompressionStats(null);
-            }} className="bg-ls-forest hover:bg-ls-forest/90">
-              <Upload className="w-4 h-4 mr-2" />
-              {strings.uploadFiles}
-            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 md:p-6" style={{ color: colors.textSecondary }}>
@@ -897,7 +958,10 @@ export default function EvidenceVault() {
                             <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
                           </div>
                           <button
-                            onClick={() => setUploadFiles(uploadFiles.filter((_, i) => i !== index))}
+                            onClick={() => {
+                              haptic.light();
+                              setUploadFiles(uploadFiles.filter((_, i) => i !== index));
+                            }}
                             className="p-1 hover:bg-red-100 rounded flex-shrink-0 ml-2"
                             disabled={uploading}
                           >
@@ -911,6 +975,7 @@ export default function EvidenceVault() {
 
                 <div className="flex gap-3 justify-end mt-4">
                   <Button variant="outline" onClick={() => {
+                    haptic.light();
                     setShowUploadDialog(false);
                     setUploadFiles([]);
                     setCompressionStats(null);
@@ -947,6 +1012,7 @@ export default function EvidenceVault() {
           <Link to={createPageUrl("Templates")}>
             <div
               className="p-4 rounded-lg border-2 hover:shadow-md transition-all cursor-pointer"
+              onClick={() => haptic.light()} // Added haptic
               style={{
                 backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
                 borderColor: '#0C3B2E'
@@ -1014,10 +1080,10 @@ export default function EvidenceVault() {
                       variant="destructive"
                       size="sm"
                       onClick={handleBulkDelete}
-                      disabled={deleteBulkMutation.isPending}
+                      disabled={deleteDocumentMutation.isPending} // Use deleteDocumentMutation's pending state
                       className="text-xs h-8"
                     >
-                      {deleteBulkMutation.isPending ? (
+                      {deleteDocumentMutation.isPending ? ( // Use deleteDocumentMutation's pending state
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           {strings.deleting}
@@ -1174,13 +1240,23 @@ export default function EvidenceVault() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDelete(doc.id)}
-                            disabled={deleteDocumentMutation.isPending}
-                            className="w-full sm:col-span-3 text-red-600 hover:text-red-700 justify-center text-xs"
+                            onClick={() => handleEdit(doc)}
+                            className="w-full justify-center text-xs"
                             style={{
                               borderColor: colors.borderColor,
                               backgroundColor: colors.cardBg,
+                              color: colors.textPrimary,
                             }}
+                          >
+                            <Edit2 className="w-3 h-3 mr-1" />
+                            {strings.editDocument}
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(doc.id)}
+                            disabled={deleteDocumentMutation.isPending}
+                            className="w-full text-xs"
                           >
                             <Trash2 className="w-3 h-3 mr-1" />
                             {strings.delete}

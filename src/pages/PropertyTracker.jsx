@@ -288,6 +288,7 @@ export default function PropertyTracker() {
   };
 
   const toggleSection = (section) => {
+    haptic.light();
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
@@ -341,6 +342,7 @@ export default function PropertyTracker() {
 
 
   const handleDepositSubmit = () => {
+    haptic.medium();
     const data = {
       deposit_amount: parseFloat(depositForm.deposit_amount),
       deposit_paid_date: depositForm.deposit_paid_date,
@@ -359,6 +361,7 @@ export default function PropertyTracker() {
   };
 
   const handleRentSubmit = () => {
+    haptic.medium();
     const data = {
       rent_amount: parseFloat(rentForm.rent_amount),
       rent_due_day: parseInt(rentForm.rent_due_day, 10),
@@ -570,6 +573,8 @@ export default function PropertyTracker() {
   const handleCloseMaintenance = async (request) => {
     if (!confirm(strings.confirmClose)) return;
 
+    haptic.medium();
+
     try {
       const closeLogEntry = {
         timestamp: new Date().toISOString(),
@@ -592,9 +597,11 @@ export default function PropertyTracker() {
           communication_log: updatedCommunicationLog
         }
       });
+      haptic.success();
       alert(language === 'th' ? 'คำขอถูกปิดแล้ว' : 'Request closed successfully');
     } catch (error) {
       console.error('❌ Failed to close maintenance request:', error);
+      haptic.error();
       alert(language === 'th' ? 'ไม่สามารถปิดคำขอได้' : 'Failed to close request');
     }
   };
@@ -602,11 +609,15 @@ export default function PropertyTracker() {
   const handleDeleteMaintenance = async (request) => {
     if (!confirm(strings.confirmDelete)) return;
 
+    haptic.heavy();
+
     try {
       await deleteMaintenanceMutation.mutateAsync(request.id);
+      haptic.success();
       alert(language === 'th' ? 'คำขอถูกลบแล้ว' : 'Request deleted successfully');
     } catch (error) {
       console.error('❌ Failed to delete maintenance request:', error);
+      haptic.error();
       alert(language === 'th' ? 'ไม่สามารถลบคำขอได้' : 'Failed to delete request');
     }
   };
@@ -684,7 +695,7 @@ export default function PropertyTracker() {
                     <div className="text-sm font-normal flex items-center gap-2 mt-1">
                       <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>
                         {isOverdue
-                          ? `${strings.overdue} ${Math.abs(daysRemaining)} ${strings.daysRemaining}`
+                          ? `${Math.abs(daysRemaining)} ${strings.daysRemaining} ${strings.overdue}`
                           : daysRemaining !== null
                             ? `${daysRemaining} ${strings.daysRemaining}`
                             : 'Active'

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom"; // Added Link import
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Scale, Plus, Crown, Calendar, DollarSign, Zap, FileText, Loader2, Check
 import { format } from "date-fns";
 import { useFeatureAccess } from "@/components/shared/FeatureGate";
 import LetterPreview from "../components/shared/LetterPreview";
+import { haptic } from "../components/shared/HapticFeedback"; // Added haptic import
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
@@ -21,7 +22,7 @@ const STATUS_CONFIG = {
   closed: { label: 'Closed', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 }
 };
 
-export default function Cases() {
+export default function CasesPage() { // Renamed from Cases to CasesPage
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -29,7 +30,7 @@ export default function Cases() {
   const { hasAccess: hasMemberPrice } = useFeatureAccess('resolve_member_price');
   
   const [expandedCase, setExpandedCase] = useState(null);
-  const [previewLetter, setPreviewLetter] = useState(null);
+  const [previewLetter, setPreviewLetter] = useState(null); // Retained existing state for LetterPreview compatibility
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -183,21 +184,33 @@ export default function Cases() {
     return titles[subject] || subject;
   };
 
-  const handleDownloadWord = (caseItem, subject) => {
-    const urlKey = `${subject}_url`;
-    const url = caseItem?.letters?.[urlKey];
-    
-    if (!url) {
-      alert(language === 'th' 
-        ? `ไม่พบไฟล์ Word สำหรับ ${getLetterTitle(subject)}` 
-        : `No Word file found for ${getLetterTitle(subject)}`);
-      return;
+  // New handleDownloadDocx function from the outline
+  const handleDownloadDocx = async (docUrl, subject) => {
+    haptic.light();
+    try {
+      const response = await fetch(docUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${subject}_${new Date().getTime()}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      haptic.success();
+    } catch (err) {
+      console.error('Download failed:', err);
+      haptic.error();
+      alert(language === 'th' ? 'ไม่สามารถดาวน์โหลดได้' : 'Download failed');
     }
-    
-    window.open(url, "_blank", "noopener,noreferrer");
   };
 
+  // Modified existing handlePreviewHtml to add haptic feedback.
+  // The outline's suggested signature and state (htmlContent, title, setPreviewHtml, setPreviewTitle)
+  // are NOT used directly to preserve compatibility with the `LetterPreview` component which expects `htmlUrl` and `docUrl`.
   const handlePreviewHtml = (caseItem, subject) => {
+    haptic.light(); // Added haptic feedback
     const htmlKey = `${subject}_html_url`;
     const docKey = `${subject}_url`;
     
@@ -254,16 +267,46 @@ export default function Cases() {
           </p>
         </div>
 
-        <Button
-          onClick={() => navigate(createPageUrl("ResolveCase"))}
-          className="w-full mb-6 bg-blue-600 hover:bg-blue-700 py-6 text-base font-bold"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          {strings.openNewCase}
-        </Button>
+        {/* Updated "Open New Case" button as per outline */}
+        <Link to={createPageUrl("ResolveCase")}>
+          <button
+            onClick={() => haptic.medium()}
+            style={{
+              padding: '14px 28px',
+              backgroundColor: '#C7A338',
+              color: '#1A1D1F',
+              borderRadius: '12px',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 6px rgba(199, 163, 56, 0.3)',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              width: '100%', // Added to match original button's width
+              justifyContent: 'center' // Added to center content
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#D4B451';
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 8px rgba(199, 163, 56, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#C7A338';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 6px rgba(199, 163, 56, 0.3)';
+            }}
+          >
+            <Plus className="w-5 h-5" />
+            {strings.openNewCase}
+          </button>
+        </Link>
+        {/* End of updated "Open New Case" button */}
 
         {/* Premium Benefits */}
-        <Card className="mb-6 border-none shadow-lg bg-gradient-to-br from-purple-600 to-blue-600">
+        <Card className="mb-6 mt-6 border-none shadow-lg bg-gradient-to-br from-purple-600 to-blue-600"> {/* Added mt-6 for spacing */}
           <CardContent className="p-4 md:p-6">
             <div className="flex items-start gap-3">
               <Crown className="w-6 h-6 text-yellow-300 flex-shrink-0 mt-1" />
@@ -424,7 +467,7 @@ export default function Cases() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handlePreviewHtml(caseItem, subject);
+                                      handlePreviewHtml(caseItem, subject); // Calls modified existing handlePreviewHtml with haptic
                                     }}
                                     className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
                                     style={{
@@ -447,7 +490,8 @@ export default function Cases() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleDownloadWord(caseItem, subject);
+                                      // Call the new handleDownloadDocx function, passing the direct doc URL
+                                      handleDownloadDocx(caseItem.letters[`${subject}_url`], subject); 
                                     }}
                                     className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
                                     style={{
