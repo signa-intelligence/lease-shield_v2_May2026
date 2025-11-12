@@ -19,6 +19,8 @@ import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import OnboardingWizard from "../components/onboarding/OnboardingWizard";
+import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 
 function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -28,6 +30,7 @@ function DashboardContent() {
     quickActions: true,
     content: true,
   });
+  const [showOnboarding, setShowOnboarding] = React.useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -1039,11 +1042,34 @@ function DashboardContent() {
 
   const isLoading = leasesLoading || depositsLoading;
 
+  // Check if user is new and should see onboarding
+  React.useEffect(() => {
+    if (user && !user.onboarding_completed) {
+      const hasAnyActivity = leases.length > 0 || deposits.length > 0 || documents.length > 0 || cases.length > 0;
+      
+      if (!hasAnyActivity) {
+        // Show onboarding wizard for brand new users
+        setShowOnboarding(true);
+      }
+    }
+  }, [user, leases, deposits, documents, cases]);
+
+  const handleOnboardingComplete = async () => {
+    setShowOnboarding(false);
+    // Mark onboarding as completed
+    await base44.auth.updateMe({ onboarding_completed: true });
+    queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+  };
+
   // Check if user has any data
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
 
+  // Calculate if user is still in onboarding phase
+  const isNewUser = !user?.onboarding_completed || 
+    (leases.length === 0 && deposits.length === 0 && documents.length === 0);
+
   // Show empty state for completely new users
-  if (!isLoading && !hasAnyData) {
+  if (!isLoading && !hasAnyData && !showOnboarding) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
         <EmptyState
@@ -1064,6 +1090,15 @@ function DashboardContent() {
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
       <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
+          {/* Onboarding Wizard */}
+          <OnboardingWizard
+            open={showOnboarding}
+            onClose={handleOnboardingComplete}
+            user={user}
+            colors={colors}
+            language={language}
+          />
+
           {/* Header with Focus Mode Toggle */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -1516,6 +1551,21 @@ function DashboardContent() {
             </div>
           )}
 
+          {/* NEW: Onboarding Checklist for new users */}
+          {isNewUser && !showOnboarding && (
+            <div className="mb-6">
+              <OnboardingChecklist
+                user={user}
+                leases={leases}
+                deposits={deposits}
+                documents={documents}
+                cases={cases}
+                colors={colors}
+                language={language}
+              />
+            </div>
+          )}
+
           {/* Stats Grid - MOBILE-OPTIMIZED: Protection Score First */}
           {(!focusMode || urgentDeposits > 0 || activeCases.length > 0) && (
             <div className="mb-6">
@@ -1821,8 +1871,8 @@ function DashboardContent() {
                             }
                           ] : undefined}
                           actionButton={activeMaintenanceCount > 0 ? {
-                            label: language === 'th' ? 'ดู' : 'View',
-                            link: createPageUrl("PropertyTracker")
+                              label: language === 'th' ? 'ดู' : 'View',
+                              link: createPageUrl("PropertyTracker")
                           } : undefined}
                           ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
                           onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
