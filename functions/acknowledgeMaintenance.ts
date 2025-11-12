@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 Deno.serve(async (req) => {
@@ -44,24 +43,27 @@ Deno.serve(async (req) => {
 
       console.log('📝 === UPDATE ACTION STARTING ===');
 
-      // Get user data for sender name AND LINE notifications
-      console.log('🔍 Fetching tenant user data...');
-      const users = await base44.asServiceRole.entities.User.filter({ 
-        email: maintenanceRequest.created_by 
-      });
+      // ========================================
+      // CRITICAL FIX: Use list() instead of filter()
+      // ========================================
+      console.log('🔍 Fetching tenant user data using list()...');
+      const allUsers = await base44.asServiceRole.entities.User.list();
+      const tenant = allUsers.find(u => u.email === maintenanceRequest.created_by);
       
-      if (!users || users.length === 0) {
+      if (!tenant) {
         console.error('❌ Tenant user not found:', maintenanceRequest.created_by);
+        console.log('📋 All user emails:', allUsers.map(u => u.email));
         return Response.json({ error: 'Tenant not found' }, { status: 404 });
       }
 
-      const tenant = users[0];
       console.log('✅ === TENANT USER DATA LOADED ===');
       console.log('📧 Email:', tenant.email);
-      console.log('📱 LINE Token:', tenant.line_messaging_token ? 'EXISTS (length: ' + tenant.line_messaging_token.length + ')' : 'NOT SET');
-      console.log('🔔 Email Notifications:', tenant.email_notifications !== false ? 'ENABLED' : 'DISABLED');
-      console.log('🔔 LINE Notifications:', tenant.line_notifications !== false ? 'ENABLED' : 'DISABLED');
-      console.log('🌐 Language:', tenant.language || 'en');
+      console.log('📋 Full tenant object keys:', Object.keys(tenant));
+      console.log('📱 line_messaging_token:', tenant.line_messaging_token || 'NOT SET');
+      console.log('📱 line_user_id:', tenant.line_user_id || 'NOT SET');
+      console.log('🔔 line_notifications:', tenant.line_notifications);
+      console.log('🔔 email_notifications:', tenant.email_notifications);
+      console.log('🌐 language:', tenant.language || 'en');
 
       const language = tenant.language || 'en';
       const senderName = role === 'landlord' 
@@ -132,13 +134,17 @@ Deno.serve(async (req) => {
       console.log('');
       console.log('📱 === STEP 1: LINE NOTIFICATION ===');
       
-      if (!tenant.line_messaging_token) {
-        console.log('⚠️ LINE Token not set - skipping LINE notification');
+      // Try both possible token fields
+      const lineToken = tenant.line_messaging_token || tenant.line_user_id;
+      
+      if (!lineToken) {
+        console.log('⚠️ LINE Token not set (checked both line_messaging_token and line_user_id)');
+        console.log('📋 Tenant data:', JSON.stringify(tenant, null, 2));
       } else if (tenant.line_notifications === false) {
-        console.log('⚠️ LINE notifications disabled by user - skipping');
+        console.log('⚠️ LINE notifications disabled by user');
       } else {
         console.log('✅ Prerequisites met - attempting LINE notification');
-        console.log('🎯 Target LINE User ID:', tenant.line_messaging_token);
+        console.log('🎯 Target LINE User ID:', lineToken);
         
         try {
           // Create Flex message
@@ -362,7 +368,7 @@ Deno.serve(async (req) => {
           console.log('🚀 Calling sendLineMessage function...');
 
           const lineResponse = await base44.asServiceRole.functions.invoke('sendLineMessage', {
-            userId: tenant.line_messaging_token,
+            userId: lineToken,
             flexMessage: updateFlexMessage
           });
 
@@ -557,7 +563,7 @@ Deno.serve(async (req) => {
           lineError: lineError,
           emailError: emailError,
           tenantEmail: tenant.email,
-          tenantLineToken: tenant.line_messaging_token ? 'SET' : 'NOT_SET',
+          tenantLineToken: (tenant.line_messaging_token || tenant.line_user_id) ? 'SET' : 'NOT_SET',
           emailNotificationsEnabled: tenant.email_notifications !== false,
           lineNotificationsEnabled: tenant.line_notifications !== false
         },
