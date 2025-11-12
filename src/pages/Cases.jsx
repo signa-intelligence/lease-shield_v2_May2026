@@ -19,6 +19,7 @@ import SwipeToDelete from "../components/shared/SwipeToDelete";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import EmptyState from "../components/shared/EmptyState";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
+import LazyImage from "../components/shared/LazyImage";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
@@ -337,6 +338,7 @@ export default function CasesPage() {
               const availableLetters = getGeneratedLetters(caseItem);
               const hasLetters = availableLetters.length > 0;
               const isExpanded = expandedCase === caseItem.id;
+              const hasEvidence = caseItem.evidence && caseItem.evidence.length > 0;
 
               return (
                 <SwipeToDelete
@@ -414,6 +416,37 @@ export default function CasesPage() {
                         <p className="text-sm line-clamp-2" style={{ color: colors.textSecondary }}>
                           {caseItem.summary}
                         </p>
+                      )}
+
+                      {/* Evidence Photos Preview */}
+                      {hasEvidence && (
+                        <div className="mt-3">
+                          <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                            {language === 'th' ? 'หลักฐาน' : 'Evidence'} ({caseItem.evidence.length})
+                          </p>
+                          <div className="grid grid-cols-4 gap-2">
+                            {caseItem.evidence.slice(0, 4).map((evidence, idx) => (
+                              <LazyImage
+                                key={idx}
+                                src={evidence.url}
+                                alt={evidence.label || `Evidence ${idx + 1}`}
+                                className="w-full h-16 object-cover rounded-lg border"
+                                style={{ borderColor: colors.borderColor }}
+                                loadingColor="#C7A338"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  haptic.light();
+                                  window.open(evidence.url, '_blank');
+                                }}
+                                fallback={
+                                  <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                                    <FileText className="w-6 h-6 text-gray-400" />
+                                  </div>
+                                }
+                              />
+                            ))}
+                          </div>
+                        </div>
                       )}
 
                       {/* Generated Letters Section */}
