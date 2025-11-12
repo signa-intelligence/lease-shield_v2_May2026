@@ -16,7 +16,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LetterPreview from "../components/shared/LetterPreview";
-import DocumentAnnotation from "../components/documents/DocumentAnnotation"; // NEW IMPORT
+import DocumentAnnotation from "../components/documents/DocumentAnnotation";
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -37,7 +37,7 @@ export default function EvidenceVault() {
   const [editingDoc, setEditingDoc] = useState(null);
   const [editFormData, setEditFormData] = useState({ type: '', label: '' });
   const [viewingDoc, setViewingDoc] = useState(null);
-  const [annotatingDocument, setAnnotatingDocument] = useState(null); // NEW
+  const [annotatingDocument, setAnnotatingDocument] = useState(null);
   const queryClient = useQueryClient();
 
   const [exportingZip, setExportingZip] = useState(false);
@@ -466,7 +466,7 @@ export default function EvidenceVault() {
       exportReport: "Export Full Report",
       exporting: "Exporting...",
       bulkActions: "Bulk Actions",
-      annotate: "Annotate" // NEW string
+      annotate: "Annotate"
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -507,7 +507,7 @@ export default function EvidenceVault() {
       exportReport: "ส่งออกรายงานฉบับเต็ม",
       exporting: "กำลังส่งออก...",
       bulkActions: "การดำเนินการจำนวนมาก",
-      annotate: "เขียนบันทึก" // NEW string
+      annotate: "เขียนบันทึก"
     }
   };
 
@@ -835,8 +835,8 @@ export default function EvidenceVault() {
                   </div>
                   <ArrowRight className="w-5 h-5 text-ls-forest flex-shrink-0" />
                 </div>
-              </Link>
-            </div>
+              </div>
+            </Link>
           </div>
         </CardContent>
       </Card>
