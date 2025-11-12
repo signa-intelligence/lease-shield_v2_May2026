@@ -1,7 +1,8 @@
+
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -143,6 +144,7 @@ export default function Layout({ children, currentPageName }) {
       property: "Property",
       evidence: "Evidence",
       admin: "Admin",
+      search: "Search", // Added search
     },
     th: {
       appName: "ลีสชีลด์",
@@ -151,6 +153,7 @@ export default function Layout({ children, currentPageName }) {
       property: "ทรัพย์สิน",
       evidence: "หลักฐาน",
       admin: "แอดมิน",
+      search: "ค้นหา", // Added search
     }
   };
 
@@ -312,12 +315,12 @@ export default function Layout({ children, currentPageName }) {
 
         ::-webkit-scrollbar-track {
           background: ${isDarkMode ? '#2A2D30' : '#F3F4F6'};
-          borderRadius: 4px;
+          border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb {
           background: ${isDarkMode ? '#4B5563' : '#D1D5DB'};
-          borderRadius: 4px;
+          border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -355,14 +358,55 @@ export default function Layout({ children, currentPageName }) {
             )}
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            <LanguageToggle />
-            <Link to={createPageUrl("Account")}>
+            <Link to={createPageUrl("Search")}>
               <button
+                aria-label={strings.search}
                 style={{
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
-                  backgroundColor: location.pathname === createPageUrl("Account") ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
+                  backgroundColor: isActiveTab(createPageUrl("Search")) ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActiveTab(createPageUrl("Search"))) {
+                    e.currentTarget.style.backgroundColor = '#0C3B2E';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.color = '#FFFFFF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActiveTab(createPageUrl("Search"))) {
+                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.color = '#0C3B2E';
+                  }
+                }}
+              >
+                <Search 
+                  className="w-4 h-4 sm:w-5 sm:h-5" 
+                  style={{ 
+                    color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : '#0C3B2E',
+                    transition: 'color 0.2s'
+                  }}
+                />
+              </button>
+            </Link>
+            <LanguageToggle />
+            <Link to={createPageUrl("Account")}>
+              <button
+                aria-label="Account Settings"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: isActiveTab(createPageUrl("Account")) ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',

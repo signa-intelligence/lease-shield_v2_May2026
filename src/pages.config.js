@@ -23,6 +23,7 @@ import AcknowledgeMaintenance from './pages/AcknowledgeMaintenance';
 import Acknowledge from './pages/Acknowledge';
 import PropertyTracker from './pages/PropertyTracker';
 import Analytics from './pages/Analytics';
+import Search from './pages/Search';
 import Layout from './Layout.jsx';
 
 
@@ -52,6 +53,7 @@ export const PAGES = {
     "Acknowledge": Acknowledge,
     "PropertyTracker": PropertyTracker,
     "Analytics": Analytics,
+    "Search": Search,
 }
 
 export const pagesConfig = {
