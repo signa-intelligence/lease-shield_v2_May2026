@@ -7,21 +7,25 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Scale, Plus, Crown, Calendar, DollarSign, Zap, FileText, Loader2, CheckCircle2, Eye, Download, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Scale, Plus, Crown, Calendar, DollarSign, Zap, FileText, Loader2,
+  CheckCircle2, Eye, Download, ChevronDown, ChevronUp, ArrowLeft, Clock, AlertCircle
+} from "lucide-react";
 import { format } from "date-fns";
 import { useFeatureAccess } from "@/components/shared/FeatureGate";
 import LetterPreview from "../components/shared/LetterPreview";
 import { haptic } from "../components/shared/HapticFeedback";
-import SwipeToDelete from "../components/shared/SwipeToDelete"; // Added SwipeToDelete import
-import SkeletonLoader from "../components/shared/SkeletonLoader"; // Added SkeletonLoader import
-import EmptyState from "../components/shared/EmptyState"; // Added EmptyState import
+import SwipeToDelete from "../components/shared/SwipeToDelete";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
+import EmptyState from "../components/shared/EmptyState";
+import FloatingActionButton from "../components/shared/FloatingActionButton";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
-  pending: { label: 'Pending', color: 'bg-amber-100 text-amber-800', icon: Calendar },
+  pending: { label: 'Pending', color: 'bg-amber-100 text-amber-800', icon: Clock }, // Changed to Clock icon
   active: { label: 'Active', color: 'bg-blue-100 text-blue-800', icon: Scale },
   waiting: { label: 'Waiting', color: 'bg-purple-100 text-purple-800', icon: Calendar },
-  user_action: { label: 'Action Required', color: 'bg-red-100 text-red-800', icon: CheckCircle2 },
+  user_action: { label: 'Action Required', color: 'bg-red-100 text-red-800', icon: AlertCircle }, // Changed to AlertCircle icon
   closed: { label: 'Closed', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 }
 };
 
@@ -31,7 +35,7 @@ export default function CasesPage() {
   const queryClient = useQueryClient();
   const { hasAccess: hasPriorityQueue } = useFeatureAccess('priority_queue');
   const { hasAccess: hasMemberPrice } = useFeatureAccess('resolve_member_price');
-  
+
   const [expandedCase, setExpandedCase] = useState(null);
   const [previewLetter, setPreviewLetter] = useState(null);
 
@@ -66,36 +70,36 @@ export default function CasesPage() {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const paymentStatus = urlParams.get('payment');
-    
+
     if (paymentStatus === 'success' && user) {
       console.log('💰 Payment success detected - refetching cases');
       console.log('👤 User email:', user.email);
-      
+
       refetchCases().then((result) => {
         console.log('🔄 Immediate refetch result:', result.data?.length || 0, 'cases');
       });
-      
+
       setTimeout(() => {
         console.log('⏱️ Refetch after 2s');
         refetchCases().then((result) => {
           console.log('🔄 2s refetch result:', result.data?.length || 0, 'cases');
         });
       }, 2000);
-      
+
       setTimeout(() => {
         console.log('⏱️ Refetch after 5s');
         refetchCases().then((result) => {
           console.log('🔄 5s refetch result:', result.data?.length || 0, 'cases');
         });
       }, 5000);
-      
+
       setTimeout(() => {
         console.log('⏱️ Final refetch after 10s');
         refetchCases().then((result) => {
           console.log('🔄 10s refetch result:', result.data?.length || 0, 'cases');
         });
       }, 10000);
-      
+
       const newUrl = location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
@@ -148,7 +152,8 @@ export default function CasesPage() {
       hideLetters: "Hide Letters",
       preview: "Preview",
       download: "Download",
-      delete: "Delete", // Added for SwipeToDelete
+      delete: "Delete",
+      back: "Back", // Added translation
     },
     th: {
       title: "คดีของฉัน",
@@ -172,7 +177,8 @@ export default function CasesPage() {
       hideLetters: "ซ่อนจดหมาย",
       preview: "ดูตัวอย่าง",
       download: "ดาวน์โหลด",
-      delete: "ลบ", // Added for SwipeToDelete
+      delete: "ลบ",
+      back: "ย้อนกลับ", // Added translation
     }
   };
 
@@ -189,7 +195,6 @@ export default function CasesPage() {
     return titles[subject] || subject;
   };
 
-  // New handleDownloadDocx function from the outline
   const handleDownloadDocx = async (docUrl, subject) => {
     haptic.light();
     try {
@@ -211,24 +216,21 @@ export default function CasesPage() {
     }
   };
 
-  // Modified existing handlePreviewHtml to add haptic feedback.
-  // The outline's suggested signature and state (htmlContent, title, setPreviewHtml, setPreviewTitle)
-  // are NOT used directly to preserve compatibility with the `LetterPreview` component which expects `htmlUrl` and `docUrl`.
   const handlePreviewHtml = (caseItem, subject) => {
     haptic.light();
     const htmlKey = `${subject}_html_url`;
     const docKey = `${subject}_url`;
-    
+
     const htmlUrl = caseItem?.letters?.[htmlKey];
     const docUrl = caseItem?.letters?.[docKey];
-    
+
     if (!htmlUrl && !docUrl) {
-      alert(language === 'th' 
-        ? `ไม่พบไฟล์สำหรับ ${getLetterTitle(subject)}` 
+      alert(language === 'th'
+        ? `ไม่พบไฟล์สำหรับ ${getLetterTitle(subject)}`
         : `No file found for ${getLetterTitle(subject)}`);
       return;
     }
-    
+
     setPreviewLetter({
       htmlUrl: htmlUrl,
       docUrl: docUrl,
@@ -236,7 +238,6 @@ export default function CasesPage() {
     });
   };
 
-  // Renamed from getLetterList to getGeneratedLetters as per outline.
   const getGeneratedLetters = (caseItem) => {
     const letters = [];
     if (caseItem?.letters) {
@@ -251,7 +252,7 @@ export default function CasesPage() {
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Letter Preview Modal */}
         {previewLetter && (
           <LetterPreview
@@ -263,6 +264,27 @@ export default function CasesPage() {
           />
         )}
 
+        {/* FAB for Opening New Case */}
+        <FloatingActionButton
+          icon={Plus}
+          label={strings.openNewCase}
+          onClick={() => navigate(createPageUrl("ResolveCase"))}
+          color="#C7A338"
+        />
+
+        <Button
+          variant="ghost"
+          onClick={() => {
+            haptic.light();
+            navigate(createPageUrl("Dashboard"));
+          }}
+          className="mb-4"
+          style={{ color: colors.textSecondary, minHeight: '44px' }}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          {strings.back}
+        </Button>
+
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
             <Scale className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
@@ -272,44 +294,6 @@ export default function CasesPage() {
             {strings.subtitle}
           </p>
         </div>
-
-        {/* Updated "Open New Case" button as per outline */}
-        <Link to={createPageUrl("ResolveCase")}>
-          <button
-            onClick={() => haptic.medium()}
-            style={{
-              padding: '14px 28px',
-              backgroundColor: '#C7A338',
-              color: '#1A1D1F',
-              borderRadius: '12px',
-              fontWeight: 'bold',
-              fontSize: '16px',
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 4px 6px rgba(199, 163, 56, 0.3)',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              width: '100%',
-              justifyContent: 'center'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#D4B451';
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 8px rgba(199, 163, 56, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#C7A338';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 6px rgba(199, 163, 56, 0.3)';
-            }}
-          >
-            <Plus className="w-5 h-5" />
-            {strings.openNewCase}
-          </button>
-        </Link>
-        {/* End of updated "Open New Case" button */}
 
         {/* Premium Benefits */}
         <Card className="mb-6 mt-6 border-none shadow-lg bg-gradient-to-br from-purple-600 to-blue-600">
@@ -341,7 +325,7 @@ export default function CasesPage() {
             icon={Scale}
             title={strings.noCases}
             description={strings.noCasesDesc}
-            illustration="cases" // Assuming an 'illustration' prop for EmptyState
+            illustration="cases"
             actionLabel={strings.openNewCase}
             onAction={() => navigate(createPageUrl("ResolveCase"))}
           />
@@ -350,7 +334,7 @@ export default function CasesPage() {
             {cases.map((caseItem) => {
               const statusConfig = STATUS_CONFIG[caseItem.status] || STATUS_CONFIG.intake;
               const StatusIcon = statusConfig.icon;
-              const availableLetters = getGeneratedLetters(caseItem); // Changed from getLetterList
+              const availableLetters = getGeneratedLetters(caseItem);
               const hasLetters = availableLetters.length > 0;
               const isExpanded = expandedCase === caseItem.id;
 
@@ -359,7 +343,7 @@ export default function CasesPage() {
                   key={caseItem.id}
                   deleteLabel={strings.delete || (language === 'th' ? 'ลบ' : 'Delete')}
                   colors={colors}
-                  // onDelete={() => handleDelete(caseItem.id)} // Assuming a handleDelete function would be added later
+                // onDelete={() => handleDelete(caseItem.id)} // Assuming a handleDelete function would be added later
                 >
                   <Card
                     className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
@@ -371,7 +355,7 @@ export default function CasesPage() {
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between gap-2">
-                        <div 
+                        <div
                           className="flex items-center gap-2 min-w-0 flex-1"
                         >
                           <Scale className="w-5 h-5 text-ls-forest flex-shrink-0" />
@@ -499,7 +483,7 @@ export default function CasesPage() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleDownloadDocx(caseItem.letters[`${subject}_url`], subject); 
+                                        handleDownloadDocx(caseItem.letters[`${subject}_url`], subject);
                                       }}
                                       className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
                                       style={{

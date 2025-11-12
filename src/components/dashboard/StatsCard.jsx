@@ -1,365 +1,114 @@
-import React, { useEffect, useState, useRef } from "react";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown } from "lucide-react";
+
+import React from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
-import ProtectionScoreGauge from "./ProtectionScoreGauge";
+import { haptic } from "@/lib/haptics"; // Added for haptic feedback
 
-// Inlined animation hook
-const useAnimatedNumber = (value, duration = 800) => {
-  const [displayValue, setDisplayValue] = useState(value);
-  const rafRef = useRef(null);
-
-  useEffect(() => {
-    const startValue = displayValue;
-    const endValue = value;
-    const startTime = performance.now();
-
-    const animate = (currentTime) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const easeOut = 1 - Math.pow(1 - progress, 3);
-      const current = startValue + (endValue - startValue) * easeOut;
-      setDisplayValue(Math.round(current));
-
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    rafRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, [value, duration]);
-
-  return displayValue;
-};
-
-const createRipple = (event, element) => {
-  const ripple = document.createElement('span');
-  ripple.className = 'ripple';
-  const rect = element.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  ripple.style.left = `${x}px`;
-  ripple.style.top = `${y}px`;
-  element.appendChild(ripple);
-  setTimeout(() => ripple.remove(), 600);
-};
-
-export default function StatsCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  trend, 
-  scoreColor,
+export default function StatsCard({
+  title,
+  value,
+  icon: Icon, // Destructure icon as Icon for direct component usage
   bgGradient,
-  scoreStatus,
-  showGauge = false,
-  scoreValue,
-  ctaText,
-  onCtaClick,
   miniStats,
   actionButton,
+  ctaText,
+  onCtaClick,
+  scoreColor,
   compact = false
 }) {
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
-
-  const isDarkMode = user?.theme === 'dark';
-
-  // Animate number values
-  const numericValue = typeof value === 'string' ? parseInt(value.replace(/[^0-9]/g, '')) : value;
-  const animatedValue = useAnimatedNumber(numericValue || 0);
-
-  // Brand colors
-  const brandColors = {
-    forest: '#0C3B2E',
-    gold: '#C7A338',
-    charcoal: '#1A1D1F',
-    stone: '#ECEFED',
-    white: '#FFFFFF'
-  };
-
-  const colors = {
-    cardBg: isDarkMode ? '#2A2D30' : brandColors.white,
-    textPrimary: isDarkMode ? '#ECEFED' : brandColors.charcoal,
-    textSecondary: isDarkMode ? '#9CA3AF' : '#64748b',
-    miniStatBg: isDarkMode ? '#353A3D' : brandColors.stone
-  };
-
-  // Determine accent color based on bgGradient or scoreColor
-  let accentColor = scoreColor || brandColors.forest;
-  if (bgGradient === 'bg-gradient-to-br from-ls-gold to-amber-600') {
-    accentColor = brandColors.gold;
-  } else if (bgGradient === 'bg-gradient-to-br from-ls-charcoal to-slate-700') {
-    accentColor = brandColors.charcoal;
-  }
-
-  const handleCardClick = (e) => {
-    if (!e.target.closest('button') && !e.target.closest('a')) {
-      createRipple(e, e.currentTarget);
-    }
-  };
-
-  // Format the display value (preserve currency symbol if present)
-  const displayValue = typeof value === 'string' && value.includes('฿')
-    ? `฿${animatedValue.toLocaleString()}`
-    : animatedValue.toString();
+  // Determine padding based on compact prop
+  const cardStyle = compact
+    ? "p-3 sm:p-4"
+    : "p-4 sm:p-6";
 
   return (
     <div
-      className="ripple-container card-hover-lift"
-      onClick={handleCardClick}
+      className={`rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 card-hover-lift ${cardStyle}`}
       style={{
-        backgroundColor: colors.cardBg,
-        borderLeft: `4px solid ${accentColor}`,
-        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-        borderRadius: compact ? '12px' : '16px',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        padding: compact ? '12px' : '24px',
-        position: 'relative',
-        cursor: 'pointer'
+        // Dynamic background: use bgGradient if provided, otherwise a gradient based on scoreColor, or a default grey
+        background: bgGradient || (scoreColor ? `linear-gradient(135deg, ${scoreColor}15 0%, ${scoreColor}05 100%)` : 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)'),
+        // Dynamic border based on scoreColor
+        border: scoreColor ? `2px solid ${scoreColor}30` : '2px solid transparent',
+        minHeight: compact ? '120px' : '140px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        // Card is clickable if onCtaClick is provided
+        cursor: onCtaClick ? 'pointer' : 'default',
+        // TOUCH TARGET OPTIMIZATION
+        minWidth: '140px'
       }}
+      onClick={onCtaClick} // Card's primary click action, if defined
     >
-      {/* Header: Title & Icon */}
-      <div className="flex items-start justify-between" style={{ marginBottom: compact ? '8px' : '16px' }}>
+      {/* Header: Title & Value with optional Icon */}
+      <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
-          <p className={compact ? "text-[10px]" : "text-xs"} style={{ 
-            color: colors.textSecondary,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            fontWeight: 'bold',
-            marginBottom: compact ? '4px' : '8px'
-          }}>
+          <p className={`${compact ? 'text-xs' : 'text-sm'} font-semibold text-slate-600 dark:text-slate-300 mb-1`}>
             {title}
           </p>
-          <p 
-            className={compact ? "text-xl" : "text-3xl"} 
-            style={{ 
-              color: accentColor,
-              letterSpacing: '-0.02em',
-              fontWeight: 'bold',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            {typeof value === 'string' && value.includes('฿') ? displayValue : value}
+          <p className={`${compact ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'} font-bold`} style={{ color: scoreColor || '#1A1D1F' }}>
+            {value}
           </p>
         </div>
-        <div 
-          className="icon-bounce"
-          style={{
-            width: compact ? '32px' : '48px',
-            height: compact ? '32px' : '48px',
-            borderRadius: compact ? '8px' : '12px',
-            backgroundColor: `${accentColor}15`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}
-        >
-          <Icon className={compact ? "w-4 h-4" : "w-6 h-6"} style={{ color: accentColor }} />
-        </div>
+        {/* Icon display, conditionally rendered */}
+        {Icon && (
+          <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg bg-white/50 flex items-center justify-center flex-shrink-0`}>
+            <Icon className={`${compact ? 'w-4 h-4' : 'w-5 h-5'}`} style={{ color: scoreColor || '#1A1D1F' }} />
+          </div>
+        )}
       </div>
 
-      <style jsx>{`
-        .icon-bounce:hover {
-          animation: iconBounce 0.5s ease-in-out;
-        }
-
-        @keyframes iconBounce {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-4px);
-          }
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        .ripple-container {
-          position: relative;
-          overflow: hidden;
-        }
-
-        .ripple {
-          position: absolute;
-          border-radius: 50%;
-          background-color: rgba(255, 255, 255, 0.6);
-          width: 20px;
-          height: 20px;
-          margin-top: -10px;
-          margin-left: -10px;
-          animation: ripple 0.6s ease-out;
-          pointer-events: none;
-        }
-
-        @keyframes ripple {
-          to {
-            transform: scale(4);
-            opacity: 0;
-          }
-        }
-
-        .btn-press-feedback:active {
-          transform: scale(0.97);
-          transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-      `}</style>
-
-      {trend && (
-        <Badge className={`${trend > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'} text-xs font-semibold`}>
-          {trend > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
-          {Math.abs(trend)}%
-        </Badge>
-      )}
-
-      {showGauge && (
-        <div style={{ marginTop: compact ? '8px' : '16px' }}>
-          <ProtectionScoreGauge score={scoreValue} />
-          {scoreStatus && (
-            <Badge className={compact ? "mt-2 text-[10px]" : "mt-3 text-xs"} style={{ 
-              backgroundColor: colors.miniStatBg,
-              color: accentColor,
-              width: '100%',
-              justifyContent: 'center',
-              border: 'none',
-              fontWeight: 'bold'
-            }}>
-              {scoreStatus}
-            </Badge>
-          )}
-        </div>
-      )}
-
+      {/* Mini Stats section, conditionally rendered */}
       {miniStats && miniStats.length > 0 && (
-        <div className="grid grid-cols-2 gap-2" style={{ marginTop: compact ? '8px' : '16px' }}>
-          {miniStats.map((stat, idx) => (
-            <div 
-              key={idx} 
-              className={compact ? "p-2" : "p-3"}
-              style={{ 
-                backgroundColor: colors.miniStatBg,
-                borderRadius: '8px',
-                transition: 'all 0.2s ease',
-                animation: `fadeIn 0.4s ease-out ${idx * 0.1}s backwards`
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.05)';
-                e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#E5E7EB';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.backgroundColor = colors.miniStatBg;
-              }}
-            >
-              <p className={compact ? "text-[9px]" : "text-xs"} style={{ 
-                color: colors.textSecondary,
-                fontWeight: '600',
-                marginBottom: compact ? '2px' : '4px'
-              }}>
-                {stat.label}
-              </p>
-              <p className={compact ? "text-sm" : "text-lg"} style={{ 
-                color: colors.textPrimary,
-                fontWeight: 'bold'
-              }}>
-                {stat.value}
-              </p>
+        <div className="flex gap-2 sm:gap-3 flex-wrap mb-2">
+          {miniStats.map((stat, index) => (
+            <div key={index} className={`${compact ? 'text-xs' : 'text-sm'} text-slate-600 dark:text-slate-300`}>
+              <span className="font-semibold">{stat.label}:</span> {stat.value}
             </div>
           ))}
         </div>
       )}
 
-      {ctaText && onCtaClick && (
-        <button
-          onClick={(e) => {
-            createRipple(e, e.currentTarget);
-            onCtaClick();
-          }}
-          className="ripple-container btn-press-feedback"
-          style={{
-            width: '100%',
-            marginTop: compact ? '8px' : '16px',
-            padding: compact ? '8px 12px' : '12px 20px',
-            backgroundColor: accentColor,
-            color: brandColors.white,
-            borderRadius: compact ? '8px' : '10px',
-            fontWeight: '600',
-            fontSize: compact ? '12px' : '14px',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-            position: 'relative',
-            overflow: 'hidden'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-1px)';
-            e.target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
-            e.target.style.opacity = '0.9';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
-            e.target.style.opacity = '1';
-          }}
-        >
-          {ctaText}
-        </button>
-      )}
-
+      {/* Action Button (Link to another page) */}
       {actionButton && (
-        <Link to={actionButton.link} className="block" style={{ marginTop: compact ? '8px' : '16px' }}>
+        <Link to={actionButton.link}>
           <button
-            className="ripple-container btn-press-feedback"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent the card's onClick from triggering
+              haptic.light(); // Provide haptic feedback
+            }}
+            className={`${compact ? 'text-xs py-1.5 px-3' : 'text-sm py-2 px-4'} rounded-lg font-semibold transition-all hover:opacity-80 active:scale-95 w-full`}
             style={{
-              width: '100%',
-              padding: compact ? '8px 12px' : '12px 20px',
-              backgroundColor: 'transparent',
-              color: accentColor,
-              borderRadius: compact ? '8px' : '10px',
-              fontWeight: '600',
-              fontSize: compact ? '12px' : '14px',
-              border: `2px solid ${accentColor}`,
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
-            onClick={(e) => createRipple(e, e.currentTarget)}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = accentColor;
-              e.target.style.color = brandColors.white;
-              e.target.style.transform = 'scale(1.02)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = 'transparent';
-              e.target.style.color = accentColor;
-              e.target.style.transform = 'scale(1)';
+              backgroundColor: scoreColor || '#0C3B2E', // Use scoreColor as background or default
+              color: '#FFFFFF',
+              border: 'none',
+              // TOUCH TARGET OPTIMIZATION
+              minHeight: '44px'
             }}
           >
             {actionButton.label}
           </button>
         </Link>
+      )}
+
+      {/* CTA Button (triggers a function) */}
+      {ctaText && onCtaClick && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent the card's onClick from triggering
+            haptic.medium(); // Provide haptic feedback
+            onCtaClick(); // Execute the provided CTA click handler
+          }}
+          className={`${compact ? 'text-xs py-1.5 px-3' : 'text-sm py-2 px-4'} rounded-lg font-semibold transition-all hover:opacity-80 active:scale-95 w-full`}
+          style={{
+            backgroundColor: scoreColor || '#0C3B2E', // Use scoreColor as background or default
+            color: '#FFFFFF',
+            border: 'none',
+            // TOUCH TARGET OPTIMIZATION
+            minHeight: '44px'
+          }}
+        >
+          {ctaText}
+        </button>
       )}
     </div>
   );

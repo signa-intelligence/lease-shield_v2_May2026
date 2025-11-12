@@ -1,59 +1,111 @@
-import React, { useEffect } from 'react';
-import { X } from 'lucide-react';
-import { borderRadius, transitions, shadows } from '@/utils/designSystem';
+import React, { useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
+import { haptic } from "./HapticFeedback";
 
-const BottomSheet = ({ 
-  isOpen, 
+/**
+ * Mobile-optimized Bottom Sheet Component
+ * Slides up from bottom with smooth animations and drag-to-dismiss
+ */
+export default function BottomSheet({ 
+  open, 
   onClose, 
   title, 
-  children,
+  children, 
   colors,
-  maxHeight = '85vh'
-}) => {
+  height = 'auto',
+  maxHeight = '90vh',
+  showHandle = true,
+  closeOnBackdrop = true
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartY, setDragStartY] = useState(0);
+  const [currentY, setCurrentY] = useState(0);
+  const sheetRef = useRef(null);
+
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       document.body.style.overflow = 'hidden';
+      haptic.light();
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     };
-  }, [isOpen]);
+  }, [open]);
 
-  if (!isOpen) return null;
+  const handleTouchStart = (e) => {
+    const touch = e.touches[0];
+    setDragStartY(touch.clientY);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging) return;
+    
+    const touch = e.touches[0];
+    const deltaY = touch.clientY - dragStartY;
+    
+    // Only allow dragging down
+    if (deltaY > 0) {
+      setCurrentY(deltaY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    
+    // If dragged more than 100px, close the sheet
+    if (currentY > 100) {
+      haptic.medium();
+      onClose();
+    } else {
+      haptic.light();
+    }
+    
+    setCurrentY(0);
+  };
+
+  const handleBackdropClick = () => {
+    if (closeOnBackdrop) {
+      haptic.light();
+      onClose();
+    }
+  };
+
+  if (!open) return null;
 
   return (
     <>
       {/* Backdrop */}
       <div
-        onClick={onClose}
+        className="fixed inset-0 z-50"
         style={{
-          position: 'fixed',
-          inset: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 999,
           animation: 'fadeIn 0.2s ease-out',
+          backdropFilter: 'blur(4px)'
         }}
+        onClick={handleBackdropClick}
       />
 
       {/* Bottom Sheet */}
       <div
+        ref={sheetRef}
+        className="fixed left-0 right-0 bottom-0 z-50"
         style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
           backgroundColor: colors.cardBg,
-          borderTopLeftRadius: borderRadius['3xl'],
-          borderTopRightRadius: borderRadius['3xl'],
-          boxShadow: shadows['2xl'],
+          borderTopLeftRadius: '24px',
+          borderTopRightRadius: '24px',
+          boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.2)',
+          transform: `translateY(${currentY}px)`,
+          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          animation: 'slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          height: height,
           maxHeight: maxHeight,
           display: 'flex',
           flexDirection: 'column',
-          animation: 'slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+          paddingBottom: 'max(env(safe-area-inset-bottom), 16px)'
         }}
       >
         <style>
@@ -66,67 +118,66 @@ const BottomSheet = ({
                 transform: translateY(0);
               }
             }
-            
             @keyframes fadeIn {
-              from {
-                opacity: 0;
-              }
-              to {
-                opacity: 1;
-              }
+              from { opacity: 0; }
+              to { opacity: 1; }
             }
           `}
         </style>
 
-        {/* Handle bar */}
-        <div className="flex justify-center pt-3 pb-2">
+        {/* Drag Handle */}
+        {showHandle && (
           <div
-            style={{
-              width: '40px',
-              height: '4px',
-              backgroundColor: colors.borderColor,
-              borderRadius: '2px',
-            }}
-          />
-        </div>
+            className="flex items-center justify-center py-3 cursor-grab active:cursor-grabbing"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div
+              style={{
+                width: '40px',
+                height: '4px',
+                backgroundColor: colors.borderColor,
+                borderRadius: '2px',
+                opacity: 0.5
+              }}
+            />
+          </div>
+        )}
 
         {/* Header */}
-        <div
-          className="flex items-center justify-between px-6 py-4 border-b"
-          style={{ borderColor: colors.borderColor }}
-        >
-          <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-            {title}
-          </h3>
-          <button
-            onClick={onClose}
+        {title && (
+          <div
+            className="flex items-center justify-between px-6 pb-4"
             style={{
-              padding: '8px',
-              backgroundColor: colors.bg,
-              border: 'none',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: transitions.fast,
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = colors.borderColor;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = colors.bg;
+              borderBottom: `1px solid ${colors.borderColor}`
             }}
           >
-            <X className="w-5 h-5" style={{ color: colors.textPrimary }} />
-          </button>
-        </div>
+            <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+              {title}
+            </h3>
+            <button
+              onClick={() => {
+                haptic.light();
+                onClose();
+              }}
+              className="p-2 rounded-lg hover:bg-opacity-10 transition-colors"
+              style={{
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <X className="w-5 h-5" style={{ color: colors.textSecondary }} />
+            </button>
+          </div>
+        )}
 
         {/* Content */}
         <div
           className="flex-1 overflow-y-auto px-6 py-4"
           style={{
-            WebkitOverflowScrolling: 'touch',
+            WebkitOverflowScrolling: 'touch'
           }}
         >
           {children}
@@ -134,6 +185,4 @@ const BottomSheet = ({
       </div>
     </>
   );
-};
-
-export default BottomSheet;
+}

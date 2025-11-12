@@ -21,6 +21,9 @@ import { compressMultipleImages } from "../components/shared/ImageCompression";
 import { haptic } from "../components/shared/HapticFeedback";
 import UploadProgress from "../components/shared/UploadProgress";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
+import BottomSheet from "../components/shared/BottomSheet";
+import FloatingActionButton from "../components/shared/FloatingActionButton";
+import MobileFormInput from "../components/shared/MobileFormInput";
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -37,12 +40,12 @@ export default function EvidenceVault() {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadType, setUploadType] = useState('photo');
-  const [uploadLabel, setUploadLabel] = useState(''); // Renamed from customLabel
-  const [uploadFiles, setUploadFiles] = useState([]); // Renamed from selectedFiles
-  const [error, setError] = useState(null); // For upload errors
-  const [compressionStats, setCompressionStats] = useState(null); // New state
-  const [uploadStage, setUploadStage] = useState(''); // New state
-  const [uploadProgressPercent, setUploadProgressPercent] = useState(0); // New state
+  const [uploadLabel, setUploadLabel] = useState('');
+  const [uploadFiles, setUploadFiles] = useState([]);
+  const [error, setError] = useState(null);
+  const [compressionStats, setCompressionStats] = useState(null);
+  const [uploadStage, setUploadStage] = useState('');
+  const [uploadProgressPercent, setUploadProgressPercent] = useState(0);
 
   // Existing states for document management
   const [selectedDocs, setSelectedDocs] = useState([]);
@@ -129,8 +132,6 @@ export default function EvidenceVault() {
       setSelectedDocs([]); // Clear selection in case a selected item was deleted
     },
   });
-
-  // Removed deleteBulkMutation as per outline, will use deleteDocumentMutation in a loop
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -505,7 +506,7 @@ export default function EvidenceVault() {
     inputBg: '#FFFFFF'
   };
 
-  const t = {
+  const strings = {
     en: {
       back: "Back to Dashboard",
       title: "Evidence Vault",
@@ -558,6 +559,8 @@ export default function EvidenceVault() {
       compressing: "Compressing images...",
       uploadingFiles: "Uploading files...",
       savingDocuments: "Saving documents...",
+      uploadTypeLabel: "Document Type",
+      customLabelLabel: "Custom Label (Optional)",
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -611,10 +614,10 @@ export default function EvidenceVault() {
       compressing: "กำลังบีบอัดรูปภาพ...",
       uploadingFiles: "กำลังอัปโหลดไฟล์...",
       savingDocuments: "กำลังบันทึกเอกสาร...",
+      uploadTypeLabel: "ประเภทเอกสาร",
+      customLabelLabel: "ป้ายกำกับที่กำหนดเอง (ไม่บังคับ)",
     }
-  };
-
-  const strings = t[language];
+  }[language];
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
@@ -766,6 +769,202 @@ export default function EvidenceVault() {
         />
       )}
 
+      {/* FAB for Upload */}
+      <FloatingActionButton
+        icon={Upload}
+        label={strings.uploadDocument}
+        onClick={() => setShowUploadDialog(true)}
+        color="#0C3B2E"
+        showLabel={false}
+      />
+
+      {/* Upload Bottom Sheet - REPLACING Dialog */}
+      <BottomSheet
+        open={showUploadDialog}
+        onClose={() => {
+          setShowUploadDialog(false);
+          setUploadFiles([]);
+          setCompressionStats(null);
+          setError(null);
+          setUploadType('photo'); // Reset type to default
+          setUploadLabel(''); // Clear label
+        }}
+        title={strings.uploadDocument}
+        colors={colors}
+        maxHeight="85vh"
+      >
+        <div className="space-y-4 pb-4">
+          {uploading ? (
+            <UploadProgress
+              currentStage={uploadStage}
+              progress={uploadProgressPercent}
+              fileCount={uploadFiles.length}
+              primaryColor={colors.textPrimary}
+              secondaryColor={colors.textSecondary}
+              language={language}
+            />
+          ) : (
+            <>
+              {error && (
+                <div className="p-3 rounded-lg border-2 border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-100">
+                  <p className="text-sm font-semibold">{strings.error}:</p>
+                  <p className="text-xs">{error}</p>
+                </div>
+              )}
+
+              {compressionStats && compressionStats.compressedCount > 0 && (
+                <div className="p-3 rounded-lg border-2" style={{
+                  backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                  borderColor: '#3B82F6'
+                }}>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle2 className="w-3 h-3 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                        {language === 'th' ? 'ปรับขนาดไฟล์แล้ว' : 'Images Optimized'}
+                      </p>
+                      <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                        {language === 'th' 
+                          ? `${compressionStats.compressedCount} รูป • ประหยัด ${compressionStats.savedMB} MB`
+                          : `${compressionStats.compressedCount} images • Saved ${compressionStats.savedMB} MB`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <Label style={{ color: colors.textPrimary }}>{strings.uploadTypeLabel}</Label>
+                <Select value={uploadType} onValueChange={setUploadType}>
+                  <SelectTrigger className="mt-2" style={{ 
+                    backgroundColor: colors.inputBg, 
+                    borderColor: colors.borderColor, 
+                    color: colors.textPrimary,
+                    minHeight: '44px',
+                    fontSize: '16px'
+                  }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                    {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        {language === 'th' ? config.label_th : config.label_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <MobileFormInput
+                label={strings.customLabelLabel}
+                value={uploadLabel}
+                onChange={(e) => setUploadLabel(e.target.value)}
+                placeholder={strings.customLabelPlaceholder}
+                colors={colors}
+              />
+
+              <div>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="bottomsheet-file-upload"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mov,.avi"
+                  disabled={uploading}
+                />
+                <label htmlFor="bottomsheet-file-upload">
+                  <div
+                    className="border-2 border-dashed rounded-xl p-8 text-center transition-colors active:scale-[0.98]"
+                    style={{
+                      borderColor: colors.borderColor,
+                      backgroundColor: colors.uploadBg,
+                      cursor: uploading ? 'not-allowed' : 'pointer',
+                      minHeight: '120px'
+                    }}
+                  >
+                    <Upload className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary }} />
+                    <p className="font-semibold mb-1 text-sm" style={{ color: colors.textPrimary }}>
+                      {strings.selectFiles}
+                    </p>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>
+                      {strings.supportedFormats}
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {uploadFiles.length > 0 && (
+                <div>
+                  <p className="font-semibold mb-2 text-sm" style={{ color: colors.textPrimary }}>
+                    {strings.selectedFiles} ({uploadFiles.length})
+                  </p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {uploadFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: colors.uploadBg }}>
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <FileText className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                          <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            haptic.light();
+                            setUploadFiles(uploadFiles.filter((_, i) => i !== index));
+                          }}
+                          className="p-2 hover:bg-red-100 rounded-lg flex-shrink-0 transition-all active:scale-95"
+                          disabled={uploading}
+                          style={{ minWidth: '44px', minHeight: '44px' }}
+                        >
+                          <X className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    haptic.light();
+                    setShowUploadDialog(false);
+                    setUploadFiles([]);
+                    setCompressionStats(null);
+                  }}
+                  disabled={uploading}
+                  className="flex-1"
+                  style={{ minHeight: '48px' }}
+                >
+                  {strings.cancel}
+                </Button>
+                <Button
+                  onClick={handleUpload}
+                  disabled={uploading || uploadFiles.length === 0}
+                  className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
+                  style={{ minHeight: '48px' }}
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {strings.uploading}
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      {strings.uploadButton}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </BottomSheet>
+
       <Button
         variant="ghost"
         onClick={() => {
@@ -803,209 +1002,6 @@ export default function EvidenceVault() {
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <button
-          onClick={() => {
-            haptic.light();
-            setShowUploadDialog(true);
-          }}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: '#0C3B2E',
-            color: '#FFFFFF',
-            borderRadius: '12px',
-            fontWeight: 'bold',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#0a2f25';
-            e.target.style.transform = 'translateY(-2px)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = '#0C3B2E';
-            e.target.style.transform = 'translateY(0)';
-          }}
-        >
-          <Upload className="w-5 h-5" />
-          {strings.uploadDocument}
-        </button>
-        {/* Other action buttons, if any, could be added here following the same style */}
-      </div>
-
-      {/* Upload Dialog */}
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-md" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-          <DialogHeader>
-            <DialogTitle style={{ color: colors.textPrimary }}>{strings.uploadDocument}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            {uploading ? (
-              <UploadProgress
-                currentStage={uploadStage}
-                progress={uploadProgressPercent}
-                fileCount={uploadFiles.length}
-                primaryColor={colors.textPrimary}
-                secondaryColor={colors.textSecondary}
-                language={language}
-              />
-            ) : (
-              <>
-                {error && (
-                  <div className="p-3 rounded-lg border-2 border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-100">
-                    <p className="text-sm font-semibold">{strings.error}:</p>
-                    <p className="text-xs">{error}</p>
-                  </div>
-                )}
-
-                {/* Compression Notice */}
-                {compressionStats && compressionStats.compressedCount > 0 && (
-                  <div className="p-3 rounded-lg border-2" style={{
-                    backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-                    borderColor: '#3B82F6'
-                  }}>
-                    <div className="flex items-start gap-2">
-                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <CheckCircle2 className="w-3 h-3 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                          {language === 'th' ? 'ปรับขนาดไฟล์แล้ว' : 'Images Optimized'}
-                        </p>
-                        <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
-                          {language === 'th' 
-                            ? `${compressionStats.compressedCount} รูป • ประหยัด ${compressionStats.savedMB} MB (${compressionStats.savingsPercent}%)`
-                            : `${compressionStats.compressedCount} images • Saved ${compressionStats.savedMB} MB (${compressionStats.savingsPercent}%)`
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <Label htmlFor="dialog_doc_type" style={{ color: colors.textPrimary }}>{strings.documentType}</Label>
-                  <Select value={uploadType} onValueChange={setUploadType}>
-                    <SelectTrigger id="dialog_doc_type" className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
-                      {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
-                        <SelectItem key={key} value={key}>
-                          {language === 'th' ? config.label_th : config.label_en}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="dialog_custom_label" style={{ color: colors.textPrimary }}>{strings.customLabel}</Label>
-                  <Input
-                    id="dialog_custom_label"
-                    type="text"
-                    value={uploadLabel}
-                    onChange={(e) => setUploadLabel(e.target.value)}
-                    placeholder={strings.customLabelPlaceholder}
-                    className="mt-2"
-                    style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                  />
-                </div>
-
-                <div>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    id="dialog-file-upload"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mov,.avi"
-                    disabled={uploading}
-                  />
-                  <label htmlFor="dialog-file-upload" className={uploading ? 'cursor-not-allowed opacity-70' : ''}>
-                    <div
-                      className="border-2 border-dashed rounded-xl p-6 md:p-8 text-center transition-colors"
-                      style={{
-                        borderColor: colors.borderColor,
-                        backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                        cursor: uploading ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      <Upload className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3" style={{ color: colors.textSecondary }} />
-                      <p className="font-semibold mb-1 text-sm md:text-base" style={{ color: colors.textPrimary }}>{strings.selectFiles}</p>
-                      <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>{strings.supportedFormats}</p>
-                    </div>
-                  </label>
-                </div>
-
-                {/* Selected Files List */}
-                {uploadFiles.length > 0 && (
-                  <div>
-                    <p className="font-semibold mb-2 text-sm" style={{ color: colors.textPrimary }}>
-                      {strings.selectedFiles} ({uploadFiles.length})
-                    </p>
-                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                      {uploadFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <FileText className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
-                            <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
-                          </div>
-                          <button
-                            onClick={() => {
-                              haptic.light();
-                              setUploadFiles(uploadFiles.filter((_, i) => i !== index));
-                            }}
-                            className="p-1 hover:bg-red-100 rounded flex-shrink-0 ml-2"
-                            disabled={uploading}
-                          >
-                            <X className="w-4 h-4 text-red-600" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-3 justify-end mt-4">
-                  <Button variant="outline" onClick={() => {
-                    haptic.light();
-                    setShowUploadDialog(false);
-                    setUploadFiles([]);
-                    setCompressionStats(null);
-                  }} disabled={uploading}>
-                    {strings.cancel}
-                  </Button>
-                  <Button
-                    onClick={handleUpload}
-                    disabled={uploading || uploadFiles.length === 0}
-                    className="bg-ls-forest hover:bg-ls-forest/90"
-                  >
-                    {uploading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {strings.uploading}
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4 mr-2" />
-                        {strings.uploadButton}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-      
       {/* Templates Link - now a separate card */}
       <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
         <CardContent className="p-0">

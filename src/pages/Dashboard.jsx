@@ -22,6 +22,7 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import { haptic } from "../components/shared/HapticFeedback";
+import FloatingActionButton from "../components/shared/FloatingActionButton";
 
 function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -1116,6 +1117,15 @@ function DashboardContent() {
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
       <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
+          {/* FAB - Quick Upload */}
+          <FloatingActionButton
+            icon={Shield}
+            label={strings.uploadLease}
+            onClick={() => navigate(createPageUrl("UploadScan"))}
+            color="#C7A338"
+            position="bottom-right"
+          />
+
           {/* Onboarding Wizard */}
           <OnboardingWizard
             open={showOnboarding}
@@ -1884,7 +1894,7 @@ function DashboardContent() {
                           actionButton={notificationLogs.length > 0 ? {
                             label: strings.viewAll,
                             link: createPageUrl("Account")
-                          } : undefined}
+                          }}
                           ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
                           compact
                         />

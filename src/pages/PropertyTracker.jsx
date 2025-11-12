@@ -22,6 +22,9 @@ import { compressMultipleImages } from "../components/shared/ImageCompression";
 import { haptic } from "../components/shared/HapticFeedback";
 import UploadProgress from "../components/shared/UploadProgress";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
+import BottomSheet from "../components/shared/BottomSheet";
+import FloatingActionButton from "../components/shared/FloatingActionButton";
+import MobileFormInput from "../components/shared/MobileFormInput";
 
 export default function PropertyTracker() {
   const navigate = useNavigate();
@@ -333,11 +336,22 @@ export default function PropertyTracker() {
   };
 
   const handleRemovePhoto = (indexToRemove) => {
-    const previewToRemove = photoPreviews[indexToRemove];
-    if (previewToRemove && previewToRemove.startsWith('data:image')) {
-      const newPhotoFiles = photoFiles.filter((_, i) => i !== indexToRemove);
-      setPhotoFiles(newPhotoFiles);
-    }
+    haptic.light();
+    // The photoFiles array contains the actual File objects, while photoPreviews contains data URLs or blob URLs.
+    // When removing, we need to make sure we remove the correct File object if it was a newly added one.
+    // If it was an original URL from editingMaintenance, it's not in photoFiles, so we just remove from previews.
+
+    // Filter out the file from photoFiles based on index, but only if it's a 'new' file.
+    // This logic assumes photoPreviews and photoFiles are kept in sync for new uploads.
+    // For existing `photo_urls` from `editingMaintenance`, they are only in `photoPreviews`.
+    const newPhotoFiles = photoFiles.filter((_, i) => {
+      // Find its corresponding preview. If it was a data URL, it's a new file.
+      // This is a simplified check. A more robust solution might involve unique IDs.
+      const isNewFile = photoPreviews[i] && photoPreviews[i].startsWith('data:image');
+      return i !== indexToRemove || !isNewFile;
+    });
+    setPhotoFiles(newPhotoFiles);
+    
     setPhotoPreviews(prev => prev.filter((_, i) => i !== indexToRemove));
   };
 
@@ -490,6 +504,7 @@ export default function PropertyTracker() {
   };
 
   const handleEditMaintenance = (request) => {
+    haptic.light();
     setEditingMaintenance(request);
     setShowAddMaintenance(true);
     setMaintenanceForm({
@@ -505,6 +520,7 @@ export default function PropertyTracker() {
   };
 
   const handleUpdateMaintenance = async () => {
+    haptic.medium();
     if (!editingMaintenance || !user?.email) return;
 
     try {
@@ -527,7 +543,8 @@ export default function PropertyTracker() {
         setPhotoUploadProgress(100);
       }
 
-      const remainingOriginalPhotoUrls = photoPreviews.filter(p => !p.startsWith('data:image'));
+      // Filter out temporary data URLs from photoPreviews, keeping only existing URLs
+      const remainingOriginalPhotoUrls = photoPreviews.filter(p => !p.startsWith('data:image') && !p.startsWith('blob:'));
       const finalPhotoUrls = [...remainingOriginalPhotoUrls, ...newUploadUrls];
 
       const updateLogEntry = {
@@ -561,20 +578,22 @@ export default function PropertyTracker() {
       setUploadingPhotos(false);
       setPhotoUploadStage('');
       setPhotoUploadProgress(0);
+      haptic.success();
       alert(language === 'th' ? 'อัปเดตสำเร็จ' : 'Updated successfully');
     } catch (error) {
       console.error('❌ Failed to update maintenance request:', error);
       setUploadingPhotos(false);
       setPhotoUploadStage('');
       setPhotoUploadProgress(0);
+      haptic.error();
       alert(language === 'th' ? 'ไม่สามารถอัปเดตคำขอซ่อมบำรุงได้ กรุณาลองอีกครั้ง' : 'Failed to update maintenance request. Please try again.');
     }
   };
 
   const handleCloseMaintenance = async (request) => {
+    haptic.medium();
     if (!confirm(strings.confirmClose)) return;
 
-    haptic.medium();
 
     try {
       const closeLogEntry = {
@@ -608,9 +627,8 @@ export default function PropertyTracker() {
   };
 
   const handleDeleteMaintenance = async (request) => {
-    if (!confirm(strings.confirmDelete)) return;
-
     haptic.heavy();
+    if (!confirm(strings.confirmDelete)) return;
 
     try {
       await deleteMaintenanceMutation.mutateAsync(request.id);
@@ -660,7 +678,10 @@ export default function PropertyTracker() {
       <div className="max-w-5xl mx-auto">
         <Button
           variant="ghost"
-          onClick={() => navigate(createPageUrl("Dashboard"))}
+          onClick={() => {
+            haptic.light();
+            navigate(createPageUrl("Dashboard"))
+          }}
           className="mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -674,6 +695,31 @@ export default function PropertyTracker() {
           </h1>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
+
+        {/* FAB for Adding Maintenance */}
+        {!showAddMaintenance && !editingMaintenance && (
+          <FloatingActionButton
+            icon={Plus}
+            label={strings.addMaintenance}
+            onClick={() => {
+              haptic.medium();
+              setShowAddMaintenance(true);
+              setEditingMaintenance(null);
+              setCompressionStats(null);
+              setMaintenanceForm({
+                issue_title: '', 
+                description: '', 
+                category: 'other', 
+                priority: 'medium', 
+                property_address: '', 
+                reported_date: new Date().toISOString().split('T')[0]
+              });
+              setPhotoFiles([]);
+              setPhotoPreviews([]);
+            }}
+            color="#F59E0B"
+          />
+        )}
 
         {/* DEPOSIT SECTION - Enhanced styling */}
         <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
@@ -723,6 +769,7 @@ export default function PropertyTracker() {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
+                      haptic.light();
                       setDepositForm({
                         deposit_amount: deposit.deposit_amount?.toString() || '',
                         deposit_paid_date: deposit.deposit_paid_date || '',
@@ -748,7 +795,14 @@ export default function PropertyTracker() {
                   <Wallet className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
                   <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noDeposit}</p>
                   <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addDepositDesc}</p>
-                  <Button onClick={() => setEditingDeposit(true)} className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal">
+                  <Button 
+                    onClick={() => {
+                      haptic.light();
+                      setEditingDeposit(true);
+                    }} 
+                    className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal"
+                    style={{ minHeight: '44px' }}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     {strings.addDeposit}
                   </Button>
@@ -756,64 +810,69 @@ export default function PropertyTracker() {
               ) : editingDeposit ? (
                 <div className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label style={{ color: colors.textPrimary }}>{strings.depositAmount}</Label>
-                      <Input
-                        type="number"
-                        value={depositForm.deposit_amount}
-                        onChange={(e) => setDepositForm({...depositForm, deposit_amount: e.target.value})}
-                        className="mt-2"
-                        style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
-                      />
-                    </div>
-                    <div>
-                      <Label style={{ color: colors.textPrimary }}>{strings.propertyAddress}</Label>
-                      <Input
-                        value={depositForm.property_address}
-                        onChange={(e) => setDepositForm({...depositForm, property_address: e.target.value})}
-                        className="mt-2"
-                        style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label style={{ color: colors.textPrimary }}>{strings.paidDate}</Label>
-                      <Input
-                        type="date"
-                        value={depositForm.deposit_paid_date}
-                        onChange={(e) => setDepositForm({...depositForm, deposit_paid_date: e.target.value})}
-                        className="mt-2"
-                        style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
-                      />
-                    </div>
-                    <div>
-                      <Label style={{ color: colors.textPrimary }}>{strings.expectedReturn}</Label>
-                      <Input
-                        type="date"
-                        value={depositForm.expected_return_date}
-                        onChange={(e) => setDepositForm({...depositForm, expected_return_date: e.target.value})}
-                        className="mt-2"
-                        style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label style={{ color: colors.textPrimary }}>{strings.notes}</Label>
-                    <Textarea
-                      value={depositForm.notes}
-                      onChange={(e) => setDepositForm({...depositForm, notes: e.target.value})}
-                      className="mt-2"
-                      rows={2}
-                      style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
+                    <MobileFormInput
+                      label={strings.depositAmount}
+                      type="number"
+                      value={depositForm.deposit_amount}
+                      onChange={(e) => setDepositForm({...depositForm, deposit_amount: e.target.value})}
+                      icon={DollarSign}
+                      colors={colors}
+                      inputMode="decimal"
+                      required
+                    />
+                    <MobileFormInput
+                      label={strings.propertyAddress}
+                      value={depositForm.property_address}
+                      onChange={(e) => setDepositForm({...depositForm, property_address: e.target.value})}
+                      icon={Home}
+                      colors={colors}
                     />
                   </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <MobileFormInput
+                      label={strings.paidDate}
+                      type="date"
+                      value={depositForm.deposit_paid_date}
+                      onChange={(e) => setDepositForm({...depositForm, deposit_paid_date: e.target.value})}
+                      icon={Calendar}
+                      colors={colors}
+                      required
+                    />
+                    <MobileFormInput
+                      label={strings.expectedReturn}
+                      type="date"
+                      value={depositForm.expected_return_date}
+                      onChange={(e) => setDepositForm({...depositForm, expected_return_date: e.target.value})}
+                      icon={Calendar}
+                      colors={colors}
+                      required
+                    />
+                  </div>
+                  <MobileFormInput
+                    label={strings.notes}
+                    value={depositForm.notes}
+                    onChange={(e) => setDepositForm({...depositForm, notes: e.target.value})}
+                    multiline
+                    rows={2}
+                    colors={colors}
+                  />
                   <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={() => setEditingDeposit(false)}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        haptic.light();
+                        setEditingDeposit(false);
+                      }}
+                      style={{ minHeight: '44px' }}
+                    >
                       <X className="w-4 h-4 mr-2" />
                       {strings.cancel}
                     </Button>
-                    <Button onClick={handleDepositSubmit} className="bg-ls-forest hover:bg-ls-forest/90">
+                    <Button 
+                      onClick={handleDepositSubmit} 
+                      className="bg-ls-forest hover:bg-ls-forest/90"
+                      style={{ minHeight: '44px' }}
+                    >
                       <Save className="w-4 h-4 mr-2" />
                       {strings.save}
                     </Button>
@@ -888,6 +947,7 @@ export default function PropertyTracker() {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
+                      haptic.light();
                       setRentForm({
                         rent_amount: deposit.rent_amount?.toString() || '',
                         rent_due_day: deposit.rent_due_day?.toString() || '',
@@ -912,7 +972,14 @@ export default function PropertyTracker() {
                   <Calendar className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
                   <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noRent}</p>
                   <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addRentDesc}</p>
-                  <Button onClick={() => setEditingRent(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button 
+                    onClick={() => {
+                      haptic.light();
+                      setEditingRent(true);
+                    }} 
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    style={{ minHeight: '44px' }}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     {strings.addRent}
                   </Button>
@@ -920,55 +987,68 @@ export default function PropertyTracker() {
               ) : editingRent ? (
                 <div className="space-y-4">
                   <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <Label style={{ color: colors.textPrimary }}>{strings.rentAmount}</Label>
-                      <Input
-                        type="number"
-                        value={rentForm.rent_amount}
-                        onChange={(e) => setRentForm({...rentForm, rent_amount: e.target.value})}
-                        className="mt-2"
-                        style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
-                      />
-                    </div>
-                    <div>
-                      <Label style={{ color: colors.textPrimary }}>{strings.rentDueDay}</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="31"
-                        placeholder="e.g., 5"
-                        value={rentForm.rent_due_day}
-                        onChange={(e) => setRentForm({...rentForm, rent_due_day: e.target.value})}
-                        className="mt-2"
-                        style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
-                      />
-                    </div>
-                    <div>
-                      <Label style={{ color: colors.textPrimary }}>{strings.alertDaysBefore}</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="14"
-                        value={rentForm.rent_alert_days_before}
-                        onChange={(e) => setRentForm({...rentForm, rent_alert_days_before: e.target.value})}
-                        className="mt-2"
-                        style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
-                      />
-                    </div>
+                    <MobileFormInput
+                      label={strings.rentAmount}
+                      type="number"
+                      value={rentForm.rent_amount}
+                      onChange={(e) => setRentForm({...rentForm, rent_amount: e.target.value})}
+                      icon={DollarSign}
+                      colors={colors}
+                      inputMode="decimal"
+                      required
+                    />
+                    <MobileFormInput
+                      label={strings.rentDueDay}
+                      type="number"
+                      value={rentForm.rent_due_day}
+                      onChange={(e) => setRentForm({...rentForm, rent_due_day: e.target.value})}
+                      placeholder="e.g., 5"
+                      icon={Calendar}
+                      colors={colors}
+                      inputMode="numeric"
+                      min={1}
+                      max={31}
+                      required
+                    />
+                    <MobileFormInput
+                      label={strings.alertDaysBefore}
+                      type="number"
+                      value={rentForm.rent_alert_days_before}
+                      onChange={(e) => setRentForm({...rentForm, rent_alert_days_before: e.target.value})}
+                      icon={Bell}
+                      colors={colors}
+                      inputMode="numeric"
+                      min={1}
+                      max={14}
+                    />
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2" style={{ minHeight: '44px' }}>
                     <Checkbox
                       checked={rentForm.rent_alerts_enabled}
-                      onCheckedChange={(checked) => setRentForm({...rentForm, rent_alerts_enabled: checked})}
+                      onCheckedChange={(checked) => {
+                        haptic.light();
+                        setRentForm({...rentForm, rent_alerts_enabled: checked});
+                      }}
                     />
                     <Label style={{ color: colors.textPrimary }}>{strings.rentAlertsEnabled}</Label>
                   </div>
                   <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={() => setEditingRent(false)}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        haptic.light();
+                        setEditingRent(false);
+                      }}
+                      style={{ minHeight: '44px' }}
+                    >
                       <X className="w-4 h-4 mr-2" />
                       {strings.cancel}
                     </Button>
-                    <Button onClick={handleRentSubmit} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Button 
+                      onClick={handleRentSubmit} 
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      style={{ minHeight: '44px' }}
+                    >
                       <Save className="w-4 h-4 mr-2" />
                       {strings.save}
                     </Button>
@@ -1062,6 +1142,7 @@ export default function PropertyTracker() {
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
+                    haptic.light();
                     setShowAddMaintenance(true);
                     setEditingMaintenance(null); // Clear editing state when adding new
                     setCompressionStats(null); // Clear compression stats
@@ -1116,10 +1197,7 @@ export default function PropertyTracker() {
                             {strings.imagesOptimized}
                           </p>
                           <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
-                            {language === 'th' 
-                              ? `${compressionStats.compressedCount} รูป • ประหยัด ${compressionStats.savedMB} MB`
-                              : `${compressionStats.compressedCount} images • Saved ${compressionStats.savedMB} MB`
-                            }
+                            {strings.imagesOptimizedDesc.split('•')[0].trim()} {compressionStats.compressedCount} {strings.imagesOptimizedDesc.split('•')[1].trim()} {compressionStats.savedMB} MB
                           </p>
                         </div>
                       </div>
@@ -1127,25 +1205,24 @@ export default function PropertyTracker() {
                   )}
 
                   <div className="space-y-3">
-                    <div>
-                      <Label style={{ color: colors.textPrimary }}>{strings.issueTitle}</Label>
-                      <Input
-                        value={maintenanceForm.issue_title}
-                        onChange={(e) => setMaintenanceForm({...maintenanceForm, issue_title: e.target.value})}
-                        className="mt-2"
-                        style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
-                      />
-                    </div>
-                    <div>
-                      <Label style={{ color: colors.textPrimary }}>{strings.description}</Label>
-                      <Textarea
-                        value={maintenanceForm.description}
-                        onChange={(e) => setMaintenanceForm({...maintenanceForm, description: e.target.value})}
-                        className="mt-2"
-                        rows={3}
-                        style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
-                      />
-                    </div>
+                    <MobileFormInput
+                      label={strings.issueTitle}
+                      value={maintenanceForm.issue_title}
+                      onChange={(e) => setMaintenanceForm({...maintenanceForm, issue_title: e.target.value})}
+                      icon={Wrench}
+                      colors={colors}
+                      required
+                      autoFocus
+                    />
+                    
+                    <MobileFormInput
+                      label={strings.description}
+                      value={maintenanceForm.description}
+                      onChange={(e) => setMaintenanceForm({...maintenanceForm, description: e.target.value})}
+                      multiline
+                      rows={3}
+                      colors={colors}
+                    />
 
                     <div>
                       <Label style={{ color: colors.textPrimary }}>{strings.addPhotos}</Label>
@@ -1160,11 +1237,12 @@ export default function PropertyTracker() {
                               onChange={handlePhotoSelection}
                               className="hidden"
                             />
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all"
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all active:scale-95"
                               style={{
                                 backgroundColor: colors.inputBg,
                                 borderColor: colors.borderColor,
-                                color: colors.textPrimary
+                                color: colors.textPrimary,
+                                minHeight: '44px'
                               }}
                               onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
                               onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
@@ -1182,11 +1260,12 @@ export default function PropertyTracker() {
                               onChange={handlePhotoSelection}
                               className="hidden"
                             />
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all"
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all active:scale-95"
                               style={{
                                 backgroundColor: colors.inputBg,
                                 borderColor: colors.borderColor,
-                                color: colors.textPrimary
+                                color: colors.textPrimary,
+                                minHeight: '44px'
                               }}
                               onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
                               onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
@@ -1214,7 +1293,8 @@ export default function PropertyTracker() {
                                   <button
                                     type="button"
                                     onClick={() => handleRemovePhoto(index)}
-                                    className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95"
+                                    style={{ minWidth: '28px', minHeight: '28px' }}
                                   >
                                     <X className="w-3 h-3" />
                                   </button>
@@ -1229,8 +1309,19 @@ export default function PropertyTracker() {
                     <div className="grid md:grid-cols-2 gap-3">
                       <div>
                         <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
-                        <Select value={maintenanceForm.category} onValueChange={(value) => setMaintenanceForm({...maintenanceForm, category: value})}>
-                          <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
+                        <Select 
+                          value={maintenanceForm.category} 
+                          onValueChange={(value) => {
+                            haptic.light();
+                            setMaintenanceForm({...maintenanceForm, category: value});
+                          }}
+                        >
+                          <SelectTrigger className="mt-2" style={{ 
+                            backgroundColor: colors.inputBg, 
+                            borderColor: colors.borderColor,
+                            minHeight: '44px',
+                            fontSize: '16px'
+                          }}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -1246,8 +1337,19 @@ export default function PropertyTracker() {
                       </div>
                       <div>
                         <Label style={{ color: colors.textPrimary }}>{strings.priority}</Label>
-                        <Select value={maintenanceForm.priority} onValueChange={(value) => setMaintenanceForm({...maintenanceForm, priority: value})}>
-                          <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
+                        <Select 
+                          value={maintenanceForm.priority} 
+                          onValueChange={(value) => {
+                            haptic.light();
+                            setMaintenanceForm({...maintenanceForm, priority: value});
+                          }}
+                        >
+                          <SelectTrigger className="mt-2" style={{ 
+                            backgroundColor: colors.inputBg, 
+                            borderColor: colors.borderColor,
+                            minHeight: '44px',
+                            fontSize: '16px'
+                          }}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -1263,16 +1365,18 @@ export default function PropertyTracker() {
                       <Button
                         variant="outline"
                         onClick={() => {
+                          haptic.light();
                           setShowAddMaintenance(false);
                           setEditingMaintenance(null);
                           setPhotoFiles([]);
                           setPhotoPreviews([]);
-                          setCompressionStats(null); // Clear compression stats on cancel
+                          setCompressionStats(null);
                           setMaintenanceForm({
                             issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
                           });
                         }}
                         disabled={uploadingPhotos}
+                        style={{ minHeight: '44px' }}
                       >
                         <X className="w-4 h-4 mr-2" />
                         {strings.cancel}
@@ -1281,6 +1385,7 @@ export default function PropertyTracker() {
                         onClick={editingMaintenance ? handleUpdateMaintenance : handleMaintenanceSubmit}
                         className="bg-orange-600 hover:bg-orange-700"
                         disabled={uploadingPhotos}
+                        style={{ minHeight: '44px' }}
                       >
                         {uploadingPhotos ? (
                           <>
@@ -1303,7 +1408,14 @@ export default function PropertyTracker() {
                 <div className="text-center py-8">
                   <Wrench className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
                   <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noMaintenance}</p>
-                  <Button onClick={() => setShowAddMaintenance(true)} className="bg-orange-600 hover:bg-orange-700 text-white">
+                  <Button 
+                    onClick={() => {
+                      haptic.light();
+                      setShowAddMaintenance(true);
+                    }} 
+                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                    style={{ minHeight: '44px' }}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     {strings.addMaintenance}
                   </Button>
@@ -1364,7 +1476,7 @@ export default function PropertyTracker() {
                                         alt={`Issue ${index + 1}`}
                                         className="w-full h-20 object-cover rounded-lg border"
                                         style={{ borderColor: colors.borderColor, cursor: 'pointer' }}
-                                        onClick={() => window.open(url, '_blank')}
+                                        onClick={() => { haptic.light(); window.open(url, '_blank')}}
                                       />
                                     ))}
                                   </div>
@@ -1432,6 +1544,7 @@ export default function PropertyTracker() {
                                     haptic.light();
                                     handleEditMaintenance(request);
                                   }}
+                                  style={{ minHeight: '36px' }}
                                 >
                                   <Edit2 className="w-3 h-3 mr-1" />
                                   {strings.edit}
@@ -1445,6 +1558,7 @@ export default function PropertyTracker() {
                                     handleCloseMaintenance(request);
                                   }}
                                   className="text-emerald-600 border-emerald-600 hover:bg-emerald-50"
+                                  style={{ minHeight: '36px' }}
                                 >
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
                                   {strings.close}
@@ -1457,6 +1571,7 @@ export default function PropertyTracker() {
                                     handleDeleteMaintenance(request);
                                   }}
                                   className="text-red-600 border-red-600 hover:bg-red-50"
+                                  style={{ minHeight: '36px' }}
                                 >
                                   <Trash2 className="w-3 h-3 mr-1" />
                                   {strings.delete}
@@ -1518,6 +1633,7 @@ export default function PropertyTracker() {
                                     handleDeleteMaintenance(request);
                                   }}
                                   className="text-red-600"
+                                  style={{ minHeight: '36px' }}
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </Button>
