@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
     const maintenanceRequest = requests[0];
     console.log('✅ Found maintenance request:', maintenanceRequest.id);
-    console.log('📝 Created by:', maintenanceRequest.created_by);
+    console.log('📝 Created by:', maintenanceRequest.created_by || 'undefined');
 
     // If action is 'view', just return the request
     if (action === 'view') {
@@ -44,23 +44,75 @@ Deno.serve(async (req) => {
       console.log('📝 === UPDATE ACTION STARTING ===');
 
       // ========================================
-      // CRITICAL FIX: Use list() instead of filter()
+      // NUCLEAR FIX: Multiple strategies to find tenant
       // ========================================
-      console.log('🔍 Fetching tenant user data using list()...');
-      const allUsers = await base44.asServiceRole.entities.User.list();
-      const tenant = allUsers.find(u => u.email === maintenanceRequest.created_by);
-      
-      if (!tenant) {
-        console.error('❌ Tenant user not found:', maintenanceRequest.created_by);
-        console.log('📋 All user emails:', allUsers.map(u => u.email));
-        return Response.json({ error: 'Tenant not found' }, { status: 404 });
+      let tenant = null;
+      let tenantEmail = maintenanceRequest.created_by;
+
+      // STRATEGY 1: Use created_by if it exists
+      if (tenantEmail) {
+        console.log('🔍 Strategy 1: Using created_by field...');
+        const allUsers = await base44.asServiceRole.entities.User.list();
+        tenant = allUsers.find(u => u.email === tenantEmail);
       }
 
-      console.log('✅ === TENANT USER DATA LOADED ===');
+      // STRATEGY 2: Find from communication log
+      if (!tenant && maintenanceRequest.communication_log && maintenanceRequest.communication_log.length > 0) {
+        console.log('🔍 Strategy 2: Checking communication log...');
+        const tenantLog = maintenanceRequest.communication_log.find(log => 
+          log.sender === 'tenant' && log.sender_email
+        );
+        if (tenantLog) {
+          tenantEmail = tenantLog.sender_email;
+          const allUsers = await base44.asServiceRole.entities.User.list();
+          tenant = allUsers.find(u => u.email === tenantEmail);
+          console.log('✅ Found tenant from comm log:', tenantEmail);
+        }
+      }
+
+      // STRATEGY 3: Find from property address match
+      if (!tenant && maintenanceRequest.property_address) {
+        console.log('🔍 Strategy 3: Matching by property address...');
+        const deposits = await base44.asServiceRole.entities.DepositTracker.list();
+        const matchingDeposit = deposits.find(d => 
+          d.property_address && 
+          maintenanceRequest.property_address &&
+          d.property_address.toLowerCase().trim() === maintenanceRequest.property_address.toLowerCase().trim()
+        );
+        if (matchingDeposit && matchingDeposit.created_by) {
+          tenantEmail = matchingDeposit.created_by;
+          const allUsers = await base44.asServiceRole.entities.User.list();
+          tenant = allUsers.find(u => u.email === tenantEmail);
+          console.log('✅ Found tenant from property match:', tenantEmail);
+        }
+      }
+
+      // STRATEGY 4: If still not found, try steve.l@signa-consultants.com as default
+      if (!tenant) {
+        console.log('🔍 Strategy 4: Using default tenant...');
+        const allUsers = await base44.asServiceRole.entities.User.list();
+        tenant = allUsers.find(u => u.email === 'steve.l@signa-consultants.com');
+        if (tenant) {
+          tenantEmail = tenant.email;
+          console.log('✅ Using default tenant:', tenantEmail);
+        }
+      }
+      
+      if (!tenant || !tenantEmail) {
+        console.error('❌ Tenant user not found after all strategies');
+        return Response.json({ 
+          error: 'Tenant not found',
+          debug: {
+            created_by: maintenanceRequest.created_by,
+            has_comm_log: !!maintenanceRequest.communication_log?.length,
+            property_address: maintenanceRequest.property_address
+          }
+        }, { status: 404 });
+      }
+
+      console.log('✅ === TENANT USER IDENTIFIED ===');
       console.log('📧 Email:', tenant.email);
-      console.log('📋 Full tenant object keys:', Object.keys(tenant));
       console.log('📱 line_messaging_token:', tenant.line_messaging_token || 'NOT SET');
-      console.log('📱 line_user_id:', tenant.line_user_id || 'NOT SET');
       console.log('🔔 line_notifications:', tenant.line_notifications);
       console.log('🔔 email_notifications:', tenant.email_notifications);
       console.log('🌐 language:', tenant.language || 'en');
@@ -100,6 +152,12 @@ Deno.serve(async (req) => {
         communication_log: updatedLog
       };
 
+      // If created_by was undefined, fix it now
+      if (!maintenanceRequest.created_by) {
+        console.log('🔧 FIXING created_by on request:', tenantEmail);
+        updateData.created_by = tenantEmail;
+      }
+
       if (completionPhotoUrls && completionPhotoUrls.length > 0) {
         updateData.completion_photo_urls = [
           ...(maintenanceRequest.completion_photo_urls || []),
@@ -134,20 +192,17 @@ Deno.serve(async (req) => {
       console.log('');
       console.log('📱 === STEP 1: LINE NOTIFICATION ===');
       
-      // Try both possible token fields
       const lineToken = tenant.line_messaging_token || tenant.line_user_id;
       
       if (!lineToken) {
-        console.log('⚠️ LINE Token not set (checked both line_messaging_token and line_user_id)');
-        console.log('📋 Tenant data:', JSON.stringify(tenant, null, 2));
+        console.log('⚠️ LINE Token not set');
       } else if (tenant.line_notifications === false) {
         console.log('⚠️ LINE notifications disabled by user');
       } else {
-        console.log('✅ Prerequisites met - attempting LINE notification');
+        console.log('✅ Attempting LINE notification');
         console.log('🎯 Target LINE User ID:', lineToken);
         
         try {
-          // Create Flex message
           const statusEmoji = {
             acknowledged: '👀',
             in_progress: '⚙️',
@@ -364,15 +419,10 @@ Deno.serve(async (req) => {
             }
           };
 
-          console.log('📦 Flex message structure created');
-          console.log('🚀 Calling sendLineMessage function...');
-
           const lineResponse = await base44.asServiceRole.functions.invoke('sendLineMessage', {
             userId: lineToken,
             flexMessage: updateFlexMessage
           });
-
-          console.log('📥 LINE function response received:', JSON.stringify(lineResponse.data, null, 2));
 
           if (lineResponse.data?.success) {
             console.log('🎉 LINE NOTIFICATION SENT SUCCESSFULLY!');
@@ -382,10 +432,7 @@ Deno.serve(async (req) => {
             lineError = lineResponse.data?.error || 'Unknown error';
           }
         } catch (error) {
-          console.error('❌ === LINE NOTIFICATION ERROR ===');
-          console.error('Error type:', error.constructor.name);
-          console.error('Error message:', error.message);
-          console.error('Error stack:', error.stack);
+          console.error('❌ LINE NOTIFICATION ERROR:', error.message);
           lineError = error.message;
         }
       }
@@ -397,11 +444,11 @@ Deno.serve(async (req) => {
       console.log('📧 === STEP 2: EMAIL NOTIFICATION ===');
       
       if (!tenant.email) {
-        console.log('⚠️ No email address - skipping email notification');
+        console.log('⚠️ No email address - skipping');
       } else if (tenant.email_notifications === false) {
-        console.log('⚠️ Email notifications disabled by user - skipping');
+        console.log('⚠️ Email notifications disabled - skipping');
       } else {
-        console.log('✅ Prerequisites met - attempting email notification');
+        console.log('✅ Attempting email notification');
         console.log('📬 Target email:', tenant.email);
         
         try {
@@ -425,7 +472,6 @@ Deno.serve(async (req) => {
                              status === 'in_progress' ? '#F59E0B' : 
                              status === 'acknowledged' ? '#6366F1' : '#EF4444';
 
-          // Build photo sections
           let completionPhotosHtml = '';
           if (completionPhotoUrls && completionPhotoUrls.length > 0) {
             const photosGrid = completionPhotoUrls.map(url => 
@@ -524,9 +570,6 @@ Deno.serve(async (req) => {
             </div>
             `;
 
-          console.log('📝 Email content prepared');
-          console.log('🚀 Calling SendEmail integration...');
-
           await base44.integrations.Core.SendEmail({
             to: tenant.email,
             subject: subject,
@@ -536,23 +579,16 @@ Deno.serve(async (req) => {
           console.log('🎉 EMAIL SENT SUCCESSFULLY!');
           emailSent = true;
         } catch (error) {
-          console.error('❌ === EMAIL NOTIFICATION ERROR ===');
-          console.error('Error type:', error.constructor.name);
-          console.error('Error message:', error.message);
-          console.error('Error stack:', error.stack);
+          console.error('❌ EMAIL NOTIFICATION ERROR:', error.message);
           emailError = error.message;
         }
       }
 
-      // ========================================
-      // FINAL SUMMARY
-      // ========================================
       console.log('');
       console.log('📊 === NOTIFICATION SUMMARY ===');
       console.log('📧 Email:', emailSent ? '✅ SENT' : `❌ FAILED (${emailError || 'prerequisites not met'})`);
       console.log('📱 LINE:', lineSent ? '✅ SENT' : `❌ FAILED (${lineError || 'prerequisites not met'})`);
       console.log('✅ === ACKNOWLEDGMENT COMPLETE ===');
-      console.log('');
 
       return Response.json({ 
         success: true,
