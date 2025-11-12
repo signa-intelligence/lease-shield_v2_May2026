@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -6,7 +5,59 @@ import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale } from "l
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
-import { animationKeyframes, createRipple } from "@/utils/animations";
+
+// Animation utilities inlined
+const animationKeyframes = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slideInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes ripple {
+    to { transform: scale(4); opacity: 0; }
+  }
+  .btn-press-feedback:active {
+    transform: scale(0.97);
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.12);
+  }
+  .ripple-container {
+    position: relative;
+    overflow: hidden;
+  }
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.6);
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    margin-left: -10px;
+    animation: ripple 0.6s ease-out;
+    pointer-events: none;
+  }
+`;
+
+const createRipple = (event, element) => {
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  const rect = element.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  ripple.style.left = `${x}px`;
+  ripple.style.top = `${y}px`;
+  element.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
+};
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -273,7 +324,7 @@ export default function Layout({ children, currentPageName }) {
           background: ${isDarkMode ? '#6B7280' : '#9CA3AF'};
         }
 
-        /* Import animation utilities */
+        /* Animation utilities */
         ${animationKeyframes}
       `}</style>
 

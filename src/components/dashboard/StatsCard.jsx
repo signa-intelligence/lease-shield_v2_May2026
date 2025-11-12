@@ -1,11 +1,56 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import ProtectionScoreGauge from "./ProtectionScoreGauge";
-import { useAnimatedNumber, createRipple } from "../../utils/animations";
+
+// Inlined animation hook
+const useAnimatedNumber = (value, duration = 800) => {
+  const [displayValue, setDisplayValue] = useState(value);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    const startValue = displayValue;
+    const endValue = value;
+    const startTime = performance.now();
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const current = startValue + (endValue - startValue) * easeOut;
+      setDisplayValue(Math.round(current));
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [value, duration]);
+
+  return displayValue;
+};
+
+const createRipple = (event, element) => {
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  const rect = element.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  ripple.style.left = `${x}px`;
+  ripple.style.top = `${y}px`;
+  element.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
+};
 
 export default function StatsCard({ 
   title, 
@@ -137,6 +182,46 @@ export default function StatsCard({
           50% {
             transform: translateY(-4px);
           }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        .ripple-container {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .ripple {
+          position: absolute;
+          border-radius: 50%;
+          background-color: rgba(255, 255, 255, 0.6);
+          width: 20px;
+          height: 20px;
+          margin-top: -10px;
+          margin-left: -10px;
+          animation: ripple 0.6s ease-out;
+          pointer-events: none;
+        }
+
+        @keyframes ripple {
+          to {
+            transform: scale(4);
+            opacity: 0;
+          }
+        }
+
+        .btn-press-feedback:active {
+          transform: scale(0.97);
+          transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
         }
       `}</style>
 
