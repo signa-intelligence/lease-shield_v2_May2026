@@ -27,6 +27,7 @@ import MobileFormInput from "../components/shared/MobileFormInput";
 import LazyImage from "../components/shared/LazyImage";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import EmptyState from "../components/shared/EmptyState";
+import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -60,7 +61,7 @@ export default function EvidenceVault() {
 
   const [exportingZip, setExportingZip] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
-  const [bulkMode, setBulkMode] = useState(false); // Added bulkMode state
+  const [bulkMode, setBulkMode] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -72,6 +73,9 @@ export default function EvidenceVault() {
     queryFn: () => base44.entities.Document.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
+
+  // ADDED: Optimistic update hook
+  const optimistic = useOptimisticUpdate(['documents'], 'Document');
 
   // For now, no filtering logic provided, so filteredDocuments is all documents
   const filteredDocuments = documents;
@@ -118,24 +122,64 @@ export default function EvidenceVault() {
 
   const createDocumentMutation = useMutation({
     mutationFn: (data) => base44.entities.Document.create(data),
-    onSuccess: () => {
-      // Query invalidation and state resets are handled by handleUpload's final logic
+    onMutate: async (newDoc) => {
+      haptic.light();
+      
+      const tempId = `optimistic-${Date.now()}-${Math.random()}`;
+      const optimisticItem = {
+        ...newDoc,
+        id: tempId,
+        created_date: new Date().toISOString(),
+        created_by: user?.email,
+        __optimistic: true,
+      };
+
+      optimistic.optimisticCreate(optimisticItem);
+      return { optimisticItem };
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      haptic.success();
+    },
+    onError: (error, variables, context) => {
+      optimistic.revert(context.optimisticItem.id);
+      haptic.error();
+    }
   });
 
   const updateDocumentMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Document.update(id, data),
+    onMutate: async ({ id, data }) => {
+      haptic.medium();
+      optimistic.optimisticUpdate(id, data);
+      return { id };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       setEditingDoc(null);
+      haptic.success();
+    },
+    onError: (error, variables, context) => {
+      optimistic.revert(context.id);
+      haptic.error();
     },
   });
 
   const deleteDocumentMutation = useMutation({
     mutationFn: (id) => base44.entities.Document.delete(id),
+    onMutate: async (idToDelete) => {
+      haptic.heavy();
+      optimistic.optimisticDelete(idToDelete);
+      return { idToDelete };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       setSelectedDocs([]); // Clear selection in case a selected item was deleted
+      haptic.success();
+    },
+    onError: (error, variables, context) => {
+      optimistic.revert(context.idToDelete);
+      haptic.error();
     },
   });
 
@@ -194,8 +238,8 @@ export default function EvidenceVault() {
 
       // Save documents (70-100%)
       setUploadStage('savingDocuments');
-      const createPromises = results.map((result, index) =>
-        base44.entities.Document.create({
+      const createPromises = results.map((result) =>
+        createDocumentMutation.mutateAsync({
           type: uploadType,
           file_url: result.file_url,
           label: uploadLabel || `${uploadType} - ${new Date().toLocaleDateString()}`,
@@ -204,12 +248,11 @@ export default function EvidenceVault() {
 
       await Promise.all(createPromises);
       setUploadProgressPercent(100);
-      haptic.success();
-
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      
+      // Query invalidation and haptic.success are handled by createDocumentMutation's onSuccess
       setShowUploadDialog(false);
       setUploadFiles([]);
-      setUploadType('other'); // Reset to default
+      setUploadType('photo'); // Reset to default
       setUploadLabel(''); // Clear custom label
     } catch (err) {
       console.error('Upload failed:', err);
@@ -242,28 +285,28 @@ export default function EvidenceVault() {
 
   const handleDelete = (docId) => {
     if (confirm(strings.confirmDelete)) { // Using new string
-      haptic.heavy();
-      deleteDocumentMutation.mutate(docId);
+      deleteDocumentMutation.mutate(docId); // haptic is now in onMutate
     }
   };
 
   const handleSwipeDelete = (docId) => {
-    haptic.heavy();
-    deleteDocumentMutation.mutate(docId);
+    deleteDocumentMutation.mutate(docId); // haptic is now in onMutate
   };
 
   const handleBulkDelete = async () => {
     if (selectedDocs.length === 0) return;
     
-    if (confirm(strings.confirmBulkDelete.replace('{count}', selectedDocs.length))) { // Using new string
-      haptic.heavy();
+    if (confirm(strings.confirmBulkDelete.replace('{count}', selectedDocs.length))) {
+      // haptic.heavy() is now in onMutate of deleteDocumentMutation
       try {
+        // Run mutations sequentially to avoid too many optimistic updates at once,
+        // but still trigger individual optimistic effects.
         for (const docId of selectedDocs) {
-          await deleteDocumentMutation.mutateAsync(docId); // Changed to use individual mutation and await
+          await deleteDocumentMutation.mutateAsync(docId);
         }
-        queryClient.invalidateQueries({ queryKey: ['documents'] }); // Invalidate once after all deletes
+        queryClient.invalidateQueries({ queryKey: ['documents'] }); // Invalidate once after all deletes are confirmed by server
         setSelectedDocs([]);
-        haptic.success();
+        // haptic.success() is handled by deleteDocumentMutation onSuccess
       } catch (error) {
         console.error("Bulk delete failed:", error);
         alert(language === 'th' ? 'การลบจำนวนมากล้มเหลว' : 'Bulk deletion failed');
@@ -370,7 +413,7 @@ export default function EvidenceVault() {
   const handleSaveEdit = async () => {
     if (!editingDoc) return;
     
-    haptic.medium();
+    // haptic.medium() is now in onMutate of updateDocumentMutation
     try {
       await updateDocumentMutation.mutateAsync({
         id: editingDoc.id,
@@ -379,7 +422,7 @@ export default function EvidenceVault() {
           label: editFormData.label
         }
       });
-      haptic.success();
+      // haptic.success() is now in onSuccess of updateDocumentMutation
     } catch (error) {
       console.error('Failed to save document edit:', error);
       alert(language === 'th' ? 'ไม่สามารถบันทึกการแก้ไขได้ โปรดลองอีกครั้ง' : 'Failed to save edits. Please try again.');
@@ -462,16 +505,18 @@ export default function EvidenceVault() {
       // Upload annotated version
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      // Update document with new URL
-      await base44.entities.Document.update(annotatingDocument.id, {
-        file_url: file_url
+      // Update document with new URL using mutation for optimistic update
+      await updateDocumentMutation.mutateAsync({
+        id: annotatingDocument.id,
+        data: {
+          file_url: file_url
+        }
       });
 
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      // Query invalidation and haptic.success are handled by updateDocumentMutation's onSuccess
       setAnnotatingDocument(null);
       
       alert(language === 'th' ? 'บันทึกคำอธิบายประกอบสำเร็จ' : 'Annotation saved successfully');
-      haptic.success();
     } catch (error) {
       console.error('Failed to save annotation:', error);
       alert(language === 'th' ? 'ไม่สามารถบันทึกได้' : 'Failed to save annotation');
@@ -1121,6 +1166,7 @@ export default function EvidenceVault() {
               const isSelected = selectedDocs.includes(doc.id);
               const isImage = doc.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
               const isVideo = doc.file_url?.match(/\.(mp4|mov|avi)$/i);
+              const isOptimistic = doc.__optimistic;
               
               return (
                 <SwipeToDelete
@@ -1128,12 +1174,19 @@ export default function EvidenceVault() {
                   onDelete={() => handleSwipeDelete(doc.id)} // Kept original handleSwipeDelete
                   deleteLabel={strings.delete}
                   colors={colors}
+                  disabled={isOptimistic}
                 >
                   <Card
-                    className={`overflow-hidden border-none shadow-lg hover:shadow-xl transition-all relative ${isSelected ? 'ring-2 ring-ls-forest' : ''}`}
+                    className={`overflow-hidden border-none shadow-lg hover:shadow-xl transition-all relative ${isSelected ? 'ring-2 ring-ls-forest' : ''} ${isOptimistic ? 'opacity-60' : ''}`}
                     style={{ backgroundColor: colors.cardBg, borderColor: isSelected ? '#0C3B2E' : colors.borderColor }}
-                    onClick={() => handleCardClick(doc)}
+                    onClick={() => !isOptimistic && handleCardClick(doc)}
                   >
+                    {isOptimistic && (
+                      <div className="absolute inset-0 bg-black/10 z-10 flex items-center justify-center rounded-lg">
+                        <Loader2 className="w-8 h-8 animate-spin text-white" />
+                      </div>
+                    )}
+                    
                     {isImage ? (
                       <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
                         <LazyImage
@@ -1153,6 +1206,7 @@ export default function EvidenceVault() {
                             handleView(doc);
                           }}
                           className="absolute top-2 right-2 p-2 bg-black/50 rounded-lg backdrop-blur-sm hover:bg-black/70 transition-colors"
+                          disabled={isOptimistic}
                         >
                           <Eye className="w-4 h-4 text-white" />
                         </button>
@@ -1185,6 +1239,7 @@ export default function EvidenceVault() {
                             checked={isSelected}
                             onCheckedChange={() => handleToggleSelect(doc.id)}
                             onClick={(e) => e.stopPropagation()}
+                            disabled={isOptimistic}
                           />
                         </div>
                       )}
@@ -1216,16 +1271,21 @@ export default function EvidenceVault() {
                             haptic.light();
                             handleView(doc);
                           }}
-                          className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all"
+                          disabled={isOptimistic}
+                          className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{
                             backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
                             color: colors.textPrimary
                           }}
                           onMouseEnter={(e) => {
-                            e.target.style.backgroundColor = isDarkMode ? '#3A3D40' : '#E5E7EB';
+                            if (!isOptimistic) {
+                              e.target.style.backgroundColor = isDarkMode ? '#3A3D40' : '#E5E7EB';
+                            }
                           }}
                           onMouseLeave={(e) => {
-                            e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                            if (!isOptimistic) {
+                              e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                            }
                           }}
                         >
                           <Eye className="w-3 h-3 inline mr-1" />
@@ -1237,16 +1297,21 @@ export default function EvidenceVault() {
                             haptic.light();
                             handleDownload(doc);
                           }}
-                          className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all"
+                          disabled={isOptimistic}
+                          className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{
                             backgroundColor: '#0C3B2E',
                             color: '#FFFFFF'
                           }}
                           onMouseEnter={(e) => {
-                            e.target.style.backgroundColor = '#0a2f25';
+                            if (!isOptimistic) {
+                              e.target.style.backgroundColor = '#0a2f25';
+                            }
                           }}
                           onMouseLeave={(e) => {
-                            e.target.style.backgroundColor = '#0C3B2E';
+                            if (!isOptimistic) {
+                              e.target.style.backgroundColor = '#0C3B2E';
+                            }
                           }}
                         >
                           <Download className="w-3 h-3 inline mr-1" />
