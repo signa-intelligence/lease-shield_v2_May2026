@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,6 +39,7 @@ export default function AcknowledgePage() {
   const [billPreviews, setBillPreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [debugInfo, setDebugInfo] = useState(null); // NEW: Debug info display
 
   // Parse URL parameters
   useEffect(() => {
@@ -120,6 +122,8 @@ export default function AcknowledgePage() {
     }
 
     setSubmitting(true);
+    setDebugInfo(null); // Clear previous debug info
+    
     try {
       // Upload photos if any
       let completionUrls = [];
@@ -147,6 +151,16 @@ export default function AcknowledgePage() {
         setUploading(false);
       }
 
+      console.log('📤 Submitting acknowledgment with:', {
+        token,
+        action: 'update',
+        status: statusUpdate,
+        message: message.substring(0, 50) + (message.length > 50 ? '...' : ''), // Truncate for log
+        role,
+        completionPhotoCount: completionUrls.length,
+        billPhotoCount: billUrls.length
+      });
+
       // Submit acknowledgment
       const response = await base44.functions.invoke('acknowledgeMaintenance', {
         token: token,
@@ -158,8 +172,23 @@ export default function AcknowledgePage() {
         billPhotoUrls: billUrls
       });
 
+      console.log('📥 Acknowledgment response:', response.data);
+
       if (response.data?.success) {
-        alert('✅ Update sent successfully! The tenant will be notified.');
+        // Show debug info
+        setDebugInfo({
+          lineSent: response.data.lineSent,
+          emailSent: response.data.emailSent
+        });
+
+        const debugMsg = `✅ Update sent successfully!\n\n` +
+          `📧 Email: ${response.data.emailSent ? '✅ SENT' : '❌ NOT SENT'}\n` +
+          `📱 LINE: ${response.data.lineSent ? '✅ SENT' : '❌ NOT SENT'}\n\n` +
+          `The tenant will be notified.\n\n` +
+          `⚠️ Check function logs (Dashboard → Code → Functions → acknowledgeMaintenance) for details.`;
+        
+        alert(debugMsg);
+        
         // Reload the request to show updated chat log
         await loadMaintenanceRequest(token);
         // Reset form
@@ -260,6 +289,40 @@ export default function AcknowledgePage() {
             </Badge>
           </div>
         </div>
+
+        {/* NEW: Debug Info Banner */}
+        {debugInfo && (
+          <div className="mb-4 p-4 rounded-lg border-2" style={{
+            backgroundColor: debugInfo.lineSent ? '#D1FAE5' : '#FEF2F2',
+            borderColor: debugInfo.lineSent ? '#10B981' : '#EF4444'
+          }}>
+            <div className="flex items-start gap-3">
+              {debugInfo.lineSent ? (
+                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className="font-semibold text-sm mb-1" style={{ 
+                  color: debugInfo.lineSent ? '#065F46' : '#991B1B' 
+                }}>
+                  {debugInfo.lineSent ? '✅ Update Sent' : '⚠️ Partial Send (LINE failed)'}
+                </p>
+                <div className="text-xs space-y-1" style={{ 
+                  color: debugInfo.lineSent ? '#047857' : '#DC2626' 
+                }}>
+                  <p>📧 Email: {debugInfo.emailSent ? '✅ Sent' : '❌ Failed'}</p>
+                  <p>📱 LINE: {debugInfo.lineSent ? '✅ Sent' : '❌ Failed'}</p>
+                  {!debugInfo.lineSent && (
+                    <p className="mt-2 font-semibold">
+                      ⚠️ Check function logs for details (Dashboard → Code → Functions → acknowledgeMaintenance)
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Request Details */}
         <Card className="mb-6 border-none shadow-xl">
@@ -518,7 +581,7 @@ export default function AcknowledgePage() {
             </Button>
 
             <p className="text-xs text-center" style={{ color: colors.textSecondary }}>
-              The tenant will receive an email notification with your update
+              The tenant will receive email {debugInfo?.lineSent !== false ? '+ LINE' : ''} notification with your update
             </p>
           </CardContent>
         </Card>
