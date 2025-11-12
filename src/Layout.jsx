@@ -2,7 +2,7 @@
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar } from "lucide-react"; // Added Calendar import
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -145,6 +145,7 @@ export default function Layout({ children, currentPageName }) {
       evidence: "Evidence",
       admin: "Admin",
       search: "Search", // Added search
+      timeline: "Timeline" // Added timeline
     },
     th: {
       appName: "ลีสชีลด์",
@@ -154,6 +155,7 @@ export default function Layout({ children, currentPageName }) {
       evidence: "หลักฐาน",
       admin: "แอดมิน",
       search: "ค้นหา", // Added search
+      timeline: "ไทม์ไลน์" // Added timeline
     }
   };
 
@@ -167,10 +169,10 @@ export default function Layout({ children, currentPageName }) {
       icon: Home,
     },
     {
-      key: "scan",
-      label: strings.scan,
-      route: createPageUrl("UploadScan"),
-      icon: Upload,
+      key: "timeline", // New timeline tab
+      label: strings.timeline,
+      route: createPageUrl("Timeline"),
+      icon: Calendar,
     },
     {
       key: "property",
