@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,8 @@ const ProtectionScoreEnhanced = ({
   breakdown, 
   recommendations, 
   language = 'en',
-  colors
+  colors,
+  compact = false
 }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -67,6 +69,104 @@ const ProtectionScoreEnhanced = ({
     Bell: '🔔',
     Wrench: '🔧',
   };
+
+  if (compact) {
+    return (
+      <div 
+        className="border-none shadow-xl overflow-hidden" 
+        style={{ 
+          backgroundColor: colors.cardBg,
+          borderLeft: `4px solid ${scoreColor}`,
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+          borderRadius: '12px',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          padding: '12px',
+          position: 'relative'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }}
+      >
+        {/* Compact Header */}
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
+            <p className="text-[10px]" style={{ 
+              color: colors.textSecondary,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              fontWeight: 'bold',
+              marginBottom: '4px'
+            }}>
+              {language === 'th' ? 'คะแนนการป้องกัน' : 'PROTECTION SCORE'}
+            </p>
+            <p className="text-xl" style={{ 
+              color: scoreColor,
+              letterSpacing: '-0.02em',
+              fontWeight: 'bold'
+            }}>
+              {score}%
+            </p>
+          </div>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            backgroundColor: `${scoreColor}15`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Shield className="w-4 h-4" style={{ color: scoreColor }} />
+          </div>
+        </div>
+
+        {/* Compact Stats */}
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <div className="p-2" style={{ 
+            backgroundColor: colors.borderColor,
+            borderRadius: '8px'
+          }}>
+            <p className="text-[9px]" style={{ 
+              color: colors.textSecondary,
+              fontWeight: '600',
+              marginBottom: '2px'
+            }}>
+              {language === 'th' ? 'เกรด' : 'Grade'}
+            </p>
+            <p className="text-sm" style={{ 
+              color: scoreColor,
+              fontWeight: 'bold'
+            }}>
+              {grade}
+            </p>
+          </div>
+          <div className="p-2" style={{ 
+            backgroundColor: colors.borderColor,
+            borderRadius: '8px'
+          }}>
+            <p className="text-[9px]" style={{ 
+              color: colors.textSecondary,
+              fontWeight: '600',
+              marginBottom: '2px'
+            }}>
+              {language === 'th' ? 'อันดับ' : 'Rank'}
+            </p>
+            <p className="text-sm" style={{ 
+              color: colors.textPrimary,
+              fontWeight: 'bold'
+            }}>
+              Top {percentile}%
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card className="border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
