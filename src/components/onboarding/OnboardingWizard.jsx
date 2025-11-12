@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -140,6 +141,7 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
           border: 'none',
           overflow: 'hidden'
         }}
+        hideCloseButton={true}
       >
         {/* Header with gradient - Fixed at top */}
         <div 
@@ -148,12 +150,7 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
             background: `linear-gradient(135deg, ${currentStepData?.color || '#0C3B2E'} 0%, ${currentStepData?.color || '#0C3B2E'}dd 100%)`
           }}
         >
-          <button
-            onClick={onClose}
-            className="absolute top-2 right-2 sm:top-4 sm:right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all"
-          >
-            <X className="w-4 h-4 text-white" />
-          </button>
+          {/* REMOVED: Custom close button to avoid duplication */}
 
           <div className="text-center">
             <div 
