@@ -31,6 +31,7 @@ import { createPageUrl } from "@/utils";
 import ProgressBreadcrumb from "../components/shared/ProgressBreadcrumb";
 import UploadProgress from "../components/shared/UploadProgress";
 import { haptic } from "../components/shared/HapticFeedback";
+import SwipeToDelete from "../components/shared/SwipeToDelete";
 
 export default function UploadScanPage() {
   const navigate = useNavigate();
@@ -605,6 +606,19 @@ export default function UploadScanPage() {
       setSelectedLease(null);
     },
   });
+
+  const handleSwipeDelete = (leaseId) => {
+    haptic.heavy();
+    const confirmMessage = language === 'th'
+      ? 'คุณแน่ใจหรือไม่ว่าต้องการลบการสแกนนี้?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้'
+      : 'Are you sure you want to delete this scan?\n\nThis action cannot be undone.';
+
+    const userConfirmed = window.confirm(confirmMessage);
+
+    if (userConfirmed) {
+      deleteLeaseWithScanMutation.mutate(leaseId);
+    }
+  };
 
   const handleDeleteLease = (leaseId, e) => {
     e.stopPropagation();
@@ -1283,7 +1297,7 @@ export default function UploadScanPage() {
           </div>
         </Card>
 
-        {/* All Leases List */}
+        {/* All Leases List - WITH SWIPE */}
         {leases.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold mb-4" style={{ color: colors.textPrimary }}>
@@ -1291,82 +1305,55 @@ export default function UploadScanPage() {
             </h2>
             <div className="grid gap-4">
               {leases.map((lease) => (
-                <Card
+                <SwipeToDelete
                   key={lease.id}
-                  className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
-                  style={{ backgroundColor: colors.cardBg }}
-                  onClick={() => handleViewDetails(lease)}
+                  onDelete={() => handleSwipeDelete(lease.id)}
+                  deleteLabel={language === 'th' ? 'ลบ' : 'Delete'}
+                  colors={colors}
                 >
-                  <CardContent className="p-4 md:p-6">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <FileText className="w-5 h-5 text-ls-forest flex-shrink-0" />
-                          <h3 className="font-bold text-sm break-words line-clamp-2" style={{
-                            color: colors.textPrimary,
-                            overflowWrap: 'break-word',
-                            wordBreak: 'break-word'
-                          }}>
-                            {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
-                          </h3>
+                  <Card
+                    className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                    style={{ backgroundColor: colors.cardBg }}
+                    onClick={() => {
+                      haptic.light();
+                      handleViewDetails(lease);
+                    }}
+                  >
+                    <CardContent className="p-4 md:p-6">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2">
+                            <FileText className="w-5 h-5 text-ls-forest flex-shrink-0" />
+                            <h3 className="font-bold text-sm break-words line-clamp-2" style={{
+                              color: colors.textPrimary,
+                              overflowWrap: 'break-word',
+                              wordBreak: 'break-word'
+                            }}>
+                              {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
+                            </h3>
+                          </div>
+                          <p className="text-sm" style={{ color: colors.textSecondary }}>
+                            {strings.scanDate}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                          </p>
                         </div>
-                        <p className="text-sm" style={{ color: colors.textSecondary }}>
-                          {strings.scanDate}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
-                        </p>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {lease.status === 'scanned' && (
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              {language === 'th' ? 'วิเคราะห์แล้ว' : 'Analyzed'}
+                            </Badge>
+                          )}
+                          {lease.status === 'uploaded' && (
+                            <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              {language === 'th' ? 'รอการวิเคราะห์' : 'Awaiting Analysis'}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {lease.status === 'scanned' && (
-                          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3 mr-1" />
-                            {language === 'th' ? 'วิเคราะห์แล้ว' : 'Analyzed'}
-                          </Badge>
-                        )}
-                        {/* If lease status is 'uploaded' from batch mode, show a different badge (e.g., 'Awaiting Analysis') */}
-                        {lease.status === 'uploaded' && (
-                          <Badge className="bg-amber-100 text-amber-700 border-amber-200">
-                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                            {language === 'th' ? 'รอการวิเคราะห์' : 'Awaiting Analysis'}
-                          </Badge>
-                        )}
-                        <button
-                          onClick={(e) => handleDeleteLease(lease.id, e)}
-                          disabled={deleteLeaseWithScanMutation.isPending}
-                          style={{
-                            backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                            color: '#EF4444',
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            border: 'none',
-                            cursor: deleteLeaseWithScanMutation.isPending ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.2s',
-                            opacity: deleteLeaseWithScanMutation.isPending ? 0.5 : 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.stopPropagation();
-                            if (!deleteLeaseWithScanMutation.isPending) {
-                              e.target.style.backgroundColor = '#DC2626';
-                              e.target.style.color = '#FFFFFF';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            e.stopPropagation();
-                            if (!deleteLeaseWithScanMutation.isPending) {
-                              e.target.style.backgroundColor = isDarkMode ? '#3A2626' : '#FEE2E2';
-                              e.target.style.color = '#EF4444';
-                            }
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </SwipeToDelete>
               ))}
             </div>
           </div>

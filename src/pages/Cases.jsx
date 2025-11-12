@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useLocation, Link } from "react-router-dom"; // Added Link import
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,10 @@ import { Scale, Plus, Crown, Calendar, DollarSign, Zap, FileText, Loader2, Check
 import { format } from "date-fns";
 import { useFeatureAccess } from "@/components/shared/FeatureGate";
 import LetterPreview from "../components/shared/LetterPreview";
-import { haptic } from "../components/shared/HapticFeedback"; // Added haptic import
+import { haptic } from "../components/shared/HapticFeedback";
+import SwipeToDelete from "../components/shared/SwipeToDelete"; // Added SwipeToDelete import
+import SkeletonLoader from "../components/shared/SkeletonLoader"; // Added SkeletonLoader import
+import EmptyState from "../components/shared/EmptyState"; // Added EmptyState import
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
@@ -22,7 +25,7 @@ const STATUS_CONFIG = {
   closed: { label: 'Closed', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 }
 };
 
-export default function CasesPage() { // Renamed from Cases to CasesPage
+export default function CasesPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -30,7 +33,7 @@ export default function CasesPage() { // Renamed from Cases to CasesPage
   const { hasAccess: hasMemberPrice } = useFeatureAccess('resolve_member_price');
   
   const [expandedCase, setExpandedCase] = useState(null);
-  const [previewLetter, setPreviewLetter] = useState(null); // Retained existing state for LetterPreview compatibility
+  const [previewLetter, setPreviewLetter] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -145,6 +148,7 @@ export default function CasesPage() { // Renamed from Cases to CasesPage
       hideLetters: "Hide Letters",
       preview: "Preview",
       download: "Download",
+      delete: "Delete", // Added for SwipeToDelete
     },
     th: {
       title: "คดีของฉัน",
@@ -168,6 +172,7 @@ export default function CasesPage() { // Renamed from Cases to CasesPage
       hideLetters: "ซ่อนจดหมาย",
       preview: "ดูตัวอย่าง",
       download: "ดาวน์โหลด",
+      delete: "ลบ", // Added for SwipeToDelete
     }
   };
 
@@ -210,7 +215,7 @@ export default function CasesPage() { // Renamed from Cases to CasesPage
   // The outline's suggested signature and state (htmlContent, title, setPreviewHtml, setPreviewTitle)
   // are NOT used directly to preserve compatibility with the `LetterPreview` component which expects `htmlUrl` and `docUrl`.
   const handlePreviewHtml = (caseItem, subject) => {
-    haptic.light(); // Added haptic feedback
+    haptic.light();
     const htmlKey = `${subject}_html_url`;
     const docKey = `${subject}_url`;
     
@@ -231,7 +236,8 @@ export default function CasesPage() { // Renamed from Cases to CasesPage
     });
   };
 
-  const getLetterList = (caseItem) => {
+  // Renamed from getLetterList to getGeneratedLetters as per outline.
+  const getGeneratedLetters = (caseItem) => {
     const letters = [];
     if (caseItem?.letters) {
       if (caseItem.letters.lease_negotiation_url) letters.push('lease_negotiation');
@@ -285,8 +291,8 @@ export default function CasesPage() { // Renamed from Cases to CasesPage
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              width: '100%', // Added to match original button's width
-              justifyContent: 'center' // Added to center content
+              width: '100%',
+              justifyContent: 'center'
             }}
             onMouseEnter={(e) => {
               e.target.style.backgroundColor = '#D4B451';
@@ -306,7 +312,7 @@ export default function CasesPage() { // Renamed from Cases to CasesPage
         {/* End of updated "Open New Case" button */}
 
         {/* Premium Benefits */}
-        <Card className="mb-6 mt-6 border-none shadow-lg bg-gradient-to-br from-purple-600 to-blue-600"> {/* Added mt-6 for spacing */}
+        <Card className="mb-6 mt-6 border-none shadow-lg bg-gradient-to-br from-purple-600 to-blue-600">
           <CardContent className="p-4 md:p-6">
             <div className="flex items-start gap-3">
               <Crown className="w-6 h-6 text-yellow-300 flex-shrink-0 mt-1" />
@@ -329,201 +335,204 @@ export default function CasesPage() { // Renamed from Cases to CasesPage
 
         {/* Cases List */}
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          </div>
+          <SkeletonLoader variant="card" count={3} colors={colors} />
         ) : cases.length === 0 ? (
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-8 md:p-12 text-center">
-              <Scale className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-              <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                {strings.noCases}
-              </h3>
-              <p className="mb-6 max-w-md mx-auto" style={{ color: colors.textSecondary }}>
-                {strings.noCasesDesc}
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Scale}
+            title={strings.noCases}
+            description={strings.noCasesDesc}
+            illustration="cases" // Assuming an 'illustration' prop for EmptyState
+            actionLabel={strings.openNewCase}
+            onAction={() => navigate(createPageUrl("ResolveCase"))}
+          />
         ) : (
           <div className="grid gap-4">
             {cases.map((caseItem) => {
               const statusConfig = STATUS_CONFIG[caseItem.status] || STATUS_CONFIG.intake;
               const StatusIcon = statusConfig.icon;
-              const availableLetters = getLetterList(caseItem);
+              const availableLetters = getGeneratedLetters(caseItem); // Changed from getLetterList
               const hasLetters = availableLetters.length > 0;
               const isExpanded = expandedCase === caseItem.id;
 
               return (
-                <Card
+                <SwipeToDelete
                   key={caseItem.id}
-                  className="border-none shadow-lg hover:shadow-xl transition-all"
-                  style={{ backgroundColor: colors.cardBg }}
+                  deleteLabel={strings.delete || (language === 'th' ? 'ลบ' : 'Delete')}
+                  colors={colors}
+                  // onDelete={() => handleDelete(caseItem.id)} // Assuming a handleDelete function would be added later
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div 
-                        className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer"
-                        onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
-                      >
-                        <Scale className="w-5 h-5 text-ls-forest flex-shrink-0" />
-                        <CardTitle className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-                          {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
-                        </CardTitle>
+                  <Card
+                    className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                    style={{ backgroundColor: colors.cardBg }}
+                    onClick={() => {
+                      haptic.light();
+                      navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`);
+                    }}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div 
+                          className="flex items-center gap-2 min-w-0 flex-1"
+                        >
+                          <Scale className="w-5 h-5 text-ls-forest flex-shrink-0" />
+                          <CardTitle className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                            {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
+                          </CardTitle>
+                        </div>
+                        <Badge className={`${statusConfig.color} border whitespace-nowrap`}>
+                          <StatusIcon className="w-3 h-3 mr-1" />
+                          {statusConfig.label}
+                        </Badge>
                       </div>
-                      <Badge className={`${statusConfig.color} border whitespace-nowrap`}>
-                        <StatusIcon className="w-3 h-3 mr-1" />
-                        {statusConfig.label}
-                      </Badge>
-                    </div>
-                    <p className="text-xs md:text-sm mt-2" style={{ color: colors.textSecondary }}>
-                      {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
-                        {strings.disputeAmount}
+                      <p className="text-xs md:text-sm mt-2" style={{ color: colors.textSecondary }}>
+                        {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
                       </p>
-                      <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                        ฿{caseItem.dispute_amount?.toLocaleString() || '0'}
-                      </p>
-                    </div>
-
-                    {(caseItem.fast_track || caseItem.letter_pack || caseItem.is_member_at_creation) && (
+                    </CardHeader>
+                    <CardContent className="space-y-3">
                       <div>
-                        <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
-                          {strings.features}
+                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                          {strings.disputeAmount}
                         </p>
-                        <div className="flex flex-wrap gap-2">
-                          {caseItem.fast_track && (
-                            <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
-                              <Zap className="w-3 h-3 mr-1" />
-                              {strings.fastTrack}
-                            </Badge>
-                          )}
-                          {caseItem.letter_pack && (
-                            <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
-                              <FileText className="w-3 h-3 mr-1" />
-                              {strings.letterPack}
-                            </Badge>
-                          )}
-                          {caseItem.is_member_at_creation && (
-                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              {strings.memberRateBadge}
-                            </Badge>
+                        <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                          ฿{caseItem.dispute_amount?.toLocaleString() || '0'}
+                        </p>
+                      </div>
+
+                      {(caseItem.fast_track || caseItem.letter_pack || caseItem.is_member_at_creation) && (
+                        <div>
+                          <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                            {strings.features}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {caseItem.fast_track && (
+                              <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
+                                <Zap className="w-3 h-3 mr-1" />
+                                {strings.fastTrack}
+                              </Badge>
+                            )}
+                            {caseItem.letter_pack && (
+                              <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                                <FileText className="w-3 h-3 mr-1" />
+                                {strings.letterPack}
+                              </Badge>
+                            )}
+                            {caseItem.is_member_at_creation && (
+                              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                {strings.memberRateBadge}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {caseItem.summary && (
+                        <p className="text-sm line-clamp-2" style={{ color: colors.textSecondary }}>
+                          {caseItem.summary}
+                        </p>
+                      )}
+
+                      {/* Generated Letters Section */}
+                      {hasLetters && (
+                        <div className="border-t pt-3" style={{ borderColor: colors.borderColor }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedCase(isExpanded ? null : caseItem.id);
+                            }}
+                            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-opacity-80 transition-all"
+                            style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4" style={{ color: colors.textPrimary }} />
+                              <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                                {strings.generatedLetters} ({availableLetters.length})
+                              </span>
+                            </div>
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                            )}
+                          </button>
+
+                          {isExpanded && (
+                            <div className="mt-3 space-y-2">
+                              {availableLetters.map((subject) => (
+                                <div
+                                  key={subject}
+                                  className="flex items-center justify-between p-3 rounded-lg"
+                                  style={{
+                                    backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                                    border: `1px solid ${colors.borderColor}`
+                                  }}
+                                >
+                                  <div className="flex-1 min-w-0 mr-3">
+                                    <p className="text-sm font-semibold truncate" style={{ color: colors.textPrimary }}>
+                                      {getLetterTitle(subject)}
+                                    </p>
+                                  </div>
+                                  <div className="flex gap-2 flex-shrink-0">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handlePreviewHtml(caseItem, subject);
+                                      }}
+                                      className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
+                                      style={{
+                                        backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                                        color: colors.textPrimary,
+                                        border: `1px solid ${colors.borderColor}`
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.target.style.backgroundColor = isDarkMode ? '#4A4D50' : '#EEF2FF';
+                                        e.target.style.borderColor = '#6366F1';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                                        e.target.style.borderColor = colors.borderColor;
+                                      }}
+                                    >
+                                      <Eye className="w-3 h-3" />
+                                      {strings.preview}
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDownloadDocx(caseItem.letters[`${subject}_url`], subject); 
+                                      }}
+                                      className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
+                                      style={{
+                                        backgroundColor: '#0C3B2E',
+                                        color: '#FFFFFF'
+                                      }}
+                                      onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                                      onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                                    >
+                                      <Download className="w-3 h-3" />
+                                      {strings.download}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {caseItem.summary && (
-                      <p className="text-sm line-clamp-2" style={{ color: colors.textSecondary }}>
-                        {caseItem.summary}
-                      </p>
-                    )}
-
-                    {/* Generated Letters Section */}
-                    {hasLetters && (
-                      <div className="border-t pt-3" style={{ borderColor: colors.borderColor }}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedCase(isExpanded ? null : caseItem.id);
-                          }}
-                          className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-opacity-80 transition-all"
-                          style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}
-                        >
-                          <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4" style={{ color: colors.textPrimary }} />
-                            <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                              {strings.generatedLetters} ({availableLetters.length})
-                            </span>
-                          </div>
-                          {isExpanded ? (
-                            <ChevronUp className="w-4 h-4" style={{ color: colors.textSecondary }} />
-                          ) : (
-                            <ChevronDown className="w-4 h-4" style={{ color: colors.textSecondary }} />
-                          )}
-                        </button>
-
-                        {isExpanded && (
-                          <div className="mt-3 space-y-2">
-                            {availableLetters.map((subject) => (
-                              <div
-                                key={subject}
-                                className="flex items-center justify-between p-3 rounded-lg"
-                                style={{
-                                  backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
-                                  border: `1px solid ${colors.borderColor}`
-                                }}
-                              >
-                                <div className="flex-1 min-w-0 mr-3">
-                                  <p className="text-sm font-semibold truncate" style={{ color: colors.textPrimary }}>
-                                    {getLetterTitle(subject)}
-                                  </p>
-                                </div>
-                                <div className="flex gap-2 flex-shrink-0">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handlePreviewHtml(caseItem, subject); // Calls modified existing handlePreviewHtml with haptic
-                                    }}
-                                    className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
-                                    style={{
-                                      backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                                      color: colors.textPrimary,
-                                      border: `1px solid ${colors.borderColor}`
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.target.style.backgroundColor = isDarkMode ? '#4A4D50' : '#EEF2FF';
-                                      e.target.style.borderColor = '#6366F1';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
-                                      e.target.style.borderColor = colors.borderColor;
-                                    }}
-                                  >
-                                    <Eye className="w-3 h-3" />
-                                    {strings.preview}
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      // Call the new handleDownloadDocx function, passing the direct doc URL
-                                      handleDownloadDocx(caseItem.letters[`${subject}_url`], subject); 
-                                    }}
-                                    className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
-                                    style={{
-                                      backgroundColor: '#0C3B2E',
-                                      color: '#FFFFFF'
-                                    }}
-                                    onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                                    onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-                                  >
-                                    <Download className="w-3 h-3" />
-                                    {strings.download}
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <Button
-                      variant="outline"
-                      className="w-full mt-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`);
-                      }}
-                    >
-                      {strings.viewDetails}
-                    </Button>
-                  </CardContent>
-                </Card>
+                      <Button
+                        variant="outline"
+                        className="w-full mt-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`);
+                        }}
+                      >
+                        {strings.viewDetails}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </SwipeToDelete>
               );
             })}
           </div>

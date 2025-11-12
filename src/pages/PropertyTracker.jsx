@@ -21,6 +21,7 @@ import { createPageUrl } from "@/utils";
 import { compressMultipleImages } from "../components/shared/ImageCompression";
 import { haptic } from "../components/shared/HapticFeedback";
 import UploadProgress from "../components/shared/UploadProgress";
+import SwipeToDelete from "../components/shared/SwipeToDelete";
 
 export default function PropertyTracker() {
   const navigate = useNavigate();
@@ -620,6 +621,16 @@ export default function PropertyTracker() {
       haptic.error();
       alert(language === 'th' ? 'ไม่สามารถลบคำขอได้' : 'Failed to delete request');
     }
+  };
+
+  const handleSwipeDelete = (request) => {
+    haptic.heavy();
+    handleDeleteMaintenance(request);
+  };
+
+  const handleSwipeComplete = (request) => {
+    haptic.medium();
+    handleCloseMaintenance(request);
   };
 
   const deposit = deposits[0];
@@ -1300,7 +1311,7 @@ export default function PropertyTracker() {
               )}
               {(activeRequests.length > 0 || completedRequests.length > 0) && (
                 <div className="space-y-4">
-                  {/* Active Requests */}
+                  {/* Active Requests - WITH SWIPE */}
                   {activeRequests.length > 0 && (
                     <div>
                       <h4 className="text-lg font-bold mb-3" style={{ color: colors.textPrimary }}>
@@ -1308,140 +1319,151 @@ export default function PropertyTracker() {
                       </h4>
                       <div className="space-y-3">
                         {activeRequests.map((request) => (
-                          <div key={request.id} className="p-4 rounded-lg border-2" style={{ borderColor: colors.borderColor, backgroundColor: colors.cardBg }}>
-                            <div className="flex items-start justify-between gap-3 mb-3">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  {request.request_number && (
-                                    <Badge 
-                                      className="font-mono text-xs"
-                                      style={{
-                                        backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
-                                        color: colors.maintenanceAccent,
-                                        border: `1px solid ${colors.maintenanceAccent}`,
-                                        fontWeight: 'bold'
-                                      }}
-                                    >
-                                      <Hash className="w-3 h-3 mr-1" />
-                                      {request.request_number}
+                          <SwipeToDelete
+                            key={request.id}
+                            onDelete={() => handleSwipeDelete(request)}
+                            onComplete={() => handleSwipeComplete(request)}
+                            deleteLabel={strings.delete}
+                            completeLabel={strings.close}
+                            colors={colors}
+                          >
+                            <div className="p-4 rounded-lg border-2" style={{ borderColor: colors.borderColor, backgroundColor: colors.cardBg }}>
+                              <div className="flex items-start justify-between gap-3 mb-3">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    {request.request_number && (
+                                      <Badge 
+                                        className="font-mono text-xs"
+                                        style={{
+                                          backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
+                                          color: colors.maintenanceAccent,
+                                          border: `1px solid ${colors.maintenanceAccent}`,
+                                          fontWeight: 'bold'
+                                        }}
+                                      >
+                                        <Hash className="w-3 h-3 mr-1" />
+                                        {request.request_number}
+                                      </Badge>
+                                    )}
+                                    <Badge className={getStatusColor(request.status)}>
+                                      {request.status}
                                     </Badge>
-                                  )}
-                                  <Badge className={getStatusColor(request.status)}>
-                                    {request.status}
-                                  </Badge>
-                                </div>
-                                <h4 className="font-bold text-lg" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
-                                <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{request.description}</p>
-                              </div>
-                            </div>
-
-                            {request.photo_urls && request.photo_urls.length > 0 && (
-                              <div className="mt-3 mb-2">
-                                <div className="grid grid-cols-4 gap-2">
-                                  {request.photo_urls.map((url, index) => (
-                                    <img
-                                      key={index}
-                                      src={url}
-                                      alt={`Issue ${index + 1}`}
-                                      className="w-full h-20 object-cover rounded-lg border"
-                                      style={{ borderColor: colors.borderColor, cursor: 'pointer' }}
-                                      onClick={() => window.open(url, '_blank')}
-                                    />
-                                  ))}
+                                  </div>
+                                  <h4 className="font-bold text-lg" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
+                                  <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{request.description}</p>
                                 </div>
                               </div>
-                            )}
 
-                            {request.communication_log && request.communication_log.length > 0 && (
-                              <div className="mt-3 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
-                                <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
-                                  {strings.communicationLog}
-                                </p>
-                                <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
-                                  {request.communication_log.map((log, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="p-2 rounded-lg text-xs"
-                                      style={{
-                                        backgroundColor: log.sender === 'tenant' ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') :
-                                                         log.sender === 'landlord' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
-                                                         log.sender === 'juristic' ? (isDarkMode ? '#2D1C3A' : '#FAF5FF') :
-                                                         (isDarkMode ? '#2A2D30' : '#F3F4F6'),
-                                        borderLeft: `3px solid ${
-                                          log.sender === 'tenant' ? '#3B82F6' :
-                                          log.sender === 'landlord' ? '#F59E0B' :
-                                          log.sender === 'juristic' ? '#8B5CF6' :
-                                          '#6B7280'
-                                        }`
-                                      }}
-                                    >
-                                      <div className="flex items-start justify-between gap-2 mb-1">
-                                        <span className="font-semibold" style={{ color: colors.textPrimary }}>
-                                          {log.sender === 'tenant' ? '👤' : log.sender === 'landlord' ? '🏠' : log.sender === 'juristic' ? '🏢' : '⚙️'} {log.sender_name || log.sender}
-                                        </span>
-                                        <span style={{ color: colors.textSecondary, fontSize: '10px' }}>
-                                          {new Date(log.timestamp).toLocaleString(language === 'th' ? 'th-TH' : 'en-US', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                          })}
-                                        </span>
-                                      </div>
-                                      <p style={{ color: colors.textPrimary }}>{log.message}</p>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-4 text-xs mt-3" style={{ color: colors.textSecondary }}>
-                              <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
-                              <span>🏷️ {request.category}</span>
-                              <span>⚡ {request.priority}</span>
                               {request.photo_urls && request.photo_urls.length > 0 && (
-                                <span>📸 {request.photo_urls.length} {strings.photosAdded}</span>
+                                <div className="mt-3 mb-2">
+                                  <div className="grid grid-cols-4 gap-2">
+                                    {request.photo_urls.map((url, index) => (
+                                      <img
+                                        key={index}
+                                        src={url}
+                                        alt={`Issue ${index + 1}`}
+                                        className="w-full h-20 object-cover rounded-lg border"
+                                        style={{ borderColor: colors.borderColor, cursor: 'pointer' }}
+                                        onClick={() => window.open(url, '_blank')}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
                               )}
-                            </div>
 
-                            <div className="flex items-center gap-2 flex-wrap mt-4 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditMaintenance(request);
-                                }}
-                              >
-                                <Edit2 className="w-3 h-3 mr-1" />
-                                {strings.edit}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCloseMaintenance(request);
-                                }}
-                                className="text-emerald-600 border-emerald-600 hover:bg-emerald-50"
-                              >
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                                {strings.close}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteMaintenance(request);
-                                }}
-                                className="text-red-600 border-red-600 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-3 h-3 mr-1" />
-                                {strings.delete}
-                              </Button>
+                              {request.communication_log && request.communication_log.length > 0 && (
+                                <div className="mt-3 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
+                                  <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                                    {strings.communicationLog}
+                                  </p>
+                                  <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                                    {request.communication_log.map((log, idx) => (
+                                      <div
+                                        key={idx}
+                                        className="p-2 rounded-lg text-xs"
+                                        style={{
+                                          backgroundColor: log.sender === 'tenant' ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') :
+                                                           log.sender === 'landlord' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
+                                                           log.sender === 'juristic' ? (isDarkMode ? '#2D1C3A' : '#FAF5FF') :
+                                                           (isDarkMode ? '#2A2D30' : '#F3F4F6'),
+                                          borderLeft: `3px solid ${
+                                            log.sender === 'tenant' ? '#3B82F6' :
+                                            log.sender === 'landlord' ? '#F59E0B' :
+                                            log.sender === 'juristic' ? '#8B5CF6' :
+                                            '#6B7280'
+                                          }`
+                                        }}
+                                      >
+                                        <div className="flex items-start justify-between gap-2 mb-1">
+                                          <span className="font-semibold" style={{ color: colors.textPrimary }}>
+                                            {log.sender === 'tenant' ? '👤' : log.sender === 'landlord' ? '🏠' : log.sender === 'juristic' ? '🏢' : '⚙️'} {log.sender_name || log.sender}
+                                          </span>
+                                          <span style={{ color: colors.textSecondary, fontSize: '10px' }}>
+                                            {new Date(log.timestamp).toLocaleString(language === 'th' ? 'th-TH' : 'en-US', {
+                                              month: 'short',
+                                              day: 'numeric',
+                                              hour: '2-digit',
+                                              minute: '2-digit'
+                                            })}
+                                          </span>
+                                        </div>
+                                        <p style={{ color: colors.textPrimary }}>{log.message}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="flex items-center gap-4 text-xs mt-3" style={{ color: colors.textSecondary }}>
+                                <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
+                                <span>🏷️ {request.category}</span>
+                                <span>⚡ {request.priority}</span>
+                                {request.photo_urls && request.photo_urls.length > 0 && (
+                                  <span>📸 {request.photo_urls.length} {strings.photosAdded}</span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2 flex-wrap mt-4 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    haptic.light();
+                                    handleEditMaintenance(request);
+                                  }}
+                                >
+                                  <Edit2 className="w-3 h-3 mr-1" />
+                                  {strings.edit}
+                                </Button>
+                                {/* The Close and Delete buttons are now handled by swipe, but kept for non-swipe interactions */}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCloseMaintenance(request);
+                                  }}
+                                  className="text-emerald-600 border-emerald-600 hover:bg-emerald-50"
+                                >
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  {strings.close}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteMaintenance(request);
+                                  }}
+                                  className="text-red-600 border-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-3 h-3 mr-1" />
+                                  {strings.delete}
+                                </Button>
+                              </div>
                             </div>
-                          </div>
+                          </SwipeToDelete>
                         ))}
                       </div>
                     </div>
@@ -1456,44 +1478,52 @@ export default function PropertyTracker() {
                       </h4>
                       <div className="space-y-2">
                         {completedRequests.map((request) => (
-                          <div key={request.id} className="p-3 rounded-lg border opacity-60" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  {request.request_number && (
-                                    <Badge 
-                                      className="font-mono text-xs"
-                                      style={{
-                                        backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
-                                        color: colors.textSecondary,
-                                        border: `1px solid ${colors.borderColor}`
-                                      }}
-                                    >
-                                      {request.request_number}
+                          <SwipeToDelete
+                            key={request.id}
+                            onDelete={() => handleSwipeDelete(request)}
+                            deleteLabel={strings.delete}
+                            colors={colors}
+                          >
+                            <div className="p-3 rounded-lg border opacity-60" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    {request.request_number && (
+                                      <Badge 
+                                        className="font-mono text-xs"
+                                        style={{
+                                          backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
+                                          color: colors.textSecondary,
+                                          border: `1px solid ${colors.borderColor}`
+                                        }}
+                                      >
+                                        {request.request_number}
+                                      </Badge>
+                                    )}
+                                    <Badge className={getStatusColor(request.status)} style={{ fontSize: '10px' }}>
+                                      {request.status}
                                     </Badge>
-                                  )}
-                                  <Badge className={getStatusColor(request.status)} style={{ fontSize: '10px' }}>
-                                    {request.status}
-                                  </Badge>
+                                  </div>
+                                  <h4 className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
+                                  <div className="flex items-center gap-3 text-xs mt-1" style={{ color: colors.textSecondary }}>
+                                    <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
+                                  </div>
                                 </div>
-                                <h4 className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
-                                <div className="flex items-center gap-3 text-xs mt-1" style={{ color: colors.textSecondary }}>
-                                  <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
-                                </div>
+                                {/* Delete button kept for non-swipe interactions */}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteMaintenance(request);
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteMaintenance(request);
-                                }}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
                             </div>
-                          </div>
+                          </SwipeToDelete>
                         ))}
                       </div>
                     </div>

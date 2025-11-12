@@ -20,6 +20,7 @@ import DocumentAnnotation from "../components/documents/DocumentAnnotation";
 import { compressMultipleImages } from "../components/shared/ImageCompression";
 import { haptic } from "../components/shared/HapticFeedback";
 import UploadProgress from "../components/shared/UploadProgress";
+import SwipeToDelete from "../components/shared/SwipeToDelete";
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -53,6 +54,7 @@ export default function EvidenceVault() {
 
   const [exportingZip, setExportingZip] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [bulkMode, setBulkMode] = useState(false); // Added bulkMode state
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -236,6 +238,11 @@ export default function EvidenceVault() {
       haptic.heavy();
       deleteDocumentMutation.mutate(docId);
     }
+  };
+
+  const handleSwipeDelete = (docId) => {
+    haptic.heavy();
+    deleteDocumentMutation.mutate(docId);
   };
 
   const handleBulkDelete = async () => {
@@ -465,6 +472,15 @@ export default function EvidenceVault() {
     }
   };
 
+  const handleCardClick = (doc) => {
+    haptic.light();
+    if (bulkMode) {
+      handleToggleSelect(doc.id);
+    } else {
+      handleView(doc);
+    }
+  };
+
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
@@ -512,7 +528,7 @@ export default function EvidenceVault() {
       uploadFirst: "Upload First Document",
       deleteConfirm: "Are you sure?", // Existing
       confirmDelete: "Are you sure you want to delete this file?", // Added for haptic-enabled delete
-      confirmBulkDelete: "Are you sure you want to delete {count} file(s)?", // Added for haptic-enabled bulk delete
+      confirmBulkDelete: "Are you sure you want to delete {count} file(s)?" , // Added for haptic-enabled bulk delete
       view: "View",
       download: "Download",
       sendEmail: "Send Email",
@@ -822,22 +838,6 @@ export default function EvidenceVault() {
         {/* Other action buttons, if any, could be added here following the same style */}
       </div>
 
-      {/* Simplified Upload Section Card - now acts as a trigger for the dialog */}
-      {/* The Upload Files button previously in CardHeader is now replaced by the above "Action Buttons" section */}
-      <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-        <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-          <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-            <span className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-ls-forest" /> {/* Changed to FileText, as Upload is in action button now */}
-              {strings.uploadFiles} {/* Text remains as is, just indicating the section */}
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 md:p-6" style={{ color: colors.textSecondary }}>
-            {strings.uploadFirst}
-        </CardContent>
-      </Card>
-
       {/* Upload Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent className="sm:max-w-md" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
@@ -1037,254 +1037,203 @@ export default function EvidenceVault() {
         </CardContent>
       </Card>
 
-      {/* Recent Uploads */}
-      {isLoadingDocuments ? (
-        <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardContent className="p-8 text-center text-ls-forest">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p>{strings.loadingDocuments}</p>
-          </CardContent>
-        </Card>
-      ) : documents.length > 0 ? (
-        <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <FileText className="w-5 h-5 text-ls-forest" />
-                {strings.recentUploads} ({documents.length})
-              </CardTitle>
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Bulk Actions */}
-                {selectedDocs.length > 0 && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleBulkExportZip}
-                      disabled={exportingZip}
-                      className="text-xs h-8"
-                    >
-                      {exportingZip ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {strings.exporting}
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4 mr-2" />
-                          {strings.exportZip}
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleBulkDelete}
-                      disabled={deleteDocumentMutation.isPending} // Use deleteDocumentMutation's pending state
-                      className="text-xs h-8"
-                    >
-                      {deleteDocumentMutation.isPending ? ( // Use deleteDocumentMutation's pending state
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {strings.deleting}
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          {strings.deleteSelected} ({selectedDocs.length})
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-
-                {/* Export Full Report */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportAllReport}
-                  disabled={exportingPdf}
-                  className="text-xs h-8"
-                >
-                  {exportingPdf ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {strings.exporting}
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-4 h-4 mr-2" />
-                      {strings.exportReport}
-                    </>
-                  )}
-                </Button>
-
-                {documents.length > 0 && (
-                  <button
-                    onClick={handleSelectAll}
-                    className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm"
-                    style={{
-                      backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                      color: colors.textPrimary
-                    }}
-                  >
-                    {selectedDocs.length === documents.length ? (
-                      <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4 text-ls-forest" />
-                    ) : (
-                      <Square className="w-3 h-3 sm:w-4 sm:h-4" />
+      <div className="max-w-7xl mx-auto">
+        {/* Recent Uploads Header and Bulk Actions */}
+        {documents.length > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                    {strings.recentUploads} ({documents.length})
+                </h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                    {/* Bulk Actions */}
+                    {selectedDocs.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleBulkExportZip}
+                                disabled={exportingZip}
+                                className="text-xs h-8"
+                            >
+                                {exportingZip ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{strings.exporting}</>) : (<><Download className="w-4 h-4 mr-2" />{strings.exportZip}</>)}
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={handleBulkDelete}
+                                disabled={deleteDocumentMutation.isPending}
+                                className="text-xs h-8"
+                            >
+                                {deleteDocumentMutation.isPending ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{strings.deleting}</>) : (<><Trash2 className="w-4 h-4 mr-2" />{strings.deleteSelected} ({selectedDocs.length})</>)}
+                            </Button>
+                        </div>
                     )}
-                    <span className="font-medium">{language === 'th' ? 'เลือกทั้งหมด' : 'Select All'}</span>
-                  </button>
-                )}
-              </div>
+                    {/* Export Full Report */}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleExportAllReport}
+                        disabled={exportingPdf}
+                        className="text-xs h-8"
+                    >
+                        {exportingPdf ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{strings.exporting}</>) : (<><FileText className="w-4 h-4 mr-2" />{strings.exportReport}</>)}
+                    </Button>
+                    {documents.length > 0 && (
+                        <button
+                            onClick={handleSelectAll}
+                            className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm"
+                            style={{
+                                backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                                color: colors.textPrimary
+                            }}
+                        >
+                            {selectedDocs.length === documents.length ? (
+                                <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4 text-ls-forest" />
+                            ) : (
+                                <Square className="w-3 h-3 sm:w-4 sm:h-4" />
+                            )}
+                            <span className="font-medium">{strings.selectAll}</span>
+                        </button>
+                    )}
+                </div>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y" style={{ borderColor: colors.borderColor }}>
-              {documents.map((doc) => {
-                const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
-                const Icon = config.icon;
-                const isSelected = selectedDocs.includes(doc.id);
+        )}
 
-                return (
-                  <div
-                    key={doc.id}
-                    className="p-4 hover:bg-opacity-50 transition-colors"
-                    style={{
-                      backgroundColor: isSelected ? (isDarkMode ? '#3A3D40' : '#F3F4F6') : 'transparent'
-                    }}
+        {/* Documents Grid */}
+        {isLoadingDocuments ? (
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-8 text-center text-ls-forest">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+              <p>{strings.loadingDocuments}</p>
+            </CardContent>
+          </Card>
+        ) : documents.length === 0 ? (
+          <div className="text-center py-12 md:py-20">
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style={{
+              backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6'
+            }}>
+              <FileText className="w-10 h-10 md:w-12 md:h-12" style={{ color: colors.textSecondary, opacity: 0.5 }} />
+            </div>
+            <h2 className="text-xl md:text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {strings.noDocuments}
+            </h2>
+            <p className="mb-6 max-w-md mx-auto text-sm md:text-base px-4" style={{ color: colors.textSecondary }}>
+              {strings.noDocumentsDesc}
+            </p>
+            <Button
+              onClick={() => {
+                haptic.light();
+                setShowUploadDialog(true);
+              }}
+              className="bg-ls-forest hover:bg-ls-forest/90"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {strings.uploadFirst}
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {documents.map((doc) => {
+              const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
+              const Icon = config.icon;
+              const isSelected = selectedDocs.includes(doc.id);
+
+              return (
+                <SwipeToDelete
+                  key={doc.id}
+                  onDelete={() => handleSwipeDelete(doc.id)}
+                  deleteLabel={strings.delete}
+                  colors={colors}
+                >
+                  <Card
+                    className={`border-none shadow-lg hover:shadow-xl transition-all ${isSelected ? 'ring-2 ring-ls-forest' : ''}`}
+                    style={{ backgroundColor: colors.cardBg, borderColor: isSelected ? '#0C3B2E' : colors.borderColor }}
+                    onClick={() => handleCardClick(doc)}
                   >
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => handleToggleSelect(doc.id)}
-                        className="mt-1 flex-shrink-0 rounded"
-                      />
-                      <div
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}
-                        style={{ backgroundColor: config.bgColor }}
-                      >
-                        <Icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-sm break-words" style={{ 
-                              color: colors.textPrimary,
-                              wordBreak: 'break-word',
-                              overflowWrap: 'anywhere'
-                            }}>
-                              {doc.label || (language === 'th' ? config.label_th : config.label_en)}
-                            </p>
-                            <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                              {format(new Date(doc.created_date), 'MMM d, yyyy')}
-                            </p>
-                          </div>
-                          <Badge className="text-xs whitespace-nowrap" style={{ backgroundColor: config.bgColor + '20', color: config.bgColor, border: `1px solid ${config.bgColor}40` }}>
+                    <div className={`h-2 rounded-t-xl`} style={{ backgroundColor: config.bgColor }} />
+                    <CardContent className="p-4">
+                      {bulkMode && (
+                        <div className="absolute top-4 right-4 z-10">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleToggleSelect(doc.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0`} style={{ backgroundColor: config.bgColor }}>
+                          <Icon className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <Badge className="mb-2" style={{
+                            backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                            color: colors.textPrimary
+                          }}>
                             {language === 'th' ? config.label_th : config.label_en}
                           </Badge>
-                        </div>
-                        {doc.type === 'photo' && doc.file_url && (
-                          <div className="mb-3">
-                            <img
-                              src={doc.file_url}
-                              alt={doc.label}
-                              className="w-full h-32 object-cover rounded-lg"
-                              style={{ border: `1px solid ${colors.borderColor}` }}
-                            />
-                          </div>
-                        )}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleView(doc)}
-                            className="w-full justify-center text-xs"
-                            style={{
-                              borderColor: colors.borderColor,
-                              backgroundColor: colors.cardBg,
-                              color: colors.textPrimary,
-                            }}
-                          >
-                            <Eye className="w-3 h-3 mr-1" />
-                            {strings.view}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDownload(doc)}
-                            className="w-full justify-center text-xs"
-                            style={{
-                              borderColor: colors.borderColor,
-                              backgroundColor: colors.cardBg,
-                              color: colors.textPrimary,
-                            }}
-                          >
-                            <Download className="w-3 h-3 mr-1" />
-                            {strings.download}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSendEmail(doc)}
-                            className="w-full justify-center text-xs"
-                            style={{
-                              borderColor: colors.borderColor,
-                              backgroundColor: colors.cardBg,
-                              color: colors.textPrimary,
-                            }}
-                          >
-                            <Send className="w-3 h-3 mr-1" />
-                            {strings.sendEmail}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(doc)}
-                            className="w-full justify-center text-xs"
-                            style={{
-                              borderColor: colors.borderColor,
-                              backgroundColor: colors.cardBg,
-                              color: colors.textPrimary,
-                            }}
-                          >
-                            <Edit2 className="w-3 h-3 mr-1" />
-                            {strings.editDocument}
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(doc.id)}
-                            disabled={deleteDocumentMutation.isPending}
-                            className="w-full text-xs"
-                          >
-                            <Trash2 className="w-3 h-3 mr-1" />
-                            {strings.delete}
-                          </Button>
+                          <h3 className="font-bold text-sm truncate" style={{ color: colors.textPrimary }}>
+                            {doc.label || (language === 'th' ? config.label_th : config.label_en)}
+                          </h3>
+                          <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                            {format(new Date(doc.created_date), 'MMM d, yyyy')}
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="text-center py-12 md:py-20">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style={{
-            backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6'
-          }}>
-            <FileText className="w-10 h-10 md:w-12 md:h-12" style={{ color: colors.textSecondary, opacity: 0.5 }} />
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            haptic.light();
+                            handleView(doc);
+                          }}
+                          className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all"
+                          style={{
+                            backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                            color: colors.textPrimary
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = isDarkMode ? '#3A3D40' : '#E5E7EB';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
+                          }}
+                        >
+                          <Eye className="w-3 h-3 inline mr-1" />
+                          {strings.view}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            haptic.light();
+                            handleDownload(doc);
+                          }}
+                          className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all"
+                          style={{
+                            backgroundColor: '#0C3B2E',
+                            color: '#FFFFFF'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#0a2f25';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = '#0C3B2E';
+                          }}
+                        >
+                          <Download className="w-3 h-3 inline mr-1" />
+                          {strings.download}
+                        </button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </SwipeToDelete>
+              );
+            })}
           </div>
-          <h2 className="text-xl md:text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-            {strings.noDocuments}
-          </h2>
-          <p className="mb-6 max-w-md mx-auto text-sm md:text-base px-4" style={{ color: colors.textSecondary }}>
-            {strings.noDocumentsDesc}
-          </p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
