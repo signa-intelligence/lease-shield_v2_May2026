@@ -16,18 +16,19 @@ import {
   Camera,
   X,
   Trash2,
-  Home, // New Icon
-  DollarSign, // New Icon
-  Bell, // New Icon
-  Edit2, // New Icon
-  Save, // New Icon
-  Shield, // New Icon
-  Eye, // New Icon
-  ExternalLink // New Icon
+  Home,
+  DollarSign,
+  Bell,
+  Edit2,
+  Save,
+  Shield,
+  Eye,
+  ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import ProgressBreadcrumb from "../components/shared/ProgressBreadcrumb";
 
 export default function UploadScanPage() {
   const navigate = useNavigate();
@@ -50,6 +51,9 @@ export default function UploadScanPage() {
   const [selectedLease, setSelectedLease] = useState(null);
   const [editingNotice, setEditingNotice] = useState(false);
   const [noticeSettings, setNoticeSettings] = useState({ notice_period_days: 30 });
+
+  // NEW: Track current step for breadcrumb
+  const [currentStep, setCurrentStep] = useState(0);
 
   const queryClient = useQueryClient();
 
@@ -190,7 +194,12 @@ export default function UploadScanPage() {
       takePhotos: "Take Photos",
       batchUpload: "Batch Upload",
       singleUpload: "Single Upload",
-      filesWillBeSeparate: "Each file will be uploaded as a separate lease"
+      filesWillBeSeparate: "Each file will be uploaded as a separate lease",
+      // NEW: Progress steps
+      stepUpload: "Upload",
+      stepAnalyze: "Analyze",
+      stepResults: "Results",
+      stepTrack: "Track"
     },
     th: {
       title: "สแกนสัญญาเช่า",
@@ -258,9 +267,34 @@ export default function UploadScanPage() {
       takePhotos: "ถ่ายรูป",
       batchUpload: "อัปโหลดแบบกลุ่ม",
       singleUpload: "อัปโหลดแบบเดี่ยว",
-      filesWillBeSeparate: "แต่ละไฟล์จะถูกอัปโหลดเป็นสัญญาเช่าแยกกัน"
+      filesWillBeSeparate: "แต่ละไฟล์จะถูกอัปโหลดเป็นสัญญาเช่าแยกกัน",
+      stepUpload: "อัปโหลด",
+      stepAnalyze: "วิเคราะห์",
+      stepResults: "ผลลัพธ์",
+      stepTrack: "ติดตาม"
     }
   }[language];
+
+  // NEW: Define breadcrumb steps
+  const breadcrumbSteps = [
+    { label: strings.stepUpload, sublabel: language === 'th' ? 'เลือกไฟล์' : 'Select files' },
+    { label: strings.stepAnalyze, sublabel: language === 'th' ? 'AI สแกน' : 'AI scan' },
+    { label: strings.stepResults, sublabel: language === 'th' ? 'ดูผล' : 'View results' },
+    { label: strings.stepTrack, sublabel: language === 'th' ? 'ติดตามมัดจำ' : 'Track deposit' }
+  ];
+
+  // Update step based on upload/analysis state
+  useEffect(() => {
+    if (analyzing) {
+      setCurrentStep(1); // Analyzing step
+    } else if (uploading) {
+      setCurrentStep(1); // Also uploading/creating/scanning
+    } else if (selectedFiles.length > 0) {
+      setCurrentStep(0); // Files selected, ready to upload
+    } else {
+      setCurrentStep(0); // Initial state or after completion/error
+    }
+  }, [uploading, analyzing, selectedFiles]);
 
   const updateLeaseMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Lease.update(id, data),
@@ -298,6 +332,7 @@ export default function UploadScanPage() {
       setAnalyzing(false); // Batch upload is just uploading, not analyzing immediately
       setError(null);
       setUploadProgress(0); // Reset progress for batch
+      setCurrentStep(1); // Move to analyzing step
       const batchResultsTemp = []; // Use a temporary array to store results for this batch operation
 
       for (let i = 0; i < selectedFiles.length; i++) {
@@ -328,6 +363,7 @@ export default function UploadScanPage() {
       setSelectedFiles([]); // Clear selected files after batch upload attempt
       setUploadProgress(0);
       setAnalysisStage(''); // Clear stage
+      setCurrentStep(0); // Reset after batch upload
       queryClient.invalidateQueries({ queryKey: ['leases'] }); // Invalidate to show new 'uploaded' leases
 
       const successCount = batchResultsTemp.filter(r => r.success).length;
@@ -346,6 +382,7 @@ export default function UploadScanPage() {
     setUploadProgress(0);
     setRetryCount(0);
     setAnalysisStage('uploading');
+    setCurrentStep(1); // Move to analyzing
 
     let currentRetry = 0;
     const maxRetries = 3;
@@ -415,6 +452,7 @@ export default function UploadScanPage() {
           version: '1.0'
         });
         setUploadProgress(100);
+        setCurrentStep(2); // Move to results step
 
         if (scanResult.end_date) {
           setLeaseDetails({
@@ -428,6 +466,7 @@ export default function UploadScanPage() {
           const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
           const newLease = updatedLeases.find(l => l.id === createdLeaseId);
           setSelectedLease(newLease);
+          setCurrentStep(2); // Still results step if no end date
         }
 
         setSelectedFiles([]);
@@ -488,6 +527,7 @@ export default function UploadScanPage() {
               console.error('Failed final cleanup:', cleanupErr);
             }
           }
+          setCurrentStep(0); // Reset on error
         }
       } finally {
         setUploading(false);
@@ -516,6 +556,7 @@ export default function UploadScanPage() {
 
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       setShowConfirmation(false);
+      setCurrentStep(3); // Move to track deposit step
 
       // Open in modal instead of navigating
       const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
@@ -527,11 +568,13 @@ export default function UploadScanPage() {
       const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
       const updatedLease = updatedLeases.find(l => l.id === pendingLeaseId);
       setSelectedLease(updatedLease);
+      setCurrentStep(3); // Even on error, we attempted to set it, so move to track
     }
   };
 
   const handleSkipConfirmation = async () => {
     setShowConfirmation(false);
+    setCurrentStep(2); // Stay on results step
     if (pendingLeaseId) {
       const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
       const skippedLease = updatedLeases.find(l => l.id === pendingLeaseId);
@@ -601,6 +644,7 @@ export default function UploadScanPage() {
     setUploadProgress(0);
     setRetryCount(0);
     setAnalysisStage('');
+    setCurrentStep(0); // Reset step on retry
   };
 
   const handleToggleAlerts = async (enabled) => {
@@ -660,7 +704,7 @@ export default function UploadScanPage() {
         window.history.replaceState({}, '', createPageUrl("UploadScan"));
       }
     }
-  }, [leases, createPageUrl]);
+  }, [leases]);
 
   const getPeriodText = (period) => {
     if (period === 'year') {
@@ -674,6 +718,18 @@ export default function UploadScanPage() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
+        {/* NEW: Progress Breadcrumb */}
+        {(uploading || analyzing || selectedFiles.length > 0) && (
+          <div className="mb-6">
+            <ProgressBreadcrumb
+              steps={breadcrumbSteps}
+              currentStep={currentStep}
+              primaryColor="#0C3B2E"
+              secondaryColor="#C7A338"
+            />
+          </div>
+        )}
+
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
@@ -702,7 +758,7 @@ export default function UploadScanPage() {
 
         {error && (
           <div className="mb-6 p-4 rounded-lg border-2 border-red-200 animate-shake" style={{
-            backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2'
+            backgroundColor: isDarkMode ? '#3A2626' : '#FEE2F2'
           }}>
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
