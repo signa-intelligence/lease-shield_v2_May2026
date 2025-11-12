@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, FileText, ArrowLeft, ExternalLink, Loader2, Wallet, ArrowRight, Sparkles } from "lucide-react";
-import { useNavigate } => "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
 
@@ -69,16 +68,16 @@ export default function ScanPreview() {
   // Check by: 1) matching property address (if exists), OR 2) deposit amount matches
   const hasDepositForLease = deposits.some(d => {
     // Match by property address if both exist and are not "N/A"
-    if (d.property_address && lease?.property_address &&
+    if (d.property_address && lease?.property_address && 
         d.property_address !== 'N/A' && lease.property_address !== 'N/A') {
       return d.property_address === lease.property_address;
     }
-
+    
     // Fallback: Match by deposit amount if lease has one
     if (lease?.deposit_amount && d.deposit_amount === lease.deposit_amount) {
       return true;
     }
-
+    
     return false;
   });
 
@@ -166,15 +165,15 @@ export default function ScanPreview() {
 
   const getDisplayFlags = () => {
     const allFlags = scan?.flags || [];
-
+    
     if (userTier === 'lite') {
       return allFlags.slice(0, 5);
     }
-
+    
     if (userTier === 'free') {
       return allFlags.slice(0, 4);
     }
-
+    
     return allFlags;
   };
 
@@ -239,7 +238,7 @@ export default function ScanPreview() {
 
         {/* IMPROVED: Next Step Guidance Card - Now shows for all deposits with amount */}
         {shouldShowTrackDepositCard && (
-          <Card
+          <Card 
             className="mb-6 border-none shadow-xl overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
@@ -317,7 +316,7 @@ export default function ScanPreview() {
 
         {/* Show alternative if deposit already tracked */}
         {hasDepositForLease && lease?.deposit_amount > 0 && (
-          <Card
+          <Card 
             className="mb-6 border-none shadow-xl"
             style={{
               backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5',
@@ -373,9 +372,9 @@ export default function ScanPreview() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="w-6 h-6 text-orange-600" />
-              {userTier === 'lite'
+              {userTier === 'lite' 
                 ? `${language === 'th' ? 'ปัญหาสำคัญ 5 อันดับแรก' : 'Top 5 Issues'} (${Math.min(5, totalFlags)})`
-                : (hasFullReportAccess
+                : (hasFullReportAccess 
                     ? `${strings.allIssues} (${displayFlags.length})`
                     : `${strings.topIssues} (${displayFlags.length})`)}
             </CardTitle>
@@ -396,7 +395,7 @@ export default function ScanPreview() {
                       <Badge variant="outline">{flag.category}</Badge>
                     )}
                   </div>
-                  <p className="text-base font-semibold" style={{
+                  <p className="text-base font-semibold" style={{ 
                     color: colors.textPrimary,
                     wordBreak: 'break-word'
                   }}>{flag.description}</p>
@@ -415,16 +414,16 @@ export default function ScanPreview() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
-                      {language === 'th'
-                        ? `เหลืออีก ${hiddenCount} ปัญหา${userTier === 'lite' ? ' (อัปเกรดเป็น Protect/Secure เพื่อดูทั้งหมด)' : ''}`
+                      {language === 'th' 
+                        ? `เหลืออีก ${hiddenCount} ปัญหา${userTier === 'lite' ? ' (อัปเกรดเป็น Protect/Secure เพื่อดูทั้งหมด)' : ''}` 
                         : `${hiddenCount} More Issue${hiddenCount > 1 ? 's' : ''} Found${userTier === 'lite' ? ' (Upgrade to Protect/Secure)' : ''}`}
                     </h4>
                     <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
                       {userTier === 'lite'
-                        ? (language === 'th'
+                        ? (language === 'th' 
                             ? 'อัปเกรดเป็น Protect หรือ Secure เพื่อดูปัญหาทั้งหมดพร้อมคำแนะนำโดยละเอียด'
                             : 'Upgrade to Protect or Secure to view all issues with detailed recommendations')
-                        : (language === 'th'
+                        : (language === 'th' 
                             ? 'อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อดูรายงานฉบับเต็มพร้อมคำแนะนำโดยละเอียด'
                             : 'Upgrade to Lite, Protect, or Secure to view full report with detailed recommendations')}
                     </p>
