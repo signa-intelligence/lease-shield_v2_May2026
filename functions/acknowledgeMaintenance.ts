@@ -5,11 +5,12 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const { token, action, status, message, role, completionPhotoUrls, billPhotoUrls } = await req.json();
 
+    console.log('🔍 === ACKNOWLEDGMENT REQUEST START ===');
+    console.log('📥 Request payload:', { token, action, status, role, hasMessage: !!message });
+
     if (!token) {
       return Response.json({ error: 'Missing token' }, { status: 400 });
     }
-
-    console.log('🔍 Acknowledgment request:', { token, action, status, role });
 
     // Find maintenance request by token
     const requests = await base44.asServiceRole.entities.MaintenanceRequest.filter({
@@ -23,6 +24,7 @@ Deno.serve(async (req) => {
 
     const maintenanceRequest = requests[0];
     console.log('✅ Found maintenance request:', maintenanceRequest.id);
+    console.log('📝 Created by:', maintenanceRequest.created_by);
 
     // If action is 'view', just return the request
     if (action === 'view') {
@@ -35,21 +37,30 @@ Deno.serve(async (req) => {
     // If action is 'update', update the status and add to communication log
     if (action === 'update') {
       if (!status || !message || !role) {
+        console.error('❌ Missing required fields:', { status, hasMessage: !!message, role });
         return Response.json({ error: 'Missing required fields' }, { status: 400 });
       }
 
-      console.log('📝 Updating maintenance request...');
+      console.log('📝 === UPDATE ACTION STARTING ===');
 
       // Get user data for sender name AND LINE notifications
+      console.log('🔍 Fetching tenant user data...');
       const users = await base44.asServiceRole.entities.User.filter({ 
         email: maintenanceRequest.created_by 
       });
-      const tenant = users[0];
       
-      if (!tenant) {
+      if (!users || users.length === 0) {
         console.error('❌ Tenant user not found:', maintenanceRequest.created_by);
         return Response.json({ error: 'Tenant not found' }, { status: 404 });
       }
+
+      const tenant = users[0];
+      console.log('✅ === TENANT USER DATA LOADED ===');
+      console.log('📧 Email:', tenant.email);
+      console.log('📱 LINE Token:', tenant.line_messaging_token ? 'EXISTS (length: ' + tenant.line_messaging_token.length + ')' : 'NOT SET');
+      console.log('🔔 Email Notifications:', tenant.email_notifications !== false ? 'ENABLED' : 'DISABLED');
+      console.log('🔔 LINE Notifications:', tenant.line_notifications !== false ? 'ENABLED' : 'DISABLED');
+      console.log('🌐 Language:', tenant.language || 'en');
 
       const language = tenant.language || 'en';
       const senderName = role === 'landlord' 
@@ -59,12 +70,7 @@ Deno.serve(async (req) => {
         ? (tenant.landlord_email || '')
         : (tenant.juristic_email || '');
 
-      console.log('👤 Tenant data loaded:', {
-        email: tenant.email,
-        lineToken: tenant.line_messaging_token || 'NOT SET',
-        lineEnabled: tenant.line_notifications !== false,
-        emailEnabled: tenant.email_notifications !== false
-      });
+      console.log('👤 Sender info:', { role, senderName, senderEmail });
 
       // Build new log entry
       const newLogEntry = {
@@ -109,18 +115,32 @@ Deno.serve(async (req) => {
         updateData.resolved_date = new Date().toISOString().split('T')[0];
       }
 
+      console.log('💾 Updating maintenance request...');
       await base44.asServiceRole.entities.MaintenanceRequest.update(maintenanceRequest.id, updateData);
-      console.log('✅ Maintenance request updated');
+      console.log('✅ Maintenance request updated successfully');
 
-      // ✅ SEND LINE NOTIFICATION TO TENANT FIRST (before email)
+      // Track notification results
       let lineSent = false;
-      if (tenant.line_messaging_token && tenant.line_notifications !== false) {
-        console.log('📱 === ATTEMPTING LINE NOTIFICATION TO TENANT ===');
-        console.log('📱 Tenant LINE Token:', tenant.line_messaging_token);
-        console.log('📱 LINE Notifications Enabled:', tenant.line_notifications !== false);
+      let emailSent = false;
+      let lineError = null;
+      let emailError = null;
+
+      // ========================================
+      // SEND LINE NOTIFICATION TO TENANT
+      // ========================================
+      console.log('');
+      console.log('📱 === STEP 1: LINE NOTIFICATION ===');
+      
+      if (!tenant.line_messaging_token) {
+        console.log('⚠️ LINE Token not set - skipping LINE notification');
+      } else if (tenant.line_notifications === false) {
+        console.log('⚠️ LINE notifications disabled by user - skipping');
+      } else {
+        console.log('✅ Prerequisites met - attempting LINE notification');
+        console.log('🎯 Target LINE User ID:', tenant.line_messaging_token);
         
         try {
-          // Create Flex message for maintenance update
+          // Create Flex message
           const statusEmoji = {
             acknowledged: '👀',
             in_progress: '⚙️',
@@ -337,184 +357,209 @@ Deno.serve(async (req) => {
             }
           };
 
-          console.log('📤 === SENDING FLEX MESSAGE TO TENANT LINE ===');
-          console.log('📦 Flex Message Structure:', JSON.stringify(updateFlexMessage, null, 2));
-          console.log('🎯 Target LINE User ID:', tenant.line_messaging_token);
+          console.log('📦 Flex message structure created');
+          console.log('🚀 Calling sendLineMessage function...');
 
           const lineResponse = await base44.asServiceRole.functions.invoke('sendLineMessage', {
             userId: tenant.line_messaging_token,
             flexMessage: updateFlexMessage
           });
 
-          console.log('✅ === LINE RESPONSE RECEIVED ===');
-          console.log('📊 LINE Response:', JSON.stringify(lineResponse.data, null, 2));
-          
+          console.log('📥 LINE function response received:', JSON.stringify(lineResponse.data, null, 2));
+
           if (lineResponse.data?.success) {
-            console.log('🎉 LINE NOTIFICATION SENT SUCCESSFULLY TO TENANT!');
+            console.log('🎉 LINE NOTIFICATION SENT SUCCESSFULLY!');
             lineSent = true;
           } else {
-            console.error('❌ LINE RESPONSE INDICATED FAILURE:', lineResponse.data);
+            console.error('❌ LINE function returned success=false:', lineResponse.data);
+            lineError = lineResponse.data?.error || 'Unknown error';
           }
-        } catch (lineError) {
-          console.error('❌ === LINE NOTIFICATION FAILED ===');
-          console.error('❌ Error message:', lineError.message);
-          console.error('❌ Error stack:', lineError.stack);
-          console.error('❌ Full error:', JSON.stringify(lineError, null, 2));
+        } catch (error) {
+          console.error('❌ === LINE NOTIFICATION ERROR ===');
+          console.error('Error type:', error.constructor.name);
+          console.error('Error message:', error.message);
+          console.error('Error stack:', error.stack);
+          lineError = error.message;
         }
-      } else {
-        console.log('⚠️ === TENANT LINE NOT AVAILABLE ===');
-        console.log('⚠️ Has line_messaging_token?', !!tenant.line_messaging_token);
-        console.log('⚠️ Token value:', tenant.line_messaging_token || 'NULL');
-        console.log('⚠️ line_notifications enabled?', tenant.line_notifications !== false);
-        console.log('⚠️ line_notifications value:', tenant.line_notifications);
       }
 
-      // ✅ SEND EMAIL NOTIFICATION TO TENANT
-      if (tenant.email && tenant.email_notifications !== false) {
-        console.log('📧 Sending email notification to tenant...');
+      // ========================================
+      // SEND EMAIL NOTIFICATION TO TENANT
+      // ========================================
+      console.log('');
+      console.log('📧 === STEP 2: EMAIL NOTIFICATION ===');
+      
+      if (!tenant.email) {
+        console.log('⚠️ No email address - skipping email notification');
+      } else if (tenant.email_notifications === false) {
+        console.log('⚠️ Email notifications disabled by user - skipping');
+      } else {
+        console.log('✅ Prerequisites met - attempting email notification');
+        console.log('📬 Target email:', tenant.email);
         
-        const statusLabels = {
-          en: {
-            acknowledged: 'Acknowledged',
-            in_progress: 'In Progress',
-            completed: 'Completed',
-            rejected: 'Rejected'
-          },
-          th: {
-            acknowledged: 'รับทราบแล้ว',
-            in_progress: 'กำลังดำเนินการ',
-            completed: 'เสร็จสิ้น',
-            rejected: 'ถูกปฏิเสธ'
-          }
-        };
-
-        const statusLabel = statusLabels[language][status] || status;
-        const statusColor = status === 'completed' ? '#10B981' : 
-                           status === 'in_progress' ? '#F59E0B' : 
-                           status === 'acknowledged' ? '#6366F1' : '#EF4444';
-
-        // Build photo sections
-        let completionPhotosHtml = '';
-        if (completionPhotoUrls && completionPhotoUrls.length > 0) {
-          const photosGrid = completionPhotoUrls.map(url => 
-            `<img src="${url}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin: 5px;" />`
-          ).join('');
-          completionPhotosHtml = language === 'th'
-            ? `<div style="margin: 20px 0;">
-                <p style="font-weight: bold; margin-bottom: 10px;">📸 รูปงานซ่อมเสร็จแล้ว:</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-                  ${photosGrid}
-                </div>
-              </div>`
-            : `<div style="margin: 20px 0;">
-                <p style="font-weight: bold; margin-bottom: 10px;">📸 Completion Photos:</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-                  ${photosGrid}
-                </div>
-              </div>`;
-        }
-
-        let billPhotosHtml = '';
-        if (billPhotoUrls && billPhotoUrls.length > 0) {
-          const billsGrid = billPhotoUrls.map(url => 
-            `<img src="${url}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin: 5px;" />`
-          ).join('');
-          billPhotosHtml = language === 'th'
-            ? `<div style="margin: 20px 0;">
-                <p style="font-weight: bold; margin-bottom: 10px;">🧾 ใบเสร็จ/บิล:</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-                  ${billsGrid}
-                </div>
-              </div>`
-            : `<div style="margin: 20px 0;">
-                <p style="font-weight: bold; margin-bottom: 10px;">🧾 Bills/Receipts:</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-                  ${billsGrid}
-                </div>
-              </div>`;
-        }
-
-        const subject = language === 'th'
-          ? `🔔 อัปเดตคำขอซ่อม: ${maintenanceRequest.issue_title}`
-          : `🔔 Maintenance Update: ${maintenanceRequest.issue_title}`;
-
-        const emailBody = language === 'th'
-          ? `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
-              <h2 style="color: white; margin: 0;">🔔 อัปเดตคำขอซ่อม</h2>
-            </div>
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
-              <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid ${statusColor};">
-                <h3 style="color: #0C3B2E; margin-top: 0;">${maintenanceRequest.issue_title}</h3>
-                <p style="margin: 15px 0;"><strong>สถานะใหม่:</strong> <span style="color: ${statusColor}; font-weight: bold;">${statusLabel}</span></p>
-                <div style="background: #F3F4F6; padding: 15px; border-radius: 8px; margin: 15px 0;">
-                  <p style="margin: 0; color: #666; font-size: 14px;"><strong>ข้อความจาก ${senderName}:</strong></p>
-                  <p style="margin: 5px 0 0 0; color: #1a1d1f;">${message}</p>
-                </div>
-                ${completionPhotosHtml}
-                ${billPhotosHtml}
-                <p style="font-size: 12px; color: #999; margin-top: 20px;">อัปเดตเมื่อ: ${new Date().toLocaleString('th-TH')}</p>
-              </div>
-              <div style="text-align: center; margin-top: 20px;">
-                <a href="https://app.leaseshield.asia/MaintenanceTracker" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-                  ดูรายละเอียดเต็ม
-                </a>
-              </div>
-              <p style="font-size: 10px; color: #999; text-align: center; margin-top: 20px;">ส่งจาก Lease Shield - www.leaseshield.asia</p>
-            </div>
-          </div>
-          `
-          : `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
-              <h2 style="color: white; margin: 0;">🔔 Maintenance Update</h2>
-            </div>
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
-              <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid ${statusColor};">
-                <h3 style="color: #0C3B2E; margin-top: 0;">${maintenanceRequest.issue_title}</h3>
-                <p style="margin: 15px 0;"><strong>New Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${statusLabel}</span></p>
-                <div style="background: #F3F4F6; padding: 15px; border-radius: 8px; margin: 15px 0;">
-                  <p style="margin: 0; color: #666; font-size: 14px;"><strong>Message from ${senderName}:</strong></p>
-                  <p style="margin: 5px 0 0 0; color: #1a1d1f;">${message}</p>
-                </div>
-                ${completionPhotosHtml}
-                ${billPhotosHtml}
-                <p style="font-size: 12px; color: #999; margin-top: 20px;">Updated: ${new Date().toLocaleString('en-US')}</p>
-              </div>
-              <div style="text-align: center; margin-top: 20px;">
-                <a href="https://app.leaseshield.asia/MaintenanceTracker" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-                  View Full Details
-                </a>
-              </div>
-              <p style="font-size: 10px; color: #999; text-align: center; margin-top: 20px;">Sent from Lease Shield - www.leaseshield.asia</p>
-            </div>
-          </div>
-          `;
-
         try {
+          const statusLabels = {
+            en: {
+              acknowledged: 'Acknowledged',
+              in_progress: 'In Progress',
+              completed: 'Completed',
+              rejected: 'Rejected'
+            },
+            th: {
+              acknowledged: 'รับทราบแล้ว',
+              in_progress: 'กำลังดำเนินการ',
+              completed: 'เสร็จสิ้น',
+              rejected: 'ถูกปฏิเสธ'
+            }
+          };
+
+          const statusLabel = statusLabels[language][status] || status;
+          const statusColor = status === 'completed' ? '#10B981' : 
+                             status === 'in_progress' ? '#F59E0B' : 
+                             status === 'acknowledged' ? '#6366F1' : '#EF4444';
+
+          // Build photo sections
+          let completionPhotosHtml = '';
+          if (completionPhotoUrls && completionPhotoUrls.length > 0) {
+            const photosGrid = completionPhotoUrls.map(url => 
+              `<img src="${url}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin: 5px;" />`
+            ).join('');
+            completionPhotosHtml = language === 'th'
+              ? `<div style="margin: 20px 0;">
+                  <p style="font-weight: bold; margin-bottom: 10px;">📸 รูปงานซ่อมเสร็จแล้ว:</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                    ${photosGrid}
+                  </div>
+                </div>`
+              : `<div style="margin: 20px 0;">
+                  <p style="font-weight: bold; margin-bottom: 10px;">📸 Completion Photos:</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                    ${photosGrid}
+                  </div>
+                </div>`;
+          }
+
+          let billPhotosHtml = '';
+          if (billPhotoUrls && billPhotoUrls.length > 0) {
+            const billsGrid = billPhotoUrls.map(url => 
+              `<img src="${url}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin: 5px;" />`
+            ).join('');
+            billPhotosHtml = language === 'th'
+              ? `<div style="margin: 20px 0;">
+                  <p style="font-weight: bold; margin-bottom: 10px;">🧾 ใบเสร็จ/บิล:</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                    ${billsGrid}
+                  </div>
+                </div>`
+              : `<div style="margin: 20px 0;">
+                  <p style="font-weight: bold; margin-bottom: 10px;">🧾 Bills/Receipts:</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                    ${billsGrid}
+                  </div>
+                </div>`;
+          }
+
+          const subject = language === 'th'
+            ? `🔔 อัปเดตคำขอซ่อม: ${maintenanceRequest.issue_title}`
+            : `🔔 Maintenance Update: ${maintenanceRequest.issue_title}`;
+
+          const emailBody = language === 'th'
+            ? `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+                <h2 style="color: white; margin: 0;">🔔 อัปเดตคำขอซ่อม</h2>
+              </div>
+              <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+                <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid ${statusColor};">
+                  <h3 style="color: #0C3B2E; margin-top: 0;">${maintenanceRequest.issue_title}</h3>
+                  <p style="margin: 15px 0;"><strong>สถานะใหม่:</strong> <span style="color: ${statusColor}; font-weight: bold;">${statusLabel}</span></p>
+                  <div style="background: #F3F4F6; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <p style="margin: 0; color: #666; font-size: 14px;"><strong>ข้อความจาก ${senderName}:</strong></p>
+                    <p style="margin: 5px 0 0 0; color: #1a1d1f;">${message}</p>
+                  </div>
+                  ${completionPhotosHtml}
+                  ${billPhotosHtml}
+                  <p style="font-size: 12px; color: #999; margin-top: 20px;">อัปเดตเมื่อ: ${new Date().toLocaleString('th-TH')}</p>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                  <a href="https://app.leaseshield.asia/MaintenanceTracker" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                    ดูรายละเอียดเต็ม
+                  </a>
+                </div>
+                <p style="font-size: 10px; color: #999; text-align: center; margin-top: 20px;">ส่งจาก Lease Shield - www.leaseshield.asia</p>
+              </div>
+            </div>
+            `
+            : `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+                <h2 style="color: white; margin: 0;">🔔 Maintenance Update</h2>
+              </div>
+              <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+                <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid ${statusColor};">
+                  <h3 style="color: #0C3B2E; margin-top: 0;">${maintenanceRequest.issue_title}</h3>
+                  <p style="margin: 15px 0;"><strong>New Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${statusLabel}</span></p>
+                  <div style="background: #F3F4F6; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <p style="margin: 0; color: #666; font-size: 14px;"><strong>Message from ${senderName}:</strong></p>
+                    <p style="margin: 5px 0 0 0; color: #1a1d1f;">${message}</p>
+                  </div>
+                  ${completionPhotosHtml}
+                  ${billPhotosHtml}
+                  <p style="font-size: 12px; color: #999; margin-top: 20px;">Updated: ${new Date().toLocaleString('en-US')}</p>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                  <a href="https://app.leaseshield.asia/MaintenanceTracker" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                    View Full Details
+                  </a>
+                </div>
+                <p style="font-size: 10px; color: #999; text-align: center; margin-top: 20px;">Sent from Lease Shield - www.leaseshield.asia</p>
+              </div>
+            </div>
+            `;
+
+          console.log('📝 Email content prepared');
+          console.log('🚀 Calling SendEmail integration...');
+
           await base44.integrations.Core.SendEmail({
             to: tenant.email,
             subject: subject,
             body: emailBody
           });
-          console.log('✅ Notification email sent to tenant:', tenant.email);
-        } catch (emailError) {
-          console.error('❌ Failed to send notification email:', emailError);
+
+          console.log('🎉 EMAIL SENT SUCCESSFULLY!');
+          emailSent = true;
+        } catch (error) {
+          console.error('❌ === EMAIL NOTIFICATION ERROR ===');
+          console.error('Error type:', error.constructor.name);
+          console.error('Error message:', error.message);
+          console.error('Error stack:', error.stack);
+          emailError = error.message;
         }
-      } else {
-        console.log('⚠️ Tenant email notifications disabled or no email');
       }
 
-      console.log('📊 === ACKNOWLEDGMENT COMPLETE ===');
-      console.log('✉️ Email sent: YES');
-      console.log('📱 LINE sent:', lineSent ? 'YES' : 'NO');
+      // ========================================
+      // FINAL SUMMARY
+      // ========================================
+      console.log('');
+      console.log('📊 === NOTIFICATION SUMMARY ===');
+      console.log('📧 Email:', emailSent ? '✅ SENT' : `❌ FAILED (${emailError || 'prerequisites not met'})`);
+      console.log('📱 LINE:', lineSent ? '✅ SENT' : `❌ FAILED (${lineError || 'prerequisites not met'})`);
+      console.log('✅ === ACKNOWLEDGMENT COMPLETE ===');
+      console.log('');
 
       return Response.json({ 
         success: true,
         message: 'Update successful',
         lineSent: lineSent,
-        emailSent: tenant.email && tenant.email_notifications !== false,
+        emailSent: emailSent,
+        debug: {
+          lineError: lineError,
+          emailError: emailError,
+          tenantEmail: tenant.email,
+          tenantLineToken: tenant.line_messaging_token ? 'SET' : 'NOT_SET',
+          emailNotificationsEnabled: tenant.email_notifications !== false,
+          lineNotificationsEnabled: tenant.line_notifications !== false
+        },
         maintenanceRequest: {
           ...maintenanceRequest,
           ...updateData
@@ -525,8 +570,10 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Invalid action' }, { status: 400 });
 
   } catch (error) {
-    console.error('❌ Acknowledge maintenance error:', error);
-    console.error('❌ Full error stack:', error.stack);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('❌ === CRITICAL ERROR ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    return Response.json({ error: error.message, stack: error.stack }, { status: 500 });
   }
 });
