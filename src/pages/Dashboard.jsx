@@ -1758,6 +1758,7 @@ function DashboardContent() {
                             link: createPageUrl("Account")
                           } : undefined}
                           ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
+                          onCtaClick={notificationLogs.length === 0 ? () => navigate(createPageUrl("Account")) : undefined}
                           compact
                         />
                         
