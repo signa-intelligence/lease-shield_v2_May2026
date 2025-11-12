@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -31,12 +30,11 @@ export default function PropertyTracker() {
   const [editingRent, setEditingRent] = useState(false);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
   const [expandedRequests, setExpandedRequests] = useState({});
-  const [chatMessages, setChatMessages] = useState({}); // {requestId: message}
-  const [chatPhotos, setChatPhotos] = useState({}); // {requestId: [urls]}
-  const [sendingChat, setSendingChat] = useState({}); // {requestId: boolean}
-  const [uploadingChatPhoto, setUploadingChatPhoto] = useState({}); // {requestId: boolean}
+  const [chatMessages, setChatMessages] = useState({});
+  const [chatPhotos, setChatPhotos] = useState({});
+  const [sendingChat, setSendingChat] = useState({});
+  const [uploadingChatPhoto, setUploadingChatPhoto] = useState({});
 
-  // NEW: Photo upload for creating maintenance request
   const [newRequestPhotos, setNewRequestPhotos] = useState([]);
   const [uploadingNewRequestPhoto, setUploadingNewRequestPhoto] = useState(false);
 
@@ -107,7 +105,6 @@ export default function PropertyTracker() {
 
   const createMaintenanceMutation = useMutation({
     mutationFn: async (data) => {
-      // ✅ Add initial log entry when tenant creates request
       const initialLog = [{
         date: new Date().toISOString(),
         sender: 'Tenant',
@@ -118,12 +115,11 @@ export default function PropertyTracker() {
       const requestData = {
         ...data,
         communication_log: initialLog,
-        acknowledgment_token: crypto.randomUUID() // Generate secure token for landlord access
+        acknowledgment_token: crypto.randomUUID()
       };
       
       const request = await base44.entities.MaintenanceRequest.create(requestData);
       
-      // Send notifications to landlord/juristic
       try {
         await base44.functions.invoke('sendMaintenanceNotification', {
           maintenanceId: request.id,
@@ -147,7 +143,7 @@ export default function PropertyTracker() {
         property_address: '',
         reported_date: new Date().toISOString().split('T')[0]
       });
-      setNewRequestPhotos([]); // Clear photos after successful creation
+      setNewRequestPhotos([]);
     },
   });
 
@@ -155,7 +151,6 @@ export default function PropertyTracker() {
     mutationFn: async ({ id, status }) => {
       await base44.entities.MaintenanceRequest.update(id, { status });
       
-      // Send notification to tenant about status change
       try {
         await base44.functions.invoke('sendMaintenanceNotification', {
           maintenanceId: id,
@@ -173,7 +168,6 @@ export default function PropertyTracker() {
 
   const language = user?.language || 'en';
 
-  // NEW: Handle photo/video upload for new maintenance request
   const handleNewRequestPhotoUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -242,7 +236,7 @@ export default function PropertyTracker() {
     try {
       const response = await base44.functions.invoke('addMaintenanceComment', {
         maintenanceId: requestId,
-        message: message || (language === 'th' ? '[ส่งรูปภาพ]' : '[Photo sent]'), // Message updated to reflect photo/video
+        message: message || (language === 'th' ? '[ส่งรูปภาพ]' : '[Photo sent]'),
         photoUrls: chatPhotos[requestId] || [],
         senderType: 'Tenant'
       });
@@ -787,7 +781,7 @@ export default function PropertyTracker() {
           )}
         </Card>
 
-        {/* MAINTENANCE SECTION - UPDATED WITH PHOTO UPLOAD IN CREATION FORM */}
+        {/* MAINTENANCE SECTION */}
         <Card className="mb-4 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader 
             className="cursor-pointer"
@@ -849,14 +843,12 @@ export default function PropertyTracker() {
                       />
                     </div>
                     
-                    {/* Photo/Video Upload Section - RESTORED TO WORKING VERSION */}
                     <div>
                       <Label style={{ color: colors.textPrimary }}>
                         <Camera className="w-4 h-4 inline mr-1" />
                         {strings.addPhotos}
                       </Label>
                       
-                      {/* Photo/Video Preview Grid */}
                       {newRequestPhotos.length > 0 && (
                         <div className="grid grid-cols-3 gap-2 mt-2 mb-3">
                           {newRequestPhotos.map((url, index) => {
@@ -894,26 +886,9 @@ export default function PropertyTracker() {
                         </div>
                       )}
                       
-                      {/* Upload Buttons - BACK TO ORIGINAL WORKING VERSION */}
                       <div className="grid grid-cols-2 gap-2 mt-2">
-                        {/* Take Photo/Video Button - capture="user" */}
-                        <label
-                          className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
-                          style={{
-                            backgroundColor: colors.inputBg,
-                            borderColor: colors.borderColor,
-                            color: colors.textPrimary
-                          }}
-                        >
-                          <input
-                            type="file"
-                            accept="image/*,video/*"
-                            capture="user"
-                            multiple
-                            onChange={handleNewRequestPhotoUpload}
-                            className="hidden"
-                            disabled={uploadingNewRequestPhoto}
-                          />
+                        <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                          <input type="file" accept="image/*,video/*" capture multiple onChange={handleNewRequestPhotoUpload} className="hidden" disabled={uploadingNewRequestPhoto} />
                           {uploadingNewRequestPhoto ? (
                             <>
                               <Loader2 className="w-5 h-5 animate-spin" />
@@ -927,23 +902,8 @@ export default function PropertyTracker() {
                           )}
                         </label>
 
-                        {/* Upload from Gallery Button - NO capture */}
-                        <label
-                          className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
-                          style={{
-                            backgroundColor: colors.inputBg,
-                            borderColor: colors.borderColor,
-                            color: colors.textPrimary
-                          }}
-                        >
-                          <input
-                            type="file"
-                            accept="image/*,video/*"
-                            multiple
-                            onChange={handleNewRequestPhotoUpload}
-                            className="hidden"
-                            disabled={uploadingNewRequestPhoto}
-                          />
+                        <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                          <input type="file" accept="image/*,video/*" multiple onChange={handleNewRequestPhotoUpload} className="hidden" disabled={uploadingNewRequestPhoto} />
                           {uploadingNewRequestPhoto ? (
                             <>
                               <Loader2 className="w-5 h-5 animate-spin" />
@@ -1066,7 +1026,6 @@ export default function PropertyTracker() {
                             )}
                           </div>
 
-                          {/* Chat Log Toggle */}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1079,10 +1038,8 @@ export default function PropertyTracker() {
                           </Button>
                         </div>
 
-                        {/* Communication Log + Chat Input */}
                         {isChatExpanded && (
                           <div className="border-t" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF' }}>
-                            {/* Chat Messages */}
                             <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
                               {chatLog.map((entry, index) => {
                                 const isTenant = entry.sender?.toLowerCase().includes('tenant');
@@ -1142,9 +1099,7 @@ export default function PropertyTracker() {
                               })}
                             </div>
 
-                            {/* Chat Input with Working Camera */}
                             <div className="p-4 border-t" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
-                              {/* Photo/Video Preview */}
                               {chatPhotos[request.id] && chatPhotos[request.id].length > 0 && (
                                 <div className="grid grid-cols-4 gap-2 mb-3">
                                   {chatPhotos[request.id].map((url, index) => {
@@ -1181,29 +1136,8 @@ export default function PropertyTracker() {
                               )}
 
                               <div className="flex gap-2">
-                                {/* Take Photo/Video Button - FIXED */}
-                                <label
-                                  className="flex-shrink-0 cursor-pointer"
-                                  style={{
-                                    padding: '10px',
-                                    borderRadius: '8px',
-                                    backgroundColor: uploadingChatPhoto[request.id] ? colors.borderColor : colors.inputBg,
-                                    border: `2px solid ${colors.borderColor}`,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transition: 'all 0.2s'
-                                  }}
-                                >
-                                  <input
-                                    type="file"
-                                    accept="image/*,video/*"
-                                    capture="user"
-                                    multiple
-                                    onChange={(e) => handleChatPhotoUpload(e, request.id)}
-                                    className="hidden"
-                                    disabled={uploadingChatPhoto[request.id]}
-                                  />
+                                <label className="flex-shrink-0 cursor-pointer" style={{ padding: '10px', borderRadius: '8px', backgroundColor: uploadingChatPhoto[request.id] ? colors.borderColor : colors.inputBg, border: `2px solid ${colors.borderColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
+                                  <input type="file" accept="image/*,video/*" capture multiple onChange={(e) => handleChatPhotoUpload(e, request.id)} className="hidden" disabled={uploadingChatPhoto[request.id]} />
                                   {uploadingChatPhoto[request.id] ? (
                                     <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
                                   ) : (
@@ -1211,28 +1145,8 @@ export default function PropertyTracker() {
                                   )}
                                 </label>
 
-                                {/* Upload from Gallery Button - NO capture */}
-                                <label
-                                  className="flex-shrink-0 cursor-pointer"
-                                  style={{
-                                    padding: '10px',
-                                    borderRadius: '8px',
-                                    backgroundColor: uploadingChatPhoto[request.id] ? colors.borderColor : colors.inputBg,
-                                    border: `2px solid ${colors.borderColor}`,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transition: 'all 0.2s'
-                                  }}
-                                >
-                                  <input
-                                    type="file"
-                                    accept="image/*,video/*"
-                                    multiple
-                                    onChange={(e) => handleChatPhotoUpload(e, request.id)}
-                                    className="hidden"
-                                    disabled={uploadingChatPhoto[request.id]}
-                                  />
+                                <label className="flex-shrink-0 cursor-pointer" style={{ padding: '10px', borderRadius: '8px', backgroundColor: uploadingChatPhoto[request.id] ? colors.borderColor : colors.inputBg, border: `2px solid ${colors.borderColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
+                                  <input type="file" accept="image/*,video/*" multiple onChange={(e) => handleChatPhotoUpload(e, request.id)} className="hidden" disabled={uploadingChatPhoto[request.id]} />
                                   {uploadingChatPhoto[request.id] ? (
                                     <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
                                   ) : (
@@ -1240,7 +1154,6 @@ export default function PropertyTracker() {
                                   )}
                                 </label>
 
-                                {/* Message Input */}
                                 <Input
                                   value={chatMessages[request.id] || ''}
                                   onChange={(e) => setChatMessages(prev => ({ ...prev, [request.id]: e.target.value }))}
@@ -1259,7 +1172,6 @@ export default function PropertyTracker() {
                                   }}
                                 />
 
-                                {/* Send Button */}
                                 <Button
                                   onClick={() => handleSendChatMessage(request.id)}
                                   disabled={sendingChat[request.id] || (!chatMessages[request.id]?.trim() && (!chatPhotos[request.id] || chatPhotos[request.id].length === 0))}

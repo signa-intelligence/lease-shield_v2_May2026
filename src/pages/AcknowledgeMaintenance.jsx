@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,7 +50,6 @@ export default function AcknowledgeMaintenance() {
         } else {
           setNewStatus(response.data.maintenanceRequest.status);
         }
-        // Load existing photos if any
         setCompletionPhotos(response.data.maintenanceRequest.completion_photo_urls || []);
         setBillPhotos(response.data.maintenanceRequest.bill_photo_urls || []);
         setActualCost(response.data.maintenanceRequest.actual_cost?.toString() || '');
@@ -134,7 +132,7 @@ export default function AcknowledgeMaintenance() {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    setUploadingPhotos(true); // Reusing this state for both types of uploads
+    setUploadingPhotos(true);
     try {
       const uploadPromises = files.map(file => 
         base44.integrations.Core.UploadFile({ file })
@@ -149,7 +147,7 @@ export default function AcknowledgeMaintenance() {
       alert('Failed to upload files. Please try again.');
     } finally {
       setUploadingPhotos(false);
-      e.target.value = ''; // Clear input field
+      e.target.value = '';
     }
   };
 
@@ -174,7 +172,6 @@ export default function AcknowledgeMaintenance() {
       });
 
       if (response.data?.success) {
-        // Reload maintenance request to show new message
         await loadMaintenanceRequest();
         setChatMessage('');
         setChatPhotos([]);
@@ -325,7 +322,6 @@ export default function AcknowledgeMaintenance() {
           </CardContent>
         </Card>
 
-        {/* Communication History Card */}
         {maintenanceRequest?.communication_log && (
           <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
@@ -393,9 +389,7 @@ export default function AcknowledgeMaintenance() {
                 </div>
               )}
 
-              {/* Chat Input Area with Working Camera */}
               <div className="border-t pt-4" style={{ borderColor: colors.borderColor }}>
-                {/* Photo/Video Preview */}
                 {chatPhotos.length > 0 && (
                   <div className="grid grid-cols-4 gap-2 mb-3">
                     {chatPhotos.map((url, index) => {
@@ -430,29 +424,8 @@ export default function AcknowledgeMaintenance() {
                 )}
 
                 <div className="flex gap-2 items-center">
-                  {/* Take Photo/Video Button - capture="user" */}
-                  <label
-                    className="flex-shrink-0 cursor-pointer"
-                    style={{
-                      padding: '10px',
-                      borderRadius: '8px',
-                      backgroundColor: uploadingPhotos ? colors.borderColor : colors.cardBg,
-                      border: `2px solid ${colors.borderColor}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*,video/*"
-                      capture="user"
-                      multiple
-                      onChange={handleChatPhotoUpload}
-                      className="hidden"
-                      disabled={uploadingPhotos}
-                    />
+                  <label className="flex-shrink-0 cursor-pointer" style={{ padding: '10px', borderRadius: '8px', backgroundColor: uploadingPhotos ? colors.borderColor : colors.cardBg, border: `2px solid ${colors.borderColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
+                    <input type="file" accept="image/*,video/*" capture multiple onChange={handleChatPhotoUpload} className="hidden" disabled={uploadingPhotos} />
                     {uploadingPhotos ? (
                       <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
                     ) : (
@@ -460,28 +433,8 @@ export default function AcknowledgeMaintenance() {
                     )}
                   </label>
 
-                  {/* Upload from Gallery Button - NO capture */}
-                  <label
-                    className="flex-shrink-0 cursor-pointer"
-                    style={{
-                      padding: '10px',
-                      borderRadius: '8px',
-                      backgroundColor: uploadingPhotos ? colors.borderColor : colors.cardBg,
-                      border: `2px solid ${colors.borderColor}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*,video/*"
-                      multiple
-                      onChange={handleChatPhotoUpload}
-                      className="hidden"
-                      disabled={uploadingPhotos}
-                    />
+                  <label className="flex-shrink-0 cursor-pointer" style={{ padding: '10px', borderRadius: '8px', backgroundColor: uploadingPhotos ? colors.borderColor : colors.cardBg, border: `2px solid ${colors.borderColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
+                    <input type="file" accept="image/*,video/*" multiple onChange={handleChatPhotoUpload} className="hidden" disabled={uploadingPhotos} />
                     {uploadingPhotos ? (
                       <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.textSecondary }} />
                     ) : (
@@ -489,7 +442,6 @@ export default function AcknowledgeMaintenance() {
                     )}
                   </label>
 
-                  {/* Message Input */}
                   <Input
                     value={chatMessage}
                     onChange={(e) => setChatMessage(e.target.value)}
@@ -508,7 +460,6 @@ export default function AcknowledgeMaintenance() {
                     }}
                   />
 
-                  {/* Send Button */}
                   <Button
                     onClick={handleSendChatMessage}
                     disabled={sendingChat || (!chatMessage.trim() && chatPhotos.length === 0)}
@@ -529,7 +480,6 @@ export default function AcknowledgeMaintenance() {
           </Card>
         )}
 
-        {/* Update Status Card */}
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
@@ -598,7 +548,6 @@ export default function AcknowledgeMaintenance() {
                 />
               </div>
 
-              {/* Completion Photos/Videos with Working Camera */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Camera className="w-4 h-4 inline mr-1" />
@@ -643,24 +592,8 @@ export default function AcknowledgeMaintenance() {
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Take Photo/Video - capture="user" */}
-                  <label
-                    className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
-                    style={{
-                      backgroundColor: '#F3F4F6',
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*,video/*"
-                      capture="user"
-                      multiple
-                      onChange={(e) => handlePhotoUpload(e, 'completion')}
-                      className="hidden"
-                      disabled={uploadingPhotos}
-                    />
+                  <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: '#F3F4F6', borderColor: colors.borderColor, color: colors.textPrimary }}>
+                    <input type="file" accept="image/*,video/*" capture multiple onChange={(e) => handlePhotoUpload(e, 'completion')} className="hidden" disabled={uploadingPhotos} />
                     {uploadingPhotos ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -674,23 +607,8 @@ export default function AcknowledgeMaintenance() {
                     )}
                   </label>
 
-                  {/* Upload from Gallery - NO capture */}
-                  <label
-                    className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
-                    style={{
-                      backgroundColor: '#F3F4F6',
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*,video/*"
-                      multiple
-                      onChange={(e) => handlePhotoUpload(e, 'completion')}
-                      className="hidden"
-                      disabled={uploadingPhotos}
-                    />
+                  <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: '#F3F4F6', borderColor: colors.borderColor, color: colors.textPrimary }}>
+                    <input type="file" accept="image/*,video/*" multiple onChange={(e) => handlePhotoUpload(e, 'completion')} className="hidden" disabled={uploadingPhotos} />
                     {uploadingPhotos ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -706,7 +624,6 @@ export default function AcknowledgeMaintenance() {
                 </div>
               </div>
 
-              {/* Bill Photos/Videos with Working Camera */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Receipt className="w-4 h-4 inline mr-1" />
@@ -751,24 +668,8 @@ export default function AcknowledgeMaintenance() {
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Take Photo/Video - capture="user" */}
-                  <label
-                    className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
-                    style={{
-                      backgroundColor: '#F3F4F6',
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*,video/*"
-                      capture="user"
-                      multiple
-                      onChange={(e) => handlePhotoUpload(e, 'bill')}
-                      className="hidden"
-                      disabled={uploadingPhotos}
-                    />
+                  <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: '#F3F4F6', borderColor: colors.borderColor, color: colors.textPrimary }}>
+                    <input type="file" accept="image/*,video/*" capture multiple onChange={(e) => handlePhotoUpload(e, 'bill')} className="hidden" disabled={uploadingPhotos} />
                     {uploadingPhotos ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -782,23 +683,8 @@ export default function AcknowledgeMaintenance() {
                     )}
                   </label>
 
-                  {/* Upload from Gallery - NO capture */}
-                  <label
-                    className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2"
-                    style={{
-                      backgroundColor: '#F3F4F6',
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*,video/*"
-                      multiple
-                      onChange={(e) => handlePhotoUpload(e, 'bill')}
-                      className="hidden"
-                      disabled={uploadingPhotos}
-                    />
+                  <label className="flex items-center justify-center gap-2 p-3 rounded-lg cursor-pointer transition-all border-2" style={{ backgroundColor: '#F3F4F6', borderColor: colors.borderColor, color: colors.textPrimary }}>
+                    <input type="file" accept="image/*,video/*" multiple onChange={(e) => handlePhotoUpload(e, 'bill')} className="hidden" disabled={uploadingPhotos} />
                     {uploadingPhotos ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
