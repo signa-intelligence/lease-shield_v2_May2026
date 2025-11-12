@@ -9,9 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
-import NotificationSettings from "../components/settings/NotificationSettings"; // This import will be removed
-import NotificationPreferences from "../components/settings/NotificationPreferences"; // New import
-import NotificationAnalytics from "../components/dashboard/NotificationAnalytics"; // New import
+import NotificationPreferences from "../components/settings/NotificationPreferences";
+import NotificationAnalytics from "../components/dashboard/NotificationAnalytics";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import LineConnectionStatus from "../components/shared/LineConnectionStatus"; // New import
 
 
 const PLAN_DETAILS = [
@@ -1612,6 +1612,11 @@ export default function Account() {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* NEW: LINE Connection Status - PROMINENT PLACEMENT */}
+        <div className="mb-6">
+          <LineConnectionStatus user={user} colors={colors} />
         </div>
 
         {/* Landlord Information Card */}
