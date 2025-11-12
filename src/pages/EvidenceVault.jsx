@@ -706,24 +706,41 @@ export default function EvidenceVault() {
                     </div>
                   </div>
 
-                  {/* UPLOAD BUTTON - Now properly outside the file list div */}
-                  <Button
+                  {/* UPLOAD BUTTON - Fixed with explicit white text color */}
+                  <button
                     onClick={handleUpload}
                     disabled={uploading}
-                    className="w-full bg-ls-forest hover:bg-ls-forest/90 py-6 text-base font-bold"
+                    className="w-full py-6 text-base font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+                    style={{
+                      backgroundColor: uploading ? '#9CA3AF' : '#0C3B2E',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      cursor: uploading ? 'not-allowed' : 'pointer',
+                      opacity: uploading ? 0.7 : 1
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!uploading) {
+                        e.target.style.backgroundColor = '#0a2f25';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!uploading) {
+                        e.target.style.backgroundColor = '#0C3B2E';
+                      }
+                    }}
                   >
                     {uploading ? (
                       <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        {strings.uploading}
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>{strings.uploading}</span>
                       </>
                     ) : (
                       <>
-                        <Upload className="w-5 h-5 mr-2" />
-                        {strings.uploadButton}
+                        <Upload className="w-5 h-5" />
+                        <span>{strings.uploadButton}</span>
                       </>
                     )}
-                  </Button>
+                  </button>
                 </>
               )}
             </div>
