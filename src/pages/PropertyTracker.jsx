@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -90,7 +89,6 @@ export default function PropertyTracker() {
 
   const language = user?.language || 'en';
 
-  // Replace mutations with optimistic versions
   const createDepositMutation = useOptimisticCreate({
     entityName: 'DepositTracker',
     queryKey: ['deposits'],
@@ -237,25 +235,23 @@ export default function PropertyTracker() {
       confirmClose: "ทำเครื่องหมายว่าเสร็จสิ้นและปิดคำขอนี้?",
       archived: "เก็บถาวร",
       active: "ใช้งาน",
-      imagesOptimized: "ปรับขนาดไฟล์แล้ว", // Original: "ปรับขนาดไฟล์แล้ว"
-      imagesOptimizedDesc: "รูป • ประหยัด", // Original: "รูป • ประหยัด"
+      imagesOptimized: "ปรับขนาดไฟล์แล้ว",
+      imagesOptimizedDesc: "รูป • ประหยัด",
     }
   };
 
   const strings = t[language];
 
-  // Function to generate sequential request number
   const generateRequestNumber = () => {
     if (maintenanceRequests.length === 0) {
       return 'MR-001';
     }
     
-    // Find highest existing number
     const existingNumbers = maintenanceRequests
       .map(r => r.request_number)
-      .filter(num => num && typeof num === 'string' && num.startsWith('MR-')) // Ensure it's a string starting with 'MR-'
+      .filter(num => num && typeof num === 'string' && num.startsWith('MR-'))
       .map(num => parseInt(num.split('-')[1]))
-      .filter(num => !isNaN(num)); // Filter out any non-numeric results after parsing
+      .filter(num => !isNaN(num));
     
     const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
     const nextNumber = maxNumber + 1;
@@ -301,7 +297,6 @@ export default function PropertyTracker() {
         };
         reader.readAsDataURL(file);
       } else {
-        // For non-image files, you might want a placeholder or just their name
         setPhotoPreviews(prev => [...prev, URL.createObjectURL(file)]);
       }
     });
@@ -309,16 +304,7 @@ export default function PropertyTracker() {
 
   const handleRemovePhoto = (indexToRemove) => {
     haptic.light();
-    // The photoFiles array contains the actual File objects, while photoPreviews contains data URLs or blob URLs.
-    // When removing, we need to make sure we remove the correct File object if it was a newly added one.
-    // If it was an original URL from editingMaintenance, it's not in photoFiles, so we just remove from previews.
-
-    // Filter out the file from photoFiles based on index, but only if it's a 'new' file.
-    // This logic assumes photoPreviews and photoFiles are kept in sync for new uploads.
-    // For existing `photo_urls` from `editingMaintenance`, they are only in `photoPreviews`.
     const newPhotoFiles = photoFiles.filter((_, i) => {
-      // Find its corresponding preview. If it was a data URL, it's a new file.
-      // This is a simplified check. A more robust solution might involve unique IDs.
       const isNewFile = photoPreviews[i] && (photoPreviews[i].startsWith('data:image') || photoPreviews[i].startsWith('blob:'));
       return i !== indexToRemove || !isNewFile;
     });
@@ -326,7 +312,6 @@ export default function PropertyTracker() {
     
     setPhotoPreviews(prev => prev.filter((_, i) => i !== indexToRemove));
   };
-
 
   const handleDepositSubmit = async () => {
     haptic.medium();
@@ -383,7 +368,6 @@ export default function PropertyTracker() {
         await createDepositMutation.mutateAsync(minimalDeposit);
       }
       setEditingRent(false);
-      setEditingDeposit(false); // If rent is set, deposit might also be in an editing state
     } catch (error) {
       console.error('Failed to submit rent:', error);
       alert('Failed to save rent schedule. Please try again.');
@@ -457,7 +441,6 @@ export default function PropertyTracker() {
       const createdRequest = await createMaintenanceMutation.mutateAsync(maintenanceData);
 
       console.log('✅ Maintenance request created successfully!');
-      // State reset from original onSuccess:
       setShowAddMaintenance(false);
       setPhotoFiles([]);
       setPhotoPreviews([]);
@@ -548,7 +531,6 @@ export default function PropertyTracker() {
         setPhotoUploadProgress(100);
       }
 
-      // Filter out temporary data URLs from photoPreviews, keeping only existing URLs
       const remainingOriginalPhotoUrls = photoPreviews.filter(p => !p.startsWith('data:image') && !p.startsWith('blob:'));
       const finalPhotoUrls = [...remainingOriginalPhotoUrls, ...newUploadUrls];
 
@@ -567,12 +549,11 @@ export default function PropertyTracker() {
       };
       const updatedCommunicationLog = [...(editingMaintenance.communication_log || []), updateLogEntry];
 
-
       const updatedData = {
         ...maintenanceForm,
         photo_urls: finalPhotoUrls,
         communication_log: updatedCommunicationLog,
-        created_by: user.email // Ensure created_by is maintained/set
+        created_by: user.email
       };
 
       await updateMaintenanceMutation.mutateAsync({
@@ -580,7 +561,6 @@ export default function PropertyTracker() {
         data: updatedData
       });
 
-      // State reset from original onSuccess:
       setEditingMaintenance(null);
       setShowAddMaintenance(false);
       setPhotoFiles([]);
@@ -607,7 +587,6 @@ export default function PropertyTracker() {
   const handleCloseMaintenance = async (request) => {
     haptic.medium();
     if (!confirm(strings.confirmClose)) return;
-
 
     try {
       const closeLogEntry = {
@@ -710,7 +689,6 @@ export default function PropertyTracker() {
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
 
-        {/* FAB for Adding Maintenance */}
         {!showAddMaintenance && !editingMaintenance && (
           <FloatingActionButton
             icon={Plus}
@@ -735,7 +713,6 @@ export default function PropertyTracker() {
           />
         )}
 
-        {/* DEPOSIT SECTION - Enhanced styling */}
         <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
           <CardHeader
             className="cursor-pointer"
@@ -918,7 +895,6 @@ export default function PropertyTracker() {
           )}
         </Card>
 
-        {/* RENT SECTION - Enhanced styling */}
         <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.rentAccent}` }}>
           <CardHeader
             className="cursor-pointer"
@@ -1109,7 +1085,6 @@ export default function PropertyTracker() {
           )}
         </Card>
 
-        {/* MAINTENANCE SECTION - Enhanced styling with actions */}
         <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.maintenanceAccent}` }}>
           <CardHeader
             className="cursor-pointer"
@@ -1158,9 +1133,9 @@ export default function PropertyTracker() {
                     e.stopPropagation();
                     haptic.light();
                     setShowAddMaintenance(true);
-                    setEditingMaintenance(null); // Clear editing state when adding new
-                    setCompressionStats(null); // Clear compression stats
-                    setMaintenanceForm({ // Reset form for new entry
+                    setEditingMaintenance(null);
+                    setCompressionStats(null);
+                    setMaintenanceForm({
                       issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
                     });
                     setPhotoFiles([]);
@@ -1182,7 +1157,6 @@ export default function PropertyTracker() {
                     {editingMaintenance ? strings.edit : strings.addMaintenance}
                   </h3>
                   
-                  {/* Upload Progress */}
                   {uploadingPhotos && (
                     <div className="mb-4">
                       <UploadProgress
@@ -1196,7 +1170,6 @@ export default function PropertyTracker() {
                     </div>
                   )}
 
-                  {/* Compression Stats Notice */}
                   {!uploadingPhotos && compressionStats && compressionStats.compressedCount > 0 && (
                     <div className="mb-4 p-3 rounded-lg border-2" style={{
                       backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
@@ -1437,7 +1410,6 @@ export default function PropertyTracker() {
               )}
               {(activeRequests.length > 0 || completedRequests.length > 0) && (
                 <div className="space-y-4">
-                  {/* Active Requests - WITH SWIPE */}
                   {activeRequests.length > 0 && (
                     <div>
                       <h4 className="text-lg font-bold mb-3" style={{ color: colors.textPrimary }}>
@@ -1552,7 +1524,7 @@ export default function PropertyTracker() {
                                 )}
                               </div>
 
-                              <div className="flex items-center gap-2 flex-wrap mt-4 pt-3 border-t" style={{ borderColor: colors.borderColor }>
+                              <div className="flex items-center gap-2 flex-wrap mt-4 pt-3 border-t" style={{ borderColor: colors.borderColor }}>
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -1566,7 +1538,6 @@ export default function PropertyTracker() {
                                   <Edit2 className="w-3 h-3 mr-1" />
                                   {strings.edit}
                                 </Button>
-                                {/* The Close and Delete buttons are now handled by swipe, but kept for non-swipe interactions */}
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -1601,7 +1572,6 @@ export default function PropertyTracker() {
                     </div>
                   )}
 
-                  {/* Completed Requests */}
                   {completedRequests.length > 0 && (
                     <div>
                       <h4 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: colors.textSecondary }}>
@@ -1641,7 +1611,6 @@ export default function PropertyTracker() {
                                     <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
                                   </div>
                                 </div>
-                                {/* Delete button kept for non-swipe interactions */}
                                 <Button
                                   variant="ghost"
                                   size="sm"
