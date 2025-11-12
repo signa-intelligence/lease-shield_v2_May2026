@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
   Edit2, Save, X, Wrench, AlertCircle, CheckCircle2, Clock,
-  DollarSign, ArrowLeft, Shield, Camera, Image as ImageIcon, Loader2, Trash2, Archive
+  DollarSign, ArrowLeft, Shield, Camera, Image as ImageIcon, Loader2, Trash2, Archive, Hash
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -30,10 +30,10 @@ export default function PropertyTracker() {
   const [editingDeposit, setEditingDeposit] = useState(false);
   const [editingRent, setEditingRent] = useState(false);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
-  const [editingMaintenance, setEditingMaintenance] = useState(null); // Stores the maintenance request object being edited
+  const [editingMaintenance, setEditingMaintenance] = useState(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
-  const [photoFiles, setPhotoFiles] = useState([]); // Stores actual File objects for new uploads
-  const [photoPreviews, setPhotoPreviews] = useState([]); // Stores data URLs for new files AND existing URLs for edited requests
+  const [photoFiles, setPhotoFiles] = useState([]);
+  const [photoPreviews, setPhotoPreviews] = useState([]);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -123,10 +123,10 @@ export default function PropertyTracker() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       setEditingMaintenance(null);
-      setShowAddMaintenance(false); // Close the form after successful update
+      setShowAddMaintenance(false);
       setPhotoFiles([]);
       setPhotoPreviews([]);
-      setMaintenanceForm({ // Clear form
+      setMaintenanceForm({
         issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
       });
     },
@@ -150,9 +150,9 @@ export default function PropertyTracker() {
     borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
     inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
     sectionBg: isDarkMode ? '#353A3D' : '#F8FAFC',
-    depositAccent: '#C7A338', // Golden
-    rentAccent: '#3B82F6',    // Blue
-    maintenanceAccent: '#F59E0B' // Orange
+    depositAccent: '#C7A338',
+    rentAccent: '#3B82F6',
+    maintenanceAccent: '#F59E0B'
   };
 
   const t = {
@@ -258,6 +258,25 @@ export default function PropertyTracker() {
 
   const strings = t[language];
 
+  // Function to generate sequential request number
+  const generateRequestNumber = () => {
+    if (maintenanceRequests.length === 0) {
+      return 'MR-001';
+    }
+    
+    // Find highest existing number
+    const existingNumbers = maintenanceRequests
+      .map(r => r.request_number)
+      .filter(num => num && typeof num === 'string' && num.startsWith('MR-')) // Ensure it's a string starting with 'MR-'
+      .map(num => parseInt(num.split('-')[1]))
+      .filter(num => !isNaN(num)); // Filter out any non-numeric results after parsing
+    
+    const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+    const nextNumber = maxNumber + 1;
+    
+    return `MR-${String(nextNumber).padStart(3, '0')}`;
+  };
+
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
       ...prev,
@@ -281,21 +300,11 @@ export default function PropertyTracker() {
   };
 
   const handleRemovePhoto = (indexToRemove) => {
-    // Determine if the photo being removed is a newly added file or an existing URL
     const previewToRemove = photoPreviews[indexToRemove];
     if (previewToRemove && previewToRemove.startsWith('data:image')) {
-      // It's a newly added file (data URL)
-      // Find the corresponding file in photoFiles to remove it
-      // This is a simplified approach; a more robust solution would track `File` objects with unique IDs
-      const newPhotoFiles = photoFiles.filter((_, i) => {
-          // This comparison is not robust without unique IDs for files.
-          // For simplicity, we'll assume `photoFiles` order matches `data:image` previews.
-          // A better way would be to store `File` objects in a map keyed by a generated ID.
-          return i !== indexToRemove; // This is only correct if no existing URLs are before it
-      });
+      const newPhotoFiles = photoFiles.filter((_, i) => i !== indexToRemove);
       setPhotoFiles(newPhotoFiles);
     }
-    // Remove from previews
     setPhotoPreviews(prev => prev.filter((_, i) => i !== indexToRemove));
   };
 
@@ -326,12 +335,11 @@ export default function PropertyTracker() {
       rent_alert_days_before: parseInt(rentForm.rent_alert_days_before, 10)
     };
 
-    // If a deposit record exists, update it. Otherwise, create a minimal one.
     if (deposits.length > 0) {
       updateDepositMutation.mutate({ id: deposits[0].id, data });
     } else {
       const minimalDeposit = {
-        deposit_amount: 0, // Default for minimal record
+        deposit_amount: 0,
         deposit_paid_date: new Date().toISOString().split('T')[0],
         expected_return_date: new Date().toISOString().split('T')[0],
         status: 'tracking',
@@ -367,6 +375,9 @@ export default function PropertyTracker() {
         console.log('✅ Photos uploaded:', photoUrls.length);
       }
 
+      const requestNumber = generateRequestNumber();
+      console.log('🔢 Generated request number:', requestNumber);
+
       const initialLogEntry = {
         timestamp: new Date().toISOString(),
         message: `${language === 'th' ? 'คำขอซ่อมถูกสร้างโดย' : 'Maintenance request created by'} ${user?.full_name || user?.email}`,
@@ -377,18 +388,20 @@ export default function PropertyTracker() {
         metadata: {
           issue_title: maintenanceForm.issue_title,
           category: maintenanceForm.category,
-          priority: maintenanceForm.priority
+          priority: maintenanceForm.priority,
+          request_number: requestNumber
         }
       };
 
       const maintenanceData = {
         ...maintenanceForm,
+        request_number: requestNumber,
         created_by: user.email,
         photo_urls: photoUrls,
         communication_log: [initialLogEntry]
       };
 
-      console.log('📝 Creating maintenance request with explicit created_by:', user.email);
+      console.log('📝 Creating maintenance request with number:', requestNumber);
 
       const createdRequest = await createMaintenanceMutation.mutateAsync(maintenanceData);
 
@@ -406,8 +419,8 @@ export default function PropertyTracker() {
           if (sentCount > 0) {
             alert(
               language === 'th'
-                ? `✅ คำขอซ่อมถูกส่งแล้ว!\n\nแจ้งไปยัง: ${sentCount} ผู้รับ\n\nคุณจะได้รับการแจ้งเตือนเมื่อมีการตอบกลับ`
-                : `✅ Maintenance request sent!\n\nNotified: ${sentCount} recipient(s)\n\nYou'll be notified when they respond`
+                ? `✅ คำขอซ่อมถูกส่งแล้ว!\n\nเลขที่: ${requestNumber}\nแจ้งไปยัง: ${sentCount} ผู้รับ\n\nคุณจะได้รับการแจ้งเตือนเมื่อมีการตอบกลับ`
+                : `✅ Maintenance request sent!\n\nRequest #: ${requestNumber}\nNotified: ${sentCount} recipient(s)\n\nYou'll be notified when they respond`
             );
           }
         }
@@ -426,7 +439,7 @@ export default function PropertyTracker() {
 
   const handleEditMaintenance = (request) => {
     setEditingMaintenance(request);
-    setShowAddMaintenance(true); // Open the form
+    setShowAddMaintenance(true);
     setMaintenanceForm({
       issue_title: request.issue_title,
       description: request.description,
@@ -435,8 +448,7 @@ export default function PropertyTracker() {
       property_address: request.property_address || '',
       reported_date: request.reported_date
     });
-    setPhotoFiles([]); // Clear any new files from previous sessions
-    // Pre-fill photo previews with existing URLs from the request
+    setPhotoFiles([]);
     setPhotoPreviews(request.photo_urls || []);
   };
 
@@ -453,8 +465,6 @@ export default function PropertyTracker() {
         newUploadUrls = await Promise.all(uploadPromises).then(results => results.map(result => result.file_url));
       }
 
-      // Filter photoPreviews to keep only original URLs that are still present
-      // and then add newly uploaded ones.
       const remainingOriginalPhotoUrls = photoPreviews.filter(p => !p.startsWith('data:image'));
       const finalPhotoUrls = [...remainingOriginalPhotoUrls, ...newUploadUrls];
 
@@ -1186,13 +1196,27 @@ export default function PropertyTracker() {
                           <div key={request.id} className="p-4 rounded-lg border-2" style={{ borderColor: colors.borderColor, backgroundColor: colors.cardBg }}>
                             <div className="flex items-start justify-between gap-3 mb-3">
                               <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  {request.request_number && (
+                                    <Badge 
+                                      className="font-mono text-xs"
+                                      style={{
+                                        backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
+                                        color: colors.maintenanceAccent,
+                                        border: `1px solid ${colors.maintenanceAccent}`,
+                                        fontWeight: 'bold'
+                                      }}
+                                    >
+                                      <Hash className="w-3 h-3 mr-1" />
+                                      {request.request_number}
+                                    </Badge>
+                                  )}
+                                  <Badge className={getStatusColor(request.status)}>
+                                    {request.status}
+                                  </Badge>
+                                </div>
                                 <h4 className="font-bold text-lg" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
                                 <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{request.description}</p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge className={getStatusColor(request.status)}>
-                                  {request.status}
-                                </Badge>
                               </div>
                             </div>
 
@@ -1320,12 +1344,26 @@ export default function PropertyTracker() {
                           <div key={request.id} className="p-3 rounded-lg border opacity-60" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
-                                <h4 className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
-                                <div className="flex items-center gap-3 text-xs mt-1" style={{ color: colors.textSecondary }}>
-                                  <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
+                                <div className="flex items-center gap-2 mb-1">
+                                  {request.request_number && (
+                                    <Badge 
+                                      className="font-mono text-xs"
+                                      style={{
+                                        backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
+                                        color: colors.textSecondary,
+                                        border: `1px solid ${colors.borderColor}`
+                                      }}
+                                    >
+                                      {request.request_number}
+                                    </Badge>
+                                  )}
                                   <Badge className={getStatusColor(request.status)} style={{ fontSize: '10px' }}>
                                     {request.status}
                                   </Badge>
+                                </div>
+                                <h4 className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{request.issue_title}</h4>
+                                <div className="flex items-center gap-3 text-xs mt-1" style={{ color: colors.textSecondary }}>
+                                  <span>📅 {format(new Date(request.reported_date), 'MMM d, yyyy')}</span>
                                 </div>
                               </div>
                               <Button
