@@ -121,124 +121,87 @@ export default function NotificationSummary({ language = 'en', colors }) {
     }
   };
 
-  const str = t[language] || t.en;
+  const str = strings[language] || strings.en;
+
+  const getTypeColor = (type) => {
+    if (type.includes('overdue') || type === '0d_notice') return '#EF4444';
+    if (type.includes('3d')) return '#F59E0B';
+    if (type.includes('7d')) return '#EAB308';
+    if (type.includes('30d')) return '#10B981';
+    return '#3B82F6';
+  };
+
+  const getTimeAgo = (date) => {
+    const hours = differenceInHours(new Date(), new Date(date));
+    if (hours < 1) return str.justNow;
+    return `${hours} ${str.hoursAgo}`;
+  };
+
+  const recentLogs = myLogs.slice(0, 5);
 
   return (
-    <Card 
-      className="border-none" 
-      style={{ 
-        backgroundColor: colors.cardBg,
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        borderRadius: '16px'
-      }}
-    >
-      <CardHeader className="pb-4" style={{ 
-        borderBottom: `1px solid ${colors.borderColor}`,
-        backgroundColor: isDarkMode ? '#353A3D' : '#F9FAFB',
-        borderTopLeftRadius: '16px',
-        borderTopRightRadius: '16px'
-      }}>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
-            <FileText className="w-5 h-5 text-ls-forest" />
-            {str.recentLeases}
-          </CardTitle>
-          {leases.length > 0 && (
-            <Link to={createPageUrl("UploadScan")}>
-              <button
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '8px',
-                  backgroundColor: 'transparent',
-                  color: '#0C3B2E',
-                  border: '1.5px solid #0C3B2E',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#0C3B2E';
-                  e.target.style.color = '#FFFFFF';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = '#0C3B2E';
-                }}
-              >
-                {str.viewAll}
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            </Link>
-          )}
-        </div>
+    <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+      <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+        <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+          <Bell className="w-5 h-5 text-blue-600" />
+          {str.title}
+        </CardTitle>
       </CardHeader>
-      <CardContent className="p-6">
-        {leases.length === 0 ? (
-          <div className="text-center py-12">
-            <div 
-              className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(135deg, rgba(12, 59, 46, 0.1) 0%, rgba(12, 59, 46, 0.05) 100%)'
-              }}
-            >
-              <Upload className="w-10 h-10" style={{ color: colors.textSecondary, opacity: 0.4 }} />
-            </div>
-            <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
-              {str.noLeases}
+      <CardContent className="p-4">
+        {recentLogs.length === 0 ? (
+          <div className="text-center py-8">
+            <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-600" />
+            <p className="font-semibold" style={{ color: colors.textPrimary }}>
+              {str.allCaughtUp}
             </p>
-            <p className="text-sm" style={{ color: colors.textSecondary }}>
-              {str.scanFirst}
+            <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
+              {str.noNotifications}
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {leases.slice(0, 5).map((lease) => (
+            {recentLogs.map((log) => (
               <div
-                key={lease.id}
-                onClick={() => navigate(createPageUrl("UploadScan") + `?leaseId=${lease.id}`)}
-                className="p-4 rounded-xl cursor-pointer"
+                key={log.id}
+                className="p-3 rounded-lg border"
                 style={{
-                  backgroundColor: colors.itemBg,
-                  border: `1px solid ${colors.borderColor}`,
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.itemHoverBg;
-                  e.currentTarget.style.borderColor = '#0C3B2E';
-                  e.currentTarget.style.transform = 'translateX(4px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.itemBg;
-                  e.currentTarget.style.borderColor = colors.borderColor;
-                  e.currentTarget.style.transform = 'translateX(0)';
+                  backgroundColor: colors.bg,
+                  borderColor: colors.borderColor
                 }}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold mb-1 truncate" style={{ color: colors.textPrimary }}>
-                      {lease.property_address || 'Lease Agreement'}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: colors.textSecondary }}>
-                      <span>{format(new Date(lease.created_date), 'MMM d, yyyy')}</span>
-                      {lease.rent_amount && (
-                        <>
-                          <span>•</span>
-                          <span className="font-semibold">{str.rent}: ฿{lease.rent_amount.toLocaleString()}</span>
-                        </>
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{
+                        backgroundColor: `${getTypeColor(log.notification_type)}20`
+                      }}
+                    >
+                      {log.status === 'sent' ? (
+                        <CheckCircle2 className="w-4 h-4" style={{ color: getTypeColor(log.notification_type) }} />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-red-600" />
                       )}
                     </div>
-                  </div>
-                  <div className="flex-shrink-0">
-                    {lease.status === 'scanned' && (
-                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        {str.scanned}
-                      </Badge>
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                        {str.types[log.notification_type] || log.notification_type}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs flex items-center gap-1">
+                          {log.channel === 'LINE' ? (
+                            <MessageCircle className="w-3 h-3" />
+                          ) : (
+                            <Mail className="w-3 h-3" />
+                          )}
+                          {str.via} {log.channel}
+                        </Badge>
+                        <span className="text-xs flex items-center gap-1" style={{ color: colors.textSecondary }}>
+                          <Clock className="w-3 h-3" />
+                          {getTimeAgo(log.created_date)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
