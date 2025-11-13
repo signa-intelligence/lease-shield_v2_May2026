@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -256,7 +257,7 @@ export default function Timeline() {
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   const allEvents = useMemo(() => {
     const events = [];

@@ -1,12 +1,10 @@
-
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Bell, TrendingUp, TrendingDown, MessageCircle, Mail, CheckCircle2, AlertCircle } from 'lucide-react';
-import { differenceInDays, subDays, startOfDay } from 'date-fns';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import React from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Bell, TrendingUp, Mail, MessageSquare } from "lucide-react";
+import { subDays } from "date-fns";
 
 export default function NotificationAnalytics({ language = 'en', colors }) {
   const { data: user } = useQuery({
@@ -15,10 +13,28 @@ export default function NotificationAnalytics({ language = 'en', colors }) {
   });
 
   const { data: logs = [] } = useQuery({
-    queryKey: ['myNotificationLogs'],
+    queryKey: ['notificationLogs'],
     queryFn: () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 100),
     enabled: !!user,
   });
+
+  const thirtyDaysAgo = subDays(new Date(), 30);
+  const recentLogs = logs.filter(log => new Date(log.created_date) >= thirtyDaysAgo);
+
+  const totalSent = recentLogs.length;
+  const successCount = recentLogs.filter(l => l.status === 'sent').length;
+  const successRate = totalSent > 0 ? Math.round((successCount / totalSent) * 100) : 0;
+
+  const byChannel = {
+    LINE: recentLogs.filter(l => l.channel === 'LINE').length,
+    Email: recentLogs.filter(l => l.channel === 'Email').length
+  };
+
+  const byType = {};
+  recentLogs.forEach(log => {
+    byType[log.notification_type] = (byType[log.notification_type] || 0) + 1;
+  });
+  const mostCommonType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0];
 
   const strings = {
     en: {
@@ -85,222 +101,70 @@ export default function NotificationAnalytics({ language = 'en', colors }) {
 
   const str = strings[language] || strings.en;
 
-  // Filter last 30 days
-  const thirtyDaysAgo = subDays(new Date(), 30);
-  const recentLogs = logs.filter(log => new Date(log.created_date) >= thirtyDaysAgo);
-
-  if (recentLogs.length === 0) {
+  if (totalSent === 0) {
     return (
       <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-        <CardContent className="p-12 text-center">
-          <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" style={{ color: colors.textSecondary }} />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+            <TrendingUp className="w-5 h-5 text-ls-gold" />
+            {str.title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-8">
+          <Bell className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
           <p style={{ color: colors.textSecondary }}>{str.noData}</p>
         </CardContent>
       </Card>
     );
   }
 
-  // Calculate stats
-  const totalSent = recentLogs.length;
-  const successCount = recentLogs.filter(l => l.status === 'sent').length;
-  const successRate = Math.round((successCount / totalSent) * 100);
-
-  // Channel breakdown
-  const channelData = [
-    {
-      name: 'LINE',
-      value: recentLogs.filter(l => l.channel === 'LINE').length,
-      color: '#10B981'
-    },
-    {
-      name: 'Email',
-      value: recentLogs.filter(l => l.channel === 'Email').length,
-      color: '#3B82F6'
-    }
-  ].filter(d => d.value > 0);
-
-  // Type breakdown
-  const typeBreakdown = recentLogs.reduce((acc, log) => {
-    acc[log.notification_type] = (acc[log.notification_type] || 0) + 1;
-    return acc;
-  }, {});
-
-  const topType = Object.entries(typeBreakdown).sort((a, b) => b[1] - a[1])[0];
-
-  // Daily trend (last 7 days)
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const date = subDays(new Date(), 6 - i);
-    const dayStart = startOfDay(date);
-    const dayLogs = recentLogs.filter(log => {
-      const logDate = startOfDay(new Date(log.created_date));
-      return logDate.getTime() === dayStart.getTime();
-    });
-
-    return {
-      date: date.toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { weekday: 'short' }),
-      count: dayLogs.length
-    };
-  });
-
-  const avgDaily = Math.round(last7Days.reduce((sum, d) => sum + d.count, 0) / 7);
-  const todayCount = last7Days[last7Days.length - 1]?.count || 0;
-  const trend = todayCount >= avgDaily ? 'up' : 'down';
-
   return (
     <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-      <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+      <CardHeader>
         <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-          <Bell className="w-5 h-5 text-blue-600" />
+          <TrendingUp className="w-5 h-5 text-ls-gold" />
           {str.title}
+          <Badge className="bg-blue-100 text-blue-800">{str.last30Days}</Badge>
         </CardTitle>
-        <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-          {str.last30Days}
-        </p>
       </CardHeader>
-
-      <CardContent className="p-6">
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div
-            className="p-4 rounded-lg"
-            style={{
-              backgroundColor: colors.bg,
-              border: `1px solid ${colors.borderColor}`
-            }}
-          >
-            <p className="text-xs mb-1" style={{ color: colors.textSecondary }}>
-              {str.totalSent}
-            </p>
-            <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-              {totalSent}
-            </p>
-            <div className="flex items-center gap-1 mt-1">
-              {trend === 'up' ? (
-                <TrendingUp className="w-3 h-3 text-emerald-600" />
-              ) : (
-                <TrendingDown className="w-3 h-3 text-red-600" />
-              )}
-              <span className="text-xs" style={{ color: trend === 'up' ? '#10B981' : '#EF4444' }}>
-                {avgDaily}/day avg
-              </span>
-            </div>
-          </div>
-
-          <div
-            className="p-4 rounded-lg"
-            style={{
-              backgroundColor: colors.bg,
-              border: `1px solid ${colors.borderColor}`
-            }}
-          >
-            <p className="text-xs mb-1" style={{ color: colors.textSecondary }}>
-              {str.successRate}
-            </p>
-            <p className="text-2xl font-bold" style={{ color: successRate >= 90 ? '#10B981' : '#EAB308' }}>
-              {successRate}%
-            </p>
-            <div className="flex items-center gap-1 mt-1">
-              {successRate >= 90 ? (
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-              ) : (
-                <AlertCircle className="w-3 h-3 text-amber-600" />
-              )}
-              <span className="text-xs" style={{ color: successRate >= 90 ? '#10B981' : '#EAB308' }}>
-                {successCount}/{totalSent}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Trend Chart */}
-        <div className="mb-6">
-          <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
-            {str.trend}
-          </p>
-          <ResponsiveContainer width="100%" height={120}>
-            <LineChart data={last7Days}>
-              <XAxis
-                dataKey="date"
-                stroke={colors.textSecondary}
-                style={{ fontSize: '12px' }}
-              />
-              <YAxis
-                stroke={colors.textSecondary}
-                style={{ fontSize: '12px' }}
-                width={30}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: colors.cardBg,
-                  border: `1px solid ${colors.borderColor}`,
-                  borderRadius: '8px',
-                  color: colors.textPrimary
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="count"
-                stroke="#3B82F6"
-                strokeWidth={2}
-                dot={{ fill: '#3B82F6', r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Channel Breakdown */}
+      <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
-              {str.byChannel}
-            </p>
-            <div className="space-y-2">
-              {channelData.map((channel) => (
-                <div key={channel.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {channel.name === 'LINE' ? (
-                      <MessageCircle className="w-4 h-4" style={{ color: channel.color }} />
-                    ) : (
-                      <Mail className="w-4 h-4" style={{ color: channel.color }} />
-                    )}
-                    <span className="text-sm" style={{ color: colors.textPrimary }}>
-                      {channel.name}
-                    </span>
-                  </div>
-                  <Badge style={{
-                    backgroundColor: `${channel.color}20`,
-                    color: channel.color,
-                    border: `1px solid ${channel.color}40`
-                  }}>
-                    {channel.value}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+          <div className="p-4 rounded-lg" style={{ backgroundColor: colors.bg }}>
+            <p className="text-xs mb-1" style={{ color: colors.textSecondary }}>{str.totalSent}</p>
+            <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{totalSent}</p>
           </div>
+          <div className="p-4 rounded-lg" style={{ backgroundColor: colors.bg }}>
+            <p className="text-xs mb-1" style={{ color: colors.textSecondary }}>{str.successRate}</p>
+            <p className="text-2xl font-bold text-emerald-600">{successRate}%</p>
+          </div>
+        </div>
 
-          <div>
-            <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
-              {str.mostCommon}
-            </p>
-            {topType && (
-              <div
-                className="p-3 rounded-lg"
-                style={{
-                  backgroundColor: colors.bg,
-                  border: `1px solid ${colors.borderColor}`
-                }}
-              >
-                <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                  {topType[0].replace(/_/g, ' ')}
-                </p>
-                <p className="text-2xl font-bold mt-1" style={{ color: '#3B82F6' }}>
-                  {topType[1]}
-                </p>
-              </div>
+        <div>
+          <p className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>{str.byChannel}</p>
+          <div className="flex gap-2">
+            {byChannel.LINE > 0 && (
+              <Badge className="bg-emerald-100 text-emerald-700">
+                <MessageSquare className="w-3 h-3 mr-1" />
+                LINE: {byChannel.LINE}
+              </Badge>
+            )}
+            {byChannel.Email > 0 && (
+              <Badge className="bg-blue-100 text-blue-700">
+                <Mail className="w-3 h-3 mr-1" />
+                Email: {byChannel.Email}
+              </Badge>
             )}
           </div>
         </div>
+
+        {mostCommonType && (
+          <div>
+            <p className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>{str.mostCommon}</p>
+            <Badge className="bg-purple-100 text-purple-700">
+              {mostCommonType[0]}: {mostCommonType[1]}
+            </Badge>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

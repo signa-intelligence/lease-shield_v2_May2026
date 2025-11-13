@@ -1,48 +1,30 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, MessageCircle, ExternalLink, Copy, Loader2 } from "lucide-react";
+import { MessageSquare, CheckCircle2, Clock, ExternalLink, Copy, Loader2 } from "lucide-react";
 
 export default function LineConnectionStatus({ user, colors }) {
-  const [showQR, setShowQR] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const queryClient = useQueryClient();
 
-  const startConnectionMutation = useMutation({
+  const checkConnectionMutation = useMutation({
     mutationFn: async () => {
-      // Set pending flag on user
-      await base44.auth.updateMe({ pending_line_connection: true });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return await base44.auth.me();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      setShowQR(true);
+    onSuccess: (data) => {
+      queryClient.setQueryData(['currentUser'], data);
     }
   });
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
   const isConnected = !!user?.line_messaging_token;
-  const isPending = user?.pending_line_connection === true;
-
-  const lineOALink = 'https://line.me/R/ti/p/@leaseshield';
-  const lineOAQR = 'https://qr-official.line.me/sid/M/leaseshield.png';
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(lineOALink);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
-
-  const handleStartConnection = () => {
-    startConnectionMutation.mutate();
-  };
+  const isPending = user?.line_connection_pending === true;
 
   const strings = {
     en: {
@@ -164,109 +146,50 @@ export default function LineConnectionStatus({ user, colors }) {
 
   const str = strings[language] || strings.en;
 
-  if (isConnected) {
-    return (
-      <Card className="border-2 border-green-200" style={{ backgroundColor: colors.cardBg }}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="font-bold" style={{ color: colors.textPrimary }}>{str.title}</p>
-                <Badge className="bg-green-100 text-green-800 mt-1">
-                  {str.connected}
-                </Badge>
-              </div>
-            </div>
-            <MessageCircle className="w-6 h-6 text-green-600" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const lineOAUrl = "https://line.me/R/ti/p/@leaseshield";
+  const qrCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46467_M_gainfriends_2dbarcodes_GW.png";
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(lineOAUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   return (
-    <Card className="border-2 border-amber-200" style={{ backgroundColor: colors.cardBg }}>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-            <XCircle className="w-5 h-5 text-amber-600" />
+    <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+      <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+        <CardTitle className="flex items-center justify-between" style={{ color: colors.textPrimary }}>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-emerald-600" />
+            {str.title}
           </div>
-          <div className="flex-1">
-            <p className="font-bold" style={{ color: colors.textPrimary }}>{str.title}</p>
-            <Badge className="bg-amber-100 text-amber-800 mt-1">
-              {isPending ? str.pending : str.notConnected}
-            </Badge>
-          </div>
-        </div>
-
-        {isPending ? (
-          <div className="space-y-3">
-            <div className="p-3 rounded-lg bg-blue-50 border-2 border-blue-200">
-              <p className="text-sm text-blue-900 mb-2">
-                <strong>{str.pendingMsg}</strong>
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href={lineOALink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg font-bold text-sm hover:bg-green-600 transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  {str.openLine}
-                </a>
-                <button
-                  onClick={handleCopyLink}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-green-500 text-green-600 rounded-lg font-bold text-sm hover:bg-green-50 transition-colors"
-                >
-                  {copiedLink ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      {str.linkCopied}
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      {str.copyLink}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {showQR && (
-              <div className="text-center p-4 border-2 border-dashed border-gray-300 rounded-lg">
-                <img 
-                  src={lineOAQR}
-                  alt="LINE QR Code"
-                  className="w-48 h-48 mx-auto mb-2"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-                <p className="text-xs" style={{ color: colors.textSecondary }}>
-                  {str.scanQR}
-                </p>
-              </div>
+          <Badge className={isConnected ? 'bg-emerald-100 text-emerald-700' : isPending ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}>
+            {isConnected ? (
+              <>
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                {str.connected}
+              </>
+            ) : isPending ? (
+              <>
+                <Clock className="w-3 h-3 mr-1" />
+                {str.pending}
+              </>
+            ) : (
+              str.notConnected
             )}
-
-            <Button
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['currentUser'] })}
-              variant="outline"
-              className="w-full"
-            >
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              {str.checkConnection}
-            </Button>
-          </div>
-        ) : (
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        {!isConnected ? (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                {str.benefits}
-              </p>
-              <ul className="text-sm space-y-1" style={{ color: colors.textSecondary }}>
+            <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF', border: '2px solid #3B82F6' }}>
+              <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>{str.benefits}</h4>
+              <ul className="space-y-1 text-sm" style={{ color: colors.textSecondary }}>
                 <li>{str.benefit1}</li>
                 <li>{str.benefit2}</li>
                 <li>{str.benefit3}</li>
@@ -274,29 +197,65 @@ export default function LineConnectionStatus({ user, colors }) {
               </ul>
             </div>
 
-            <Button
-              onClick={handleStartConnection}
-              disabled={startConnectionMutation.isPending}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold"
-            >
-              {startConnectionMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {str.checking}
-                </>
-              ) : (
-                <>
-                  <MessageCircle className="w-4 h-4 mr-2" />
+            <div className="flex flex-col gap-2">
+              <a href={lineOAUrl} target="_blank" rel="noopener noreferrer">
+                <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <ExternalLink className="w-4 h-4 mr-2" />
                   {str.connectBtn}
-                </>
-              )}
-            </Button>
-
-            <div className="text-center">
-              <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                {str.step1} → {str.step2} → {str.step3}
-              </p>
+                </Button>
+              </a>
+              
+              <Button
+                variant="outline"
+                onClick={handleCopyLink}
+                className="w-full"
+              >
+                {copiedLink ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-600" />
+                    {str.linkCopied}
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-2" />
+                    {str.copyLink}
+                  </>
+                )}
+              </Button>
             </div>
+
+            {isPending && (
+              <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#3A2D1C' : '#FFF7ED', border: '2px solid #F59E0B' }}>
+                <p className="text-sm mb-3" style={{ color: colors.textPrimary }}>
+                  {str.pendingMsg}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => checkConnectionMutation.mutate()}
+                  disabled={checkConnectionMutation.isPending}
+                  className="w-full"
+                >
+                  {checkConnectionMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {str.checking}
+                    </>
+                  ) : (
+                    str.checkConnection
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <CheckCircle2 className="w-16 h-16 mx-auto mb-3 text-emerald-600" />
+            <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>
+              {str.connected}
+            </p>
+            <p className="text-sm" style={{ color: colors.textSecondary }}>
+              {str.benefit1} • {str.benefit2}
+            </p>
           </div>
         )}
       </CardContent>

@@ -80,6 +80,16 @@ export default function Support() {
   };
 
   const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
+  const colors = {
+    bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
+    cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
+    textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
+    textSecondary: isDarkMode ? '#A8ABAD' : '#64748b',
+    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
+    inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
+  };
 
   const t = {
     en: {
@@ -95,7 +105,8 @@ export default function Support() {
       myTickets: "My Support Tickets",
       noTickets: "No Support Tickets",
       noTicketsSub: "Need help? Submit a support request and we'll get back to you.",
-      recentTickets: "Recent Tickets"
+      recentTickets: "Recent Tickets",
+      back: "Back"
     },
     th: {
       title: "ความช่วยเหลือและการสนับสนุน",
@@ -110,7 +121,8 @@ export default function Support() {
       myTickets: "คำขอสนับสนุนของฉัน",
       noTickets: "ไม่มีคำขอสนับสนุน",
       noTicketsSub: "ต้องการความช่วยเหลือ? ส่งคำขอสนับสนุนและเราจะติดต่อกลับ",
-      recentTickets: "คำขอล่าสุด"
+      recentTickets: "คำขอล่าสุด",
+      back: "กลับ"
     },
     zh: {
       title: "帮助与支持",
@@ -125,7 +137,8 @@ export default function Support() {
       myTickets: "我的支持工单",
       noTickets: "没有支持工单",
       noTicketsSub: "需要帮助？提交支持请求，我们会回复您。",
-      recentTickets: "最近的工单"
+      recentTickets: "最近的工单",
+      back: "返回"
     },
     ja: {
       title: "ヘルプとサポート",
@@ -140,7 +153,8 @@ export default function Support() {
       myTickets: "私のサポートチケット",
       noTickets: "サポートチケットなし",
       noTicketsSub: "助けが必要ですか？サポートリクエストを送信すれば、ご連絡します。",
-      recentTickets: "最近のチケット"
+      recentTickets: "最近のチケット",
+      back: "戻る"
     },
     ko: {
       title: "도움말 및 지원",
@@ -155,7 +169,8 @@ export default function Support() {
       myTickets: "내 지원 티켓",
       noTickets: "지원 티켓 없음",
       noTicketsSub: "도움이 필요하신가요? 지원 요청을 제출하시면 연락드리겠습니다.",
-      recentTickets: "최근 티켓"
+      recentTickets: "최근 티켓",
+      back: "뒤로"
     }
   };
 

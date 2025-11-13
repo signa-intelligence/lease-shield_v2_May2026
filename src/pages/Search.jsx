@@ -55,20 +55,13 @@ export default function Search() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D'
-  } : {
-    bg: '#ECEFED',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    inputBg: '#FFFFFF'
+  const colors = {
+    bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
+    cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
+    textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
+    textSecondary: isDarkMode ? '#A8ABAD' : '#64748b',
+    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
+    inputBg: isDarkMode ? '#353A3D' : '#FFFFFF'
   };
 
   const strings = {
@@ -97,7 +90,8 @@ export default function Search() {
       open: "Open",
       closed: "Closed",
       reported: "Reported",
-      completed: "Completed"
+      completed: "Completed",
+      back: "Back"
     },
     th: {
       title: "ค้นหา",
@@ -124,7 +118,8 @@ export default function Search() {
       open: "เปิด",
       closed: "ปิด",
       reported: "รายงาน",
-      completed: "เสร็จสิ้น"
+      completed: "เสร็จสิ้น",
+      back: "กลับ"
     },
     zh: {
       title: "搜索",
@@ -151,7 +146,8 @@ export default function Search() {
       open: "打开",
       closed: "已关闭",
       reported: "已报告",
-      completed: "已完成"
+      completed: "已完成",
+      back: "返回"
     },
     ja: {
       title: "検索",
@@ -178,7 +174,8 @@ export default function Search() {
       open: "開く",
       closed: "閉じた",
       reported: "報告済み",
-      completed: "完了"
+      completed: "完了",
+      back: "戻る"
     },
     ko: {
       title: "검색",
@@ -205,9 +202,12 @@ export default function Search() {
       open: "열기",
       closed: "닫힘",
       reported: "보고됨",
-      completed: "완료"
+      completed: "완료",
+      back: "뒤로"
     }
-  }[language];
+  };
+
+  const str = strings[language] || strings.en;
 
   // Memoized search results to avoid re-computation
   const searchResults = useMemo(() => {
@@ -225,8 +225,8 @@ export default function Search() {
           results.push({
             type: 'lease',
             id: lease.id,
-            title: lease.property_address || strings.lease,
-            subtitle: `${strings.scanned} ${format(new Date(lease.created_date), 'MMM d, yyyy')}`,
+            title: lease.property_address || str.lease,
+            subtitle: `${str.scanned} ${format(new Date(lease.created_date), 'MMM d, yyyy')}`,
             status: lease.status,
             icon: FileText,
             color: '#3B82F6',
@@ -250,8 +250,8 @@ export default function Search() {
           results.push({
             type: 'deposit',
             id: deposit.id,
-            title: `฿${deposit.deposit_amount?.toLocaleString()} - ${deposit.property_address || strings.deposit}`,
-            subtitle: `${strings.tracking} - ${format(new Date(deposit.expected_return_date), 'MMM d, yyyy')}`,
+            title: `฿${deposit.deposit_amount?.toLocaleString()} - ${deposit.property_address || str.deposit}`,
+            subtitle: `${str.tracking} - ${format(new Date(deposit.expected_return_date), 'MMM d, yyyy')}`,
             status: deposit.status,
             icon: Wallet,
             color: '#C7A338',
@@ -276,7 +276,7 @@ export default function Search() {
           results.push({
             type: 'case',
             id: caseItem.id,
-            title: caseItem.case_number || strings.case,
+            title: caseItem.case_number || str.case,
             subtitle: caseItem.summary || `฿${caseItem.dispute_amount?.toLocaleString()}`,
             status: caseItem.status,
             icon: Scale,
@@ -324,7 +324,7 @@ export default function Search() {
           results.push({
             type: 'maintenance',
             id: req.id,
-            title: req.issue_title || strings.maintenance,
+            title: req.issue_title || str.maintenance,
             subtitle: req.property_address || req.category,
             status: req.status,
             icon: Wrench,
@@ -338,20 +338,20 @@ export default function Search() {
     }
 
     return results.sort((a, b) => b.matchScore - a.matchScore);
-  }, [searchQuery, filterType, leases, deposits, cases, documents, maintenance, strings]);
+  }, [searchQuery, filterType, leases, deposits, cases, documents, maintenance, str]);
 
   const isLoading = leasesLoading || depositsLoading || casesLoading || documentsLoading || maintenanceLoading;
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      scanned: { bg: '#ECFDF5', text: '#059669', label: strings.scanned },
-      uploaded: { bg: '#FEF3C7', text: '#D97706', label: strings.uploaded },
-      tracking: { bg: '#DBEAFE', text: '#2563EB', label: strings.tracking },
-      returned: { bg: '#ECFDF5', text: '#059669', label: strings.returned },
-      open: { bg: '#FEE2E2', text: '#DC2626', label: strings.open },
-      closed: { bg: '#F3F4F6', text: '#6B7280', label: strings.closed },
-      reported: { bg: '#FEF3C7', text: '#D97706', label: strings.reported },
-      completed: { bg: '#ECFDF5', text: '#059669', label: strings.completed }
+      scanned: { bg: '#ECFDF5', text: '#059669', label: str.scanned },
+      uploaded: { bg: '#FEF3C7', text: '#D97706', label: str.uploaded },
+      tracking: { bg: '#DBEAFE', text: '#2563EB', label: str.tracking },
+      returned: { bg: '#ECFDF5', text: '#059669', label: str.returned },
+      open: { bg: '#FEE2E2', text: '#DC2626', label: str.open },
+      closed: { bg: '#F3F4F6', text: '#6B7280', label: str.closed },
+      reported: { bg: '#FEF3C7', text: '#D97706', label: str.reported },
+      completed: { bg: '#ECFDF5', text: '#059669', label: str.completed }
     };
 
     const config = statusMap[status] || { bg: '#F3F4F6', text: '#6B7280', label: status };
@@ -381,9 +381,9 @@ export default function Search() {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                {strings.title}
+                {str.title}
               </h1>
-              <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+              <p style={{ color: colors.textSecondary }}>{str.subtitle}</p>
             </div>
           </div>
         </div>
@@ -392,7 +392,7 @@ export default function Search() {
           <CardContent className="p-4">
             <DebouncedSearch
               onSearch={setSearchQuery}
-              placeholder={strings.searchPlaceholder}
+              placeholder={str.searchPlaceholder}
               colors={colors}
               language={language}
               delay={300}
@@ -412,17 +412,17 @@ export default function Search() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent style={{ backgroundColor: colors.cardBg }}>
-              <SelectItem value="all">{strings.filterAll}</SelectItem>
-              <SelectItem value="leases">{strings.filterLeases}</SelectItem>
-              <SelectItem value="deposits">{strings.filterDeposits}</SelectItem>
-              <SelectItem value="cases">{strings.filterCases}</SelectItem>
-              <SelectItem value="documents">{strings.filterDocuments}</SelectItem>
-              <SelectItem value="maintenance">{strings.filterMaintenance}</SelectItem>
+              <SelectItem value="all">{str.filterAll}</SelectItem>
+              <SelectItem value="leases">{str.filterLeases}</SelectItem>
+              <SelectItem value="deposits">{str.filterDeposits}</SelectItem>
+              <SelectItem value="cases">{str.filterCases}</SelectItem>
+              <SelectItem value="documents">{str.filterDocuments}</SelectItem>
+              <SelectItem value="maintenance">{str.filterMaintenance}</SelectItem>
             </SelectContent>
           </Select>
           {(searchQuery || filterType !== 'all') && (
             <Badge className="flex items-center gap-1">
-              {searchResults.length} {strings.results}
+              {searchResults.length} {str.results}
             </Badge>
           )}
         </div>
@@ -434,9 +434,9 @@ export default function Search() {
             <CardContent className="p-12 text-center">
               <SearchIcon className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary }} />
               <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                {strings.noResults}
+                {str.noResults}
               </h3>
-              <p style={{ color: colors.textSecondary }}>{strings.tryDifferent}</p>
+              <p style={{ color: colors.textSecondary }}>{str.tryDifferent}</p>
             </CardContent>
           </Card>
         ) : (
@@ -480,7 +480,7 @@ export default function Search() {
                             color: result.color
                           }}
                         >
-                          {strings[result.type]}
+                          {str[result.type]}
                         </Badge>
                       </div>
                     </div>
