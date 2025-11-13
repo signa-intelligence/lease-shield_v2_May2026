@@ -1679,7 +1679,7 @@ function DashboardContent() {
                             title={strings.activeLeases}
                             value={leases.length.toString()}
                             icon={FileText}
-                            bgGradient="bg-gradient-to-br from-blue-500 to-blue-600"
+                            scoreColor="#3B82F6"
                             miniStats={leases.length > 0 ? [
                               {
                                 label: language === 'th' ? 'สแกนแล้ว' : 'Scanned',
@@ -1697,7 +1697,6 @@ function DashboardContent() {
                             ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
                             onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
                             compact
-                            colors={colors}
                           />
 
                           <StatsCard
@@ -1714,14 +1713,13 @@ function DashboardContent() {
                               link: createPageUrl("DepositTracker")
                             }}
                             compact
-                            colors={colors}
                           />
                           
                           <StatsCard
                             title={strings.rentTracked}
                             value={rentTrackedCount.toString()}
                             icon={Calendar}
-                            bgGradient="bg-gradient-to-br from-blue-500 to-blue-600"
+                            scoreColor="#3B82F6"
                             miniStats={rentTrackedCount > 0 ? [
                               {
                                 label: language === 'th' ? 'เตือน' : 'Alerts',
@@ -1735,14 +1733,13 @@ function DashboardContent() {
                             ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
                             onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
                             compact
-                            colors={colors}
                           />
 
                           <StatsCard
                             title={strings.notifications}
                             value={notificationLogs.length.toString()}
                             icon={Bell}
-                            bgGradient="bg-gradient-to-br from-purple-500 to-purple-600"
+                            scoreColor="#8B5CF6"
                             miniStats={notificationLogs.length > 0 ? [
                               {
                                 label: language === 'th' ? 'ส่งแล้ว' : 'Sent',
@@ -1759,7 +1756,6 @@ function DashboardContent() {
                             } : undefined}
                             ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
                             compact
-                            colors={colors}
                           />
                           
                           <StatsCard
@@ -1775,14 +1771,13 @@ function DashboardContent() {
                               link: createPageUrl("Cases")
                             }}
                             compact
-                            colors={colors}
                           />
 
                           <StatsCard
                             title={strings.maintenanceRequests}
                             value={activeMaintenanceCount.toString()}
                             icon={Wrench}
-                            bgGradient="bg-gradient-to-br from-amber-500 to-amber-600"
+                            scoreColor="#F59E0B"
                             miniStats={activeMaintenanceCount > 0 ? [
                               {
                                 label: language === 'th' ? 'เสร็จ' : 'Done',
@@ -1796,7 +1791,6 @@ function DashboardContent() {
                             ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
                             onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
                             compact
-                            colors={colors}
                           />
                         </div>
                       </div>
@@ -1806,7 +1800,7 @@ function DashboardContent() {
                           title={strings.activeLeases}
                           value={leases.length.toString()}
                           icon={FileText}
-                          bgGradient="bg-gradient-to-br from-blue-500 to-blue-600"
+                          scoreColor="#3B82F6"
                           miniStats={leases.length > 0 ? [
                             {
                               label: language === 'th' ? 'สแกนแล้ว' : 'Scanned',
@@ -1824,7 +1818,6 @@ function DashboardContent() {
                           ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
                           onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
                           compact
-                          colors={colors}
                         />
 
                         <StatsCard
@@ -1841,14 +1834,13 @@ function DashboardContent() {
                             link: createPageUrl("DepositTracker")
                           }}
                           compact
-                          colors={colors}
                         />
                         
                         <StatsCard
                           title={strings.rentTracked}
                           value={rentTrackedCount.toString()}
                           icon={Calendar}
-                          bgGradient="bg-gradient-to-br from-blue-500 to-blue-600"
+                          scoreColor="#3B82F6"
                           miniStats={rentTrackedCount > 0 ? [
                             {
                               label: language === 'th' ? 'เตือน' : 'Alerts',
@@ -1862,7 +1854,6 @@ function DashboardContent() {
                           ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
                           onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
                           compact
-                          colors={colors}
                         />
 
                         <div className="row-span-2">
@@ -1880,7 +1871,7 @@ function DashboardContent() {
                           title={strings.notifications}
                           value={notificationLogs.length.toString()}
                           icon={Bell}
-                          bgGradient="bg-gradient-to-br from-purple-500 to-purple-600"
+                          scoreColor="#8B5CF6"
                           miniStats={notificationLogs.length > 0 ? [
                             {
                               label: language === 'th' ? 'ส่งแล้ว' : 'Sent',
@@ -1897,7 +1888,6 @@ function DashboardContent() {
                           } : undefined}
                           ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
                           compact
-                          colors={colors}
                         />
                         
                         <StatsCard
@@ -1913,14 +1903,13 @@ function DashboardContent() {
                             link: createPageUrl("Cases")
                           }}
                           compact
-                          colors={colors}
                         />
 
                         <StatsCard
                           title={strings.maintenanceRequests}
                           value={activeMaintenanceCount.toString()}
                           icon={Wrench}
-                          bgGradient="bg-gradient-to-br from-amber-500 to-amber-600"
+                          scoreColor="#F59E0B"
                           miniStats={activeMaintenanceCount > 0 ? [
                             {
                               label: language === 'th' ? 'เสร็จ' : 'Done',
@@ -1935,7 +1924,6 @@ function DashboardContent() {
                           ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
                           onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
                           compact
-                          colors={colors}
                         />
                       </div>
                     </>
@@ -2049,7 +2037,7 @@ function DashboardContent() {
                 {isLoading ? (
                   <SkeletonLoader variant="card" colors={colors} />
                 ) : (
-                  <DepositAlert deposits={deposits} language={language} colors={colors} />
+                  <DepositAlert deposits={deposits} language={language} />
                 )}
               </div>
             </div>

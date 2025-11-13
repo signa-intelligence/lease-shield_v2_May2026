@@ -7,19 +7,9 @@ import { differenceInDays } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
-export default function DepositAlert({ deposits, language = 'en', colors }) {
+export default function DepositAlert({ deposits, language = 'en' }) {
   const navigate = useNavigate();
   const now = new Date();
-  
-  const cardColors = colors || {
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    bg: '#F8FAFC'
-  };
-
-  const isDarkMode = cardColors.bg === '#1A1D1F';
   
   const activeDeposits = deposits.filter(d => d.status === 'tracking');
   
@@ -95,46 +85,23 @@ export default function DepositAlert({ deposits, language = 'en', colors }) {
   const str = strings[language] || strings.en;
 
   const getUrgencyColor = (days) => {
-    if (days < 0) {
-      // Overdue - Red
-      return isDarkMode 
-        ? { bg: '#7F1D1D', text: '#FCA5A5', border: '#DC2626' }
-        : { bg: '#FEE2E2', text: '#DC2626', border: '#DC2626' };
-    }
-    if (days <= 3) {
-      // Critical - Amber
-      return isDarkMode
-        ? { bg: '#78350F', text: '#FCD34D', border: '#F59E0B' }
-        : { bg: '#FEF3C7', text: '#D97706', border: '#F59E0B' };
-    }
-    if (days <= 7) {
-      // High - Blue
-      return isDarkMode
-        ? { bg: '#1E3A8A', text: '#93C5FD', border: '#3B82F6' }
-        : { bg: '#DBEAFE', text: '#1D4ED8', border: '#3B82F6' };
-    }
-    // Medium - Green
-    return isDarkMode
-      ? { bg: '#064E3B', text: '#6EE7B7', border: '#10B981' }
-      : { bg: '#D1FAE5', text: '#047857', border: '#10B981' };
+    if (days < 0) return { bg: '#FEE2E2', text: '#DC2626', border: '#DC2626' }; // Overdue - Red
+    if (days <= 3) return { bg: '#FEF3C7', text: '#D97706', border: '#F59E0B' }; // Critical - Amber
+    if (days <= 7) return { bg: '#DBEAFE', text: '#1D4ED8', border: '#3B82F6' }; // High - Blue
+    return { bg: '#D1FAE5', text: '#047857', border: '#10B981' }; // Medium - Green
   };
 
   if (urgentDeposits.length === 0) {
     return (
-      <Card className="border-none shadow-lg" style={{ backgroundColor: cardColors.cardBg }}>
+      <Card className="border-none shadow-lg" style={{ backgroundColor: '#FFFFFF' }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base" style={{ color: cardColors.textPrimary }}>
+          <CardTitle className="flex items-center gap-2 text-base">
             <Calendar className="w-5 h-5 text-emerald-600" />
             {str.title}
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center py-8">
-          <div 
-            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"
-            style={{
-              backgroundColor: isDarkMode ? '#064E3B' : '#D1FAE5'
-            }}
-          >
+          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
             <Calendar className="w-8 h-8 text-emerald-600" />
           </div>
           <p className="font-semibold text-emerald-700">{str.noDue}</p>
@@ -144,16 +111,16 @@ export default function DepositAlert({ deposits, language = 'en', colors }) {
   }
 
   return (
-    <Card className="border-none shadow-xl" style={{ backgroundColor: cardColors.cardBg }}>
+    <Card className="border-none shadow-xl" style={{ backgroundColor: '#FFFFFF' }}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base" style={{ color: cardColors.textPrimary }}>
+        <CardTitle className="flex items-center gap-2 text-base">
           <AlertCircle className="w-5 h-5 text-amber-600" />
           {str.title}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {urgentDeposits.map((deposit) => {
-          const urgencyColors = getUrgencyColor(deposit.daysRemaining);
+          const colors = getUrgencyColor(deposit.daysRemaining);
           const isOverdue = deposit.daysRemaining < 0;
           
           return (
@@ -161,21 +128,21 @@ export default function DepositAlert({ deposits, language = 'en', colors }) {
               key={deposit.id}
               className="rounded-lg p-4 border-2 transition-all hover:shadow-md"
               style={{
-                backgroundColor: urgencyColors.bg,
-                borderColor: urgencyColors.border
+                backgroundColor: colors.bg,
+                borderColor: colors.border
               }}
             >
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
-                    <Home className="w-4 h-4 flex-shrink-0" style={{ color: urgencyColors.text }} />
-                    <p className="font-semibold text-sm truncate" style={{ color: urgencyColors.text }}>
+                    <Home className="w-4 h-4 flex-shrink-0" style={{ color: colors.text }} />
+                    <p className="font-semibold text-sm truncate" style={{ color: colors.text }}>
                       {deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : language === 'zh' ? '未指定' : language === 'ja' ? '未指定' : language === 'ko' ? '미지정' : 'N/A')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 flex-shrink-0" style={{ color: urgencyColors.text }} />
-                    <p className="text-xs font-medium" style={{ color: urgencyColors.text }}>
+                    <DollarSign className="w-4 h-4 flex-shrink-0" style={{ color: colors.text }} />
+                    <p className="text-xs font-medium" style={{ color: colors.text }}>
                       {str.amount}: ฿{deposit.deposit_amount?.toLocaleString() || '0'}
                     </p>
                   </div>
@@ -183,9 +150,9 @@ export default function DepositAlert({ deposits, language = 'en', colors }) {
                 <Badge
                   className="flex-shrink-0"
                   style={{
-                    backgroundColor: urgencyColors.bg,
-                    color: urgencyColors.text,
-                    border: `2px solid ${urgencyColors.border}`,
+                    backgroundColor: colors.bg,
+                    color: colors.text,
+                    border: `2px solid ${colors.border}`,
                     fontWeight: 'bold',
                     fontSize: '11px'
                   }}
@@ -204,9 +171,8 @@ export default function DepositAlert({ deposits, language = 'en', colors }) {
                     size="sm"
                     className="w-full text-xs"
                     style={{
-                      borderColor: urgencyColors.border,
-                      color: urgencyColors.text,
-                      backgroundColor: isDarkMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)'
+                      borderColor: colors.border,
+                      color: colors.text
                     }}
                   >
                     {str.viewDetails}
