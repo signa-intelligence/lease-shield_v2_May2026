@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,9 +13,9 @@ export default function NotificationSettings({ user, onUpdate, colors }) {
 
   const updateMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
-    onSuccess: () => {
+    onSuccess: (data) => { // Added data parameter to onSuccess
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      if (onUpdate) onUpdate(data);
+      if (onUpdate) onUpdate(data); // Pass data to onUpdate
     },
   });
 
@@ -42,10 +43,43 @@ export default function NotificationSettings({ user, onUpdate, colors }) {
       premiumFeature: 'ฟีเจอร์พรีเมียม',
       enabled: 'เปิดใช้งาน',
       disabled: 'ปิดใช้งาน'
+    },
+    zh: {
+      title: '通知设置',
+      subtitle: '管理您接收提醒的方式',
+      emailNotifications: '电子邮件通知',
+      emailDesc: '通过电子邮件接收提醒',
+      lineNotifications: 'LINE通知',
+      lineDesc: '通过LINE应用即时提醒',
+      premiumFeature: '高级功能',
+      enabled: '已启用',
+      disabled: '已禁用'
+    },
+    ja: {
+      title: '通知設定',
+      subtitle: 'アラートの受信方法を管理',
+      emailNotifications: 'メール通知',
+      emailDesc: 'メールでアラートを受信',
+      lineNotifications: 'LINE通知',
+      lineDesc: 'LINEアプリで即時アラート',
+      premiumFeature: 'プレミアム機能',
+      enabled: '有効',
+      disabled: '無効'
+    },
+    ko: {
+      title: '알림 설정',
+      subtitle: '알림 수신 방법 관리',
+      emailNotifications: '이메일 알림',
+      emailDesc: '이메일로 알림 받기',
+      lineNotifications: 'LINE 알림',
+      lineDesc: 'LINE 앱으로 즉시 알림',
+      premiumFeature: '프리미엄 기능',
+      enabled: '활성화됨',
+      disabled: '비활성화됨'
     }
   };
 
-  const str = strings[language];
+  const str = strings[language] || strings.en;
 
   const toggleEmail = () => {
     updateMutation.mutate({ email_notifications: !user?.email_notifications });

@@ -73,6 +73,9 @@ export default function Welcome() {
       learnMore: "Learn More",
       preventTitle: "Prevent Problems",
       preventDesc: "Automated lease analysis identifies risks before signing",
+      sendingEmail: "Sending welcome email...",
+      fairTransparentProtected: "Fair • Transparent • Protected",
+      notLawFirm: "We are not a law firm and do not provide legal advice"
     },
     th: {
       welcome: "ยินดีต้อนรับสู่ Lease Shield",
@@ -91,10 +94,76 @@ export default function Welcome() {
       learnMore: "เรียนรู้เพิ่มเติม",
       preventTitle: "ป้องกันปัญหา",
       preventDesc: "การวิเคราะห์สัญญาเช่าอัตโนมัติระบุความเสี่ยงก่อนลงนาม",
+      sendingEmail: "กำลังส่งอีเมล...",
+      fairTransparentProtected: "ยุติธรรม • โปร่งใส • ปลอดภัย",
+      notLawFirm: "เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย"
+    },
+    zh: {
+      welcome: "欢迎来到租约盾",
+      subtitle: "您的租赁保护现在开始",
+      description: "通过AI驱动的租约分析、自动押金追踪和专业文档，在问题发生之前预防租赁问题。",
+      checkEmail: "查看您的电子邮件以获取入门提示！",
+      feature1Title: "AI租约分析",
+      feature1Desc: "上传您的租约，立即获得详细的风险评估",
+      feature2Title: "押金保护",
+      feature2Desc: "自动提醒追踪您的押金",
+      feature3Title: "证据保险库",
+      feature3Desc: "安全存储照片、收据和文件以保护自己",
+      feature4Title: "维护追踪器",
+      feature4Desc: "记录所有维修请求和与房东的沟通",
+      getStarted: "开始使用",
+      learnMore: "了解更多",
+      preventTitle: "预防问题",
+      preventDesc: "自动租约分析在签署前识别风险",
+      sendingEmail: "发送欢迎邮件中...",
+      fairTransparentProtected: "公平 • 透明 • 受保护",
+      notLawFirm: "我们不是律师事务所，不提供法律建议"
+    },
+    ja: {
+      welcome: "リースシールドへようこそ",
+      subtitle: "あなたの賃貸保護が始まります",
+      description: "AI駆動のリース分析、自動敷金追跡、プロフェッショナルな文書化で、問題が発生する前に賃貸問題を防ぎます。",
+      checkEmail: "スタートのヒントについてメールをご確認ください！",
+      feature1Title: "AI賃貸分析",
+      feature1Desc: "賃貸契約をアップロードして、詳細な洞察を含む即座のリスク評価を取得",
+      feature2Title: "敷金保護",
+      feature2Desc: "自動返金リマインダーで敷金を追跡",
+      feature3Title: "証拠保管庫",
+      feature3Desc: "保護のために写真、領収書、書類を安全に保存",
+      feature4Title: "メンテナンストラッカー",
+      feature4Desc: "家主との全ての修理リクエストと連絡を記録",
+      getStarted: "始める",
+      learnMore: "詳細を見る",
+      preventTitle: "問題を防ぐ",
+      preventDesc: "自動リース分析は署名前にリスクを特定",
+      sendingEmail: "ウェルカムメール送信中...",
+      fairTransparentProtected: "公正 • 透明 • 保護",
+      notLawFirm: "私たちは法律事務所ではなく、法的助言を提供しません"
+    },
+    ko: {
+      welcome: "리스실드에 오신 것을 환영합니다",
+      subtitle: "임대 보호가 이제 시작됩니다",
+      description: "AI 기반 임대 분석, 자동 보증금 추적 및 전문 문서화로 문제가 발생하기 전에 임대 문제를 예방하세요.",
+      checkEmail: "시작 팁을 위해 이메일을 확인하세요!",
+      feature1Title: "AI 임대 분석",
+      feature1Desc: "임대 계약을 업로드하고 자세한 통찰력과 함께 즉시 위험 평가 받기",
+      feature2Title: "보증금 보호",
+      feature2Desc: "자동 반환 알림으로 보증금 추적",
+      feature3Title: "증거 보관소",
+      feature3Desc: "보호를 위해 사진, 영수증, 문서를 안전하게 저장",
+      feature4Title: "유지보수 추적기",
+      feature4Desc: "집주인과의 모든 수리 요청 및 통신 기록",
+      getStarted: "시작하기",
+      learnMore: "더 알아보기",
+      preventTitle: "문제 예방",
+      preventDesc: "자동 임대 분석은 서명 전에 위험 식별",
+      sendingEmail: "환영 이메일 전송 중...",
+      fairTransparentProtected: "공정 • 투명 • 보호",
+      notLawFirm: "우리는 법률 회사가 아니며 법률 자문을 제공하지 않습니다"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   const features = [
     {
@@ -197,7 +266,7 @@ export default function Welcome() {
             }}>
               <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#C7A338' }} />
               <span style={{ fontSize: '14px', color: colors.textPrimary }}>
-                {language === 'th' ? 'กำลังส่งอีเมล...' : 'Sending welcome email...'}
+                {strings.sendingEmail}
               </span>
             </div>
           ) : user?.welcome_email_sent && (
@@ -326,16 +395,14 @@ export default function Welcome() {
             color: colors.textSecondary,
             marginBottom: '8px'
           }}>
-            {language === 'th' ? 'ยุติธรรม • โปร่งใส • ปลอดภัย' : 'Fair • Transparent • Protected'}
+            {strings.fairTransparentProtected}
           </p>
           <p style={{
             fontSize: '11px',
             color: colors.textSecondary,
             fontStyle: 'italic'
           }}>
-            {language === 'th' 
-              ? 'เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย' 
-              : 'We are not a law firm and do not provide legal advice'}
+            {strings.notLawFirm}
           </p>
         </div>
       </div>
