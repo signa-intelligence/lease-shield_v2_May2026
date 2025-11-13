@@ -37,14 +37,12 @@ export default function StatsCard({
 
   return (
     <Card 
-      className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${!hasCustomBg && getGradientClass()} h-full`}
+      className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${bgGradient ? bgGradient : (!scoreColor && getGradientClass())} h-full`}
       style={{
-        backgroundColor: hasCustomBg 
-          ? (scoreColor 
-              ? (isDarkMode ? cardColors.cardBg : `${scoreColor}10`)
-              : undefined)
+        backgroundColor: scoreColor && !bgGradient
+          ? (isDarkMode ? cardColors.cardBg : `${scoreColor}10`)
           : undefined,
-        borderLeft: scoreColor ? `4px solid ${scoreColor}` : undefined
+        borderLeft: scoreColor && !bgGradient ? `4px solid ${scoreColor}` : undefined
       }}
     >
       <CardContent className="p-3 md:p-4 flex flex-col justify-between h-full">
@@ -52,17 +50,17 @@ export default function StatsCard({
           <div 
             className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{
-              backgroundColor: hasCustomBg 
-                ? (scoreColor 
-                    ? (isDarkMode ? `${scoreColor}30` : `${scoreColor}20`)
-                    : 'rgba(255, 255, 255, 0.2)')
-                : 'rgba(255, 255, 255, 0.2)'
+              backgroundColor: bgGradient
+                ? 'rgba(255, 255, 255, 0.2)'
+                : scoreColor 
+                  ? (isDarkMode ? `${scoreColor}30` : `${scoreColor}20`)
+                  : 'rgba(255, 255, 255, 0.2)'
             }}
           >
             <Icon 
               className="w-5 h-5 md:w-6 md:h-6" 
               style={{ 
-                color: hasCustomBg ? (scoreColor || cardColors.textPrimary) : '#FFFFFF'
+                color: bgGradient ? '#FFFFFF' : (scoreColor ? scoreColor : '#FFFFFF')
               }} 
             />
           </div>
@@ -84,7 +82,7 @@ export default function StatsCard({
           <p 
             className="text-xs font-semibold mb-1 truncate" 
             style={{ 
-              color: hasCustomBg ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.8)'
+              color: bgGradient ? 'rgba(255, 255, 255, 0.8)' : (scoreColor ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.8)')
             }}
           >
             {title}
@@ -92,7 +90,7 @@ export default function StatsCard({
           <p 
             className="text-xl md:text-2xl font-bold truncate" 
             style={{ 
-              color: hasCustomBg ? (scoreColor || cardColors.textPrimary) : '#FFFFFF'
+              color: bgGradient ? '#FFFFFF' : (scoreColor ? scoreColor : '#FFFFFF')
             }}
           >
             {value}
@@ -105,7 +103,7 @@ export default function StatsCard({
               <div key={idx} className="text-xs">
                 <span 
                   style={{ 
-                    color: hasCustomBg ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.7)',
+                    color: bgGradient ? 'rgba(255, 255, 255, 0.7)' : (scoreColor ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.7)'),
                     marginRight: '4px'
                   }}
                 >
@@ -114,7 +112,7 @@ export default function StatsCard({
                 <span 
                   className="font-bold"
                   style={{ 
-                    color: hasCustomBg ? (scoreColor || cardColors.textPrimary) : '#FFFFFF'
+                    color: bgGradient ? '#FFFFFF' : (scoreColor ? scoreColor : '#FFFFFF')
                   }}
                 >
                   {stat.value}
@@ -129,9 +127,11 @@ export default function StatsCard({
             onClick={onCtaClick}
             className="mt-3 w-full py-2 px-3 rounded-lg text-xs font-bold transition-all hover:opacity-80"
             style={{
-              backgroundColor: scoreColor || (isDarkMode ? cardColors.borderColor : '#FFFFFF'),
-              color: scoreColor ? '#FFFFFF' : cardColors.textPrimary,
-              border: scoreColor ? 'none' : `2px solid ${cardColors.borderColor}`
+              backgroundColor: bgGradient 
+                ? 'rgba(255, 255, 255, 0.2)'
+                : (scoreColor || (isDarkMode ? cardColors.borderColor : '#FFFFFF')),
+              color: bgGradient ? '#FFFFFF' : (scoreColor ? '#FFFFFF' : cardColors.textPrimary),
+              border: bgGradient ? '1px solid rgba(255, 255, 255, 0.4)' : (scoreColor ? 'none' : `2px solid ${cardColors.borderColor}`)
             }}
           >
             {ctaText}
@@ -143,24 +143,32 @@ export default function StatsCard({
             <button
               className="w-full py-2 px-3 rounded-lg text-xs font-bold transition-all"
               style={{
-                backgroundColor: hasCustomBg 
-                  ? (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
-                  : 'rgba(255, 255, 255, 0.3)',
-                color: hasCustomBg ? (scoreColor || cardColors.textPrimary) : '#FFFFFF',
-                border: hasCustomBg 
-                  ? `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : `${scoreColor || cardColors.borderColor}40`}`
-                  : '1px solid rgba(255, 255, 255, 0.4)',
+                backgroundColor: bgGradient
+                  ? 'rgba(255, 255, 255, 0.3)'
+                  : (scoreColor
+                      ? (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
+                      : 'rgba(255, 255, 255, 0.3)'),
+                color: bgGradient ? '#FFFFFF' : (scoreColor || '#FFFFFF'),
+                border: bgGradient
+                  ? '1px solid rgba(255, 255, 255, 0.4)'
+                  : (scoreColor
+                      ? `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : `${scoreColor}40`}`
+                      : '1px solid rgba(255, 255, 255, 0.4)'),
                 backdropFilter: 'blur(10px)'
               }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = hasCustomBg 
-                  ? (isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.3)')
-                  : 'rgba(255, 255, 255, 0.4)';
+                e.target.style.backgroundColor = bgGradient
+                  ? 'rgba(255, 255, 255, 0.4)'
+                  : (scoreColor
+                      ? (isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.3)')
+                      : 'rgba(255, 255, 255, 0.4)');
               }}
               onMouseLeave={(e) => {
-                e.target.style.backgroundColor = hasCustomBg 
-                  ? (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
-                  : 'rgba(255, 255, 255, 0.3)';
+                e.target.style.backgroundColor = bgGradient
+                  ? 'rgba(255, 255, 255, 0.3)'
+                  : (scoreColor
+                      ? (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
+                      : 'rgba(255, 255, 255, 0.3)');
               }}
             >
               {actionButton.label}
