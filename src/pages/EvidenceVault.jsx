@@ -32,12 +32,66 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 
 const DOC_TYPE_CONFIG = {
-  lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
-  receipt: { label_en: 'Receipt', label_th: 'ใบเสร็จ', icon: FileText, color: 'bg-emerald-100 text-emerald-800', bgColor: '#10B981' },
-  photo: { label_en: 'Photo', label_th: 'รูปภาพ', icon: Camera, color: 'bg-purple-100 text-purple-800', bgColor: '#A855F7' },
-  video: { label_en: 'Video', label_th: 'วิดีโอ', icon: FileVideo, color: 'bg-amber-100 text-amber-800', bgColor: '#F59E0B' },
-  letter: { label_en: 'Letter', label_th: 'จดหมาย', icon: Mail, color: 'bg-indigo-100 text-indigo-800', bgColor: '#6366F1' },
-  other: { label_en: 'Other', label_th: 'อื่น ๆ', icon: HelpCircle, color: 'bg-slate-100 text-slate-800', bgColor: '#64748B' }
+  lease: { 
+    label_en: 'Lease', 
+    label_th: 'สัญญาเช่า', 
+    label_zh: '租约', 
+    label_ja: '賃貸契約', 
+    label_ko: '임대 계약', 
+    icon: FileText, 
+    color: 'bg-blue-100 text-blue-800', 
+    bgColor: '#3B82F6' 
+  },
+  receipt: { 
+    label_en: 'Receipt', 
+    label_th: 'ใบเสร็จ', 
+    label_zh: '收据', 
+    label_ja: '領収書', 
+    label_ko: '영수증', 
+    icon: FileText, 
+    color: 'bg-emerald-100 text-emerald-800', 
+    bgColor: '#10B981' 
+  },
+  photo: { 
+    label_en: 'Photo', 
+    label_th: 'รูปภาพ', 
+    label_zh: '照片', 
+    label_ja: '写真', 
+    label_ko: '사진', 
+    icon: Camera, 
+    color: 'bg-purple-100 text-purple-800', 
+    bgColor: '#A855F7' 
+  },
+  video: { 
+    label_en: 'Video', 
+    label_th: 'วิดีโอ', 
+    label_zh: '视频', 
+    label_ja: '動画', 
+    label_ko: '비디오', 
+    icon: FileVideo, 
+    color: 'bg-amber-100 text-amber-800', 
+    bgColor: '#F59E0B' 
+  },
+  letter: { 
+    label_en: 'Letter', 
+    label_th: 'จดหมาย', 
+    label_zh: '信件', 
+    label_ja: 'レター', 
+    label_ko: '편지', 
+    icon: Mail, 
+    color: 'bg-indigo-100 text-indigo-800', 
+    bgColor: '#6366F1' 
+  },
+  other: { 
+    label_en: 'Other', 
+    label_th: 'อื่น ๆ', 
+    label_zh: '其他', 
+    label_ja: 'その他', 
+    label_ko: '기타', 
+    icon: HelpCircle, 
+    color: 'bg-slate-100 text-slate-800', 
+    bgColor: '#64748B' 
+  }
 };
 
 function EvidenceVaultContent() {
@@ -446,11 +500,15 @@ function EvidenceVaultContent() {
   const handleSendEmail = (doc) => {
     haptic.light();
     const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
-    const docLabel = doc.label || (language === 'th' ? config.label_th : config.label_en);
+    const docLabel = doc.label || (
+      language === 'zh' ? config.label_zh : 
+      language === 'ja' ? config.label_ja : 
+      language === 'ko' ? config.label_ko : 
+      language === 'th' ? config.label_th : 
+      config.label_en
+    );
     
-    const subject = language === 'th' 
-      ? `${docLabel}` 
-      : `${docLabel}`;
+    const subject = `${docLabel}`;
     
     let body = '';
     
@@ -494,12 +552,14 @@ function EvidenceVaultContent() {
       }
       
       // Format final email with footer
-      body = `${letterContent}\n\n---\n\n${language === 'th' ? 'สร้างโดย' : 'Created by'} Lease Shield - https://www.leaseshield.asia`;
+      const createdByText = language === 'zh' ? '创建者' : language === 'ja' ? '作成者' : language === 'ko' ? '생성자' : language === 'th' ? 'สร้างโดย' : 'Created by';
+      body = `${letterContent}\n\n---\n\n${createdByText} Lease Shield - https://www.leaseshield.asia`;
     } else {
-      // For other document types, keep existing format
-      body = language === 'th'
-        ? `เอกสาร: ${docLabel}\nวันที่: ${format(new Date(doc.created_date), 'dd/MM/yyyy')}\n\n${doc.file_url}`
-        : `Document: ${docLabel}\nDate: ${format(new Date(doc.created_date), 'MMM d, yyyy')}\n\n${doc.file_url}`;
+      // For other document types
+      const documentText = language === 'zh' ? '文档' : language === 'ja' ? 'ドキュメント' : language === 'ko' ? '문서' : language === 'th' ? 'เอกสาร' : 'Document';
+      const dateText = language === 'zh' ? '日期' : language === 'ja' ? '日付' : language === 'ko' ? '날짜' : language === 'th' ? 'วันที่' : 'Date';
+      
+      body = `${documentText}: ${docLabel}\n${dateText}: ${format(new Date(doc.created_date), language === 'th' ? 'dd/MM/yyyy' : 'MMM d, yyyy')}\n\n${doc.file_url}`;
     }
     
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -1016,7 +1076,7 @@ function EvidenceVaultContent() {
                   <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
                     {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
                       <SelectItem key={key} value={key}>
-                        {language === 'th' ? config.label_th : config.label_en}
+                        {language === 'zh' ? config.label_zh : language === 'ja' ? config.label_ja : language === 'ko' ? config.label_ko : language === 'th' ? config.label_th : config.label_en}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1067,7 +1127,13 @@ function EvidenceVaultContent() {
           <DialogContent className="max-w-4xl max-h-[90vh]" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
             <DialogHeader>
               <DialogTitle style={{ color: colors.textPrimary }}>
-                {viewingDoc?.label || (language === 'th' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_th : DOC_TYPE_CONFIG[viewingDoc?.type]?.label_en)}
+                {viewingDoc?.label || (
+                  language === 'zh' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_zh :
+                  language === 'ja' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_ja :
+                  language === 'ko' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_ko :
+                  language === 'th' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_th : 
+                  DOC_TYPE_CONFIG[viewingDoc?.type]?.label_en
+                )}
               </DialogTitle>
             </DialogHeader>
             <div className="mt-4 overflow-auto max-h-[70vh]">
@@ -1213,7 +1279,7 @@ function EvidenceVaultContent() {
                     <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
                       {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
                         <SelectItem key={key} value={key}>
-                          {language === 'th' ? config.label_th : config.label_en}
+                           {language === 'zh' ? config.label_zh : language === 'ja' ? config.label_ja : language === 'ko' ? config.label_ko : language === 'th' ? config.label_th : config.label_en}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1538,7 +1604,13 @@ function EvidenceVaultContent() {
                         >
                           {React.createElement(config.icon, { className: "w-12 h-12 mb-2" })}
                           <span className="text-sm font-semibold text-center break-words">
-                            {doc.label || (language === 'th' ? config.label_th : config.label_en)}
+                            {doc.label || (
+                              language === 'zh' ? config.label_zh :
+                              language === 'ja' ? config.label_ja :
+                              language === 'ko' ? config.label_ko :
+                              language === 'th' ? config.label_th :
+                              config.label_en
+                            )}
                           </span>
                         </div>
                       )}
@@ -1564,10 +1636,16 @@ function EvidenceVaultContent() {
                               backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
                               color: colors.textPrimary
                             }}>
-                              {language === 'th' ? config.label_th : config.label_en}
+                              {language === 'zh' ? config.label_zh : language === 'ja' ? config.label_ja : language === 'ko' ? config.label_ko : language === 'th' ? config.label_th : config.label_en}
                             </Badge>
                             <h3 className="font-bold text-sm truncate" style={{ color: colors.textPrimary }}>
-                              {doc.label || (language === 'th' ? config.label_th : config.label_en)}
+                              {doc.label || (
+                                language === 'zh' ? config.label_zh :
+                                language === 'ja' ? config.label_ja :
+                                language === 'ko' ? config.label_ko :
+                                language === 'th' ? config.label_th :
+                                config.label_en
+                              )}
                             </h3>
                             <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
                               {format(new Date(doc.created_date), 'MMM d, yyyy')}

@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -145,7 +146,8 @@ export default function Layout({ children, currentPageName }) {
       evidence: "Evidence",
       admin: "Admin",
       search: "Search",
-      timeline: "Timeline"
+      timeline: "Timeline",
+      tagline: "Fair. Transparent. Protected."
     },
     th: {
       appName: "ลีสชีลด์",
@@ -155,7 +157,8 @@ export default function Layout({ children, currentPageName }) {
       evidence: "หลักฐาน",
       admin: "แอดมิน",
       search: "ค้นหา",
-      timeline: "ไทม์ไลน์"
+      timeline: "ไทม์ไลน์",
+      tagline: "ยุติธรรม • โปร่งใส • ปลอดภัย"
     },
     zh: {
       appName: "租约盾",
@@ -165,7 +168,8 @@ export default function Layout({ children, currentPageName }) {
       evidence: "证据",
       admin: "管理",
       search: "搜索",
-      timeline: "时间线"
+      timeline: "时间线",
+      tagline: "公平 • 透明 • 保护"
     },
     ja: {
       appName: "リースシールド",
@@ -175,7 +179,8 @@ export default function Layout({ children, currentPageName }) {
       evidence: "証拠",
       admin: "管理",
       search: "検索",
-      timeline: "タイムライン"
+      timeline: "タイムライン",
+      tagline: "公正 • 透明 • 保護"
     },
     ko: {
       appName: "리스실드",
@@ -185,7 +190,8 @@ export default function Layout({ children, currentPageName }) {
       evidence: "증거",
       admin: "관리",
       search: "검색",
-      timeline: "타임라인"
+      timeline: "타임라인",
+      tagline: "공정 • 투명 • 보호"
     }
   };
 

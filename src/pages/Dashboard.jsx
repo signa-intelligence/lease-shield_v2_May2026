@@ -1120,9 +1120,37 @@ function DashboardContent() {
                   </svg>
                 </div>
                 <div className="flex items-center gap-2 text-sm sm:text-base font-semibold">
-                  <span style={{ color: '#FFFFFF' }}>Fair.</span>
-                  <span style={{ color: '#ECEFED' }}>Transparent.</span>
-                  <span style={{ color: '#C7A338' }}>Protected.</span>
+                  {language === 'zh' ? (
+                    <>
+                      <span style={{ color: '#FFFFFF' }}>公平。</span>
+                      <span style={{ color: '#ECEFED' }}>透明。</span>
+                      <span style={{ color: '#C7A338' }}>保护。</span>
+                    </>
+                  ) : language === 'ja' ? (
+                    <>
+                      <span style={{ color: '#FFFFFF' }}>公正。</span>
+                      <span style={{ color: '#ECEFED' }}>透明。</span>
+                      <span style={{ color: '#C7A338' }}>保護。</span>
+                    </>
+                  ) : language === 'ko' ? (
+                    <>
+                      <span style={{ color: '#FFFFFF' }}>공정。</span>
+                      <span style={{ color: '#ECEFED' }}>투명。</span>
+                      <span style={{ color: '#C7A338' }}>보호。</span>
+                    </>
+                  ) : language === 'th' ? (
+                    <>
+                      <span style={{ color: '#FFFFFF' }}>ยุติธรรม。</span>
+                      <span style={{ color: '#ECEFED' }}>โปร่งใส。</span>
+                      <span style={{ color: '#C7A338' }}>ปลอดภัย。</span>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ color: '#FFFFFF' }}>Fair.</span>
+                      <span style={{ color: '#ECEFED' }}>Transparent.</span>
+                      <span style={{ color: '#C7A338' }}>Protected.</span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1886,6 +1914,7 @@ function DashboardContent() {
                             {
                               label: language === 'th' ? 'เสร็จ' : 'Done',
                               value: maintenanceRequests.filter(r => r.status === 'completed').length
+                              
                             }
                           ] : undefined}
                           actionButton={activeMaintenanceCount > 0 ? {
