@@ -119,7 +119,8 @@ export default function MaintenanceTracker() {
       hideChat: "Hide Chat",
       requestSent: "Request sent to",
       recipients: "recipient(s)!",
-      failedToCreate: "Failed to create request. Please try again."
+      failedToCreate: "Failed to create request. Please try again.",
+      requestCreatedBy: "Request created by"
     },
     th: {
       title: "ติดตามการซ่อมบำรุง",
@@ -146,7 +147,8 @@ export default function MaintenanceTracker() {
       hideChat: "ซ่อนแชท",
       requestSent: "คำขอซ่อมถูกส่งแล้ว!\n\nแจ้งไปยัง:",
       recipients: "ผู้รับ",
-      failedToCreate: "ไม่สามารถสร้างคำขอได้ กรุณาลองอีกครั้ง"
+      failedToCreate: "ไม่สามารถสร้างคำขอได้ กรุณาลองอีกครั้ง",
+      requestCreatedBy: "คำขอซ่อมถูกสร้างโดย"
     },
     zh: {
       title: "维护追踪器",
@@ -173,7 +175,8 @@ export default function MaintenanceTracker() {
       hideChat: "隐藏聊天",
       requestSent: "请求已发送至",
       recipients: "收件人！",
-      failedToCreate: "创建请求失败。请重试。"
+      failedToCreate: "创建请求失败。请重试。",
+      requestCreatedBy: "请求创建者"
     },
     ja: {
       title: "メンテナンストラッカー",
@@ -200,7 +203,8 @@ export default function MaintenanceTracker() {
       hideChat: "チャットを非表示",
       requestSent: "リクエストが送信されました",
       recipients: "受信者！",
-      failedToCreate: "リクエストの作成に失敗しました。もう一度お試しください。"
+      failedToCreate: "リクエストの作成に失敗しました。もう一度お試しください。",
+      requestCreatedBy: "リクエスト作成者"
     },
     ko: {
       title: "유지보수 추적기",
@@ -227,7 +231,8 @@ export default function MaintenanceTracker() {
       hideChat: "채팅 숨기기",
       requestSent: "요청이 전송되었습니다",
       recipients: "수신자！",
-      failedToCreate: "요청 생성 실패. 다시 시도하세요."
+      failedToCreate: "요청 생성 실패. 다시 시도하세요.",
+      requestCreatedBy: "요청 생성자"
     }
   };
 
