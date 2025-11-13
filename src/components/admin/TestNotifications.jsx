@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,6 +72,71 @@ const TestNotifications = ({ users = [], language = 'en', colors }) => {
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null);
 
+  const strings = {
+    en: {
+      title: 'Test Notifications',
+      selectUser: 'Select User',
+      selectUserPlaceholder: 'Select user...',
+      notificationType: 'Notification Type',
+      selectTypePlaceholder: 'Select type...',
+      sendTest: 'Send Test Notification',
+      sending: 'Sending...',
+      successMessage: 'Test notification sent successfully via',
+      errorMessage: 'Failed to send:',
+      infoText: 'Notifications will be sent via LINE if enabled, otherwise via email. Messages will use the user\'s language preference'
+    },
+    th: {
+      title: 'ทดสอบการแจ้งเตือน',
+      selectUser: 'เลือกผู้ใช้',
+      selectUserPlaceholder: 'เลือกผู้ใช้...',
+      notificationType: 'ประเภทการแจ้งเตือน',
+      selectTypePlaceholder: 'เลือกประเภท...',
+      sendTest: 'ส่งการแจ้งเตือนทดสอบ',
+      sending: 'กำลังส่ง...',
+      successMessage: 'ส่งการแจ้งเตือนทดสอบสำเร็จ ผ่าน',
+      errorMessage: 'ไม่สามารถส่งได้:',
+      infoText: 'การแจ้งเตือนจะถูกส่งผ่าน LINE หากเปิดใช้งาน มิฉะนั้นจะส่งทางอีเมล ข้อความจะใช้ภาษาตามการตั้งค่าของผู้ใช้'
+    },
+    zh: {
+      title: '测试通知',
+      selectUser: '选择用户',
+      selectUserPlaceholder: '选择用户...',
+      notificationType: '通知类型',
+      selectTypePlaceholder: '选择类型...',
+      sendTest: '发送测试通知',
+      sending: '发送中...',
+      successMessage: '测试通知成功发送通过',
+      errorMessage: '发送失败：',
+      infoText: '如果启用，通知将通过LINE发送，否则通过电子邮件。消息将使用用户的语言偏好'
+    },
+    ja: {
+      title: 'テスト通知',
+      selectUser: 'ユーザーを選択',
+      selectUserPlaceholder: 'ユーザーを選択...',
+      notificationType: '通知タイプ',
+      selectTypePlaceholder: 'タイプを選択...',
+      sendTest: 'テスト通知を送信',
+      sending: '送信中...',
+      successMessage: 'テスト通知が正常に送信されました',
+      errorMessage: '送信失敗：',
+      infoText: '有効な場合、通知はLINE経由で送信されます。それ以外の場合はメールで送信されます。メッセージはユーザーの言語設定を使用します'
+    },
+    ko: {
+      title: '테스트 알림',
+      selectUser: '사용자 선택',
+      selectUserPlaceholder: '사용자 선택...',
+      notificationType: '알림 유형',
+      selectTypePlaceholder: '유형 선택...',
+      sendTest: '테스트 알림 보내기',
+      sending: '보내는 중...',
+      successMessage: '테스트 알림이 성공적으로 전송되었습니다',
+      errorMessage: '전송 실패：',
+      infoText: '활성화된 경우 LINE을 통해 알림이 전송되고, 그렇지 않으면 이메일을 통해 전송됩니다. 메시지는 사용자의 언어 기본 설정을 사용합니다'
+    }
+  };
+
+  const str = strings[language] || strings.en;
+
   const handleSendTest = async () => {
     if (!selectedUser || !selectedType) {
       setResult({ success: false, message: 'Please select user and notification type' });
@@ -93,9 +159,7 @@ const TestNotifications = ({ users = [], language = 'en', colors }) => {
       if (response.data.success) {
         setResult({
           success: true,
-          message: language === 'th' 
-            ? `✅ ส่งการแจ้งเตือนทดสอบสำเร็จ ผ่าน ${response.data.channel}` 
-            : `✅ Test notification sent successfully via ${response.data.channel}`,
+          message: `✅ ${str.successMessage} ${response.data.channel}`,
           channel: response.data.channel
         });
       } else {
@@ -106,9 +170,7 @@ const TestNotifications = ({ users = [], language = 'en', colors }) => {
       console.error('Test notification error:', error);
       setResult({
         success: false,
-        message: language === 'th' 
-          ? `❌ ไม่สามารถส่งได้: ${error.message}` 
-          : `❌ Failed to send: ${error.message}`
+        message: `❌ ${str.errorMessage} ${error.message}`
       });
     } finally {
       setSending(false);
@@ -123,18 +185,18 @@ const TestNotifications = ({ users = [], language = 'en', colors }) => {
       <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
         <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
           <Bell className="w-5 h-5 text-blue-600" />
-          {language === 'th' ? 'ทดสอบการแจ้งเตือน' : 'Test Notifications'}
+          {str.title}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-4">
         {/* User Selection */}
         <div>
           <label className="text-sm font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
-            {language === 'th' ? 'เลือกผู้ใช้' : 'Select User'}
+            {str.selectUser}
           </label>
           <Select value={selectedUser || ''} onValueChange={setSelectedUser}>
             <SelectTrigger style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-              <SelectValue placeholder={language === 'th' ? 'เลือกผู้ใช้...' : 'Select user...'} />
+              <SelectValue placeholder={str.selectUserPlaceholder} />
             </SelectTrigger>
             <SelectContent style={{ backgroundColor: colors.cardBg }}>
               {users.map(user => (
@@ -173,11 +235,11 @@ const TestNotifications = ({ users = [], language = 'en', colors }) => {
         {/* Notification Type Selection */}
         <div>
           <label className="text-sm font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
-            {language === 'th' ? 'ประเภทการแจ้งเตือน' : 'Notification Type'}
+            {str.notificationType}
           </label>
           <Select value={selectedType || ''} onValueChange={setSelectedType}>
             <SelectTrigger style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-              <SelectValue placeholder={language === 'th' ? 'เลือกประเภท...' : 'Select type...'} />
+              <SelectValue placeholder={str.selectTypePlaceholder} />
             </SelectTrigger>
             <SelectContent style={{ backgroundColor: colors.cardBg }}>
               {NOTIFICATION_TYPES.map(type => (
@@ -209,12 +271,12 @@ const TestNotifications = ({ users = [], language = 'en', colors }) => {
           {sending ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              {language === 'th' ? 'กำลังส่ง...' : 'Sending...'}
+              {str.sending}
             </>
           ) : (
             <>
               <Send className="w-4 h-4 mr-2" />
-              {language === 'th' ? 'ส่งการแจ้งเตือนทดสอบ' : 'Send Test Notification'}
+              {str.sendTest}
             </>
           )}
         </Button>
@@ -270,9 +332,7 @@ const TestNotifications = ({ users = [], language = 'en', colors }) => {
           }}
         >
           <p style={{ color: colors.textSecondary }}>
-            {language === 'th' 
-              ? '💡 การแจ้งเตือนจะถูกส่งผ่าน LINE หากเปิดใช้งาน มิฉะนั้นจะส่งทางอีเมล ข้อความจะใช้ภาษาตามการตั้งค่าของผู้ใช้'
-              : '💡 Notifications will be sent via LINE if enabled, otherwise via email. Messages will use the user\'s language preference'}
+            💡 {str.infoText}
           </p>
         </div>
       </CardContent>

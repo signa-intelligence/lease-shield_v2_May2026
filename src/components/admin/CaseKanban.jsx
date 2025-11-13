@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,10 +51,28 @@ export default function CaseKanban({ cases = [], onStatusChange, colors, languag
       filterAll: "ทุกประเภท",
       noCases: "ไม่มีคดีในคอลัมน์นี้",
       dragToMove: "ลากเพื่อเปลี่ยนสถานะ",
+    },
+    zh: {
+      searchPlaceholder: "搜索案件...",
+      filterAll: "所有类型",
+      noCases: "此列中无案件",
+      dragToMove: "拖动以移动状态",
+    },
+    ja: {
+      searchPlaceholder: "ケースを検索...",
+      filterAll: "すべてのタイプ",
+      noCases: "この列にケースはありません",
+      dragToMove: "ドラッグしてステータスを移動",
+    },
+    ko: {
+      searchPlaceholder: "사례 검색...",
+      filterAll: "모든 유형",
+      noCases: "이 열에 사례 없음",
+      dragToMove: "상태를 이동하려면 드래그",
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   // Filter cases
   const filteredCases = cases.filter(c => {

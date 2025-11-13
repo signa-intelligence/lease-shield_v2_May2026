@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -100,10 +101,109 @@ export default function NotificationHistory({ language = 'en', colors }) {
         'maintenance_update': 'ซ่อมบำรุง',
         'test': 'ทดสอบ'
       }
+    },
+    zh: {
+      title: '通知历史',
+      subtitle: '最近的自动通知',
+      total: '总发送数',
+      success: '成功率',
+      filterType: '筛选类型',
+      filterChannel: '渠道',
+      filterStatus: '状态',
+      allTypes: '所有类型',
+      allChannels: '所有渠道',
+      allStatuses: '所有状态',
+      sent: '已发送',
+      failed: '失败',
+      noLogs: '尚未发送通知',
+      recipient: '收件人',
+      type: '类型',
+      channel: '渠道',
+      time: '时间',
+      preview: '预览',
+      types: {
+        '30d_deposit': '30天押金',
+        '7d_deposit': '7天押金',
+        '3d_deposit': '3天押金',
+        'overdue_deposit': '逾期押金',
+        '30d_notice': '30天通知',
+        '7d_notice': '7天通知',
+        '3d_notice': '3天通知',
+        '0d_notice': '今日通知',
+        'rent_reminder': '租金提醒',
+        'maintenance_update': '维护',
+        'test': '测试'
+      }
+    },
+    ja: {
+      title: '通知履歴',
+      subtitle: '最近の自動通知',
+      total: '合計送信数',
+      success: '成功率',
+      filterType: 'タイプでフィルター',
+      filterChannel: 'チャンネル',
+      filterStatus: 'ステータス',
+      allTypes: 'すべてのタイプ',
+      allChannels: 'すべてのチャンネル',
+      allStatuses: 'すべてのステータス',
+      sent: '送信済み',
+      failed: '失敗',
+      noLogs: 'まだ通知が送信されていません',
+      recipient: '受信者',
+      type: 'タイプ',
+      channel: 'チャンネル',
+      time: '時間',
+      preview: 'プレビュー',
+      types: {
+        '30d_deposit': '30日敷金',
+        '7d_deposit': '7日敷金',
+        '3d_deposit': '3日敷金',
+        'overdue_deposit': '延滞敷金',
+        '30d_notice': '30日通知',
+        '7d_notice': '7日通知',
+        '3d_notice': '3日通知',
+        '0d_notice': '今日の通知',
+        'rent_reminder': '家賃リマインダー',
+        'maintenance_update': 'メンテナンス',
+        'test': 'テスト'
+      }
+    },
+    ko: {
+      title: '알림 기록',
+      subtitle: '최근 자동 알림',
+      total: '총 발송수',
+      success: '성공률',
+      filterType: '유형별 필터',
+      filterChannel: '채널',
+      filterStatus: '상태',
+      allTypes: '모든 유형',
+      allChannels: '모든 채널',
+      allStatuses: '모든 상태',
+      sent: '발송됨',
+      failed: '실패',
+      noLogs: '아직 알림이 발송되지 않음',
+      recipient: '수신자',
+      type: '유형',
+      channel: '채널',
+      time: '시간',
+      preview: '미리보기',
+      types: {
+        '30d_deposit': '30일 보증금',
+        '7d_deposit': '7일 보증금',
+        '3d_deposit': '3일 보증금',
+        'overdue_deposit': '연체 보증금',
+        '30d_notice': '30일 통지',
+        '7d_notice': '7일 통지',
+        '3d_notice': '3일 통지',
+        '0d_notice': '오늘 통지',
+        'rent_reminder': '임대료 알림',
+        'maintenance_update': '유지보수',
+        'test': '테스트'
+      }
     }
   };
 
-  const str = strings[language];
+  const str = strings[language] || strings.en;
 
   // Apply filters
   const filteredLogs = logs.filter(log => {

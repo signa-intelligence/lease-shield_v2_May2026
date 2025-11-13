@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -51,8 +52,22 @@ export default function DebouncedSearch({
     th: {
       searching: "กำลังค้นหา...",
       clear: "ล้าง"
+    },
+    zh: {
+      searching: "搜索中...",
+      clear: "清除"
+    },
+    ja: {
+      searching: "検索中...",
+      clear: "クリア"
+    },
+    ko: {
+      searching: "검색 중...",
+      clear: "지우기"
     }
-  }[language];
+  };
+
+  const str = strings[language] || strings.en;
 
   return (
     <div className="relative w-full">
@@ -77,7 +92,7 @@ export default function DebouncedSearch({
           <button
             onClick={handleClear}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-full hover:bg-gray-200 transition-colors"
-            aria-label={strings.clear}
+            aria-label={str.clear}
           >
             <X className="w-4 h-4" style={{ color: colors?.textSecondary || '#64748b' }} />
           </button>
@@ -85,7 +100,7 @@ export default function DebouncedSearch({
       </div>
       {isSearching && (
         <p className="text-xs mt-1" style={{ color: colors?.textSecondary || '#64748b' }}>
-          {strings.searching}
+          {str.searching}
         </p>
       )}
     </div>

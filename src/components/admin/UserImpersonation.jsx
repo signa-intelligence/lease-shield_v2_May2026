@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -96,10 +97,73 @@ export default function UserImpersonation({ colors, language = 'en' }) {
       userTimeline: "ไทม์ไลน์ผู้ใช้",
       internalNotes: "บันทึกภายใน",
       quickActions: "การดำเนินการด่วน",
+    },
+    zh: {
+      title: "用户模拟",
+      subtitle: "以任何用户身份查看应用以进行支持和调试",
+      searchPlaceholder: "按电子邮件或姓名搜索...",
+      noUsers: "未找到用户",
+      viewAsUser: "以用户身份查看",
+      stopImpersonating: "停止查看",
+      currentlyViewing: "当前查看",
+      userEmail: "电子邮件",
+      joinedOn: "加入于",
+      plan: "计划",
+      activity: "活动",
+      leases: "租约",
+      deposits: "押金",
+      cases: "案件",
+      documents: "文档",
+      goToDashboard: "转到仪表板",
+      userTimeline: "用户时间轴",
+      internalNotes: "内部备注",
+      quickActions: "快速操作",
+    },
+    ja: {
+      title: "ユーザーなりすまし",
+      subtitle: "サポートとデバッグのために任意のユーザーとしてアプリを表示",
+      searchPlaceholder: "メールまたは名前で検索...",
+      noUsers: "ユーザーが見つかりません",
+      viewAsUser: "ユーザーとして表示",
+      stopImpersonating: "表示を停止",
+      currentlyViewing: "現在表示中",
+      userEmail: "メール",
+      joinedOn: "参加日",
+      plan: "プラン",
+      activity: "アクティビティ",
+      leases: "賃貸契約",
+      deposits: "敷金",
+      cases: "ケース",
+      documents: "ドキュメント",
+      goToDashboard: "ダッシュボードへ",
+      userTimeline: "ユーザータイムライン",
+      internalNotes: "内部メモ",
+      quickActions: "クイックアクション",
+    },
+    ko: {
+      title: "사용자 가장",
+      subtitle: "지원 및 디버깅을 위해 모든 사용자로 앱 보기",
+      searchPlaceholder: "이메일 또는 이름으로 검색...",
+      noUsers: "사용자를 찾을 수 없음",
+      viewAsUser: "사용자로 보기",
+      stopImpersonating: "보기 중지",
+      currentlyViewing: "현재 보기 중",
+      userEmail: "이메일",
+      joinedOn: "가입일",
+      plan: "계획",
+      activity: "활동",
+      leases: "임대 계약",
+      deposits: "보증금",
+      cases: "사례",
+      documents: "문서",
+      goToDashboard: "대시보드로 이동",
+      userTimeline: "사용자 타임라인",
+      internalNotes: "내부 메모",
+      quickActions: "빠른 작업",
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   const filteredUsers = allUsers.filter(u => 
     u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||

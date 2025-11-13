@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,10 +66,61 @@ const ReminderControl = ({ language = 'en', colors }) => {
       setupCron: 'การตั้งค่าสำหรับการใช้งานจริง',
       cronInstructions: 'สำหรับการใช้งานจริง ตั้งค่า cron job รายวันเพื่อเรียกใช้อัตโนมัติ',
       viewLogs: 'ตรวจสอบ function logs สำหรับรายละเอียด'
+    },
+    zh: {
+      title: '自动提醒系统',
+      description: '手动触发押金、租约和租金的每日提醒检查',
+      runNow: '运行提醒检查',
+      running: '检查中...',
+      lastRun: '上次检查',
+      notificationsSent: '已发送通知',
+      success: '成功',
+      failed: '失败',
+      notRunYet: '尚未运行',
+      depositReminders: '押金提醒',
+      leaseNotices: '租约通知',
+      rentReminders: '租金提醒',
+      setupCron: '生产设置',
+      cronInstructions: '对于生产环境，设置每日cron作业以自动调用此端点',
+      viewLogs: '检查功能日志以获取详细信息'
+    },
+    ja: {
+      title: '自動リマインダーシステム',
+      description: '敷金、賃貸契約、家賃の毎日のリマインダーチェックを手動でトリガー',
+      runNow: 'リマインダーチェックを実行',
+      running: 'チェック中...',
+      lastRun: '最終チェック',
+      notificationsSent: '送信された通知',
+      success: '成功',
+      failed: '失敗',
+      notRunYet: 'まだ実行されていません',
+      depositReminders: '敷金リマインダー',
+      leaseNotices: '賃貸契約通知',
+      rentReminders: '家賃リマインダー',
+      setupCron: '本番設定',
+      cronInstructions: '本番環境では、このエンドポイントを自動的に呼び出すように毎日のcronジョブを設定してください',
+      viewLogs: '詳細については機能ログを確認してください'
+    },
+    ko: {
+      title: '자동 알림 시스템',
+      description: '보증금, 임대 계약 및 임대료에 대한 일일 알림 확인을 수동으로 트리거',
+      runNow: '알림 확인 실행',
+      running: '확인 중...',
+      lastRun: '마지막 확인',
+      notificationsSent: '발송된 알림',
+      success: '성공',
+      failed: '실패',
+      notRunYet: '아직 실행되지 않음',
+      depositReminders: '보증금 알림',
+      leaseNotices: '임대 통지',
+      rentReminders: '임대료 알림',
+      setupCron: '프로덕션 설정',
+      cronInstructions: '프로덕션의 경우 이 엔드포인트를 자동으로 호출하도록 일일 cron 작업을 설정하세요',
+      viewLogs: '세부 정보는 기능 로그를 확인하세요'
     }
   };
 
-  const str = strings[language];
+  const str = strings[language] || strings.en;
 
   const categorizeNotifications = () => {
     if (!lastResult?.details) return { deposit: 0, lease: 0, rent: 0 };
