@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -360,7 +361,7 @@ function PropertyTrackerContent() {
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   const handleRefresh = async () => {
     haptic.light();
