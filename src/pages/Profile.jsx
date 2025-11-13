@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -571,7 +572,9 @@ export default function Profile() {
       accessTemplateLibrary: "Access template library",
       bilingual: "Bilingual Templates",
       humanAndAiGeneration: "Human and AI generation",
-      creditsNeverExpire: "Credits never expire"
+      creditsNeverExpire: "Credits never expire",
+      cancelSuccess: "Cancellation successful. You'll keep access until your renewal date.",
+      cancelFailed: "Failed to cancel. Please try again or contact support."
     },
     th: {
       pageTitle: "โปรไฟล์ของฉัน",
@@ -1055,7 +1058,8 @@ export default function Profile() {
     }
   };
 
-  const strings = t[language] || t.en;
+  // DEFENSIVE: Ensure strings always has a valid fallback
+  const strings = (t[language] && typeof t[language] === 'object') ? t[language] : t.en;
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
@@ -1516,7 +1520,7 @@ export default function Profile() {
                 </p>
                 {!isFree && user?.billing_interval && (
                   <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-                    {user.billing_interval === 'annual' ? (language === 'zh' ? '按年计费' : language === 'ja' ? '年間請求' : language === 'ko' ? '연간 청구' : language === 'th' ? 'เรียกเก็บรายปี' : 'Billed annually') : (language === 'zh' ? '按月计费' : language === 'ja' ? '月額請求' : language === 'ko' ? '월간 청구' : language === 'th' ? 'เรียกเก็บรายเดือน' : 'Billed monthly')}
+                    {user.billing_interval === 'annual' ? (language === 'zh' ? '按年计费' : language === 'ja' ? '年間請求' : language === 'ko' ? '연간 청구' : language === 'th' ? 'เรียกเก็บรายปี' : 'Billed annually')}
                   </p>
                 )}
                 {user?.plan_renews_at && (
