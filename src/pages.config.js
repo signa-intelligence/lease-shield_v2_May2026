@@ -25,6 +25,7 @@ import Analytics from './pages/Analytics';
 import Search from './pages/Search';
 import Timeline from './pages/Timeline';
 import EvidenceVault from './pages/EvidenceVault';
+import RevenueAnalytics from './pages/RevenueAnalytics';
 import Layout from './Layout.jsx';
 
 
@@ -56,6 +57,7 @@ export const PAGES = {
     "Search": Search,
     "Timeline": Timeline,
     "EvidenceVault": EvidenceVault,
+    "RevenueAnalytics": RevenueAnalytics,
 }
 
 export const pagesConfig = {
