@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -44,7 +43,7 @@ import { createPageUrl } from "@/utils";
 export default function Timeline() {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('calendar'); // 'calendar', 'list', 'upcoming'
+  const [viewMode, setViewMode] = useState('calendar');
   const [selectedTypes, setSelectedTypes] = useState([]);
 
   const { data: user } = useQuery({
@@ -259,12 +258,10 @@ export default function Timeline() {
 
   const strings = t[language];
 
-  // Build timeline events from all data sources
   const allEvents = useMemo(() => {
     const events = [];
     const now = new Date();
 
-    // Lease events
     leases.forEach(lease => {
       if (lease.start_date) {
         events.push({
@@ -311,7 +308,6 @@ export default function Timeline() {
       }
     });
 
-    // Deposit events
     deposits.forEach(deposit => {
       if (deposit.expected_return_date) {
         const daysUntil = differenceInDays(parseISO(deposit.expected_return_date), now);
@@ -331,7 +327,6 @@ export default function Timeline() {
       }
     });
 
-    // Case events
     cases.forEach(caseItem => {
       events.push({
         id: `case-${caseItem.id}`,
@@ -347,7 +342,6 @@ export default function Timeline() {
       });
     });
 
-    // Maintenance events
     maintenance.forEach(req => {
       events.push({
         id: `maintenance-${req.id}`,
@@ -366,58 +360,42 @@ export default function Timeline() {
     return events.sort((a, b) => a.date - b.date);
   }, [leases, deposits, cases, maintenance, strings]);
 
-  // Filter events by selected types
   const filteredEvents = useMemo(() => {
     if (selectedTypes.length === 0) return allEvents;
     return allEvents.filter(event => selectedTypes.includes(event.type));
   }, [allEvents, selectedTypes]);
 
-  // Get events for current month (calendar view)
   const monthEvents = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
     
     return filteredEvents.filter(event => 
-      isAfter(event.date, monthStart) && isBefore(event.date, endOfDay(monthEnd))
+      isAfter(event.date, monthStart) && isBefore(event.date, monthEnd)
     );
   }, [filteredEvents, currentDate]);
 
-  // Get upcoming events (next 30 days)
   const upcomingEvents = useMemo(() => {
     const now = new Date();
-    const thirtyDaysFromNow = addMonths(now, 1); // Roughly 30 days from now
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
     
     return filteredEvents
-      .filter(event => isAfter(event.date, startOfDay(now)) && isBefore(event.date, endOfDay(thirtyDaysFromNow)))
+      .filter(event => isAfter(event.date, now) && isBefore(event.date, thirtyDaysFromNow))
       .slice(0, 10);
   }, [filteredEvents]);
 
-  // Get past events
   const pastEvents = useMemo(() => {
     const now = new Date();
     return filteredEvents
-      .filter(event => isBefore(event.date, startOfDay(now)))
+      .filter(event => isBefore(event.date, now))
       .reverse()
       .slice(0, 20);
   }, [filteredEvents]);
 
-  // Calendar grid generation
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
-    
-    // Adjust start of the calendar grid to the first day of the week
-    const startDay = monthStart.getDay(); // 0 for Sunday, 1 for Monday, etc.
-    const daysBefore = startDay; // Days from previous month to show
-    const firstDay = subMonths(monthStart, 1); // Get previous month to correctly calculate start date
-    const startOfGrid = new Date(firstDay.setDate(firstDay.getDate() + (daysBefore)));
-
-    const endDay = monthEnd.getDay();
-    const daysAfter = 6 - endDay; // Days from next month to show
-    const endOfGrid = new Date(monthEnd);
-    endOfGrid.setDate(endOfGrid.getDate() + daysAfter);
-    
-    const days = eachDayOfInterval({ start: startOfGrid, end: endOfGrid });
+    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
     
     return days.map(day => ({
       date: day,
@@ -437,7 +415,7 @@ export default function Timeline() {
     const Icon = event.icon;
     const now = new Date();
     const daysUntil = differenceInDays(event.date, now);
-    const isOverdue = daysUntil < 0 && !event.isPast; // A past event isn't necessarily "overdue" in this context
+    const isOverdue = daysUntil < 0 && !event.isPast;
     const isUrgent = daysUntil <= 7 && daysUntil >= 0;
 
     return (
@@ -487,6 +465,17 @@ export default function Timeline() {
     );
   };
 
+  const getWeekdayLabel = (idx) => {
+    const weekdays = {
+      en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      th: ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'],
+      zh: ['日', '一', '二', '三', '四', '五', '六'],
+      ja: ['日', '月', '火', '水', '木', '金', '土'],
+      ko: ['일', '월', '화', '수', '목', '금', '토']
+    };
+    return weekdays[language]?.[idx] || weekdays['en'][idx];
+  };
+
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
@@ -499,7 +488,6 @@ export default function Timeline() {
           {strings.back}
         </Button>
 
-        {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 bg-ls-forest rounded-xl flex items-center justify-center">
@@ -516,9 +504,7 @@ export default function Timeline() {
           </div>
         </div>
 
-        {/* Controls */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          {/* View Mode Tabs */}
           <div className="flex gap-2 p-1 rounded-lg" style={{ backgroundColor: colors.cardBg, border: `2px solid ${colors.borderColor}` }}>
             <button
               onClick={() => setViewMode('upcoming')}
@@ -555,7 +541,6 @@ export default function Timeline() {
             </button>
           </div>
 
-          {/* Type Filters */}
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedTypes([])}
@@ -590,7 +575,6 @@ export default function Timeline() {
           </div>
         </div>
 
-        {/* UPCOMING VIEW */}
         {viewMode === 'upcoming' && (
           <div className="space-y-6">
             <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
@@ -638,13 +622,12 @@ export default function Timeline() {
           </div>
         )}
 
-        {/* CALENDAR VIEW */}
         {viewMode === 'calendar' && (
           <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle style={{ color: colors.textPrimary }}>
-                  {format(currentDate, 'MMMM yyyy', { locale: language === 'th' ? require('date-fns/locale/th') : undefined || language === 'ja' ? require('date-fns/locale/ja') : undefined || language === 'ko' ? require('date-fns/locale/ko') : undefined || language === 'zh' ? require('date-fns/locale/zh-CN') : undefined })}
+                  {format(currentDate, 'MMMM yyyy')}
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
@@ -672,24 +655,14 @@ export default function Timeline() {
               </div>
             </CardHeader>
             <CardContent className="p-4">
-              {/* Weekday Headers */}
               <div className="grid grid-cols-7 gap-2 mb-2">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
-                  <div key={day} className="text-center text-xs font-bold py-2" style={{ color: colors.textSecondary }}>
-                    {language === 'th' 
-                      ? ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][idx]
-                      : language === 'ja'
-                      ? ['日', '月', '火', '水', '木', '金', '土'][idx]
-                      : language === 'zh'
-                      ? ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][idx]
-                      : language === 'ko'
-                      ? ['일', '월', '화', '수', '목', '금', '토'][idx]
-                      : day}
+                {[0, 1, 2, 3, 4, 5, 6].map((idx) => (
+                  <div key={idx} className="text-center text-xs font-bold py-2" style={{ color: colors.textSecondary }}>
+                    {getWeekdayLabel(idx)}
                   </div>
                 ))}
               </div>
 
-              {/* Calendar Grid */}
               <div className="grid grid-cols-7 gap-2">
                 {calendarDays.map((dayData, idx) => {
                   const hasEvents = dayData.events.length > 0;
@@ -742,14 +715,13 @@ export default function Timeline() {
                 })}
               </div>
 
-              {/* Month Events Summary */}
               {monthEvents.length > 0 && (
                 <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
                   <h3 className="font-bold mb-4 text-sm" style={{ color: colors.textPrimary }}>
-                    {strings.eventsOn} {format(currentDate, 'MMMM', { locale: language === 'th' ? require('date-fns/locale/th') : undefined || language === 'ja' ? require('date-fns/locale/ja') : undefined || language === 'ko' ? require('date-fns/locale/ko') : undefined || language === 'zh' ? require('date-fns/locale/zh-CN') : undefined })} ({monthEvents.length})
+                    {strings.eventsOn} {format(currentDate, 'MMMM')} ({monthEvents.length})
                   </h3>
                   <div className="space-y-3">
-                    {monthEvents.map(event => (
+                    {monthEvents.slice(0, 5).map(event => (
                       <EventCard key={event.id} event={event} />
                     ))}
                   </div>
@@ -759,10 +731,8 @@ export default function Timeline() {
           </Card>
         )}
 
-        {/* LIST VIEW */}
         {viewMode === 'list' && (
           <div className="space-y-6">
-            {/* Upcoming */}
             {upcomingEvents.length > 0 && (
               <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
                 <CardHeader>
@@ -781,7 +751,6 @@ export default function Timeline() {
               </Card>
             )}
 
-            {/* Past */}
             {pastEvents.length > 0 && (
               <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
                 <CardHeader>
@@ -816,4 +785,4 @@ export default function Timeline() {
       </div>
     </div>
   );
-};
+}
