@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock } from "lucide-react";
+import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp } from "lucide-react";
 import { format, differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
@@ -40,7 +40,7 @@ export default function AdminConsole() {
   const [permissionsDialog, setPermissionsDialog] = useState(false);
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState(null);
   const [permissionsFormData, setPermissionsFormData] = useState({});
-  const [showKanban, setShowKanban] = useState(false); // NEW
+  const [showKanban, setShowKanban] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -386,9 +386,12 @@ export default function AdminConsole() {
       accessOpsConsole: "Access Ops Console",
       leaseTrends: "Lease Upload Trends",
       depositTrends: "Deposit Tracking Trends",
-      caseManagement: "Case Management", // NEW
-      hideKanban: "Hide Kanban", // NEW
-      showKanban: "Show Kanban", // NEW
+      caseManagement: "Case Management",
+      hideKanban: "Hide Kanban",
+      showKanban: "Show Kanban",
+      revenueAnalyticsTitle: "Revenue & Business Analytics",
+      revenueAnalyticsDesc: "View revenue, users, and feature purchase insights",
+      viewAnalyticsButton: "View Analytics",
     },
     th: {
       adminConsole: "คอนโซลผู้ดูแล",
@@ -447,9 +450,12 @@ export default function AdminConsole() {
       accessOpsConsole: "เข้าถึงคอนโซลปฏิบัติการ",
       leaseTrends: "แนวโน้มการอัปโหลดสัญญา",
       depositTrends: "แนวโน้มการติดตามเงินมัดจำ",
-      caseManagement: "จัดการคดี", // NEW
-      hideKanban: "ซ่อน Kanban", // NEW
-      showKanban: "แสดง Kanban", // NEW
+      caseManagement: "จัดการคดี",
+      hideKanban: "ซ่อน Kanban",
+      showKanban: "แสดง Kanban",
+      revenueAnalyticsTitle: "วิเคราะห์รายได้และธุรกิจ",
+      revenueAnalyticsDesc: "ดูข้อมูลรายได้ ผู้ใช้ และการซื้อฟีเจอร์",
+      viewAnalyticsButton: "เปิดดู",
     }
   };
 
@@ -597,6 +603,45 @@ export default function AdminConsole() {
             {strings.adminSubtitle}
           </p>
         </div>
+
+        {isSuperAdmin && (
+          <Card className="mb-6 border-none shadow-lg" style={{ 
+            backgroundColor: colors.cardBg,
+            borderLeft: '6px solid #10B981'
+          }}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    backgroundColor: '#10B981',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <DollarSign className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                      {strings.revenueAnalyticsTitle}
+                    </h3>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      {strings.revenueAnalyticsDesc}
+                    </p>
+                  </div>
+                </div>
+                <Link to={createPageUrl("RevenueAnalytics")}>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700">
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    {strings.viewAnalyticsButton}
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
 
