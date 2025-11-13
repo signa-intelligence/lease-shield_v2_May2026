@@ -46,10 +46,31 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, htmlContent
       download: "ดาวน์โหลด Word",
       openNew: "เปิดในแท็บใหม่",
       close: "ปิด"
+    },
+    zh: {
+      loading: "加载信件中...",
+      error: "加载信件失败",
+      download: "下载Word",
+      openNew: "在新标签页中打开",
+      close: "关闭"
+    },
+    ja: {
+      loading: "レター読み込み中...",
+      error: "レターの読み込みに失敗しました",
+      download: "Wordをダウンロード",
+      openNew: "新しいタブで開く",
+      close: "閉じる"
+    },
+    ko: {
+      loading: "편지 로딩 중...",
+      error: "편지 로드 실패",
+      download: "Word 다운로드",
+      openNew: "새 탭에서 열기",
+      close: "닫기"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   useEffect(() => {
     // If htmlContent is provided directly, use it
@@ -108,7 +129,7 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, htmlContent
           borderBottom: `1px solid ${colors.borderColor}`
         }}>
           <DialogTitle className="text-sm sm:text-base" style={{ color: colors.textPrimary }}>
-            {title || (language === 'th' ? 'ตัวอย่างจดหมาย' : 'Letter Preview')}
+            {title || (language === 'th' ? 'ตัวอย่างจดหมาย' : language === 'zh' ? '信件预览' : language === 'ja' ? 'レタープレビュー' : language === 'ko' ? '편지 미리보기' : 'Letter Preview')}
           </DialogTitle>
           <div className="flex items-center gap-2">
             {htmlUrl && (
@@ -152,7 +173,7 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, htmlContent
             <div className="flex flex-col items-center justify-center py-20">
               <p className="text-red-600 mb-4">{error}</p>
               <Button variant="outline" onClick={() => window.location.reload()}>
-                {language === 'th' ? 'ลองอีกครั้ง' : 'Try Again'}
+                {language === 'th' ? 'ลองอีกครั้ง' : language === 'zh' ? '重试' : language === 'ja' ? '再試行' : language === 'ko' ? '다시 시도' : 'Try Again'}
               </Button>
             </div>
           )}
