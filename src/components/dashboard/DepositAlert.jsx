@@ -46,10 +46,43 @@ export default function DepositAlert({ deposits, language = 'en' }) {
       viewDetails: "ดูรายละเอียด",
       openCase: "🛡️ เปิดคดีเลย",
       depositShield: "Deposit Shield พร้อมช่วย"
+    },
+    zh: {
+      title: "押金提醒",
+      noDue: "所有押金都在正常追踪中",
+      dueIn: "还剩",
+      overdue: "逾期",
+      days: "天",
+      amount: "金额",
+      viewDetails: "查看详情",
+      openCase: "🛡️ 立即开启案件",
+      depositShield: "押金盾已准备就绪"
+    },
+    ja: {
+      title: "敷金アラート",
+      noDue: "すべての敷金が予定通り",
+      dueIn: "あと",
+      overdue: "延滞",
+      days: "日",
+      amount: "金額",
+      viewDetails: "詳細を見る",
+      openCase: "🛡️ 今すぐケースを開く",
+      depositShield: "敷金シールド準備完了"
+    },
+    ko: {
+      title: "보증금 알림",
+      noDue: "모든 보증금이 정상 추적 중",
+      dueIn: "남은 기간",
+      overdue: "연체",
+      days: "일",
+      amount: "금액",
+      viewDetails: "세부 정보 보기",
+      openCase: "🛡️ 지금 사례 열기",
+      depositShield: "보증금 실드 준비 완료"
     }
   };
 
-  const str = strings[language];
+  const str = strings[language] || strings.en;
 
   const getUrgencyColor = (days) => {
     if (days < 0) return { bg: '#FEE2E2', text: '#DC2626', border: '#DC2626' }; // Overdue - Red
@@ -104,7 +137,7 @@ export default function DepositAlert({ deposits, language = 'en' }) {
                   <div className="flex items-center gap-2 mb-2">
                     <Home className="w-4 h-4 flex-shrink-0" style={{ color: colors.text }} />
                     <p className="font-semibold text-sm truncate" style={{ color: colors.text }}>
-                      {deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A')}
+                      {deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : language === 'zh' ? '未指定' : language === 'ja' ? '未指定' : language === 'ko' ? '미지정' : 'N/A')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

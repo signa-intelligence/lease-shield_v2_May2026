@@ -43,10 +43,34 @@ export default function RecentLeases({ leases, language }) {
       scanFirst: "อัปโหลดสัญญาเช่าแรกของคุณเพื่อเริ่มต้น",
       scanned: "สแกนแล้ว",
       rent: "ค่าเช่า"
+    },
+    zh: {
+      recentLeases: "最近的租约",
+      viewAll: "查看全部",
+      noLeases: "暂无租约",
+      scanFirst: "上传您的第一份租约以开始",
+      scanned: "已扫描",
+      rent: "租金"
+    },
+    ja: {
+      recentLeases: "最近の賃貸契約",
+      viewAll: "すべて表示",
+      noLeases: "賃貸契約なし",
+      scanFirst: "最初の賃貸契約をアップロードして開始",
+      scanned: "スキャン済み",
+      rent: "家賃"
+    },
+    ko: {
+      recentLeases: "최근 임대 계약",
+      viewAll: "모두 보기",
+      noLeases: "임대 계약 없음",
+      scanFirst: "첫 번째 임대 계약을 업로드하여 시작하세요",
+      scanned: "스캔됨",
+      rent: "임대료"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   return (
     <Card 
