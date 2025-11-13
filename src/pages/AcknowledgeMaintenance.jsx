@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,19 +20,13 @@ export default function AcknowledgeMaintenance() {
   const [billPhotos, setBillPhotos] = useState([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   
-  // Placeholder for user object, replace with actual user context or hook if available
   const [user, setUser] = useState({ language: 'en' }); 
 
   useEffect(() => {
-    // In a real app, you'd fetch the user's language preference here, e.g., from base44.user or context
-    // For this example, it's hardcoded to 'en'
-    // const fetchedUser = base44.user || { language: 'en' }; 
-    // setUser(fetchedUser); 
-
     loadMaintenanceRequest();
   }, []);
 
-  const strings = {
+  const t = {
     en: {
       loading: "Loading...",
       error: "Error",
@@ -221,8 +214,8 @@ export default function AcknowledgeMaintenance() {
     }
   };
 
-  const t = strings[user?.language] || strings.en;
-
+  const language = user?.language || 'en';
+  const strings = t[language] || t.en;
 
   const loadMaintenanceRequest = async () => {
     try {
@@ -230,7 +223,7 @@ export default function AcknowledgeMaintenance() {
       const token = urlParams.get('token');
 
       if (!token) {
-        setError(t.invalidToken);
+        setError(strings.invalidToken);
         setLoading(false);
         return;
       }
@@ -247,16 +240,15 @@ export default function AcknowledgeMaintenance() {
         } else {
           setNewStatus(response.data.maintenanceRequest.status);
         }
-        // Load existing photos if any
         setCompletionPhotos(response.data.maintenanceRequest.completion_photo_urls || []);
         setBillPhotos(response.data.maintenanceRequest.bill_photo_urls || []);
         setActualCost(response.data.maintenanceRequest.actual_cost?.toString() || '');
       } else {
-        setError(t.requestNotFound);
+        setError(strings.requestNotFound);
       }
     } catch (err) {
       console.error('Failed to load maintenance request:', err);
-      setError(err.message || t.failedToLoad);
+      setError(err.message || strings.failedToLoad);
     } finally {
       setLoading(false);
     }
@@ -282,7 +274,7 @@ export default function AcknowledgeMaintenance() {
       }
     } catch (error) {
       console.error('Photo upload failed:', error);
-      alert(t.uploadFailed);
+      alert(strings.uploadFailed);
     } finally {
       setUploadingPhotos(false);
       e.target.value = '';
@@ -316,11 +308,11 @@ export default function AcknowledgeMaintenance() {
       if (response.data?.success) {
         setSuccess(true);
       } else {
-        setError(t.updateFailed);
+        setError(strings.updateFailed);
       }
     } catch (err) {
       console.error('Failed to update:', err);
-      setError(err.message || t.updateFailed);
+      setError(err.message || strings.updateFailed);
     } finally {
       setUpdating(false);
     }
@@ -339,7 +331,7 @@ export default function AcknowledgeMaintenance() {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-ls-forest" />
-          <p className="text-lg" style={{ color: colors.textSecondary }}>{t.loading}</p>
+          <p className="text-lg" style={{ color: colors.textSecondary }}>{strings.loading}</p>
         </div>
       </div>
     );
@@ -351,7 +343,7 @@ export default function AcknowledgeMaintenance() {
         <Card className="max-w-md w-full border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardContent className="p-8 text-center">
             <AlertTriangle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>{t.error}</h2>
+            <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.error}</h2>
             <p style={{ color: colors.textSecondary }}>{error}</p>
           </CardContent>
         </Card>
@@ -366,23 +358,23 @@ export default function AcknowledgeMaintenance() {
           <CardContent className="p-8 text-center">
             <CheckCircle2 className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {t.updateSuccessful}
+              {strings.updateSuccessful}
             </h2>
             <p className="mb-6" style={{ color: colors.textSecondary }}>
-              {t.tenantNotified}
+              {strings.tenantNotified}
             </p>
             <div className="p-4 rounded-lg" style={{ backgroundColor: '#F3F4F6' }}>
               <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                {t.status}: <span className="text-ls-forest">{newStatus.toUpperCase()}</span>
+                {strings.status}: <span className="text-ls-forest">{newStatus.toUpperCase()}</span>
               </p>
               {completionPhotos.length > 0 && (
                 <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
-                  {completionPhotos.length} {t.completionPhotos}
+                  {completionPhotos.length} {strings.completionPhotos}
                 </p>
               )}
               {billPhotos.length > 0 && (
                 <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                  {billPhotos.length} {t.billPhotos}
+                  {billPhotos.length} {strings.billPhotos}
                 </p>
               )}
             </div>
@@ -399,10 +391,10 @@ export default function AcknowledgeMaintenance() {
           <div className="flex items-center gap-3 mb-2">
             <Wrench className="w-8 h-8 text-ls-forest" />
             <h1 className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
-              {t.maintenanceRequest}
+              {strings.maintenanceRequest}
             </h1>
           </div>
-          <p style={{ color: colors.textSecondary }}>{t.updateStatus}</p>
+          <p style={{ color: colors.textSecondary }}>{strings.updateStatus}</p>
         </div>
 
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
@@ -414,30 +406,30 @@ export default function AcknowledgeMaintenance() {
           <CardContent className="p-6">
             <div className="space-y-4">
               <div>
-                <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{t.description}</p>
+                <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.description}</p>
                 <p style={{ color: colors.textPrimary }}>{maintenanceRequest?.description}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{t.category}</p>
+                  <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.category}</p>
                   <p style={{ color: colors.textPrimary }}>{maintenanceRequest?.category}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{t.priority}</p>
+                  <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.priority}</p>
                   <p style={{ color: colors.textPrimary }} className="capitalize">{maintenanceRequest?.priority}</p>
                 </div>
               </div>
 
               {maintenanceRequest?.property_address && (
                 <div>
-                  <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{t.property}</p>
+                  <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.property}</p>
                   <p style={{ color: colors.textPrimary }}>{maintenanceRequest.property_address}</p>
                 </div>
               )}
 
               <div>
-                <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{t.reported}</p>
+                <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.reported}</p>
                 <p style={{ color: colors.textPrimary }}>
                   {maintenanceRequest?.reported_date && new Date(maintenanceRequest.reported_date).toLocaleDateString()}
                 </p>
@@ -445,7 +437,7 @@ export default function AcknowledgeMaintenance() {
 
               {maintenanceRequest?.photo_urls && maintenanceRequest.photo_urls.length > 0 && (
                 <div>
-                  <p className="text-sm font-semibold mb-2" style={{ color: colors.textSecondary }}>{t.tenantPhotos}</p>
+                  <p className="text-sm font-semibold mb-2" style={{ color: colors.textSecondary }}>{strings.tenantPhotos}</p>
                   <div className="grid grid-cols-3 gap-2">
                     {maintenanceRequest.photo_urls.map((url, index) => (
                       <img
@@ -468,14 +460,14 @@ export default function AcknowledgeMaintenance() {
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <Clock className="w-5 h-5 text-ls-gold" />
-              {t.updateStatusDoc}
+              {strings.updateStatusDoc}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-6">
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                  {t.newStatus}
+                  {strings.newStatus}
                 </Label>
                 <select
                   value={newStatus}
@@ -497,12 +489,12 @@ export default function AcknowledgeMaintenance() {
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <MessageSquare className="w-4 h-4 inline mr-1" />
-                  {t.response}
+                  {strings.response}
                 </Label>
                 <Textarea
                   value={landlordResponse}
                   onChange={(e) => setLandlordResponse(e.target.value)}
-                  placeholder={t.responsePlaceholder}
+                  placeholder={strings.responsePlaceholder}
                   rows={4}
                   className="w-full p-3 border-2 rounded-lg"
                   style={{
@@ -516,13 +508,13 @@ export default function AcknowledgeMaintenance() {
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Receipt className="w-4 h-4 inline mr-1" />
-                  {t.actualCost}
+                  {strings.actualCost}
                 </Label>
                 <Input
                   type="number"
                   value={actualCost}
                   onChange={(e) => setActualCost(e.target.value)}
-                  placeholder={t.actualCostPlaceholder}
+                  placeholder={strings.actualCostPlaceholder}
                   className="w-full p-3 border-2 rounded-lg"
                   style={{
                     backgroundColor: colors.cardBg,
@@ -532,14 +524,13 @@ export default function AcknowledgeMaintenance() {
                 />
               </div>
 
-              {/* Completion Photos */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Camera className="w-4 h-4 inline mr-1" />
-                  {t.completionPhotosLabel}
+                  {strings.completionPhotosLabel}
                 </Label>
                 <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
-                  {t.completionPhotosDesc}
+                  {strings.completionPhotosDesc}
                 </p>
 
                 {completionPhotos.length > 0 && (
@@ -591,25 +582,24 @@ export default function AcknowledgeMaintenance() {
                   {uploadingPhotos ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      <span className="font-medium">{t.uploading}</span>
+                      <span className="font-medium">{strings.uploading}</span>
                     </>
                   ) : (
                     <>
                       <Camera className="w-5 h-5" />
-                      <span className="font-medium">{t.addCompletionPhotos}</span>
+                      <span className="font-medium">{strings.addCompletionPhotos}</span>
                     </>
                   )}
                 </label>
               </div>
 
-              {/* Bill Photos */}
               <div>
                 <Label className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   <Receipt className="w-4 h-4 inline mr-1" />
-                  {t.billPhotosLabel}
+                  {strings.billPhotosLabel}
                 </Label>
                 <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
-                  {t.billPhotosDesc}
+                  {strings.billPhotosDesc}
                 </p>
 
                 {billPhotos.length > 0 && (
@@ -661,12 +651,12 @@ export default function AcknowledgeMaintenance() {
                   {uploadingPhotos ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      <span className="font-medium">{t.uploading}</span>
+                      <span className="font-medium">{strings.uploading}</span>
                     </>
                   ) : (
                     <>
                       <Receipt className="w-5 h-5" />
-                      <span className="font-medium">{t.addBillPhotos}</span>
+                      <span className="font-medium">{strings.addBillPhotos}</span>
                     </>
                   )}
                 </label>
@@ -680,12 +670,12 @@ export default function AcknowledgeMaintenance() {
                 {updating ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    {t.updating}
+                    {strings.updating}
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5 mr-2" />
-                    {t.updateNotify}
+                    {strings.updateNotify}
                   </>
                 )}
               </Button>
