@@ -135,7 +135,14 @@ export default function TemplateForm() {
       selectLetterTypePlaceholder: "Choose a letter type",
       concernsList: "List of Concerns (Optional)",
       concernsListPlaceholder: "e.g., Unpaid rent, Noise complaints, Unauthorized pet",
-      creditsDeductedMessage: "1 credit will be deducted upon saving this letter."
+      creditsDeductedMessage: "1 credit will be deducted upon saving this letter.",
+      selectTypeFirst: "Please select a letter type",
+      insufficientCreditsMsg: "Insufficient credits. Please purchase credits to generate letters.",
+      creditAlreadyDeducted: "On save, the letter will be stored in Evidence Vault (credit already deducted)",
+      cancelEditConfirm: "Cancel editing? Credit was already deducted. If you cancel, the letter will not be saved.",
+      reviewContentRequired: "Please review letter content",
+      saveFailed: "Failed to save. Please try again.",
+      creditDeductedRemaining: "✅ Credit deducted - {credits_remaining} remaining"
     },
     th: {
       generateLetter: "สร้างจดหมาย",
@@ -196,24 +203,235 @@ export default function TemplateForm() {
       selectLetterTypePlaceholder: "เลือกประเภทจดหมาย",
       concernsList: "รายการข้อกังวล (ไม่บังคับ)",
       concernsListPlaceholder: "เช่น ค่าเช่าที่ค้างชำระ, ข้อร้องเรียนเรื่องเสียงดัง, สัตว์เลี้ยงไม่ได้รับอนุญาต",
-      creditsDeductedMessage: "จะถูกหัก 1 เครดิตเมื่อบันทึกจดหมายนี้"
+      creditsDeductedMessage: "จะถูกหัก 1 เครดิตเมื่อบันทึกจดหมายนี้",
+      selectTypeFirst: "กรุณาเลือกประเภทจดหมาย",
+      insufficientCreditsMsg: "เครดิตไม่เพียงพอ กรุณาซื้อเครดิตเพื่อสร้างจดหมาย",
+      creditAlreadyDeducted: "เมื่อบันทึก จดหมายจะถูกเก็บในคลังหลักฐาน (เครดิตถูกหักไปแล้ว)",
+      cancelEditConfirm: "ยกเลิกการแก้ไข? เครดิตถูกหักไปแล้ว หากยกเลิกจะไม่มีการบันทึกจดหมาย",
+      reviewContentRequired: "กรุณาตรวจสอบเนื้อหาจดหมาย",
+      saveFailed: "ไม่สามารถบันทึกได้ กรุณาลองอีกครั้ง",
+      creditDeductedRemaining: "✅ เครดิตถูกหักแล้ว - เหลือ {credits_remaining}"
+    },
+    zh: {
+      generateLetter: "生成信件",
+      formDesc: "填写详细信息以生成您的信件",
+      personalDetails: "信件详情",
+      yourName: "您的姓名（租户）",
+      yourNamePlaceholder: "张三",
+      landlordName: "房东姓名",
+      landlordNamePlaceholder: "李四",
+      propertyAddress: "物业地址",
+      propertyAddressPlaceholder: "123 Main St, Bangkok",
+      contractRef: "合同参考（可选）",
+      contractRefPlaceholder: "例如，2024年1月15日签订的租约",
+      depositAmount: "押金金额（可选）",
+      letterType: "信件类型",
+      depositReturn: "押金退还请求",
+      damageDispute: "损害索赔回应",
+      earlyTermination: "提前终止通知",
+      generateButton: "生成信件",
+      generating: "生成中...",
+      cancel: "返回",
+      required: "必填",
+      errorFillRequired: '请填写您的姓名和房东姓名。',
+      errorGenerationFailed: '生成信件失败。请重试。',
+      successTitle: "信件生成成功！",
+      successDesc: "您的双语信件已创建并保存到文档保管库。",
+      previewHtml: "在浏览器中预览",
+      downloadWord: "下载Word",
+      goToVault: "转到文档保管库",
+      exampleItem1: "示例项目1（可选）",
+      exampleItem1Placeholder: "例如，墙壁划痕",
+      exampleItem2: "示例项目2（可选）",
+      exampleItem2Placeholder: "例如，地毯轻微磨损",
+      exampleItem3: "示例项目3（可选）",
+      exampleItem3Placeholder: "例如，轻微划痕",
+      breachSummary: "违约摘要",
+      breachSummaryPlaceholder: "描述不合规问题...",
+      settlementAmount: "和解金额（泰铢）",
+      settlementAmountPlaceholder: "18000",
+      settlementDate: "和解日期",
+      insufficientCreditsError: "信用不足。请从帐户页面购买信用。",
+      insufficientCreditsWarningTitle: "⚠️ 信用不足",
+      insufficientCreditsWarningDesc: "您需要1个信用来生成信件。请从帐户页面购买信用。",
+      goToAccount: "转到帐户",
+      creditsLabel: "信用",
+      back: "返回",
+      reviewEditLetter: "审阅和编辑信件",
+      reviewEditLetterDesc: "在保存之前审阅内容并进行编辑。您可以直接编辑文本。",
+      editContent: "编辑内容",
+      englishLetter: "英文信件",
+      thaiLetter: "泰文信件",
+      saveLetter: "保存信件",
+      saving: "保存中...",
+      saveLetterSuccess: "信件保存成功！",
+      saveLetterCreditDeduction: "⚡ 保存时，将扣除1个信用，信件将保存到文档保管库。",
+      cancelReviewConfirm: "取消信件生成？更改将不会保存。",
+      selectLetterType: "选择信件类型",
+      selectLetterTypePlaceholder: "选择信件类型",
+      concernsList: "关注列表（可选）",
+      concernsListPlaceholder: "例如，未付租金、噪音投诉、未经授权的宠物",
+      creditsDeductedMessage: "保存此信件时将扣除1个信用。",
+      selectTypeFirst: "请先选择信件类型",
+      insufficientCreditsMsg: "信用不足。请购买信用以生成信件。",
+      creditAlreadyDeducted: "保存时，信件将存储在证据保管库中（信用已扣除）",
+      cancelEditConfirm: "取消编辑？信用已被扣除。如果取消，信件将不会被保存。",
+      reviewContentRequired: "请审阅信件内容",
+      saveFailed: "保存失败。请重试。",
+      creditDeductedRemaining: "✅ 信用已扣除 - 剩余 {credits_remaining}"
+    },
+    ja: {
+      generateLetter: "レターを生成",
+      formDesc: "レター生成のための詳細を入力してください",
+      personalDetails: "レター詳細",
+      yourName: "あなたの名前（賃借人）",
+      yourNamePlaceholder: "田中太郎",
+      landlordName: "家主の名前",
+      landlordNamePlaceholder: "佐藤花子",
+      propertyAddress: "物件住所",
+      propertyAddressPlaceholder: "123 Main St, Bangkok",
+      contractRef: "契約参照（オプション）",
+      contractRefPlaceholder: "例：2024年1月15日付けリース",
+      depositAmount: "敷金額（オプション）",
+      letterType: "レタータイプ",
+      depositReturn: "敷金返還請求",
+      damageDispute: "損害請求への回答",
+      earlyTermination: "早期終了通知",
+      generateButton: "レターを生成",
+      generating: "生成中...",
+      cancel: "戻る",
+      required: "必須",
+      errorFillRequired: 'あなたの名前と家主の名前を入力してください。',
+      errorGenerationFailed: 'レターの生成に失敗しました。もう一度お試しください。',
+      successTitle: "レター生成成功！",
+      successDesc: "バイリンガルレターが作成され、ドキュメントボールトに保存されました。",
+      previewHtml: "ブラウザでプレビュー",
+      downloadWord: "Wordをダウンロード",
+      goToVault: "ドキュメントボールトへ",
+      exampleItem1: "例アイテム1（オプション）",
+      exampleItem1Placeholder: "例：壁の擦り傷",
+      exampleItem2: "例アイテム2（オプション）",
+      exampleItem2Placeholder: "例：軽微なカーペットの摩耗",
+      exampleItem3: "例アイテム3（オプション）",
+      exampleItem3Placeholder: "例：軽微な引っかき傷",
+      breachSummary: "違反の概要",
+      breachSummaryPlaceholder: "コンプライアンス違反の問題を説明...",
+      settlementAmount: "和解金額（タイバーツ）",
+      settlementAmountPlaceholder: "18000",
+      settlementDate: "和解日",
+      insufficientCreditsError: "クレジット不足。アカウントページからクレジットを購入してください。",
+      insufficientCreditsWarningTitle: "⚠️ クレジット不足",
+      insufficientCreditsWarningDesc: "レターを生成するには1クレジットが必要です。アカウントページからクレジットを購入してください。",
+      goToAccount: "アカウントへ",
+      creditsLabel: "クレジット",
+      back: "戻る",
+      reviewEditLetter: "レターを確認して編集",
+      reviewEditLetterDesc: "保存する前に内容を確認して編集してください。テキストを直接編集できます。",
+      editContent: "コンテンツを編集",
+      englishLetter: "英語レター",
+      thaiLetter: "タイ語レター",
+      saveLetter: "レターを保存",
+      saving: "保存中...",
+      saveLetterSuccess: "レターが正常に保存されました！",
+      saveLetterCreditDeduction: "⚡ 保存時に1クレジットが差し引かれ、レターがドキュメントボールトに保存されます。",
+      cancelReviewConfirm: "レター生成をキャンセルしますか？変更は保存されません。",
+      selectLetterType: "レタータイプを選択",
+      selectLetterTypePlaceholder: "レタータイプを選択",
+      concernsList: "懸念事項リスト（オプション）",
+      concernsListPlaceholder: "例：未払い家賃、騒音苦情、無許可のペット",
+      creditsDeductedMessage: "このレターを保存すると1クレジットが差し引かれます。",
+      selectTypeFirst: "まずレタータイプを選択してください",
+      insufficientCreditsMsg: "クレジット不足。レター生成にはクレジットを購入してください。",
+      creditAlreadyDeducted: "保存時にレターは証拠保管庫に保存されます（クレジットは既に差し引かれています）",
+      cancelEditConfirm: "編集をキャンセルしますか？クレジットは既に差し引かれています。キャンセルすると、レターは保存されません。",
+      reviewContentRequired: "レターの内容を確認してください",
+      saveFailed: "保存に失敗しました。もう一度お試しください。",
+      creditDeductedRemaining: "✅ クレジットが差し引かれました - 残り {credits_remaining}"
+    },
+    ko: {
+      generateLetter: "편지 생성",
+      formDesc: "편지를 생성하기 위해 세부 정보를 입력하세요",
+      personalDetails: "편지 세부정보",
+      yourName: "귀하의 이름（임차인）",
+      yourNamePlaceholder: "홍길동",
+      landlordName: "집주인 이름",
+      landlordNamePlaceholder: "김영희",
+      propertyAddress: "부동산 주소",
+      propertyAddressPlaceholder: "123 Main St, Bangkok",
+      contractRef: "계약 참조（선택사항）",
+      contractRefPlaceholder: "예：2024년 1월 15일자 임대",
+      depositAmount: "보증금 금액（선택사항）",
+      letterType: "편지 유형",
+      depositReturn: "보증금 반환 요청",
+      damageDispute: "손해 청구 응답",
+      earlyTermination: "조기 종료 통지",
+      generateButton: "편지 생성",
+      generating: "생성 중...",
+      cancel: "뒤로",
+      required: "필수",
+      errorFillRequired: '귀하의 이름과 집주인 이름을 입력하세요.',
+      errorGenerationFailed: '편지 생성 실패. 다시 시도하세요.',
+      successTitle: "편지 생성 성공！",
+      successDesc: "이중 언어 편지가 생성되어 문서 보관소에 저장되었습니다.",
+      previewHtml: "브라우저에서 미리보기",
+      downloadWord: "Word 다운로드",
+      goToVault: "문서 보관소로 이동",
+      exampleItem1: "예시 항목 1（선택사항）",
+      exampleItem1Placeholder: "예：벽 긁힘",
+      exampleItem2: "예시 항목 2（선택사항）",
+      exampleItem2Placeholder: "예：카펫 경미한 마모",
+      exampleItem3: "예시 항목 3（선택사항）",
+      exampleItem3Placeholder: "예：가벼운 긁힘",
+      breachSummary: "위반 요약",
+      breachSummaryPlaceholder: "준수 위반 문제를 설명하세요...",
+      settlementAmount: "합의 금액（바트）",
+      settlementAmountPlaceholder: "18000",
+      settlementDate: "합의 날짜",
+      insufficientCreditsError: "크레딧 부족. 계정 페이지에서 크레딧을 구매하세요.",
+      insufficientCreditsWarningTitle: "⚠️ 크레딧 부족",
+      insufficientCreditsWarningDesc: "편지를 생성하려면 1 크레딧이 필요합니다. 계정 페이지에서 크레딧을 구매하세요.",
+      goToAccount: "계정으로 이동",
+      creditsLabel: "크레딧",
+      back: "뒤로",
+      reviewEditLetter: "편지 검토 및 편집",
+      reviewEditLetterDesc: "저장하기 전에 내용을 검토하고 편집하세요. 텍스트를 직접 편집할 수 있습니다.",
+      editContent: "콘텐츠 편집",
+      englishLetter: "영어 편지",
+      thaiLetter: "태국어 편지",
+      saveLetter: "편지 저장",
+      saving: "저장 중...",
+      saveLetterSuccess: "편지가 성공적으로 저장되었습니다！",
+      saveLetterCreditDeduction: "⚡ 저장 시 1 크레딧이 차감되고 편지가 문서 보관소에 저장됩니다.",
+      cancelReviewConfirm: "편지 생성을 취소하시겠습니까? 변경사항이 저장되지 않습니다.",
+      selectLetterType: "편지 유형 선택",
+      selectLetterTypePlaceholder: "편지 유형 선택",
+      concernsList: "우려 목록（선택사항）",
+      concernsListPlaceholder: "예：미납 임대료, 소음 불만, 무단 애완동물",
+      creditsDeductedMessage: "이 편지를 저장하면 1 크레딧이 차감됩니다.",
+      selectTypeFirst: "먼저 편지 유형을 선택하세요",
+      insufficientCreditsMsg: "크레딧 부족. 편지를 생성하려면 크레딧을 구매하세요.",
+      creditAlreadyDeducted: "저장 시 편지가 증거 보관소에 저장됩니다（크레딧이 이미 차감됨）",
+      cancelEditConfirm: "편집을 취소하시겠습니까? 크레딧이 이미 차감되었습니다. 취소하면 편지가 저장되지 않습니다.",
+      reviewContentRequired: "편지 내용을 검토하세요",
+      saveFailed: "저장 실패. 다시 시도하세요.",
+      creditDeductedRemaining: "✅ 크레딧 차감됨 - {credits_remaining} 남음"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   const letterTypeLabels = {
-    deposit: language === 'th' ? 'จดหมายขอคืนเงินมัดจำ' : 'Deposit Return Request',
-    deductions: language === 'th' ? 'ขอรายละเอียดการหักเงิน' : 'Request for Itemised Deductions',
-    reminder: language === 'th' ? 'จดหมายเตือนแบบมิตร' : 'Friendly Reminder',
-    dispute: language === 'th' ? 'จดหมายคัดค้านการระงับเงิน' : 'Formal Dispute of Withholding',
-    early_termination: language === 'th' ? 'ประสานยุติสัญญาก่อนกำหนด' : 'Early Termination Reconciliation',
-    condition_dispute: language === 'th' ? 'โต้แย้งสภาพทรัพย์สิน' : 'Property Condition Dispute',
-    evidence: language === 'th' ? 'ขอหลักฐานประกอบ' : 'Request for Evidence',
-    final_opportunity: language === 'th' ? 'โอกาสสุดท้าย' : 'Final Opportunity',
-    non_compliance: language === 'th' ? 'แจ้งไม่ปฏิบัติตามสัญญา' : 'Notice of Non-Compliance',
-    settlement: language === 'th' ? 'ยืนยันการตกลงชำระเงิน' : 'Settlement Confirmation',
-    general_concerns: language === 'th' ? 'ข้อกังวลทั่วไป' : 'General Concerns/Issues'
+    deposit: strings.depositReturn,
+    deductions: language === 'th' ? 'ขอรายละเอียดการหักเงิน' : language === 'zh' ? '要求逐项扣除' : language === 'ja' ? '明細化された控除要求' : language === 'ko' ? '항목별 공제 요청' : 'Request for Itemised Deductions',
+    reminder: language === 'th' ? 'จดหมายเตือนแบบมิตร' : language === 'zh' ? '友好提醒' : language === 'ja' ? '友好的なリマインダー' : language === 'ko' ? '친근한 알림' : 'Friendly Reminder',
+    dispute: language === 'th' ? 'จดหมายคัดค้านการระงับเงิน' : language === 'zh' ? '正式扣款争议' : language === 'ja' ? '差し止めに対する正式な異議申し立て' : language === 'ko' ? '공식 보류 이의 제기' : 'Formal Dispute of Withholding',
+    early_termination: language === 'th' ? 'ประสานยุติสัญญาก่อนกำหนด' : language === 'zh' ? '提前终止调解' : language === 'ja' ? '早期終了和解' : language === 'ko' ? '조기 해지 조정' : 'Early Termination Reconciliation',
+    condition_dispute: language === 'th' ? 'โต้แย้งสภาพทรัพย์สิน' : language === 'zh' ? '财产状况争议' : language === 'ja' ? '物件状態に関する紛争' : language === 'ko' ? '부동산 상태 분쟁' : 'Property Condition Dispute',
+    evidence: language === 'th' ? 'ขอหลักฐานประกอบ' : language === 'zh' ? '要求提供证据' : language === 'ja' ? '証拠提出要求' : language === 'ko' ? '증거 요청' : 'Request for Evidence',
+    final_opportunity: language === 'th' ? 'โอกาสสุดท้าย' : language === 'zh' ? '最后机会' : language === 'ja' ? '最終的な機会' : language === 'ko' ? '마지막 기회' : 'Final Opportunity',
+    non_compliance: language === 'th' ? 'แจ้งไม่ปฏิบัติตามสัญญา' : language === 'zh' ? '违规通知' : language === 'ja' ? '不履行通知' : language === 'ko' ? '미준수 통지' : 'Notice of Non-Compliance',
+    settlement: language === 'th' ? 'ยืนยันการตกลงชำระเงิน' : language === 'zh' ? '和解确认' : language === 'ja' ? '和解確認' : language === 'ko' ? '합의 확인' : 'Settlement Confirmation',
+    general_concerns: language === 'th' ? 'ข้อกังวลทั่วไป' : language === 'zh' ? '一般关注/问题' : language === 'ja' ? '一般的な懸念/問題' : language === 'ko' ? '일반적인 우려/문제' : 'General Concerns/Issues'
   };
 
   const handleInputChange = (field, value) => {
@@ -227,7 +445,7 @@ export default function TemplateForm() {
 
     // Basic validation
     if (!formData.subject) {
-      setError(language === 'th' ? 'กรุณาเลือกประเภทจดหมาย' : 'Please select a letter type');
+      setError(strings.selectTypeFirst);
       return;
     }
     if (!formData.tenant_name || !formData.landlord_name) {
@@ -237,9 +455,7 @@ export default function TemplateForm() {
 
     // Credit check
     if (userCredits < 1) {
-      setError(language === 'th'
-        ? 'เครดิตไม่เพียงพอ กรุณาซื้อเครดิตเพื่อสร้างจดหมาย'
-        : 'Insufficient credits. Please purchase credits to generate letters.');
+      setError(strings.insufficientCreditsMsg);
       return;
     }
 
@@ -261,13 +477,11 @@ export default function TemplateForm() {
         });
         setReviewMode(true); // Enter review mode
       } else {
-        throw new Error(response.data?.error || 'Generation failed');
+        throw new Error(response.data?.error || strings.errorGenerationFailed);
       }
     } catch (err) {
       console.error('Generation error:', err);
-      setError(err.message || (language === 'th'
-        ? 'ไม่สามารถสร้างจดหมายได้ กรุณาลองอีกครั้ง'
-        : 'Failed to generate letter. Please try again.'));
+      setError(err.message || strings.errorGenerationFailed);
     } finally {
       setGenerating(false);
     }
@@ -275,7 +489,7 @@ export default function TemplateForm() {
 
   const handleSaveAfterReview = async () => {
     if (!generatedLetter || !editedContent.letter_en || !editedContent.letter_th) {
-      setError(language === 'th' ? 'กรุณาตรวจสอบเนื้อหาจดหมาย' : 'Please review letter content');
+      setError(strings.reviewContentRequired);
       return;
     }
 
@@ -295,28 +509,22 @@ export default function TemplateForm() {
         queryClient.invalidateQueries({ queryKey: ['documents'] });
 
         // Show success and navigate
-        alert(language === 'th'
-          ? 'บันทึกจดหมายสำเร็จ!'
-          : 'Letter saved successfully!');
+        alert(strings.saveLetterSuccess);
 
         navigate(createPageUrl("DocumentVault"));
       } else {
-        throw new Error(response.data?.error || 'Save failed');
+        throw new Error(response.data?.error || strings.saveFailed);
       }
     } catch (err) {
       console.error('Save error:', err);
-      setError(err.message || (language === 'th'
-        ? 'ไม่สามารถบันทึกได้ กรุณาลองอีกครั้ง'
-        : 'Failed to save. Please try again.'));
+      setError(err.message || strings.saveFailed);
     } finally {
       setSaving(false);
     }
   };
 
   const handleCancelReview = () => {
-    if (window.confirm(language === 'th'
-      ? 'ยกเลิกการแก้ไข? เครดิตถูกหักไปแล้ว หากยกเลิกจะไม่มีการบันทึกจดหมาย'
-      : 'Cancel editing? Credit was already deducted. If you cancel, the letter will not be saved.')) {
+    if (window.confirm(strings.cancelEditConfirm)) {
       setReviewMode(false);
       setGeneratedLetter(null);
       setEditedContent({ letter_en: '', letter_th: '' });
@@ -343,18 +551,14 @@ export default function TemplateForm() {
 
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {language === 'th' ? 'ตรวจสอบและแก้ไขจดหมาย' : 'Review & Edit Letter'}
+              {strings.reviewEditLetter}
             </h1>
             <p style={{ color: colors.textSecondary }}>
-              {language === 'th'
-                ? 'ตรวจสอบเนื้อหาและแก้ไขตามต้องการ จากนั้นบันทึกไปยังคลังหลักฐาน'
-                : 'Review the content and make any edits needed, then save to Evidence Vault.'}
+              {strings.reviewEditLetterDesc}
             </p>
             <div className="mt-2">
               <Badge className="bg-amber-100 text-amber-700 border-amber-200">
-                {language === 'th'
-                  ? `✅ เครดิตถูกหักแล้ว - เหลือ ${generatedLetter.credits_remaining || 0}`
-                  : `✅ Credit deducted - ${generatedLetter.credits_remaining || 0} remaining`}
+                {strings.creditDeductedRemaining.replace('{credits_remaining}', generatedLetter.credits_remaining || 0)}
               </Badge>
             </div>
           </div>
@@ -373,15 +577,15 @@ export default function TemplateForm() {
           <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
               <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Edit2 className="w-5 h-5 text-purple-600" /> {/* Kept original purple as ls-forest is not in colors */}
-                {language === 'th' ? 'แก้ไขเนื้อหา' : 'Edit Content'}
+                <Edit2 className="w-5 h-5 text-purple-600" />
+                {strings.editContent}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               {/* English Version */}
               <div>
                 <Label htmlFor="letter_en" className="text-base font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? 'จดหมายภาษาอังกฤษ' : 'English Letter'}
+                  {strings.englishLetter}
                 </Label>
                 <Textarea
                   id="letter_en"
@@ -401,7 +605,7 @@ export default function TemplateForm() {
               {/* Thai Version */}
               <div>
                 <Label htmlFor="letter_th" className="text-base font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? 'จดหมายภาษาไทย' : 'Thai Letter'}
+                  {strings.thaiLetter}
                 </Label>
                 <Textarea
                   id="letter_th"
@@ -437,26 +641,24 @@ export default function TemplateForm() {
                 <Button
                   onClick={handleSaveAfterReview}
                   disabled={saving || !editedContent.letter_en || !editedContent.letter_th}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" // Using purple as ls-forest is not in colors
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   {saving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
+                      {strings.saving}
                     </>
                   ) : (
                     <>
                       <Save className="w-4 h-4 mr-2" />
-                      {language === 'th' ? 'บันทึกจดหมาย' : 'Save Letter'}
+                      {strings.saveLetter}
                     </>
                   )}
                 </Button>
               </div>
 
               <div className="text-xs text-center pt-2" style={{ color: colors.textSecondary }}>
-                {language === 'th'
-                  ? '💾 เมื่อบันทึก จดหมายจะถูกเก็บในคลังหลักฐาน (เครดิตถูกหักไปแล้ว)'
-                  : '💾 On save, the letter will be stored in Evidence Vault (credit already deducted)'}
+                {strings.creditAlreadyDeducted}
               </div>
             </CardContent>
           </Card>
@@ -475,7 +677,7 @@ export default function TemplateForm() {
           style={{ color: colors.textSecondary }}
         >
           <ArrowLeft className="w-4 h-4" />
-          {strings.cancel}
+          {strings.back}
         </button>
 
         <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>

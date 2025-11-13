@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -69,9 +70,7 @@ export default function MaintenanceTracker() {
           const sentCount = notificationResponse.data.notifications?.filter(n => n.status === 'sent').length || 0;
           if (sentCount > 0) {
             alert(
-              language === 'th'
-                ? `✅ คำขอซ่อมถูกส่งแล้ว!\n\nแจ้งไปยัง: ${sentCount} ผู้รับ`
-                : `✅ Request sent to ${sentCount} recipient(s)!`
+              `${strings.requestSent} ${sentCount} ${strings.recipients}`
             );
           }
         }
@@ -118,6 +117,9 @@ export default function MaintenanceTracker() {
       back: "Back",
       viewChat: "View Chat",
       hideChat: "Hide Chat",
+      requestSent: "Request sent to",
+      recipients: "recipient(s)!",
+      failedToCreate: "Failed to create request. Please try again."
     },
     th: {
       title: "ติดตามการซ่อมบำรุง",
@@ -142,10 +144,94 @@ export default function MaintenanceTracker() {
       back: "กลับ",
       viewChat: "ดูแชท",
       hideChat: "ซ่อนแชท",
+      requestSent: "คำขอซ่อมถูกส่งแล้ว!\n\nแจ้งไปยัง:",
+      recipients: "ผู้รับ",
+      failedToCreate: "ไม่สามารถสร้างคำขอได้ กรุณาลองอีกครั้ง"
+    },
+    zh: {
+      title: "维护追踪器",
+      subtitle: "追踪维修请求并与物业管理沟通",
+      addRequest: "新请求",
+      issueTitle: "问题标题",
+      description: "描述",
+      category: "类别",
+      priority: "优先级",
+      propertyAddress: "物业地址",
+      reportedDate: "报告日期",
+      addPhotos: "添加照片",
+      takePhoto: "拍照",
+      chooseFiles: "选择文件",
+      uploadingPhotos: "上传照片中...",
+      photosAdded: "已添加照片",
+      save: "保存并发送",
+      cancel: "取消",
+      noRequests: "无维护请求",
+      noRequestsDesc: "报告问题以保留记录并通知您的房东",
+      status: "状态",
+      back: "返回",
+      viewChat: "查看聊天",
+      hideChat: "隐藏聊天",
+      requestSent: "请求已发送至",
+      recipients: "收件人！",
+      failedToCreate: "创建请求失败。请重试。"
+    },
+    ja: {
+      title: "メンテナンストラッカー",
+      subtitle: "修理リクエストを追跡し、物件管理と連絡",
+      addRequest: "新しいリクエスト",
+      issueTitle: "問題タイトル",
+      description: "説明",
+      category: "カテゴリ",
+      priority: "優先度",
+      propertyAddress: "物件住所",
+      reportedDate: "報告日",
+      addPhotos: "写真を追加",
+      takePhoto: "写真を撮る",
+      chooseFiles: "ファイルを選択",
+      uploadingPhotos: "写真をアップロード中...",
+      photosAdded: "追加された写真",
+      save: "保存して送信",
+      cancel: "キャンセル",
+      noRequests: "メンテナンスリクエストなし",
+      noRequestsDesc: "記録を保持し家主に通知するために問題を報告",
+      status: "ステータス",
+      back: "戻る",
+      viewChat: "チャットを表示",
+      hideChat: "チャットを非表示",
+      requestSent: "リクエストが送信されました",
+      recipients: "受信者！",
+      failedToCreate: "リクエストの作成に失敗しました。もう一度お試しください。"
+    },
+    ko: {
+      title: "유지보수 추적기",
+      subtitle: "수리 요청을 추적하고 부동산 관리와 소통",
+      addRequest: "새 요청",
+      issueTitle: "문제 제목",
+      description: "설명",
+      category: "카테고리",
+      priority: "우선순위",
+      propertyAddress: "부동산 주소",
+      reportedDate: "보고 날짜",
+      addPhotos: "사진 추가",
+      takePhoto: "사진 촬영",
+      chooseFiles: "파일 선택",
+      uploadingPhotos: "사진 업로드 중...",
+      photosAdded: "추가된 사진",
+      save: "저장 및 전송",
+      cancel: "취소",
+      noRequests: "유지보수 요청 없음",
+      noRequestsDesc: "기록을 유지하고 집주인에게 알리기 위해 문제 보고",
+      status: "상태",
+      back: "뒤로",
+      viewChat: "채팅 보기",
+      hideChat: "채팅 숨기기",
+      requestSent: "요청이 전송되었습니다",
+      recipients: "수신자！",
+      failedToCreate: "요청 생성 실패. 다시 시도하세요."
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   const handlePhotoSelection = (e) => {
     const files = Array.from(e.target.files);
@@ -184,7 +270,7 @@ export default function MaintenanceTracker() {
 
       const initialLogEntry = {
         timestamp: new Date().toISOString(),
-        message: `${language === 'th' ? 'คำขอซ่อมถูกสร้างโดย' : 'Maintenance request created by'} ${user?.full_name || user?.email}`,
+        message: `${strings.requestCreatedBy} ${user?.full_name || user?.email}`,
         sender: 'tenant',
         sender_name: user?.full_name || user?.email,
         sender_email: user?.email,
@@ -207,9 +293,7 @@ export default function MaintenanceTracker() {
     } catch (error) {
       console.error('Failed to create request:', error);
       setUploadingPhotos(false);
-      alert(language === 'th' 
-        ? 'ไม่สามารถสร้างคำขอได้ กรุณาลองอีกครั้ง' 
-        : 'Failed to create request. Please try again.');
+      alert(strings.failedToCreate);
     }
   };
 

@@ -237,7 +237,11 @@ export default function Templates() {
       uploading: "Uploading...",
       cancel: "Cancel",
       upload: "Upload",
-      adminOnly: "Admin Only"
+      adminOnly: "Admin Only",
+      back: "Back",
+      fillAllFields: "Please fill in all fields and select a file",
+      uploadSuccess: "Template uploaded successfully!",
+      uploadFailed: "Upload failed. Please try again."
     },
     th: {
       title: "เทมเพลตจดหมายทางกฎหมาย",
@@ -268,11 +272,120 @@ export default function Templates() {
       uploading: "กำลังอัปโหลด...",
       cancel: "ยกเลิก",
       upload: "อัปโหลด",
-      adminOnly: "สำหรับแอดมินเท่านั้น"
+      adminOnly: "สำหรับแอดมินเท่านั้น",
+      back: "กลับ",
+      fillAllFields: "กรุณากรอกข้อมูลให้ครบถ้วนและเลือกไฟล์",
+      uploadSuccess: "อัปโหลดเทมเพลตสำเร็จ!",
+      uploadFailed: "อัปโหลดล้มเหลว กรุณาลองอีกครั้ง"
+    },
+    zh: {
+      title: "法律信件模板",
+      subtitle: "专业双语升级阶梯 - 所有模板可用",
+      creditBalance: "信用余额",
+      credits: "信用",
+      allLetters: "所有信件（11个模板）",
+      insufficientCredits: "信用不足",
+      upgradeForCredits: "升级以获得更多信用",
+      preSigningSection: "⭐ 签署前协商",
+      friendlyApproach: "友好方式（3封信）",
+      professionalEscalation: "专业升级（4封信）",
+      finalMeasures: "最终措施（3封信）",
+      oneLetterPerCredit: "1封信 = 1信用",
+      accessTemplateLibrary: "访问模板库",
+      bilingual: "双语模板",
+      creditsNeverExpire: "信用永不过期",
+      purchaseCredits: "购买信用",
+      uploadTemplate: "上传模板",
+      uploadTemplateTitle: "上传新信件模板",
+      category: "类别",
+      titleEnglish: "标题（英文）",
+      titleThai: "标题（泰文）",
+      descriptionEnglish: "描述（英文）",
+      descriptionThai: "描述（泰文）",
+      creditCost: "信用成本",
+      selectFile: "选择模板文件",
+      uploading: "上传中...",
+      cancel: "取消",
+      upload: "上传",
+      adminOnly: "仅限管理员",
+      back: "返回",
+      fillAllFields: "请填写所有字段并选择文件",
+      uploadSuccess: "模板上传成功！",
+      uploadFailed: "上传失败。请重试。"
+    },
+    ja: {
+      title: "法的レターテンプレート",
+      subtitle: "プロフェッショナルなバイリンガルエスカレーションラダー - すべてのテンプレート利用可能",
+      creditBalance: "クレジット残高",
+      credits: "クレジット",
+      allLetters: "すべてのレター（11テンプレート）",
+      insufficientCredits: "クレジット不足",
+      upgradeForCredits: "より多くのクレジットを得るためにアップグレード",
+      preSigningSection: "⭐ 署名前交渉",
+      friendlyApproach: "友好的アプローチ（3レター）",
+      professionalEscalation: "プロフェッショナルエスカレーション（4レター）",
+      finalMeasures: "最終手段（3レター）",
+      oneLetterPerCredit: "1レター = 1クレジット",
+      accessTemplateLibrary: "テンプレートライブラリにアクセス",
+      bilingual: "バイリンガルテンプレート",
+      creditsNeverExpire: "クレジットは期限切れになりません",
+      purchaseCredits: "クレジット購入",
+      uploadTemplate: "テンプレートアップロード",
+      uploadTemplateTitle: "新しいレターテンプレートをアップロード",
+      category: "カテゴリ",
+      titleEnglish: "タイトル（英語）",
+      titleThai: "タイトル（タイ語）",
+      descriptionEnglish: "説明（英語）",
+      descriptionThai: "説明（タイ語）",
+      creditCost: "クレジットコスト",
+      selectFile: "テンプレートファイルを選択",
+      uploading: "アップロード中...",
+      cancel: "キャンセル",
+      upload: "アップロード",
+      adminOnly: "管理者のみ",
+      back: "戻る",
+      fillAllFields: "すべてのフィールドに入力してファイルを選択してください",
+      uploadSuccess: "テンプレートが正常にアップロードされました！",
+      uploadFailed: "アップロードに失敗しました。もう一度お試しください。"
+    },
+    ko: {
+      title: "법적 편지 템플릿",
+      subtitle: "전문적인 이중 언어 확대 사다리 - 모든 템플릿 사용 가능",
+      creditBalance: "크레딧 잔액",
+      credits: "크레딧",
+      allLetters: "모든 편지 (11개 템플릿)",
+      insufficientCredits: "크레딧 부족",
+      upgradeForCredits: "더 많은 크레딧을 위해 업그레이드",
+      preSigningSection: "⭐ 서명 전 협상",
+      friendlyApproach: "우호적 접근 (3개 편지)",
+      professionalEscalation: "전문적 확대 (4개 편지)",
+      finalMeasures: "최종 조치 (3개 편지)",
+      oneLetterPerCredit: "1개 편지 = 1 크레딧",
+      accessTemplateLibrary: "템플릿 라이브러리 액세스",
+      bilingual: "이중 언어 템플릿",
+      creditsNeverExpire: "크레딧은 만료되지 않습니다",
+      purchaseCredits: "크레딧 구매",
+      uploadTemplate: "템플릿 업로드",
+      uploadTemplateTitle: "새 편지 템플릿 업로드",
+      category: "카테고리",
+      titleEnglish: "제목 (영어)",
+      titleThai: "제목 (태국어)",
+      descriptionEnglish: "설명 (영어)",
+      descriptionThai: "설명 (태국어)",
+      creditCost: "크레딧 비용",
+      selectFile: "템플릿 파일 선택",
+      uploading: "업로드 중...",
+      cancel: "취소",
+      upload: "업로드",
+      adminOnly: "관리자 전용",
+      back: "뒤로",
+      fillAllFields: "모든 필드를 입력하고 파일을 선택하세요",
+      uploadSuccess: "템플릿이 성공적으로 업로드되었습니다！",
+      uploadFailed: "업로드 실패. 다시 시도하세요."
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   const categoryOptions = {
     en: {
@@ -286,6 +399,24 @@ export default function Templates() {
       friendly: 'แนวทางเป็นมิตร',
       professional: 'การยกระดับอย่างมืออาชีพ',
       final: 'มาตรการสุดท้าย'
+    },
+    zh: {
+      pre_signing: '签署前协商',
+      friendly: '友好方式',
+      professional: '专业升级',
+      final: '最终措施'
+    },
+    ja: {
+      pre_signing: '署名前交渉',
+      friendly: '友好的アプローチ',
+      professional: 'プロフェッショナルエスカレーション',
+      final: '最終手段'
+    },
+    ko: {
+      pre_signing: '서명 전 협상',
+      friendly: '우호적 접근',
+      professional: '전문적 확대',
+      final: '최종 조치'
     }
   };
 
@@ -318,9 +449,7 @@ export default function Templates() {
 
   const handleUploadTemplate = async () => {
     if (!uploadFormData.file || !uploadFormData.title_en || !uploadFormData.title_th) {
-      alert(language === 'th' 
-        ? 'กรุณากรอกข้อมูลให้ครบถ้วนและเลือกไฟล์' 
-        : 'Please fill in all fields and select a file');
+      alert(strings.fillAllFields);
       return;
     }
 
@@ -343,11 +472,11 @@ export default function Templates() {
       });
 
       haptic.success();
-      alert(language === 'th' ? 'อัปโหลดเทมเพลตสำเร็จ!' : 'Template uploaded successfully!');
+      alert(strings.uploadSuccess);
     } catch (error) {
       console.error('Upload failed:', error);
       haptic.error();
-      alert(language === 'th' ? 'อัปโหลดล้มเหลว กรุณาลองอีกครั้ง' : 'Upload failed. Please try again.');
+      alert(strings.uploadFailed);
     } finally {
       setUploadingFile(false);
     }
@@ -419,7 +548,7 @@ export default function Templates() {
           className="mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          {language === 'th' ? 'กลับ' : 'Back'}
+          {strings.back}
         </Button>
 
         <div className="mb-8">
