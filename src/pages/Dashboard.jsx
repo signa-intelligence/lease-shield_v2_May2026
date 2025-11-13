@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1857,7 +1856,7 @@ function DashboardContent() {
                           actionButton={notificationLogs.length > 0 ? {
                             label: strings.viewAll,
                             link: createPageUrl("Account")
-                          }}
+                          } : undefined}
                           ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
                           compact
                         />
