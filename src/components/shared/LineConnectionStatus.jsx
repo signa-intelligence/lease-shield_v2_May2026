@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -89,10 +90,79 @@ export default function LineConnectionStatus({ user, colors }) {
       orUseLink: 'หรือคลิกลิงก์ด้านบน',
       checkConnection: 'ตรวจสอบการเชื่อมต่อ',
       checking: 'กำลังตรวจสอบ...'
+    },
+    zh: {
+      title: 'LINE通知',
+      connected: '已连接',
+      notConnected: '未连接',
+      pending: '等待连接',
+      connectBtn: '连接LINE',
+      openLine: '在LINE中打开',
+      copyLink: '复制链接',
+      linkCopied: '链接已复制！',
+      step1: '步骤1：点击连接LINE',
+      step2: '步骤2：添加LeaseShield为好友',
+      step3: '步骤3：完成！您将收到通知',
+      benefits: '获得即时提醒：',
+      benefit1: '📅 租约截止日期',
+      benefit2: '💰 押金退还',
+      benefit3: '🏠 租金提醒',
+      benefit4: '🔧 维护更新',
+      pendingMsg: '等待您添加LeaseShield LINE OA为好友',
+      scanQR: '用LINE应用扫描此二维码',
+      orUseLink: '或点击上面的链接',
+      checkConnection: '检查连接',
+      checking: '检查中...'
+    },
+    ja: {
+      title: 'LINE通知',
+      connected: '接続済み',
+      notConnected: '未接続',
+      pending: '接続待ち',
+      connectBtn: 'LINEを接続',
+      openLine: 'LINEで開く',
+      copyLink: 'リンクをコピー',
+      linkCopied: 'リンクをコピーしました！',
+      step1: 'ステップ1：LINEを接続をクリック',
+      step2: 'ステップ2：LeaseShieldを友達に追加',
+      step3: 'ステップ3：完了！通知を受け取ります',
+      benefits: '即座のアラートを受け取る：',
+      benefit1: '📅 賃貸契約期限',
+      benefit2: '💰 敷金返還',
+      benefit3: '🏠 家賃リマインダー',
+      benefit4: '🔧 メンテナンス更新',
+      pendingMsg: 'LeaseShield LINE OAを友達に追加するのをお待ちしています',
+      scanQR: 'LINEアプリでこのQRをスキャン',
+      orUseLink: 'または上のリンクをクリック',
+      checkConnection: '接続を確認',
+      checking: '確認中...'
+    },
+    ko: {
+      title: 'LINE 알림',
+      connected: '연결됨',
+      notConnected: '연결되지 않음',
+      pending: '연결 대기 중',
+      connectBtn: 'LINE 연결',
+      openLine: 'LINE에서 열기',
+      copyLink: '링크 복사',
+      linkCopied: '링크 복사됨!',
+      step1: '1단계: LINE 연결 클릭',
+      step2: '2단계: LeaseShield를 친구로 추가',
+      step3: '3단계: 완료! 알림을 받게 됩니다',
+      benefits: '즉시 알림 받기:',
+      benefit1: '📅 임대 계약 마감일',
+      benefit2: '💰 보증금 반환',
+      benefit3: '🏠 임대료 알림',
+      benefit4: '🔧 유지보수 업데이트',
+      pendingMsg: 'LeaseShield LINE OA를 친구로 추가하기를 기다리는 중',
+      scanQR: 'LINE 앱으로 이 QR 스캔',
+      orUseLink: '또는 위의 링크를 클릭',
+      checkConnection: '연결 확인',
+      checking: '확인 중...'
     }
   };
 
-  const str = strings[language];
+  const str = strings[language] || strings.en;
 
   if (isConnected) {
     return (

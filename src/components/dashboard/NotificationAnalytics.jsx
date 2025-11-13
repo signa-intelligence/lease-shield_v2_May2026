@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -43,10 +44,46 @@ export default function NotificationAnalytics({ language = 'en', colors }) {
       mostCommon: 'พบบ่อยที่สุด',
       recentActivity: 'กิจกรรมล่าสุด',
       noData: 'ยังไม่มีข้อมูลเพียงพอ'
+    },
+    zh: {
+      title: '通知见解',
+      last30Days: '过去30天',
+      totalSent: '总发送数',
+      successRate: '成功率',
+      byChannel: '按渠道',
+      byType: '按类型',
+      trend: '趋势',
+      mostCommon: '最常见',
+      recentActivity: '最近活动',
+      noData: '数据不足'
+    },
+    ja: {
+      title: '通知インサイト',
+      last30Days: '過去30日',
+      totalSent: '合計送信数',
+      successRate: '成功率',
+      byChannel: 'チャンネル別',
+      byType: 'タイプ別',
+      trend: 'トレンド',
+      mostCommon: '最も一般的',
+      recentActivity: '最近のアクティビティ',
+      noData: 'データが不足しています'
+    },
+    ko: {
+      title: '알림 인사이트',
+      last30Days: '지난 30일',
+      totalSent: '총 발송수',
+      successRate: '성공률',
+      byChannel: '채널별',
+      byType: '유형별',
+      trend: '추세',
+      mostCommon: '가장 일반적',
+      recentActivity: '최근 활동',
+      noData: '데이터가 충분하지 않음'
     }
   };
 
-  const str = strings[language];
+  const str = strings[language] || strings.en;
 
   // Filter last 30 days
   const thirtyDaysAgo = subDays(new Date(), 30);

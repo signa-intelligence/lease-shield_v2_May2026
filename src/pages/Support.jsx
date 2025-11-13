@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -110,10 +111,55 @@ export default function Support() {
       noTickets: "ไม่มีคำขอสนับสนุน",
       noTicketsSub: "ต้องการความช่วยเหลือ? ส่งคำขอสนับสนุนและเราจะติดต่อกลับ",
       recentTickets: "คำขอล่าสุด"
+    },
+    zh: {
+      title: "帮助与支持",
+      subtitle: "我们随时帮助您保护您的权利",
+      submitTicket: "提交支持请求",
+      subject: "主题",
+      description: "描述",
+      category: "类别",
+      attachments: "附件",
+      uploadFiles: "上传文件",
+      submitButton: "提交工单",
+      myTickets: "我的支持工单",
+      noTickets: "没有支持工单",
+      noTicketsSub: "需要帮助？提交支持请求，我们会回复您。",
+      recentTickets: "最近的工单"
+    },
+    ja: {
+      title: "ヘルプとサポート",
+      subtitle: "あなたの権利を守るお手伝いをします",
+      submitTicket: "サポートリクエストを送信",
+      subject: "件名",
+      description: "説明",
+      category: "カテゴリー",
+      attachments: "添付ファイル",
+      uploadFiles: "ファイルをアップロード",
+      submitButton: "チケットを送信",
+      myTickets: "私のサポートチケット",
+      noTickets: "サポートチケットなし",
+      noTicketsSub: "助けが必要ですか？サポートリクエストを送信すれば、ご連絡します。",
+      recentTickets: "最近のチケット"
+    },
+    ko: {
+      title: "도움말 및 지원",
+      subtitle: "귀하의 권리를 보호하는 데 도움을 드립니다",
+      submitTicket: "지원 요청 제출",
+      subject: "제목",
+      description: "설명",
+      category: "카테고리",
+      attachments: "첨부파일",
+      uploadFiles: "파일 업로드",
+      submitButton: "티켓 제출",
+      myTickets: "내 지원 티켓",
+      noTickets: "지원 티켓 없음",
+      noTicketsSub: "도움이 필요하신가요? 지원 요청을 제출하시면 연락드리겠습니다.",
+      recentTickets: "최근 티켓"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">

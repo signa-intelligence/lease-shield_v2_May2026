@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -154,6 +155,105 @@ export default function Timeline() {
       caseCreated: "เปิดคดี",
       maintenanceReported: "แจ้งซ่อมบำรุง",
       eventsOn: "เหตุการณ์ในวันที่"
+    },
+    zh: {
+      title: "时间轴",
+      subtitle: "您完整的租赁历程一览",
+      back: "返回",
+      today: "今天",
+      calendar: "日历",
+      list: "列表",
+      upcoming: "即将到来",
+      filters: "筛选",
+      allTypes: "所有类型",
+      leaseEvents: "租约事件",
+      depositEvents: "押金退还",
+      caseEvents: "案件",
+      maintenanceEvents: "维护",
+      noEvents: "未找到事件",
+      noEventsDesc: "尝试选择不同的筛选或日期范围",
+      upcomingDeadlines: "即将到来的截止日期",
+      next30Days: "未来30天",
+      noUpcoming: "没有即将到来的截止日期",
+      pastEvents: "过去的事件",
+      viewDetails: "查看详情",
+      dueIn: "到期时间",
+      days: "天",
+      overdue: "逾期",
+      day: "天",
+      leaseStart: "租约开始",
+      leaseEnd: "租约结束",
+      noticeDeadline: "通知截止日期",
+      depositReturn: "押金退还",
+      caseCreated: "案件已开启",
+      maintenanceReported: "已报告维护",
+      eventsOn: "事件发生于"
+    },
+    ja: {
+      title: "タイムライン",
+      subtitle: "あなたの完全な賃貸の旅を一箇所で",
+      back: "戻る",
+      today: "今日",
+      calendar: "カレンダー",
+      list: "リスト",
+      upcoming: "今後",
+      filters: "フィルター",
+      allTypes: "すべてのタイプ",
+      leaseEvents: "賃貸契約イベント",
+      depositEvents: "敷金返還",
+      caseEvents: "ケース",
+      maintenanceEvents: "メンテナンス",
+      noEvents: "イベントが見つかりません",
+      noEventsDesc: "別のフィルターまたは日付範囲を選択してみてください",
+      upcomingDeadlines: "今後の期限",
+      next30Days: "今後30日",
+      noUpcoming: "今後の期限はありません",
+      pastEvents: "過去のイベント",
+      viewDetails: "詳細を表示",
+      dueIn: "期日まで",
+      days: "日",
+      overdue: "期限超過",
+      day: "日",
+      leaseStart: "賃貸契約開始",
+      leaseEnd: "賃貸契約終了",
+      noticeDeadline: "通知期限",
+      depositReturn: "敷金返還",
+      caseCreated: "ケース開設",
+      maintenanceReported: "メンテナンス報告済み",
+      eventsOn: "イベント日"
+    },
+    ko: {
+      title: "타임라인",
+      subtitle: "한 곳에서 완전한 임대 여정",
+      back: "뒤로",
+      today: "오늘",
+      calendar: "달력",
+      list: "목록",
+      upcoming: "다가오는",
+      filters: "필터",
+      allTypes: "모든 유형",
+      leaseEvents: "임대 계약 이벤트",
+      depositEvents: "보증금 반환",
+      caseEvents: "사례",
+      maintenanceEvents: "유지보수",
+      noEvents: "이벤트를 찾을 수 없음",
+      noEventsDesc: "다른 필터 또는 날짜 범위를 선택해보세요",
+      upcomingDeadlines: "다가오는 마감일",
+      next30Days: "향후 30일",
+      noUpcoming: "다가오는 마감일 없음",
+      pastEvents: "과거 이벤트",
+      viewDetails: "세부 정보 보기",
+      dueIn: "만기까지",
+      days: "일",
+      overdue: "기한 초과",
+      day: "일",
+      leaseStart: "임대 계약 시작",
+      leaseEnd: "임대 계약 종료",
+      noticeDeadline: "통지 마감일",
+      depositReturn: "보증금 반환",
+      caseCreated: "사례 개설",
+      maintenanceReported: "유지보수 보고됨",
+      eventsOn: "이벤트 일자"
     }
   };
 
@@ -278,18 +378,17 @@ export default function Timeline() {
     const monthEnd = endOfMonth(currentDate);
     
     return filteredEvents.filter(event => 
-      isAfter(event.date, monthStart) && isBefore(event.date, monthEnd)
+      isAfter(event.date, monthStart) && isBefore(event.date, endOfDay(monthEnd))
     );
   }, [filteredEvents, currentDate]);
 
   // Get upcoming events (next 30 days)
   const upcomingEvents = useMemo(() => {
     const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    const thirtyDaysFromNow = addMonths(now, 1); // Roughly 30 days from now
     
     return filteredEvents
-      .filter(event => isAfter(event.date, now) && isBefore(event.date, thirtyDaysFromNow))
+      .filter(event => isAfter(event.date, startOfDay(now)) && isBefore(event.date, endOfDay(thirtyDaysFromNow)))
       .slice(0, 10);
   }, [filteredEvents]);
 
@@ -297,7 +396,7 @@ export default function Timeline() {
   const pastEvents = useMemo(() => {
     const now = new Date();
     return filteredEvents
-      .filter(event => isBefore(event.date, now))
+      .filter(event => isBefore(event.date, startOfDay(now)))
       .reverse()
       .slice(0, 20);
   }, [filteredEvents]);
@@ -306,7 +405,19 @@ export default function Timeline() {
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    
+    // Adjust start of the calendar grid to the first day of the week
+    const startDay = monthStart.getDay(); // 0 for Sunday, 1 for Monday, etc.
+    const daysBefore = startDay; // Days from previous month to show
+    const firstDay = subMonths(monthStart, 1); // Get previous month to correctly calculate start date
+    const startOfGrid = new Date(firstDay.setDate(firstDay.getDate() + (daysBefore)));
+
+    const endDay = monthEnd.getDay();
+    const daysAfter = 6 - endDay; // Days from next month to show
+    const endOfGrid = new Date(monthEnd);
+    endOfGrid.setDate(endOfGrid.getDate() + daysAfter);
+    
+    const days = eachDayOfInterval({ start: startOfGrid, end: endOfGrid });
     
     return days.map(day => ({
       date: day,
@@ -326,7 +437,7 @@ export default function Timeline() {
     const Icon = event.icon;
     const now = new Date();
     const daysUntil = differenceInDays(event.date, now);
-    const isOverdue = daysUntil < 0 && !event.isPast;
+    const isOverdue = daysUntil < 0 && !event.isPast; // A past event isn't necessarily "overdue" in this context
     const isUrgent = daysUntil <= 7 && daysUntil >= 0;
 
     return (
@@ -533,7 +644,7 @@ export default function Timeline() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle style={{ color: colors.textPrimary }}>
-                  {format(currentDate, 'MMMM yyyy', { locale: language === 'th' ? require('date-fns/locale/th') : undefined })}
+                  {format(currentDate, 'MMMM yyyy', { locale: language === 'th' ? require('date-fns/locale/th') : undefined || language === 'ja' ? require('date-fns/locale/ja') : undefined || language === 'ko' ? require('date-fns/locale/ko') : undefined || language === 'zh' ? require('date-fns/locale/zh-CN') : undefined })}
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
@@ -567,6 +678,12 @@ export default function Timeline() {
                   <div key={day} className="text-center text-xs font-bold py-2" style={{ color: colors.textSecondary }}>
                     {language === 'th' 
                       ? ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][idx]
+                      : language === 'ja'
+                      ? ['日', '月', '火', '水', '木', '金', '土'][idx]
+                      : language === 'zh'
+                      ? ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][idx]
+                      : language === 'ko'
+                      ? ['일', '월', '화', '수', '목', '금', '토'][idx]
                       : day}
                   </div>
                 ))}
@@ -629,10 +746,10 @@ export default function Timeline() {
               {monthEvents.length > 0 && (
                 <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
                   <h3 className="font-bold mb-4 text-sm" style={{ color: colors.textPrimary }}>
-                    {strings.eventsOn} {format(currentDate, 'MMMM', { locale: language === 'th' ? require('date-fns/locale/th') : undefined })} ({monthEvents.length})
+                    {strings.eventsOn} {format(currentDate, 'MMMM', { locale: language === 'th' ? require('date-fns/locale/th') : undefined || language === 'ja' ? require('date-fns/locale/ja') : undefined || language === 'ko' ? require('date-fns/locale/ko') : undefined || language === 'zh' ? require('date-fns/locale/zh-CN') : undefined })} ({monthEvents.length})
                   </h3>
                   <div className="space-y-3">
-                    {monthEvents.slice(0, 5).map(event => (
+                    {monthEvents.map(event => (
                       <EventCard key={event.id} event={event} />
                     ))}
                   </div>
