@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,14 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
-  Edit2, Save, X, Wrench, AlertCircle, CheckCircle2, Clock,
-  DollarSign, ArrowLeft, Shield, Camera, Image as ImageIcon, Loader2, Trash2, Archive, Hash
+  Edit2, Save, X, Wrench, CheckCircle2,
+  DollarSign, ArrowLeft, Camera, Image as ImageIcon, Loader2, Trash2, Archive, Hash
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -22,13 +20,13 @@ import { compressMultipleImages } from "../components/shared/ImageCompression";
 import { haptic } from "../components/shared/HapticFeedback";
 import UploadProgress from "../components/shared/UploadProgress";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
-import BottomSheet from "../components/shared/BottomSheet";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import MobileFormInput from "../components/shared/MobileFormInput";
 import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 import LazyImage from "../components/shared/LazyImage";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import DebouncedSearch from "../components/shared/DebouncedSearch";
 
 function PropertyTrackerContent() {
   const navigate = useNavigate();
@@ -49,6 +47,8 @@ function PropertyTrackerContent() {
   const [photoFiles, setPhotoFiles] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
   const [compressionStats, setCompressionStats] = useState(null);
+  const [maintenanceSearchQuery, setMaintenanceSearchQuery] = useState('');
+  const [maintenanceStatusFilter, setMaintenanceStatusFilter] = useState('all');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -138,7 +138,7 @@ function PropertyTrackerContent() {
       optimistic.optimisticCreate(optimisticItem);
       return { optimisticItem }; 
     },
-    onSuccess: (data, variables, context) => { 
+    onSuccess: (data) => { 
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       setShowAddMaintenance(false);
       setPhotoFiles([]);
@@ -293,7 +293,12 @@ function PropertyTrackerContent() {
       imagesOptimized: "Images Optimized",
       imagesOptimizedDesc: "images • Saved",
       refreshed: "Refreshed successfully",
-      processingError: "An error occurred during processing. Please try again.",
+      processingError: "Processing error occurred",
+      searchMaintenance: "Search by title or description...",
+      filterByStatus: "Filter by status",
+      allStatuses: "All Statuses",
+      noResultsFound: "No requests found",
+      tryDifferentSearch: "Try a different search term",
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -346,7 +351,12 @@ function PropertyTrackerContent() {
       imagesOptimized: "ปรับขนาดไฟล์แล้ว", 
       imagesOptimizedDesc: "รูป • ประหยัด",
       refreshed: "รีเฟรชสำเร็จ",
-      processingError: "เกิดข้อผิดพลาดในการดำเนินการ กรุณาลองอีกครั้ง",
+      processingError: "เกิดข้อผิดพลาด",
+      searchMaintenance: "ค้นหาด้วยหัวข้อหรือรายละเอียด...",
+      filterByStatus: "กรองตามสถานะ",
+      allStatuses: "ทุกสถานะ",
+      noResultsFound: "ไม่พบคำขอ",
+      tryDifferentSearch: "ลองค้นหาด้วยคำอื่น",
     }
   };
 
@@ -359,15 +369,27 @@ function PropertyTrackerContent() {
     toast.success(strings.refreshed);
   };
 
-  // Function to generate sequential request number
+  const filteredMaintenanceRequests = maintenanceRequests.filter(request => {
+    const matchesSearch = maintenanceSearchQuery === '' || 
+      request.issue_title?.toLowerCase().includes(maintenanceSearchQuery.toLowerCase()) ||
+      request.description?.toLowerCase().includes(maintenanceSearchQuery.toLowerCase()) ||
+      request.request_number?.toLowerCase().includes(maintenanceSearchQuery.toLowerCase());
+    
+    const matchesStatus = maintenanceStatusFilter === 'all' || request.status === maintenanceStatusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const activeRequests = filteredMaintenanceRequests.filter(r => r.status !== 'completed' && r.status !== 'rejected');
+  const completedRequests = filteredMaintenanceRequests.filter(r => r.status === 'completed' || r.status === 'rejected');
+
   const generateRequestNumber = () => {
     if (maintenanceRequests.length === 0) {
       return 'MR-001';
     }
     
-    // Find highest existing number, excluding optimistic items for number generation
     const existingNumbers = maintenanceRequests
-      .filter(r => !r.__optimistic) // Exclude optimistic items from number generation
+      .filter(r => !r.__optimistic)
       .map(r => r.request_number)
       .filter(num => num && typeof num === 'string' && num.startsWith('MR-')) 
       .map(num => parseInt(num.split('-')[1]))
@@ -432,7 +454,6 @@ function PropertyTrackerContent() {
     
     setPhotoPreviews(prev => prev.filter((_, i) => i !== indexToRemove));
   };
-
 
   const handleDepositSubmit = () => {
     haptic.medium();
@@ -615,7 +636,6 @@ function PropertyTrackerContent() {
       };
       const updatedCommunicationLog = [...(editingMaintenance.communication_log || []), updateLogEntry];
 
-
       const updatedData = {
         ...maintenanceForm,
         photo_urls: finalPhotoUrls,
@@ -700,9 +720,6 @@ function PropertyTrackerContent() {
   const isOverdue = daysRemaining !== null && daysRemaining < 0;
   const isUrgent = daysRemaining !== null && daysRemaining <= 30 && daysRemaining > 0;
 
-  const activeRequests = maintenanceRequests.filter(r => r.status !== 'completed' && r.status !== 'rejected');
-  const completedRequests = maintenanceRequests.filter(r => r.status === 'completed' || r.status === 'rejected');
-
   const getStatusColor = (status) => {
     switch (status) {
       case 'reported': return 'bg-blue-100 text-blue-800';
@@ -738,7 +755,6 @@ function PropertyTrackerContent() {
             <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
           </div>
 
-          {/* FAB for Adding Maintenance */}
           {!showAddMaintenance && !editingMaintenance && (
             <FloatingActionButton
               icon={Plus}
@@ -763,7 +779,6 @@ function PropertyTrackerContent() {
             />
           )}
 
-          {/* DEPOSIT SECTION - Enhanced styling */}
           <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
             <CardHeader
               className="cursor-pointer"
@@ -946,7 +961,6 @@ function PropertyTrackerContent() {
             )}
           </Card>
 
-          {/* RENT SECTION - Enhanced styling */}
           <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.rentAccent}` }}>
             <CardHeader
               className="cursor-pointer"
@@ -1137,7 +1151,6 @@ function PropertyTrackerContent() {
             )}
           </Card>
 
-          {/* MAINTENANCE SECTION - Enhanced styling with actions */}
           <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.maintenanceAccent}` }}>
             <CardHeader
               className="cursor-pointer"
@@ -1204,13 +1217,48 @@ function PropertyTrackerContent() {
 
             {expandedSections.maintenance && (
               <CardContent className="p-6">
+                {maintenanceRequests.length > 0 && !showAddMaintenance && !editingMaintenance && (
+                  <div className="mb-4 space-y-3">
+                    <DebouncedSearch
+                      onSearch={setMaintenanceSearchQuery}
+                      placeholder={strings.searchMaintenance}
+                      colors={colors}
+                      language={language}
+                    />
+                    
+                    <div>
+                      <Label className="text-xs font-semibold mb-2 block" style={{ color: colors.textSecondary }}>
+                        {strings.filterByStatus}
+                      </Label>
+                      <Select 
+                        value={maintenanceStatusFilter} 
+                        onValueChange={(value) => {
+                          haptic.light();
+                          setMaintenanceStatusFilter(value);
+                        }}
+                      >
+                        <SelectTrigger style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                          <SelectItem value="all">{strings.allStatuses}</SelectItem>
+                          <SelectItem value="reported">Reported</SelectItem>
+                          <SelectItem value="acknowledged">Acknowledged</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
                 {(showAddMaintenance || editingMaintenance) && (
                   <div className="mb-4 p-4 rounded-lg border-2 border-dashed" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
                     <h3 className="font-bold mb-3" style={{ color: colors.textPrimary }}>
                       {editingMaintenance ? strings.edit : strings.addMaintenance}
                     </h3>
                     
-                    {/* Upload Progress */}
                     {uploadingPhotos && (
                       <div className="mb-4">
                         <UploadProgress
@@ -1224,7 +1272,6 @@ function PropertyTrackerContent() {
                       </div>
                     )}
 
-                    {/* Compression Stats Notice */}
                     {!uploadingPhotos && compressionStats && compressionStats.compressedCount > 0 && (
                       <div className="mb-4 p-3 rounded-lg border-2" style={{
                         backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
@@ -1464,9 +1511,17 @@ function PropertyTrackerContent() {
                     </Button>
                   </div>
                 )}
+
+                {maintenanceRequests.length > 0 && filteredMaintenanceRequests.length === 0 && !showAddMaintenance && (
+                  <div className="text-center py-8">
+                    <Wrench className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                    <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noResultsFound}</p>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.tryDifferentSearch}</p>
+                  </div>
+                )}
+
                 {(activeRequests.length > 0 || completedRequests.length > 0) && (
                   <div className="space-y-4">
-                    {/* Active Requests - WITH SWIPE */}
                     {activeRequests.length > 0 && (
                       <div>
                         <h4 className="text-lg font-bold mb-3" style={{ color: colors.textPrimary }}>
@@ -1575,7 +1630,7 @@ function PropertyTrackerContent() {
                                   <span>🏷️ {request.category}</span>
                                   <span>⚡ {request.priority}</span>
                                   {request.photo_urls && request.photo_urls.length > 0 && (
-                                    <span>📸 {request.photo_urls.length} {strings.photosAdded}</span>
+                                    <span>📸 {request.photo_urls.length}</span>
                                   )}
                                 </div>
 
@@ -1627,7 +1682,6 @@ function PropertyTrackerContent() {
                       </div>
                     )}
 
-                    {/* Completed Requests */}
                     {completedRequests.length > 0 && (
                       <div>
                         <h4 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: colors.textSecondary }}>
