@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -157,10 +156,40 @@ export default function Layout({ children, currentPageName }) {
       admin: "แอดมิน",
       search: "ค้นหา",
       timeline: "ไทม์ไลน์"
+    },
+    zh: {
+      appName: "租约盾",
+      home: "主页",
+      scan: "扫描",
+      property: "房产",
+      evidence: "证据",
+      admin: "管理",
+      search: "搜索",
+      timeline: "时间线"
+    },
+    ja: {
+      appName: "リースシールド",
+      home: "ホーム",
+      scan: "スキャン",
+      property: "物件",
+      evidence: "証拠",
+      admin: "管理",
+      search: "検索",
+      timeline: "タイムライン"
+    },
+    ko: {
+      appName: "리스실드",
+      home: "홈",
+      scan: "스캔",
+      property: "부동산",
+      evidence: "증거",
+      admin: "관리",
+      search: "검색",
+      timeline: "타임라인"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
   
   const navTabs = [
     {
