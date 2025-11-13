@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .fab-bottom {
+    position: fixed;
+    right: 20px;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    z-index: 50;
+  }
+}
