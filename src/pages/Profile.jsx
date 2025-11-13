@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,14 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Edit2, X, Settings, CheckCircle2, Bell, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins, Crown, Zap, Lock } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Edit2, X, Settings, CheckCircle2, Download, FileText, AlertCircle, Loader2, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins, Crown, Zap, Lock, Gift } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationPreferences from "../components/settings/NotificationPreferences";
 import NotificationAnalytics from "../components/dashboard/NotificationAnalytics";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { createPageUrl } from "@/utils";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { haptic } from "../components/shared/HapticFeedback";
 
@@ -119,7 +118,6 @@ const CREDIT_PACKAGES = [
 ];
 
 export default function Profile() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState({});
@@ -286,8 +284,10 @@ export default function Profile() {
     } catch (error) {
       console.error('Subscription error:', error);
       haptic.error();
+      const lang = user?.language || 'en';
       const errorMsg = error.response?.data?.details || error.response?.data?.error || error.message;
-      alert(`${language === 'zh' ? '无法启动订阅' : language === 'ja' ? 'サブスクリプションを開始できません' : language === 'ko' ? '구독을 시작할 수 없습니다' : language === 'th' ? 'ไม่สามารถสร้างการสมัครได้' : 'Failed to start subscription'}\n\n${errorMsg}`);
+      const failMsg = lang === 'zh' ? '无法启动订阅' : lang === 'ja' ? 'サブスクリプションを開始できません' : lang === 'ko' ? '구독을 시작할 수 없습니다' : lang === 'th' ? 'ไม่สามารถสร้างการสมัครได้' : 'Failed to start subscription';
+      alert(`${failMsg}\n\n${errorMsg}`);
       
       setSubscribing(prev => ({ ...prev, [planKey]: false }));
     }
@@ -318,7 +318,9 @@ export default function Profile() {
     } catch (error) {
       console.error('Failed to create checkout:', error);
       haptic.error();
-      alert(language === 'zh' ? '无法创建结账。请重试。' : language === 'ja' ? 'チェックアウトの作成に失敗しました。再試行してください。' : language === 'ko' ? '체크아웃 생성에 실패했습니다. 다시 시도하세요.' : language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
+      const lang = user?.language || 'en';
+      const failMsg = lang === 'zh' ? '无法创建结账。请重试。' : lang === 'ja' ? 'チェックアウトの作成に失敗しました。再試行してください。' : lang === 'ko' ? '체크아웃 생성에 실패했습니다. 다시 시도하세요.' : lang === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.';
+      alert(failMsg);
     } finally {
       setBuyingCredits(prev => ({ ...prev, [pkg.id]: false }));
     }
@@ -349,8 +351,10 @@ export default function Profile() {
   };
 
   const handleCancelSubscription = async () => {
+    const lang = user?.language || 'en';
     if (!cancelReason) {
-      alert(t[language].selectReason);
+      const selectMsg = lang === 'zh' ? '请选择取消原因' : lang === 'ja' ? 'キャンセル理由を選択してください' : lang === 'ko' ? '취소 이유를 선택하세요' : lang === 'th' ? 'กรุณาเลือกเหตุผลในการยกเลิก' : 'Please select a reason';
+      alert(selectMsg);
       return;
     }
 
@@ -368,12 +372,14 @@ export default function Profile() {
         setCancelReason('');
         setCancelFeedback('');
         haptic.success();
-        alert(t[language].cancelSuccess || 'Cancellation successful. You\'ll keep access until your renewal date.');
+        const successMsg = lang === 'zh' ? '取消成功。您将保留访问权限直到续订日期。' : lang === 'ja' ? 'キャンセルに成功しました。更新日までアクセスを維持できます。' : lang === 'ko' ? '취소 성공。갱신 날짜까지 액세스를 유지합니다。' : lang === 'th' ? 'การยกเลิกสำเร็จ คุณจะยังคงสามารถเข้าถึงฟีเจอร์ได้จนถึงวันที่ต่ออายุ' : 'Cancellation successful. You\'ll keep access until your renewal date.';
+        alert(successMsg);
       }
     } catch (error) {
       console.error('Cancellation error:', error);
       haptic.error();
-      alert(t[language].cancelFailed || 'Failed to cancel. Please try again or contact support.');
+      const failMsg = lang === 'zh' ? '取消失败。请重试或联系支持。' : lang === 'ja' ? 'キャンセルに失敗しました。再試行するかサポートに連絡してください。' : lang === 'ko' ? '취소 실패。다시 시도하거나 지원팀에 문의하세요。' : lang === 'th' ? 'ไม่สามารถยกเลิกได้ กรุณาลองอีกครั้งหรือติดต่อฝ่ายสนับสนุน' : 'Failed to cancel. Please try again or contact support.';
+      alert(failMsg);
     } finally {
       setCancelling(false);
     }
@@ -414,9 +420,10 @@ export default function Profile() {
 
   const handleShareLink = async (role) => {
     const link = generateLineOALink(role);
+    const lang = user?.language || 'en';
     const title = role === 'landlord' 
-      ? t[language].landlordLineConnect
-      : t[language].juristicLineConnect;
+      ? (lang === 'zh' ? '将房东连接到LINE' : lang === 'ja' ? '家主をLINEに接続' : lang === 'ko' ? '집주인을 LINE에 연결' : lang === 'th' ? 'เชื่อมต่อเจ้าของบ้านกับ LINE' : 'Connect Landlord to LINE')
+      : (lang === 'zh' ? '将物业连接到LINE' : lang === 'ja' ? '管理事務所をLINEに接続' : lang === 'ko' ? '관리 사무소를 LINE에 연결' : lang === 'th' ? 'เชื่อมต่อนิติบุคคลกับ LINE' : 'Connect Juristic to LINE');
     
     if (navigator.share) {
       try {
@@ -572,9 +579,7 @@ export default function Profile() {
       accessTemplateLibrary: "Access template library",
       bilingual: "Bilingual Templates",
       humanAndAiGeneration: "Human and AI generation",
-      creditsNeverExpire: "Credits never expire",
-      cancelSuccess: "Cancellation successful. You'll keep access until your renewal date.",
-      cancelFailed: "Failed to cancel. Please try again or contact support."
+      creditsNeverExpire: "Credits never expire"
     },
     th: {
       pageTitle: "โปรไฟล์ของฉัน",
@@ -692,9 +697,7 @@ export default function Profile() {
       accessTemplateLibrary: "เข้าถึงคลังเทมเพลต",
       bilingual: "เทมเพลตสองภาษา",
       humanAndAiGeneration: "สร้างโดยมนุษย์และ AI",
-      creditsNeverExpire: "เครดิตไม่หมดอายุ",
-      cancelSuccess: "การยกเลิกสำเร็จ คุณจะยังคงสามารถเข้าถึงฟีเจอร์ได้จนถึงวันที่ต่ออายุ",
-      cancelFailed: "ไม่สามารถยกเลิกได้ กรุณาลองอีกครั้งหรือติดต่อฝ่ายสนับสนุน"
+      creditsNeverExpire: "เครดิตไม่หมดอายุ"
     },
     zh: {
       pageTitle: "我的个人资料",
@@ -812,9 +815,7 @@ export default function Profile() {
       accessTemplateLibrary: "访问模板库",
       bilingual: "双语模板",
       humanAndAiGeneration: "人工和AI生成",
-      creditsNeverExpire: "积分永不过期",
-      cancelSuccess: "取消成功。您将保留访问权限直到续订日期。",
-      cancelFailed: "取消失败。请重试或联系支持。"
+      creditsNeverExpire: "积分永不过期"
     },
     ja: {
       pageTitle: "マイプロフィール",
@@ -932,9 +933,7 @@ export default function Profile() {
       accessTemplateLibrary: "テンプレートライブラリにアクセス",
       bilingual: "バイリンガルテンプレート",
       humanAndAiGeneration: "人間とAIの生成",
-      creditsNeverExpire: "クレジットは期限切れになりません",
-      cancelSuccess: "キャンセルに成功しました。更新日までアクセスを維持できます。",
-      cancelFailed: "キャンセルに失敗しました。再試行するかサポートに連絡してください。"
+      creditsNeverExpire: "クレジットは期限切れになりません"
     },
     ko: {
       pageTitle: "내 프로필",
@@ -1052,14 +1051,11 @@ export default function Profile() {
       accessTemplateLibrary: "템플릿 라이브러리 액세스",
       bilingual: "이중 언어 템플릿",
       humanAndAiGeneration: "인간 및 AI 생성",
-      creditsNeverExpire: "크레딧은 만료되지 않습니다",
-      cancelSuccess: "취소 성공。갱신 날짜까지 액세스를 유지합니다。",
-      cancelFailed: "취소 실패。다시 시도하거나 지원팀에 문의하세요。"
+      creditsNeverExpire: "크레딧은 만료되지 않습니다"
     }
   };
 
-  // DEFENSIVE: Ensure strings always has a valid fallback
-  const strings = (t[language] && typeof t[language] === 'object') ? t[language] : t.en;
+  const strings = (t && t[language] && typeof t[language] === 'object') ? t[language] : t.en;
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
@@ -1088,7 +1084,6 @@ export default function Profile() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
-          {/* Personal Information Card */}
           <Card className="lg:col-span-2 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader className="border-b pb-4" style={{
               backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
@@ -1485,7 +1480,6 @@ export default function Profile() {
             </CardContent>
           </Card>
 
-          {/* Current Plan Card */}
           <Card className="border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader className="border-b pb-4" style={{
               backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
@@ -1520,10 +1514,7 @@ export default function Profile() {
                 </p>
                 {!isFree && user?.billing_interval && (
                   <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-                    {user.billing_interval === 'annual'
-                      ? (language === 'zh' ? '按年计费' : language === 'ja' ? '年間請求' : language === 'ko' ? '연간 청구' : language === 'th' ? 'เรียกเก็บรายปี' : 'Billed annually')
-                      : (language === 'zh' ? '按月计费' : language === 'ja' ? '月額請求' : language === 'ko' ? '월간 청구' : language === 'th' ? 'เรียกเก็บรายเดือน' : 'Billed monthly')
-                    }
+                    {user.billing_interval === 'annual' ? (language === 'zh' ? '按年计费' : language === 'ja' ? '年間請求' : language === 'ko' ? '연간 청구' : language === 'th' ? 'เรียกเก็บรายปี' : 'Billed annually') : (language === 'zh' ? '按月计费' : language === 'ja' ? '月額請求' : language === 'ko' ? '월간 청구' : language === 'th' ? 'เรียกเก็บรายเดือน' : 'Billed monthly')}
                   </p>
                 )}
                 {user?.plan_renews_at && (
@@ -1554,12 +1545,10 @@ export default function Profile() {
           </Card>
         </div>
 
-        {/* LINE Connection */}
         <div className="mb-6">
           <LineConnectionStatus user={user} colors={colors} />
         </div>
 
-        {/* Landlord Info */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b pb-4" style={{
             backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
@@ -1660,7 +1649,6 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* Juristic Info */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b pb-4" style={{
             backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
@@ -1750,7 +1738,6 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* Notification Preferences and Analytics */}
         <div className="grid lg:grid-cols-2 gap-6 mb-6">
           <NotificationPreferences 
             user={user} 
@@ -1765,7 +1752,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Help & Support */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
@@ -1812,7 +1798,6 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* Data Privacy */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
@@ -1882,7 +1867,6 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* Prevention Banner */}
         <div style={{
           background: 'linear-gradient(to right, #0C3B2E, #047857)',
           borderRadius: '16px',
@@ -1898,7 +1882,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Plan Selection */}
         <div id="plans-section" className="mb-6">
           <div className="flex items-center justify-center mb-6">
             <div className="rounded-xl p-2 shadow-md inline-flex items-center gap-3" style={{ backgroundColor: colors.cardBg }}>
@@ -1983,8 +1966,8 @@ export default function Profile() {
                   <div className="text-center mb-4">
                     <Icon className="w-8 h-8 mx-auto mb-2" style={{ color: plan.bgColor }} />
                     <h3 className="text-xl font-bold mb-1" style={{ color: colors.textPrimary }}>{plan.label}</h3>
-                    <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>{plan.tagline[language]}</p>
-                    <p className="text-xs" style={{ color: colors.textSecondary }}>{plan.description[language]}</p>
+                    <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>{plan.tagline[language] || plan.tagline.en}</p>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>{plan.description[language] || plan.description.en}</p>
                   </div>
                   <div className="text-center mb-4">
                     <div className="text-3xl font-bold" style={{ color: '#C7A338' }}>
@@ -1993,7 +1976,7 @@ export default function Profile() {
                     {!isFreeplan && <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{displayInterval}</div>}
                   </div>
                   <ul className="space-y-2 mb-4 flex-1">
-                    {plan.benefits[language].map((benefit, idx) => (
+                    {(plan.benefits[language] || plan.benefits.en || []).map((benefit, idx) => (
                       <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
                         <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5 text-ls-forest" />
                         <span>{benefit}</span>
@@ -2027,7 +2010,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Buy Credits */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <div className="flex items-center justify-between">
@@ -2107,7 +2089,6 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* Cancel Dialog */}
         <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
           <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
             <DialogHeader>
@@ -2157,7 +2138,6 @@ export default function Profile() {
           </DialogContent>
         </Dialog>
 
-        {/* Logout */}
         <Button
           variant="outline"
           className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
