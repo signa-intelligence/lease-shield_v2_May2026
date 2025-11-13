@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Shield, TrendingUp, Award, Target, ChevronRight, CheckCircle2, ChevronLeft, Star, Trophy, Zap } from 'lucide-react';
+import { Shield, TrendingUp, Award, Target, ChevronRight, CheckCircle2, ChevronLeft, Star, Trophy, Zap, Pause, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
@@ -17,6 +17,40 @@ const ProtectionScoreEnhanced = ({
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
+  const [isAutoRotating, setIsAutoRotating] = useState(true);
+  const [shuffledRecommendations, setShuffledRecommendations] = useState([]);
+
+  // Shuffle recommendations on mount and when recommendations change
+  useEffect(() => {
+    if (recommendations && recommendations.length > 0) {
+      const shuffled = [...recommendations].sort(() => Math.random() - 0.5);
+      setShuffledRecommendations(shuffled);
+    }
+  }, [recommendations]);
+
+  // Auto-rotation effect
+  useEffect(() => {
+    if (!isAutoRotating || !shuffledRecommendations || shuffledRecommendations.length <= 1) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => {
+        const next = prev + 1;
+        // Loop back to start when reaching the end
+        return next >= shuffledRecommendations.length ? 0 : next;
+      });
+    }, 5000); // Rotate every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [isAutoRotating, shuffledRecommendations]);
+
+  // Pause auto-rotation when user interacts
+  const handleUserInteraction = () => {
+    setIsAutoRotating(false);
+    // Resume after 10 seconds of no interaction
+    setTimeout(() => setIsAutoRotating(true), 10000);
+  };
 
   const getScoreColor = (score) => {
     if (score >= 85) return '#10B981';
@@ -105,6 +139,7 @@ const ProtectionScoreEnhanced = ({
   // Swipe Handlers
   const handleTouchStart = (e) => {
     setTouchStart(e.targetTouches[0].clientX);
+    handleUserInteraction();
   };
 
   const handleTouchMove = (e) => {
@@ -118,7 +153,7 @@ const ProtectionScoreEnhanced = ({
     const isLeftSwipe = distance > 50;
     const isRightSwipe = distance < -50;
     
-    if (isLeftSwipe && currentSlide < recommendations.length - 1) {
+    if (isLeftSwipe && currentSlide < shuffledRecommendations.length - 1) {
       setCurrentSlide(currentSlide + 1);
     }
     if (isRightSwipe && currentSlide > 0) {
@@ -130,15 +165,25 @@ const ProtectionScoreEnhanced = ({
   };
 
   const nextSlide = () => {
-    if (currentSlide < recommendations.length - 1) {
+    if (currentSlide < shuffledRecommendations.length - 1) {
       setCurrentSlide(currentSlide + 1);
+    } else {
+      setCurrentSlide(0); // Loop back to start
     }
+    handleUserInteraction();
   };
 
   const prevSlide = () => {
     if (currentSlide > 0) {
       setCurrentSlide(currentSlide - 1);
+    } else {
+      setCurrentSlide(shuffledRecommendations.length - 1); // Loop to end
     }
+    handleUserInteraction();
+  };
+
+  const toggleAutoRotate = () => {
+    setIsAutoRotating(!isAutoRotating);
   };
 
   return (
@@ -302,52 +347,65 @@ const ProtectionScoreEnhanced = ({
           ))}
         </div>
 
-        {/* Swipeable Recommendation Cards */}
-        {recommendations && recommendations.length > 0 && (
+        {/* Auto-rotating Recommendation Cards */}
+        {shuffledRecommendations && shuffledRecommendations.length > 0 && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>
                 {language === 'th' ? 'คำแนะนำ' : 'Quick Wins'}
               </span>
-              {recommendations.length > 1 && (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={prevSlide}
-                    disabled={currentSlide === 0}
-                    style={{
-                      padding: '4px',
-                      borderRadius: '4px',
-                      border: 'none',
-                      backgroundColor: currentSlide === 0 ? colors.borderColor : colors.textPrimary,
-                      color: currentSlide === 0 ? colors.textSecondary : colors.cardBg,
-                      cursor: currentSlide === 0 ? 'not-allowed' : 'pointer',
-                      opacity: currentSlide === 0 ? 0.5 : 1,
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <ChevronLeft className="w-3 h-3" />
-                  </button>
-                  <span className="text-[10px]" style={{ color: colors.textSecondary }}>
-                    {currentSlide + 1}/{recommendations.length}
-                  </span>
-                  <button
-                    onClick={nextSlide}
-                    disabled={currentSlide === recommendations.length - 1}
-                    style={{
-                      padding: '4px',
-                      borderRadius: '4px',
-                      border: 'none',
-                      backgroundColor: currentSlide === recommendations.length - 1 ? colors.borderColor : colors.textPrimary,
-                      color: currentSlide === recommendations.length - 1 ? colors.textSecondary : colors.cardBg,
-                      cursor: currentSlide === recommendations.length - 1 ? 'not-allowed' : 'pointer',
-                      opacity: currentSlide === recommendations.length - 1 ? 0.5 : 1,
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <ChevronRight className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-1">
+                {shuffledRecommendations.length > 1 && (
+                  <>
+                    <button
+                      onClick={toggleAutoRotate}
+                      style={{
+                        padding: '4px',
+                        borderRadius: '4px',
+                        border: 'none',
+                        backgroundColor: isAutoRotating ? scoreColor : colors.borderColor,
+                        color: isAutoRotating ? '#FFFFFF' : colors.textSecondary,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      title={isAutoRotating ? (language === 'th' ? 'หยุดหมุน' : 'Pause') : (language === 'th' ? 'เล่นหมุน' : 'Play')}
+                    >
+                      {isAutoRotating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                    </button>
+                    <button
+                      onClick={prevSlide}
+                      style={{
+                        padding: '4px',
+                        borderRadius: '4px',
+                        border: 'none',
+                        backgroundColor: colors.textPrimary,
+                        color: colors.cardBg,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                    </button>
+                    <span className="text-[10px]" style={{ color: colors.textSecondary }}>
+                      {currentSlide + 1}/{shuffledRecommendations.length}
+                    </span>
+                    <button
+                      onClick={nextSlide}
+                      style={{
+                        padding: '4px',
+                        borderRadius: '4px',
+                        border: 'none',
+                        backgroundColor: colors.textPrimary,
+                        color: colors.cardBg,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
             
             <div 
@@ -362,7 +420,7 @@ const ProtectionScoreEnhanced = ({
                   transform: `translateX(-${currentSlide * 100}%)`
                 }}
               >
-                {recommendations.map((rec, idx) => (
+                {shuffledRecommendations.map((rec, idx) => (
                   <div 
                     key={idx}
                     className="min-w-full px-1"
@@ -401,12 +459,15 @@ const ProtectionScoreEnhanced = ({
             </div>
 
             {/* Dot indicators */}
-            {recommendations.length > 1 && (
+            {shuffledRecommendations.length > 1 && (
               <div className="flex justify-center gap-1 mt-2">
-                {recommendations.map((_, idx) => (
+                {shuffledRecommendations.map((_, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setCurrentSlide(idx)}
+                    onClick={() => {
+                      setCurrentSlide(idx);
+                      handleUserInteraction();
+                    }}
                     style={{
                       width: '6px',
                       height: '6px',
