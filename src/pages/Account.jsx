@@ -467,16 +467,17 @@ export default function Account() {
   };
 
   const handleExportData = async () => {
-    haptic.light();
+    haptic.medium();
     setExporting(true);
     try {
       const response = await base44.functions.invoke('exportUserData');
       
-      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+      // Handle PDF response
+      const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `lease_shield_data_export_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `LeaseShield_Personal_Data_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -562,7 +563,6 @@ export default function Account() {
 
   const handleShareLink = async (role) => {
     const language = user?.language || 'en'; // Declared here to ensure it's available for the alert
-    const link = generateLineOALink(role);
     const title = role === 'landlord' 
       ? (language === 'th' ? 'เชื่อมต่อกับ Lease Shield' : 'Connect to Lease Shield')
       : (language === 'th' ? 'เชื่อมต่อนิติบุคคลกับ Lease Shield' : 'Connect Juristic to Lease Shield');
@@ -574,7 +574,7 @@ export default function Account() {
           text: language === 'th' 
             ? 'คลิกเพื่อเพิ่มเพื่อน Lease Shield LINE Official Account' 
             : 'Click to add Lease Shield LINE Official Account',
-          url: link
+          url: generateLineOALink(role) // Use generateLineOALink to ensure consistent URL
         });
       } catch (err) {
         console.error('Share failed:', err);
@@ -2280,7 +2280,7 @@ export default function Account() {
                     </div>
                   </div>
                   <a
-                    href="https://www.leaseshield.asia/legal#privacy" // Changed to direct URL
+                    href="https://www.leaseshield.asia/legal#privacy"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -2291,10 +2291,10 @@ export default function Account() {
                       color: '#0C3B2E',
                       fontWeight: 'bold',
                       fontSize: '14px',
-                      textDecoration: 'none', // Added for anchor tag
+                      textDecoration: 'none',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
-                      display: 'inline-block' // Added to make it behave like a block for styling
+                      display: 'inline-block'
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#0C3B2E';
@@ -2312,9 +2312,9 @@ export default function Account() {
 
               <div style={{
                 padding: '16px',
-                backgroundColor: colors.fieldBg, // Changed to fieldBg for consistency with theme
+                backgroundColor: colors.fieldBg,
                 borderRadius: '12px',
-                borderLeft: '4px solid #C7A338' // Changed to gold color
+                borderLeft: '4px solid #C7A338'
               }}>
                 <div className="flex items-start gap-3 justify-between flex-wrap">
                   <div className="flex items-start gap-3">
