@@ -66,76 +66,101 @@ const NOTIFICATION_TYPES = [
   },
 ];
 
-const TestNotifications = ({ users = [], language = 'en', colors }) => {
+export default function TestNotifications({ users = [], language = 'en', colors }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null);
 
-  const strings = {
+  const t = {
     en: {
-      title: 'Test Notifications',
-      selectUser: 'Select User',
-      selectUserPlaceholder: 'Select user...',
-      notificationType: 'Notification Type',
-      selectTypePlaceholder: 'Select type...',
-      sendTest: 'Send Test Notification',
-      sending: 'Sending...',
-      successMessage: 'Test notification sent successfully via',
-      errorMessage: 'Failed to send:',
-      infoText: 'Notifications will be sent via LINE if enabled, otherwise via email. Messages will use the user\'s language preference'
+      testNotifications: "Test Notifications",
+      testNotificationsDesc: "Send test notifications to users",
+      selectUser: "Select User",
+      selectUserPlaceholder: "Choose a user...",
+      notificationType: "Notification Type", // Kept from original, as it's used
+      selectTypePlaceholder: "Select type...", // Kept from original, as it's used
+      sendTest: "Send Test", // Updated to shorter version from outline
+      sending: "Sending...",
+      successMessage: "Test notification sent successfully via", // Kept from original, as it's used
+      errorMessage: "Failed to send:", // Kept from original, as it's used
+      infoText: 'Notifications will be sent via LINE if enabled, otherwise via email. Messages will use the user\'s language preference', // Kept from original, as it's used
+      lineConnected: "LINE Connected",
+      lineNotConnected: "LINE Not Connected",
+      emailEnabled: "Email Enabled",
+      emailDisabled: "Email Disabled"
     },
     th: {
-      title: 'ทดสอบการแจ้งเตือน',
-      selectUser: 'เลือกผู้ใช้',
-      selectUserPlaceholder: 'เลือกผู้ใช้...',
-      notificationType: 'ประเภทการแจ้งเตือน',
-      selectTypePlaceholder: 'เลือกประเภท...',
-      sendTest: 'ส่งการแจ้งเตือนทดสอบ',
-      sending: 'กำลังส่ง...',
-      successMessage: 'ส่งการแจ้งเตือนทดสอบสำเร็จ ผ่าน',
-      errorMessage: 'ไม่สามารถส่งได้:',
-      infoText: 'การแจ้งเตือนจะถูกส่งผ่าน LINE หากเปิดใช้งาน มิฉะนั้นจะส่งทางอีเมล ข้อความจะใช้ภาษาตามการตั้งค่าของผู้ใช้'
+      testNotifications: "ทดสอบการแจ้งเตือน",
+      testNotificationsDesc: "ส่งการแจ้งเตือนทดสอบไปยังผู้ใช้",
+      selectUser: "เลือกผู้ใช้",
+      selectUserPlaceholder: "เลือกผู้ใช้...",
+      notificationType: "ประเภทการแจ้งเตือน",
+      selectTypePlaceholder: "เลือกประเภท...",
+      sendTest: "ส่งทดสอบ",
+      sending: "กำลังส่ง...",
+      successMessage: "ส่งการแจ้งเตือนทดสอบสำเร็จ ผ่าน",
+      errorMessage: "ไม่สามารถส่งได้:",
+      infoText: "การแจ้งเตือนจะถูกส่งผ่าน LINE หากเปิดใช้งาน มิฉะนั้นจะส่งทางอีเมล ข้อความจะใช้ภาษาตามการตั้งค่าของผู้ใช้",
+      lineConnected: "เชื่อมต่อ LINE แล้ว",
+      lineNotConnected: "ไม่ได้เชื่อมต่อ LINE",
+      emailEnabled: "เปิดอีเมล",
+      emailDisabled: "ปิดอีเมล"
     },
     zh: {
-      title: '测试通知',
-      selectUser: '选择用户',
-      selectUserPlaceholder: '选择用户...',
-      notificationType: '通知类型',
-      selectTypePlaceholder: '选择类型...',
-      sendTest: '发送测试通知',
-      sending: '发送中...',
-      successMessage: '测试通知成功发送通过',
-      errorMessage: '发送失败：',
-      infoText: '如果启用，通知将通过LINE发送，否则通过电子邮件。消息将使用用户的语言偏好'
+      testNotifications: "测试通知",
+      testNotificationsDesc: "向用户发送测试通知",
+      selectUser: "选择用户",
+      selectUserPlaceholder: "选择用户...",
+      notificationType: "通知类型",
+      selectTypePlaceholder: "选择类型...",
+      sendTest: "发送测试",
+      sending: "发送中...",
+      successMessage: "测试通知成功发送通过",
+      errorMessage: "发送失败：",
+      infoText: "如果启用，通知将通过LINE发送，否则通过电子邮件。消息将使用用户的语言偏好",
+      lineConnected: "LINE已连接",
+      lineNotConnected: "LINE未连接",
+      emailEnabled: "电子邮件已启用",
+      emailDisabled: "电子邮件已禁用"
     },
     ja: {
-      title: 'テスト通知',
-      selectUser: 'ユーザーを選択',
-      selectUserPlaceholder: 'ユーザーを選択...',
-      notificationType: '通知タイプ',
-      selectTypePlaceholder: 'タイプを選択...',
-      sendTest: 'テスト通知を送信',
-      sending: '送信中...',
-      successMessage: 'テスト通知が正常に送信されました',
-      errorMessage: '送信失敗：',
-      infoText: '有効な場合、通知はLINE経由で送信されます。それ以外の場合はメールで送信されます。メッセージはユーザーの言語設定を使用します'
+      testNotifications: "通知テスト",
+      testNotificationsDesc: "ユーザーにテスト通知を送信",
+      selectUser: "ユーザーを選択",
+      selectUserPlaceholder: "ユーザーを選択...",
+      notificationType: "通知タイプ",
+      selectTypePlaceholder: "タイプを選択...",
+      sendTest: "テスト送信",
+      sending: "送信中...",
+      successMessage: "テスト通知が正常に送信されました",
+      errorMessage: "送信失敗：",
+      infoText: "有効な場合、通知はLINE経由で送信されます。それ以外の場合はメールで送信されます。メッセージはユーザーの言語設定を使用します",
+      lineConnected: "LINE接続済み",
+      lineNotConnected: "LINE未接続",
+      emailEnabled: "メール有効",
+      emailDisabled: "メール無効"
     },
     ko: {
-      title: '테스트 알림',
-      selectUser: '사용자 선택',
-      selectUserPlaceholder: '사용자 선택...',
-      notificationType: '알림 유형',
-      selectTypePlaceholder: '유형 선택...',
-      sendTest: '테스트 알림 보내기',
-      sending: '보내는 중...',
-      successMessage: '테스트 알림이 성공적으로 전송되었습니다',
-      errorMessage: '전송 실패：',
-      infoText: '활성화된 경우 LINE을 통해 알림이 전송되고, 그렇지 않으면 이메일을 통해 전송됩니다. 메시지는 사용자의 언어 기본 설정을 사용합니다'
+      testNotifications: "알림 테스트",
+      testNotificationsDesc: "사용자에게 테스트 알림 보내기",
+      selectUser: "사용자 선택",
+      selectUserPlaceholder: "사용자 선택...",
+      notificationType: "알림 유형",
+      selectTypePlaceholder: "유형 선택...",
+      sendTest: "테스트 보내기",
+      sending: "전송 중...",
+      successMessage: "테스트 알림이 성공적으로 전송되었습니다",
+      errorMessage: "전송 실패：",
+      infoText: "활성화된 경우 LINE을 통해 알림이 전송되고, 그렇지 않으면 이메일을 통해 전송됩니다. 메시지는 사용자의 언어 기본 설정을 사용합니다",
+      lineConnected: "LINE 연결됨",
+      lineNotConnected: "LINE 연결 안됨",
+      emailEnabled: "이메일 활성화됨",
+      emailDisabled: "이메일 비활성화됨"
     }
   };
 
-  const str = strings[language] || strings.en;
+  const str = t[language] || t.en;
 
   const handleSendTest = async () => {
     if (!selectedUser || !selectedType) {
@@ -185,7 +210,7 @@ const TestNotifications = ({ users = [], language = 'en', colors }) => {
       <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
         <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
           <Bell className="w-5 h-5 text-blue-600" />
-          {str.title}
+          {str.testNotifications}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-4">
@@ -216,16 +241,26 @@ const TestNotifications = ({ users = [], language = 'en', colors }) => {
           </Select>
           {selectedUserObj && (
             <div className="mt-2 flex gap-2">
-              {selectedUserObj.line_notifications && selectedUserObj.line_messaging_token && (
+              {selectedUserObj.line_notifications && selectedUserObj.line_messaging_token ? (
                 <Badge className="bg-green-100 text-green-700 text-xs">
                   <MessageCircle className="w-3 h-3 mr-1" />
-                  LINE Enabled
+                  {str.lineConnected}
+                </Badge>
+              ) : (
+                <Badge className="bg-gray-100 text-gray-700 text-xs">
+                  <MessageCircle className="w-3 h-3 mr-1" />
+                  {str.lineNotConnected}
                 </Badge>
               )}
-              {selectedUserObj.email_notifications && (
+              {selectedUserObj.email_notifications ? (
                 <Badge className="bg-blue-100 text-blue-700 text-xs">
                   <Mail className="w-3 h-3 mr-1" />
-                  Email Enabled
+                  {str.emailEnabled}
+                </Badge>
+              ) : (
+                <Badge className="bg-gray-100 text-gray-700 text-xs">
+                  <Mail className="w-3 h-3 mr-1" />
+                  {str.emailDisabled}
                 </Badge>
               )}
             </div>
@@ -338,6 +373,4 @@ const TestNotifications = ({ users = [], language = 'en', colors }) => {
       </CardContent>
     </Card>
   );
-};
-
-export default TestNotifications;
+}

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Bell, Play, CheckCircle2, Clock, Loader2, AlertTriangle, Calendar } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
-const ReminderControl = ({ language = 'en', colors }) => {
+export default function ReminderControl({ language, colors }) { // Updated function declaration and prop destructuring
   const [running, setRunning] = useState(false);
   const [lastResult, setLastResult] = useState(null);
 
@@ -32,18 +32,23 @@ const ReminderControl = ({ language = 'en', colors }) => {
     }
   };
 
-  const strings = {
+  // The new 't' object, merging original translations with new keys from the outline.
+  // All original keys that don't have a direct semantic replacement from the outline are preserved.
+  const t = {
     en: {
-      title: 'Automated Reminder System',
-      description: 'Manually trigger the daily reminder check for deposits, leases, and rent',
-      runNow: 'Run Reminder Check',
-      running: 'Checking...',
-      lastRun: 'Last Check',
+      reminderControl: "Reminder Control", // New from outline, replaces 'title'
+      reminderControlDesc: "Manually trigger reminder checks", // New from outline, replaces 'description'
+      checkAll: "Check All Reminders", // New from outline, replaces 'runNow'
+      checking: "Checking...", // New from outline, replaces 'running'
+      lastRun: "Last run", // New from outline, same as old 'lastRun'
+      never: "Never", // New from outline, can be used instead of 'notRunYet' if applicable
+      
+      // Preserve original keys not directly replaced by the outline's new keys
       notificationsSent: 'Notifications Sent',
       success: 'Success',
       failed: 'Failed',
-      notRunYet: 'Not run yet',
-      depositReminders: 'Deposit Reminders',
+      notRunYet: 'Not run yet', // Kept for safety, though 'never' is provided
+      depositReminders: 'Deposit Reminders', // 'checkDeposits' from outline doesn't fit this context
       leaseNotices: 'Lease Notices',
       rentReminders: 'Rent Reminders',
       setupCron: 'Production Setup',
@@ -51,11 +56,13 @@ const ReminderControl = ({ language = 'en', colors }) => {
       viewLogs: 'Check function logs for details'
     },
     th: {
-      title: 'ระบบแจ้งเตือนอัตโนมัติ',
-      description: 'เรียกใช้การตรวจสอบการแจ้งเตือนรายวันสำหรับเงินมัดจำ สัญญา และค่าเช่า',
-      runNow: 'ตรวจสอบการแจ้งเตือน',
-      running: 'กำลังตรวจสอบ...',
-      lastRun: 'ตรวจสอบล่าสุด',
+      reminderControl: "ควบคุมการแจ้งเตือน",
+      reminderControlDesc: "เรียกการตรวจสอบแจ้งเตือนด้วยตนเอง",
+      checkAll: "ตรวจสอบทั้งหมด",
+      checking: "กำลังตรวจสอบ...",
+      lastRun: "ครั้งล่าสุด",
+      never: "ไม่เคย",
+
       notificationsSent: 'การแจ้งเตือนที่ส่ง',
       success: 'สำเร็จ',
       failed: 'ล้มเหลว',
@@ -68,11 +75,13 @@ const ReminderControl = ({ language = 'en', colors }) => {
       viewLogs: 'ตรวจสอบ function logs สำหรับรายละเอียด'
     },
     zh: {
-      title: '自动提醒系统',
-      description: '手动触发押金、租约和租金的每日提醒检查',
-      runNow: '运行提醒检查',
-      running: '检查中...',
-      lastRun: '上次检查',
+      reminderControl: "提醒控制",
+      reminderControlDesc: "手动触发提醒检查",
+      checkAll: "检查所有提醒",
+      checking: "检查中...",
+      lastRun: "上次运行",
+      never: "从未",
+
       notificationsSent: '已发送通知',
       success: '成功',
       failed: '失败',
@@ -85,11 +94,13 @@ const ReminderControl = ({ language = 'en', colors }) => {
       viewLogs: '检查功能日志以获取详细信息'
     },
     ja: {
-      title: '自動リマインダーシステム',
-      description: '敷金、賃貸契約、家賃の毎日のリマインダーチェックを手動でトリガー',
-      runNow: 'リマインダーチェックを実行',
-      running: 'チェック中...',
-      lastRun: '最終チェック',
+      reminderControl: "リマインダー制御",
+      reminderControlDesc: "リマインダーチェックを手動でトリガー",
+      checkAll: "すべてのリマインダーをチェック",
+      checking: "チェック中...",
+      lastRun: "最終実行",
+      never: "なし",
+
       notificationsSent: '送信された通知',
       success: '成功',
       failed: '失敗',
@@ -102,11 +113,13 @@ const ReminderControl = ({ language = 'en', colors }) => {
       viewLogs: '詳細については機能ログを確認してください'
     },
     ko: {
-      title: '자동 알림 시스템',
-      description: '보증금, 임대 계약 및 임대료에 대한 일일 알림 확인을 수동으로 트리거',
-      runNow: '알림 확인 실행',
-      running: '확인 중...',
-      lastRun: '마지막 확인',
+      reminderControl: "알림 제어",
+      reminderControlDesc: "수동으로 알림 확인 트리거",
+      checkAll: "모든 알림 확인",
+      checking: "확인 중...",
+      lastRun: "마지막 실행",
+      never: "안함",
+
       notificationsSent: '발송된 알림',
       success: '성공',
       failed: '실패',
@@ -120,7 +133,7 @@ const ReminderControl = ({ language = 'en', colors }) => {
     }
   };
 
-  const str = strings[language] || strings.en;
+  const strings = t[language] || t.en; // Updated variable name and source for translations
 
   const categorizeNotifications = () => {
     if (!lastResult?.details) return { deposit: 0, lease: 0, rent: 0 };
@@ -147,13 +160,13 @@ const ReminderControl = ({ language = 'en', colors }) => {
       <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
         <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
           <Bell className="w-5 h-5 text-purple-600" />
-          {str.title}
+          {strings.reminderControl} {/* Updated from str.title */}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
         <div>
           <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-            {str.description}
+            {strings.reminderControlDesc} {/* Updated from str.description */}
           </p>
           
           <Button
@@ -168,12 +181,12 @@ const ReminderControl = ({ language = 'en', colors }) => {
             {running ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {str.running}
+                {strings.checking} {/* Updated from str.running */}
               </>
             ) : (
               <>
                 <Play className="w-4 h-4 mr-2" />
-                {str.runNow}
+                {strings.checkAll} {/* Updated from str.runNow */}
               </>
             )}
           </Button>
@@ -199,7 +212,7 @@ const ReminderControl = ({ language = 'en', colors }) => {
                 <span className="font-semibold" style={{ 
                   color: lastResult.success ? '#047857' : '#DC2626' 
                 }}>
-                  {lastResult.success ? str.success : str.failed}
+                  {strings.success} {/* Updated from str.success */}
                 </span>
               </div>
               <Badge className="bg-slate-100 text-slate-700 text-xs">
@@ -213,15 +226,15 @@ const ReminderControl = ({ language = 'en', colors }) => {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="text-center p-3 rounded-lg" style={{ backgroundColor: colors.cardBg }}>
                     <p className="text-2xl font-bold text-blue-600">{notificationBreakdown.deposit}</p>
-                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>{str.depositReminders}</p>
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>{strings.depositReminders}</p> {/* Updated from str.depositReminders */}
                   </div>
                   <div className="text-center p-3 rounded-lg" style={{ backgroundColor: colors.cardBg }}>
                     <p className="text-2xl font-bold text-emerald-600">{notificationBreakdown.lease}</p>
-                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>{str.leaseNotices}</p>
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>{strings.leaseNotices}</p> {/* Updated from str.leaseNotices */}
                   </div>
                   <div className="text-center p-3 rounded-lg" style={{ backgroundColor: colors.cardBg }}>
                     <p className="text-2xl font-bold text-amber-600">{notificationBreakdown.rent}</p>
-                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>{str.rentReminders}</p>
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>{strings.rentReminders}</p> {/* Updated from str.rentReminders */}
                   </div>
                 </div>
 
@@ -230,7 +243,7 @@ const ReminderControl = ({ language = 'en', colors }) => {
                   border: `1px solid ${colors.borderColor}`
                 }}>
                   <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                    {str.notificationsSent}
+                    {strings.notificationsSent} {/* Updated from str.notificationsSent */}
                   </span>
                   <span className="text-xl font-bold text-purple-600">
                     {lastResult.notifications_sent}
@@ -258,10 +271,10 @@ const ReminderControl = ({ language = 'en', colors }) => {
             <Calendar className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
-                {str.setupCron}
+                {strings.setupCron} {/* Updated from str.setupCron */}
               </p>
               <p style={{ color: colors.textSecondary }}>
-                {str.cronInstructions}
+                {strings.cronInstructions} {/* Updated from str.cronInstructions */}
               </p>
               <p className="mt-2 text-blue-600 font-mono text-xs">
                 Dashboard → Code → Functions → checkAllReminders
@@ -272,6 +285,4 @@ const ReminderControl = ({ language = 'en', colors }) => {
       </CardContent>
     </Card>
   );
-};
-
-export default ReminderControl;
+}

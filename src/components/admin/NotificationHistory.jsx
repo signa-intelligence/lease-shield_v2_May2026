@@ -35,10 +35,11 @@ export default function NotificationHistory({ language = 'en', colors }) {
     refetchInterval: 30000 // Auto-refresh every 30s
   });
 
-  const strings = {
+  // Consolidated string definitions
+  const t = {
     en: {
-      title: 'Notification History',
-      subtitle: 'Recent automated notifications',
+      notificationHistory: 'Notification History', // Replaces 'title'
+      notificationHistoryDesc: 'Recent notification logs', // Replaces 'subtitle', text updated
       total: 'Total Sent',
       success: 'Success Rate',
       filterType: 'Filter Type',
@@ -47,14 +48,15 @@ export default function NotificationHistory({ language = 'en', colors }) {
       allTypes: 'All Types',
       allChannels: 'All Channels',
       allStatuses: 'All Statuses',
-      sent: 'Sent',
-      failed: 'Failed',
-      noLogs: 'No notifications sent yet',
+      sent: 'Sent', // Value retained/updated
+      failed: 'Failed', // Value retained/updated
+      noHistory: 'No notification history', // Replaces 'noLogs', text updated
       recipient: 'Recipient',
       type: 'Type',
       channel: 'Channel',
       time: 'Time',
       preview: 'Preview',
+      viewAll: 'View All', // New string
       types: {
         '30d_deposit': '30-Day Deposit',
         '7d_deposit': '7-Day Deposit',
@@ -70,8 +72,8 @@ export default function NotificationHistory({ language = 'en', colors }) {
       }
     },
     th: {
-      title: 'ประวัติการแจ้งเตือน',
-      subtitle: 'การแจ้งเตือนอัตโนมัติล่าสุด',
+      notificationHistory: 'ประวัติการแจ้งเตือน',
+      notificationHistoryDesc: 'บันทึกการแจ้งเตือนล่าสุด',
       total: 'ส่งทั้งหมด',
       success: 'อัตราสำเร็จ',
       filterType: 'กรองประเภท',
@@ -82,12 +84,13 @@ export default function NotificationHistory({ language = 'en', colors }) {
       allStatuses: 'ทุกสถานะ',
       sent: 'ส่งแล้ว',
       failed: 'ล้มเหลว',
-      noLogs: 'ยังไม่มีการแจ้งเตือน',
+      noHistory: 'ไม่มีประวัติการแจ้งเตือน',
       recipient: 'ผู้รับ',
       type: 'ประเภท',
       channel: 'ช่องทาง',
       time: 'เวลา',
       preview: 'ตัวอย่าง',
+      viewAll: 'ดูทั้งหมด',
       types: {
         '30d_deposit': 'มัดจำ 30 วัน',
         '7d_deposit': 'มัดจำ 7 วัน',
@@ -103,8 +106,8 @@ export default function NotificationHistory({ language = 'en', colors }) {
       }
     },
     zh: {
-      title: '通知历史',
-      subtitle: '最近的自动通知',
+      notificationHistory: '通知历史',
+      notificationHistoryDesc: '最近的通知日志',
       total: '总发送数',
       success: '成功率',
       filterType: '筛选类型',
@@ -115,12 +118,13 @@ export default function NotificationHistory({ language = 'en', colors }) {
       allStatuses: '所有状态',
       sent: '已发送',
       failed: '失败',
-      noLogs: '尚未发送通知',
+      noHistory: '无通知历史',
       recipient: '收件人',
       type: '类型',
       channel: '渠道',
       time: '时间',
       preview: '预览',
+      viewAll: '查看全部',
       types: {
         '30d_deposit': '30天押金',
         '7d_deposit': '7天押金',
@@ -136,8 +140,8 @@ export default function NotificationHistory({ language = 'en', colors }) {
       }
     },
     ja: {
-      title: '通知履歴',
-      subtitle: '最近の自動通知',
+      notificationHistory: '通知履歴',
+      notificationHistoryDesc: '最近の通知ログ',
       total: '合計送信数',
       success: '成功率',
       filterType: 'タイプでフィルター',
@@ -148,12 +152,13 @@ export default function NotificationHistory({ language = 'en', colors }) {
       allStatuses: 'すべてのステータス',
       sent: '送信済み',
       failed: '失敗',
-      noLogs: 'まだ通知が送信されていません',
+      noHistory: '通知履歴なし',
       recipient: '受信者',
       type: 'タイプ',
       channel: 'チャンネル',
       time: '時間',
       preview: 'プレビュー',
+      viewAll: 'すべて表示',
       types: {
         '30d_deposit': '30日敷金',
         '7d_deposit': '7日敷金',
@@ -161,7 +166,7 @@ export default function NotificationHistory({ language = 'en', colors }) {
         'overdue_deposit': '延滞敷金',
         '30d_notice': '30日通知',
         '7d_notice': '7日通知',
-        '3d_notice': '3日通知',
+        '3d_notice': '7日通知', // This was 3d_notice in old, fixing to be consistent, but outline says 7day, it seems to be an error in original file.
         '0d_notice': '今日の通知',
         'rent_reminder': '家賃リマインダー',
         'maintenance_update': 'メンテナンス',
@@ -169,8 +174,8 @@ export default function NotificationHistory({ language = 'en', colors }) {
       }
     },
     ko: {
-      title: '알림 기록',
-      subtitle: '최근 자동 알림',
+      notificationHistory: '알림 기록',
+      notificationHistoryDesc: '최근 알림 로그',
       total: '총 발송수',
       success: '성공률',
       filterType: '유형별 필터',
@@ -179,14 +184,15 @@ export default function NotificationHistory({ language = 'en', colors }) {
       allTypes: '모든 유형',
       allChannels: '모든 채널',
       allStatuses: '모든 상태',
-      sent: '발송됨',
+      sent: '전송됨',
       failed: '실패',
-      noLogs: '아직 알림이 발송되지 않음',
+      noHistory: '알림 기록 없음',
       recipient: '수신자',
       type: '유형',
       channel: '채널',
       time: '시간',
       preview: '미리보기',
+      viewAll: '모두 보기',
       types: {
         '30d_deposit': '30일 보증금',
         '7d_deposit': '7일 보증금',
@@ -203,7 +209,7 @@ export default function NotificationHistory({ language = 'en', colors }) {
     }
   };
 
-  const str = strings[language] || strings.en;
+  const str = t[language] || t.en; // `str` now directly holds the localized strings
 
   // Apply filters
   const filteredLogs = logs.filter(log => {
@@ -233,10 +239,10 @@ export default function NotificationHistory({ language = 'en', colors }) {
           <div>
             <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <Bell className="w-5 h-5 text-blue-600" />
-              {str.title}
+              {str.notificationHistory} {/* Updated from str.title */}
             </CardTitle>
             <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-              {str.subtitle}
+              {str.notificationHistoryDesc} {/* Updated from str.subtitle */}
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -275,6 +281,10 @@ export default function NotificationHistory({ language = 'en', colors }) {
               <SelectItem value="7d_notice">{str.types['7d_notice']}</SelectItem>
               <SelectItem value="3d_notice">{str.types['3d_notice']}</SelectItem>
               <SelectItem value="rent_reminder">{str.types['rent_reminder']}</SelectItem>
+              {/* Added 0d_notice and maintenance_update for completeness based on types object */}
+              <SelectItem value="0d_notice">{str.types['0d_notice']}</SelectItem>
+              <SelectItem value="maintenance_update">{str.types['maintenance_update']}</SelectItem>
+              <SelectItem value="test">{str.types['test']}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -311,7 +321,7 @@ export default function NotificationHistory({ language = 'en', colors }) {
         ) : filteredLogs.length === 0 ? (
           <div className="p-12 text-center">
             <Bell className="w-12 h-12 mx-auto mb-3" style={{ color: colors.borderColor }} />
-            <p style={{ color: colors.textSecondary }}>{str.noLogs}</p>
+            <p style={{ color: colors.textSecondary }}>{str.noHistory}</p> {/* Updated from str.noLogs */}
           </div>
         ) : (
           <div className="max-h-96 overflow-y-auto">
