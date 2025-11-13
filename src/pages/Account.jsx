@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import LineConnectionStatus from "../components/shared/LineConnectionStatus"; // New import
+import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
 
 
@@ -175,7 +175,6 @@ const PLAN_DETAILS = [
   }
 ];
 
-// Credit packages
 const CREDIT_PACKAGES = [
   {
     id: 'credits_1',
@@ -209,7 +208,7 @@ const CREDIT_PACKAGES = [
 export default function Account() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [subscribing, setSubscribing] = useState({}); // Changed to object to track each plan
+  const [subscribing, setSubscribing] = useState({});
   const [exporting, setExporting] = useState(false);
   const [billingInterval, setBillingInterval] = useState('monthly');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -217,14 +216,13 @@ export default function Account() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelFeedback, setCancelFeedback] = useState('');
   const [copiedLink, setCopiedLink] = useState(null);
-  const [buyingCredits, setBuyingCredits] = useState({}); // Object to track each package separately
+  const [buyingCredits, setBuyingCredits] = useState({});
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  // Detect payment success on page load and trigger aggressive refresh
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment');
@@ -233,12 +231,10 @@ export default function Account() {
     if (paymentStatus === 'success' || subscriptionStatus === 'success') {
       console.log('💳 Payment success detected - starting credit/subscription refresh...');
       
-      // Clean URL immediately
       window.history.replaceState({}, '', window.location.pathname);
       
-      // Aggressive polling for 60 seconds to catch webhook update
       let pollCount = 0;
-      const maxPolls = 12; // 60 seconds total (5s intervals)
+      const maxPolls = 12;
       
       const pollInterval = setInterval(() => {
         pollCount++;
@@ -249,36 +245,31 @@ export default function Account() {
           clearInterval(pollInterval);
           console.log('✅ Credit/subscription refresh polling complete');
         }
-      }, 5000); // Every 5 seconds
+      }, 5000);
       
-      // Cleanup on unmount
       return () => clearInterval(pollInterval);
     }
   }, [queryClient]);
 
-  // Auto-refresh credits every 5 seconds after window regains focus
   React.useEffect(() => {
     let intervalId;
     
     const handleFocus = () => {
-      // Immediate refresh
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       
-      // Clear any existing interval to prevent multiple intervals
       if (intervalId) {
         clearInterval(intervalId);
-        intervalId = null; // Important: null out the ID after clearing
+        intervalId = null;
       }
 
-      // Then refresh every 5 seconds for 30 seconds
       let count = 0;
       intervalId = setInterval(() => {
         count++;
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         
-        if (count >= 6) { // Stop after 30 seconds (6 * 5s)
+        if (count >= 6) {
           clearInterval(intervalId);
-          intervalId = null; // Important: null out the ID after clearing
+          intervalId = null;
         }
       }, 5000);
     };
@@ -286,7 +277,7 @@ export default function Account() {
     const handleBlur = () => {
       if (intervalId) {
         clearInterval(intervalId);
-        intervalId = null; // Important: null out the ID after clearing
+        intervalId = null;
       }
     };
     
@@ -296,7 +287,7 @@ export default function Account() {
     return () => {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('blur', handleBlur);
-      if (intervalId) { // Ensure interval is cleared on component unmount
+      if (intervalId) {
         clearInterval(intervalId);
       }
     };
@@ -453,13 +444,12 @@ export default function Account() {
       });
       
       if (response.data?.url) {
-        // Open in SAME window - when they come back, credits will auto-refresh
-        window.location.href = response.data.url; 
+        window.location.href = response.data.url;
       }
     } catch (error) {
       console.error('Failed to create checkout:', error);
       haptic.error();
-      const language = user?.language || 'en'; // Declared here to ensure it's available for the alert
+      const language = user?.language || 'en';
       alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
     } finally {
       setBuyingCredits(prev => ({ ...prev, [pkg.id]: false }));
@@ -470,9 +460,11 @@ export default function Account() {
     haptic.medium();
     setExporting(true);
     try {
+      console.log('📥 Requesting PDF export...');
       const response = await base44.functions.invoke('exportUserData');
       
-      // Handle PDF response
+      console.log('📦 Response received, creating PDF download...');
+      
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -482,9 +474,11 @@ export default function Account() {
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
+      
+      console.log('✅ PDF downloaded successfully');
       haptic.success();
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('❌ Export failed:', error);
       haptic.error();
       alert('Failed to export data. Please try again or contact support.');
     } finally {
@@ -493,7 +487,7 @@ export default function Account() {
   };
 
   const handleCancelSubscription = async () => {
-    const language = user?.language || 'en'; // Declared here to ensure it's available for the alert
+    const language = user?.language || 'en';
     if (!cancelReason) {
       alert(language === 'th' ? 'กรุณาเลือกเหตุผลในการยกเลิก' : 'Please select a reason for cancellation');
       return;
@@ -562,7 +556,8 @@ export default function Account() {
   };
 
   const handleShareLink = async (role) => {
-    const language = user?.language || 'en'; // Declared here to ensure it's available for the alert
+    const language = user?.language || 'en';
+    const link = generateLineOALink(role);
     const title = role === 'landlord' 
       ? (language === 'th' ? 'เชื่อมต่อกับ Lease Shield' : 'Connect to Lease Shield')
       : (language === 'th' ? 'เชื่อมต่อนิติบุคคลกับ Lease Shield' : 'Connect Juristic to Lease Shield');
@@ -574,7 +569,7 @@ export default function Account() {
           text: language === 'th' 
             ? 'คลิกเพื่อเพิ่มเพื่อน Lease Shield LINE Official Account' 
             : 'Click to add Lease Shield LINE Official Account',
-          url: generateLineOALink(role) // Use generateLineOALink to ensure consistent URL
+          url: link
         });
       } catch (err) {
         console.error('Share failed:', err);
@@ -588,7 +583,7 @@ export default function Account() {
   const currentPlanTier = user?.plan_tier || 'free';
   const isFree = currentPlanTier === 'free';
   const language = user?.language || 'en';
-  const currentTheme = user?.theme || 'dark'; // Default to 'dark' if user?.theme is undefined
+  const currentTheme = user?.theme || 'dark';
   const isDarkMode = currentTheme === 'dark';
 
   const colors = isDarkMode ? {
@@ -892,13 +887,11 @@ export default function Account() {
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
-  // Updated LINE QR Code URL - Kept as it might be used elsewhere or for future features, despite QR buttons being removed.
-  const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46467_M_gainfriends_2dbarcodes_GW.png"; // Fixed typo in URL
+  const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46467_M_gainfriends_2dbarcodes_GW.png";
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div style={{
@@ -921,7 +914,6 @@ export default function Account() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
-          {/* Personal Information Card */}
           <Card className="lg:col-span-2 border-none shadow-xl" style={{
             backgroundColor: colors.cardBg
           }}>
@@ -967,7 +959,6 @@ export default function Account() {
             <CardContent className="p-6">
               {!isEditing ? (
                 <div className="space-y-3">
-                  {/* Name Display */}
                   <div style={{
                     padding: '16px',
                     backgroundColor: colors.fieldBg,
@@ -993,7 +984,6 @@ export default function Account() {
                     </div>
                   </div>
 
-                  {/* Email Display */}
                   <div style={{
                     padding: '16px',
                     backgroundColor: colors.fieldBg,
@@ -1019,7 +1009,6 @@ export default function Account() {
                     </div>
                   </div>
 
-                  {/* Phone Display */}
                   <div style={{
                     padding: '16px',
                     backgroundColor: colors.fieldBg,
@@ -1045,7 +1034,6 @@ export default function Account() {
                     </div>
                   </div>
 
-                  {/* Tenant Address Display */}
                   {(user?.tenant_address || user?.tenant_city || user?.tenant_state || user?.tenant_zip) && (
                     <div style={{
                       padding: '16px',
@@ -1078,7 +1066,6 @@ export default function Account() {
                     </div>
                   )}
 
-                  {/* Language Display */}
                   <div style={{
                     padding: '16px',
                     backgroundColor: colors.fieldBg,
@@ -1106,7 +1093,6 @@ export default function Account() {
                     </div>
                   </div>
 
-                  {/* Theme Display with Toggle */}
                   <div style={{
                     padding: '16px',
                     backgroundColor: colors.fieldBg,
@@ -1208,7 +1194,6 @@ export default function Account() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Name Input */}
                   <div>
                     <Label htmlFor="full_name" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <User className="w-4 h-4 text-ls-forest" />
@@ -1230,7 +1215,6 @@ export default function Account() {
                     />
                   </div>
 
-                  {/* Email Display (Read-only) */}
                   <div>
                     <Label className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <Mail className="w-4 h-4 text-ls-gold" />
@@ -1258,7 +1242,6 @@ export default function Account() {
                     </div>
                   </div>
 
-                  {/* Phone Input */}
                   <div>
                     <Label htmlFor="phone" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <Phone className="w-4 h-4 text-ls-forest" />
@@ -1280,7 +1263,6 @@ export default function Account() {
                     />
                   </div>
 
-                  {/* Tenant Address Inputs */}
                   <div>
                     <Label htmlFor="tenant_address" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <Globe className="w-4 h-4 text-ls-gold" />
@@ -1364,7 +1346,6 @@ export default function Account() {
                     </div>
                   </div>
 
-                  {/* Country Input */}
                   <div>
                     <Label htmlFor="country" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <Globe className="w-4 h-4 text-ls-forest" />
@@ -1386,7 +1367,6 @@ export default function Account() {
                     />
                   </div>
 
-                  {/* Language Select */}
                   <div>
                     <Label htmlFor="language" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.language}</Label>
                     <Select value={formData.language} onValueChange={(value) => setFormData({...formData, language: value})}>
@@ -1400,7 +1380,6 @@ export default function Account() {
                     </Select>
                   </div>
 
-                  {/* Theme Select */}
                   <div>
                     <Label htmlFor="theme" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.theme}</Label>
                     <Select value={formData.theme} onValueChange={(value) => setFormData({...formData, theme: value})}>
@@ -1436,7 +1415,6 @@ export default function Account() {
                     </Select>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="flex gap-3 pt-4">
                     <button
                       type="submit"
@@ -1500,7 +1478,6 @@ export default function Account() {
             </CardContent>
           </Card>
 
-          {/* Current Plan Card with Manage Subscription */}
           <Card className="border-none shadow-xl overflow-hidden" style={{
             backgroundColor: colors.cardBg
           }}>
@@ -1634,12 +1611,10 @@ export default function Account() {
           </Card>
         </div>
 
-        {/* NEW: LINE Connection Status - PROMINENT PLACEMENT */}
         <div className="mb-6">
           <LineConnectionStatus user={user} colors={colors} />
         </div>
 
-        {/* Landlord Information Card */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b pb-4" style={{
             backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
@@ -1656,7 +1631,6 @@ export default function Account() {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            {/* LINE OA Connection Section */}
             <div className="mb-6 p-4 rounded-xl border-2 border-dashed" style={{
               backgroundColor: isDarkMode ? '#2A2D30' : '#F0FDF4',
               borderColor: isDarkMode ? '#10B981' : '#86EFAC'
@@ -1885,7 +1859,6 @@ export default function Account() {
           </CardContent>
         </Card>
 
-        {/* Juristic Office Card */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b pb-4" style={{
             backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
@@ -1902,7 +1875,6 @@ export default function Account() {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            {/* LINE OA Connection Section */}
             <div className="mb-6 p-4 rounded-xl border-2 border-dashed" style={{
               backgroundColor: isDarkMode ? '#2A2D30' : '#FFFBEB',
               borderColor: isDarkMode ? '#F59E0B' : '#FDE047'
@@ -2117,7 +2089,6 @@ export default function Account() {
           </CardContent>
         </Card>
 
-        {/* Notification Settings - SPLIT INTO TWO CARDS */}
         <div className="grid lg:grid-cols-2 gap-6 mb-6">
           <NotificationPreferences 
             user={user} 
@@ -2130,7 +2101,6 @@ export default function Account() {
           />
         </div>
 
-        {/* Help & Support Section */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
@@ -2245,7 +2215,6 @@ export default function Account() {
           </CardContent>
         </Card>
 
-        {/* Data Privacy & Rights Section */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
@@ -2384,7 +2353,6 @@ export default function Account() {
           </CardContent>
         </Card>
 
-        {/* Cancel Subscription Dialog */}
         <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
           <DialogContent className="sm:max-w-2xl" style={{
             backgroundColor: colors.cardBg,
@@ -2537,7 +2505,6 @@ export default function Account() {
           </DialogContent>
         </Dialog>
 
-        {/* Prevention-First Subscription Positioning Banner */}
         <div style={{
           background: 'linear-gradient(to right, #0C3B2E, #047857)',
           borderRadius: '16px',
@@ -2559,9 +2526,6 @@ export default function Account() {
           </div>
         </div>
 
-        {/* Removed Promo Code Input Section */}
-
-        {/* Billing Toggle */}
         <div id="plans-section" className="mb-6">
           <div className="flex items-center justify-center mb-6">
             <div className="rounded-xl p-2 shadow-md inline-flex items-center gap-3" style={{ backgroundColor: colors.cardBg }}>
@@ -2616,7 +2580,6 @@ export default function Account() {
           <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
           <p className="mb-6 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
           
-          {/* Plans Grid - UPDATED WITH THAI TRANSLATIONS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
@@ -2627,7 +2590,7 @@ export default function Account() {
               const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
               const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? (language === 'th' ? '/ปี' : plan.intervalAnnual) : (language === 'th' ? '/เดือน' : plan.intervalMonthly));
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
-              const isSubscribing = subscribing[plan.key]; // Only check THIS plan's state
+              const isSubscribing = subscribing[plan.key];
               
               return (
                 <div
@@ -2652,7 +2615,6 @@ export default function Account() {
                     minHeight: '520px'
                   }}
                 >
-                  {/* Badge Area - Fixed Height */}
                   <div style={{ height: '24px', marginBottom: '12px' }}>
                     {plan.popular && (
                       <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
@@ -2671,7 +2633,6 @@ export default function Account() {
                     )}
                   </div>
 
-                  {/* Plan Name & Icon - Fixed Height */}
                   <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
                     <div className="flex items-center justify-center gap-2 mb-2">
                       <div style={{
@@ -2697,7 +2658,6 @@ export default function Account() {
                     </p>
                   </div>
 
-                  {/* Price Section - Fixed Height */}
                   <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
                     {isFreeplan ? (
                       <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
@@ -2727,7 +2687,6 @@ export default function Account() {
                     </div>
                   </div>
 
-                  {/* Benefits List - Flexible Height - SHOW ALL WITH THAI */}
                   <div style={{ flex: 1, marginBottom: '12px' }}>
                     <ul className="space-y-2">
                       {(language === 'th' ? plan.benefitsTh : plan.benefits).map((benefit, idx) => {
@@ -2742,7 +2701,6 @@ export default function Account() {
                     </ul>
                   </div>
 
-                  {/* Button - Fixed at Bottom */}
                   <div className="mt-auto">
                     {isCurrentPlan ? (
                       <Button
@@ -2794,7 +2752,6 @@ export default function Account() {
           </div>
         </div>
 
-        {/* Letter Credits Section */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
@@ -2822,7 +2779,6 @@ export default function Account() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {/* Benefits - UPDATED ALIGNMENT */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -2842,7 +2798,6 @@ export default function Account() {
               </div>
             </div>
 
-            {/* Credit Packages - ALIGNED LAYOUT WITH DIRECT STRIPE LINKS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {CREDIT_PACKAGES.map((pkg) => {
                 const pricePerCredit = Math.round(pkg.price / pkg.credits);
@@ -2863,7 +2818,6 @@ export default function Account() {
                       minHeight: '240px'
                     }}
                   >
-                    {/* Badge Area - Fixed Height */}
                     <div style={{ height: '24px', marginBottom: '8px' }}>
                       {pkg.popular && (
                         <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
@@ -2877,7 +2831,6 @@ export default function Account() {
                       )}
                     </div>
                     
-                    {/* Credit Number - Fixed Height */}
                     <div className="text-center" style={{ height: '60px', marginBottom: '12px' }}>
                       <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
                         {pkg.credits}
@@ -2887,7 +2840,6 @@ export default function Account() {
                       </div>
                     </div>
 
-                    {/* Price Section - Fixed Height */}
                     <div className="text-center" style={{ height: '80px', marginBottom: '12px' }}>
                       <div className="text-2xl font-bold mb-1" style={{ color: '#C7A338' }}>
                         ฿{pkg.price}
@@ -2904,11 +2856,10 @@ export default function Account() {
                       </div>
                     </div>
 
-                    {/* Button - Fixed at Bottom - UPDATED */}
                     <div className="mt-auto">
                       <button
                         onClick={() => handleBuyCredits(pkg)}
-                        disabled={buyingCredits[pkg.id]} // Check THIS package's loading state
+                        disabled={buyingCredits[pkg.id]}
                         style={{
                           display: 'block',
                           width: '100%',
@@ -2947,7 +2898,6 @@ export default function Account() {
           </CardContent>
         </Card>
 
-        {/* Logout Button */}
         <div className="mt-8 mb-4">
           <Button
             variant="outline"
