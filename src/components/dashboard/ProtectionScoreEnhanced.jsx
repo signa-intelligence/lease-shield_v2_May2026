@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Shield, TrendingUp, Award, Target, ChevronRight, CheckCircle2, ChevronLeft, Star, Trophy, Zap, Pause, Play } from 'lucide-react';
+import { Shield, TrendingUp, Award, Target, ChevronRight, CheckCircle2, ChevronLeft, Star, Trophy, Zap, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { base44 } from '@/api/base44Client';
+import { useQueryClient } from '@tanstack/react-query';
 
 const ProtectionScoreEnhanced = ({ 
   score, 
@@ -12,45 +14,21 @@ const ProtectionScoreEnhanced = ({
   recommendations, 
   language = 'en',
   colors,
-  compact = false
+  compact = false,
+  user
 }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
-  const [isAutoRotating, setIsAutoRotating] = useState(true);
-  const [shuffledRecommendations, setShuffledRecommendations] = useState([]);
+  const [dismissing, setDismissing] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Shuffle recommendations on mount and when recommendations change
-  useEffect(() => {
-    if (recommendations && recommendations.length > 0) {
-      const shuffled = [...recommendations].sort(() => Math.random() - 0.5);
-      setShuffledRecommendations(shuffled);
-    }
-  }, [recommendations]);
-
-  // Auto-rotation effect
-  useEffect(() => {
-    if (!isAutoRotating || !shuffledRecommendations || shuffledRecommendations.length <= 1) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => {
-        const next = prev + 1;
-        // Loop back to start when reaching the end
-        return next >= shuffledRecommendations.length ? 0 : next;
-      });
-    }, 5000); // Rotate every 5 seconds
-
-    return () => clearInterval(interval);
-  }, [isAutoRotating, shuffledRecommendations]);
-
-  // Pause auto-rotation when user interacts
-  const handleUserInteraction = () => {
-    setIsAutoRotating(false);
-    // Resume after 10 seconds of no interaction
-    setTimeout(() => setIsAutoRotating(true), 10000);
-  };
+  const dismissedRecs = user?.dismissed_recommendations || [];
+  
+  // Filter out dismissed recommendations
+  const activeRecommendations = recommendations.filter(rec => 
+    !dismissedRecs.includes(rec.action)
+  );
 
   const getScoreColor = (score) => {
     if (score >= 85) return '#10B981';
@@ -98,7 +76,6 @@ const ProtectionScoreEnhanced = ({
 
   const percentile = Math.min(95, Math.floor(score * 0.9 + 10));
 
-  // Achievement Badges Logic
   const getAchievements = () => {
     const achievements = [];
     
@@ -136,10 +113,29 @@ const ProtectionScoreEnhanced = ({
 
   const achievements = getAchievements();
 
-  // Swipe Handlers
+  const handleDismissRecommendation = async (rec) => {
+    setDismissing(true);
+    try {
+      const updatedDismissed = [...dismissedRecs, rec.action];
+      await base44.auth.updateMe({ 
+        dismissed_recommendations: updatedDismissed 
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      
+      // Move to next slide if available, otherwise go back
+      if (currentSlide >= activeRecommendations.length - 1 && currentSlide > 0) {
+        setCurrentSlide(currentSlide - 1);
+      }
+    } catch (error) {
+      console.error('Failed to dismiss recommendation:', error);
+    } finally {
+      setDismissing(false);
+    }
+  };
+
   const handleTouchStart = (e) => {
     setTouchStart(e.targetTouches[0].clientX);
-    handleUserInteraction();
   };
 
   const handleTouchMove = (e) => {
@@ -153,7 +149,7 @@ const ProtectionScoreEnhanced = ({
     const isLeftSwipe = distance > 50;
     const isRightSwipe = distance < -50;
     
-    if (isLeftSwipe && currentSlide < shuffledRecommendations.length - 1) {
+    if (isLeftSwipe && currentSlide < activeRecommendations.length - 1) {
       setCurrentSlide(currentSlide + 1);
     }
     if (isRightSwipe && currentSlide > 0) {
@@ -165,25 +161,15 @@ const ProtectionScoreEnhanced = ({
   };
 
   const nextSlide = () => {
-    if (currentSlide < shuffledRecommendations.length - 1) {
+    if (currentSlide < activeRecommendations.length - 1) {
       setCurrentSlide(currentSlide + 1);
-    } else {
-      setCurrentSlide(0); // Loop back to start
     }
-    handleUserInteraction();
   };
 
   const prevSlide = () => {
     if (currentSlide > 0) {
       setCurrentSlide(currentSlide - 1);
-    } else {
-      setCurrentSlide(shuffledRecommendations.length - 1); // Loop to end
     }
-    handleUserInteraction();
-  };
-
-  const toggleAutoRotate = () => {
-    setIsAutoRotating(!isAutoRotating);
   };
 
   return (
@@ -219,10 +205,8 @@ const ProtectionScoreEnhanced = ({
       </CardHeader>
 
       <CardContent className="p-4">
-        {/* Compact Score Circle */}
         <div className="flex flex-col items-center mb-4">
           <div className="relative w-32 h-32 mb-3">
-            {/* Background circle */}
             <svg className="w-full h-full transform -rotate-90">
               <circle
                 cx="64"
@@ -248,7 +232,6 @@ const ProtectionScoreEnhanced = ({
               />
             </svg>
 
-            {/* Score text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <div
                 className="text-3xl font-bold"
@@ -265,7 +248,6 @@ const ProtectionScoreEnhanced = ({
             </div>
           </div>
 
-          {/* Percentile badge with animation */}
           <div
             className="flex items-center gap-1 px-3 py-1 rounded-full animate-pulse"
             style={{
@@ -279,7 +261,6 @@ const ProtectionScoreEnhanced = ({
             </span>
           </div>
 
-          {/* Achievement Badges */}
           {achievements.length > 0 && (
             <div className="flex items-center gap-1 mt-2 flex-wrap justify-center">
               {achievements.map((achievement, idx) => {
@@ -308,7 +289,6 @@ const ProtectionScoreEnhanced = ({
           )}
         </div>
 
-        {/* Compact Breakdown bars with progress rings */}
         <div className="space-y-3 mb-4">
           {categoryData.map((cat, idx) => (
             <div 
@@ -347,65 +327,51 @@ const ProtectionScoreEnhanced = ({
           ))}
         </div>
 
-        {/* Auto-rotating Recommendation Cards */}
-        {shuffledRecommendations && shuffledRecommendations.length > 0 && (
+        {activeRecommendations && activeRecommendations.length > 0 && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'คำแนะนำ' : 'Quick Wins'}
+                {language === 'th' ? 'วิธีปรับปรุงคะแนน' : 'Quick Wins'}
               </span>
-              <div className="flex items-center gap-1">
-                {shuffledRecommendations.length > 1 && (
-                  <>
-                    <button
-                      onClick={toggleAutoRotate}
-                      style={{
-                        padding: '4px',
-                        borderRadius: '4px',
-                        border: 'none',
-                        backgroundColor: isAutoRotating ? scoreColor : colors.borderColor,
-                        color: isAutoRotating ? '#FFFFFF' : colors.textSecondary,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                      title={isAutoRotating ? (language === 'th' ? 'หยุดหมุน' : 'Pause') : (language === 'th' ? 'เล่นหมุน' : 'Play')}
-                    >
-                      {isAutoRotating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                    </button>
-                    <button
-                      onClick={prevSlide}
-                      style={{
-                        padding: '4px',
-                        borderRadius: '4px',
-                        border: 'none',
-                        backgroundColor: colors.textPrimary,
-                        color: colors.cardBg,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <ChevronLeft className="w-3 h-3" />
-                    </button>
-                    <span className="text-[10px]" style={{ color: colors.textSecondary }}>
-                      {currentSlide + 1}/{shuffledRecommendations.length}
-                    </span>
-                    <button
-                      onClick={nextSlide}
-                      style={{
-                        padding: '4px',
-                        borderRadius: '4px',
-                        border: 'none',
-                        backgroundColor: colors.textPrimary,
-                        color: colors.cardBg,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <ChevronRight className="w-3 h-3" />
-                    </button>
-                  </>
-                )}
-              </div>
+              {activeRecommendations.length > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={prevSlide}
+                    disabled={currentSlide === 0}
+                    style={{
+                      padding: '4px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      backgroundColor: currentSlide === 0 ? colors.borderColor : colors.textPrimary,
+                      color: currentSlide === 0 ? colors.textSecondary : colors.cardBg,
+                      cursor: currentSlide === 0 ? 'not-allowed' : 'pointer',
+                      opacity: currentSlide === 0 ? 0.5 : 1,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                  </button>
+                  <span className="text-[10px]" style={{ color: colors.textSecondary }}>
+                    {currentSlide + 1}/{activeRecommendations.length}
+                  </span>
+                  <button
+                    onClick={nextSlide}
+                    disabled={currentSlide === activeRecommendations.length - 1}
+                    style={{
+                      padding: '4px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      backgroundColor: currentSlide === activeRecommendations.length - 1 ? colors.borderColor : colors.textPrimary,
+                      color: currentSlide === activeRecommendations.length - 1 ? colors.textSecondary : colors.cardBg,
+                      cursor: currentSlide === activeRecommendations.length - 1 ? 'not-allowed' : 'pointer',
+                      opacity: currentSlide === activeRecommendations.length - 1 ? 0.5 : 1,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </div>
             
             <div 
@@ -420,54 +386,94 @@ const ProtectionScoreEnhanced = ({
                   transform: `translateX(-${currentSlide * 100}%)`
                 }}
               >
-                {shuffledRecommendations.map((rec, idx) => (
+                {activeRecommendations.map((rec, idx) => (
                   <div 
                     key={idx}
                     className="min-w-full px-1"
                   >
-                    <Link to={createPageUrl(rec.route)}>
-                      <div
-                        className="p-3 rounded-lg cursor-pointer transition-all duration-200 hover:scale-105"
+                    <div className="relative">
+                      <Link to={createPageUrl(rec.route)}>
+                        <div
+                          className="p-3 rounded-lg cursor-pointer transition-all duration-200 hover:scale-105"
+                          style={{
+                            backgroundColor: `${scoreColor}10`,
+                            border: `1px solid ${scoreColor}30`,
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold pr-6" style={{ color: colors.textPrimary }}>
+                              {rec.action}
+                            </span>
+                            <Badge
+                              style={{
+                                backgroundColor: scoreColor,
+                                color: '#FFFFFF',
+                                fontSize: '10px',
+                                padding: '2px 6px'
+                              }}
+                            >
+                              +{rec.points}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-end">
+                            <ChevronRight className="w-4 h-4" style={{ color: scoreColor }} />
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      {/* Dismiss button */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDismissRecommendation(rec);
+                        }}
+                        disabled={dismissing}
                         style={{
-                          backgroundColor: `${scoreColor}10`,
-                          border: `1px solid ${scoreColor}30`,
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          border: 'none',
+                          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                          color: '#FFFFFF',
+                          cursor: dismissing ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: dismissing ? 0.5 : 1,
+                          transition: 'all 0.2s',
+                          zIndex: 10
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!dismissing) {
+                            e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
+                            e.target.style.transform = 'scale(1.1)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!dismissing) {
+                            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                            e.target.style.transform = 'scale(1)';
+                          }
                         }}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>
-                            {rec.action}
-                          </span>
-                          <Badge
-                            style={{
-                              backgroundColor: scoreColor,
-                              color: '#FFFFFF',
-                              fontSize: '10px',
-                              padding: '2px 6px'
-                            }}
-                          >
-                            +{rec.points}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-end">
-                          <ChevronRight className="w-4 h-4" style={{ color: scoreColor }} />
-                        </div>
-                      </div>
-                    </Link>
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Dot indicators */}
-            {shuffledRecommendations.length > 1 && (
+            {activeRecommendations.length > 1 && (
               <div className="flex justify-center gap-1 mt-2">
-                {shuffledRecommendations.map((_, idx) => (
+                {activeRecommendations.map((_, idx) => (
                   <button
                     key={idx}
-                    onClick={() => {
-                      setCurrentSlide(idx);
-                      handleUserInteraction();
-                    }}
+                    onClick={() => setCurrentSlide(idx)}
                     style={{
                       width: '6px',
                       height: '6px',
@@ -482,6 +488,68 @@ const ProtectionScoreEnhanced = ({
                 ))}
               </div>
             )}
+
+            {dismissedRecs.length > 0 && (
+              <button
+                onClick={async () => {
+                  await base44.auth.updateMe({ dismissed_recommendations: [] });
+                  queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+                  setCurrentSlide(0);
+                }}
+                style={{
+                  marginTop: '8px',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: `1px solid ${colors.borderColor}`,
+                  backgroundColor: 'transparent',
+                  color: colors.textSecondary,
+                  fontSize: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  width: '100%'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = colors.borderColor;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                }}
+              >
+                {language === 'th' ? 'รีเซ็ตคำแนะนำที่ซ่อน' : 'Reset hidden tips'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {activeRecommendations.length === 0 && recommendations.length > 0 && (
+          <div className="mt-4 p-3 rounded-lg text-center" style={{
+            backgroundColor: `${scoreColor}10`,
+            border: `1px solid ${scoreColor}30`,
+          }}>
+            <Trophy className="w-6 h-6 mx-auto mb-2" style={{ color: scoreColor }} />
+            <p className="text-xs font-semibold mb-2" style={{ color: colors.textPrimary }}>
+              {language === 'th' ? 'ซ่อนคำแนะนำทั้งหมดแล้ว!' : 'All tips hidden!'}
+            </p>
+            <button
+              onClick={async () => {
+                await base44.auth.updateMe({ dismissed_recommendations: [] });
+                queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+                setCurrentSlide(0);
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: scoreColor,
+                color: '#FFFFFF',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              {language === 'th' ? 'แสดงคำแนะนำอีกครั้ง' : 'Show tips again'}
+            </button>
           </div>
         )}
       </CardContent>

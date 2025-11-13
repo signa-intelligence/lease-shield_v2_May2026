@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1513,6 +1514,7 @@ function DashboardContent() {
                           recommendations={recommendations}
                           language={language}
                           colors={colors}
+                          user={user}
                         />
 
                         <div className="grid grid-cols-2 gap-3">
@@ -1704,6 +1706,7 @@ function DashboardContent() {
                             recommendations={recommendations}
                             language={language}
                             colors={colors}
+                            user={user}
                           />
                         </div>
 
