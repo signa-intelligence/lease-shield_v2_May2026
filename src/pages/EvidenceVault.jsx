@@ -1469,6 +1469,19 @@ function EvidenceVaultContent() {
                       {strings.recentUploads} ({filteredDocuments.length})
                   </h2>
                   <div className="flex items-center gap-2 flex-wrap">
+                      {/* Upload Evidence Button */}
+                      <Button
+                        onClick={() => {
+                          haptic.medium();
+                          setShowUploadDialog(true);
+                        }}
+                        className="bg-ls-forest hover:bg-ls-forest/90 text-white"
+                        style={{ minHeight: '40px' }}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {strings.uploadFiles}
+                      </Button>
+                      
                       {/* Bulk Actions */}
                       {selectedDocs.length > 0 && (
                           <div className="flex items-center gap-2 flex-wrap">
