@@ -27,25 +27,38 @@ export default function StatsCard({
 
   const isDarkMode = cardColors.bg === '#1A1D1F';
 
-  const getGradientClass = () => {
-    if (bgGradient) return bgGradient;
-    if (scoreColor) return '';
-    return 'bg-gradient-to-br from-blue-600 to-purple-600';
+  // Convert Tailwind gradient classes to inline styles
+  const getInlineGradient = () => {
+    if (!bgGradient) return null;
+    
+    if (bgGradient.includes('from-ls-gold')) {
+      return 'linear-gradient(135deg, #C7A338 0%, #D97706 100%)';
+    }
+    if (bgGradient.includes('from-ls-charcoal')) {
+      return 'linear-gradient(135deg, #1A1D1F 0%, #475569 100%)';
+    }
+    if (bgGradient.includes('from-blue-600')) {
+      return 'linear-gradient(135deg, #2563EB 0%, #9333EA 100%)';
+    }
+    
+    return null;
   };
 
-  const hasCustomBg = bgGradient || scoreColor;
-  const hasGradient = !!bgGradient;
+  const inlineGradient = getInlineGradient();
+  const hasGradient = !!inlineGradient;
+  const hasCustomBg = hasGradient || scoreColor;
 
   return (
     <Card 
-      className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasGradient ? getGradientClass() : ''} h-full`}
+      className="border-none shadow-lg hover:shadow-xl transition-all duration-300 h-full"
       style={{
-        backgroundColor: hasGradient 
-          ? undefined 
-          : (scoreColor 
+        background: inlineGradient || undefined,
+        backgroundColor: !inlineGradient 
+          ? (scoreColor 
               ? (isDarkMode ? '#2A2D30' : `${scoreColor}10`) 
-              : cardColors.cardBg),
-        borderLeft: scoreColor ? `4px solid ${scoreColor}` : undefined,
+              : cardColors.cardBg)
+          : undefined,
+        borderLeft: scoreColor && !hasGradient ? `4px solid ${scoreColor}` : undefined,
       }}
     >
       <CardContent className="p-3 md:p-4 flex flex-col justify-between h-full">
@@ -88,7 +101,7 @@ export default function StatsCard({
             className="text-xs font-semibold mb-1 truncate" 
             style={{ 
               color: hasGradient 
-                ? 'rgba(255, 255, 255, 0.8)' 
+                ? 'rgba(255, 255, 255, 0.9)' 
                 : cardColors.textSecondary
             }}
           >
@@ -113,7 +126,7 @@ export default function StatsCard({
                 <span 
                   style={{ 
                     color: hasGradient 
-                      ? 'rgba(255, 255, 255, 0.7)' 
+                      ? 'rgba(255, 255, 255, 0.8)' 
                       : cardColors.textSecondary,
                     marginRight: '4px'
                   }}
@@ -155,25 +168,26 @@ export default function StatsCard({
               className="w-full py-2 px-3 rounded-lg text-xs font-bold transition-all"
               style={{
                 backgroundColor: hasGradient 
-                  ? 'rgba(255, 255, 255, 0.2)' 
-                  : (isDarkMode ? '#353A3D' : 'rgba(255, 255, 255, 0.2)'),
+                  ? 'rgba(255, 255, 255, 0.25)' 
+                  : (isDarkMode ? '#353A3D' : 'rgba(12, 59, 46, 0.1)'),
                 color: hasGradient 
                   ? '#FFFFFF' 
-                  : (scoreColor || cardColors.textPrimary),
+                  : (scoreColor || '#0C3B2E'),
                 border: hasGradient 
-                  ? '1px solid rgba(255, 255, 255, 0.4)' 
-                  : `1px solid ${isDarkMode ? '#4B5563' : (scoreColor ? `${scoreColor}40` : cardColors.borderColor)}`,
-                backdropFilter: 'blur(10px)'
+                  ? '1px solid rgba(255, 255, 255, 0.5)' 
+                  : `1px solid ${isDarkMode ? '#4B5563' : (scoreColor ? `${scoreColor}60` : '#0C3B2E')}`,
+                backdropFilter: 'blur(10px)',
+                fontWeight: '700'
               }}
               onMouseEnter={(e) => {
                 e.target.style.backgroundColor = hasGradient 
-                  ? 'rgba(255, 255, 255, 0.3)' 
-                  : (isDarkMode ? '#4B5563' : 'rgba(255, 255, 255, 0.3)');
+                  ? 'rgba(255, 255, 255, 0.35)' 
+                  : (isDarkMode ? '#4B5563' : 'rgba(12, 59, 46, 0.15)');
               }}
               onMouseLeave={(e) => {
                 e.target.style.backgroundColor = hasGradient 
-                  ? 'rgba(255, 255, 255, 0.2)' 
-                  : (isDarkMode ? '#353A3D' : 'rgba(255, 255, 255, 0.2)');
+                  ? 'rgba(255, 255, 255, 0.25)' 
+                  : (isDarkMode ? '#353A3D' : 'rgba(12, 59, 46, 0.1)');
               }}
             >
               {actionButton.label}
