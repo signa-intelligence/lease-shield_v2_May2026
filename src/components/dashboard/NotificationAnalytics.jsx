@@ -1,3 +1,4 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -99,7 +100,10 @@ export default function NotificationAnalytics({ language = 'en', colors }) {
     }
   };
 
-  const str = strings[language] || strings.en;
+  // DEFENSIVE: Always ensure valid strings object
+  const str = (strings && strings[language] && typeof strings[language] === 'object') 
+    ? strings[language] 
+    : strings.en;
 
   if (totalSent === 0) {
     return (
