@@ -1,102 +1,158 @@
 import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, TrendingDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { haptic } from "../shared/HapticFeedback";
 
 export default function StatsCard({
   title,
   value,
   icon: Icon,
   bgGradient,
-  miniStats,
+  scoreColor,
+  miniStats = [],
+  trend,
   actionButton,
   ctaText,
   onCtaClick,
-  scoreColor,
-  compact = false
+  compact = false,
+  colors
 }) {
-  const cardStyle = compact
-    ? "p-3 sm:p-4"
-    : "p-4 sm:p-6";
+  const cardColors = colors || {
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB'
+  };
+
+  const getGradientClass = () => {
+    if (bgGradient) return bgGradient;
+    if (scoreColor) return '';
+    return 'bg-gradient-to-br from-blue-600 to-purple-600';
+  };
+
+  const hasCustomBg = bgGradient || scoreColor;
 
   return (
-    <div
-      className={`rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 card-hover-lift ${cardStyle}`}
+    <Card 
+      className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${!hasCustomBg && getGradientClass()} h-full`}
       style={{
-        background: bgGradient || (scoreColor ? `linear-gradient(135deg, ${scoreColor}15 0%, ${scoreColor}05 100%)` : 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)'),
-        border: scoreColor ? `2px solid ${scoreColor}30` : '2px solid transparent',
-        minHeight: compact ? '120px' : '140px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        cursor: onCtaClick ? 'pointer' : 'default',
-        minWidth: '140px'
+        backgroundColor: hasCustomBg ? (scoreColor ? `${scoreColor}10` : undefined) : undefined,
+        borderLeft: scoreColor ? `4px solid ${scoreColor}` : undefined,
+        ...(hasCustomBg && !scoreColor ? {} : { backgroundColor: cardColors.cardBg })
       }}
-      onClick={onCtaClick}
     >
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1">
-          <p className={`${compact ? 'text-xs' : 'text-sm'} font-semibold text-slate-600 dark:text-slate-300 mb-1`}>
+      <CardContent className="p-3 md:p-4 flex flex-col justify-between h-full">
+        <div className="flex items-start justify-between mb-3">
+          <div 
+            className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{
+              backgroundColor: hasCustomBg 
+                ? (scoreColor ? `${scoreColor}20` : 'rgba(255, 255, 255, 0.2)')
+                : 'rgba(255, 255, 255, 0.2)'
+            }}
+          >
+            <Icon 
+              className="w-5 h-5 md:w-6 md:h-6" 
+              style={{ 
+                color: hasCustomBg ? (scoreColor || cardColors.textPrimary) : '#FFFFFF'
+              }} 
+            />
+          </div>
+          {trend !== undefined && (
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
+              trend > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+            }`}>
+              {trend > 0 ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : (
+                <TrendingDown className="w-3 h-3" />
+              )}
+              {Math.abs(trend)}%
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p 
+            className="text-xs font-semibold mb-1 truncate" 
+            style={{ 
+              color: hasCustomBg ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.8)'
+            }}
+          >
             {title}
           </p>
-          <p className={`${compact ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'} font-bold`} style={{ color: scoreColor || '#1A1D1F' }}>
+          <p 
+            className="text-xl md:text-2xl font-bold truncate" 
+            style={{ 
+              color: hasCustomBg ? (scoreColor || cardColors.textPrimary) : '#FFFFFF'
+            }}
+          >
             {value}
           </p>
         </div>
-        {Icon && (
-          <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg bg-white/50 flex items-center justify-center flex-shrink-0`}>
-            <Icon className={`${compact ? 'w-4 h-4' : 'w-5 h-5'}`} style={{ color: scoreColor || '#1A1D1F' }} />
+
+        {miniStats && miniStats.length > 0 && (
+          <div className="flex items-center gap-3 mt-3 flex-wrap">
+            {miniStats.map((stat, idx) => (
+              <div key={idx} className="text-xs">
+                <span 
+                  style={{ 
+                    color: hasCustomBg ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.7)',
+                    marginRight: '4px'
+                  }}
+                >
+                  {stat.label}:
+                </span>
+                <span 
+                  className="font-bold"
+                  style={{ 
+                    color: hasCustomBg ? (scoreColor || cardColors.textPrimary) : '#FFFFFF'
+                  }}
+                >
+                  {stat.value}
+                </span>
+              </div>
+            ))}
           </div>
         )}
-      </div>
 
-      {miniStats && miniStats.length > 0 && (
-        <div className="flex gap-2 sm:gap-3 flex-wrap mb-2">
-          {miniStats.map((stat, index) => (
-            <div key={index} className={`${compact ? 'text-xs' : 'text-sm'} text-slate-600 dark:text-slate-300`}>
-              <span className="font-semibold">{stat.label}:</span> {stat.value}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {actionButton && (
-        <Link to={actionButton.link}>
+        {ctaText && onCtaClick && (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              haptic.light();
-            }}
-            className={`${compact ? 'text-xs py-1.5 px-3' : 'text-sm py-2 px-4'} rounded-lg font-semibold transition-all hover:opacity-80 active:scale-95 w-full`}
+            onClick={onCtaClick}
+            className="mt-3 w-full py-2 px-3 rounded-lg text-xs font-bold transition-all hover:opacity-80"
             style={{
-              backgroundColor: scoreColor || '#0C3B2E',
-              color: '#FFFFFF',
-              border: 'none',
-              minHeight: '44px'
+              backgroundColor: scoreColor || '#FFFFFF',
+              color: scoreColor ? '#FFFFFF' : cardColors.textPrimary,
+              border: scoreColor ? 'none' : `2px solid ${cardColors.borderColor}`
             }}
           >
-            {actionButton.label}
+            {ctaText}
           </button>
-        </Link>
-      )}
+        )}
 
-      {ctaText && onCtaClick && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            haptic.medium();
-            onCtaClick();
-          }}
-          className={`${compact ? 'text-xs py-1.5 px-3' : 'text-sm py-2 px-4'} rounded-lg font-semibold transition-all hover:opacity-80 active:scale-95 w-full`}
-          style={{
-            backgroundColor: scoreColor || '#0C3B2E',
-            color: '#FFFFFF',
-            border: 'none',
-            minHeight: '44px'
-          }}
-        >
-          {ctaText}
-        </button>
-      )}
-    </div>
+        {actionButton && (
+          <Link to={actionButton.link} className="mt-3 block">
+            <button
+              className="w-full py-2 px-3 rounded-lg text-xs font-bold transition-all"
+              style={{
+                backgroundColor: hasCustomBg ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.3)',
+                color: hasCustomBg ? (scoreColor || cardColors.textPrimary) : '#FFFFFF',
+                border: hasCustomBg ? `1px solid ${scoreColor || cardColors.borderColor}40` : '1px solid rgba(255, 255, 255, 0.4)',
+                backdropFilter: 'blur(10px)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = hasCustomBg ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = hasCustomBg ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.3)';
+              }}
+            >
+              {actionButton.label}
+            </button>
+          </Link>
+        )}
+      </CardContent>
+    </Card>
   );
 }
