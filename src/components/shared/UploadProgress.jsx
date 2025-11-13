@@ -19,22 +19,95 @@ export default function UploadProgress({
     en: {
       compressing: 'Compressing images...',
       uploading: 'Uploading files...',
+      uploadingFiles: 'Uploading files...',
       processing: 'Processing...',
       analyzing: 'Analyzing...',
       finalizing: 'Finalizing...',
+      savingDocuments: 'Saving documents...',
+      creating: 'Creating lease record...',
+      scanning: 'AI analyzing document...',
+      extracting: 'Extracting lease details...',
       complete: 'Complete!'
     },
     th: {
       compressing: 'กำลังบีบอัดรูปภาพ...',
       uploading: 'กำลังอัปโหลดไฟล์...',
+      uploadingFiles: 'กำลังอัปโหลดไฟล์...',
       processing: 'กำลังประมวลผล...',
       analyzing: 'กำลังวิเคราะห์...',
       finalizing: 'กำลังสรุป...',
+      savingDocuments: 'กำลังบันทึกเอกสาร...',
+      creating: 'กำลังสร้างบันทึกสัญญาเช่า...',
+      scanning: 'AI กำลังวิเคราะห์เอกสาร...',
+      extracting: 'กำลังดึงข้อมูลสัญญาเช่า...',
       complete: 'เสร็จสมบูรณ์!'
+    },
+    zh: {
+      compressing: '压缩图片中...',
+      uploading: '上传文件中...',
+      uploadingFiles: '上传文件中...',
+      processing: '处理中...',
+      analyzing: '分析中...',
+      finalizing: '完成中...',
+      savingDocuments: '保存文档中...',
+      creating: '创建租约记录中...',
+      scanning: 'AI分析文档中...',
+      extracting: '提取租约详情中...',
+      complete: '完成！'
+    },
+    ja: {
+      compressing: '画像を圧縮中...',
+      uploading: 'ファイルをアップロード中...',
+      uploadingFiles: 'ファイルをアップロード中...',
+      processing: '処理中...',
+      analyzing: '分析中...',
+      finalizing: '最終処理中...',
+      savingDocuments: 'ドキュメントを保存中...',
+      creating: '賃貸契約記録を作成中...',
+      scanning: 'AIがドキュメントを分析中...',
+      extracting: '賃貸契約の詳細を抽出中...',
+      complete: '完了！'
+    },
+    ko: {
+      compressing: '이미지 압축 중...',
+      uploading: '파일 업로드 중...',
+      uploadingFiles: '파일 업로드 중...',
+      processing: '처리 중...',
+      analyzing: '분석 중...',
+      finalizing: '완료 중...',
+      savingDocuments: '문서 저장 중...',
+      creating: '임대 계약 기록 생성 중...',
+      scanning: 'AI가 문서를 분석 중...',
+      extracting: '임대 계약 세부 정보 추출 중...',
+      complete: '완료！'
     }
   };
 
-  const stageText = stages[language][stage] || stage;
+  const stageText = stages[language]?.[stage] || stages['en'][stage] || stage;
+
+  const progressText = {
+    en: 'Progress',
+    th: 'ความคืบหน้า',
+    zh: '进度',
+    ja: '進捗',
+    ko: '진행 상황'
+  };
+
+  const fileText = {
+    en: 'File',
+    th: 'ไฟล์',
+    zh: '文件',
+    ja: 'ファイル',
+    ko: '파일'
+  };
+
+  const pleaseWaitText = {
+    en: 'Please wait...',
+    th: 'โปรดรอสักครู่...',
+    zh: '请稍候...',
+    ja: 'お待ちください...',
+    ko: '잠시 기다려주세요...'
+  };
 
   return (
     <div className="w-full">
@@ -48,12 +121,12 @@ export default function UploadProgress({
           <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
         )}
         <div className="text-left">
-          <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+          <p className="text-lg font-bold" style={{ color: colors?.textPrimary || '#1A1D1F' }}>
             {stageText}
           </p>
           {totalFiles > 1 && !isComplete && (
-            <p className="text-sm" style={{ color: colors.textSecondary }}>
-              {language === 'th' ? 'ไฟล์' : 'File'} {currentFile}/{totalFiles}
+            <p className="text-sm" style={{ color: colors?.textSecondary || '#64748b' }}>
+              {fileText[language] || fileText['en']} {currentFile}/{totalFiles}
             </p>
           )}
         </div>
@@ -62,8 +135,8 @@ export default function UploadProgress({
       {/* Progress Bar */}
       <div className="w-full max-w-md mx-auto">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
-            {language === 'th' ? 'ความคืบหน้า' : 'Progress'}
+          <span className="text-sm font-semibold" style={{ color: colors?.textSecondary || '#64748b' }}>
+            {progressText[language] || progressText['en']}
           </span>
           <span className="text-sm font-bold" style={{ color: '#3B82F6' }}>
             {progress}%
@@ -84,8 +157,8 @@ export default function UploadProgress({
 
         {/* Estimated Time (if not complete) */}
         {!isComplete && progress > 0 && progress < 100 && (
-          <p className="text-xs text-center mt-2" style={{ color: colors.textSecondary }}>
-            {language === 'th' ? 'โปรดรอสักครู่...' : 'Please wait...'}
+          <p className="text-xs text-center mt-2" style={{ color: colors?.textSecondary || '#64748b' }}>
+            {pleaseWaitText[language] || pleaseWaitText['en']}
           </p>
         )}
       </div>
