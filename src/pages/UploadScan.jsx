@@ -130,7 +130,7 @@ export default function UploadScanPage() {
     inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
   };
 
-  const strings = {
+  const t = {
     en: {
       title: "Scan Your Lease",
       subtitle: "Upload your lease agreement for automated analysis",
@@ -501,88 +501,16 @@ export default function UploadScanPage() {
       stepResults: "결과",
       stepTrack: "추적"
     }
-  }[language] || {
-    // Fallback to English if language not found
-    title: "Scan Your Lease",
-    subtitle: "Upload your lease agreement for automated analysis",
-    uploadArea: "Drop your lease files here or click to browse",
-    supportedFormats: "PDF, Word (DOC/DOCX), PNG, JPG (Max 10MB each)",
-    selectFiles: "Select Files",
-    uploadAll: "Upload & Analyze",
-    uploading: "Uploading files...",
-    analyzingTitle: "Analyzing Your Lease",
-    analyzingDesc: "Our AI is reviewing your lease agreement. This may take up to 30 seconds...",
-    analyzing: {
-      uploading: "Uploading files...",
-      creating: "Creating lease record...",
-      scanning: "AI analyzing document...",
-      extracting: "Extracting lease details...",
-      finalizing: "Finalizing analysis..."
-    },
-    recentScans: "Recent Scans",
-    viewAll: "View All Leases",
-    noScans: "No recent scans",
-    scanDate: "Scanned on",
-    confirmNoticeTitle: "Set Notice Period Reminder",
-    confirmNoticeDesc: "We detected your lease ends on",
-    noticePeriodLabel: "Notice Period (Days)",
-    noticePeriodHelp: "Days before lease end to notify landlord",
-    skipReminder: "Skip",
-    setReminder: "Set Reminder",
-    riskLevels: {
-      low: "Low Risk",
-      medium: "Medium Risk",
-      high: "High Risk",
-      critical: "Critical Risk"
-    },
-    leaseDetails: "Lease Details",
-    basicInfo: "Basic Information",
-    propertyAddress: "Property Address",
-    monthlyRent: "Monthly Rent",
-    securityDeposit: "Security Deposit",
-    leasePeriod: "Lease Period",
-    leaseStart: "Lease Start",
-    leaseEnd: "Lease End",
-    to: "to",
-    noticeSettings: "Notice Settings",
-    noticeAlertsEnabled: "Notice Alerts Enabled",
-    noticePeriod: "Notice Period (Days)",
-    noticeDeadline: "Notice Deadline",
-    edit: "Edit",
-    save: "Save",
-    cancel: "Cancel",
-    days: "days",
-    riskAnalysis: "Risk Analysis",
-    riskScore: "Risk Score",
-    viewFullReport: "View Full Report",
-    viewScanResults: "View Scan Results",
-    viewLease: "View Lease Document",
-    closeDetails: "Close Details",
-    enableAlertsHelp: "Receive reminders 30, 7, and 3 days before notice deadline",
-    deadlineCalculated: "Calculated based on lease end date and notice period",
-    allLeases: "All Leases",
-    scanLimitReached: "Scan Limit Reached",
-    scanLimitMsg: "You've used {used} of {limit} scans {periodText}",
-    upgradeForMore: "Upgrade for More Scans",
-    scansRemaining: "{remaining} scan(s) remaining {periodText}",
-    unlimitedScans: "Unlimited Scans",
-    browseDocuments: "Browse Documents",
-    takePhotos: "Take Photos",
-    batchUpload: "Batch Upload",
-    singleUpload: "Single Upload",
-    filesWillBeSeparate: "Each file will be uploaded as a separate lease",
-    stepUpload: "Upload",
-    stepAnalyze: "Analyze",
-    stepResults: "Results",
-    stepTrack: "Track"
   };
+
+  const strings = t[language] || t.en;
 
   // NEW: Define breadcrumb steps
   const breadcrumbSteps = [
-    { label: strings.stepUpload, sublabel: language === 'th' ? 'เลือกไฟล์' : 'Select files' },
-    { label: strings.stepAnalyze, sublabel: language === 'th' ? 'AI สแกน' : 'AI scan' },
-    { label: strings.stepResults, sublabel: language === 'th' ? 'ดูผล' : 'View results' },
-    { label: strings.stepTrack, sublabel: language === 'th' ? 'ติดตามมัดจำ' : 'Track deposit' }
+    { label: strings.stepUpload, sublabel: language === 'th' ? 'เลือกไฟล์' : language === 'zh' ? '选择文件' : language === 'ja' ? 'ファイルを選択' : language === 'ko' ? '파일 선택' : 'Select files' },
+    { label: strings.stepAnalyze, sublabel: language === 'th' ? 'AI สแกน' : language === 'zh' ? 'AI扫描' : language === 'ja' ? 'AIスキャン' : language === 'ko' ? 'AI 스캔' : 'AI scan' },
+    { label: strings.stepResults, sublabel: language === 'th' ? 'ดูผล' : language === 'zh' ? '查看结果' : language === 'ja' ? '結果を見る' : language === 'ko' ? '결과 보기' : 'View results' },
+    { label: strings.stepTrack, sublabel: language === 'th' ? 'ติดตามมัดจำ' : language === 'zh' ? '追踪押金' : language === 'ja' ? '敷金を追跡' : language === 'ko' ? '보증금 추적' : 'Track deposit' }
   ];
 
   // Update step based on upload/analysis state
@@ -831,7 +759,7 @@ export default function UploadScanPage() {
               console.error('Failed final cleanup:', cleanupErr);
             }
           }
-          setCurrentStep(0); // Reset on error
+          setCurrentStep(0); // Reset step on error
         }
       } finally {
         setUploading(false);
