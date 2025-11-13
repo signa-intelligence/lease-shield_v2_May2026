@@ -6,10 +6,13 @@ import { TrendingUp } from "lucide-react";
 export default function TrendChart({ title, data, dataKey, chartType = "line", color = "#0C3B2E", colors, language }) {
   const strings = {
     en: { noData: "No data available" },
-    th: { noData: "ไม่มีข้อมูล" }
+    th: { noData: "ไม่มีข้อมูล" },
+    zh: { noData: "无数据" },
+    ja: { noData: "データなし" },
+    ko: { noData: "데이터 없음" }
   };
 
-  const t = strings[language];
+  const t = strings[language] || strings.en;
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {

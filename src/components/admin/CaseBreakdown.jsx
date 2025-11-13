@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
@@ -34,12 +33,35 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
       resolutionRate: "อัตราแก้ไข",
       status: "สถานะ",
       count: "จำนวน"
+    },
+    zh: {
+      caseBreakdown: "案件状态分布",
+      totalCases: "总案件数",
+      activeRate: "活跃率",
+      resolutionRate: "解决率",
+      status: "状态",
+      count: "数量"
+    },
+    ja: {
+      caseBreakdown: "ケースステータス内訳",
+      totalCases: "総ケース数",
+      activeRate: "アクティブ率",
+      resolutionRate: "解決率",
+      status: "ステータス",
+      count: "件数"
+    },
+    ko: {
+      caseBreakdown: "사례 상태 분석",
+      totalCases: "총 사례 수",
+      activeRate: "활성 비율",
+      resolutionRate: "해결 비율",
+      status: "상태",
+      count: "건수"
     }
   };
 
-  const t = strings[language];
+  const t = strings[language] || strings.en;
 
-  // Count cases by status
   const statusCounts = cases.reduce((acc, caseItem) => {
     const status = caseItem.status || 'intake';
     acc[status] = (acc[status] || 0) + 1;
@@ -80,6 +102,22 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
     return null;
   };
 
+  const casesText = {
+    en: 'cases',
+    th: 'คดี',
+    zh: '案件',
+    ja: 'ケース',
+    ko: '사례'
+  };
+
+  const noDataText = {
+    en: 'No data',
+    th: 'ไม่มีข้อมูล',
+    zh: '无数据',
+    ja: 'データなし',
+    ko: '데이터 없음'
+  };
+
   return (
     <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
       <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
@@ -90,7 +128,6 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
       </CardHeader>
       <CardContent className="p-4 md:p-6 overflow-x-hidden">
         <div className="grid grid-cols-1 gap-6">
-          {/* Pie Chart - MOBILE RESPONSIVE */}
           <div className="w-full overflow-hidden flex justify-center">
             {chartData.length > 0 ? (
               <div style={{ width: '100%', maxWidth: '350px', height: '250px' }}>
@@ -115,12 +152,11 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
               </div>
             ) : (
               <div className="flex items-center justify-center h-64">
-                <p style={{ color: colors.textSecondary }}>{language === 'th' ? 'ไม่มีข้อมูล' : 'No data'}</p>
+                <p style={{ color: colors.textSecondary }}>{noDataText[language] || noDataText.en}</p>
               </div>
             )}
           </div>
 
-          {/* Stats - MOBILE RESPONSIVE */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div
               className="p-4 rounded-xl"
@@ -157,7 +193,7 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
                 {activeRate}%
               </p>
               <p className="text-xs mt-1 truncate" style={{ color: colors.textSecondary }}>
-                {activeCases} {language === 'th' ? 'คดี' : 'cases'}
+                {activeCases} {casesText[language] || casesText.en}
               </p>
             </div>
 
@@ -178,13 +214,12 @@ export default function CaseBreakdown({ cases = [], colors, language }) {
                 {resolutionRate}%
               </p>
               <p className="text-xs mt-1 truncate" style={{ color: colors.textSecondary }}>
-                {resolvedCases} {language === 'th' ? 'คดี' : 'cases'}
+                {resolvedCases} {casesText[language] || casesText.en}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Status Legend - Mobile Friendly */}
         <div className="mt-6 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
           <div className="flex flex-wrap gap-2">
             {Object.entries(statusCounts).map(([status, count]) => (

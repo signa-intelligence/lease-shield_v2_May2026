@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, User, FileText, Scale, Shield } from "lucide-react";
@@ -24,26 +23,52 @@ export default function ActivityTimeline({ activities = [], colors, language }) 
       newCase: "เปิดคดี",
       caseResolved: "แก้ไขคดีแล้ว",
       subscribed: "สมัครสมาชิกใหม่"
+    },
+    zh: {
+      recentActivity: "最近活动",
+      noActivity: "无最近活动",
+      newUser: "新用户注册",
+      newLease: "租约已上传",
+      newCase: "案件已开启",
+      caseResolved: "案件已解决",
+      subscribed: "新订阅"
+    },
+    ja: {
+      recentActivity: "最近のアクティビティ",
+      noActivity: "最近のアクティビティはありません",
+      newUser: "新規ユーザー登録",
+      newLease: "賃貸契約アップロード済み",
+      newCase: "ケース開設",
+      caseResolved: "ケース解決済み",
+      subscribed: "新規サブスクリプション"
+    },
+    ko: {
+      recentActivity: "최근 활동",
+      noActivity: "최근 활동 없음",
+      newUser: "신규 사용자 등록",
+      newLease: "임대 계약 업로드됨",
+      newCase: "사례 개설",
+      caseResolved: "사례 해결됨",
+      subscribed: "신규 구독"
     }
   };
 
-  // The 't' object is still defined but some new strings directly use `language === 'th' ? ... : ...`
-  const t = strings[language]; 
+  const t = strings[language] || strings.en;
 
   const getActivityIcon = (type) => {
     switch (type) {
       case 'user_registered':
-        return { icon: User, color: '#3B82F6', bgColor: '#EFF6FF' }; // Changed 'bg' to 'bgColor'
+        return { icon: User, color: '#3B82F6', bgColor: '#EFF6FF' };
       case 'lease_uploaded':
-        return { icon: FileText, color: '#8B5CF6', bgColor: '#F5F3FF' }; // Changed 'bg' to 'bgColor'
+        return { icon: FileText, color: '#8B5CF6', bgColor: '#F5F3FF' };
       case 'case_opened':
-        return { icon: Scale, color: '#F59E0B', bgColor: '#FFFBEB' }; // Changed 'bg' to 'bgColor'
+        return { icon: Scale, color: '#F59E0B', bgColor: '#FFFBEB' };
       case 'case_resolved':
-        return { icon: Scale, color: '#10B981', bgColor: '#F0FDF4' }; // Changed 'bg' to 'bgColor'
+        return { icon: Scale, color: '#10B981', bgColor: '#F0FDF4' };
       case 'subscription':
-        return { icon: Shield, color: '#C7A338', bgColor: '#FFFBEB' }; // Changed 'bg' to 'bgColor'
+        return { icon: Shield, color: '#C7A338', bgColor: '#FFFBEB' };
       default:
-        return { icon: Clock, color: '#64748B', bgColor: '#F8FAFC' }; // Changed 'bg' to 'bgColor'
+        return { icon: Clock, color: '#64748B', bgColor: '#F8FAFC' };
     }
   };
 
@@ -60,9 +85,27 @@ export default function ActivityTimeline({ activities = [], colors, language }) 
         lease_uploaded: 'อัปโหลดสัญญาเช่า',
         case_opened: 'เปิดคดี',
         case_resolved: 'แก้ไขคดี'
+      },
+      zh: {
+        user_registered: '新用户注册',
+        lease_uploaded: '租约已上传',
+        case_opened: '案件已开启',
+        case_resolved: '案件已解决'
+      },
+      ja: {
+        user_registered: '新規ユーザー登録',
+        lease_uploaded: '賃貸契約アップロード',
+        case_opened: 'ケース開設',
+        case_resolved: 'ケース解決'
+      },
+      ko: {
+        user_registered: '신규 사용자 등록',
+        lease_uploaded: '임대 계약 업로드',
+        case_opened: '사례 개설',
+        case_resolved: '사례 해결'
       }
     };
-    return labels[language]?.[type] || type;
+    return labels[language]?.[type] || labels.en?.[type] || type;
   };
 
   return (
@@ -70,13 +113,13 @@ export default function ActivityTimeline({ activities = [], colors, language }) 
       <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
         <CardTitle className="flex items-center gap-2 text-base md:text-lg" style={{ color: colors.textPrimary }}>
           <Clock className="w-5 h-5 text-ls-forest" />
-          {language === 'th' ? 'กิจกรรมล่าสุด' : 'Recent Activity'}
+          {t.recentActivity}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 md:p-6">
         {activities.length === 0 ? (
           <div className="text-center py-8">
-            <p style={{ color: colors.textSecondary }}>{language === 'th' ? 'ไม่มีกิจกรรมล่าสุด' : 'No recent activity'}</p>
+            <p style={{ color: colors.textSecondary }}>{t.noActivity}</p>
           </div>
         ) : (
           <div className="space-y-3 overflow-x-hidden">

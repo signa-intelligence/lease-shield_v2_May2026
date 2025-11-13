@@ -27,10 +27,46 @@ export default function AdminDashboardStats({ stats, language, colors }) {
       urgentCases: "คดีเร่งด่วน",
       vsLastMonth: "เทียบเดือนก่อน",
       days: "วัน"
+    },
+    zh: {
+      totalUsers: "总用户数",
+      activeSubscribers: "活跃订阅者",
+      totalRevenue: "月收入",
+      totalLeases: "总租约数",
+      totalCases: "总案件数",
+      activeCases: "活跃案件",
+      avgResolutionTime: "平均解决时间",
+      urgentCases: "紧急案件",
+      vsLastMonth: "与上月相比",
+      days: "天"
+    },
+    ja: {
+      totalUsers: "総ユーザー数",
+      activeSubscribers: "アクティブサブスクライバー",
+      totalRevenue: "月間収益",
+      totalLeases: "総賃貸契約数",
+      totalCases: "総ケース数",
+      activeCases: "アクティブケース",
+      avgResolutionTime: "平均解決時間",
+      urgentCases: "緊急ケース",
+      vsLastMonth: "先月比",
+      days: "日"
+    },
+    ko: {
+      totalUsers: "총 사용자 수",
+      activeSubscribers: "활성 구독자",
+      totalRevenue: "월간 수익",
+      totalLeases: "총 임대 계약 수",
+      totalCases: "총 사례 수",
+      activeCases: "활성 사례",
+      avgResolutionTime: "평균 해결 시간",
+      urgentCases: "긴급 사례",
+      vsLastMonth: "지난 달 대비",
+      days: "일"
     }
   };
 
-  const t = strings[language];
+  const t = strings[language] || strings.en;
 
   const kpis = [
     {
@@ -90,7 +126,7 @@ export default function AdminDashboardStats({ stats, language, colors }) {
     {
       label: t.avgResolutionTime,
       value: `${stats.avgResolutionDays || 0} ${t.days}`,
-      trend: -(stats.resolutionTrend || 0), // Negative trend is good for resolution time
+      trend: -(stats.resolutionTrend || 0),
       icon: Clock,
       color: '#6366F1',
       bgLight: '#EEF2FF',
