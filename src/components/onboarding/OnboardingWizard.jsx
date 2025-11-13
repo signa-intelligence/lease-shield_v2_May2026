@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -69,10 +68,79 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
       reportMaintenance: "แจ้งปัญหา",
       uploadDocs: "เพิ่มหลักฐาน",
       stepOf: "ขั้นตอนที่ {current} จาก {total}"
+    },
+    zh: {
+      welcome: "欢迎来到租约盾！",
+      welcomeSubtitle: "让我们通过4个简单步骤保护您",
+      step1Title: "上传您的租约",
+      step1Desc: "获得即时AI分析，识别风险和不公平条款，防患于未然。",
+      step2Title: "追踪您的押金",
+      step2Desc: "永远不会失去对押金的追踪。设置自动提醒，准确知道何时能收回押金。",
+      step3Title: "报告维护问题",
+      step3Desc: "记录和追踪所有维护问题，包括时间戳和照片。让房东负起责任。",
+      step4Title: "存储证据",
+      step4Desc: "建立完整的文件记录。上传照片、收据和文件，以便在发生争议时保护自己。",
+      finalTitle: "一切就绪！",
+      finalDesc: "租约盾现在正在保护您的租赁权利。从下面的第一个操作开始。",
+      next: "下一步",
+      back: "返回",
+      skip: "跳过教程",
+      getStarted: "开始使用",
+      uploadLease: "上传我的租约",
+      addDeposit: "追踪押金",
+      reportMaintenance: "报告问题",
+      uploadDocs: "添加证据",
+      stepOf: "第 {current} 步，共 {total} 步"
+    },
+    ja: {
+      welcome: "リースシールドへようこそ！",
+      welcomeSubtitle: "4つの簡単なステップで保護を開始しましょう",
+      step1Title: "賃貸契約をアップロード",
+      step1Desc: "AIによる即座の分析で、問題になる前にリスクや不公平な条項を特定します。",
+      step2Title: "敷金を追跡",
+      step2Desc: "敷金の追跡を見失うことはありません。自動リマインダーを設定して、いつ返金されるか正確に把握します。",
+      step3Title: "メンテナンスを報告",
+      step3Desc: "タイムスタンプと写真で全てのメンテナンス問題を記録・追跡。家主に責任を持たせましょう。",
+      step4Title: "証拠を保存",
+      step4Desc: "確かな記録を構築します。写真、領収書、書類をアップロードして、紛争が発生した場合に備えます。",
+      finalTitle: "準備完了！",
+      finalDesc: "リースシールドがあなたの賃貸権を保護しています。以下の最初のアクションから始めましょう。",
+      next: "次へ",
+      back: "戻る",
+      skip: "ツアーをスキップ",
+      getStarted: "始める",
+      uploadLease: "賃貸契約をアップロード",
+      addDeposit: "敷金を追跡",
+      reportMaintenance: "問題を報告",
+      uploadDocs: "証拠を追加",
+      stepOf: "ステップ {current} / {total}"
+    },
+    ko: {
+      welcome: "리스실드에 오신 것을 환영합니다!",
+      welcomeSubtitle: "4가지 간단한 단계로 보호를 시작하세요",
+      step1Title: "임대 계약 업로드",
+      step1Desc: "AI 즉시 분석으로 문제가 되기 전에 위험과 불공정한 조건을 식별합니다.",
+      step2Title: "보증금 추적",
+      step2Desc: "보증금 추적을 놓치지 마세요. 자동 알림을 설정하여 언제 돌려받을지 정확히 알 수 있습니다.",
+      step3Title: "유지보수 보고",
+      step3Desc: "타임스탬프와 사진으로 모든 유지보수 문제를 기록하고 추적하세요. 집주인에게 책임을 물으세요.",
+      step4Title: "증거 저장",
+      step4Desc: "탄탄한 서류 기록을 만드세요. 분쟁이 발생할 경우를 대비해 사진, 영수증, 문서를 업로드하세요.",
+      finalTitle: "모두 준비되었습니다!",
+      finalDesc: "리스실드가 이제 귀하의 임대 권리를 보호하고 있습니다. 아래의 첫 번째 작업부터 시작하세요.",
+      next: "다음",
+      back: "뒤로",
+      skip: "투어 건너뛰기",
+      getStarted: "시작하기",
+      uploadLease: "임대 계약 업로드",
+      addDeposit: "보증금 추적",
+      reportMaintenance: "문제 보고",
+      uploadDocs: "증거 추가",
+      stepOf: "{total}단계 중 {current}단계"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   const steps = [
     {
@@ -150,8 +218,6 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
             background: `linear-gradient(135deg, ${currentStepData?.color || '#0C3B2E'} 0%, ${currentStepData?.color || '#0C3B2E'}dd 100%)`
           }}
         >
-          {/* REMOVED: Custom close button to avoid duplication */}
-
           <div className="text-center">
             <div 
               className="w-16 h-16 sm:w-20 sm:h-20 rounded-full mx-auto mb-3 sm:mb-4 flex items-center justify-center"
@@ -212,7 +278,7 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
                       )}
                     </div>
                     <span className="font-semibold text-xs sm:text-sm" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? `ขั้นที่ ${idx + 1}` : `Step ${idx + 1}`}
+                      {language === 'th' ? `ขั้นที่ ${idx + 1}` : language === 'zh' ? `第 ${idx + 1} 步` : language === 'ja' ? `ステップ ${idx + 1}` : language === 'ko' ? `${idx + 1}단계` : `Step ${idx + 1}`}
                     </span>
                   </div>
                   <p className="text-xs font-medium line-clamp-2" style={{ color: colors.textSecondary }}>
@@ -245,7 +311,7 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
                     {currentStepData.action}
                   </p>
                   <p className="text-xs sm:text-sm" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'คลิกเพื่อเริ่ม' : 'Click to start'}
+                    {language === 'th' ? 'คลิกเพื่อเริ่ม' : language === 'zh' ? '点击开始' : language === 'ja' ? 'クリックして開始' : language === 'ko' ? '시작하려면 클릭' : 'Click to start'}
                   </p>
                 </div>
               </div>

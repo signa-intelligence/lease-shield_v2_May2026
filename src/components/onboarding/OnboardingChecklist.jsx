@@ -80,10 +80,100 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       allDone: "พร้อมแล้ว!",
       allDoneDesc: "คุณทำสิ่งสำคัญเสร็จแล้ว เพิ่มเติมต่อไปเพื่อเพิ่มคะแนนการป้องกัน!",
       earnedBadge: "คุณได้รับตราแล้ว!"
+    },
+    zh: {
+      title: "入门指南",
+      subtitle: "完成这些步骤以最大化您的保护",
+      progress: "进度",
+      completed: "已完成！",
+      tasks: {
+        uploadLease: "上传您的第一份租约",
+        uploadLeaseDesc: "获得AI风险分析",
+        trackDeposit: "追踪押金",
+        trackDepositDesc: "永不丢失您的钱",
+        reportMaintenance: "报告维护问题",
+        reportMaintenanceDesc: "追踪维修并让房东负责",
+        uploadDoc: "上传证据",
+        uploadDocDesc: "建立文件记录",
+        setupProfile: "完善您的个人资料",
+        setupProfileDesc: "添加联系方式",
+        enableNotifications: "启用通知",
+        enableNotificationsDesc: "保持信息畅通",
+        openCase: "开启您的第一个案件",
+        openCaseDesc: "获得专业帮助"
+      },
+      actions: {
+        start: "开始",
+        continue: "继续",
+        done: "完成"
+      },
+      allDone: "全部完成！",
+      allDoneDesc: "您已完成基本步骤。继续添加更多以提高您的保护分数！",
+      earnedBadge: "您获得了徽章！"
+    },
+    ja: {
+      title: "はじめに",
+      subtitle: "これらのステップを完了して保護を最大化しましょう",
+      progress: "進捗",
+      completed: "完了！",
+      tasks: {
+        uploadLease: "最初の賃貸契約をアップロード",
+        uploadLeaseDesc: "AIリスク分析を取得",
+        trackDeposit: "敷金を追跡",
+        trackDepositDesc: "お金を失わないように",
+        reportMaintenance: "メンテナンス問題を報告",
+        reportMaintenanceDesc: "修理を追跡し、家主に責任を持たせる",
+        uploadDoc: "証拠をアップロード",
+        uploadDocDesc: "記録を構築",
+        setupProfile: "プロフィールを完成",
+        setupProfileDesc: "連絡先を追加",
+        enableNotifications: "通知を有効にする",
+        enableNotificationsDesc: "情報を受け取る",
+        openCase: "最初のケースを開く",
+        openCaseDesc: "専門家の助けを得る"
+      },
+      actions: {
+        start: "開始",
+        continue: "続ける",
+        done: "完了"
+      },
+      allDone: "すべて完了！",
+      allDoneDesc: "基本を完了しました。保護スコアを上げるためにさらに追加してください！",
+      earnedBadge: "バッジを獲得しました！"
+    },
+    ko: {
+      title: "시작하기",
+      subtitle: "이 단계를 완료하여 보호를 극대화하세요",
+      progress: "진행 상황",
+      completed: "완료!",
+      tasks: {
+        uploadLease: "첫 번째 임대 계약 업로드",
+        uploadLeaseDesc: "AI 위험 분석 받기",
+        trackDeposit: "보증금 추적",
+        trackDepositDesc: "돈을 잃지 마세요",
+        reportMaintenance: "유지보수 문제 보고",
+        reportMaintenanceDesc: "수리를 추적하고 집주인에게 책임을 묻기",
+        uploadDoc: "증거 업로드",
+        uploadDocDesc: "서류 기록 구축",
+        setupProfile: "프로필 완성",
+        setupProfileDesc: "연락처 추가",
+        enableNotifications: "알림 활성화",
+        enableNotificationsDesc: "정보 받기",
+        openCase: "첫 번째 사례 열기",
+        openCaseDesc: "전문가 도움 받기"
+      },
+      actions: {
+        start: "시작",
+        continue: "계속",
+        done: "완료"
+      },
+      allDone: "모두 완료!",
+      allDoneDesc: "필수 사항을 완료했습니다. 보호 점수를 높이려면 더 추가하세요!",
+      earnedBadge: "배지를 획득했습니다!"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   const tasks = [
     {
