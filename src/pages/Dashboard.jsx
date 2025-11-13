@@ -845,6 +845,11 @@ function DashboardContent() {
       noNotifications: "No notifications yet",
       noMaintenance: "No requests",
       analytics: "Analytics",
+      depositAvg: "Avg",
+      depositSoon: "Soon",
+      depositAdd: "Add",
+      casesResolved: "Resolved",
+      casesOpen: "Open",
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -888,6 +893,11 @@ function DashboardContent() {
       noNotifications: "ยังไม่มีการแจ้งเตือน",
       noMaintenance: "ไม่มีคำขอ",
       analytics: "วิเคราะห์",
+      depositAvg: "เฉลี่ย",
+      depositSoon: "เร็วๆนี้",
+      depositAdd: "เพิ่ม",
+      casesResolved: "แก้ไข",
+      casesOpen: "เปิด",
     },
     zh: {
       welcome: "欢迎回来",
@@ -931,6 +941,11 @@ function DashboardContent() {
       noNotifications: "暂无通知",
       noMaintenance: "无请求",
       analytics: "分析",
+      depositAvg: "平均",
+      depositSoon: "即将到期",
+      depositAdd: "添加",
+      casesResolved: "已解决",
+      casesOpen: "打开",
     },
     ja: {
       welcome: "おかえりなさい",
@@ -974,6 +989,11 @@ function DashboardContent() {
       noNotifications: "通知なし",
       noMaintenance: "リクエストなし",
       analytics: "分析",
+      depositAvg: "平均",
+      depositSoon: "もうすぐ",
+      depositAdd: "追加",
+      casesResolved: "解決済み",
+      casesOpen: "開く",
     },
     ko: {
       welcome: "다시 오신 것을 환영합니다",
@@ -1017,6 +1037,11 @@ function DashboardContent() {
       noNotifications: "알림 없음",
       noMaintenance: "요청 없음",
       analytics: "분석",
+      depositAvg: "평균",
+      depositSoon: "곧",
+      depositAdd: "추가",
+      casesResolved: "해결됨",
+      casesOpen: "열기",
     }
   };
 
@@ -1705,11 +1730,11 @@ function DashboardContent() {
                             icon={Wallet}
                             bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
                             miniStats={[
-                              { label: language === 'th' ? 'เฉลี่ย' : 'Avg', value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
-                              { label: language === 'th' ? 'เร็วๆนี้' : 'Soon', value: urgentDeposits }
+                              { label: strings.depositAvg, value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
+                              { label: strings.depositSoon, value: urgentDeposits }
                             ]}
                             actionButton={{
-                              label: language === 'th' ? 'เพิ่ม' : 'Add',
+                              label: strings.depositAdd,
                               link: createPageUrl("DepositTracker")
                             }}
                             compact
@@ -1764,10 +1789,10 @@ function DashboardContent() {
                             icon={Scale}
                             bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
                             miniStats={[
-                              { label: language === 'th' ? 'แก้ไข' : 'Resolved', value: resolvedCases }
+                              { label: strings.casesResolved, value: resolvedCases }
                             ]}
                             actionButton={{
-                              label: language === 'th' ? 'เปิด' : 'Open',
+                              label: strings.casesOpen,
                               link: createPageUrl("Cases")
                             }}
                             compact
@@ -1782,6 +1807,7 @@ function DashboardContent() {
                               {
                                 label: language === 'th' ? 'เสร็จ' : 'Done',
                                 value: maintenanceRequests.filter(r => r.status === 'completed').length
+                                
                               }
                             ] : undefined}
                             actionButton={activeMaintenanceCount > 0 ? {
@@ -1826,11 +1852,11 @@ function DashboardContent() {
                           icon={Wallet}
                           bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
                           miniStats={[
-                            { label: language === 'th' ? 'เฉลี่ย' : 'Avg', value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
-                            { label: language === 'th' ? 'เร็วๆนี้' : 'Soon', value: urgentDeposits }
+                            { label: strings.depositAvg, value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
+                            { label: strings.depositSoon, value: urgentDeposits }
                           ]}
                           actionButton={{
-                            label: language === 'th' ? 'เพิ่ม' : 'Add',
+                            label: strings.depositAdd,
                             link: createPageUrl("DepositTracker")
                           }}
                           compact
@@ -1896,10 +1922,10 @@ function DashboardContent() {
                           icon={Scale}
                           bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
                           miniStats={[
-                            { label: language === 'th' ? 'แก้ไข' : 'Resolved', value: resolvedCases }
+                            { label: strings.casesResolved, value: resolvedCases }
                           ]}
                           actionButton={{
-                            label: language === 'th' ? 'เปิด' : 'Open',
+                            label: strings.casesOpen,
                             link: createPageUrl("Cases")
                           }}
                           compact
