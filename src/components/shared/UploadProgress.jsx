@@ -6,12 +6,18 @@ import { Loader2, CheckCircle2 } from "lucide-react";
  * Shows detailed progress with stages and percentages
  */
 export default function UploadProgress({ 
-  stage = '', 
+  currentStage = '',  // Changed from 'stage' to match usage
   progress = 0, 
-  totalFiles = 1, 
+  fileCount = 1,  // Changed from 'totalFiles' to match usage
   currentFile = 1,
   language = 'en',
-  colors
+  primaryColor,
+  secondaryColor,
+  colors,
+  isAnalyzing = false,
+  isUploading = false,
+  strings,
+  retryCount = 0
 }) {
   const isComplete = progress >= 100;
 
@@ -83,7 +89,9 @@ export default function UploadProgress({
     }
   };
 
-  const stageText = stages[language]?.[stage] || stages['en'][stage] || stage;
+  // Safe access with fallbacks
+  const langStages = stages[language] || stages.en;
+  const stageText = currentStage ? (langStages[currentStage] || currentStage) : '';
 
   const progressText = {
     en: 'Progress',
@@ -109,6 +117,9 @@ export default function UploadProgress({
     ko: '잠시 기다려주세요...'
   };
 
+  const textColor = colors?.textPrimary || primaryColor || '#1A1D1F';
+  const secondaryTextColor = colors?.textSecondary || secondaryColor || '#64748b';
+
   return (
     <div className="w-full">
       {/* Stage Indicator */}
@@ -121,12 +132,17 @@ export default function UploadProgress({
           <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
         )}
         <div className="text-left">
-          <p className="text-lg font-bold" style={{ color: colors?.textPrimary || '#1A1D1F' }}>
+          <p className="text-lg font-bold" style={{ color: textColor }}>
             {stageText}
           </p>
-          {totalFiles > 1 && !isComplete && (
-            <p className="text-sm" style={{ color: colors?.textSecondary || '#64748b' }}>
-              {fileText[language] || fileText['en']} {currentFile}/{totalFiles}
+          {fileCount > 1 && !isComplete && (
+            <p className="text-sm" style={{ color: secondaryTextColor }}>
+              {fileText[language] || fileText.en} {currentFile}/{fileCount}
+            </p>
+          )}
+          {retryCount > 0 && !isComplete && (
+            <p className="text-xs text-amber-600">
+              {language === 'th' ? `กำลังลองใหม่ (${retryCount}/3)` : `Retrying (${retryCount}/3)`}
             </p>
           )}
         </div>
@@ -135,8 +151,8 @@ export default function UploadProgress({
       {/* Progress Bar */}
       <div className="w-full max-w-md mx-auto">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-semibold" style={{ color: colors?.textSecondary || '#64748b' }}>
-            {progressText[language] || progressText['en']}
+          <span className="text-sm font-semibold" style={{ color: secondaryTextColor }}>
+            {progressText[language] || progressText.en}
           </span>
           <span className="text-sm font-bold" style={{ color: '#3B82F6' }}>
             {progress}%
@@ -157,8 +173,8 @@ export default function UploadProgress({
 
         {/* Estimated Time (if not complete) */}
         {!isComplete && progress > 0 && progress < 100 && (
-          <p className="text-xs text-center mt-2" style={{ color: colors?.textSecondary || '#64748b' }}>
-            {pleaseWaitText[language] || pleaseWaitText['en']}
+          <p className="text-xs text-center mt-2" style={{ color: secondaryTextColor }}>
+            {pleaseWaitText[language] || pleaseWaitText.en}
           </p>
         )}
       </div>
