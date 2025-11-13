@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1723,7 +1724,7 @@ function DashboardContent() {
                             ] : undefined}
                             actionButton={notificationLogs.length > 0 ? {
                               label: strings.viewAll,
-                              link: createPageUrl("Account")
+                              link: createPageUrl("Account") + "#notifications"
                             } : undefined}
                             ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
                             compact
@@ -1757,7 +1758,7 @@ function DashboardContent() {
                             ] : undefined}
                             actionButton={activeMaintenanceCount > 0 ? {
                               label: language === 'th' ? 'ดู' : 'View',
-                              link: createPageUrl("PropertyTracker")
+                              link: createPageUrl("PropertyTracker") + "#maintenance"
                             } : undefined}
                             ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
                             onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
@@ -1855,7 +1856,7 @@ function DashboardContent() {
                           ] : undefined}
                           actionButton={notificationLogs.length > 0 ? {
                             label: strings.viewAll,
-                            link: createPageUrl("Account")
+                            link: createPageUrl("Account") + "#notifications"
                           } : undefined}
                           ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
                           compact
@@ -1889,7 +1890,7 @@ function DashboardContent() {
                           ] : undefined}
                           actionButton={activeMaintenanceCount > 0 ? {
                             label: language === 'th' ? 'ดู' : 'View',
-                            link: createPageUrl("PropertyTracker")
+                            link: createPageUrl("PropertyTracker") + "#maintenance"
                           } : undefined}
                           ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
                           onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}

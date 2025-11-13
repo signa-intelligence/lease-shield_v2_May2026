@@ -932,7 +932,7 @@ function PropertyTrackerContent() {
 
           {!showAddMaintenance && !editingMaintenance && (
             <FloatingActionButton
-              icon={Plus}
+              icon={Wrench}
               label={strings.addMaintenance}
               onClick={() => {
                 haptic.medium();
@@ -1383,7 +1383,7 @@ function PropertyTrackerContent() {
                       setPhotoPreviews([]);
                     }}
                   >
-                    <Plus className="w-4 h-4" />
+                    <Edit2 className="w-4 h-4" />
                   </Button>
                   {expandedSections.maintenance ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                 </div>

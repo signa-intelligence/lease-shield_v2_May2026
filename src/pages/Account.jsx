@@ -252,6 +252,18 @@ export default function Account() {
   }, [queryClient]);
 
   React.useEffect(() => {
+    const hash = window.location.hash;
+    if (hash === '#notifications') {
+      setTimeout(() => {
+        const notificationSection = document.getElementById('notification-analytics');
+        if (notificationSection) {
+          notificationSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+    }
+  }, []);
+
+  React.useEffect(() => {
     let intervalId;
     
     const handleFocus = () => {
@@ -2095,10 +2107,12 @@ export default function Account() {
             onUpdate={handleNotificationUpdate}
             colors={colors}
           />
-          <NotificationAnalytics 
-            language={language}
-            colors={colors}
-          />
+          <div id="notification-analytics">
+            <NotificationAnalytics 
+              language={language}
+              colors={colors}
+            />
+          </div>
         </div>
 
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
