@@ -37,11 +37,111 @@ const ProtectionScoreEnhanced = ({
     return '#EF4444';
   };
 
+  const t = {
+    en: {
+      protectionScore: 'Protection Score',
+      excellent: 'Excellent',
+      good: 'Good',
+      fair: 'Fair',
+      needsWork: 'Needs Work',
+      top: 'Top',
+      documentation: 'Documentation',
+      protections: 'Protections',
+      actions: 'Actions',
+      expert: 'Expert',
+      selfProtector: 'Self-Protector',
+      documenter: 'Documenter',
+      actionTaker: 'Action Taker',
+      quickWins: 'Quick Wins',
+      resetHiddenTips: 'Reset hidden tips',
+      allTipsHidden: 'All tips hidden!',
+      showTipsAgain: 'Show tips again'
+    },
+    th: {
+      protectionScore: 'คะแนนการป้องกัน',
+      excellent: 'ยอดเยี่ยม',
+      good: 'ดี',
+      fair: 'พอใช้',
+      needsWork: 'ต้องปรับปรุง',
+      top: 'ท็อป',
+      documentation: 'เอกสาร',
+      protections: 'การป้องกัน',
+      actions: 'การดำเนินการ',
+      expert: 'ผู้เชี่ยวชาญ',
+      selfProtector: 'ผู้ป้องกันตัวเอง',
+      documenter: 'นักจัดเก็บเอกสาร',
+      actionTaker: 'นักดำเนินการ',
+      quickWins: 'วิธีปรับปรุงคะแนน',
+      resetHiddenTips: 'รีเซ็ตคำแนะนำที่ซ่อน',
+      allTipsHidden: 'ซ่อนคำแนะนำทั้งหมดแล้ว!',
+      showTipsAgain: 'แสดงคำแนะนำอีกครั้ง'
+    },
+    zh: {
+      protectionScore: '保护分数',
+      excellent: '优秀',
+      good: '良好',
+      fair: '一般',
+      needsWork: '需要改进',
+      top: '前',
+      documentation: '文档',
+      protections: '保护',
+      actions: '行动',
+      expert: '专家',
+      selfProtector: '自我保护者',
+      documenter: '文档管理者',
+      actionTaker: '行动者',
+      quickWins: '快速提升',
+      resetHiddenTips: '重置隐藏提示',
+      allTipsHidden: '所有提示已隐藏！',
+      showTipsAgain: '再次显示提示'
+    },
+    ja: {
+      protectionScore: '保護スコア',
+      excellent: '優秀',
+      good: '良い',
+      fair: '普通',
+      needsWork: '改善が必要',
+      top: 'トップ',
+      documentation: 'ドキュメント',
+      protections: '保護',
+      actions: 'アクション',
+      expert: 'エキスパート',
+      selfProtector: '自己保護者',
+      documenter: 'ドキュメンター',
+      actionTaker: '実行者',
+      quickWins: 'クイックウィン',
+      resetHiddenTips: '非表示のヒントをリセット',
+      allTipsHidden: 'すべてのヒントが非表示！',
+      showTipsAgain: 'ヒントを再表示'
+    },
+    ko: {
+      protectionScore: '보호 점수',
+      excellent: '우수',
+      good: '좋음',
+      fair: '보통',
+      needsWork: '개선 필요',
+      top: '상위',
+      documentation: '문서화',
+      protections: '보호',
+      actions: '조치',
+      expert: '전문가',
+      selfProtector: '자기보호자',
+      documenter: '문서 관리자',
+      actionTaker: '실행자',
+      quickWins: '빠른 개선',
+      resetHiddenTips: '숨겨진 팁 재설정',
+      allTipsHidden: '모든 팁이 숨겨졌습니다!',
+      showTipsAgain: '팁 다시 표시'
+    }
+  };
+
+  const strings = t[language] || t.en;
+
   const getScoreGrade = (score) => {
-    if (score >= 85) return { grade: 'A+', label: language === 'th' ? 'ยอดเยี่ยม' : 'Excellent' };
-    if (score >= 70) return { grade: 'B+', label: language === 'th' ? 'ดี' : 'Good' };
-    if (score >= 50) return { grade: 'C', label: language === 'th' ? 'พอใช้' : 'Fair' };
-    return { grade: 'D', label: language === 'th' ? 'ต้องปรับปรุง' : 'Needs Work' };
+    if (score >= 85) return { grade: 'A+', label: strings.excellent };
+    if (score >= 70) return { grade: 'B+', label: strings.good };
+    if (score >= 50) return { grade: 'C', label: strings.fair };
+    return { grade: 'D', label: strings.needsWork };
   };
 
   const scoreColor = getScoreColor(score);
@@ -50,7 +150,7 @@ const ProtectionScoreEnhanced = ({
   const categoryData = [
     {
       key: 'documentation',
-      label: language === 'th' ? 'เอกสาร' : 'Documentation',
+      label: strings.documentation,
       maxScore: 40,
       score: breakdown.documentation,
       color: '#3B82F6',
@@ -58,7 +158,7 @@ const ProtectionScoreEnhanced = ({
     },
     {
       key: 'activeProtections',
-      label: language === 'th' ? 'การป้องกัน' : 'Protections',
+      label: strings.protections,
       maxScore: 35,
       score: breakdown.activeProtections,
       color: '#8B5CF6',
@@ -66,7 +166,7 @@ const ProtectionScoreEnhanced = ({
     },
     {
       key: 'proactiveActions',
-      label: language === 'th' ? 'การดำเนินการ' : 'Actions',
+      label: strings.actions,
       maxScore: 25,
       score: breakdown.proactiveActions,
       color: '#10B981',
@@ -82,28 +182,28 @@ const ProtectionScoreEnhanced = ({
     if (score >= 85) {
       achievements.push({
         icon: Trophy,
-        label: language === 'th' ? 'ผู้เชี่ยวชาญ' : 'Expert',
+        label: strings.expert,
         color: '#FFD700'
       });
     }
     if (score >= 70) {
       achievements.push({
         icon: Star,
-        label: language === 'th' ? 'ผู้ป้องกันตัวเอง' : 'Self-Protector',
+        label: strings.selfProtector,
         color: '#C7A338'
       });
     }
     if (breakdown.documentation >= 30) {
       achievements.push({
         icon: CheckCircle2,
-        label: language === 'th' ? 'นักจัดเก็บเอกสาร' : 'Documenter',
+        label: strings.documenter,
         color: '#3B82F6'
       });
     }
     if (breakdown.proactiveActions >= 20) {
       achievements.push({
         icon: Zap,
-        label: language === 'th' ? 'นักดำเนินการ' : 'Action Taker',
+        label: strings.actionTaker,
         color: '#10B981'
       });
     }
@@ -186,7 +286,7 @@ const ProtectionScoreEnhanced = ({
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5" style={{ color: scoreColor }} />
             <span className="text-sm font-bold" style={{ color: colors.textPrimary }}>
-              {language === 'th' ? 'คะแนนการป้องกัน' : 'Protection Score'}
+              {strings.protectionScore}
             </span>
           </div>
           <Badge
@@ -257,7 +357,7 @@ const ProtectionScoreEnhanced = ({
           >
             <TrendingUp className="w-3 h-3" style={{ color: scoreColor }} />
             <span className="text-xs font-semibold" style={{ color: scoreColor }}>
-              {language === 'th' ? `ท็อป ${percentile}%` : `Top ${percentile}%`}
+              {strings.top} {percentile}%
             </span>
           </div>
 
@@ -331,7 +431,7 @@ const ProtectionScoreEnhanced = ({
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'วิธีปรับปรุงคะแนน' : 'Quick Wins'}
+                {strings.quickWins}
               </span>
               {activeRecommendations.length > 1 && (
                 <div className="flex items-center gap-1">
@@ -515,7 +615,7 @@ const ProtectionScoreEnhanced = ({
                   e.target.style.backgroundColor = 'transparent';
                 }}
               >
-                {language === 'th' ? 'รีเซ็ตคำแนะนำที่ซ่อน' : 'Reset hidden tips'}
+                {strings.resetHiddenTips}
               </button>
             )}
           </div>
@@ -528,7 +628,7 @@ const ProtectionScoreEnhanced = ({
           }}>
             <Trophy className="w-6 h-6 mx-auto mb-2" style={{ color: scoreColor }} />
             <p className="text-xs font-semibold mb-2" style={{ color: colors.textPrimary }}>
-              {language === 'th' ? 'ซ่อนคำแนะนำทั้งหมดแล้ว!' : 'All tips hidden!'}
+              {strings.allTipsHidden}
             </p>
             <button
               onClick={async () => {
@@ -548,7 +648,7 @@ const ProtectionScoreEnhanced = ({
                 transition: 'all 0.2s'
               }}
             >
-              {language === 'th' ? 'แสดงคำแนะนำอีกครั้ง' : 'Show tips again'}
+              {strings.showTipsAgain}
             </button>
           </div>
         )}
