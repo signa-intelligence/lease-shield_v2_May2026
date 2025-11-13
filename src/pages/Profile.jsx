@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -756,7 +757,7 @@ export default function Profile() {
       helpSupport: "帮助与支持",
       helpDesc: "需要帮助？提交请求，我们将通过电子邮件回复",
       submitRequest: "提交支持请求",
-      submitDesc: "报告问题、提问或获取帮助",
+      submitDesc: "问题报告、提问或获取帮助",
       directEmail: "直接电子邮件",
       responseTime: "24-48小时内回复",
       dataPrivacy: "数据隐私与您的权利",
@@ -1514,12 +1515,44 @@ export default function Profile() {
                 </p>
                 {!isFree && user?.billing_interval && (
                   <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-                    {user.billing_interval === 'annual' ? (language === 'zh' ? '按年计费' : language === 'ja' ? '年間請求' : language === 'ko' ? '연간 청구' : language === 'th' ? 'เรียกเก็บรายปี' : 'Billed annually') : (language === 'zh' ? '按月计费' : language === 'ja' ? '月額請求' : language === 'ko' ? '월간 청구' : language === 'th' ? 'เรียกเก็บรายเดือน' : 'Billed monthly')}
+                    {(() => {
+                      const lang = language || 'en';
+
+                      const labels = {
+                        en: {
+                          annual: 'Billed annually',
+                          monthly: 'Billed monthly',
+                        },
+                        zh: {
+                          annual: '按年计费',
+                          monthly: '按月计费',
+                        },
+                        ja: {
+                          annual: '年間請求',
+                          monthly: '月額請求',
+                        },
+                        ko: {
+                          annual: '연간 청구',
+                          monthly: '월별 청구',
+                        },
+                        th: {
+                          annual: 'เรียกเก็บรายปี',
+                          monthly: 'เรียกเก็บรายเดือน',
+                        },
+                      };
+
+                      const isAnnual = user.billing_interval === 'annual';
+                      const key = isAnnual ? 'annual' : 'monthly';
+
+                      return (labels[lang] && labels[lang][key]) || labels.en[key];
+                    })()}
                   </p>
                 )}
+
                 {user?.plan_renews_at && (
                   <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
-                    {strings.renewsOn} {new Date(user.plan_renews_at).toLocaleDateString()}
+                    {strings.renewsOn}{' '}
+                    {new Date(user.plan_renews_at).toLocaleDateString()}
                   </p>
                 )}
               </div>
