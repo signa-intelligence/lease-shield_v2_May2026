@@ -7,12 +7,12 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  ArrowLeft, 
-  Scale, 
-  Calendar, 
-  DollarSign, 
-  FileText, 
+import {
+  ArrowLeft,
+  Scale,
+  Calendar,
+  DollarSign,
+  FileText,
   AlertCircle,
   Clock,
   CheckCircle2,
@@ -111,31 +111,31 @@ export default function CaseDetails() {
   const handleDownloadWord = (subject) => {
     const urlKey = `${subject}_url`;
     const url = caseItem?.letters?.[urlKey];
-    
+
     if (!url) {
-      alert(language === 'th' 
-        ? `ไม่พบไฟล์ Word สำหรับ ${subject}` 
+      alert(language === 'th'
+        ? `ไม่พบไฟล์ Word สำหรับ ${subject}`
         : `No Word file found for ${subject}`);
       return;
     }
-    
+
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handlePreviewHtml = (subject) => {
     const htmlKey = `${subject}_html_url`;
     const docKey = `${subject}_url`;
-    
+
     const htmlUrl = caseItem?.letters?.[htmlKey];
     const docUrl = caseItem?.letters?.[docKey];
-    
+
     if (!htmlUrl && !docUrl) {
-      alert(language === 'th' 
-        ? `ไม่พบไฟล์สำหรับ ${subject}` 
+      alert(language === 'th'
+        ? `ไม่พบไฟล์สำหรับ ${subject}`
         : `No file found for ${subject}`);
       return;
     }
-    
+
     setPreviewLetter({
       htmlUrl: htmlUrl,
       docUrl: docUrl,
@@ -145,10 +145,10 @@ export default function CaseDetails() {
 
   const getLetterTitle = (subject) => {
     const titles = {
-      lease_negotiation: language === 'th' ? 'จดหมายขอทบทวนสัญญาเช่า' : 'Lease Negotiation Request',
-      deposit: language === 'th' ? 'จดหมายขอคืนเงินมัดจำ' : 'Deposit Return Request',
-      damages: language === 'th' ? 'จดหมายโต้แย้งค่าเสียหาย' : 'Damage Claim Response',
-      early_termination: language === 'th' ? 'จดหมายแจ้งยกเลิกก่อนกำหนด' : 'Early Termination Notice',
+      lease_negotiation: strings.leaseNegotiationRequest,
+      deposit: strings.depositReturnRequest,
+      damages: strings.damageClaimResponse,
+      early_termination: strings.earlyTerminationNotice,
       v1: strings.initialNotice,
       v2: strings.followupLetter,
       v3: strings.finalSettlementOffer
@@ -196,8 +196,20 @@ export default function CaseDetails() {
       completeLetterPack: "📄 Complete Letter Pack",
       allLettersInOnePdf: "All letters in one PDF",
       download: "Download",
-      downloadWord: "Download Word", // Added translation
+      downloadWord: "Download Word",
       preview: "Preview",
+      notFoundDesc: "The case you're looking for doesn't exist.",
+      teamWillContact: "Our team will contact you soon",
+      reviewWithin: "Our team will review your case within 24-48 hours",
+      addEvidence: "Add evidence",
+      contactTeam: "Contact team",
+      leaseNegotiationRequest: "Lease Negotiation Request",
+      depositReturnRequest: "Deposit Return Request",
+      damageClaimResponse: "Damage Claim Response",
+      earlyTerminationNotice: "Early Termination Notice",
+      forNegotiationBeforeSigning: "For negotiation before signing - Send to landlord",
+      requestItemisedAssessment: "Request itemised assessment",
+      requestReconciliation: "Request reconciliation"
     },
     th: {
       caseDetails: "รายละเอียดคดี",
@@ -238,12 +250,186 @@ export default function CaseDetails() {
       completeLetterPack: "📄 Letter Pack ฉบับเต็ม",
       allLettersInOnePdf: "จดหมายทั้งหมดรวมใน PDF เดียว",
       download: "ดาวน์โหลด",
-      downloadWord: "ดาวน์โหลด Word", // Added translation
+      downloadWord: "ดาวน์โหลด Word",
       preview: "ดูตัวอย่าง",
+      notFoundDesc: "ไม่พบคดีที่คุณกำลังมองหา",
+      teamWillContact: "ทีมของเราจะติดต่อคุณเร็วๆ นี้",
+      reviewWithin: "ทีมของเราจะตรวจสอบคดีของคุณภายใน 24-48 ชั่วโมง",
+      addEvidence: "เพิ่มหลักฐาน",
+      contactTeam: "ติดต่อทีม",
+      leaseNegotiationRequest: "จดหมายขอทบทวนสัญญาเช่า",
+      depositReturnRequest: "จดหมายขอคืนเงินมัดจำ",
+      damageClaimResponse: "จดหมายโต้แย้งค่าเสียหาย",
+      earlyTerminationNotice: "จดหมายแจ้งยกเลิกก่อนกำหนด",
+      forNegotiationBeforeSigning: "สำหรับเจรจาก่อนลงนาม - ส่งหาเจ้าของบ้าน",
+      requestItemisedAssessment: "ขอรายละเอียดการประเมิน",
+      requestReconciliation: "ขอประสานการยกเลิกสัญญา"
+    },
+    zh: {
+      caseDetails: "案件详情",
+      loading: "加载中...",
+      notFound: "案件未找到",
+      backToCases: "返回案件",
+      caseNumber: "案件 #",
+      opened: "开启",
+      status: "状态",
+      disputeAmount: "争议金额",
+      caseSummary: "案件摘要",
+      features: "功能",
+      fastTrack: "快速通道",
+      letterPack: "信件包",
+      memberRate: "会员价",
+      relatedLease: "相关租约",
+      viewLease: "查看租约",
+      opsAssignment: "运营分配",
+      opsTeam: "运营团队",
+      unassigned: "尚未分配",
+      timeline: "案件时间轴",
+      caseOpened: "案件已开启",
+      awaitingReview: "等待团队审核",
+      actions: "操作",
+      uploadDocument: "上传文档",
+      contactSupport: "联系支持",
+      caseHistory: "案件历史",
+      generatedLetters: "生成的信件",
+      initialNotice: "初始通知",
+      clarificationDocumentation: "澄清和文档",
+      followupLetter: "跟进信件",
+      reconciliationPlan: "和解计划",
+      finalSettlementOffer: "最终和解提议",
+      beforeEscalation: "升级之前",
+      view: "查看",
+      compilePack: "编译包",
+      compiling: "编译中...",
+      completeLetterPack: "📄 完整信件包",
+      allLettersInOnePdf: "所有信件合并为一个PDF",
+      download: "下载",
+      downloadWord: "下载Word",
+      preview: "预览",
+      notFoundDesc: "找不到您要查找的案件。",
+      teamWillContact: "我们的团队将很快与您联系",
+      reviewWithin: "我们的团队将在24-48小时内审核您的案件",
+      addEvidence: "添加证据",
+      contactTeam: "联系团队",
+      leaseNegotiationRequest: "租约谈判请求",
+      depositReturnRequest: "押金退还请求",
+      damageClaimResponse: "损害赔偿请求回复",
+      earlyTerminationNotice: "提前终止通知",
+      forNegotiationBeforeSigning: "签署前谈判 - 发送给房东",
+      requestItemisedAssessment: "请求详细评估",
+      requestReconciliation: "请求和解"
+    },
+    ja: {
+      caseDetails: "ケース詳細",
+      loading: "読み込み中...",
+      notFound: "ケースが見つかりません",
+      backToCases: "ケースに戻る",
+      caseNumber: "ケース #",
+      opened: "開設日",
+      status: "ステータス",
+      disputeAmount: "紛争金額",
+      caseSummary: "ケース概要",
+      features: "機能",
+      fastTrack: "ファストトラック",
+      letterPack: "レターパック",
+      memberRate: "メンバー価格",
+      relatedLease: "関連賃貸契約",
+      viewLease: "賃貸契約を表示",
+      opsAssignment: "運用割り当て",
+      opsTeam: "運用チーム",
+      unassigned: "まだ割り当てられていません",
+      timeline: "ケースタイムライン",
+      caseOpened: "ケース開設",
+      awaitingReview: "チームのレビュー待ち",
+      actions: "アクション",
+      uploadDocument: "ドキュメントをアップロード",
+      contactSupport: "サポートに連絡",
+      caseHistory: "ケース履歴",
+      generatedLetters: "生成されたレター",
+      initialNotice: "初期通知",
+      clarificationDocumentation: "明確化と文書化",
+      followupLetter: "フォローアップレター",
+      reconciliationPlan: "和解計画",
+      finalSettlementOffer: "最終和解提案",
+      beforeEscalation: "エスカレーション前",
+      view: "表示",
+      compilePack: "パックをコンパイル",
+      compiling: "コンパイル中...",
+      completeLetterPack: "📄 完全なレターパック",
+      allLettersInOnePdf: "すべてのレターを1つのPDFに",
+      download: "ダウンロード",
+      downloadWord: "Wordをダウンロード",
+      preview: "プレビュー",
+      notFoundDesc: "お探しのケースは存在しません。",
+      teamWillContact: "チームがすぐにご連絡します",
+      reviewWithin: "チームは24〜48時間以内にケースをレビューします",
+      addEvidence: "証拠を追加",
+      contactTeam: "チームに連絡",
+      leaseNegotiationRequest: "賃貸契約交渉リクエスト",
+      depositReturnRequest: "敷金返還リクエスト",
+      damageClaimResponse: "損害賠償請求への回答",
+      earlyTerminationNotice: "早期解約通知",
+      forNegotiationBeforeSigning: "署名前の交渉 - 家主へ送付",
+      requestItemisedAssessment: "項目別評価を要求",
+      requestReconciliation: "和解調整を要求"
+    },
+    ko: {
+      caseDetails: "사례 상세정보",
+      loading: "로딩 중...",
+      notFound: "사례를 찾을 수 없음",
+      backToCases: "사례로 돌아가기",
+      caseNumber: "사례 #",
+      opened: "개설일",
+      status: "상태",
+      disputeAmount: "분쟁 금액",
+      caseSummary: "사례 요약",
+      features: "기능",
+      fastTrack: "패스트 트랙",
+      letterPack: "레터 팩",
+      memberRate: "회원 가격",
+      relatedLease: "관련 임대 계약",
+      viewLease: "임대 계약 보기",
+      opsAssignment: "운영 할당",
+      opsTeam: "운영 팀",
+      unassigned: "아직 할당되지 않음",
+      timeline: "사례 타임라인",
+      caseOpened: "사례 개설",
+      awaitingReview: "팀 검토 대기 중",
+      actions: "작업",
+      uploadDocument: "문서 업로드",
+      contactSupport: "지원 문의",
+      caseHistory: "사례 기록",
+      generatedLetters: "생성된 레터",
+      initialNotice: "초기 통지",
+      clarificationDocumentation: "명확화 및 문서화",
+      followupLetter: "후속 레터",
+      reconciliationPlan: "화해 계획",
+      finalSettlementOffer: "최종 합의 제안",
+      beforeEscalation: "확대 전",
+      view: "보기",
+      compilePack: "팩 컴파일",
+      compiling: "컴파일 중...",
+      completeLetterPack: "📄 완전한 레터 팩",
+      allLettersInOnePdf: "모든 레터를 하나의 PDF로",
+      download: "다운로드",
+      downloadWord: "Word 다운로드",
+      preview: "미리보기",
+      notFoundDesc: "찾으시는 사례가 존재하지 않습니다.",
+      teamWillContact: "팀이 곧 연락드리겠습니다",
+      reviewWithin: "팀이 24-48시간 이내에 사례를 검토합니다",
+      addEvidence: "증거 추가",
+      contactTeam: "팀에 문의",
+      leaseNegotiationRequest: "임대 협상 요청서",
+      depositReturnRequest: "보증금 반환 요청서",
+      damageClaimResponse: "손해배상 청구 응답",
+      earlyTerminationNotice: "조기 해지 통지",
+      forNegotiationBeforeSigning: "서명 전 협상 - 집주인에게 발송",
+      requestItemisedAssessment: "항목별 평가 요청",
+      requestReconciliation: "화해 요청"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
   const statusConfig = caseItem ? STATUS_CONFIG[caseItem.status] || STATUS_CONFIG.intake : STATUS_CONFIG.intake;
   const StatusIcon = statusConfig.icon;
 
@@ -278,9 +464,7 @@ export default function CaseDetails() {
               {strings.notFound}
             </h2>
             <p className="mb-6" style={{ color: colors.textSecondary }}>
-              {language === 'th' 
-                ? 'ไม่พบคดีที่คุณกำลังมองหา' 
-                : "The case you're looking for doesn't exist."}
+              {strings.notFoundDesc}
             </p>
             <Button onClick={() => navigate(createPageUrl("Cases"))} className="bg-ls-forest hover:bg-ls-forest/90">
               {strings.backToCases}
@@ -454,7 +638,7 @@ export default function CaseDetails() {
                     {strings.opsTeam}
                   </p>
                   <p className="text-sm" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'ทีมของเราจะติดต่อคุณเร็วๆ นี้' : 'Our team will contact you soon'}
+                    {strings.teamWillContact}
                   </p>
                 </div>
               </div>
@@ -468,9 +652,7 @@ export default function CaseDetails() {
                     {strings.unassigned}
                   </p>
                   <p className="text-sm" style={{ color: colors.textSecondary }}>
-                    {language === 'th' 
-                      ? 'ทีมของเราจะตรวจสอบคดีของคุณภายใน 24-48 ชั่วโมง' 
-                      : 'Our team will review your case within 24-48 hours'}
+                    {strings.reviewWithin}
                   </p>
                 </div>
               </div>
@@ -557,10 +739,10 @@ export default function CaseDetails() {
                           ⭐ PRE-SIGNING
                         </Badge>
                         <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'จดหมายขอทบทวนสัญญาเช่า' : 'Lease Negotiation Request'}
+                          {strings.leaseNegotiationRequest}
                         </p>
                         <p className="text-xs" style={{ color: colors.textSecondary }}>
-                          {language === 'th' ? 'สำหรับเจรจาก่อนลงนาม - ส่งหาเจ้าของบ้าน' : 'For negotiation before signing - Send to landlord'}
+                          {strings.forNegotiationBeforeSigning}
                         </p>
                       </div>
                     </div>
@@ -614,10 +796,10 @@ export default function CaseDetails() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'จดหมายขอคืนเงินมัดจำ' : 'Deposit Return Request'}
+                          {strings.depositReturnRequest}
                         </p>
                         <p className="text-xs" style={{ color: colors.textSecondary }}>
-                          {language === 'th' ? 'ขอชี้แจงและเอกสารประกอบ' : strings.clarificationDocumentation}
+                          {strings.clarificationDocumentation}
                         </p>
                       </div>
                     </div>
@@ -671,10 +853,10 @@ export default function CaseDetails() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'จดหมายโต้แย้งค่าเสียหาย' : 'Damage Claim Response'}
+                          {strings.damageClaimResponse}
                         </p>
                         <p className="text-xs" style={{ color: colors.textSecondary }}>
-                          {language === 'th' ? 'ขอรายละเอียดการประเมิน' : 'Request itemised assessment'}
+                          {strings.requestItemisedAssessment}
                         </p>
                       </div>
                     </div>
@@ -728,10 +910,10 @@ export default function CaseDetails() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'จดหมายแจ้งยกเลิกก่อนกำหนด' : 'Early Termination Notice'}
+                          {strings.earlyTerminationNotice}
                         </p>
                         <p className="text-xs" style={{ color: colors.textSecondary }}>
-                          {language === 'th' ? 'ขอประสานการยกเลิกสัญญา' : 'Request reconciliation'}
+                          {strings.requestReconciliation}
                         </p>
                       </div>
                     </div>
@@ -898,9 +1080,7 @@ export default function CaseDetails() {
                       {strings.awaitingReview}
                     </p>
                     <p className="text-sm" style={{ color: colors.textSecondary }}>
-                      {language === 'th' 
-                        ? 'เราจะติดต่อคุณเร็วๆ นี้' 
-                        : "We'll be in touch soon"}
+                      {strings.teamWillContact}
                     </p>
                   </div>
                 </div>
@@ -925,7 +1105,7 @@ export default function CaseDetails() {
                 <div className="text-left">
                   <div className="font-semibold">{strings.uploadDocument}</div>
                   <div className="text-xs" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'เพิ่มหลักฐาน' : 'Add evidence'}
+                    {strings.addEvidence}
                   </div>
                 </div>
               </Button>
@@ -939,7 +1119,7 @@ export default function CaseDetails() {
                 <div className="text-left">
                   <div className="font-semibold">{strings.contactSupport}</div>
                   <div className="text-xs" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'ติดต่อทีม' : 'Contact team'}
+                    {strings.contactTeam}
                   </div>
                 </div>
               </Button>

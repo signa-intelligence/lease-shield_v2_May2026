@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -202,7 +203,9 @@ export default function ResolveCase() {
       submit: "Submit Case",
       creating: "Creating case...",
       required: "Required",
-      optional: "Optional"
+      optional: "Optional",
+      caseDetails: "Case Details",
+      autoFilledMsg: "Deposit data has been pre-filled. You can edit as needed."
     },
     th: {
       title: "เปิดคดี",
@@ -230,11 +233,103 @@ export default function ResolveCase() {
       submit: "ส่งคดี",
       creating: "กำลังสร้างคดี...",
       required: "จำเป็น",
-      optional: "ไม่บังคับ"
+      optional: "ไม่บังคับ",
+      caseDetails: "รายละเอียดคดี",
+      autoFilledMsg: "ข้อมูลเงินมัดจำได้ถูกกรอกให้อัตโนมัติ คุณสามารถแก้ไขได้"
+    },
+    zh: {
+      title: "开启案件",
+      subtitle: "获得解决租赁纠纷的帮助",
+      autoFilled: "从逾期押金自动填充",
+      caseType: "案件类型",
+      depositCase: "押金未退还",
+      earlyTermCase: "提前终止问题",
+      damagesCase: "损害纠纷",
+      otherCase: "其他问题",
+      disputeAmount: "争议金额",
+      disputePlaceholder: "10000",
+      propertAddress: "物业地址",
+      addressPlaceholder: "123 Main St, Bangkok",
+      summary: "案件摘要",
+      summaryPlaceholder: "详细描述您的情况...",
+      landlordInfo: "房东信息",
+      landlordName: "房东姓名",
+      landlordEmail: "房东电子邮件",
+      evidence: "支持证据",
+      evidenceDesc: "上传照片、收据或文件",
+      uploadFiles: "上传文件",
+      uploading: "上传中...",
+      removeFile: "移除",
+      submit: "提交案件",
+      creating: "创建案件中...",
+      required: "必填",
+      optional: "可选",
+      caseDetails: "案件详情",
+      autoFilledMsg: "押金数据已预填。您可以根据需要进行编辑。"
+    },
+    ja: {
+      title: "ケースを開く",
+      subtitle: "賃貸紛争の解決を支援します",
+      autoFilled: "期限超過の敷金から自動入力",
+      caseType: "ケースタイプ",
+      depositCase: "敷金が返還されていない",
+      earlyTermCase: "早期終了問題",
+      damagesCase: "損害紛争",
+      otherCase: "その他の問題",
+      disputeAmount: "紛争金額",
+      disputePlaceholder: "10000",
+      propertAddress: "物件住所",
+      addressPlaceholder: "123 Main St, Bangkok",
+      summary: "ケース概要",
+      summaryPlaceholder: "状況を詳しく説明してください...",
+      landlordInfo: "家主情報",
+      landlordName: "家主名",
+      landlordEmail: "家主メール",
+      evidence: "裏付け証拠",
+      evidenceDesc: "写真、領収書、または書類をアップロード",
+      uploadFiles: "ファイルをアップロード",
+      uploading: "アップロード中...",
+      removeFile: "削除",
+      submit: "ケースを送信",
+      creating: "ケース作成中...",
+      required: "必須",
+      optional: "オプション",
+      caseDetails: "ケース詳細",
+      autoFilledMsg: "敷金データが事前入力されました。必要に応じて編集できます。"
+    },
+    ko: {
+      title: "사례 열기",
+      subtitle: "임대 분쟁 해결 도움 받기",
+      autoFilled: "연체 보증금에서 자동 입력됨",
+      caseType: "사례 유형",
+      depositCase: "보증금 미반환",
+      earlyTermCase: "조기 종료 문제",
+      damagesCase: "손해 분쟁",
+      otherCase: "기타 문제",
+      disputeAmount: "분쟁 금액",
+      disputePlaceholder: "10000",
+      propertAddress: "부동산 주소",
+      addressPlaceholder: "123 Main St, Bangkok",
+      summary: "사례 요약",
+      summaryPlaceholder: "상황을 자세히 설명하세요...",
+      landlordInfo: "집주인 정보",
+      landlordName: "집주인 이름",
+      landlordEmail: "집주인 이메일",
+      evidence: "증빙 자료",
+      evidenceDesc: "사진, 영수증 또는 문서 업로드",
+      uploadFiles: "파일 업로드",
+      uploading: "업로드 중...",
+      removeFile: "제거",
+      submit: "사례 제출",
+      creating: "사례 생성 중...",
+      required: "필수",
+      optional: "선택사항",
+      caseDetails: "사례 상세정보",
+      autoFilledMsg: "보증금 데이터가 미리 채워졌습니다. 필요에 따라 편집할 수 있습니다."
     }
   };
 
-  const str = strings[language];
+  const str = strings[language] || strings.en;
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
@@ -275,9 +370,7 @@ export default function ResolveCase() {
                     🛡️ {str.autoFilled}
                   </p>
                   <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                    {language === 'th' 
-                      ? 'ข้อมูลเงินมัดจำได้ถูกกรอkให้อัตโนมัติ คุณสามารถแก้ไขได้' 
-                      : 'Deposit data has been pre-filled. You can edit as needed.'}
+                    {str.autoFilledMsg}
                   </p>
                 </div>
               </div>
@@ -288,7 +381,7 @@ export default function ResolveCase() {
         <form onSubmit={handleSubmit}>
           <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader>
-              <CardTitle style={{ color: colors.textPrimary }}>{language === 'th' ? 'รายละเอียดคดี' : 'Case Details'}</CardTitle>
+              <CardTitle style={{ color: colors.textPrimary }}>{str.caseDetails}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Case Type */}
