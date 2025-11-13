@@ -1682,20 +1682,21 @@ function DashboardContent() {
                             scoreColor="#3B82F6"
                             miniStats={leases.length > 0 ? [
                               {
-                                label: language === 'th' ? 'สแกนแล้ว' : 'Scanned',
+                                label: language === 'zh' ? '已扫描' : language === 'ja' ? 'スキャン済み' : language === 'ko' ? '스캔됨' : language === 'th' ? 'สแกนแล้ว' : 'Scanned',
                                 value: scannedLeases.length
                               },
                               {
-                                label: language === 'th' ? 'เตือน' : 'Alerts',
+                                label: language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'th' ? 'เตือน' : 'Alerts',
                                 value: leases.filter(l => l.notice_alerts_enabled).length
                               }
                             ] : undefined}
                             actionButton={leases.length > 0 ? {
-                              label: language === 'th' ? 'จัดการ' : 'Manage',
+                              label: language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'th' ? 'จัดการ' : 'Manage',
                               link: createPageUrl("UploadScan")
                             } : undefined}
                             ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
                             onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
+                            colors={colors}
                             compact
                           />
 
@@ -1705,13 +1706,20 @@ function DashboardContent() {
                             icon={Wallet}
                             bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
                             miniStats={[
-                              { label: language === 'th' ? 'เฉลี่ย' : 'Avg', value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
-                              { label: language === 'th' ? 'เร็วๆนี้' : 'Soon', value: urgentDeposits }
+                              { 
+                                label: language === 'zh' ? '平均' : language === 'ja' ? '平均' : language === 'ko' ? '평균' : language === 'th' ? 'เฉลี่ย' : 'Avg',
+                                value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—'
+                              },
+                              { 
+                                label: language === 'zh' ? '即将' : language === 'ja' ? 'まもなく' : language === 'ko' ? '곧' : language === 'th' ? 'เร็วๆนี้' : 'Soon',
+                                value: urgentDeposits
+                              }
                             ]}
                             actionButton={{
-                              label: language === 'th' ? 'เพิ่ม' : 'Add',
+                              label: language === 'zh' ? '添加' : language === 'ja' ? '追加' : language === 'ko' ? '추가' : language === 'th' ? 'เพิ่ม' : 'Add',
                               link: createPageUrl("DepositTracker")
                             }}
+                            colors={colors}
                             compact
                           />
                           
@@ -1722,16 +1730,17 @@ function DashboardContent() {
                             scoreColor="#3B82F6"
                             miniStats={rentTrackedCount > 0 ? [
                               {
-                                label: language === 'th' ? 'เตือน' : 'Alerts',
+                                label: language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'th' ? 'เตือน' : 'Alerts',
                                 value: deposits.filter(d => d.rent_alerts_enabled).length
                               }
                             ] : undefined}
                             actionButton={rentTrackedCount > 0 ? {
-                              label: language === 'th' ? 'จัดการ' : 'Manage',
+                              label: language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'th' ? 'จัดการ' : 'Manage',
                               link: createPageUrl("PropertyTracker")
                             } : undefined}
                             ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
                             onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                            colors={colors}
                             compact
                           />
 
@@ -1742,19 +1751,20 @@ function DashboardContent() {
                             scoreColor="#8B5CF6"
                             miniStats={notificationLogs.length > 0 ? [
                               {
-                                label: language === 'th' ? 'ส่งแล้ว' : 'Sent',
+                                label: language === 'zh' ? '已发送' : language === 'ja' ? '送信済み' : language === 'ko' ? '전송됨' : language === 'th' ? 'ส่งแล้ว' : 'Sent',
                                 value: notificationLogs.filter(n => n.status === 'sent').length
                               },
                               {
-                                label: language === 'th' ? 'ล้มเหลว' : 'Failed',
+                                label: language === 'zh' ? '失败' : language === 'ja' ? '失敗' : language === 'ko' ? '실패' : language === 'th' ? 'ล้มเหลว' : 'Failed',
                                 value: notificationLogs.filter(n => n.status === 'failed').length
                               }
                             ] : undefined}
                             actionButton={notificationLogs.length > 0 ? {
-                              label: strings.viewAll,
+                              label: language === 'zh' ? '查看全部' : language === 'ja' ? 'すべて表示' : language === 'ko' ? '모두 보기' : language === 'th' ? 'ดูทั้งหมด' : 'View All',
                               link: createPageUrl("Account") + "#notifications"
                             } : undefined}
                             ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
+                            colors={colors}
                             compact
                           />
                           
@@ -1764,12 +1774,16 @@ function DashboardContent() {
                             icon={Scale}
                             bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
                             miniStats={[
-                              { label: language === 'th' ? 'แก้ไข' : 'Resolved', value: resolvedCases }
+                              { 
+                                label: language === 'zh' ? '已解决' : language === 'ja' ? '解決済み' : language === 'ko' ? '해결됨' : language === 'th' ? 'แก้ไข' : 'Resolved',
+                                value: resolvedCases
+                              }
                             ]}
                             actionButton={{
-                              label: language === 'th' ? 'เปิด' : 'Open',
+                              label: language === 'zh' ? '打开' : language === 'ja' ? '開く' : language === 'ko' ? '열기' : language === 'th' ? 'เปิด' : 'Open',
                               link: createPageUrl("Cases")
                             }}
+                            colors={colors}
                             compact
                           />
 
@@ -1780,16 +1794,17 @@ function DashboardContent() {
                             scoreColor="#F59E0B"
                             miniStats={activeMaintenanceCount > 0 ? [
                               {
-                                label: language === 'th' ? 'เสร็จ' : 'Done',
+                                label: language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : language === 'th' ? 'เสร็จ' : 'Done',
                                 value: maintenanceRequests.filter(r => r.status === 'completed').length
                               }
                             ] : undefined}
                             actionButton={activeMaintenanceCount > 0 ? {
-                              label: language === 'th' ? 'ดู' : 'View',
+                              label: language === 'zh' ? '查看' : language === 'ja' ? '見る' : language === 'ko' ? '보기' : language === 'th' ? 'ดู' : 'View',
                               link: createPageUrl("PropertyTracker") + "#maintenance"
                             } : undefined}
                             ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
                             onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                            colors={colors}
                             compact
                           />
                         </div>
@@ -1803,20 +1818,21 @@ function DashboardContent() {
                           scoreColor="#3B82F6"
                           miniStats={leases.length > 0 ? [
                             {
-                              label: language === 'th' ? 'สแกนแล้ว' : 'Scanned',
+                              label: language === 'zh' ? '已扫描' : language === 'ja' ? 'スキャン済み' : language === 'ko' ? '스캔됨' : language === 'th' ? 'สแกนแล้ว' : 'Scanned',
                               value: scannedLeases.length
                             },
                             {
-                              label: language === 'th' ? 'เตือน' : 'Alerts',
+                              label: language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'th' ? 'เตือน' : 'Alerts',
                               value: leases.filter(l => l.notice_alerts_enabled).length
                             }
                           ] : undefined}
                           actionButton={leases.length > 0 ? {
-                            label: language === 'th' ? 'จัดการ' : 'Manage',
+                            label: language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'th' ? 'จัดการ' : 'Manage',
                             link: createPageUrl("UploadScan")
                           } : undefined}
                           ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
                           onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
+                          colors={colors}
                           compact
                         />
 
@@ -1826,13 +1842,20 @@ function DashboardContent() {
                           icon={Wallet}
                           bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
                           miniStats={[
-                            { label: language === 'th' ? 'เฉลี่ย' : 'Avg', value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—' },
-                            { label: language === 'th' ? 'เร็วๆนี้' : 'Soon', value: urgentDeposits }
+                            { 
+                              label: language === 'zh' ? '平均' : language === 'ja' ? '平均' : language === 'ko' ? '평균' : language === 'th' ? 'เฉลี่ย' : 'Avg',
+                              value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—'
+                            },
+                            { 
+                              label: language === 'zh' ? '即将' : language === 'ja' ? 'まもなく' : language === 'ko' ? '곧' : language === 'th' ? 'เร็วๆนี้' : 'Soon',
+                              value: urgentDeposits
+                            }
                           ]}
                           actionButton={{
-                            label: language === 'th' ? 'เพิ่ม' : 'Add',
+                            label: language === 'zh' ? '添加' : language === 'ja' ? '追加' : language === 'ko' ? '추가' : language === 'th' ? 'เพิ่ม' : 'Add',
                             link: createPageUrl("DepositTracker")
                           }}
+                          colors={colors}
                           compact
                         />
                         
@@ -1843,16 +1866,17 @@ function DashboardContent() {
                           scoreColor="#3B82F6"
                           miniStats={rentTrackedCount > 0 ? [
                             {
-                              label: language === 'th' ? 'เตือน' : 'Alerts',
+                              label: language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'th' ? 'เตือน' : 'Alerts',
                               value: deposits.filter(d => d.rent_alerts_enabled).length
                             }
                           ] : undefined}
                           actionButton={rentTrackedCount > 0 ? {
-                            label: language === 'th' ? 'จัดการ' : 'Manage',
+                            label: language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'th' ? 'จัดการ' : 'Manage',
                             link: createPageUrl("PropertyTracker")
                           } : undefined}
                           ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
                           onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                          colors={colors}
                           compact
                         />
 
@@ -1874,19 +1898,20 @@ function DashboardContent() {
                           scoreColor="#8B5CF6"
                           miniStats={notificationLogs.length > 0 ? [
                             {
-                              label: language === 'th' ? 'ส่งแล้ว' : 'Sent',
+                              label: language === 'zh' ? '已发送' : language === 'ja' ? '送信済み' : language === 'ko' ? '전송됨' : language === 'th' ? 'ส่งแล้ว' : 'Sent',
                               value: notificationLogs.filter(n => n.status === 'sent').length
                             },
                             {
-                              label: language === 'th' ? 'ล้มเหลว' : 'Failed',
+                              label: language === 'zh' ? '失败' : language === 'ja' ? '失敗' : language === 'ko' ? '실패' : language === 'th' ? 'ล้มเหลว' : 'Failed',
                               value: notificationLogs.filter(n => n.status === 'failed').length
                             }
                           ] : undefined}
                           actionButton={notificationLogs.length > 0 ? {
-                            label: strings.viewAll,
+                            label: language === 'zh' ? '查看全部' : language === 'ja' ? 'すべて表示' : language === 'ko' ? '모두 보기' : language === 'th' ? 'ดูทั้งหมด' : 'View All',
                             link: createPageUrl("Account") + "#notifications"
                           } : undefined}
                           ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
+                          colors={colors}
                           compact
                         />
                         
@@ -1896,12 +1921,16 @@ function DashboardContent() {
                           icon={Scale}
                           bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
                           miniStats={[
-                            { label: language === 'th' ? 'แก้ไข' : 'Resolved', value: resolvedCases }
+                            { 
+                              label: language === 'zh' ? '已解决' : language === 'ja' ? '解決済み' : language === 'ko' ? '해결됨' : language === 'th' ? 'แก้ไข' : 'Resolved',
+                              value: resolvedCases
+                            }
                           ]}
                           actionButton={{
-                            label: language === 'th' ? 'เปิด' : 'Open',
+                            label: language === 'zh' ? '打开' : language === 'ja' ? '開く' : language === 'ko' ? '열기' : language === 'th' ? 'เปิด' : 'Open',
                             link: createPageUrl("Cases")
                           }}
+                          colors={colors}
                           compact
                         />
 
@@ -1912,17 +1941,18 @@ function DashboardContent() {
                           scoreColor="#F59E0B"
                           miniStats={activeMaintenanceCount > 0 ? [
                             {
-                              label: language === 'th' ? 'เสร็จ' : 'Done',
+                              label: language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : language === 'th' ? 'เสร็จ' : 'Done',
                               value: maintenanceRequests.filter(r => r.status === 'completed').length
                               
                             }
                           ] : undefined}
                           actionButton={activeMaintenanceCount > 0 ? {
-                            label: language === 'th' ? 'ดู' : 'View',
+                            label: language === 'zh' ? '查看' : language === 'ja' ? '見る' : language === 'ko' ? '보기' : language === 'th' ? 'ดู' : 'View',
                             link: createPageUrl("PropertyTracker") + "#maintenance"
                           } : undefined}
                           ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
                           onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                          colors={colors}
                           compact
                         />
                       </div>
