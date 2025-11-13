@@ -6,10 +6,19 @@ import { AlertCircle, Calendar, DollarSign, Home, Shield } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 export default function DepositAlert({ deposits, language = 'en' }) {
   const navigate = useNavigate();
   const now = new Date();
+  
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const isDarkMode = user?.theme === 'dark';
   
   const activeDeposits = deposits.filter(d => d.status === 'tracking');
   
@@ -85,17 +94,36 @@ export default function DepositAlert({ deposits, language = 'en' }) {
   const str = strings[language] || strings.en;
 
   const getUrgencyColor = (days) => {
-    if (days < 0) return { bg: '#FEE2E2', text: '#DC2626', border: '#DC2626' }; // Overdue - Red
-    if (days <= 3) return { bg: '#FEF3C7', text: '#D97706', border: '#F59E0B' }; // Critical - Amber
-    if (days <= 7) return { bg: '#DBEAFE', text: '#1D4ED8', border: '#3B82F6' }; // High - Blue
-    return { bg: '#D1FAE5', text: '#047857', border: '#10B981' }; // Medium - Green
+    if (days < 0) {
+      // OVERDUE - RED
+      return {
+        border: '#FF6B6B',
+        bgLight: '#FFECEC',
+        bgDark: '#3A1E1E',
+        text: '#DC2626',
+        labelBgLight: '#FFB8B8',
+        labelBgDark: '#5C2C2C'
+      };
+    }
+    // UPCOMING - GREEN
+    return {
+      border: '#4CAF50',
+      bgLight: '#E6FFE9',
+      bgDark: '#1E3A22',
+      text: '#047857',
+      labelBgLight: '#B8FFCC',
+      labelBgDark: '#2E5C39'
+    };
   };
+
+  const cardBg = isDarkMode ? '#2A2D30' : '#FFFFFF';
+  const textPrimary = isDarkMode ? '#ECEFED' : '#1A1D1F';
 
   if (urgentDeposits.length === 0) {
     return (
-      <Card className="border-none shadow-lg" style={{ backgroundColor: '#FFFFFF' }}>
+      <Card className="border-none shadow-lg" style={{ backgroundColor: cardBg }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2 text-base" style={{ color: textPrimary }}>
             <Calendar className="w-5 h-5 text-emerald-600" />
             {str.title}
           </CardTitle>
@@ -111,16 +139,16 @@ export default function DepositAlert({ deposits, language = 'en' }) {
   }
 
   return (
-    <Card className="border-none shadow-xl" style={{ backgroundColor: '#FFFFFF' }}>
+    <Card className="border-none shadow-xl" style={{ backgroundColor: cardBg }}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-2 text-base" style={{ color: textPrimary }}>
           <AlertCircle className="w-5 h-5 text-amber-600" />
           {str.title}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {urgentDeposits.map((deposit) => {
-          const colors = getUrgencyColor(deposit.daysRemaining);
+          const colorScheme = getUrgencyColor(deposit.daysRemaining);
           const isOverdue = deposit.daysRemaining < 0;
           
           return (
@@ -128,21 +156,21 @@ export default function DepositAlert({ deposits, language = 'en' }) {
               key={deposit.id}
               className="rounded-lg p-4 border-2 transition-all hover:shadow-md"
               style={{
-                backgroundColor: colors.bg,
-                borderColor: colors.border
+                backgroundColor: isDarkMode ? colorScheme.bgDark : colorScheme.bgLight,
+                borderColor: colorScheme.border
               }}
             >
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
-                    <Home className="w-4 h-4 flex-shrink-0" style={{ color: colors.text }} />
-                    <p className="font-semibold text-sm truncate" style={{ color: colors.text }}>
+                    <Home className="w-4 h-4 flex-shrink-0" style={{ color: colorScheme.text }} />
+                    <p className="font-semibold text-sm truncate" style={{ color: colorScheme.text }}>
                       {deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : language === 'zh' ? '未指定' : language === 'ja' ? '未指定' : language === 'ko' ? '미지정' : 'N/A')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 flex-shrink-0" style={{ color: colors.text }} />
-                    <p className="text-xs font-medium" style={{ color: colors.text }}>
+                    <DollarSign className="w-4 h-4 flex-shrink-0" style={{ color: colorScheme.text }} />
+                    <p className="text-xs font-medium" style={{ color: colorScheme.text }}>
                       {str.amount}: ฿{deposit.deposit_amount?.toLocaleString() || '0'}
                     </p>
                   </div>
@@ -150,9 +178,9 @@ export default function DepositAlert({ deposits, language = 'en' }) {
                 <Badge
                   className="flex-shrink-0"
                   style={{
-                    backgroundColor: colors.bg,
-                    color: colors.text,
-                    border: `2px solid ${colors.border}`,
+                    backgroundColor: isDarkMode ? colorScheme.labelBgDark : colorScheme.labelBgLight,
+                    color: colorScheme.text,
+                    border: `2px solid ${colorScheme.border}`,
                     fontWeight: 'bold',
                     fontSize: '11px'
                   }}
@@ -171,8 +199,9 @@ export default function DepositAlert({ deposits, language = 'en' }) {
                     size="sm"
                     className="w-full text-xs"
                     style={{
-                      borderColor: colors.border,
-                      color: colors.text
+                      borderColor: colorScheme.border,
+                      color: colorScheme.text,
+                      backgroundColor: 'transparent'
                     }}
                   >
                     {str.viewDetails}

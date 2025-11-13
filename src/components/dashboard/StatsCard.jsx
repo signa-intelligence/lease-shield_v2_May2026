@@ -27,22 +27,70 @@ export default function StatsCard({
 
   const isDarkMode = cardColors.cardBg === '#2A2D30';
 
-  const getGradientClass = () => {
-    if (bgGradient) return bgGradient;
-    if (scoreColor) return '';
-    return 'bg-gradient-to-br from-blue-600 to-purple-600';
+  // 🎨 UNIFIED COLOR MAPPING FOR DASHBOARD CARDS
+  const CARD_STYLE_MAP = {
+    'Active Leases': {
+      borderLeft: '#3A8DFF',
+      bgLight: '#E9F2FF',
+      bgDark: '#1E2A38'
+    },
+    'Rent Tracked': {
+      borderLeft: '#529CFF',
+      bgLight: '#EAF3FF',
+      bgDark: '#1F2E40'
+    },
+    'Notifications': {
+      borderLeft: '#A388FF',
+      bgLight: '#F2EDFF',
+      bgDark: '#27223A'
+    },
+    'Maintenance': {
+      borderLeft: '#E8A93B',
+      bgLight: '#FBF5E6',
+      bgDark: '#3A2F1B'
+    },
+    'Deposits Tracked': {
+      borderLeft: '#8C8C8C',
+      bgLight: '#F6F6F6',
+      bgDark: '#2A2A2A'
+    },
+    'Active Cases': {
+      borderLeft: '#8C8C8C',
+      bgLight: '#F6F6F6',
+      bgDark: '#2A2A2A'
+    }
   };
 
-  const hasCustomBg = bgGradient || scoreColor;
+  const cardStyle = CARD_STYLE_MAP[title];
+
+  // Determine card background and border
+  let cardBackground;
+  let cardBorderLeft;
+
+  if (bgGradient) {
+    // Use gradient as-is for cards with explicit gradients
+    cardBackground = undefined;
+    cardBorderLeft = undefined;
+  } else if (cardStyle) {
+    // Use mapped style for specific dashboard cards
+    cardBackground = isDarkMode ? cardStyle.bgDark : cardStyle.bgLight;
+    cardBorderLeft = `4px solid ${cardStyle.borderLeft}`;
+  } else if (scoreColor) {
+    // Fallback for other cards with scoreColor
+    cardBackground = isDarkMode ? cardColors.cardBg : `${scoreColor}10`;
+    cardBorderLeft = `4px solid ${scoreColor}`;
+  } else {
+    // Default
+    cardBackground = cardColors.cardBg;
+    cardBorderLeft = undefined;
+  }
 
   return (
     <Card 
-      className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${bgGradient ? bgGradient : (!scoreColor && getGradientClass())} h-full`}
+      className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${bgGradient || ''} h-full`}
       style={{
-        backgroundColor: scoreColor && !bgGradient
-          ? (isDarkMode ? cardColors.cardBg : `${scoreColor}10`)
-          : undefined,
-        borderLeft: scoreColor && !bgGradient ? `4px solid ${scoreColor}` : undefined
+        backgroundColor: cardBackground,
+        borderLeft: cardBorderLeft
       }}
     >
       <CardContent className="p-3 md:p-4 flex flex-col justify-between h-full">
@@ -52,15 +100,21 @@ export default function StatsCard({
             style={{
               backgroundColor: bgGradient
                 ? 'rgba(255, 255, 255, 0.2)'
-                : scoreColor 
-                  ? (isDarkMode ? `${scoreColor}30` : `${scoreColor}20`)
-                  : 'rgba(255, 255, 255, 0.2)'
+                : cardStyle
+                  ? (isDarkMode ? `${cardStyle.borderLeft}30` : `${cardStyle.borderLeft}20`)
+                  : scoreColor 
+                    ? (isDarkMode ? `${scoreColor}30` : `${scoreColor}20`)
+                    : 'rgba(255, 255, 255, 0.2)'
             }}
           >
             <Icon 
               className="w-5 h-5 md:w-6 md:h-6" 
               style={{ 
-                color: bgGradient ? '#FFFFFF' : (scoreColor ? scoreColor : '#FFFFFF')
+                color: bgGradient 
+                  ? '#FFFFFF' 
+                  : cardStyle
+                    ? cardStyle.borderLeft
+                    : (scoreColor ? scoreColor : '#FFFFFF')
               }} 
             />
           </div>
@@ -82,7 +136,11 @@ export default function StatsCard({
           <p 
             className="text-xs font-semibold mb-1 truncate" 
             style={{ 
-              color: bgGradient ? 'rgba(255, 255, 255, 0.8)' : (scoreColor ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.8)')
+              color: bgGradient 
+                ? 'rgba(255, 255, 255, 0.8)' 
+                : cardStyle
+                  ? (isDarkMode ? cardColors.textPrimary : cardStyle.borderLeft)
+                  : (scoreColor ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.8)')
             }}
           >
             {title}
@@ -90,7 +148,11 @@ export default function StatsCard({
           <p 
             className="text-xl md:text-2xl font-bold truncate" 
             style={{ 
-              color: bgGradient ? '#FFFFFF' : (scoreColor ? scoreColor : '#FFFFFF')
+              color: bgGradient 
+                ? '#FFFFFF' 
+                : cardStyle
+                  ? cardColors.textPrimary
+                  : (scoreColor ? scoreColor : '#FFFFFF')
             }}
           >
             {value}
@@ -103,7 +165,11 @@ export default function StatsCard({
               <div key={idx} className="text-xs">
                 <span 
                   style={{ 
-                    color: bgGradient ? 'rgba(255, 255, 255, 0.7)' : (scoreColor ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.7)'),
+                    color: bgGradient 
+                      ? 'rgba(255, 255, 255, 0.7)' 
+                      : cardStyle
+                        ? cardColors.textSecondary
+                        : (scoreColor ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.7)'),
                     marginRight: '4px'
                   }}
                 >
@@ -112,7 +178,11 @@ export default function StatsCard({
                 <span 
                   className="font-bold"
                   style={{ 
-                    color: bgGradient ? '#FFFFFF' : (scoreColor ? scoreColor : '#FFFFFF')
+                    color: bgGradient 
+                      ? '#FFFFFF' 
+                      : cardStyle
+                        ? cardColors.textPrimary
+                        : (scoreColor ? scoreColor : '#FFFFFF')
                   }}
                 >
                   {stat.value}
@@ -129,9 +199,19 @@ export default function StatsCard({
             style={{
               backgroundColor: bgGradient 
                 ? 'rgba(255, 255, 255, 0.2)'
-                : (scoreColor || (isDarkMode ? cardColors.borderColor : '#FFFFFF')),
-              color: bgGradient ? '#FFFFFF' : (scoreColor ? '#FFFFFF' : cardColors.textPrimary),
-              border: bgGradient ? '1px solid rgba(255, 255, 255, 0.4)' : (scoreColor ? 'none' : `2px solid ${cardColors.borderColor}`)
+                : cardStyle
+                  ? (isDarkMode ? `${cardStyle.borderLeft}40` : cardStyle.borderLeft)
+                  : (scoreColor || (isDarkMode ? cardColors.borderColor : '#FFFFFF')),
+              color: bgGradient 
+                ? '#FFFFFF' 
+                : cardStyle
+                  ? '#FFFFFF'
+                  : (scoreColor ? '#FFFFFF' : cardColors.textPrimary),
+              border: bgGradient 
+                ? '1px solid rgba(255, 255, 255, 0.4)' 
+                : cardStyle
+                  ? 'none'
+                  : (scoreColor ? 'none' : `2px solid ${cardColors.borderColor}`)
             }}
           >
             {ctaText}
@@ -145,30 +225,46 @@ export default function StatsCard({
               style={{
                 backgroundColor: bgGradient
                   ? 'rgba(255, 255, 255, 0.3)'
-                  : (scoreColor
-                      ? (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
-                      : 'rgba(255, 255, 255, 0.3)'),
-                color: bgGradient ? '#FFFFFF' : (scoreColor || '#FFFFFF'),
+                  : cardStyle
+                    ? (isDarkMode ? `${cardStyle.borderLeft}40` : cardStyle.borderLeft)
+                    : (scoreColor
+                        ? (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
+                        : 'rgba(255, 255, 255, 0.3)'),
+                color: bgGradient 
+                  ? '#FFFFFF' 
+                  : cardStyle
+                    ? '#FFFFFF'
+                    : (scoreColor || '#FFFFFF'),
                 border: bgGradient
                   ? '1px solid rgba(255, 255, 255, 0.4)'
-                  : (scoreColor
-                      ? `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : `${scoreColor}40`}`
-                      : '1px solid rgba(255, 255, 255, 0.4)'),
+                  : cardStyle
+                    ? 'none'
+                    : (scoreColor
+                        ? `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : `${scoreColor}40`}`
+                        : '1px solid rgba(255, 255, 255, 0.4)'),
                 backdropFilter: 'blur(10px)'
               }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = bgGradient
-                  ? 'rgba(255, 255, 255, 0.4)'
-                  : (scoreColor
-                      ? (isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.3)')
-                      : 'rgba(255, 255, 255, 0.4)');
+                if (bgGradient) {
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
+                } else if (cardStyle) {
+                  e.target.style.backgroundColor = isDarkMode ? `${cardStyle.borderLeft}60` : `${cardStyle.borderLeft}CC`;
+                } else if (scoreColor) {
+                  e.target.style.backgroundColor = isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.3)';
+                } else {
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
+                }
               }}
               onMouseLeave={(e) => {
-                e.target.style.backgroundColor = bgGradient
-                  ? 'rgba(255, 255, 255, 0.3)'
-                  : (scoreColor
-                      ? (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
-                      : 'rgba(255, 255, 255, 0.3)');
+                if (bgGradient) {
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                } else if (cardStyle) {
+                  e.target.style.backgroundColor = isDarkMode ? `${cardStyle.borderLeft}40` : cardStyle.borderLeft;
+                } else if (scoreColor) {
+                  e.target.style.backgroundColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)';
+                } else {
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                }
               }}
             >
               {actionButton.label}
