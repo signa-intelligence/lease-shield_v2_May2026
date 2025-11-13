@@ -38,12 +38,12 @@ Deno.serve(async (req) => {
       return false;
     };
 
-    const addSectionHeader = (title, icon = '') => {
+    const addSectionHeader = (title) => {
       checkPageBreak(15);
       doc.setFontSize(14);
       doc.setFont(undefined, 'bold');
       doc.setTextColor(12, 59, 46);
-      doc.text(`${icon} ${title}`, margin, yPos);
+      doc.text(title, margin, yPos);
       yPos += 2;
       doc.setDrawColor(199, 163, 56);
       doc.setLineWidth(0.5);
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
       doc.setTextColor(64, 64, 64);
       doc.setFont(undefined, 'normal');
       const splitText = doc.splitTextToSize(text, contentWidth - indent - 5);
-      doc.text('•', margin + indent, yPos);
+      doc.text('-', margin + indent, yPos);
       doc.text(splitText, margin + indent + 5, yPos);
       yPos += (splitText.length * 5) + 2;
     };
@@ -122,13 +122,13 @@ Deno.serve(async (req) => {
     const statsCol2 = margin + 60;
     const statsCol3 = margin + 115;
     
-    doc.text(`📄 ${leases.length} Leases`, statsCol1, yPos);
-    doc.text(`💰 ${deposits.length} Deposits`, statsCol2, yPos);
-    doc.text(`⚖️ ${cases.length} Cases`, statsCol3, yPos);
+    doc.text(`${leases.length} Leases`, statsCol1, yPos);
+    doc.text(`${deposits.length} Deposits`, statsCol2, yPos);
+    doc.text(`${cases.length} Cases`, statsCol3, yPos);
     yPos += 7;
-    doc.text(`📁 ${documents.length} Documents`, statsCol1, yPos);
-    doc.text(`🔧 ${maintenance.length} Maintenance`, statsCol2, yPos);
-    doc.text(`🔔 ${notifications.length} Notifications`, statsCol3, yPos);
+    doc.text(`${documents.length} Documents`, statsCol1, yPos);
+    doc.text(`${maintenance.length} Maintenance`, statsCol2, yPos);
+    doc.text(`${notifications.length} Notifications`, statsCol3, yPos);
     
     yPos += 25;
 
@@ -136,12 +136,12 @@ Deno.serve(async (req) => {
     doc.addPage();
     yPos = margin;
     
-    addSectionHeader('Personal Information', '👤');
+    addSectionHeader('Personal Information');
     addKeyValue('Full Name', user.full_name);
     addKeyValue('Email Address', user.email);
     addKeyValue('Phone Number', user.phone);
     addKeyValue('Country', user.country);
-    addKeyValue('Language Preference', user.language === 'th' ? 'Thai (ไทย)' : 'English');
+    addKeyValue('Language Preference', user.language === 'th' ? 'Thai' : 'English');
     addKeyValue('Theme Preference', user.theme === 'dark' ? 'Dark Mode' : 'Light Mode');
     addKeyValue('Tenant Address', user.tenant_address);
     addKeyValue('City', user.tenant_city);
@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
     yPos += 5;
 
     // === SUBSCRIPTION INFORMATION ===
-    addSectionHeader('Subscription Details', '💳');
+    addSectionHeader('Subscription Details');
     addKeyValue('Current Plan', (user.plan_tier || 'free').toUpperCase());
     addKeyValue('Subscription Status', user.subscription_status || 'active');
     addKeyValue('Billing Interval', user.billing_interval || 'N/A');
@@ -160,14 +160,14 @@ Deno.serve(async (req) => {
     yPos += 5;
 
     // === NOTIFICATION PREFERENCES ===
-    addSectionHeader('Notification Preferences', '🔔');
+    addSectionHeader('Notification Preferences');
     addKeyValue('Email Notifications', user.email_notifications ? 'Enabled' : 'Disabled');
     addKeyValue('LINE Notifications', user.line_notifications ? 'Enabled' : 'Disabled');
     addKeyValue('LINE Connected', user.line_messaging_token ? 'Yes' : 'No');
     yPos += 5;
 
     // === CONTACT INFORMATION ===
-    addSectionHeader('Stored Contact Information', '📞');
+    addSectionHeader('Stored Contact Information');
     
     doc.setFontSize(11);
     doc.setFont(undefined, 'bold');
@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
       doc.addPage();
       yPos = margin;
       
-      addSectionHeader(`Lease Agreements (${leases.length})`, '📄');
+      addSectionHeader(`Lease Agreements (${leases.length})`);
       
       leases.forEach((lease, idx) => {
         checkPageBreak(50);
@@ -207,8 +207,8 @@ Deno.serve(async (req) => {
         yPos += 8;
         
         addKeyValue('Property Address', lease.property_address, 5);
-        addKeyValue('Monthly Rent', lease.rent_amount ? `฿${lease.rent_amount.toLocaleString()}` : 'N/A', 5);
-        addKeyValue('Security Deposit', lease.deposit_amount ? `฿${lease.deposit_amount.toLocaleString()}` : 'N/A', 5);
+        addKeyValue('Monthly Rent', lease.rent_amount ? `THB ${lease.rent_amount.toLocaleString()}` : 'N/A', 5);
+        addKeyValue('Security Deposit', lease.deposit_amount ? `THB ${lease.deposit_amount.toLocaleString()}` : 'N/A', 5);
         addKeyValue('Lease Start Date', lease.start_date, 5);
         addKeyValue('Lease End Date', lease.end_date, 5);
         addKeyValue('Notice Period', lease.notice_period_days ? `${lease.notice_period_days} days` : 'N/A', 5);
@@ -225,7 +225,7 @@ Deno.serve(async (req) => {
       doc.addPage();
       yPos = margin;
       
-      addSectionHeader(`Security Deposits Tracked (${deposits.length})`, '💰');
+      addSectionHeader(`Security Deposits Tracked (${deposits.length})`);
       
       const totalDeposit = deposits.reduce((sum, d) => sum + (d.deposit_amount || 0), 0);
       doc.setFillColor(255, 251, 235);
@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
       doc.setFontSize(10);
       doc.setTextColor(199, 163, 56);
       doc.setFont(undefined, 'bold');
-      doc.text(`Total Deposits: ฿${totalDeposit.toLocaleString()}`, margin + 5, yPos);
+      doc.text(`Total Deposits: THB ${totalDeposit.toLocaleString()}`, margin + 5, yPos);
       yPos += 15;
 
       deposits.forEach((deposit, idx) => {
@@ -246,324 +246,6 @@ Deno.serve(async (req) => {
         doc.text(`Deposit ${idx + 1}`, margin, yPos);
         yPos += 8;
         
-        addKeyValue('Amount', `฿${deposit.deposit_amount?.toLocaleString()}`, 5);
+        addKeyValue('Amount', `THB ${deposit.deposit_amount?.toLocaleString()}`, 5);
         addKeyValue('Property Address', deposit.property_address, 5);
-        addKeyValue('Paid Date', deposit.deposit_paid_date, 5);
-        addKeyValue('Expected Return Date', deposit.expected_return_date, 5);
-        addKeyValue('Status', deposit.status?.toUpperCase(), 5);
-        addKeyValue('Monthly Rent', deposit.rent_amount ? `฿${deposit.rent_amount.toLocaleString()}` : 'N/A', 5);
-        addKeyValue('Rent Due Day', deposit.rent_due_day || 'N/A', 5);
-        addKeyValue('Rent Alerts', deposit.rent_alerts_enabled ? 'Enabled' : 'Disabled', 5);
-        if (deposit.notes) addKeyValue('Notes', deposit.notes, 5);
-        yPos += 5;
-      });
-    }
-
-    // === DOCUMENTS ===
-    if (documents.length > 0) {
-      doc.addPage();
-      yPos = margin;
-      
-      addSectionHeader(`Documents & Evidence (${documents.length})`, '📁');
-      
-      const docsByType = documents.reduce((acc, doc) => {
-        acc[doc.type] = (acc[doc.type] || 0) + 1;
-        return acc;
-      }, {});
-
-      doc.setFontSize(10);
-      doc.setTextColor(64, 64, 64);
-      Object.entries(docsByType).forEach(([type, count]) => {
-        addBulletPoint(`${type}: ${count} files`);
-      });
-      yPos += 5;
-
-      documents.forEach((docItem, idx) => {
-        checkPageBreak(12);
-        doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`${idx + 1}. ${docItem.type.toUpperCase()} - ${docItem.label || 'Untitled'}`, margin + 5, yPos);
-        yPos += 6;
-        doc.setFontSize(8);
-        doc.text(`   Uploaded: ${new Date(docItem.created_date).toLocaleDateString()}`, margin + 5, yPos);
-        yPos += 6;
-      });
-      yPos += 5;
-    }
-
-    // === DISPUTE CASES ===
-    if (cases.length > 0) {
-      doc.addPage();
-      yPos = margin;
-      
-      addSectionHeader(`Dispute Cases (${cases.length})`, '⚖️');
-      
-      const totalDisputed = cases.reduce((sum, c) => sum + (c.dispute_amount || 0), 0);
-      const totalRecovered = cases.filter(c => c.status === 'closed').reduce((sum, c) => sum + (c.settlement?.amount || 0), 0);
-      
-      doc.setFillColor(239, 246, 255);
-      doc.roundedRect(margin, yPos, contentWidth, 20, 2, 2, 'F');
-      yPos += 5;
-      doc.setFontSize(10);
-      doc.setTextColor(59, 130, 246);
-      doc.setFont(undefined, 'bold');
-      doc.text(`Total Disputed: ฿${totalDisputed.toLocaleString()}`, margin + 5, yPos);
-      yPos += 7;
-      doc.setTextColor(16, 185, 129);
-      doc.text(`Total Recovered: ฿${totalRecovered.toLocaleString()}`, margin + 5, yPos);
-      yPos += 15;
-
-      cases.forEach((caseItem, idx) => {
-        checkPageBreak(50);
-        
-        doc.setFontSize(12);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(12, 59, 46);
-        doc.text(`Case ${idx + 1}: ${caseItem.case_number || 'Unnamed'}`, margin, yPos);
-        yPos += 8;
-        
-        addKeyValue('Case Type', caseItem.type?.toUpperCase(), 5);
-        addKeyValue('Status', caseItem.status?.toUpperCase(), 5);
-        addKeyValue('Dispute Amount', caseItem.dispute_amount ? `฿${caseItem.dispute_amount.toLocaleString()}` : 'N/A', 5);
-        addKeyValue('Landlord Name', caseItem.landlord_name, 5);
-        addKeyValue('Landlord Email', caseItem.landlord_email, 5);
-        if (caseItem.summary) addKeyValue('Summary', caseItem.summary, 5);
-        if (caseItem.settlement?.amount) {
-          addKeyValue('Settlement Amount', `฿${caseItem.settlement.amount.toLocaleString()}`, 5);
-          addKeyValue('Settlement Date', caseItem.settlement.date, 5);
-        }
-        addKeyValue('Created On', new Date(caseItem.created_date).toLocaleDateString(), 5);
-        yPos += 5;
-      });
-    }
-
-    // === MAINTENANCE REQUESTS ===
-    if (maintenance.length > 0) {
-      doc.addPage();
-      yPos = margin;
-      
-      addSectionHeader(`Maintenance Requests (${maintenance.length})`, '🔧');
-      
-      const activeCount = maintenance.filter(m => m.status !== 'completed' && m.status !== 'rejected').length;
-      const completedCount = maintenance.filter(m => m.status === 'completed').length;
-      
-      doc.setFillColor(255, 247, 237);
-      doc.roundedRect(margin, yPos, contentWidth, 15, 2, 2, 'F');
-      yPos += 5;
-      doc.setFontSize(10);
-      doc.setTextColor(245, 158, 11);
-      doc.setFont(undefined, 'bold');
-      doc.text(`Active: ${activeCount} | Completed: ${completedCount}`, margin + 5, yPos);
-      yPos += 15;
-
-      maintenance.forEach((req, idx) => {
-        checkPageBreak(40);
-        
-        doc.setFontSize(11);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(12, 59, 46);
-        doc.text(`Request ${idx + 1}: ${req.request_number || 'N/A'}`, margin, yPos);
-        yPos += 8;
-        
-        addKeyValue('Issue Title', req.issue_title, 5);
-        addKeyValue('Description', req.description, 5);
-        addKeyValue('Category', req.category?.toUpperCase(), 5);
-        addKeyValue('Priority', req.priority?.toUpperCase(), 5);
-        addKeyValue('Status', req.status?.toUpperCase(), 5);
-        addKeyValue('Property', req.property_address, 5);
-        addKeyValue('Reported Date', req.reported_date, 5);
-        if (req.resolved_date) addKeyValue('Resolved Date', req.resolved_date, 5);
-        addKeyValue('Photos Attached', req.photo_urls?.length || 0, 5);
-        yPos += 5;
-      });
-    }
-
-    // === NOTIFICATIONS LOG ===
-    if (notifications.length > 0) {
-      doc.addPage();
-      yPos = margin;
-      
-      addSectionHeader(`Notification History (${notifications.length})`, '🔔');
-      
-      const sentCount = notifications.filter(n => n.status === 'sent').length;
-      const failedCount = notifications.filter(n => n.status === 'failed').length;
-      
-      doc.setFillColor(243, 232, 255);
-      doc.roundedRect(margin, yPos, contentWidth, 15, 2, 2, 'F');
-      yPos += 5;
-      doc.setFontSize(10);
-      doc.setTextColor(139, 92, 246);
-      doc.setFont(undefined, 'bold');
-      doc.text(`Sent: ${sentCount} | Failed: ${failedCount}`, margin + 5, yPos);
-      yPos += 15;
-
-      const recentNotifications = notifications.slice(0, 20);
-      
-      recentNotifications.forEach((notif, idx) => {
-        checkPageBreak(12);
-        doc.setFontSize(9);
-        doc.setTextColor(notif.status === 'sent' ? 16 : 239, notif.status === 'sent' ? 185 : 68, notif.status === 'sent' ? 129 : 68);
-        doc.text(`${new Date(notif.created_date).toLocaleDateString()} - ${notif.notification_type} via ${notif.channel}`, margin + 5, yPos);
-        yPos += 6;
-      });
-      
-      if (notifications.length > 20) {
-        yPos += 3;
-        doc.setFontSize(8);
-        doc.setTextColor(128, 128, 128);
-        doc.text(`... and ${notifications.length - 20} more notifications`, margin + 5, yPos);
-        yPos += 10;
-      }
-    }
-
-    // === PDPA RIGHTS PAGE ===
-    doc.addPage();
-    yPos = margin;
-
-    doc.setFillColor(12, 59, 46);
-    doc.rect(0, 0, pageWidth, 60, 'F');
-    
-    doc.setFontSize(20);
-    doc.setTextColor(255, 255, 255);
-    doc.setFont(undefined, 'bold');
-    doc.text('Your Rights Under PDPA', pageWidth / 2, 30, { align: 'center' });
-    
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-    doc.text('Personal Data Protection Act B.E. 2562 (2019)', pageWidth / 2, 42, { align: 'center' });
-
-    yPos = 75;
-
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont(undefined, 'normal');
-    
-    const introText = `This export includes all personal data we hold about you as required by Thailand's Personal Data Protection Act (PDPA). As a data subject, you have the following rights:`;
-    const splitIntro = doc.splitTextToSize(introText, contentWidth);
-    splitIntro.forEach(line => {
-      doc.text(line, margin, yPos);
-      yPos += 5;
-    });
-    yPos += 8;
-
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(12, 59, 46);
-    doc.text('Your Data Rights:', margin, yPos);
-    yPos += 10;
-
-    const rights = [
-      {
-        title: 'Right to Access',
-        desc: 'You can request to see what personal data we hold about you (this export fulfills that right)'
-      },
-      {
-        title: 'Right to Rectification',
-        desc: 'Update your data anytime in Account Settings or contact us for corrections'
-      },
-      {
-        title: 'Right to Erasure',
-        desc: 'Request complete deletion of your account and all associated data'
-      },
-      {
-        title: 'Right to Data Portability',
-        desc: 'Download and transfer your data (this PDF serves as portable format)'
-      },
-      {
-        title: 'Right to Object',
-        desc: 'Object to processing of your data for specific purposes'
-      },
-      {
-        title: 'Right to Withdraw Consent',
-        desc: 'Withdraw consent for data processing at any time'
-      },
-      {
-        title: 'Right to Restrict Processing',
-        desc: 'Request limitation on how we process your data'
-      }
-    ];
-
-    rights.forEach(right => {
-      checkPageBreak(18);
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'bold');
-      doc.setTextColor(12, 59, 46);
-      doc.text(`• ${right.title}`, margin + 5, yPos);
-      yPos += 6;
-      doc.setFontSize(9);
-      doc.setFont(undefined, 'normal');
-      doc.setTextColor(64, 64, 64);
-      const splitDesc = doc.splitTextToSize(right.desc, contentWidth - 15);
-      splitDesc.forEach(line => {
-        doc.text(line, margin + 10, yPos);
-        yPos += 5;
-      });
-      yPos += 3;
-    });
-
-    yPos += 10;
-    checkPageBreak(40);
-
-    doc.setFillColor(254, 243, 199);
-    doc.roundedRect(margin, yPos, contentWidth, 35, 3, 3, 'F');
-    yPos += 8;
-    
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(146, 64, 14);
-    doc.text('Contact Information', margin + 5, yPos);
-    yPos += 8;
-    
-    doc.setFontSize(9);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(120, 53, 15);
-    doc.text('Data Protection Officer: dpo@leaseshield.asia', margin + 5, yPos);
-    yPos += 6;
-    doc.text('Privacy Inquiries: privacy@leaseshield.asia', margin + 5, yPos);
-    yPos += 6;
-    doc.text('General Support: support@leaseshield.asia', margin + 5, yPos);
-    yPos += 10;
-
-    doc.setFontSize(8);
-    doc.setTextColor(120, 113, 108);
-    const responseText = 'We will respond to all data rights requests within 30 days as required by PDPA.';
-    doc.text(responseText, margin + 5, yPos);
-
-    // === FOOTER ON EVERY PAGE ===
-    const totalPages = doc.internal.pages.length - 1;
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(128, 128, 128);
-      doc.text(
-        `Lease Shield - Fair. Transparent. Protected. | Page ${i} of ${totalPages}`,
-        pageWidth / 2,
-        pageHeight - 10,
-        { align: 'center' }
-      );
-      doc.text(
-        `Export Date: ${new Date().toLocaleDateString()}`,
-        pageWidth - margin,
-        pageHeight - 10,
-        { align: 'right' }
-      );
-    }
-
-    const pdfBytes = doc.output('arraybuffer');
-
-    return new Response(pdfBytes, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="LeaseShield_Personal_Data_${user.email.split('@')[0]}_${new Date().toISOString().split('T')[0]}.pdf"`
-      }
-    });
-
-  } catch (error) {
-    console.error('Data export error:', error);
-    return Response.json({ 
-      error: 'Failed to export data', 
-      details: error.message 
-    }, { status: 500 });
-  }
-});
+        addKeyValue('Paid Date', deposit.deposit_pai
