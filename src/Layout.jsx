@@ -381,7 +381,7 @@ export default function Layout({ children, currentPageName }) {
               className="hidden md:block h-12 w-12 flex-shrink-0"
             />
             <span className="font-bold text-ls-forest text-base sm:text-lg truncate hidden md:block" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
-              {strings.appName}
+              {strings.appName || "LEASE SHIELD"}
             </span>
             {accessLevel !== 'user' && (
               <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
@@ -392,7 +392,7 @@ export default function Layout({ children, currentPageName }) {
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <Link to={createPageUrl("Search")}>
               <button
-                aria-label={strings.search}
+                aria-label={strings.search || "Search"}
                 onClick={() => haptic.light()}
                 style={{
                   width: '36px',
