@@ -424,14 +424,14 @@ export default function Layout({ children, currentPageName }) {
                   if (!isActiveTab(createPageUrl("Search"))) {
                     e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
                     const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = '#0C3B2E';
+                    if (icon) icon.style.color = isDarkMode ? '#ECEFED' : '#0C3B2E';
                   }
                 }}
               >
                 <Search 
                   className="w-4 h-4 sm:w-5 sm:h-5" 
                   style={{ 
-                    color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : '#0C3B2E',
+                    color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : (isDarkMode ? '#ECEFED' : '#0C3B2E'),
                     transition: 'color 0.2s'
                   }}
                 />
@@ -466,14 +466,14 @@ export default function Layout({ children, currentPageName }) {
                   if (!isActiveTab(createPageUrl("Account"))) {
                     e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
                     const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = '#0C3B2E';
+                    if (icon) icon.style.color = isDarkMode ? '#ECEFED' : '#0C3B2E';
                   }
                 }}
               >
                 <User 
                   className="w-4 h-4 sm:w-5 sm:h-5" 
                   style={{ 
-                    color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : '#0C3B2E',
+                    color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : (isDarkMode ? '#ECEFED' : '#0C3B2E'),
                     transition: 'color 0.2s'
                   }}
                 />
