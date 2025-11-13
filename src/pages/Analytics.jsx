@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,16 +17,25 @@ import {
   Target,
   Award,
   Zap,
-  BarChart3
+  BarChart3,
+  AlertTriangle,
+  TrendingDown,
+  Loader2
 } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from "recharts";
-import { format, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths, parseISO } from "date-fns";
+import { format, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths, addDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { haptic } from "../components/shared/HapticFeedback";
+import PullToRefresh from "../components/shared/PullToRefresh";
+import { ToastProvider, useToast } from "../components/shared/Toast";
 
-export default function Analytics() {
+function AnalyticsContent() {
   const navigate = useNavigate();
-  const [timeRange, setTimeRange] = useState('6m'); // 1m, 3m, 6m, 1y, all
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const [timeRange, setTimeRange] = useState('6m');
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -54,6 +63,12 @@ export default function Analytics() {
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
+    enabled: !!user,
+  });
+
+  const { data: maintenanceRequests = [] } = useQuery({
+    queryKey: ['maintenance'],
+    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
 
@@ -104,7 +119,8 @@ export default function Analytics() {
       protectionScore: "Protection Score",
       noDataYet: "Not enough data yet",
       uploadMore: "Upload more documents and track deposits to see insights",
-      exportReport: "Export Report",
+      exportReport: "Export PDF Report",
+      exportJson: "Export JSON",
       exporting: "Exporting...",
       deposits: "Deposits",
       leases: "Leases",
@@ -126,6 +142,24 @@ export default function Analytics() {
       firstCase: "First Case Opened",
       documentCollector: "Document Collector",
       proactiveUser: "Proactive User",
+      upcomingDeadlines: "Upcoming Deadlines",
+      riskInsights: "Risk Insights",
+      next30Days: "Next 30 Days",
+      depositReturns: "Deposit Returns",
+      leaseNotices: "Lease Notices",
+      maintenanceActive: "Active Maintenance",
+      requests: "requests",
+      noUpcoming: "No upcoming deadlines",
+      allOnTrack: "You're all on track!",
+      refreshed: "Refreshed successfully",
+      exportSuccess: "Report exported successfully",
+      exportFailed: "Export failed",
+      highRiskDeposits: "High Risk Deposits",
+      overdueReturns: "Overdue Returns",
+      urgentCases: "Urgent Cases",
+      riskFactors: "Risk Factors",
+      dueIn: "Due in",
+      overdue: "Overdue by",
     },
     th: {
       title: "การวิเคราะห์และข้อมูลเชิงลึก",
@@ -159,7 +193,8 @@ export default function Analytics() {
       protectionScore: "คะแนนการป้องกัน",
       noDataYet: "ยังไม่มีข้อมูลเพียงพอ",
       uploadMore: "อัปโหลดเอกสารเพิ่มและติดตามเงินมัดจำเพื่อดูข้อมูลเชิงลึก",
-      exportReport: "ส่งออกรายงาน",
+      exportReport: "ส่งออก PDF",
+      exportJson: "ส่งออก JSON",
       exporting: "กำลังส่งออก...",
       deposits: "เงินมัดจำ",
       leases: "สัญญาเช่า",
@@ -181,10 +216,40 @@ export default function Analytics() {
       firstCase: "เปิดคดีแรก",
       documentCollector: "นักสะสมเอกสาร",
       proactiveUser: "ผู้ใช้งานเชิงรุก",
+      upcomingDeadlines: "กำหนดเวลาที่ใกล้มาถึง",
+      riskInsights: "ข้อมูลเชิงลึกความเสี่ยง",
+      next30Days: "30 วันข้างหน้า",
+      depositReturns: "การคืนเงินมัดจำ",
+      leaseNotices: "การแจ้งสัญญาเช่า",
+      maintenanceActive: "การซ่อมบำรุงที่ใช้งาน",
+      requests: "คำขอ",
+      noUpcoming: "ไม่มีกำหนดเวลาที่ใกล้มาถึง",
+      allOnTrack: "คุณอยู่ในเส้นทางที่ถูกต้อง!",
+      refreshed: "รีเฟรชสำเร็จ",
+      exportSuccess: "ส่งออกรายงานสำเร็จ",
+      exportFailed: "ส่งออกล้มเหลว",
+      highRiskDeposits: "เงินมัดจำความเสี่ยงสูง",
+      overdueReturns: "การคืนที่เกินกำหนด",
+      urgentCases: "คดีเร่งด่วน",
+      riskFactors: "ปัจจัยความเสี่ยง",
+      dueIn: "ครบกำหนดใน",
+      overdue: "เกินกำหนดไป",
     }
   };
 
   const strings = t[language];
+
+  const handleRefresh = async () => {
+    haptic.light();
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['deposits'] }),
+      queryClient.invalidateQueries({ queryKey: ['cases'] }),
+      queryClient.invalidateQueries({ queryKey: ['documents'] }),
+      queryClient.invalidateQueries({ queryKey: ['leases'] }),
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] })
+    ]);
+    toast.success(strings.refreshed);
+  };
 
   // Calculate key metrics
   const totalDepositValue = deposits.reduce((sum, d) => sum + (d.deposit_amount || 0), 0);
@@ -225,13 +290,8 @@ export default function Analytics() {
       case '3m': return subMonths(now, 3);
       case '6m': return subMonths(now, 6);
       case '1y': return subMonths(now, 12);
-      default: return new Date('2020-01-01'); // all time
+      default: return new Date('2020-01-01');
     }
-  };
-
-  const filterByDate = (items) => {
-    const cutoffDate = getFilteredDate();
-    return items.filter(item => new Date(item.created_date) >= cutoffDate);
   };
 
   // Monthly activity data
@@ -272,6 +332,98 @@ export default function Analytics() {
   };
 
   const monthlyData = getMonthlyData();
+
+  // Upcoming deadlines in next 30 days
+  const getUpcomingDeadlines = () => {
+    const now = new Date();
+    const next30Days = addDays(now, 30);
+    
+    const upcomingDeposits = deposits.filter(d => {
+      if (!d.expected_return_date || d.status !== 'tracking') return false;
+      const returnDate = new Date(d.expected_return_date);
+      return returnDate >= now && returnDate <= next30Days;
+    }).map(d => ({
+      type: 'deposit',
+      date: new Date(d.expected_return_date),
+      title: `${strings.depositReturns}: ฿${d.deposit_amount.toLocaleString()}`,
+      property: d.property_address,
+      daysUntil: differenceInDays(new Date(d.expected_return_date), now)
+    }));
+
+    const upcomingNotices = leases.filter(l => {
+      if (!l.notice_deadline || !l.notice_alerts_enabled) return false;
+      const noticeDate = new Date(l.notice_deadline);
+      return noticeDate >= now && noticeDate <= next30Days;
+    }).map(l => ({
+      type: 'notice',
+      date: new Date(l.notice_deadline),
+      title: strings.leaseNotices,
+      property: l.property_address,
+      daysUntil: differenceInDays(new Date(l.notice_deadline), now)
+    }));
+
+    return [...upcomingDeposits, ...upcomingNotices].sort((a, b) => a.date - b.date);
+  };
+
+  const upcomingDeadlines = getUpcomingDeadlines();
+
+  // Risk insights
+  const getRiskInsights = () => {
+    const now = new Date();
+    const risks = [];
+
+    // Overdue deposits
+    const overdueDeposits = deposits.filter(d => {
+      if (!d.expected_return_date || d.status !== 'tracking') return false;
+      return differenceInDays(new Date(d.expected_return_date), now) < 0;
+    });
+    
+    if (overdueDeposits.length > 0) {
+      risks.push({
+        severity: 'high',
+        title: strings.overdueReturns,
+        count: overdueDeposits.length,
+        icon: AlertTriangle,
+        color: '#EF4444'
+      });
+    }
+
+    // Deposits due soon (within 7 days)
+    const urgentDeposits = deposits.filter(d => {
+      if (!d.expected_return_date || d.status !== 'tracking') return false;
+      const daysUntil = differenceInDays(new Date(d.expected_return_date), now);
+      return daysUntil >= 0 && daysUntil <= 7;
+    });
+
+    if (urgentDeposits.length > 0) {
+      risks.push({
+        severity: 'medium',
+        title: strings.highRiskDeposits,
+        count: urgentDeposits.length,
+        icon: Shield,
+        color: '#F59E0B'
+      });
+    }
+
+    // Urgent cases
+    const urgentCases = cases.filter(c => 
+      c.status !== 'closed' && c.flags?.urgent
+    );
+
+    if (urgentCases.length > 0) {
+      risks.push({
+        severity: 'medium',
+        title: strings.urgentCases,
+        count: urgentCases.length,
+        icon: Zap,
+        color: '#8B5CF6'
+      });
+    }
+
+    return risks;
+  };
+
+  const riskInsights = getRiskInsights();
 
   // Cases by type
   const casesByType = [
@@ -334,17 +486,47 @@ export default function Analytics() {
     }
   ];
 
-  const handleExportReport = async () => {
+  const handleExportPdf = async () => {
+    haptic.medium();
+    setExportingPdf(true);
+    try {
+      const response = await base44.functions.invoke('generateDataReport');
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `LeaseShield_Analytics_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      haptic.success();
+      toast.success(strings.exportSuccess);
+    } catch (error) {
+      console.error('Export failed:', error);
+      haptic.error();
+      toast.error(strings.exportFailed);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const handleExportJson = () => {
+    haptic.light();
     const report = {
       generated_at: new Date().toISOString(),
       user: user?.email,
+      time_range: timeRange,
       summary: {
         total_deposits: deposits.length,
         total_deposit_value: totalDepositValue,
         active_cases: activeCasesCount,
         success_rate: successRate,
         total_recovered: totalRecovered,
-        documents_stored: documents.length
+        documents_stored: documents.length,
+        avg_return_time: avgReturnTime,
+        avg_resolution_time: avgResolutionTime
       },
       deposits: deposits.map(d => ({
         amount: d.deposit_amount,
@@ -359,7 +541,10 @@ export default function Analytics() {
         status: c.status,
         amount: c.dispute_amount,
         created: c.created_date
-      }))
+      })),
+      monthly_data: monthlyData,
+      risk_insights: riskInsights,
+      upcoming_deadlines: upcomingDeadlines
     };
 
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
@@ -371,490 +556,641 @@ export default function Analytics() {
     a.click();
     window.URL.revokeObjectURL(url);
     a.remove();
+    toast.success(strings.exportSuccess);
   };
 
   const hasData = deposits.length > 0 || cases.length > 0 || documents.length > 0;
+  const activeMaintenanceCount = maintenanceRequests.filter(r => r.status !== 'completed' && r.status !== 'rejected').length;
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-7xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(createPageUrl("Dashboard"))}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          {strings.back}
-        </Button>
+    <PullToRefresh onRefresh={handleRefresh} colors={colors}>
+      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-7xl mx-auto">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              haptic.light();
+              navigate(createPageUrl("Dashboard"));
+            }}
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {strings.back}
+          </Button>
 
-        {/* Header */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <BarChart3 className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
-              {strings.title}
-            </h1>
-            <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+          <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <BarChart3 className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
+                {strings.title}
+              </h1>
+              <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPdf}
+                disabled={!hasData || exportingPdf}
+              >
+                {exportingPdf ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {strings.exporting}
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    {strings.exportReport}
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportJson}
+                disabled={!hasData}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {strings.exportJson}
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportReport}
-              disabled={!hasData}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {strings.exportReport}
-            </Button>
+
+          <div className="mb-6 flex gap-2 flex-wrap">
+            {[
+              { key: '1m', label: strings.last1Month },
+              { key: '3m', label: strings.last3Months },
+              { key: '6m', label: strings.last6Months },
+              { key: '1y', label: strings.lastYear },
+              { key: 'all', label: strings.allTime }
+            ].map(range => (
+              <button
+                key={range.key}
+                onClick={() => {
+                  haptic.light();
+                  setTimeRange(range.key);
+                }}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  border: `2px solid ${timeRange === range.key ? '#0C3B2E' : colors.borderColor}`,
+                  backgroundColor: timeRange === range.key ? '#0C3B2E' : colors.cardBg,
+                  color: timeRange === range.key ? '#FFFFFF' : colors.textPrimary,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {range.label}
+              </button>
+            ))}
           </div>
-        </div>
 
-        {/* Time Range Selector */}
-        <div className="mb-6 flex gap-2 flex-wrap">
-          {[
-            { key: '1m', label: strings.last1Month },
-            { key: '3m', label: strings.last3Months },
-            { key: '6m', label: strings.last6Months },
-            { key: '1y', label: strings.lastYear },
-            { key: 'all', label: strings.allTime }
-          ].map(range => (
-            <button
-              key={range.key}
-              onClick={() => setTimeRange(range.key)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                border: `2px solid ${timeRange === range.key ? '#0C3B2E' : colors.borderColor}`,
-                backgroundColor: timeRange === range.key ? '#0C3B2E' : colors.cardBg,
-                color: timeRange === range.key ? '#FFFFFF' : colors.textPrimary,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              {range.label}
-            </button>
-          ))}
-        </div>
-
-        {!hasData ? (
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-12 text-center">
-              <BarChart3 className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-              <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                {strings.noDataYet}
-              </h3>
-              <p style={{ color: colors.textSecondary }}>{strings.uploadMore}</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            {/* Key Metrics Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg, borderLeft: '4px solid #0C3B2E' }}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className="w-5 h-5 text-ls-forest" />
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      {strings.totalProtected}
-                    </p>
-                  </div>
-                  <p className="text-2xl font-bold" style={{ color: '#0C3B2E' }}>
-                    ฿{totalDepositValue.toLocaleString()}
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                    {deposits.length} {strings.deposits.toLowerCase()}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg, borderLeft: '4px solid #C7A338' }}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Target className="w-5 h-5 text-ls-gold" />
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      {strings.successRate}
-                    </p>
-                  </div>
-                  <p className="text-2xl font-bold" style={{ color: '#C7A338' }}>
-                    {successRate}%
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                    {resolvedCases.length} {strings.resolved}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg, borderLeft: '4px solid #3B82F6' }}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="w-5 h-5 text-blue-600" />
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      {strings.avgReturnTime}
-                    </p>
-                  </div>
-                  <p className="text-2xl font-bold" style={{ color: '#3B82F6' }}>
-                    {avgReturnTime}
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                    {strings.days}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg, borderLeft: '4px solid #10B981' }}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="w-5 h-5 text-emerald-600" />
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      {strings.documentsStored}
-                    </p>
-                  </div>
-                  <p className="text-2xl font-bold" style={{ color: '#10B981' }}>
-                    {documents.length}
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                    {strings.files}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Charts Row 1 */}
-            <div className="grid lg:grid-cols-2 gap-6 mb-6">
-              {/* Monthly Activity */}
-              <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
-                    <TrendingUp className="w-5 h-5 text-ls-forest" />
-                    {strings.monthlyActivity}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <AreaChart data={monthlyData}>
-                      <defs>
-                        <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#0C3B2E" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#0C3B2E" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="colorCases" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#C7A338" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#C7A338" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke={colors.chartGrid} />
-                      <XAxis dataKey="month" stroke={colors.textSecondary} style={{ fontSize: '12px' }} />
-                      <YAxis stroke={colors.textSecondary} style={{ fontSize: '12px' }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: colors.cardBg,
-                          border: `1px solid ${colors.borderColor}`,
-                          borderRadius: '8px',
-                          color: colors.textPrimary
-                        }}
-                      />
-                      <Legend />
-                      <Area type="monotone" dataKey="deposits" stroke="#0C3B2E" fillOpacity={1} fill="url(#colorDeposits)" name={strings.deposits} />
-                      <Area type="monotone" dataKey="cases" stroke="#C7A338" fillOpacity={1} fill="url(#colorCases)" name={strings.cases} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Document Growth */}
-              <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
-                    <FileText className="w-5 h-5 text-ls-gold" />
-                    {strings.documentGrowth}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={monthlyData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={colors.chartGrid} />
-                      <XAxis dataKey="month" stroke={colors.textSecondary} style={{ fontSize: '12px' }} />
-                      <YAxis stroke={colors.textSecondary} style={{ fontSize: '12px' }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: colors.cardBg,
-                          border: `1px solid ${colors.borderColor}`,
-                          borderRadius: '8px',
-                          color: colors.textPrimary
-                        }}
-                      />
-                      <Bar dataKey="documents" fill="#C7A338" radius={[8, 8, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Charts Row 2 - Pie Charts */}
-            <div className="grid md:grid-cols-3 gap-6 mb-6">
-              {/* Deposits by Status */}
-              {depositsByStatus.length > 0 && (
-                <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                  <CardHeader>
-                    <CardTitle className="text-base" style={{ color: colors.textPrimary }}>
-                      {strings.depositsByStatus}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={depositsByStatus}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={(entry) => entry.value}
-                          outerRadius={70}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {depositsByStatus.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: colors.cardBg,
-                            border: `1px solid ${colors.borderColor}`,
-                            borderRadius: '8px',
-                            color: colors.textPrimary
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="mt-2 space-y-1">
-                      {depositsByStatus.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: item.color }} />
-                            <span style={{ color: colors.textPrimary }}>{item.name}</span>
-                          </div>
-                          <span style={{ color: colors.textSecondary }}>{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Cases by Type */}
-              {casesByType.length > 0 && (
-                <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                  <CardHeader>
-                    <CardTitle className="text-base" style={{ color: colors.textPrimary }}>
-                      {strings.casesByType}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={casesByType}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={(entry) => entry.value}
-                          outerRadius={70}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {casesByType.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: colors.cardBg,
-                            border: `1px solid ${colors.borderColor}`,
-                            borderRadius: '8px',
-                            color: colors.textPrimary
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="mt-2 space-y-1">
-                      {casesByType.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: item.color }} />
-                            <span style={{ color: colors.textPrimary }}>{item.name}</span>
-                          </div>
-                          <span style={{ color: colors.textSecondary }}>{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Cases by Status */}
-              {casesByStatus.length > 0 && (
-                <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                  <CardHeader>
-                    <CardTitle className="text-base" style={{ color: colors.textPrimary }}>
-                      {strings.casesByStatus}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={casesByStatus}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={(entry) => entry.value}
-                          outerRadius={70}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {casesByStatus.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: colors.cardBg,
-                            border: `1px solid ${colors.borderColor}`,
-                            borderRadius: '8px',
-                            color: colors.textPrimary
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="mt-2 space-y-1">
-                      {casesByStatus.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: item.color }} />
-                            <span style={{ color: colors.textPrimary }}>{item.name}</span>
-                          </div>
-                          <span style={{ color: colors.textSecondary }}>{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Achievements */}
-            <Card className="border-none shadow-xl mb-6" style={{
-              background: isDarkMode
-                ? 'linear-gradient(135deg, #2A2D30 0%, #1A1D1F 100%)'
-                : 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)'
-            }}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
-                  <Award className="w-5 h-5 text-ls-gold" />
-                  {strings.achievements}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {achievements.map((achievement) => {
-                    const Icon = achievement.icon;
-                    return (
-                      <div
-                        key={achievement.id}
-                        className="p-4 rounded-xl text-center transition-all"
-                        style={{
-                          backgroundColor: achievement.unlocked
-                            ? `${achievement.color}15`
-                            : colors.borderColor,
-                          border: `2px solid ${achievement.unlocked ? achievement.color : colors.borderColor}`,
-                          opacity: achievement.unlocked ? 1 : 0.5
-                        }}
-                      >
-                        <div
-                          className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center"
-                          style={{
-                            backgroundColor: achievement.unlocked ? achievement.color : colors.textSecondary
-                          }}
-                        >
-                          <Icon className="w-6 h-6 text-white" />
-                        </div>
-                        <p className="text-xs font-semibold" style={{
-                          color: achievement.unlocked ? colors.textPrimary : colors.textSecondary
-                        }}>
-                          {achievement.label}
-                        </p>
-                        {achievement.unlocked && (
-                          <CheckCircle2 className="w-4 h-4 mx-auto mt-2" style={{ color: achievement.color }} />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+          {!hasData ? (
+            <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+              <CardContent className="p-12 text-center">
+                <BarChart3 className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                  {strings.noDataYet}
+                </h3>
+                <p style={{ color: colors.textSecondary }}>{strings.uploadMore}</p>
               </CardContent>
             </Card>
+          ) : (
+            <>
+              {/* Risk Insights & Upcoming Deadlines */}
+              {(riskInsights.length > 0 || upcomingDeadlines.length > 0) && (
+                <div className="grid lg:grid-cols-2 gap-6 mb-6">
+                  {riskInsights.length > 0 && (
+                    <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
+                          <AlertTriangle className="w-5 h-5 text-red-600" />
+                          {strings.riskInsights}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {riskInsights.map((risk, idx) => {
+                            const Icon = risk.icon;
+                            return (
+                              <div
+                                key={idx}
+                                className="p-4 rounded-lg border-2"
+                                style={{
+                                  backgroundColor: isDarkMode ? `${risk.color}10` : `${risk.color}08`,
+                                  borderColor: risk.color
+                                }}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                    style={{ backgroundColor: risk.color }}
+                                  >
+                                    <Icon className="w-5 h-5 text-white" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="font-bold text-sm" style={{ color: colors.textPrimary }}>
+                                      {risk.title}
+                                    </p>
+                                    <p className="text-xs" style={{ color: colors.textSecondary }}>
+                                      {risk.count} {risk.count === 1 ? 'item' : 'items'}
+                                    </p>
+                                  </div>
+                                  <Badge
+                                    className="font-bold"
+                                    style={{
+                                      backgroundColor: risk.color,
+                                      color: '#FFFFFF'
+                                    }}
+                                  >
+                                    {risk.count}
+                                  </Badge>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-            {/* Additional Metrics */}
-            {cases.length > 0 && (
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                  <CardHeader>
-                    <CardTitle className="text-lg" style={{ color: colors.textPrimary }}>
-                      {strings.avgResolutionTime}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4">
-                      <div
-                        className="w-20 h-20 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: '#3B82F620' }}
-                      >
-                        <Clock className="w-10 h-10 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-4xl font-bold" style={{ color: '#3B82F6' }}>
-                          {avgResolutionTime}
-                        </p>
-                        <p className="text-sm" style={{ color: colors.textSecondary }}>
-                          {strings.days}
-                        </p>
-                      </div>
+                  <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
+                        <Calendar className="w-5 h-5 text-ls-forest" />
+                        {strings.upcomingDeadlines}
+                      </CardTitle>
+                      <p className="text-xs" style={{ color: colors.textSecondary }}>
+                        {strings.next30Days}
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      {upcomingDeadlines.length === 0 ? (
+                        <div className="text-center py-8">
+                          <CheckCircle2 className="w-12 h-12 mx-auto mb-2" style={{ color: '#10B981', opacity: 0.5 }} />
+                          <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                            {strings.noUpcoming}
+                          </p>
+                          <p className="text-xs" style={{ color: colors.textSecondary }}>
+                            {strings.allOnTrack}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                          {upcomingDeadlines.map((deadline, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3 rounded-lg border"
+                              style={{
+                                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                                borderColor: deadline.daysUntil <= 7 ? '#F59E0B' : colors.borderColor
+                              }}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                  <p className="font-bold text-sm mb-1" style={{ color: colors.textPrimary }}>
+                                    {deadline.title}
+                                  </p>
+                                  {deadline.property && (
+                                    <p className="text-xs mb-1" style={{ color: colors.textSecondary }}>
+                                      {deadline.property}
+                                    </p>
+                                  )}
+                                  <p className="text-xs" style={{ color: colors.textSecondary }}>
+                                    {format(deadline.date, 'MMM d, yyyy')}
+                                  </p>
+                                </div>
+                                <Badge
+                                  className="text-xs font-bold whitespace-nowrap"
+                                  style={{
+                                    backgroundColor: deadline.daysUntil <= 7 ? '#F59E0B' : '#3B82F6',
+                                    color: '#FFFFFF'
+                                  }}
+                                >
+                                  {deadline.daysUntil} {strings.days}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Key Metrics Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg, borderLeft: '4px solid #0C3B2E' }}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <DollarSign className="w-5 h-5 text-ls-forest" />
+                      <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                        {strings.totalProtected}
+                      </p>
                     </div>
+                    <p className="text-2xl font-bold" style={{ color: '#0C3B2E' }}>
+                      ฿{totalDepositValue.toLocaleString()}
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                      {deposits.length} {strings.deposits.toLowerCase()}
+                    </p>
                   </CardContent>
                 </Card>
 
-                <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                  <CardHeader>
-                    <CardTitle className="text-lg" style={{ color: colors.textPrimary }}>
-                      {strings.totalRecovered}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4">
-                      <div
-                        className="w-20 h-20 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: '#10B98120' }}
-                      >
-                        <DollarSign className="w-10 h-10 text-emerald-600" />
-                      </div>
-                      <div>
-                        <p className="text-4xl font-bold" style={{ color: '#10B981' }}>
-                          ฿{totalRecovered.toLocaleString()}
-                        </p>
-                        <p className="text-sm" style={{ color: colors.textSecondary }}>
-                          {resolvedCases.length} {strings.cases.toLowerCase()}
-                        </p>
-                      </div>
+                <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg, borderLeft: '4px solid #C7A338' }}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Target className="w-5 h-5 text-ls-gold" />
+                      <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                        {strings.successRate}
+                      </p>
                     </div>
+                    <p className="text-2xl font-bold" style={{ color: '#C7A338' }}>
+                      {successRate}%
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                      {resolvedCases.length} {strings.resolved}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg, borderLeft: '4px solid #3B82F6' }}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="w-5 h-5 text-blue-600" />
+                      <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                        {strings.avgReturnTime}
+                      </p>
+                    </div>
+                    <p className="text-2xl font-bold" style={{ color: '#3B82F6' }}>
+                      {avgReturnTime}
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                      {strings.days}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg, borderLeft: '4px solid #10B981' }}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="w-5 h-5 text-emerald-600" />
+                      <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                        {strings.documentsStored}
+                      </p>
+                    </div>
+                    <p className="text-2xl font-bold" style={{ color: '#10B981' }}>
+                      {documents.length}
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                      {strings.files}
+                    </p>
                   </CardContent>
                 </Card>
               </div>
-            )}
-          </>
-        )}
+
+              {/* Charts Row 1 */}
+              <div className="grid lg:grid-cols-2 gap-6 mb-6">
+                <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
+                      <TrendingUp className="w-5 h-5 text-ls-forest" />
+                      {strings.monthlyActivity}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <AreaChart data={monthlyData}>
+                        <defs>
+                          <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#0C3B2E" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#0C3B2E" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorCases" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#C7A338" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#C7A338" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={colors.chartGrid} />
+                        <XAxis dataKey="month" stroke={colors.textSecondary} style={{ fontSize: '12px' }} />
+                        <YAxis stroke={colors.textSecondary} style={{ fontSize: '12px' }} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: colors.cardBg,
+                            border: `1px solid ${colors.borderColor}`,
+                            borderRadius: '8px',
+                            color: colors.textPrimary
+                          }}
+                        />
+                        <Legend />
+                        <Area type="monotone" dataKey="deposits" stroke="#0C3B2E" fillOpacity={1} fill="url(#colorDeposits)" name={strings.deposits} />
+                        <Area type="monotone" dataKey="cases" stroke="#C7A338" fillOpacity={1} fill="url(#colorCases)" name={strings.cases} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
+                      <FileText className="w-5 h-5 text-ls-gold" />
+                      {strings.documentGrowth}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <BarChart data={monthlyData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={colors.chartGrid} />
+                        <XAxis dataKey="month" stroke={colors.textSecondary} style={{ fontSize: '12px' }} />
+                        <YAxis stroke={colors.textSecondary} style={{ fontSize: '12px' }} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: colors.cardBg,
+                            border: `1px solid ${colors.borderColor}`,
+                            borderRadius: '8px',
+                            color: colors.textPrimary
+                          }}
+                        />
+                        <Bar dataKey="documents" fill="#C7A338" radius={[8, 8, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 2 - Pie Charts */}
+              <div className="grid md:grid-cols-3 gap-6 mb-6">
+                {depositsByStatus.length > 0 && (
+                  <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                    <CardHeader>
+                      <CardTitle className="text-base" style={{ color: colors.textPrimary }}>
+                        {strings.depositsByStatus}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={depositsByStatus}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={(entry) => entry.value}
+                            outerRadius={70}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {depositsByStatus.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: colors.cardBg,
+                              border: `1px solid ${colors.borderColor}`,
+                              borderRadius: '8px',
+                              color: colors.textPrimary
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="mt-2 space-y-1">
+                        {depositsByStatus.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: item.color }} />
+                              <span style={{ color: colors.textPrimary }}>{item.name}</span>
+                            </div>
+                            <span style={{ color: colors.textSecondary }}>{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {casesByType.length > 0 && (
+                  <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                    <CardHeader>
+                      <CardTitle className="text-base" style={{ color: colors.textPrimary }}>
+                        {strings.casesByType}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={casesByType}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={(entry) => entry.value}
+                            outerRadius={70}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {casesByType.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: colors.cardBg,
+                              border: `1px solid ${colors.borderColor}`,
+                              borderRadius: '8px',
+                              color: colors.textPrimary
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="mt-2 space-y-1">
+                        {casesByType.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: item.color }} />
+                              <span style={{ color: colors.textPrimary }}>{item.name}</span>
+                            </div>
+                            <span style={{ color: colors.textSecondary }}>{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {casesByStatus.length > 0 && (
+                  <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                    <CardHeader>
+                      <CardTitle className="text-base" style={{ color: colors.textPrimary }}>
+                        {strings.casesByStatus}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={casesByStatus}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={(entry) => entry.value}
+                            outerRadius={70}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {casesByStatus.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: colors.cardBg,
+                              border: `1px solid ${colors.borderColor}`,
+                              borderRadius: '8px',
+                              color: colors.textPrimary
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="mt-2 space-y-1">
+                        {casesByStatus.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: item.color }} />
+                              <span style={{ color: colors.textPrimary }}>{item.name}</span>
+                            </div>
+                            <span style={{ color: colors.textSecondary }}>{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Achievements */}
+              <Card className="border-none shadow-xl mb-6" style={{
+                background: isDarkMode
+                  ? 'linear-gradient(135deg, #2A2D30 0%, #1A1D1F 100%)'
+                  : 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)'
+              }}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
+                    <Award className="w-5 h-5 text-ls-gold" />
+                    {strings.achievements}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    {achievements.map((achievement) => {
+                      const Icon = achievement.icon;
+                      return (
+                        <div
+                          key={achievement.id}
+                          className="p-4 rounded-xl text-center transition-all"
+                          style={{
+                            backgroundColor: achievement.unlocked
+                              ? `${achievement.color}15`
+                              : colors.borderColor,
+                            border: `2px solid ${achievement.unlocked ? achievement.color : colors.borderColor}`,
+                            opacity: achievement.unlocked ? 1 : 0.5
+                          }}
+                        >
+                          <div
+                            className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center"
+                            style={{
+                              backgroundColor: achievement.unlocked ? achievement.color : colors.textSecondary
+                            }}
+                          >
+                            <Icon className="w-6 h-6 text-white" />
+                          </div>
+                          <p className="text-xs font-semibold" style={{
+                            color: achievement.unlocked ? colors.textPrimary : colors.textSecondary
+                          }}>
+                            {achievement.label}
+                          </p>
+                          {achievement.unlocked && (
+                            <CheckCircle2 className="w-4 h-4 mx-auto mt-2" style={{ color: achievement.color }} />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Additional Metrics */}
+              {cases.length > 0 && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                    <CardHeader>
+                      <CardTitle className="text-lg" style={{ color: colors.textPrimary }}>
+                        {strings.avgResolutionTime}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="w-20 h-20 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: '#3B82F620' }}
+                        >
+                          <Clock className="w-10 h-10 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-4xl font-bold" style={{ color: '#3B82F6' }}>
+                            {avgResolutionTime}
+                          </p>
+                          <p className="text-sm" style={{ color: colors.textSecondary }}>
+                            {strings.days}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                    <CardHeader>
+                      <CardTitle className="text-lg" style={{ color: colors.textPrimary }}>
+                        {strings.totalRecovered}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="w-20 h-20 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: '#10B98120' }}
+                        >
+                          <DollarSign className="w-10 h-10 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-4xl font-bold" style={{ color: '#10B981' }}>
+                            ฿{totalRecovered.toLocaleString()}
+                          </p>
+                          <p className="text-sm" style={{ color: colors.textSecondary }}>
+                            {resolvedCases.length} {strings.cases.toLowerCase()}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </PullToRefresh>
+  );
+}
+
+export default function Analytics() {
+  return (
+    <ToastProvider>
+      <AnalyticsContent />
+    </ToastProvider>
   );
 }
