@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -88,6 +89,10 @@ export default function RevenueAnalytics() {
       lite: "Lite",
       protect: "Protect",
       secure: "Secure",
+      accessDenied: "Access Denied",
+      superAdminOnly: "This page is only accessible to Super Admins.",
+      goToDashboard: "Go to Dashboard",
+      users: "users"
     },
     th: {
       title: "วิเคราะห์รายได้",
@@ -122,10 +127,128 @@ export default function RevenueAnalytics() {
       lite: "ไลท์",
       protect: "โปรเทค",
       secure: "ซีเคียว",
+      accessDenied: "ไม่ได้รับอนุญาต",
+      superAdminOnly: "หน้านี้เฉพาะสำหรับ Super Admin เท่านั้น",
+      goToDashboard: "ไปที่แดชบอร์ด",
+      users: "ผู้ใช้"
+    },
+    zh: {
+      title: "收入分析",
+      subtitle: "业务指标和财务洞察",
+      back: "返回管理",
+      totalRevenue: "总收入",
+      mrr: "月度经常性收入",
+      arr: "年度运行率",
+      avgRevPerUser: "每用户平均收入",
+      totalUsers: "总用户数",
+      paidUsers: "付费用户",
+      freeUsers: "免费用户",
+      conversionRate: "转化率",
+      revenueByTier: "按等级分类的收入",
+      usersByTier: "按等级分类的用户",
+      revenueOverTime: "收入趋势",
+      newUsersOverTime: "新用户趋势",
+      creditPurchases: "信件信用购买",
+      lifetimeValue: "生命周期价值",
+      churnRate: "流失率",
+      recentTransactions: "最近交易",
+      exportData: "导出数据",
+      last30Days: "最近30天",
+      last3Months: "最近3个月",
+      last6Months: "最近6个月",
+      last12Months: "最近12个月",
+      allTime: "所有时间",
+      subscriptions: "订阅",
+      oneTime: "一次性付款",
+      credits: "信件信用",
+      free: "免费",
+      lite: "轻量",
+      protect: "保护",
+      secure: "安全",
+      accessDenied: "访问被拒绝",
+      superAdminOnly: "此页面仅供超级管理员访问。",
+      goToDashboard: "转到仪表板",
+      users: "用户"
+    },
+    ja: {
+      title: "収益分析",
+      subtitle: "ビジネス指標と財務インサイト",
+      back: "管理に戻る",
+      totalRevenue: "総収益",
+      mrr: "月次経常収益",
+      arr: "年間実行率",
+      avgRevPerUser: "ユーザーあたりの平均収益",
+      totalUsers: "総ユーザー数",
+      paidUsers: "有料ユーザー",
+      freeUsers: "無料ユーザー",
+      conversionRate: "コンバージョン率",
+      revenueByTier: "ティア別収益",
+      usersByTier: "ティア別ユーザー",
+      revenueOverTime: "収益の推移",
+      newUsersOverTime: "新規ユーザーの推移",
+      creditPurchases: "レタークレジット購入",
+      lifetimeValue: "生涯価値",
+      churnRate: "解約率",
+      recentTransactions: "最近の取引",
+      exportData: "データエクスポート",
+      last30Days: "過去30日間",
+      last3Months: "過去3ヶ月",
+      last6Months: "過去6ヶ月",
+      last12Months: "過去12ヶ月",
+      allTime: "全期間",
+      subscriptions: "サブスクリプション",
+      oneTime: "一度だけの支払い",
+      credits: "レタークレジット",
+      free: "無料",
+      lite: "ライト",
+      protect: "プロテクト",
+      secure: "セキュア",
+      accessDenied: "アクセス拒否",
+      superAdminOnly: "このページはスーパー管理者のみがアクセスできます。",
+      goToDashboard: "ダッシュボードへ",
+      users: "ユーザー"
+    },
+    ko: {
+      title: "수익 분석",
+      subtitle: "비즈니스 지표 및 재무 통찰력",
+      back: "관리로 돌아가기",
+      totalRevenue: "총 수익",
+      mrr: "월간 반복 수익",
+      arr: "연간 실행률",
+      avgRevPerUser: "사용자당 평균 수익",
+      totalUsers: "총 사용자",
+      paidUsers: "유료 사용자",
+      freeUsers: "무료 사용자",
+      conversionRate: "전환율",
+      revenueByTier: "등급별 수익",
+      usersByTier: "등급별 사용자",
+      revenueOverTime: "시간별 수익",
+      newUsersOverTime: "시간별 신규 사용자",
+      creditPurchases: "편지 크레딧 구매",
+      lifetimeValue: "평생 가치",
+      churnRate: "이탈률",
+      recentTransactions: "최근 거래",
+      exportData: "데이터 내보내기",
+      last30Days: "최근 30일",
+      last3Months: "최근 3개월",
+      last6Months: "최근 6개월",
+      last12Months: "최근 12개월",
+      allTime: "전체 기간",
+      subscriptions: "구독",
+      oneTime: "일회성 결제",
+      credits: "편지 크레딧",
+      free: "무료",
+      lite: "라이트",
+      protect: "프로텍트",
+      secure: "시큐어",
+      accessDenied: "액세스 거부됨",
+      superAdminOnly: "이 페이지는 슈퍼 관리자만 액세스할 수 있습니다.",
+      goToDashboard: "대시보드로 이동",
+      users: "사용자"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   if (!user || user.access_level !== 'super_admin') {
     return (
@@ -134,16 +257,16 @@ export default function RevenueAnalytics() {
           <CardContent className="p-8 text-center">
             <Shield className="w-16 h-16 mx-auto mb-4 text-red-500" />
             <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              Access Denied
+              {strings.accessDenied}
             </h2>
             <p style={{ color: colors.textSecondary }}>
-              This page is only accessible to Super Admins.
+              {strings.superAdminOnly}
             </p>
             <Button 
               onClick={() => navigate(createPageUrl("Dashboard"))}
               className="mt-4"
             >
-              Go to Dashboard
+              {strings.goToDashboard}
             </Button>
           </CardContent>
         </Card>
@@ -390,7 +513,7 @@ export default function RevenueAnalytics() {
                 {conversionRate.toFixed(1)}%
               </p>
               <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
-                {paidUsers.length} / {allUsers.length} {language === 'th' ? 'ผู้ใช้' : 'users'}
+                {paidUsers.length} / {allUsers.length} {strings.users}
               </p>
             </CardContent>
           </Card>
