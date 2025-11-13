@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -132,10 +133,82 @@ export default function ScanPreview() {
       viewDeposits: "ดูเงินมัดจำ",
       depositAmount: "เงินมัดจำ",
       leaseScanned: "วิเคราะห์สัญญาเช่าสำเร็จ!"
+    },
+    zh: {
+      backToScans: "返回扫描",
+      riskScore: "风险评分",
+      summary: "摘要",
+      topIssues: "发现的主要问题",
+      allIssues: "发现的所有问题",
+      viewFullReport: "查看完整报告",
+      viewLease: "查看租约",
+      lowRisk: "低风险",
+      moderateRisk: "中等风险",
+      highRisk: "高风险",
+      criticalRisk: "严重风险",
+      loading: "正在加载扫描结果...",
+      noScanFound: "未找到扫描",
+      noScanDesc: "找不到您要查找的扫描。",
+      nextStep: "✅ 下一步",
+      nextStepTitle: "保护您的押金",
+      nextStepDesc: "现在您的租约已扫描，追踪您的押金以确保按时返还。",
+      trackDeposit: "立即追踪押金",
+      depositTracked: "押金已追踪",
+      viewDeposits: "查看押金",
+      depositAmount: "押金",
+      leaseScanned: "租约分析成功！"
+    },
+    ja: {
+      backToScans: "スキャンに戻る",
+      riskScore: "リスクスコア",
+      summary: "概要",
+      topIssues: "見つかった主な問題",
+      allIssues: "見つかったすべての問題",
+      viewFullReport: "完全なレポートを表示",
+      viewLease: "賃貸契約を表示",
+      lowRisk: "低リスク",
+      moderateRisk: "中リスク",
+      highRisk: "高リスク",
+      criticalRisk: "重大リスク",
+      loading: "スキャン結果を読み込み中...",
+      noScanFound: "スキャンが見つかりません",
+      noScanDesc: "お探しのスキャンが見つかりませんでした。",
+      nextStep: "✅ 次のステップ",
+      nextStepTitle: "敷金を保護",
+      nextStepDesc: "賃貸契約がスキャンされたので、敷金を追跡して時間通りに返金されることを確認します。",
+      trackDeposit: "今すぐ敷金を追跡",
+      depositTracked: "敷金は既に追跡中",
+      viewDeposits: "敷金を表示",
+      depositAmount: "敷金",
+      leaseScanned: "賃貸契約分析成功！"
+    },
+    ko: {
+      backToScans: "스캔으로 돌아가기",
+      riskScore: "위험 점수",
+      summary: "요약",
+      topIssues: "발견된 주요 문제",
+      allIssues: "발견된 모든 문제",
+      viewFullReport: "전체 보고서 보기",
+      viewLease: "임대 계약 보기",
+      lowRisk: "낮은 위험",
+      moderateRisk: "중간 위험",
+      highRisk: "높은 위험",
+      criticalRisk: "심각한 위험",
+      loading: "스캔 결과 로딩 중...",
+      noScanFound: "스캔을 찾을 수 없음",
+      noScanDesc: "찾으시는 스캔을 찾을 수 없습니다.",
+      nextStep: "✅ 다음 단계",
+      nextStepTitle: "보증금 보호",
+      nextStepDesc: "이제 임대 계약이 스캔되었으므로 제때 반환되도록 보증금을 추적하세요.",
+      trackDeposit: "지금 보증금 추적",
+      depositTracked: "보증금이 이미 추적 중",
+      viewDeposits: "보증금 보기",
+      depositAmount: "보증금",
+      leaseScanned: "임대 계약 분석 성공！"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   const getRiskColor = (score) => {
     if (score <= 30) return '#10B981';

@@ -22,7 +22,7 @@ import {
   Shield,
   Eye,
   ExternalLink,
-  Loader2 // Added Loader2 import
+  Loader2 
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -70,7 +70,7 @@ export default function LeaseDetails() {
     },
     onError: (error) => {
       console.error('Update failed:', error);
-      alert(language === 'th' 
+      alert(user?.language === 'th' 
         ? 'ไม่สามารถบันทึกการเปลี่ยนแปลงได้ กรุณาลองอีกครั้ง' 
         : 'Failed to save changes. Please try again.');
     }
@@ -106,6 +106,8 @@ export default function LeaseDetails() {
       monthlyRent: "Monthly Rent",
       securityDeposit: "Security Deposit",
       leasePeriod: "Lease Period",
+      leaseStart: "Lease Start",
+      leaseEnd: "Lease End",
       to: "to",
       language: "Language",
       noticeSettings: "Notice Settings",
@@ -140,6 +142,8 @@ export default function LeaseDetails() {
       monthlyRent: "ค่าเช่ารายเดือน",
       securityDeposit: "เงินมัดจำ",
       leasePeriod: "ระยะเวลาสัญญา",
+      leaseStart: "วันเริ่มสัญญา",
+      leaseEnd: "วันสิ้นสุดสัญญา",
       to: "ถึง",
       language: "ภาษา",
       noticeSettings: "การตั้งค่าการแจ้งเตือน",
@@ -163,10 +167,118 @@ export default function LeaseDetails() {
       noticeHelp: "จำนวนวันก่อนสัญญาหมดอายุที่ต้องแจ้งเจ้าของบ้าน",
       deadlineCalculated: "คำนวณจากวันสิ้นสุดสัญญาและระยะเวลาแจ้งล่วงหน้า",
       enableAlertsHelp: "รับการแจ้งเตือน 30, 7 และ 3 วันก่อนถึงกำหนดแจ้ง"
+    },
+    zh: {
+      leaseDetails: "租约详情",
+      loading: "加载中...",
+      notFound: "未找到租约",
+      backToLeases: "返回租约",
+      basicInfo: "基本信息",
+      propertyAddress: "物业地址",
+      monthlyRent: "月租金",
+      securityDeposit: "押金",
+      leasePeriod: "租期",
+      leaseStart: "租约开始",
+      leaseEnd: "租约结束",
+      to: "至",
+      language: "语言",
+      noticeSettings: "通知设置",
+      noticeAlertsEnabled: "启用通知提醒",
+      noticePeriod: "提前通知期（天数）",
+      noticeDeadline: "通知截止日期",
+      edit: "编辑",
+      save: "保存",
+      cancel: "取消",
+      days: "天",
+      riskAnalysis: "风险分析",
+      riskScore: "风险评分",
+      viewFullReport: "查看完整报告",
+      viewScanResults: "查看扫描结果",
+      actions: "操作",
+      viewLease: "查看租约文档",
+      createDepositTracker: "创建押金追踪器",
+      generateLetter: "生成信件",
+      deleteWarning: "删除此租约？",
+      delete: "删除租约",
+      noticeHelp: "租约结束前需要通知房东的天数",
+      deadlineCalculated: "根据租约结束日期和提前通知期计算",
+      enableAlertsHelp: "在通知截止日期前30、7和3天收到提醒"
+    },
+    ja: {
+      leaseDetails: "賃貸契約の詳細",
+      loading: "読み込み中...",
+      notFound: "賃貸契約が見つかりません",
+      backToLeases: "賃貸契約に戻る",
+      basicInfo: "基本情報",
+      propertyAddress: "物件住所",
+      monthlyRent: "月額家賃",
+      securityDeposit: "敷金",
+      leasePeriod: "賃貸期間",
+      leaseStart: "契約開始",
+      leaseEnd: "契約終了",
+      to: "から",
+      language: "言語",
+      noticeSettings: "通知設定",
+      noticeAlertsEnabled: "通知アラート有効",
+      noticePeriod: "通知期間（日数）",
+      noticeDeadline: "通知期限",
+      edit: "編集",
+      save: "保存",
+      cancel: "キャンセル",
+      days: "日",
+      riskAnalysis: "リスク分析",
+      riskScore: "リスクスコア",
+      viewFullReport: "完全なレポートを表示",
+      viewScanResults: "スキャン結果を表示",
+      actions: "アクション",
+      viewLease: "賃貸契約書を表示",
+      createDepositTracker: "デポジットトラッカーを作成",
+      generateLetter: "レターを生成",
+      deleteWarning: "この賃貸契約を削除しますか？",
+      delete: "賃貸契約を削除",
+      noticeHelp: "契約終了前に家主に通知する日数",
+      deadlineCalculated: "契約終了日と通知期間に基づいて計算",
+      enableAlertsHelp: "通知期限の30日前、7日前、3日前にリマインダーを受け取る"
+    },
+    ko: {
+      leaseDetails: "임대 계약 세부 정보",
+      loading: "로딩 중...",
+      notFound: "임대 계약을 찾을 수 없음",
+      backToLeases: "임대 계약으로 돌아가기",
+      basicInfo: "기본 정보",
+      propertyAddress: "부동산 주소",
+      monthlyRent: "월 임대료",
+      securityDeposit: "보증금",
+      leasePeriod: "임대 기간",
+      leaseStart: "계약 시작",
+      leaseEnd: "계약 종료",
+      to: "~",
+      language: "언어",
+      noticeSettings: "통지 설정",
+      noticeAlertsEnabled: "통지 알림 활성화",
+      noticePeriod: "통지 기간 (일)",
+      noticeDeadline: "통지 마감일",
+      edit: "편집",
+      save: "저장",
+      cancel: "취소",
+      days: "일",
+      riskAnalysis: "위험 분석",
+      riskScore: "위험 점수",
+      viewFullReport: "전체 보고서 보기",
+      viewScanResults: "스캔 결과 보기",
+      actions: "작업",
+      viewLease: "임대 계약서 보기",
+      createDepositTracker: "보증금 추적기 생성",
+      generateLetter: "편지 생성",
+      deleteWarning: "이 임대 계약을 삭제하시겠습니까?",
+      delete: "임대 계약 삭제",
+      noticeHelp: "임대 종료 전에 집주인에게 통지할 일수",
+      deadlineCalculated: "임대 종료일과 통지 기간을 기반으로 계산",
+      enableAlertsHelp: "통지 마감일 30일, 7일, 3일 전에 알림 받기"
     }
   };
 
-  const strings = t[language];
+  const strings = t[language] || t.en;
 
   const handleToggleAlerts = async (enabled) => {
     await updateLeaseMutation.mutateAsync({
