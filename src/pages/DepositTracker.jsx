@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,14 +17,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { haptic } from "../components/shared/HapticFeedback";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import DebouncedSearch from "../components/shared/DebouncedSearch";
 
 function DepositTrackerContent() {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const toast = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
   const [expandedDeposit, setExpandedDeposit] = useState(null);
   const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
   const [selectedDispute, setSelectedDispute] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     deposit_amount: '',
     deposit_paid_date: '',
@@ -69,7 +70,7 @@ function DepositTrackerContent() {
         rent_alert_days_before: 3,
         notes: ''
       });
-      toast.success(user?.language === 'th' ? 'บันทึกสำเร็จ' : 'Saved successfully');
+      toast.success(language === 'th' ? 'บันทึกสำเร็จ' : 'Saved successfully');
     },
     onError: (error) => {
       console.error('Failed to create deposit:', error);
@@ -83,7 +84,7 @@ function DepositTrackerContent() {
     mutationFn: ({ id, data }) => base44.entities.DepositTracker.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
-      toast.success(user?.language === 'th' ? 'อัปเดตสำเร็จ' : 'Updated successfully');
+      toast.success(language === 'th' ? 'อัปเดตสำเร็จ' : 'Updated successfully');
     },
   });
 
@@ -91,7 +92,7 @@ function DepositTrackerContent() {
     mutationFn: (id) => base44.entities.DepositTracker.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
-      toast.success(user?.language === 'th' ? 'ลบสำเร็จ' : 'Deleted successfully');
+      toast.success(language === 'th' ? 'ลบสำเร็จ' : 'Deleted successfully');
     },
   });
 
@@ -151,7 +152,6 @@ function DepositTrackerContent() {
       alertEnabled: "Alert enabled",
       daysBeforeDue: "days before due",
       protectedBadge: "Protected",
-      upgradeForShield: "Upgrade for Deposit Shield",
       delete: "Delete",
       confirmDelete: "Are you sure you want to delete this deposit?",
       saving: "Saving...",
@@ -165,6 +165,9 @@ function DepositTrackerContent() {
       openCaseToGet: "Open a case to get: Expert review, letter templates, and negotiation support",
       openCase: "Open Case",
       refreshed: "Refreshed successfully",
+      searchDeposits: "Search by property address...",
+      noResultsFound: "No deposits found",
+      tryDifferentSearch: "Try a different search term",
     },
     th: {
       depositTracker: "ติดตามเงินมัดจำ",
@@ -198,7 +201,6 @@ function DepositTrackerContent() {
       alertEnabled: "การแจ้งเตือนเปิดอยู่",
       daysBeforeDue: "วันก่อนครบกำหนด",
       protectedBadge: "ได้รับการป้องกัน",
-      upgradeForShield: "อัปเกรดเพื่อ Deposit Shield",
       delete: "ลบ",
       confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบเงินมัดจำนี้?",
       saving: "กำลังบันทึก...",
@@ -212,6 +214,9 @@ function DepositTrackerContent() {
       openCaseToGet: "เปิดคดีเพื่อรับ: การตรวจสอบโดยผู้เชี่ยวชาญ, เทมเพลตจดหมาย และการสนับสนุนการเจรจา",
       openCase: "เปิดคดี",
       refreshed: "รีเฟรชสำเร็จ",
+      searchDeposits: "ค้นหาด้วยที่อยู่ทรัพย์สิน...",
+      noResultsFound: "ไม่พบเงินมัดจำ",
+      tryDifferentSearch: "ลองค้นหาด้วยคำอื่น",
     }
   };
 
@@ -223,18 +228,22 @@ function DepositTrackerContent() {
     toast.success(strings.refreshed);
   };
 
+  const filteredDeposits = deposits.filter(deposit => {
+    if (searchQuery === '') return true;
+    return deposit.property_address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           deposit.notes?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Prepare data with proper types
     const depositData = {
       deposit_amount: parseFloat(formData.deposit_amount),
       deposit_paid_date: formData.deposit_paid_date,
       expected_return_date: formData.expected_return_date,
-      status: 'tracking', // Default status for new deposits
+      status: 'tracking',
     };
 
-    // Conditionally add optional fields
     if (formData.property_address) {
       depositData.property_address = formData.property_address;
     }
@@ -242,7 +251,6 @@ function DepositTrackerContent() {
       depositData.notes = formData.notes;
     }
 
-    // Only include rent fields if they have values and user has access
     if (hasRentAlerts && formData.rent_amount) {
       depositData.rent_amount = parseFloat(formData.rent_amount);
       if (formData.rent_due_day) {
@@ -258,7 +266,6 @@ function DepositTrackerContent() {
       await createDepositMutation.mutateAsync(depositData);
     } catch (error) {
       console.error('Submit error:', error);
-      // Error is already handled by onError in mutation, but catching it here prevents unhandled promise rejection
     }
   };
 
@@ -271,12 +278,10 @@ function DepositTrackerContent() {
 
   const handleStatusChange = (depositId, newStatus) => {
     if (newStatus === 'dispute') {
-      // Find the deposit being disputed
       const deposit = deposits.find(d => d.id === depositId);
       setSelectedDispute(deposit);
       setDisputeDialogOpen(true);
     } else {
-      // For other statuses, just update
       haptic.medium();
       updateDepositMutation.mutate({
         id: depositId,
@@ -288,13 +293,11 @@ function DepositTrackerContent() {
   const handleOpenCase = () => {
     if (!selectedDispute) return;
     
-    // Update deposit status to dispute
     updateDepositMutation.mutate({
       id: selectedDispute.id,
       data: { status: 'dispute' }
     });
     
-    // Navigate to ResolveCase with pre-filled data
     const params = new URLSearchParams({
       amount: selectedDispute.deposit_amount.toString(),
       address: selectedDispute.property_address || '',
@@ -354,7 +357,6 @@ function DepositTrackerContent() {
             {strings.back}
           </Button>
 
-          {/* Dispute Dialog */}
           <Dialog open={disputeDialogOpen} onOpenChange={setDisputeDialogOpen}>
             <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
               <DialogHeader>
@@ -459,6 +461,17 @@ function DepositTrackerContent() {
               </Button>
             )}
           </div>
+
+          {deposits.length > 1 && (
+            <div className="mb-4">
+              <DebouncedSearch
+                onSearch={setSearchQuery}
+                placeholder={strings.searchDeposits}
+                colors={colors}
+                language={language}
+              />
+            </div>
+          )}
 
           {showAddForm && (
             <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
@@ -649,13 +662,22 @@ function DepositTrackerContent() {
                 {strings.addDeposit}
               </Button>
             </div>
+          ) : filteredDeposits.length === 0 ? (
+            <div className="text-center py-12">
+              <AlertCircle className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+              <h3 className="text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
+                {strings.noResultsFound}
+              </h3>
+              <p className="text-sm" style={{ color: colors.textSecondary }}>
+                {strings.tryDifferentSearch}
+              </p>
+            </div>
           ) : (
             <div className="grid gap-4">
-              {deposits.map((deposit) => {
+              {filteredDeposits.map((deposit) => {
                 const daysRemaining = differenceInDays(new Date(deposit.expected_return_date), now);
                 const isUrgent = daysRemaining <= 30 && daysRemaining > 0;
                 const isOverdue = daysRemaining < 0;
-                const isExpanded = expandedDeposit === deposit.id;
 
                 return (
                   <Card key={deposit.id} className={`border-none shadow-lg hover:shadow-xl transition-all duration-300`} style={{

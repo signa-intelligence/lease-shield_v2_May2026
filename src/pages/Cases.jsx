@@ -6,6 +6,8 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import {
   Scale, Plus, Crown, Calendar, Zap, FileText, Loader2,
   CheckCircle2, Eye, Download, ChevronDown, ChevronUp, ArrowLeft, Clock, AlertCircle
@@ -21,14 +23,18 @@ import FloatingActionButton from "../components/shared/FloatingActionButton";
 import LazyImage from "../components/shared/LazyImage";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import DebouncedSearch from "../components/shared/DebouncedSearch";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
-  pending: { label: 'Pending', color: 'bg-amber-100 text-amber-800', icon: Clock },
-  active: { label: 'Active', color: 'bg-blue-100 text-blue-800', icon: Scale },
-  waiting: { label: 'Waiting', color: 'bg-purple-100 text-purple-800', icon: Calendar },
-  user_action: { label: 'Action Required', color: 'bg-red-100 text-red-800', icon: AlertCircle },
-  closed: { label: 'Closed', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 }
+  pending_review: { label: 'Pending Review', color: 'bg-amber-100 text-amber-800', icon: Clock },
+  under_review: { label: 'Under Review', color: 'bg-blue-100 text-blue-800', icon: Scale },
+  ready_drafts: { label: 'Ready Drafts', color: 'bg-purple-100 text-purple-800', icon: FileText },
+  client_review: { label: 'Client Review', color: 'bg-cyan-100 text-cyan-800', icon: Eye },
+  awaiting_landlord: { label: 'Awaiting Landlord', color: 'bg-orange-100 text-orange-800', icon: Clock },
+  in_progress: { label: 'In Progress', color: 'bg-indigo-100 text-indigo-800', icon: Zap },
+  resolved: { label: 'Resolved', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 },
+  closed: { label: 'Closed', color: 'bg-gray-100 text-gray-800', icon: CheckCircle2 }
 };
 
 function CasesContent() {
@@ -41,6 +47,8 @@ function CasesContent() {
 
   const [expandedCase, setExpandedCase] = useState(null);
   const [previewLetter, setPreviewLetter] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -161,6 +169,11 @@ function CasesContent() {
       downloadSuccess: "Download started",
       downloadFailed: "Download failed",
       previewError: "No file found for this letter",
+      searchCases: "Search by case number or description...",
+      filterByStatus: "Filter by status",
+      allStatuses: "All Statuses",
+      noResultsFound: "No cases found",
+      tryDifferentSearch: "Try a different search or filter",
     },
     th: {
       title: "คดีของฉัน",
@@ -190,6 +203,11 @@ function CasesContent() {
       downloadSuccess: "เริ่มดาวน์โหลดแล้ว",
       downloadFailed: "ดาวน์โหลดไม่สำเร็จ",
       previewError: "ไม่พบไฟล์สำหรับจดหมายนี้",
+      searchCases: "ค้นหาด้วยเลขคดีหรือรายละเอียด...",
+      filterByStatus: "กรองตามสถานะ",
+      allStatuses: "ทุกสถานะ",
+      noResultsFound: "ไม่พบคดี",
+      tryDifferentSearch: "ลองค้นหาหรือกรองด้วยค่าอื่น",
     }
   };
 
@@ -200,6 +218,18 @@ function CasesContent() {
     await queryClient.invalidateQueries({ queryKey: ['cases'] });
     toast.success(strings.refreshed);
   };
+
+  // Filter cases based on search and status
+  const filteredCases = cases.filter(caseItem => {
+    const matchesSearch = searchQuery === '' ||
+      caseItem.case_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      caseItem.summary?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      caseItem.id?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || caseItem.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   const getLetterTitle = (subject) => {
     const titles = {
@@ -331,6 +361,47 @@ function CasesContent() {
             </CardContent>
           </Card>
 
+          {/* Search & Filter Controls */}
+          {cases.length > 0 && (
+            <div className="mb-6 space-y-3">
+              <DebouncedSearch
+                onSearch={setSearchQuery}
+                placeholder={strings.searchCases}
+                colors={colors}
+                language={language}
+              />
+              
+              <div>
+                <Label className="text-xs font-semibold mb-2 block" style={{ color: colors.textSecondary }}>
+                  {strings.filterByStatus}
+                </Label>
+                <Select 
+                  value={statusFilter} 
+                  onValueChange={(value) => {
+                    haptic.light();
+                    setStatusFilter(value);
+                  }}
+                >
+                  <SelectTrigger style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                    <SelectItem value="all">{strings.allStatuses}</SelectItem>
+                    <SelectItem value="intake">Intake</SelectItem>
+                    <SelectItem value="pending_review">Pending Review</SelectItem>
+                    <SelectItem value="under_review">Under Review</SelectItem>
+                    <SelectItem value="ready_drafts">Ready Drafts</SelectItem>
+                    <SelectItem value="client_review">Client Review</SelectItem>
+                    <SelectItem value="awaiting_landlord">Awaiting Landlord</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
             <SkeletonLoader variant="card" count={3} colors={colors} />
           ) : cases.length === 0 ? (
@@ -342,9 +413,19 @@ function CasesContent() {
               actionLabel={strings.openNewCase}
               onAction={() => navigate(createPageUrl("ResolveCase"))}
             />
+          ) : filteredCases.length === 0 ? (
+            <div className="text-center py-12">
+              <AlertCircle className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+              <h3 className="text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
+                {strings.noResultsFound}
+              </h3>
+              <p className="text-sm" style={{ color: colors.textSecondary }}>
+                {strings.tryDifferentSearch}
+              </p>
+            </div>
           ) : (
             <div className="grid gap-4">
-              {cases.map((caseItem) => {
+              {filteredCases.map((caseItem) => {
                 const statusConfig = STATUS_CONFIG[caseItem.status] || STATUS_CONFIG.intake;
                 const StatusIcon = statusConfig.icon;
                 const availableLetters = getGeneratedLetters(caseItem);
