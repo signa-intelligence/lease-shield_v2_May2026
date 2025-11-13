@@ -63,31 +63,23 @@ export default function StatsCard({
 
   const cardStyle = CARD_STYLE_MAP[title];
 
-  // Determine card background and border
-  let cardBackground;
-  let cardBorderLeft;
+  // Use dashboard-card class for mapped cards, otherwise keep original behavior
+  const cardClassName = cardStyle 
+    ? "dashboard-card hover:shadow-xl transition-all duration-300 h-full"
+    : `border-none shadow-lg hover:shadow-xl transition-all duration-300 ${bgGradient || ''} h-full`;
 
-  if (bgGradient) {
-    // Use gradient as-is for cards with explicit gradients
-    cardBackground = undefined;
-    cardBorderLeft = undefined;
-  } else if (cardStyle) {
-    // Use mapped style for specific dashboard cards
-    cardBackground = isDarkMode ? cardStyle.bgDark : cardStyle.bgLight;
-    cardBorderLeft = `4px solid ${cardStyle.borderLeft}`;
-  } else if (scoreColor) {
-    // Fallback for other cards with scoreColor
-    cardBackground = isDarkMode ? cardColors.cardBg : `${scoreColor}10`;
-    cardBorderLeft = `4px solid ${scoreColor}`;
-  } else {
-    // Default
-    cardBackground = cardColors.cardBg;
-    cardBorderLeft = undefined;
-  }
+  // Only apply custom background if NOT using dashboard-card class
+  const cardBackground = cardStyle 
+    ? undefined 
+    : (bgGradient ? undefined : (scoreColor ? (isDarkMode ? cardColors.cardBg : `${scoreColor}10`) : cardColors.cardBg));
+
+  const cardBorderLeft = cardStyle 
+    ? undefined 
+    : (bgGradient ? undefined : (scoreColor ? `4px solid ${scoreColor}` : undefined));
 
   return (
     <Card 
-      className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${bgGradient || ''} h-full`}
+      className={cardClassName}
       style={{
         backgroundColor: cardBackground,
         borderLeft: cardBorderLeft

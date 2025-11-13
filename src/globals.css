@@ -1,3 +1,4 @@
+css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,5 +9,11 @@
     right: 20px;
     bottom: calc(80px + env(safe-area-inset-bottom));
     z-index: 50;
+  }
+
+  .dashboard-card {
+    @apply rounded-2xl border-l-4 shadow-sm transition-colors duration-200;
+    @apply bg-[#F6F6F6] dark:bg-[#2A2A2A];
+    @apply border-[#8C8C8C];
   }
 }
