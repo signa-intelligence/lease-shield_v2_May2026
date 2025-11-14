@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
+import { getFeatureCardStyles } from "../components/shared/featureTheme";
 
 
 const PLAN_DETAILS = [
@@ -597,6 +598,7 @@ export default function Account() {
   const language = user?.language || 'en';
   const currentTheme = user?.theme || 'dark';
   const isDarkMode = currentTheme === 'dark';
+  const notificationsTheme = getFeatureCardStyles("notifications", isDarkMode);
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -754,7 +756,8 @@ export default function Account() {
       bilingual: "Bilingual Templates",
       humanAndAiGeneration: "Human and AI generation",
       creditsNeverExpire: "Credits never expire",
-      purchaseCredits: "Purchase Credits"
+      purchaseCredits: "Purchase Credits",
+      notifications: "Notifications"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -891,7 +894,8 @@ export default function Account() {
       bilingual: "เทมเพลตสองภาษา",
       humanAndAiGeneration: "สร้างโดยมนุษย์และ AI",
       creditsNeverExpire: "เครดิตไม่หมดอายุ",
-      purchaseCredits: "ซื้อเครดิต"
+      purchaseCredits: "ซื้อเครดิต",
+      notifications: "การแจ้งเตือน"
     },
     zh: {
       pageTitle: "我的账户",
@@ -2516,11 +2520,31 @@ export default function Account() {
         </Card>
 
         <div className="grid lg:grid-cols-2 gap-6 mb-6">
-          <NotificationPreferences 
-            user={user} 
-            onUpdate={handleNotificationUpdate}
-            colors={colors}
-          />
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <span
+                style={{
+                  backgroundColor: notificationsTheme.iconBg,
+                  color: notificationsTheme.iconColor,
+                  borderRadius: '9999px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  padding: '4px 10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Bell className="w-3 h-3" />
+                {strings.notifications}
+              </span>
+            </div>
+            <NotificationPreferences 
+              user={user} 
+              onUpdate={handleNotificationUpdate}
+              colors={colors}
+            />
+          </div>
           <div id="notification-analytics">
             <NotificationAnalytics 
               language={language}
@@ -2530,7 +2554,7 @@ export default function Account() {
         </div>
 
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <HelpCircle className="w-5 h-5 text-ls-forest" />
               {strings.helpSupport}
@@ -3079,10 +3103,10 @@ export default function Account() {
                       </h3>
                     </div>
                     <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                      {language === 'th' ? plan.taglineTh : strings[plan.tagline]}
+                      {language === 'th' ? plan.taglineTh : plan.tagline}
                     </p>
                     <p className="text-xs line-clamp-2" style={{ color: colors.textSecondary }}>
-                      {language === 'th' ? plan.descriptionTh : strings[plan.description]}
+                      {language === 'th' ? plan.descriptionTh : plan.description}
                     </p>
                   </div>
 
