@@ -23,6 +23,11 @@ import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
+import {
+  getFeatureCardStyles,
+  primaryCtaStyle,
+  primaryCtaHover
+} from "../components/shared/featureTheme";
 
 function DashboardContent() {
   const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
@@ -42,7 +47,6 @@ function DashboardContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Regular user queries
   const { data: leases = [], isLoading: leasesLoading } = useQuery({
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
@@ -85,7 +89,6 @@ function DashboardContent() {
     toast.success(language === 'th' ? 'รีเฟรชสำเร็จ' : 'Refreshed successfully');
   };
 
-  // Auto-refresh logic
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const subscriptionStatus = urlParams.get('subscription');
@@ -157,7 +160,6 @@ function DashboardContent() {
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
 
-  // Client-side overdue deposit checker
   const [checkingOverdue, setCheckingOverdue] = React.useState(false);
   
   const checkAndNotifyOverdue = React.useCallback(async () => {
@@ -217,20 +219,17 @@ function DashboardContent() {
     }
   }, [deposits, language, toast, queryClient]);
 
-  // Admin: Manual reminder trigger (now calls checkAndNotifyOverdue)
   const [triggeringReminders, setTriggeringReminders] = useState(false);
   
   const triggerReminders = async () => {
     setTriggeringReminders(true);
     try {
-      // Call the new client-side checker instead
       await checkAndNotifyOverdue();
     } finally {
       setTriggeringReminders(false);
     }
   };
 
-  // Admin: Full scheduled reminder system trigger
   const [runningScheduled, setRunningScheduled] = useState(false);
   
   const runScheduledReminders = async () => {
@@ -261,7 +260,6 @@ function DashboardContent() {
   const [testingSettings, setTestingSettings] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
 
-  // ADD NEW: Simple browser-based Flex test
   const [testingBrowserFlex, setTestingBrowserFlex] = React.useState(false);
   
   const testFlexFromBrowser = async () => {
@@ -698,6 +696,13 @@ function DashboardContent() {
     fieldBg: '#ECEFED',
     hoverBg: '#F8FAFC'
   };
+
+  const leasesCardStyles        = getFeatureCardStyles("leases", isDarkMode);
+  const depositsCardStyles      = getFeatureCardStyles("deposits", isDarkMode);
+  const rentCardStyles          = getFeatureCardStyles("rent", isDarkMode);
+  const notificationsCardStyles = getFeatureCardStyles("notifications", isDarkMode);
+  const casesCardStyles         = getFeatureCardStyles("cases", isDarkMode);
+  const maintenanceCardStyles   = getFeatureCardStyles("maintenance", isDarkMode);
 
   const calculateProtectionScore = () => {
     let score = 0;
@@ -1141,7 +1146,7 @@ function DashboardContent() {
                   ) : language === 'th' ? (
                     <>
                       <span style={{ color: '#FFFFFF' }}>ยุติธรรม。</span>
-                      <span style={{ color: '#ECEFED' }}>โปร่งใส。</span>
+                      <span style={{ color: '#ECEFED' }}>โปร่งใส।</span>
                       <span style={{ color: '#C7A338' }}>ปลอดภัย。</span>
                     </>
                   ) : (
@@ -1675,11 +1680,311 @@ function DashboardContent() {
                         />
 
                         <div className="grid grid-cols-2 gap-3">
+                          {/* 🔹 ACTIVE LEASES */}
+                          <div
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            style={{
+                              background: leasesCardStyles.background,
+                              borderLeft: `4px solid ${leasesCardStyles.borderLeftColor}`
+                            }}
+                          >
+                            <StatsCard
+                              title={strings.activeLeases}
+                              value={leases.length.toString()}
+                              icon={FileText}
+                              scoreColor={leasesCardStyles.accent}
+                              miniStats={leases.length > 0 ? [
+                                {
+                                  label: language === 'en' ? 'Scanned' : language === 'zh' ? '已扫描' : language === 'ja' ? 'スキャン済み' : language === 'ko' ? '스캔됨' : 'สแกนแล้ว',
+                                  value: scannedLeases.length
+                                },
+                                {
+                                  label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน',
+                                  value: leases.filter(l => l.notice_alerts_enabled).length
+                                }
+                              ] : undefined}
+                              ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
+                              onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
+                              colors={colors}
+                              compact
+                            />
+                            {leases.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => navigate(createPageUrl("UploadScan"))}
+                                style={{
+                                  ...primaryCtaStyle,
+                                  backgroundColor: leasesCardStyles.accent,
+                                  width: "100%",
+                                  marginTop: "12px"
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = primaryCtaHover.transform;
+                                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "";
+                                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                                }}
+                              >
+                                {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* 🔹 DEPOSITS TRACKED */}
+                          <div
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            style={{
+                              background: depositsCardStyles.background,
+                              borderLeft: `4px solid ${depositsCardStyles.borderLeftColor}`
+                            }}
+                          >
+                            <StatsCard
+                              title={strings.depositsTracked}
+                              value={`฿${totalDepositValue.toLocaleString()}`}
+                              icon={Wallet}
+                              miniStats={[
+                                { 
+                                  label: language === 'en' ? 'Avg' : language === 'zh' ? '平均' : language === 'ja' ? '平均' : language === 'ko' ? '평균' : 'เฉลี่ย',
+                                  value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—'
+                                },
+                                { 
+                                  label: language === 'en' ? 'Soon' : language === 'zh' ? '即将' : language === 'ja' ? 'まもなく' : language === 'ko' ? '곧' : 'เร็วๆนี้',
+                                  value: urgentDeposits
+                                }
+                              ]}
+                              colors={colors}
+                              compact
+                            />
+                            <button
+                              type="button"
+                              onClick={() => navigate(createPageUrl("DepositTracker"))}
+                              style={{
+                                ...primaryCtaStyle,
+                                backgroundColor: depositsCardStyles.accent,
+                                width: "100%",
+                                marginTop: "12px"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = primaryCtaHover.transform;
+                                e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                              }}
+                            >
+                              {language === 'en' ? 'Add' : language === 'zh' ? '添加' : language === 'ja' ? '追加' : language === 'ko' ? '추가' : 'เพิ่ม'}
+                            </button>
+                          </div>
+                          
+                          {/* 🔹 RENT TRACKED */}
+                          <div
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            style={{
+                              background: rentCardStyles.background,
+                              borderLeft: `4px solid ${rentCardStyles.borderLeftColor}`
+                            }}
+                          >
+                            <StatsCard
+                              title={strings.rentTracked}
+                              value={rentTrackedCount.toString()}
+                              icon={Calendar}
+                              scoreColor={rentCardStyles.accent}
+                              miniStats={rentTrackedCount > 0 ? [
+                                {
+                                  label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน',
+                                  value: deposits.filter(d => d.rent_alerts_enabled).length
+                                }
+                              ] : undefined}
+                              ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
+                              onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                              colors={colors}
+                              compact
+                            />
+                            {rentTrackedCount > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => navigate(createPageUrl("PropertyTracker"))}
+                                style={{
+                                  ...primaryCtaStyle,
+                                  backgroundColor: rentCardStyles.accent,
+                                  width: "100%",
+                                  marginTop: "12px"
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = primaryCtaHover.transform;
+                                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "";
+                                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                                }}
+                              >
+                                {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* 🔹 NOTIFICATIONS */}
+                          <div
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            style={{
+                              background: notificationsCardStyles.background,
+                              borderLeft: `4px solid ${notificationsCardStyles.borderLeftColor}`
+                            }}
+                          >
+                            <StatsCard
+                              title={strings.notifications}
+                              value={notificationLogs.length.toString()}
+                              icon={Bell}
+                              scoreColor={notificationsCardStyles.accent}
+                              miniStats={notificationLogs.length > 0 ? [
+                                {
+                                  label: language === 'en' ? 'Sent' : language === 'zh' ? '已发送' : language === 'ja' ? '送信済み' : language === 'ko' ? '전송됨' : 'ส่งแล้ว',
+                                  value: notificationLogs.filter(n => n.status === 'sent').length
+                                },
+                                {
+                                  label: language === 'en' ? 'Failed' : language === 'zh' ? '失败' : language === 'ja' ? '失敗' : language === 'ko' ? '실패' : 'ล้มเหลว',
+                                  value: notificationLogs.filter(n => n.status === 'failed').length
+                                }
+                              ] : undefined}
+                              ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
+                              colors={colors}
+                              compact
+                            />
+                            {notificationLogs.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => navigate(createPageUrl("Account") + "#notifications")}
+                                style={{
+                                  ...primaryCtaStyle,
+                                  backgroundColor: notificationsCardStyles.accent,
+                                  width: "100%",
+                                  marginTop: "12px"
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = primaryCtaHover.transform;
+                                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "";
+                                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                                }}
+                              >
+                                {language === 'en' ? 'View All' : language === 'zh' ? '查看全部' : language === 'ja' ? 'すべて表示' : language === 'ko' ? '모두 보기' : 'ดูทั้งหมด'}
+                              </button>
+                            )}
+                          </div>
+                          
+                          {/* 🔹 ACTIVE CASES */}
+                          <div
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            style={{
+                              background: casesCardStyles.background,
+                              borderLeft: `4px solid ${casesCardStyles.borderLeftColor}`
+                            }}
+                          >
+                            <StatsCard
+                              title={strings.activeCases}
+                              value={activeCases.length}
+                              icon={Scale}
+                              miniStats={[
+                                { 
+                                  label: language === 'en' ? 'Resolved' : language === 'zh' ? '已解决' : language === 'ja' ? '解決済み' : language === 'ko' ? '해결됨' : 'แก้ไข',
+                                  value: resolvedCases
+                                }
+                              ]}
+                              colors={colors}
+                              compact
+                            />
+                            <button
+                              type="button"
+                              onClick={() => navigate(createPageUrl("Cases"))}
+                              style={{
+                                ...primaryCtaStyle,
+                                backgroundColor: casesCardStyles.accent,
+                                width: "100%",
+                                marginTop: "12px"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = primaryCtaHover.transform;
+                                e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                              }}
+                            >
+                              {language === 'en' ? 'Open' : language === 'zh' ? '打开' : language === 'ja' ? '開く' : language === 'ko' ? '열기' : 'เปิด'}
+                            </button>
+                          </div>
+
+                          {/* 🔹 MAINTENANCE */}
+                          <div
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            style={{
+                              background: maintenanceCardStyles.background,
+                              borderLeft: `4px solid ${maintenanceCardStyles.borderLeftColor}`
+                            }}
+                          >
+                            <StatsCard
+                              title={strings.maintenanceRequests}
+                              value={activeMaintenanceCount.toString()}
+                              icon={Wrench}
+                              scoreColor={maintenanceCardStyles.accent}
+                              miniStats={activeMaintenanceCount > 0 ? [
+                                {
+                                  label: language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ',
+                                  value: maintenanceRequests.filter(r => r.status === 'completed').length
+                                }
+                              ] : undefined}
+                              ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
+                              onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                              colors={colors}
+                              compact
+                            />
+                            {activeMaintenanceCount > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => navigate(createPageUrl("PropertyTracker") + "#maintenance")}
+                                style={{
+                                  ...primaryCtaStyle,
+                                  backgroundColor: maintenanceCardStyles.accent,
+                                  width: "100%",
+                                  marginTop: "12px"
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = primaryCtaHover.transform;
+                                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "";
+                                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                                }}
+                              >
+                                {language === 'en' ? 'View' : language === 'zh' ? '查看' : language === 'ja' ? '見る' : language === 'ko' ? '보기' : 'ดู'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="hidden lg:grid lg:grid-cols-4 gap-3" style={{ animation: 'slideDown 0.3s ease-out', gridAutoRows: 'minmax(0, 1fr)' }}>
+                        {/* 🔹 ACTIVE LEASES (Desktop) */}
+                        <div
+                          className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                          style={{
+                            background: leasesCardStyles.background,
+                            borderLeft: `4px solid ${leasesCardStyles.borderLeftColor}`
+                          }}
+                        >
                           <StatsCard
                             title={strings.activeLeases}
                             value={leases.length.toString()}
                             icon={FileText}
-                            scoreColor="#3B82F6"
+                            scoreColor={leasesCardStyles.accent}
                             miniStats={leases.length > 0 ? [
                               {
                                 label: language === 'en' ? 'Scanned' : language === 'zh' ? '已扫描' : language === 'ja' ? 'スキャン済み' : language === 'ko' ? '스캔됨' : 'สแกนแล้ว',
@@ -1690,21 +1995,47 @@ function DashboardContent() {
                                 value: leases.filter(l => l.notice_alerts_enabled).length
                               }
                             ] : undefined}
-                            actionButton={leases.length > 0 ? {
-                              label: language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ',
-                              link: createPageUrl("UploadScan")
-                            } : undefined}
                             ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
                             onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
                             colors={colors}
                             compact
                           />
+                          {leases.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(createPageUrl("UploadScan"))}
+                              style={{
+                                ...primaryCtaStyle,
+                                backgroundColor: leasesCardStyles.accent,
+                                width: "100%",
+                                marginTop: "12px"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = primaryCtaHover.transform;
+                                e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                              }}
+                            >
+                              {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
+                            </button>
+                          )}
+                        </div>
 
+                        {/* 🔹 DEPOSITS TRACKED (Desktop) */}
+                        <div
+                          className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                          style={{
+                            background: depositsCardStyles.background,
+                            borderLeft: `4px solid ${depositsCardStyles.borderLeftColor}`
+                          }}
+                        >
                           <StatsCard
                             title={strings.depositsTracked}
                             value={`฿${totalDepositValue.toLocaleString()}`}
                             icon={Wallet}
-                            bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
                             miniStats={[
                               { 
                                 label: language === 'en' ? 'Avg' : language === 'zh' ? '平均' : language === 'ja' ? '平均' : language === 'ko' ? '평균' : 'เฉลี่ย',
@@ -1715,170 +2046,78 @@ function DashboardContent() {
                                 value: urgentDeposits
                               }
                             ]}
-                            actionButton={{
-                              label: language === 'en' ? 'Add' : language === 'zh' ? '添加' : language === 'ja' ? '追加' : language === 'ko' ? '추가' : 'เพิ่ม',
-                              link: createPageUrl("DepositTracker")
-                            }}
                             colors={colors}
                             compact
                           />
-                          
+                          <button
+                            type="button"
+                            onClick={() => navigate(createPageUrl("DepositTracker"))}
+                            style={{
+                              ...primaryCtaStyle,
+                              backgroundColor: depositsCardStyles.accent,
+                              width: "100%",
+                              marginTop: "12px"
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = primaryCtaHover.transform;
+                              e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "";
+                              e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                            }}
+                          >
+                            {language === 'en' ? 'Add' : language === 'zh' ? '添加' : language === 'ja' ? '追加' : language === 'ko' ? '추가' : 'เพิ่ม'}
+                          </button>
+                        </div>
+                        
+                        {/* 🔹 RENT TRACKED (Desktop) */}
+                        <div
+                          className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                          style={{
+                            background: rentCardStyles.background,
+                            borderLeft: `4px solid ${rentCardStyles.borderLeftColor}`
+                          }}
+                        >
                           <StatsCard
                             title={strings.rentTracked}
                             value={rentTrackedCount.toString()}
                             icon={Calendar}
-                            scoreColor="#3B82F6"
+                            scoreColor={rentCardStyles.accent}
                             miniStats={rentTrackedCount > 0 ? [
                               {
                                 label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน',
                                 value: deposits.filter(d => d.rent_alerts_enabled).length
                               }
                             ] : undefined}
-                            actionButton={rentTrackedCount > 0 ? {
-                              label: language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ',
-                              link: createPageUrl("PropertyTracker")
-                            } : undefined}
                             ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
                             onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
                             colors={colors}
                             compact
                           />
-
-                          <StatsCard
-                            title={strings.notifications}
-                            value={notificationLogs.length.toString()}
-                            icon={Bell}
-                            scoreColor="#8B5CF6"
-                            miniStats={notificationLogs.length > 0 ? [
-                              {
-                                label: language === 'en' ? 'Sent' : language === 'zh' ? '已发送' : language === 'ja' ? '送信済み' : language === 'ko' ? '전송됨' : 'ส่งแล้ว',
-                                value: notificationLogs.filter(n => n.status === 'sent').length
-                              },
-                              {
-                                label: language === 'en' ? 'Failed' : language === 'zh' ? '失败' : language === 'ja' ? '失敗' : language === 'ko' ? '실패' : 'ล้มเหลว',
-                                value: notificationLogs.filter(n => n.status === 'failed').length
-                              }
-                            ] : undefined}
-                            actionButton={notificationLogs.length > 0 ? {
-                              label: language === 'en' ? 'View All' : language === 'zh' ? '查看全部' : language === 'ja' ? 'すべて表示' : language === 'ko' ? '모두 보기' : 'ดูทั้งหมด',
-                              link: createPageUrl("Account") + "#notifications"
-                            } : undefined}
-                            ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
-                            colors={colors}
-                            compact
-                          />
-                          
-                          <StatsCard
-                            title={strings.activeCases}
-                            value={activeCases.length}
-                            icon={Scale}
-                            bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
-                            miniStats={[
-                              { 
-                                label: language === 'en' ? 'Resolved' : language === 'zh' ? '已解决' : language === 'ja' ? '解決済み' : language === 'ko' ? '해결됨' : 'แก้ไข',
-                                value: resolvedCases
-                              }
-                            ]}
-                            actionButton={{
-                              label: language === 'en' ? 'Open' : language === 'zh' ? '打开' : language === 'ja' ? '開く' : language === 'ko' ? '열기' : 'เปิด',
-                              link: createPageUrl("Cases")
-                            }}
-                            colors={colors}
-                            compact
-                          />
-
-                          <StatsCard
-                            title={strings.maintenanceRequests}
-                            value={activeMaintenanceCount.toString()}
-                            icon={Wrench}
-                            scoreColor="#F59E0B"
-                            miniStats={activeMaintenanceCount > 0 ? [
-                              {
-                                label: language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ',
-                                value: maintenanceRequests.filter(r => r.status === 'completed').length
-                              }
-                            ] : undefined}
-                            actionButton={activeMaintenanceCount > 0 ? {
-                              label: language === 'en' ? 'View' : language === 'zh' ? '查看' : language === 'ja' ? '見る' : language === 'ko' ? '보기' : 'ดู',
-                              link: createPageUrl("PropertyTracker") + "#maintenance"
-                            } : undefined}
-                            ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
-                            onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
-                            colors={colors}
-                            compact
-                          />
+                          {rentTrackedCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(createPageUrl("PropertyTracker"))}
+                              style={{
+                                ...primaryCtaStyle,
+                                backgroundColor: rentCardStyles.accent,
+                                width: "100%",
+                                marginTop: "12px"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = primaryCtaHover.transform;
+                                e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                              }}
+                            >
+                              {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
+                            </button>
+                          )}
                         </div>
-                      </div>
-
-                      <div className="hidden lg:grid lg:grid-cols-4 gap-3" style={{ animation: 'slideDown 0.3s ease-out', gridAutoRows: 'minmax(0, 1fr)' }}>
-                        <StatsCard
-                          title={strings.activeLeases}
-                          value={leases.length.toString()}
-                          icon={FileText}
-                          scoreColor="#3B82F6"
-                          miniStats={leases.length > 0 ? [
-                            {
-                              label: language === 'en' ? 'Scanned' : language === 'zh' ? '已扫描' : language === 'ja' ? 'スキャン済み' : language === 'ko' ? '스캔됨' : 'สแกนแล้ว',
-                              value: scannedLeases.length
-                            },
-                            {
-                              label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน',
-                              value: leases.filter(l => l.notice_alerts_enabled).length
-                            }
-                          ] : undefined}
-                          actionButton={leases.length > 0 ? {
-                            label: language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ',
-                            link: createPageUrl("UploadScan")
-                          } : undefined}
-                          ctaText={leases.length === 0 ? strings.uploadFirstLease : undefined}
-                          onCtaClick={leases.length === 0 ? () => navigate(createPageUrl("UploadScan")) : undefined}
-                          colors={colors}
-                          compact
-                        />
-
-                        <StatsCard
-                          title={strings.depositsTracked}
-                          value={`฿${totalDepositValue.toLocaleString()}`}
-                          icon={Wallet}
-                          bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
-                          miniStats={[
-                            { 
-                              label: language === 'en' ? 'Avg' : language === 'zh' ? '平均' : language === 'ja' ? '平均' : language === 'ko' ? '평균' : 'เฉลี่ย',
-                              value: avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—'
-                            },
-                            { 
-                              label: language === 'en' ? 'Soon' : language === 'zh' ? '即将' : language === 'ja' ? 'まもなく' : language === 'ko' ? '곧' : 'เร็วๆนี้',
-                              value: urgentDeposits
-                            }
-                          ]}
-                          actionButton={{
-                            label: language === 'en' ? 'Add' : language === 'zh' ? '添加' : language === 'ja' ? '追加' : language === 'ko' ? '추가' : 'เพิ่ม',
-                            link: createPageUrl("DepositTracker")
-                          }}
-                          colors={colors}
-                          compact
-                        />
-                        
-                        <StatsCard
-                          title={strings.rentTracked}
-                          value={rentTrackedCount.toString()}
-                          icon={Calendar}
-                          scoreColor="#3B82F6"
-                          miniStats={rentTrackedCount > 0 ? [
-                            {
-                              label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน',
-                              value: deposits.filter(d => d.rent_alerts_enabled).length
-                            }
-                          ] : undefined}
-                          actionButton={rentTrackedCount > 0 ? {
-                            label: language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ',
-                            link: createPageUrl("PropertyTracker")
-                          } : undefined}
-                          ctaText={rentTrackedCount === 0 ? strings.setupRent : undefined}
-                          onCtaClick={rentTrackedCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
-                          colors={colors}
-                          compact
-                        />
 
                         <div className="row-span-2">
                           <ProtectionScoreEnhanced
@@ -1891,69 +2130,147 @@ function DashboardContent() {
                           />
                         </div>
 
-                        <StatsCard
-                          title={strings.notifications}
-                          value={notificationLogs.length.toString()}
-                          icon={Bell}
-                          scoreColor="#8B5CF6"
-                          miniStats={notificationLogs.length > 0 ? [
-                            {
-                              label: language === 'en' ? 'Sent' : language === 'zh' ? '已发送' : language === 'ja' ? '送信済み' : language === 'ko' ? '전송됨' : 'ส่งแล้ว',
-                              value: notificationLogs.filter(n => n.status === 'sent').length
-                            },
-                            {
-                              label: language === 'en' ? 'Failed' : language === 'zh' ? '失败' : language === 'ja' ? '失敗' : language === 'ko' ? '실패' : 'ล้มเหลว',
-                              value: notificationLogs.filter(n => n.status === 'failed').length
-                            }
-                          ] : undefined}
-                          actionButton={notificationLogs.length > 0 ? {
-                            label: language === 'en' ? 'View All' : language === 'zh' ? '查看全部' : language === 'ja' ? 'すべて表示' : language === 'ko' ? '모두 보기' : 'ดูทั้งหมด',
-                            link: createPageUrl("Account") + "#notifications"
-                          } : undefined}
-                          ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
-                          colors={colors}
-                          compact
-                        />
-                        
-                        <StatsCard
-                          title={strings.activeCases}
-                          value={activeCases.length}
-                          icon={Scale}
-                          bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
-                          miniStats={[
-                            { 
-                              label: language === 'en' ? 'Resolved' : language === 'zh' ? '已解决' : language === 'ja' ? '解決済み' : language === 'ko' ? '해결됨' : 'แก้ไข',
-                              value: resolvedCases
-                            }
-                          ]}
-                          actionButton={{
-                            label: language === 'en' ? 'Open' : language === 'zh' ? '打开' : language === 'ja' ? '開く' : language === 'ko' ? '열기' : 'เปิด',
-                            link: createPageUrl("Cases")
+                        {/* 🔹 NOTIFICATIONS (Desktop) */}
+                        <div
+                          className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                          style={{
+                            background: notificationsCardStyles.background,
+                            borderLeft: `4px solid ${notificationsCardStyles.borderLeftColor}`
                           }}
-                          colors={colors}
-                          compact
-                        />
+                        >
+                          <StatsCard
+                            title={strings.notifications}
+                            value={notificationLogs.length.toString()}
+                            icon={Bell}
+                            scoreColor={notificationsCardStyles.accent}
+                            miniStats={notificationLogs.length > 0 ? [
+                              {
+                                label: language === 'en' ? 'Sent' : language === 'zh' ? '已发送' : language === 'ja' ? '送信済み' : language === 'ko' ? '전송됨' : 'ส่งแล้ว',
+                                value: notificationLogs.filter(n => n.status === 'sent').length
+                              },
+                              {
+                                label: language === 'en' ? 'Failed' : language === 'zh' ? '失败' : language === 'ja' ? '失敗' : language === 'ko' ? '실패' : 'ล้มเหลว',
+                                value: notificationLogs.filter(n => n.status === 'failed').length
+                              }
+                            ] : undefined}
+                            ctaText={notificationLogs.length === 0 ? strings.noNotifications : undefined}
+                            colors={colors}
+                            compact
+                          />
+                          {notificationLogs.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(createPageUrl("Account") + "#notifications")}
+                              style={{
+                                ...primaryCtaStyle,
+                                backgroundColor: notificationsCardStyles.accent,
+                                width: "100%",
+                                marginTop: "12px"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = primaryCtaHover.transform;
+                                e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                              }}
+                            >
+                              {language === 'en' ? 'View All' : language === 'zh' ? '查看全部' : language === 'ja' ? 'すべて表示' : language === 'ko' ? '모두 보기' : 'ดูทั้งหมด'}
+                            </button>
+                          )}
+                        </div>
+                        
+                        {/* 🔹 ACTIVE CASES (Desktop) */}
+                        <div
+                          className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                          style={{
+                            background: casesCardStyles.background,
+                            borderLeft: `4px solid ${casesCardStyles.borderLeftColor}`
+                          }}
+                        >
+                          <StatsCard
+                            title={strings.activeCases}
+                            value={activeCases.length}
+                            icon={Scale}
+                            miniStats={[
+                              { 
+                                label: language === 'en' ? 'Resolved' : language === 'zh' ? '已解决' : language === 'ja' ? '解決済み' : language === 'ko' ? '해결됨' : 'แก้ไข',
+                                value: resolvedCases
+                              }
+                            ]}
+                            colors={colors}
+                            compact
+                          />
+                          <button
+                            type="button"
+                            onClick={() => navigate(createPageUrl("Cases"))}
+                            style={{
+                              ...primaryCtaStyle,
+                              backgroundColor: casesCardStyles.accent,
+                              width: "100%",
+                              marginTop: "12px"
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = primaryCtaHover.transform;
+                              e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "";
+                              e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                            }}
+                          >
+                            {language === 'en' ? 'Open' : language === 'zh' ? '打开' : language === 'ja' ? '開く' : language === 'ko' ? '열기' : 'เปิด'}
+                          </button>
+                        </div>
 
-                        <StatsCard
-                          title={strings.maintenanceRequests}
-                          value={activeMaintenanceCount.toString()}
-                          icon={Wrench}
-                          scoreColor="#F59E0B"
-                          miniStats={activeMaintenanceCount > 0 ? [
-                            {
-                              label: language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ',
-                              value: maintenanceRequests.filter(r => r.status === 'completed').length
-                            }
-                          ] : undefined}
-                          actionButton={activeMaintenanceCount > 0 ? {
-                            label: language === 'en' ? 'View' : language === 'zh' ? '查看' : language === 'ja' ? '見る' : language === 'ko' ? '보기' : 'ดู',
-                            link: createPageUrl("PropertyTracker") + "#maintenance"
-                          } : undefined}
-                          ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
-                          onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
-                          colors={colors}
-                          compact
-                        />
+                        {/* 🔹 MAINTENANCE (Desktop) */}
+                        <div
+                          className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                          style={{
+                            background: maintenanceCardStyles.background,
+                            borderLeft: `4px solid ${maintenanceCardStyles.borderLeftColor}`
+                          }}
+                        >
+                          <StatsCard
+                            title={strings.maintenanceRequests}
+                            value={activeMaintenanceCount.toString()}
+                            icon={Wrench}
+                            scoreColor={maintenanceCardStyles.accent}
+                            miniStats={activeMaintenanceCount > 0 ? [
+                              {
+                                label: language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ',
+                                value: maintenanceRequests.filter(r => r.status === 'completed').length
+                              }
+                            ] : undefined}
+                            ctaText={activeMaintenanceCount === 0 ? strings.noMaintenance : undefined}
+                            onCtaClick={activeMaintenanceCount === 0 ? () => navigate(createPageUrl("PropertyTracker")) : undefined}
+                            colors={colors}
+                            compact
+                          />
+                          {activeMaintenanceCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(createPageUrl("PropertyTracker") + "#maintenance")}
+                              style={{
+                                ...primaryCtaStyle,
+                                backgroundColor: maintenanceCardStyles.accent,
+                                width: "100%",
+                                marginTop: "12px"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = primaryCtaHover.transform;
+                                e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                              }}
+                            >
+                              {language === 'en' ? 'View' : language === 'zh' ? '查看' : language === 'ja' ? '見る' : language === 'ko' ? '보기' : 'ดู'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </>
                   )}
