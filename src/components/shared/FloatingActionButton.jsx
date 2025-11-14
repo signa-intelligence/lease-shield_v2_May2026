@@ -15,7 +15,7 @@ export default function FloatingActionButton({
   onClick,
   color = "#0C3B2E",
   position = "bottom-right",
-  size = "large",
+  size = "medium",
   showLabel = false,
   disabled = false,
 }) {
@@ -38,15 +38,15 @@ export default function FloatingActionButton({
 
   const positionStyles = {
     "bottom-right": {
-      bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+      bottom: "calc(96px + env(safe-area-inset-bottom, 0px))",
       right: "20px",
     },
     "bottom-left": {
-      bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+      bottom: "calc(96px + env(safe-area-inset-bottom, 0px))",
       left: "20px",
     },
     "bottom-center": {
-      bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+      bottom: "calc(96px + env(safe-area-inset-bottom, 0px))",
       left: "50%",
       transform: "translateX(-50%)",
     },
