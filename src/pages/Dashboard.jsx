@@ -1,13 +1,15 @@
-import React, { useRef, useState } from "react";
+// ⚠️ LeaseShield: Dashboard overview is stabilised.
+// Do not modify card themes, layout, or handlers without explicit product approval.
+
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, X, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Settings, Mail, Calendar, BarChart3 } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Mail, Calendar, BarChart3 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { differenceInDays, format } from "date-fns";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import StatsCard from "../components/dashboard/StatsCard";
 import DepositAlert from "../components/dashboard/DepositAlert";
@@ -22,14 +24,9 @@ import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
-import {
-  getFeatureCardStyles,
-  primaryCtaStyle,
-  primaryCtaHover
-} from "../components/shared/featureTheme";
+import { getFeatureCardStyles } from "../components/shared/featureTheme";
 
 function DashboardContent() {
-  const [showImprovementDialog, setShowImprovementDialog] = React.useState(false);
   const [focusMode, setFocusMode] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState({
     stats: true,
@@ -1146,7 +1143,7 @@ function DashboardContent() {
                     <>
                       <span style={{ color: '#FFFFFF' }}>ยุติธรรม。</span>
                       <span style={{ color: '#ECEFED' }}>โปร่งใส。</span>
-                      <span style={{ color: '#C7A338' }}>ปลอดภัย。</span>
+                      <span style={{ color: '#C7A338' }}>ปลอดภัย।</span>
                     </>
                   ) : (
                     <>
