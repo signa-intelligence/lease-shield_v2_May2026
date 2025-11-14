@@ -1,12 +1,12 @@
-// Master theme configuration for LeaseShield features
+// ⚠️ LeaseShield colour system is stabilised.
+// Do NOT change these colour values or exports without explicit product approval.
+// This file defines the single source of truth for feature card themes and CTAs.
 
 export const CTA_COLOR = "#0C3B2E";
 export const CTA_COLOR_DISABLED = "#9CA3AF";
 
-// Type definition for feature card theme
 export const FEATURE_THEMES = {
   leases: {
-    // Active Leases – blue
     light: {
       cardBg: "#EFF6FF",
       borderColor: "#3B82F6",
@@ -29,7 +29,6 @@ export const FEATURE_THEMES = {
     },
   },
   rent: {
-    // Rent Tracked – sky blue (lighter blue family)
     light: {
       cardBg: "#E0F2FE",
       borderColor: "#0EA5E9",
@@ -52,7 +51,6 @@ export const FEATURE_THEMES = {
     },
   },
   notifications: {
-    // Notifications – purple
     light: {
       cardBg: "#F3E8FF",
       borderColor: "#8B5CF6",
@@ -75,7 +73,6 @@ export const FEATURE_THEMES = {
     },
   },
   deposits: {
-    // Deposits Tracked – teal/emerald green
     light: {
       cardBg: "#D1FAE5",
       borderColor: "#10B981",
@@ -98,7 +95,6 @@ export const FEATURE_THEMES = {
     },
   },
   cases: {
-    // Active Cases – red
     light: {
       cardBg: "#FEE2E2",
       borderColor: "#DC2626",
@@ -121,7 +117,6 @@ export const FEATURE_THEMES = {
     },
   },
   maintenance: {
-    // Maintenance – amber/orange
     light: {
       cardBg: "#FEF3C7",
       borderColor: "#F59E0B",
@@ -144,7 +139,6 @@ export const FEATURE_THEMES = {
     },
   },
   evidence: {
-    // Evidence Vault – indigo
     light: {
       cardBg: "#E0E7FF",
       borderColor: "#6366F1",
@@ -168,7 +162,6 @@ export const FEATURE_THEMES = {
   },
 };
 
-// Legacy compatibility: FEATURE_COLORS export for existing code
 export const FEATURE_COLORS = {
   leases: { accent: "#3B82F6" },
   deposits: { accent: "#10B981" },
@@ -189,7 +182,6 @@ export function getFeatureCardStyles(featureKey, isDarkMode = false) {
   const feature = FEATURE_THEMES[featureKey];
 
   if (!feature) {
-    // Fallback for unknown features
     return isDarkMode
       ? {
           cardBg: "#2A2D30",
@@ -216,13 +208,11 @@ export function getFeatureCardStyles(featureKey, isDarkMode = false) {
   return isDarkMode ? feature.dark : feature.light;
 }
 
-// Legacy compatibility: Extract accent color from theme
 export function getFeatureAccent(featureKey, isDarkMode = false) {
   const theme = getFeatureCardStyles(featureKey, isDarkMode);
   return theme.borderColor;
 }
 
-// Standardised CTA style object (for inline use)
 export const primaryCtaStyle = {
   backgroundColor: CTA_COLOR,
   color: "#FFFFFF",
