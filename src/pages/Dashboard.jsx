@@ -47,7 +47,6 @@ function DashboardContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Regular user queries
   const { data: leases = [], isLoading: leasesLoading } = useQuery({
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
@@ -90,7 +89,6 @@ function DashboardContent() {
     toast.success(language === 'th' ? 'รีเฟรชสำเร็จ' : 'Refreshed successfully');
   };
 
-  // Auto-refresh logic
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const subscriptionStatus = urlParams.get('subscription');
@@ -162,7 +160,6 @@ function DashboardContent() {
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
 
-  // Client-side overdue deposit checker
   const [checkingOverdue, setCheckingOverdue] = React.useState(false);
   
   const checkAndNotifyOverdue = React.useCallback(async () => {
@@ -222,20 +219,17 @@ function DashboardContent() {
     }
   }, [deposits, language, toast, queryClient]);
 
-  // Admin: Manual reminder trigger (now calls checkAndNotifyOverdue)
   const [triggeringReminders, setTriggeringReminders] = useState(false);
   
   const triggerReminders = async () => {
     setTriggeringReminders(true);
     try {
-      // Call the new client-side checker instead
       await checkAndNotifyOverdue();
     } finally {
       setTriggeringReminders(false);
     }
   };
 
-  // Admin: Full scheduled reminder system trigger
   const [runningScheduled, setRunningScheduled] = useState(false);
   
   const runScheduledReminders = async () => {
@@ -266,7 +260,6 @@ function DashboardContent() {
   const [testingSettings, setTestingSettings] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
 
-  // ADD NEW: Simple browser-based Flex test
   const [testingBrowserFlex, setTestingBrowserFlex] = React.useState(false);
   
   const testFlexFromBrowser = async () => {
@@ -1074,13 +1067,13 @@ function DashboardContent() {
 
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
 
-  // Feature card styles
-  const leasesCardStyles = getFeatureCardStyles("leases", isDarkMode);
-  const depositsCardStyles = getFeatureCardStyles("deposits", isDarkMode);
-  const rentCardStyles = getFeatureCardStyles("rent", isDarkMode);
-  const notificationsCardStyles = getFeatureCardStyles("notifications", isDarkMode);
-  const casesCardStyles = getFeatureCardStyles("cases", isDarkMode);
-  const maintenanceCardStyles = getFeatureCardStyles("maintenance", isDarkMode);
+  // Feature card themes
+  const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
+  const depositsTheme = getFeatureCardStyles("deposits", isDarkMode);
+  const rentTheme = getFeatureCardStyles("rent", isDarkMode);
+  const notificationsTheme = getFeatureCardStyles("notifications", isDarkMode);
+  const casesTheme = getFeatureCardStyles("cases", isDarkMode);
+  const maintenanceTheme = getFeatureCardStyles("maintenance", isDarkMode);
 
   if (!isLoading && !hasAnyData && !showOnboarding && !shouldShowOnboardingChecklist) {
     return (
@@ -1688,23 +1681,25 @@ function DashboardContent() {
                         />
 
                         <div className="grid grid-cols-2 gap-3">
-                          {/* ACTIVE LEASES CARD */}
+                          {/* ACTIVE LEASES */}
                           <div
-                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
-                              background: leasesCardStyles.background,
-                              borderLeft: `4px solid ${leasesCardStyles.borderLeftColor}`
+                              backgroundColor: leasesTheme.cardBg,
+                              borderLeft: `4px solid ${leasesTheme.borderColor}`
                             }}
                           >
                             <div className="flex items-start justify-between mb-3">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <FileText className="w-5 h-5" style={{ color: leasesCardStyles.accent }} />
-                                  <h3 className="text-sm font-semibold" style={{ color: leasesCardStyles.headerColor }}>
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: leasesTheme.iconBg }}>
+                                    <FileText className="w-4 h-4" style={{ color: leasesTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: leasesTheme.titleColor }}>
                                     {strings.activeLeases}
                                   </h3>
                                 </div>
-                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: leasesCardStyles.metricColor }}>
+                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: leasesTheme.metricColor }}>
                                   {leases.length}
                                 </p>
                               </div>
@@ -1713,18 +1708,18 @@ function DashboardContent() {
                             {leases.length > 0 && (
                               <div className="grid grid-cols-2 gap-2 mb-3">
                                 <div className="text-xs">
-                                  <p style={{ color: leasesCardStyles.headerColor, opacity: 0.7 }}>
+                                  <p style={{ color: leasesTheme.titleColor, opacity: 0.7 }}>
                                     {language === 'en' ? 'Scanned' : language === 'zh' ? '已扫描' : language === 'ja' ? 'スキャン済み' : language === 'ko' ? '스캔됨' : 'สแกนแล้ว'}
                                   </p>
-                                  <p className="font-semibold" style={{ color: leasesCardStyles.metricColor }}>
+                                  <p className="font-semibold" style={{ color: leasesTheme.metricColor }}>
                                     {scannedLeases.length}
                                   </p>
                                 </div>
                                 <div className="text-xs">
-                                  <p style={{ color: leasesCardStyles.headerColor, opacity: 0.7 }}>
+                                  <p style={{ color: leasesTheme.titleColor, opacity: 0.7 }}>
                                     {language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน'}
                                   </p>
-                                  <p className="font-semibold" style={{ color: leasesCardStyles.metricColor }}>
+                                  <p className="font-semibold" style={{ color: leasesTheme.metricColor }}>
                                     {leases.filter(l => l.notice_alerts_enabled).length}
                                   </p>
                                 </div>
@@ -1736,19 +1731,20 @@ function DashboardContent() {
                                 <button
                                   type="button"
                                   style={{
-                                    ...primaryCtaStyle,
-                                    backgroundColor: leasesCardStyles.accent,
+                                    backgroundColor: leasesTheme.buttonBg,
+                                    color: leasesTheme.buttonText,
                                     width: "100%",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "600",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s",
                                     marginTop: "12px"
                                   }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = primaryCtaHover.transform;
-                                    e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = "";
-                                    e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                                 >
                                   {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
                                 </button>
@@ -1758,42 +1754,45 @@ function DashboardContent() {
                                 type="button"
                                 onClick={() => navigate(createPageUrl("UploadScan"))}
                                 style={{
-                                  ...primaryCtaStyle,
-                                  backgroundColor: leasesCardStyles.accent,
+                                  backgroundColor: leasesTheme.buttonBg,
+                                  color: leasesTheme.buttonText,
                                   width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s",
                                   marginTop: "12px"
                                 }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform = primaryCtaHover.transform;
-                                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = "";
-                                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                               >
                                 {strings.uploadFirstLease}
                               </button>
                             )}
                           </div>
 
-                          {/* DEPOSITS TRACKED CARD */}
+                          {/* DEPOSITS TRACKED */}
                           <div
-                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
-                              background: depositsCardStyles.background,
-                              borderLeft: `4px solid ${depositsCardStyles.borderLeftColor}`
+                              backgroundColor: depositsTheme.cardBg,
+                              borderLeft: `4px solid ${depositsTheme.borderColor}`
                             }}
                           >
                             <div className="flex items-start justify-between mb-3">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <Wallet className="w-5 h-5" style={{ color: depositsCardStyles.accent }} />
-                                  <h3 className="text-sm font-semibold" style={{ color: depositsCardStyles.headerColor }}>
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: depositsTheme.iconBg }}>
+                                    <Wallet className="w-4 h-4" style={{ color: depositsTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: depositsTheme.titleColor }}>
                                     {strings.depositsTracked}
                                   </h3>
                                 </div>
-                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: depositsCardStyles.metricColor }}>
+                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: depositsTheme.metricColor }}>
                                   ฿{totalDepositValue.toLocaleString()}
                                 </p>
                               </div>
@@ -1801,18 +1800,18 @@ function DashboardContent() {
 
                             <div className="grid grid-cols-2 gap-2 mb-3">
                               <div className="text-xs">
-                                <p style={{ color: depositsCardStyles.headerColor, opacity: 0.7 }}>
+                                <p style={{ color: depositsTheme.titleColor, opacity: 0.7 }}>
                                   {language === 'en' ? 'Avg' : language === 'zh' ? '平均' : language === 'ja' ? '平均' : language === 'ko' ? '평균' : 'เฉลี่ย'}
                                 </p>
-                                <p className="font-semibold" style={{ color: depositsCardStyles.metricColor }}>
+                                <p className="font-semibold" style={{ color: depositsTheme.metricColor }}>
                                   {avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—'}
                                 </p>
                               </div>
                               <div className="text-xs">
-                                <p style={{ color: depositsCardStyles.headerColor, opacity: 0.7 }}>
+                                <p style={{ color: depositsTheme.titleColor, opacity: 0.7 }}>
                                   {language === 'en' ? 'Soon' : language === 'zh' ? '即将' : language === 'ja' ? 'まもなく' : language === 'ko' ? '곧' : 'เร็วๆนี้'}
-                                  </p>
-                                <p className="font-semibold" style={{ color: depositsCardStyles.metricColor }}>
+                                </p>
+                                <p className="font-semibold" style={{ color: depositsTheme.metricColor }}>
                                   {urgentDeposits}
                                 </p>
                               </div>
@@ -1822,42 +1821,45 @@ function DashboardContent() {
                               <button
                                 type="button"
                                 style={{
-                                  ...primaryCtaStyle,
-                                  backgroundColor: depositsCardStyles.accent,
+                                  backgroundColor: depositsTheme.buttonBg,
+                                  color: depositsTheme.buttonText,
                                   width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s",
                                   marginTop: "12px"
                                 }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform = primaryCtaHover.transform;
-                                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = "";
-                                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                               >
                                 {language === 'en' ? 'Add' : language === 'zh' ? '添加' : language === 'ja' ? '追加' : language === 'ko' ? '추가' : 'เพิ่ม'}
                               </button>
                             </Link>
                           </div>
                           
-                          {/* RENT TRACKED CARD */}
+                          {/* RENT TRACKED */}
                           <div
-                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
-                              background: rentCardStyles.background,
-                              borderLeft: `4px solid ${rentCardStyles.borderLeftColor}`
+                              backgroundColor: rentTheme.cardBg,
+                              borderLeft: `4px solid ${rentTheme.borderColor}`
                             }}
                           >
                             <div className="flex items-start justify-between mb-3">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <Calendar className="w-5 h-5" style={{ color: rentCardStyles.accent }} />
-                                  <h3 className="text-sm font-semibold" style={{ color: rentCardStyles.headerColor }}>
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: rentTheme.iconBg }}>
+                                    <Calendar className="w-4 h-4" style={{ color: rentTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: rentTheme.titleColor }}>
                                     {strings.rentTracked}
                                   </h3>
                                 </div>
-                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: rentCardStyles.metricColor }}>
+                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: rentTheme.metricColor }}>
                                   {rentTrackedCount}
                                 </p>
                               </div>
@@ -1866,10 +1868,10 @@ function DashboardContent() {
                             {rentTrackedCount > 0 && (
                               <div className="grid grid-cols-1 gap-2 mb-3">
                                 <div className="text-xs">
-                                  <p style={{ color: rentCardStyles.headerColor, opacity: 0.7 }}>
+                                  <p style={{ color: rentTheme.titleColor, opacity: 0.7 }}>
                                     {language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน'}
                                   </p>
-                                  <p className="font-semibold" style={{ color: rentCardStyles.metricColor }}>
+                                  <p className="font-semibold" style={{ color: rentTheme.metricColor }}>
                                     {deposits.filter(d => d.rent_alerts_enabled).length}
                                   </p>
                                 </div>
@@ -1881,19 +1883,20 @@ function DashboardContent() {
                                 <button
                                   type="button"
                                   style={{
-                                    ...primaryCtaStyle,
-                                    backgroundColor: rentCardStyles.accent,
+                                    backgroundColor: rentTheme.buttonBg,
+                                    color: rentTheme.buttonText,
                                     width: "100%",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "600",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s",
                                     marginTop: "12px"
                                   }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = primaryCtaHover.transform;
-                                    e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = "";
-                                    e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                                 >
                                   {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
                                 </button>
@@ -1903,42 +1906,45 @@ function DashboardContent() {
                                 type="button"
                                 onClick={() => navigate(createPageUrl("PropertyTracker"))}
                                 style={{
-                                  ...primaryCtaStyle,
-                                  backgroundColor: rentCardStyles.accent,
+                                  backgroundColor: rentTheme.buttonBg,
+                                  color: rentTheme.buttonText,
                                   width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s",
                                   marginTop: "12px"
                                 }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform = primaryCtaHover.transform;
-                                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = "";
-                                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                               >
                                 {strings.setupRent}
                               </button>
                             )}
                           </div>
 
-                          {/* NOTIFICATIONS CARD */}
+                          {/* NOTIFICATIONS */}
                           <div
-                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
-                              background: notificationsCardStyles.background,
-                              borderLeft: `4px solid ${notificationsCardStyles.borderLeftColor}`
+                              backgroundColor: notificationsTheme.cardBg,
+                              borderLeft: `4px solid ${notificationsTheme.borderColor}`
                             }}
                           >
                             <div className="flex items-start justify-between mb-3">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <Bell className="w-5 h-5" style={{ color: notificationsCardStyles.accent }} />
-                                  <h3 className="text-sm font-semibold" style={{ color: notificationsCardStyles.headerColor }}>
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: notificationsTheme.iconBg }}>
+                                    <Bell className="w-4 h-4" style={{ color: notificationsTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: notificationsTheme.titleColor }}>
                                     {strings.notifications}
                                   </h3>
                                 </div>
-                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: notificationsCardStyles.metricColor }}>
+                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: notificationsTheme.metricColor }}>
                                   {notificationLogs.length}
                                 </p>
                               </div>
@@ -1947,18 +1953,18 @@ function DashboardContent() {
                             {notificationLogs.length > 0 && (
                               <div className="grid grid-cols-2 gap-2 mb-3">
                                 <div className="text-xs">
-                                  <p style={{ color: notificationsCardStyles.headerColor, opacity: 0.7 }}>
+                                  <p style={{ color: notificationsTheme.titleColor, opacity: 0.7 }}>
                                     {language === 'en' ? 'Sent' : language === 'zh' ? '已发送' : language === 'ja' ? '送信済み' : language === 'ko' ? '전송됨' : 'ส่งแล้ว'}
                                   </p>
-                                  <p className="font-semibold" style={{ color: notificationsCardStyles.metricColor }}>
+                                  <p className="font-semibold" style={{ color: notificationsTheme.metricColor }}>
                                     {notificationLogs.filter(n => n.status === 'sent').length}
                                   </p>
                                 </div>
                                 <div className="text-xs">
-                                  <p style={{ color: notificationsCardStyles.headerColor, opacity: 0.7 }}>
+                                  <p style={{ color: notificationsTheme.titleColor, opacity: 0.7 }}>
                                     {language === 'en' ? 'Failed' : language === 'zh' ? '失败' : language === 'ja' ? '失敗' : language === 'ko' ? '실패' : 'ล้มเหลว'}
                                   </p>
-                                  <p className="font-semibold" style={{ color: notificationsCardStyles.metricColor }}>
+                                  <p className="font-semibold" style={{ color: notificationsTheme.metricColor }}>
                                     {notificationLogs.filter(n => n.status === 'failed').length}
                                   </p>
                                 </div>
@@ -1970,47 +1976,50 @@ function DashboardContent() {
                                 <button
                                   type="button"
                                   style={{
-                                    ...primaryCtaStyle,
-                                    backgroundColor: notificationsCardStyles.accent,
+                                    backgroundColor: notificationsTheme.buttonBg,
+                                    color: notificationsTheme.buttonText,
                                     width: "100%",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "600",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s",
                                     marginTop: "12px"
                                   }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = primaryCtaHover.transform;
-                                    e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = "";
-                                    e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                                 >
                                   {language === 'en' ? 'View All' : language === 'zh' ? '查看全部' : language === 'ja' ? 'すべて表示' : language === 'ko' ? '모두 보기' : 'ดูทั้งหมด'}
                                 </button>
                               </Link>
                             ) : (
-                              <div className="text-xs text-center py-2" style={{ color: notificationsCardStyles.headerColor, opacity: 0.6 }}>
+                              <div className="text-xs text-center py-2" style={{ color: notificationsTheme.titleColor, opacity: 0.6 }}>
                                 {strings.noNotifications}
                               </div>
                             )}
                           </div>
                           
-                          {/* ACTIVE CASES CARD */}
+                          {/* ACTIVE CASES */}
                           <div
-                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
-                              background: casesCardStyles.background,
-                              borderLeft: `4px solid ${casesCardStyles.borderLeftColor}`
+                              backgroundColor: casesTheme.cardBg,
+                              borderLeft: `4px solid ${casesTheme.borderColor}`
                             }}
                           >
                             <div className="flex items-start justify-between mb-3">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <Scale className="w-5 h-5" style={{ color: casesCardStyles.accent }} />
-                                  <h3 className="text-sm font-semibold" style={{ color: casesCardStyles.headerColor }}>
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: casesTheme.iconBg }}>
+                                    <Scale className="w-4 h-4" style={{ color: casesTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: casesTheme.titleColor }}>
                                     {strings.activeCases}
                                   </h3>
                                 </div>
-                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: casesCardStyles.metricColor }}>
+                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: casesTheme.metricColor }}>
                                   {activeCases.length}
                                 </p>
                               </div>
@@ -2018,10 +2027,10 @@ function DashboardContent() {
 
                             <div className="grid grid-cols-1 gap-2 mb-3">
                               <div className="text-xs">
-                                <p style={{ color: casesCardStyles.headerColor, opacity: 0.7 }}>
+                                <p style={{ color: casesTheme.titleColor, opacity: 0.7 }}>
                                   {language === 'en' ? 'Resolved' : language === 'zh' ? '已解决' : language === 'ja' ? '解決済み' : language === 'ko' ? '해결됨' : 'แก้ไข'}
                                 </p>
-                                <p className="font-semibold" style={{ color: casesCardStyles.metricColor }}>
+                                <p className="font-semibold" style={{ color: casesTheme.metricColor }}>
                                   {resolvedCases}
                                 </p>
                               </div>
@@ -2031,42 +2040,45 @@ function DashboardContent() {
                               <button
                                 type="button"
                                 style={{
-                                  ...primaryCtaStyle,
-                                  backgroundColor: casesCardStyles.accent,
+                                  backgroundColor: casesTheme.buttonBg,
+                                  color: casesTheme.buttonText,
                                   width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s",
                                   marginTop: "12px"
                                 }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform = primaryCtaHover.transform;
-                                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = "";
-                                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                               >
                                 {language === 'en' ? 'Open' : language === 'zh' ? '打开' : language === 'ja' ? '開く' : language === 'ko' ? '열기' : 'เปิด'}
                               </button>
                             </Link>
                           </div>
 
-                          {/* MAINTENANCE CARD */}
+                          {/* MAINTENANCE */}
                           <div
-                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+                            className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
-                              background: maintenanceCardStyles.background,
-                              borderLeft: `4px solid ${maintenanceCardStyles.borderLeftColor}`
+                              backgroundColor: maintenanceTheme.cardBg,
+                              borderLeft: `4px solid ${maintenanceTheme.borderColor}`
                             }}
                           >
                             <div className="flex items-start justify-between mb-3">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <Wrench className="w-5 h-5" style={{ color: maintenanceCardStyles.accent }} />
-                                  <h3 className="text-sm font-semibold" style={{ color: maintenanceCardStyles.headerColor }}>
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: maintenanceTheme.iconBg }}>
+                                    <Wrench className="w-4 h-4" style={{ color: maintenanceTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: maintenanceTheme.titleColor }}>
                                     {strings.maintenanceRequests}
                                   </h3>
                                 </div>
-                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: maintenanceCardStyles.metricColor }}>
+                                <p className="text-2xl sm:text-3xl font-bold" style={{ color: maintenanceTheme.metricColor }}>
                                   {activeMaintenanceCount}
                                 </p>
                               </div>
@@ -2075,10 +2087,10 @@ function DashboardContent() {
                             {activeMaintenanceCount > 0 && (
                               <div className="grid grid-cols-1 gap-2 mb-3">
                                 <div className="text-xs">
-                                  <p style={{ color: maintenanceCardStyles.headerColor, opacity: 0.7 }}>
+                                  <p style={{ color: maintenanceTheme.titleColor, opacity: 0.7 }}>
                                     {language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ'}
                                   </p>
-                                  <p className="font-semibold" style={{ color: maintenanceCardStyles.metricColor }}>
+                                  <p className="font-semibold" style={{ color: maintenanceTheme.metricColor }}>
                                     {maintenanceRequests.filter(r => r.status === 'completed').length}
                                   </p>
                                 </div>
@@ -2090,25 +2102,26 @@ function DashboardContent() {
                                 <button
                                   type="button"
                                   style={{
-                                    ...primaryCtaStyle,
-                                    backgroundColor: maintenanceCardStyles.accent,
+                                    backgroundColor: maintenanceTheme.buttonBg,
+                                    color: maintenanceTheme.buttonText,
                                     width: "100%",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "600",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s",
                                     marginTop: "12px"
                                   }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = primaryCtaHover.transform;
-                                    e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = "";
-                                    e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                                 >
                                   {language === 'en' ? 'View' : language === 'zh' ? '查看' : language === 'ja' ? '見る' : language === 'ko' ? '보기' : 'ดู'}
                                 </button>
                               </Link>
                             ) : (
-                              <div className="text-xs text-center py-2" style={{ color: maintenanceCardStyles.headerColor, opacity: 0.6 }}>
+                              <div className="text-xs text-center py-2" style={{ color: maintenanceTheme.titleColor, opacity: 0.6 }}>
                                 {strings.noMaintenance}
                               </div>
                             )}
@@ -2146,7 +2159,7 @@ function DashboardContent() {
                           title={strings.depositsTracked}
                           value={`฿${totalDepositValue.toLocaleString()}`}
                           icon={Wallet}
-                          scoreColor="#C7A338"
+                          scoreColor="#10B981"
                           miniStats={[
                             { 
                               label: language === 'en' ? 'Avg' : language === 'zh' ? '平均' : language === 'ja' ? '平均' : language === 'ko' ? '평균' : 'เฉลี่ย',
@@ -2169,7 +2182,7 @@ function DashboardContent() {
                           title={strings.rentTracked}
                           value={rentTrackedCount.toString()}
                           icon={Calendar}
-                          scoreColor="#3B82F6"
+                          scoreColor="#0EA5E9"
                           miniStats={rentTrackedCount > 0 ? [
                             {
                               label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน',
