@@ -32,6 +32,7 @@ import ProgressBreadcrumb from "../components/shared/ProgressBreadcrumb";
 import UploadProgress from "../components/shared/UploadProgress";
 import { haptic } from "../components/shared/HapticFeedback";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
+import { getFeatureCardStyles } from "../components/shared/featureTheme";
 
 export default function UploadScanPage() {
   const navigate = useNavigate();
@@ -82,6 +83,8 @@ export default function UploadScanPage() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
+
+  const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
 
   // ✅ SCAN LIMIT ENFORCEMENT
   const getScanLimits = () => {
@@ -203,7 +206,8 @@ export default function UploadScanPage() {
       stepUpload: "Upload",
       stepAnalyze: "Analyze",
       stepResults: "Results",
-      stepTrack: "Track"
+      stepTrack: "Track",
+      activeLeases: "Active Leases"
     },
     th: {
       title: "สแกนสัญญาเช่า",
@@ -277,7 +281,8 @@ export default function UploadScanPage() {
       stepUpload: "อัปโหลด",
       stepAnalyze: "วิเคราะห์",
       stepResults: "ผลลัพธ์",
-      stepTrack: "ติดตาม"
+      stepTrack: "ติดตาม",
+      activeLeases: "สัญญาเช่าที่ใช้งาน"
     },
     zh: {
       title: "扫描租约",
@@ -351,7 +356,8 @@ export default function UploadScanPage() {
       stepUpload: "上传",
       stepAnalyze: "分析",
       stepResults: "结果",
-      stepTrack: "追踪"
+      stepTrack: "追踪",
+      activeLeases: "活跃租约"
     },
     ja: {
       title: "賃貸契約をスキャン",
@@ -425,7 +431,8 @@ export default function UploadScanPage() {
       stepUpload: "アップロード",
       stepAnalyze: "分析",
       stepResults: "結果",
-      stepTrack: "追跡"
+      stepTrack: "追跡",
+      activeLeases: "アクティブな賃貸契約"
     },
     ko: {
       title: "임대 계약 스캔",
@@ -499,7 +506,8 @@ export default function UploadScanPage() {
       stepUpload: "업로드",
       stepAnalyze: "분석",
       stepResults: "결과",
-      stepTrack: "추적"
+      stepTrack: "추적",
+      activeLeases: "활성 임대 계약"
     }
   };
 
@@ -986,11 +994,44 @@ export default function UploadScanPage() {
         )}
 
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+          <div className="flex items-center gap-3 mb-3">
+            <div style={{
+              width: '40px',
+              height: '40px',
+              backgroundColor: leasesTheme.iconBg,
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+            }}>
+              <FileText className="w-5 h-5" style={{ color: leasesTheme.iconColor }} />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+            </div>
+          </div>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
 
           {/* ✅ SCAN LIMIT INDICATOR */}
-          <div className="mt-3">
+          <div className="mt-3 flex items-center gap-2">
+            <span
+              style={{
+                backgroundColor: leasesTheme.iconBg,
+                color: leasesTheme.iconColor,
+                borderRadius: '9999px',
+                fontSize: '12px',
+                fontWeight: '600',
+                padding: '4px 10px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <FileText className="w-3 h-3" />
+              {strings.activeLeases}
+            </span>
+            
             {getScanLimits().unlimited ? (
               <Badge className="bg-purple-100 text-purple-700 border-purple-200">
                 ✨ {strings.unlimitedScans}
@@ -1025,7 +1066,7 @@ export default function UploadScanPage() {
                 {retryCount > 0 && retryCount < 3 && (
                   <p className="text-red-500 text-xs mt-2">
                     {language === 'th'
-                      ? `🔄 กำลังลองอีกครั้ง... (ครั้งที่ ${retryCount}/3)`
+                      ? `🔄 กำลังลองใหม่... (ครั้งที่ ${retryCount}/3)`
                       : `🔄 Retrying... (Attempt ${retryCount}/3)`}
                   </p>
                 )}
