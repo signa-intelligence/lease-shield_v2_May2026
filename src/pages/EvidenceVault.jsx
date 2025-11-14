@@ -1,16 +1,14 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye, Download, Edit2, Send, CheckCircle2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye, Download, Edit2, Send, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -22,7 +20,6 @@ import { haptic } from "../components/shared/HapticFeedback";
 import UploadProgress from "../components/shared/UploadProgress";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
 import BottomSheet from "../components/shared/BottomSheet";
-import FloatingActionButton from "../components/shared/FloatingActionButton";
 import MobileFormInput from "../components/shared/MobileFormInput";
 import LazyImage from "../components/shared/LazyImage";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
@@ -30,6 +27,12 @@ import EmptyState from "../components/shared/EmptyState";
 import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import {
+  FEATURE_COLORS,
+  CTA_COLOR,
+  primaryCtaStyle,
+  primaryCtaHover
+} from "../components/shared/featureTheme";
 
 const DOC_TYPE_CONFIG = {
   lease: { 
@@ -636,6 +639,8 @@ function EvidenceVaultContent() {
     inputBg: '#FFFFFF'
   };
 
+  const evidenceAccent = FEATURE_COLORS.evidence.accent;
+
   const strings = {
     en: {
       back: "Back to Dashboard",
@@ -643,6 +648,7 @@ function EvidenceVaultContent() {
       subtitle: "Secure storage for all your rental documentation",
       uploadFiles: "Upload Files",
       uploadDocument: "Upload Document",
+      uploadEvidence: "Upload evidence",
       documentType: "Document Type",
       customLabel: "Custom Label",
       customLabelPlaceholder: "e.g., Move-in photos",
@@ -657,9 +663,9 @@ function EvidenceVaultContent() {
       noDocuments: "No Documents Yet",
       noDocumentsDesc: "Start building your evidence vault for better protection. All your uploaded documents are securely stored here.",
       uploadFirst: "Upload First Document",
-      deleteConfirm: "Are you sure?", // Existing
-      confirmDelete: "Are you sure you want to delete this file?", // Added for haptic-enabled delete
-      confirmBulkDelete: "Are you sure you want to delete {count} file(s)?" , // Added for haptic-enabled bulk delete
+      deleteConfirm: "Are you sure?",
+      confirmDelete: "Are you sure you want to delete this file?",
+      confirmBulkDelete: "Are you sure you want to delete {count} file(s)?" ,
       view: "View",
       download: "Download",
       sendEmail: "Send Email",
@@ -710,6 +716,7 @@ function EvidenceVaultContent() {
       subtitle: "จัดเก็บเอกสารการเช่าทั้งหมดของคุณอย่างปลอดภัย",
       uploadFiles: "อัปโหลดไฟล์",
       uploadDocument: "อัปโหลดเอกสาร",
+      uploadEvidence: "อัปโหลดหลักฐาน",
       documentType: "ประเภทเอกสาร",
       customLabel: "ป้ายกำกับที่กำหนดเอง",
       customLabelPlaceholder: "เช่น รูปภาพตอนย้ายเข้า",
@@ -724,9 +731,9 @@ function EvidenceVaultContent() {
       noDocuments: "ยังไม่มีเอกสาร",
       noDocumentsDesc: "เริ่มสร้างคลังหลักฐานเพื่อการป้องกันที่ดีขึ้น เอกสารทั้งหมดที่คุณอัปโหลดจะถูกจัดเก็บอย่างปลอดภัยที่นี่",
       uploadFirst: "อัปโหลดเอกสารแรก",
-      deleteConfirm: "คุณแน่ใจหรือไม่?", // Existing
-      confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์นี้?", // Added
-      confirmBulkDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์ {count} ไฟล์?", // Added
+      deleteConfirm: "คุณแน่ใจหรือไม่?",
+      confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์นี้?",
+      confirmBulkDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์ {count} ไฟล์?",
       view: "ดู",
       download: "ดาวน์โหลด",
       sendEmail: "ส่งอีเมล",
@@ -777,6 +784,7 @@ function EvidenceVaultContent() {
       subtitle: "安全存储您的所有租赁文档",
       uploadFiles: "上传文件",
       uploadDocument: "上传文档",
+      uploadEvidence: "上传证据",
       documentType: "文档类型",
       customLabel: "自定义标签",
       customLabelPlaceholder: "例如，搬入照片",
@@ -844,6 +852,7 @@ function EvidenceVaultContent() {
       subtitle: "すべての賃貸文書を安全に保管",
       uploadFiles: "ファイルをアップロード",
       uploadDocument: "ドキュメントをアップロード",
+      uploadEvidence: "証拠をアップロード",
       documentType: "ドキュメントタイプ",
       customLabel: "カスタムラベル",
       customLabelPlaceholder: "例：入居時の写真",
@@ -911,6 +920,7 @@ function EvidenceVaultContent() {
       subtitle: "모든 임대 문서를 안전하게 보관",
       uploadFiles: "파일 업로드",
       uploadDocument: "문서 업로드",
+      uploadEvidence: "증거 업로드",
       documentType: "문서 유형",
       customLabel: "사용자 지정 레이블",
       customLabelPlaceholder: "예: 입주 사진",
@@ -978,6 +988,7 @@ function EvidenceVaultContent() {
     subtitle: "Secure storage for all your rental documentation",
     uploadFiles: "Upload Files",
     uploadDocument: "Upload Document",
+    uploadEvidence: "Upload evidence",
     documentType: "Document Type",
     customLabel: "Custom Label",
     customLabelPlaceholder: "e.g., Move-in photos",
@@ -1197,15 +1208,6 @@ function EvidenceVaultContent() {
           />
         )}
 
-        {/* FAB for Upload */}
-        <FloatingActionButton
-          icon={Upload}
-          label={strings.uploadDocument}
-          onClick={() => setShowUploadDialog(true)}
-          color="#0C3B2E"
-          showLabel={false}
-        />
-
         {/* Upload Bottom Sheet - REPLACING Dialog */}
         <BottomSheet
           open={showUploadDialog}
@@ -1407,11 +1409,38 @@ function EvidenceVaultContent() {
         </Button>
 
         <div className="mb-4 sm:mb-6">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2">
-            <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-ls-forest" />
-            <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Shield className="w-6 h-6 sm:w-8 sm:h-8" style={{ color: evidenceAccent }} />
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+              </div>
+            </div>
+
+            {/* NEW: Upload Evidence CTA - Desktop */}
+            <div className="hidden sm:block">
+              <button
+                type="button"
+                onClick={() => {
+                  haptic.medium();
+                  setShowUploadDialog(true);
+                }}
+                style={primaryCtaStyle}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = primaryCtaHover.transform;
+                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "";
+                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                }}
+              >
+                <Upload className="w-4 h-4" />
+                {strings.uploadEvidence}
+              </button>
+            </div>
           </div>
-          <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
           
           {/* STORAGE USAGE INDICATOR */}
           <div className="mt-3 flex gap-2">
@@ -1430,20 +1459,48 @@ function EvidenceVaultContent() {
           </div>
         </div>
 
+        {/* NEW: Upload Evidence CTA - Mobile (full width) */}
+        <div className="sm:hidden mb-4">
+          <button
+            type="button"
+            onClick={() => {
+              haptic.medium();
+              setShowUploadDialog(true);
+            }}
+            style={{
+              ...primaryCtaStyle,
+              width: "100%",
+              padding: "12px 16px",
+              fontSize: "1rem"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = primaryCtaHover.transform;
+              e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "";
+              e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+            }}
+          >
+            <Upload className="w-5 h-5" />
+            {strings.uploadEvidence}
+          </button>
+        </div>
+
         {/* Templates Link - now a separate card */}
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg, borderLeft: `4px solid ${evidenceAccent}` }}>
           <CardContent className="p-0">
             <Link to={createPageUrl("Templates")}>
               <div
                 className="p-4 rounded-lg border-2 hover:shadow-md transition-all cursor-pointer"
-                onClick={() => haptic.light()} // Added haptic
+                onClick={() => haptic.light()}
                 style={{
                   backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  borderColor: '#0C3B2E'
+                  borderColor: evidenceAccent
                 }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-ls-forest flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: evidenceAccent }}>
                     <FileText className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -1454,7 +1511,7 @@ function EvidenceVaultContent() {
                       {strings.viewTemplatesDesc}
                     </p>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-ls-forest flex-shrink-0" />
+                  <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: evidenceAccent }} />
                 </div>
               </div>
             </Link>
@@ -1469,18 +1526,6 @@ function EvidenceVaultContent() {
                       {strings.recentUploads} ({filteredDocuments.length})
                   </h2>
                   <div className="flex items-center gap-2 flex-wrap">
-                      <Button
-                        onClick={() => {
-                          haptic.medium();
-                          setShowUploadDialog(true);
-                        }}
-                        className="bg-ls-forest hover:bg-ls-forest/90 text-white"
-                        style={{ minHeight: '40px' }}
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        {strings.uploadFiles}
-                      </Button>
-
                       {/* Bulk Actions */}
                       {selectedDocs.length > 0 && (
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1524,7 +1569,7 @@ function EvidenceVaultContent() {
                               }}
                           >
                               {selectedDocs.length === filteredDocuments.length ? (
-                                  <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4 text-ls-forest" />
+                                  <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4" style={{ color: evidenceAccent }} />
                               ) : (
                                   <Square className="w-3 h-3 sm:w-4 sm:h-4" />
                               )}
@@ -1560,14 +1605,18 @@ function EvidenceVaultContent() {
                 return (
                   <SwipeToDelete
                     key={doc.id}
-                    onDelete={() => handleSwipeDelete(doc.id)} // Kept original handleSwipeDelete
+                    onDelete={() => handleSwipeDelete(doc.id)}
                     deleteLabel={strings.delete}
                     colors={colors}
                     disabled={isOptimistic}
                   >
                     <Card
-                      className={`overflow-hidden border-none shadow-lg hover:shadow-xl transition-all relative ${isSelected ? 'ring-2 ring-ls-forest' : ''} ${isOptimistic ? 'opacity-60' : ''}`}
-                      style={{ backgroundColor: colors.cardBg, borderColor: isSelected ? '#0C3B2E' : colors.borderColor }}
+                      className={`overflow-hidden border-none shadow-lg hover:shadow-xl transition-all relative ${isSelected ? 'ring-2' : ''} ${isOptimistic ? 'opacity-60' : ''}`}
+                      style={{ 
+                        backgroundColor: colors.cardBg, 
+                        borderColor: isSelected ? evidenceAccent : colors.borderColor,
+                        borderLeft: isSelected ? `4px solid ${evidenceAccent}` : undefined
+                      }}
                       onClick={() => !isOptimistic && handleCardClick(doc)}
                     >
                       {isOptimistic && (
@@ -1701,7 +1750,7 @@ function EvidenceVaultContent() {
                             disabled={isOptimistic}
                             className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{
-                              backgroundColor: '#0C3B2E',
+                              backgroundColor: CTA_COLOR,
                               color: '#FFFFFF'
                             }}
                             onMouseEnter={(e) => {
@@ -1711,7 +1760,7 @@ function EvidenceVaultContent() {
                             }}
                             onMouseLeave={(e) => {
                               if (!isOptimistic) {
-                                e.target.style.backgroundColor = '#0C3B2E';
+                                e.target.style.backgroundColor = CTA_COLOR;
                               }
                             }}
                           >
