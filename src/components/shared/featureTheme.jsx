@@ -168,6 +168,17 @@ export const FEATURE_THEMES = {
   },
 };
 
+// Legacy compatibility: FEATURE_COLORS export for existing code
+export const FEATURE_COLORS = {
+  leases: { accent: "#3B82F6" },
+  deposits: { accent: "#10B981" },
+  rent: { accent: "#0EA5E9" },
+  notifications: { accent: "#8B5CF6" },
+  cases: { accent: "#DC2626" },
+  maintenance: { accent: "#F59E0B" },
+  evidence: { accent: "#6366F1" },
+};
+
 /**
  * Get comprehensive theme for a feature card
  * @param {string} featureKey - Key from FEATURE_THEMES (e.g., "leases", "deposits")
