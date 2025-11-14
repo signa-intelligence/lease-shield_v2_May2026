@@ -1811,7 +1811,7 @@ function DashboardContent() {
                               <div className="text-xs">
                                 <p style={{ color: depositsCardStyles.headerColor, opacity: 0.7 }}>
                                   {language === 'en' ? 'Soon' : language === 'zh' ? '即将' : language === 'ja' ? 'まもなく' : language === 'ko' ? '곧' : 'เร็วๆนี้'}
-                                </p>
+                                  </p>
                                 <p className="font-semibold" style={{ color: depositsCardStyles.metricColor }}>
                                   {urgentDeposits}
                                 </p>
@@ -2146,7 +2146,7 @@ function DashboardContent() {
                           title={strings.depositsTracked}
                           value={`฿${totalDepositValue.toLocaleString()}`}
                           icon={Wallet}
-                          bgGradient="bg-gradient-to-br from-ls-gold to-amber-600"
+                          scoreColor="#C7A338"
                           miniStats={[
                             { 
                               label: language === 'en' ? 'Avg' : language === 'zh' ? '平均' : language === 'ja' ? '平均' : language === 'ko' ? '평균' : 'เฉลี่ย',
@@ -2225,7 +2225,7 @@ function DashboardContent() {
                           title={strings.activeCases}
                           value={activeCases.length}
                           icon={Scale}
-                          bgGradient="bg-gradient-to-br from-ls-charcoal to-slate-700"
+                          scoreColor="#DC2626"
                           miniStats={[
                             { 
                               label: language === 'en' ? 'Resolved' : language === 'zh' ? '已解决' : language === 'ja' ? '解決済み' : language === 'ko' ? '해결됨' : 'แก้ไข',
