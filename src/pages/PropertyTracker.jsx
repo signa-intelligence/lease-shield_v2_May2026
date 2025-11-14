@@ -21,13 +21,16 @@ import { compressMultipleImages } from "../components/shared/ImageCompression";
 import { haptic } from "../components/shared/HapticFeedback";
 import UploadProgress from "../components/shared/UploadProgress";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
-import FloatingActionButton from "../components/shared/FloatingActionButton";
 import MobileFormInput from "../components/shared/MobileFormInput";
 import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 import LazyImage from "../components/shared/LazyImage";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
+import {
+  CTA_COLOR,
+  CTA_COLOR_DISABLED
+} from "../components/shared/featureTheme";
 
 function PropertyTrackerContent() {
   const navigate = useNavigate();
@@ -300,6 +303,9 @@ function PropertyTrackerContent() {
       allStatuses: "All Statuses",
       noResultsFound: "No requests found",
       tryDifferentSearch: "Try a different search term",
+      uploadDepositTracker: "Upload deposit tracker",
+      uploadRentSchedule: "Upload rent schedule",
+      newMaintenanceRequest: "New maintenance request",
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -358,6 +364,9 @@ function PropertyTrackerContent() {
       allStatuses: "ทุกสถานะ",
       noResultsFound: "ไม่พบคำขอ",
       tryDifferentSearch: "ลองค้นหาด้วยคำอื่น",
+      uploadDepositTracker: "อัปโหลดเงินมัดจำ",
+      uploadRentSchedule: "อัปโหลดกำหนดค่าเช่า",
+      newMaintenanceRequest: "คำขอซ่อมบำรุงใหม่",
     },
     zh: {
       title: "物业追踪器",
@@ -416,6 +425,9 @@ function PropertyTrackerContent() {
       allStatuses: "所有状态",
       noResultsFound: "未找到请求",
       tryDifferentSearch: "尝试不同的搜索词",
+      uploadDepositTracker: "上传押金追踪器",
+      uploadRentSchedule: "上传租金时间表",
+      newMaintenanceRequest: "新维护请求",
     },
     ja: {
       title: "物件トラッカー",
@@ -474,6 +486,9 @@ function PropertyTrackerContent() {
       allStatuses: "すべてのステータス",
       noResultsFound: "リクエストが見つかりません",
       tryDifferentSearch: "別の検索語を試してください",
+      uploadDepositTracker: "敷金トラッカーをアップロード",
+      uploadRentSchedule: "家賃スケジュールをアップロード",
+      newMaintenanceRequest: "新しいメンテナンスリクエスト",
     },
     ko: {
       title: "부동산 추적기",
@@ -532,6 +547,9 @@ function PropertyTrackerContent() {
       allStatuses: "모든 상태",
       noResultsFound: "요청을 찾을 수 없음",
       tryDifferentSearch: "다른 검색어를 시도하세요",
+      uploadDepositTracker: "보증금 추적기 업로드",
+      uploadRentSchedule: "임대료 일정 업로드",
+      newMaintenanceRequest: "새 유지보수 요청",
     }
   };
 
@@ -906,6 +924,23 @@ function PropertyTrackerContent() {
     }
   };
 
+  const baseCtaStyle = {
+    backgroundColor: CTA_COLOR,
+    color: "#FFFFFF",
+    borderRadius: "9999px",
+    border: "none",
+    padding: "10px 16px",
+    fontWeight: 600,
+    fontSize: "0.875rem",
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
+    boxShadow: "0 10px 18px rgba(12,59,46,0.35)",
+    transition: "transform 0.12s ease, box-shadow 0.12s ease, opacity 0.15s ease",
+  };
+
   return (
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
       <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
@@ -922,37 +957,94 @@ function PropertyTrackerContent() {
             {strings.back}
           </Button>
 
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <Home className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
-              {strings.title}
-            </h1>
-            <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
-          </div>
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold mb-1 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <Home className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
+                  {strings.title}
+                </h1>
+                <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+              </div>
 
-          {!showAddMaintenance && !editingMaintenance && (
-            <FloatingActionButton
-              icon={Wrench}
-              label={strings.addMaintenance}
-              onClick={() => {
-                haptic.medium();
-                setShowAddMaintenance(true);
-                setEditingMaintenance(null);
-                setCompressionStats(null);
-                setMaintenanceForm({
-                  issue_title: '', 
-                  description: '', 
-                  category: 'other', 
-                  priority: 'medium', 
-                  property_address: '', 
-                  reported_date: new Date().toISOString().split('T')[0]
-                });
-                setPhotoFiles([]);
-                setPhotoPreviews([]);
-              }}
-              color="#F59E0B"
-            />
-          )}
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic.medium();
+                    setEditingDeposit(true);
+                    setExpandedSections(prev => ({ ...prev, deposit: true }));
+                  }}
+                  style={baseCtaStyle}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                    e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "";
+                    e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
+                  }}
+                >
+                  <Wallet className="w-4 h-4" />
+                  {strings.uploadDepositTracker}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic.medium();
+                    setEditingRent(true);
+                    setExpandedSections(prev => ({ ...prev, rent: true }));
+                  }}
+                  style={baseCtaStyle}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                    e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "";
+                    e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
+                  }}
+                >
+                  <Calendar className="w-4 h-4" />
+                  {strings.uploadRentSchedule}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic.medium();
+                    setShowAddMaintenance(true);
+                    setEditingMaintenance(null);
+                    setCompressionStats(null);
+                    setMaintenanceForm({
+                      issue_title: '', 
+                      description: '', 
+                      category: 'other', 
+                      priority: 'medium', 
+                      property_address: '', 
+                      reported_date: new Date().toISOString().split('T')[0]
+                    });
+                    setPhotoFiles([]);
+                    setPhotoPreviews([]);
+                    setExpandedSections(prev => ({ ...prev, maintenance: true }));
+                  }}
+                  style={baseCtaStyle}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                    e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "";
+                    e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
+                  }}
+                >
+                  <Wrench className="w-4 h-4" />
+                  {strings.newMaintenanceRequest}
+                </button>
+              </div>
+            </div>
+          </div>
 
           <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
             <CardHeader
