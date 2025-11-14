@@ -23,10 +23,11 @@ import {
   Loader2,
   ExternalLink,
   Download,
-  Eye // Added Eye icon for Preview
+  Eye
 } from "lucide-react";
 import { format } from "date-fns";
 import LetterPreview from "../components/shared/LetterPreview";
+import { getFeatureCardStyles } from "../components/shared/featureTheme";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -72,6 +73,7 @@ export default function CaseDetails() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+  const theme = getFeatureCardStyles("cases", isDarkMode);
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -466,7 +468,7 @@ export default function CaseDetails() {
             <p className="mb-6" style={{ color: colors.textSecondary }}>
               {strings.notFoundDesc}
             </p>
-            <Button onClick={() => navigate(createPageUrl("Cases"))} className="bg-ls-forest hover:bg-ls-forest/90">
+            <Button onClick={() => navigate(createPageUrl("Cases"))} className="ls-cta-primary">
               {strings.backToCases}
             </Button>
           </div>
@@ -502,7 +504,7 @@ export default function CaseDetails() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+            <h1 className="text-3xl font-bold mb-2" style={{ color: theme.headerColor }}>
               {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
             </h1>
             <div className="flex items-center gap-2 text-sm" style={{ color: colors.textSecondary }}>
@@ -517,10 +519,16 @@ export default function CaseDetails() {
         </div>
 
         {/* Case Information */}
-        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+        <Card
+          className="mb-6 border-none shadow-lg"
+          style={{
+            background: theme.background,
+            borderLeft: `4px solid ${theme.borderLeftColor}`
+          }}
+        >
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
-            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-              <Scale className="w-5 h-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-2 text-base md:text-lg" style={{ color: theme.headerColor }}>
+              <Scale className="w-5 h-5" style={{ color: theme.accent }} />
               {strings.caseDetails}
             </CardTitle>
           </CardHeader>
@@ -532,8 +540,8 @@ export default function CaseDetails() {
                   {strings.disputeAmount}
                 </p>
                 <div className="flex items-baseline gap-2">
-                  <DollarSign className="w-5 h-5 text-blue-600" />
-                  <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                  <DollarSign className="w-5 h-5" style={{ color: theme.accent }} />
+                  <p className="text-2xl font-bold" style={{ color: theme.metricColor }}>
                     ฿{caseItem.dispute_amount?.toLocaleString() || 'N/A'}
                   </p>
                 </div>
@@ -620,10 +628,16 @@ export default function CaseDetails() {
         )}
 
         {/* Ops Assignment */}
-        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+        <Card
+          className="mb-6 border-none shadow-lg"
+          style={{
+            background: theme.background,
+            borderLeft: `4px solid ${theme.borderLeftColor}`
+          }}
+        >
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
-            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-              <UserCheck className="w-5 h-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-2 text-base md:text-lg" style={{ color: theme.headerColor }}>
+              <UserCheck className="w-5 h-5" style={{ color: theme.accent }} />
               {strings.opsAssignment}
             </CardTitle>
           </CardHeader>
@@ -662,11 +676,17 @@ export default function CaseDetails() {
 
         {/* Letters Section */}
         {caseItem.letters && (caseItem.letters.v1_url || caseItem.letters.v2_url || caseItem.letters.v3_url || caseItem.letter_pack_url || caseItem.letters.deposit_url || caseItem.letters.damages_url || caseItem.letters.early_termination_url || caseItem.letters.lease_negotiation_url) && (
-          <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+          <Card
+            className="mb-6 border-none shadow-lg"
+            style={{
+              background: theme.background,
+              borderLeft: `4px solid ${theme.borderLeftColor}`
+            }}
+          >
             <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-                  <FileText className="w-5 h-5 text-purple-600" />
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg" style={{ color: theme.headerColor }}>
+                  <FileText className="w-5 h-5" style={{ color: theme.accent }} />
                   {strings.generatedLetters}
                 </CardTitle>
                 {/* Letter Pack Compile Button */}
@@ -712,7 +732,7 @@ export default function CaseDetails() {
                       </div>
                     </div>
                     <a href={caseItem.letter_pack_url} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                      <Button size="sm" className="ls-cta-primary">
                         <ExternalLink className="w-4 h-4 mr-2" />
                         {strings.download}
                       </Button>
@@ -769,13 +789,7 @@ export default function CaseDetails() {
                       </button>
                       <button
                         onClick={() => handleDownloadWord('lease_negotiation')}
-                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
-                        style={{
-                          backgroundColor: '#F59E0B',
-                          color: '#FFFFFF'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#D97706'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#F59E0B'}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 ls-cta-primary"
                       >
                         <Download className="w-4 h-4" />
                         Word
@@ -826,13 +840,7 @@ export default function CaseDetails() {
                       </button>
                       <button
                         onClick={() => handleDownloadWord('deposit')}
-                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
-                        style={{
-                          backgroundColor: '#0C3B2E',
-                          color: '#FFFFFF'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 ls-cta-primary"
                       >
                         <Download className="w-4 h-4" />
                         Word
@@ -883,13 +891,7 @@ export default function CaseDetails() {
                       </button>
                       <button
                         onClick={() => handleDownloadWord('damages')}
-                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
-                        style={{
-                          backgroundColor: '#0C3B2E',
-                          color: '#FFFFFF'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 ls-cta-primary"
                       >
                         <Download className="w-4 h-4" />
                         Word
@@ -940,13 +942,7 @@ export default function CaseDetails() {
                       </button>
                       <button
                         onClick={() => handleDownloadWord('early_termination')}
-                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
-                        style={{
-                          backgroundColor: '#0C3B2E',
-                          color: '#FFFFFF'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                        className="px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 ls-cta-primary"
                       >
                         <Download className="w-4 h-4" />
                         Word

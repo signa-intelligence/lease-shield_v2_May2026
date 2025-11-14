@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ChatLog from "../components/maintenance/ChatLog";
+import { getFeatureCardStyles } from "../components/shared/featureTheme";
 
 export default function MaintenanceTracker() {
   const navigate = useNavigate();
@@ -82,6 +83,7 @@ export default function MaintenanceTracker() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+  const theme = getFeatureCardStyles("maintenance", isDarkMode);
 
   const colors = {
     bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
@@ -326,8 +328,8 @@ export default function MaintenanceTracker() {
         </Button>
 
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-            <Wrench className="w-7 h-7 md:w-8 md:h-8 text-orange-600" />
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
+            <Wrench className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
             {strings.title}
           </h1>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
@@ -335,14 +337,20 @@ export default function MaintenanceTracker() {
 
         <Button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="w-full mb-6 bg-orange-600 hover:bg-orange-700"
+          className="w-full mb-6 ls-cta-primary"
         >
           <Plus className="w-5 h-5 mr-2" />
           {strings.addRequest}
         </Button>
 
         {showAddForm && (
-          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <Card 
+            className="mb-6 border-none shadow-xl" 
+            style={{ 
+              background: theme.background,
+              borderLeft: `4px solid ${theme.borderLeftColor}`
+            }}
+          >
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
@@ -497,7 +505,7 @@ export default function MaintenanceTracker() {
                   </Button>
                   <Button
                     type="submit"
-                    className="bg-orange-600 hover:bg-orange-700"
+                    className="ls-cta-primary"
                     disabled={uploadingPhotos}
                   >
                     {uploadingPhotos ? (
@@ -531,11 +539,18 @@ export default function MaintenanceTracker() {
         ) : (
           <div className="grid gap-4">
             {requests.map((request) => (
-              <Card key={request.id} className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+              <Card 
+                key={request.id} 
+                className="border-none shadow-lg" 
+                style={{ 
+                  background: theme.background,
+                  borderLeft: `4px solid ${theme.borderLeftColor}`
+                }}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <CardTitle className="text-lg mb-2" style={{ color: colors.textPrimary }}>
+                      <CardTitle className="text-lg mb-2" style={{ color: theme.headerColor }}>
                         {request.issue_title}
                       </CardTitle>
                       <p className="text-sm" style={{ color: colors.textSecondary }}>

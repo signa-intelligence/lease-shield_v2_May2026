@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { getFeatureCardStyles } from '../shared/featureTheme';
 
 export default function DepositAlert({ deposits, language = 'en' }) {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function DepositAlert({ deposits, language = 'en' }) {
   });
 
   const isDarkMode = user?.theme === 'dark';
+  const theme = getFeatureCardStyles("deposits", isDarkMode);
   
   const activeDeposits = deposits.filter(d => d.status === 'tracking');
   
@@ -93,14 +95,17 @@ export default function DepositAlert({ deposits, language = 'en' }) {
 
   const str = strings[language] || strings.en;
 
-  const cardBg = isDarkMode ? '#2A2D30' : '#FFFFFF';
-  const textPrimary = isDarkMode ? '#ECEFED' : '#1A1D1F';
-
   if (urgentDeposits.length === 0) {
     return (
-      <Card className="border-none shadow-lg" style={{ backgroundColor: cardBg }}>
+      <Card 
+        className="border-none shadow-lg" 
+        style={{ 
+          background: theme.background,
+          borderLeft: `4px solid ${theme.borderLeftColor}`
+        }}
+      >
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base" style={{ color: textPrimary }}>
+          <CardTitle className="flex items-center gap-2 text-base" style={{ color: theme.headerColor }}>
             <Calendar className="w-5 h-5 text-emerald-600" />
             {str.title}
           </CardTitle>
@@ -116,9 +121,15 @@ export default function DepositAlert({ deposits, language = 'en' }) {
   }
 
   return (
-    <Card className="border-none shadow-xl" style={{ backgroundColor: cardBg }}>
+    <Card 
+      className="border-none shadow-xl" 
+      style={{ 
+        background: theme.background,
+        borderLeft: `4px solid ${theme.borderLeftColor}`
+      }}
+    >
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base" style={{ color: textPrimary }}>
+        <CardTitle className="flex items-center gap-2 text-base" style={{ color: theme.headerColor }}>
           <AlertCircle className="w-5 h-5 text-amber-600" />
           {str.title}
         </CardTitle>
@@ -189,19 +200,8 @@ export default function DepositAlert({ deposits, language = 'en' }) {
                 {isOverdue && (
                   <Button
                     size="sm"
-                    className="flex-1 text-xs font-bold"
-                    style={{
-                      backgroundColor: '#DC2626',
-                      color: '#FFFFFF',
-                      border: 'none'
-                    }}
+                    className="flex-1 text-xs font-bold ls-cta-primary"
                     onClick={() => navigate(createPageUrl('ResolveCase') + `?depositId=${deposit.id}&auto=true`)}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#B91C1C';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#DC2626';
-                    }}
                   >
                     <Shield className="w-3 h-3 mr-1" />
                     {str.openCase}

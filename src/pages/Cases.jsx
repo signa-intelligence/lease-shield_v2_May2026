@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,6 +24,7 @@ import LazyImage from "../components/shared/LazyImage";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
+import { getFeatureCardStyles } from "../components/shared/featureTheme";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
@@ -119,6 +119,7 @@ function CasesContent() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+  const theme = getFeatureCardStyles("cases", isDarkMode);
 
   if (isLoading) {
     console.log('⏳ Cases loading...');
@@ -434,8 +435,8 @@ function CasesContent() {
           </Button>
 
           <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <Scale className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
+            <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
+              <Scale className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
               {strings.title}
             </h1>
             <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>
@@ -544,7 +545,10 @@ function CasesContent() {
                   >
                     <Card
                       className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
-                      style={{ backgroundColor: colors.cardBg }}
+                      style={{ 
+                        background: theme.background,
+                        borderLeft: `4px solid ${theme.borderLeftColor}`
+                      }}
                       onClick={() => {
                         haptic.light();
                         navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`);
@@ -553,8 +557,8 @@ function CasesContent() {
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <Scale className="w-5 h-5 text-ls-forest flex-shrink-0" />
-                            <CardTitle className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                            <Scale className="w-5 h-5 flex-shrink-0" style={{ color: theme.accent }} />
+                            <CardTitle className="text-xl font-bold" style={{ color: theme.headerColor }}>
                               {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
                             </CardTitle>
                           </div>
@@ -572,7 +576,7 @@ function CasesContent() {
                           <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
                             {strings.disputeAmount}
                           </p>
-                          <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                          <p className="text-2xl font-bold" style={{ color: theme.metricColor }}>
                             ฿{caseItem.dispute_amount?.toLocaleString() || '0'}
                           </p>
                         </div>
@@ -709,13 +713,7 @@ function CasesContent() {
                                           e.stopPropagation();
                                           handleDownloadDocx(caseItem.letters[`${subject}_url`], subject);
                                         }}
-                                        className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all"
-                                        style={{
-                                          backgroundColor: '#0C3B2E',
-                                          color: '#FFFFFF'
-                                        }}
-                                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                                        className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all ls-cta-primary"
                                       >
                                         <Download className="w-3 h-3" />
                                         {strings.download}

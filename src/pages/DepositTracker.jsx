@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
+import { getFeatureCardStyles } from "../components/shared/featureTheme";
 
 function DepositTrackerContent() {
   const navigate = useNavigate();
@@ -47,6 +49,11 @@ function DepositTrackerContent() {
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
+
+  // Define language, isDarkMode, and theme here, after user data is potentially available
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+  const theme = getFeatureCardStyles("deposits", isDarkMode);
 
   const { data: deposits = [], isLoading } = useQuery({
     queryKey: ['deposits'],
@@ -95,9 +102,6 @@ function DepositTrackerContent() {
       toast.success(language === 'th' ? 'ลบสำเร็จ' : 'Deleted successfully');
     },
   });
-
-  const language = user?.language || 'en';
-  const isDarkMode = user?.theme === 'dark';
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -383,7 +387,7 @@ function DepositTrackerContent() {
                         <span className="text-sm" style={{ color: colors.textSecondary }}>
                           {strings.amount}
                         </span>
-                        <span className="text-sm font-bold" style={{ color: colors.textPrimary }}>
+                        <span className="text-sm font-bold" style={{ color: theme.metricColor }}>
                           ฿{selectedDispute.deposit_amount.toLocaleString()}
                         </span>
                       </div>
@@ -428,7 +432,7 @@ function DepositTrackerContent() {
                 </Button>
                 <Button
                   onClick={handleOpenCase}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="ls-cta-primary"
                 >
                   <Scale className="w-4 h-4 mr-2" />
                   {strings.openCase}
@@ -439,8 +443,8 @@ function DepositTrackerContent() {
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Wallet className="w-7 h-7 md:w-8 md:h-8 text-ls-gold" />
+              <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
+                <Wallet className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
                 {strings.depositTracker}
               </h1>
               <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>
@@ -453,7 +457,7 @@ function DepositTrackerContent() {
                   haptic.light();
                   setShowAddForm(!showAddForm);
                 }}
-                className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal w-full sm:w-auto"
+                className="ls-cta-primary w-full sm:w-auto"
                 size="sm"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -474,9 +478,15 @@ function DepositTrackerContent() {
           )}
 
           {showAddForm && (
-            <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <Card 
+              className="mb-6 shadow-xl" 
+              style={{ 
+                background: theme.background,
+                borderLeft: `4px solid ${theme.borderLeftColor}`
+              }}
+            >
               <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-                <CardTitle style={{ color: colors.textPrimary }}>{strings.addDeposit}</CardTitle>
+                <CardTitle style={{ color: theme.headerColor }}>{strings.addDeposit}</CardTitle>
               </CardHeader>
               <CardContent className="p-4 md:p-6">
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -620,7 +630,7 @@ function DepositTrackerContent() {
                     </Button>
                     <Button
                       type="submit"
-                      className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal"
+                      className="ls-cta-primary"
                       disabled={createDepositMutation.isPending}
                     >
                       {createDepositMutation.isPending ? (
@@ -656,7 +666,7 @@ function DepositTrackerContent() {
                   haptic.medium();
                   setShowAddForm(true);
                 }}
-                className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal"
+                className="ls-cta-primary"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 {strings.addDeposit}
@@ -680,10 +690,15 @@ function DepositTrackerContent() {
                 const isOverdue = daysRemaining < 0;
 
                 return (
-                  <Card key={deposit.id} className={`border-none shadow-lg hover:shadow-xl transition-all duration-300`} style={{
-                    backgroundColor: colors.cardBg,
-                    border: isUrgent ? `2px solid #C7A338` : 'none'
-                  }}>
+                  <Card 
+                    key={deposit.id} 
+                    className="shadow-lg hover:shadow-xl transition-all duration-300" 
+                    style={{
+                      background: theme.background,
+                      borderLeft: `4px solid ${theme.borderLeftColor}`,
+                      border: isUrgent ? `2px solid ${theme.accent}` : 'none'
+                    }}
+                  >
                     <CardHeader className="pb-3 sm:pb-4" style={{
                       borderBottom: `1px solid ${colors.borderColor}`
                     }}>
@@ -693,7 +708,7 @@ function DepositTrackerContent() {
                             {getStatusIcon(deposit.status)}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <CardTitle className="text-lg sm:text-xl font-bold break-words" style={{ color: colors.textPrimary }}>
+                            <CardTitle className="text-lg sm:text-xl font-bold break-words" style={{ color: theme.metricColor }}>
                               ฿{deposit.deposit_amount.toLocaleString()}
                             </CardTitle>
                             {deposit.property_address && (
@@ -738,7 +753,7 @@ function DepositTrackerContent() {
                           <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.paidOn}</p>
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-blue-600" />
-                            <p className="text-sm sm:text-base font-semibold" style={{ color: colors.textPrimary }}>
+                            <p className="text-sm sm:text-base font-semibold" style={{ color: theme.metricColor }}>
                               {format(new Date(deposit.deposit_paid_date), 'MMM d, yyyy')}
                             </p>
                           </div>
@@ -747,8 +762,8 @@ function DepositTrackerContent() {
                         <div>
                           <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.returnsOn}</p>
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-ls-gold" />
-                            <p className="text-sm sm:text-base font-semibold" style={{ color: colors.textPrimary }}>
+                            <Calendar className="w-4 h-4" style={{ color: theme.accent }} />
+                            <p className="text-sm sm:text-base font-semibold" style={{ color: theme.metricColor }}>
                               {format(new Date(deposit.expected_return_date), 'MMM d, yyyy')}
                             </p>
                           </div>
