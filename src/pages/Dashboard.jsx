@@ -26,6 +26,7 @@ import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
+import { ensureAuthenticated } from "../utils/authGuard";
 
 function DashboardContent() {
   const [focusMode, setFocusMode] = React.useState(false);
@@ -41,7 +42,10 @@ function DashboardContent() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      const authenticatedUser = await ensureAuthenticated(window.location.pathname);
+      return authenticatedUser;
+    },
   });
 
   const { data: leases = [], isLoading: leasesLoading } = useQuery({
@@ -2199,7 +2203,7 @@ function DashboardContent() {
                                 </div>
                                 <h3 className="text-sm font-semibold" style={{ color: leasesTheme.titleColor }}>
                                   {strings.activeLeases}
-                                </h3>
+                                  </h3>
                               </div>
                               <p className="text-3xl font-bold" style={{ color: leasesTheme.metricColor }}>
                                 {leases.length}

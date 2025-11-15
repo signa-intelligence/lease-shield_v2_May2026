@@ -32,6 +32,7 @@ import ProgressBreadcrumb from "../components/shared/ProgressBreadcrumb";
 import UploadProgress from "../components/shared/UploadProgress";
 import { haptic } from "../components/shared/HapticFeedback";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
+import { ensureAuthenticated } from "../utils/authGuard";
 
 export default function UploadScanPage() {
   const navigate = useNavigate();
@@ -65,7 +66,10 @@ export default function UploadScanPage() {
 
   const { data: user } = useQuery({
     queryKey: ['user'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      const authenticatedUser = await ensureAuthenticated(window.location.pathname);
+      return authenticatedUser;
+    },
     staleTime: 5 * 60 * 1000
   });
 

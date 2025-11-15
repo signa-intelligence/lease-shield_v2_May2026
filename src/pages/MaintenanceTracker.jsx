@@ -16,6 +16,7 @@ import { createPageUrl } from "@/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import ChatLog from "../components/maintenance/ChatLog";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
+import { ensureAuthenticated } from "../utils/authGuard";
 
 export default function MaintenanceTracker() {
   const navigate = useNavigate();
@@ -39,7 +40,10 @@ export default function MaintenanceTracker() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      const authenticatedUser = await ensureAuthenticated(window.location.pathname);
+      return authenticatedUser;
+    },
   });
 
   const { data: requests = [], isLoading } = useQuery({
