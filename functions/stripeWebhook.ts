@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -6,8 +5,16 @@ const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2023-10-16',
 });
 
+// Unified price-to-credit mapping for letter credit purchases
+const PRICE_CREDIT_MAP = {
+  'price_1SR2b5QwoI6NhlUxbwA8JfsS': 1,
+  'price_1SR2dLQwoI6NhlUxv0TkEsiZ': 3,
+  'price_1SR2gVQwoI6NhlUxbkNkf6r4': 5,
+  'price_1SR2hXQwoI6NhlUxwahfstoL': 10,
+};
+
 Deno.serve(async (req) => {
-  console.log('=== STRIPE WEBHOOK RECEIVED ===');
+  console.log('=== STRIPE UNIFIED WEBHOOK RECEIVED ===');
   
   try {
     const signature = req.headers.get('stripe-signature');
@@ -31,26 +38,58 @@ Deno.serve(async (req) => {
       
       const base44 = createClientFromRequest(req);
       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+
+      // Find user by customer ID or email
+      const users = await base44.asServiceRole.entities.User.list();
       
-      // HANDLE CREDITS PURCHASE
-      if (metadata.type === 'credits') {
-        console.log('🪙 Processing CREDITS purchase');
-        
-        const users = await base44.asServiceRole.entities.User.list();
-        
-        let user = users.find(u => 
-          u.stripe_customer_id === customerId || u.email === email
-        );
+      let user = users.find(u => 
+        u.stripe_customer_id === customerId || u.email === email
+      );
 
-        if (!user) {
-          console.error('❌ User not found for:', email, customerId);
-          return Response.json({ error: 'User not found' }, { status: 404 });
+      if (!user) {
+        console.error('❌ User not found for:', email, customerId);
+        return Response.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      // ========================================================================
+      // UNIFIED LETTER CREDITS LOGIC (supports both metadata.type and price IDs)
+      // ========================================================================
+      
+      const isCreditsFromMetadata = metadata.type === 'credits';
+      let creditsFromPriceIds = 0;
+      
+      // Check if this is a credits purchase via price IDs
+      try {
+        const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+          expand: ['line_items.data.price'],
+        });
+
+        const items = fullSession.line_items?.data || [];
+        for (const item of items) {
+          const price = item.price;
+          const qty = item.quantity || 1;
+          const perCredits = PRICE_CREDIT_MAP[price?.id] || 0;
+          creditsFromPriceIds += perCredits * qty;
         }
+      } catch (err) {
+        console.warn('⚠️ Could not expand line items:', err.message);
+      }
 
-        const creditsToAdd = parseInt(metadata.credits);
+      const isCreditsFromPriceIds = creditsFromPriceIds > 0;
+
+      // HANDLE CREDITS PURCHASE (either from metadata OR from price IDs)
+      if (isCreditsFromMetadata || isCreditsFromPriceIds) {
+        console.log('🪙 Processing LETTER CREDITS purchase');
+        
+        // Determine credits amount
+        const creditsToAdd = isCreditsFromMetadata 
+          ? parseInt(metadata.credits)
+          : creditsFromPriceIds;
+        
         const currentCredits = user.letter_credits || 0;
         const totalPurchased = user.total_credits_purchased || 0;
 
+        // Update user credits
         await base44.asServiceRole.entities.User.update(user.id, {
           letter_credits: currentCredits + creditsToAdd,
           total_credits_purchased: totalPurchased + creditsToAdd
@@ -61,7 +100,9 @@ Deno.serve(async (req) => {
         console.log('Previous credits:', currentCredits);
         console.log('Added credits:', creditsToAdd);
         console.log('New balance:', currentCredits + creditsToAdd);
+        console.log('Method:', isCreditsFromMetadata ? 'metadata' : 'price_ids');
 
+        // Create payment record
         await base44.asServiceRole.entities.Payment.create({
           type: 'addon',
           amount: parseFloat((session.amount_total / 100).toFixed(2)),
@@ -72,6 +113,7 @@ Deno.serve(async (req) => {
           created_by: user.email
         });
 
+        // Send confirmation email
         const lang = user.language || 'en';
         const subject = lang === 'th' 
           ? `ซื้อเครดิต ${creditsToAdd} เครดิตสำเร็จ` 
@@ -145,6 +187,7 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Send LINE notification if enabled
         if (user.line_messaging_token && user.line_notifications) {
           console.log('📱 Sending LINE notification...');
           
@@ -179,22 +222,14 @@ Deno.serve(async (req) => {
         return Response.json({ ok: true, credited: creditsToAdd }, { status: 200 });
       }
       
-      // ✅ HANDLE SUBSCRIPTION WITH INCLUDED CREDITS!
+      // ========================================================================
+      // SUBSCRIPTION LOGIC WITH INCLUDED CREDITS
+      // ========================================================================
+      
       if (session.mode === 'subscription' && metadata.plan) {
         console.log('💳💳💳 Processing SUBSCRIPTION UPGRADE! 💳💳💳');
         console.log('Plan:', metadata.plan);
         console.log('Interval:', metadata.interval);
-        
-        const users = await base44.asServiceRole.entities.User.list();
-        
-        let user = users.find(u => 
-          u.stripe_customer_id === customerId || u.email === email
-        );
-
-        if (!user) {
-          console.error('❌ User not found for:', email, customerId);
-          return Response.json({ error: 'User not found' }, { status: 404 });
-        }
 
         // Fetch subscription details from Stripe
         const subscriptions = await stripe.subscriptions.list({
@@ -210,7 +245,7 @@ Deno.serve(async (req) => {
 
         const subscription = subscriptions.data[0];
         
-        // ✅ CRITICAL FIX: Use correct period end date
+        // Use correct period end date
         const renewalTimestamp = subscription.current_period_end;
         const renewalDate = new Date(renewalTimestamp * 1000).toISOString();
         
@@ -219,7 +254,7 @@ Deno.serve(async (req) => {
         console.log('  End:', renewalDate);
         console.log('  Interval:', metadata.interval);
 
-        // ✅ CALCULATE INCLUDED LETTER CREDITS
+        // Calculate included letter credits
         const includedCredits = {
           'lite': 3,
           'protect': 5,
@@ -234,14 +269,14 @@ Deno.serve(async (req) => {
         console.log('  Credits to add:', creditsToAdd);
         console.log('  New balance:', currentCredits + creditsToAdd);
 
-        // ✅ UPDATE USER PLAN + ADD CREDITS
+        // Update user plan + add credits
         await base44.asServiceRole.entities.User.update(user.id, {
           plan_tier: metadata.plan,
           billing_interval: metadata.interval,
           plan_renews_at: renewalDate,
           stripe_subscription_id: subscription.id,
           subscription_status: 'active',
-          letter_credits: currentCredits + creditsToAdd // ✅ ADD INCLUDED CREDITS!
+          letter_credits: currentCredits + creditsToAdd
         });
 
         console.log('✅✅✅ SUBSCRIPTION + CREDITS SUCCESSFULLY UPDATED! ✅✅✅');
@@ -351,7 +386,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ✅ FIXED LINE NOTIFICATION - USE CORRECT DATE!
+        // Send LINE notification if enabled
         if (user.line_messaging_token && user.line_notifications) {
           console.log('📱 Sending LINE subscription notification...');
           
