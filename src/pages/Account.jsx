@@ -23,7 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
-import { ensureAuthenticated, handleLogout as logout } from "../utils/authGuard";
+import { ensureAuthenticated, handleLogout } from "../components/shared/AuthGuard";
 
 
 const PLAN_DETAILS = [
@@ -1324,7 +1324,7 @@ export default function Account() {
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
-  const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46467_M_gainfriends_2dbarcodes_GW.png";
+  const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46461_M_gainfriends_2dbarcodes_GW.png";
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
@@ -3396,7 +3396,7 @@ export default function Account() {
           <Button
             variant="outline"
             className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-            onClick={logout}
+            onClick={handleLogout}
             style={{ 
               backgroundColor: colors.cardBg, 
               borderColor: isDarkMode ? '#EF4444' : '#FECACA', 

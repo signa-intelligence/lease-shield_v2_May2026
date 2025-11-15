@@ -32,7 +32,7 @@ import ProgressBreadcrumb from "../components/shared/ProgressBreadcrumb";
 import UploadProgress from "../components/shared/UploadProgress";
 import { haptic } from "../components/shared/HapticFeedback";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
-import { ensureAuthenticated } from "../utils/authGuard";
+import { ensureAuthenticated } from "../components/shared/AuthGuard";
 
 export default function UploadScanPage() {
   const navigate = useNavigate();
