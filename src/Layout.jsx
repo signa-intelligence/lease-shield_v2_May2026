@@ -240,7 +240,7 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Add Upgrade tab for free users
+  // Add upgrade tab for free users
   if (isFreeUser) {
     navTabs.push({
       key: "upgrade",
@@ -454,7 +454,7 @@ export default function Layout({ children, currentPageName }) {
                 />
               </button>
             </Link>
-
+            <LanguageToggle />
             {isFreeUser && (
               <Link to={createPageUrl("Account") + "#plans"}>
                 <button
@@ -474,20 +474,18 @@ export default function Layout({ children, currentPageName }) {
                     transition: "all 0.2s"
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 10px 20px rgba(12,59,46,0.45)";
+                    e.target.style.transform = "translateY(-1px)";
+                    e.target.style.boxShadow = "0 10px 20px rgba(12,59,46,0.45)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 8px 16px rgba(12,59,46,0.35)";
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = "0 8px 16px rgba(12,59,46,0.35)";
                   }}
                 >
                   {strings.upgrade}
                 </button>
               </Link>
             )}
-
-            <LanguageToggle />
             <Link to={createPageUrl("Account")}>
               <button
                 aria-label="Account Settings"
@@ -600,15 +598,15 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <Icon className="w-5 h-5 mb-1" style={{ 
-                  animation: isActive && tab.key !== 'upgrade' ? 'pulse 2s infinite' : 'none', // Pulse only for active, non-upgrade tabs
-                  color: isActive ? '#FFFFFF' : (tab.key === 'upgrade' ? CTA_COLOR : colors.textPrimary), // Upgrade tab icon color
+                  animation: isActive ? 'pulse 2s infinite' : 'none',
+                  color: isActive ? '#FFFFFF' : colors.textPrimary,
                   transition: 'all 0.2s ease'
                 }} />
                 <span style={{ 
                   fontSize: '11px', 
                   fontWeight: '600', 
                   whiteSpace: 'nowrap',
-                  color: isActive ? '#FFFFFF' : (tab.key === 'upgrade' ? CTA_COLOR : colors.textPrimary), // Upgrade tab text color
+                  color: isActive ? '#FFFFFF' : colors.textPrimary,
                   transition: 'all 0.2s ease'
                 }}>
                   {tab.label}

@@ -9,14 +9,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Plus, Camera, Image as ImageIcon, X, Loader2, ArrowLeft, Save, MessageCircle, ArrowRight } from "lucide-react";
+import { Wrench, Plus, Camera, Image as ImageIcon, X, Loader2, ArrowLeft, Save, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ChatLog from "../components/maintenance/ChatLog";
 import { getFeatureCardStyles, CTA_COLOR } from "../components/shared/featureTheme";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { haptic } from "../components/shared/HapticFeedback";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 export default function MaintenanceTracker() {
   const navigate = useNavigate();
@@ -49,8 +54,6 @@ export default function MaintenanceTracker() {
     enabled: !!user,
   });
 
-  const isFreeUser = !user?.plan_tier || user?.plan_tier === 'free';
-
   const createRequestMutation = useMutation({
     mutationFn: (data) => base44.entities.MaintenanceRequest.create(data),
     onSuccess: async (createdRequest) => {
@@ -67,7 +70,8 @@ export default function MaintenanceTracker() {
         reported_date: new Date().toISOString().split('T')[0]
       });
 
-      // Show upgrade nudge for free users after success
+      // Show upgrade nudge for free users
+      const isFreeUser = !user?.plan_tier || user?.plan_tier === 'free';
       if (isFreeUser) {
         setShowPostSuccessUpgrade(true);
       }
@@ -134,11 +138,11 @@ export default function MaintenanceTracker() {
       recipients: "recipient(s)!",
       failedToCreate: "Failed to create request. Please try again.",
       requestCreatedBy: "Request created by",
-      upgradeRequired: "Upgrade to unlock full maintenance workflow",
-      upgradeMaintenanceDesc: "Unlimited tracked maintenance requests and notifications are available on paid plans.",
+      upgradeRequired: "Upgrade Required",
+      upgradeMaintenanceBody: "Unlimited tracked maintenance requests and notifications are available on paid plans. Upgrade to access the full workflow.",
       viewPlans: "View Plans",
       maybeLater: "Maybe Later",
-      upgradeTip: "Tip: Get priority landlord alerts and full maintenance history with a paid plan.",
+      upgradeTip: "Tip: Get priority landlord alerts and full maintenance history with a paid plan."
     },
     th: {
       title: "ติดตามการซ่อมบำรุง",
@@ -167,11 +171,11 @@ export default function MaintenanceTracker() {
       recipients: "ผู้รับ",
       failedToCreate: "ไม่สามารถสร้างคำขอได้ กรุณาลองอีกครั้ง",
       requestCreatedBy: "คำขอซ่อมถูกสร้างโดย",
-      upgradeRequired: "อัปเกรดเพื่อปลดล็อกเวิร์กโฟลว์การซ่อมบำรุงเต็มรูปแบบ",
-      upgradeMaintenanceDesc: "คำขอซ่อมบำรุงและการแจ้งเตือนไม่จำกัดมีให้ในแผนชำระเงิน",
+      upgradeRequired: "ต้องอัปเกรด",
+      upgradeMaintenanceBody: "คำขอซ่อมบำรุงแบบไม่จำกัดและการแจ้งเตือนพร้อมใช้งานในแผนแบบชำระเงิน อัปเกรดเพื่อเข้าถึงระบบการทำงานแบบเต็มรูปแบบ",
       viewPlans: "ดูแผน",
-      maybeLater: "ทีหลัง",
-      upgradeTip: "เคล็ดลับ: รับการแจ้งเตือนเจ้าของบ้านลำดับความสำคัญและประวัติการซ่อมบำรุงเต็มรูปแบบด้วยแผนชำระเงิน",
+      maybeLater: "ภายหลัง",
+      upgradeTip: "เคล็ดลับ: รับการแจ้งเตือนเจ้าของบ้านแบบเร่งด่วนและประวัติการซ่อมบำรุงแบบเต็มรูปแบบด้วยแผนแบบชำระเงิน"
     },
     zh: {
       title: "维护追踪器",
@@ -200,11 +204,11 @@ export default function MaintenanceTracker() {
       recipients: "收件人！",
       failedToCreate: "创建请求失败。请重试。",
       requestCreatedBy: "请求创建者",
-      upgradeRequired: "升级以解锁完整维护工作流程",
-      upgradeMaintenanceDesc: "付费计划提供无限追踪的维护请求和通知。",
+      upgradeRequired: "需要升级",
+      upgradeMaintenanceBody: "无限追踪的维护请求和通知在付费计划中可用。升级以访问完整工作流程。",
       viewPlans: "查看计划",
       maybeLater: "稍后再说",
-      upgradeTip: "提示：通过付费计划获取优先房东警报和完整维护历史记录。",
+      upgradeTip: "提示：通过付费计划获得优先房东警报和完整的维护历史记录。"
     },
     ja: {
       title: "メンテナンストラッカー",
@@ -233,11 +237,11 @@ export default function MaintenanceTracker() {
       recipients: "受信者！",
       failedToCreate: "リクエストの作成に失敗しました。もう一度お試しください。",
       requestCreatedBy: "リクエスト作成者",
-      upgradeRequired: "完全なメンテナンスワークフローを解除するにはアップグレード",
-      upgradeMaintenanceDesc: "無制限の追跡メンテナンスリクエストと通知は有料プランで利用できます。",
+      upgradeRequired: "アップグレードが必要",
+      upgradeMaintenanceBody: "無制限の追跡されたメンテナンスリクエストと通知は有料プランで利用できます。完全なワークフローにアクセスするにはアップグレードしてください。",
       viewPlans: "プランを表示",
       maybeLater: "後で",
-      upgradeTip: "ヒント：有料プランで優先家主アラートと完全なメンテナンス履歴を取得します。",
+      upgradeTip: "ヒント：有料プランで優先家主アラートと完全なメンテナンス履歴を取得します。"
     },
     ko: {
       title: "유지보수 추적기",
@@ -266,11 +270,11 @@ export default function MaintenanceTracker() {
       recipients: "수신자！",
       failedToCreate: "요청 생성 실패. 다시 시도하세요.",
       requestCreatedBy: "요청 생성자",
-      upgradeRequired: "전체 유지보수 워크플로를 잠금 해제하려면 업그레이드",
-      upgradeMaintenanceDesc: "무제한 추적 유지보수 요청 및 알림은 유료 플랜에서 사용할 수 있습니다。",
-      viewPlans: "플랜 보기",
+      upgradeRequired: "업그레이드 필요",
+      upgradeMaintenanceBody: "무제한 추적 유지보수 요청 및 알림은 유료 계획에서 사용할 수 있습니다. 전체 워크플로에 액세스하려면 업그레이드하세요.",
+      viewPlans: "계획 보기",
       maybeLater: "나중에",
-      upgradeTip: "팁：유료 플랜으로 우선 순위 집주인 알림 및 전체 유지보수 기록을 받으세요。",
+      upgradeTip: "팁: 유료 플랜으로 우선 집주인 알림과 전체 유지보수 내역을 받으세요."
     }
   };
 
@@ -297,12 +301,11 @@ export default function MaintenanceTracker() {
   };
 
   const handleAddRequestClick = () => {
+    const isFreeUser = !user?.plan_tier || user?.plan_tier === 'free';
     if (isFreeUser) {
-      haptic.light();
       setShowUpgradeModal(true);
     } else {
-      haptic.medium();
-      setShowAddForm(true);
+      setShowAddForm(!showAddForm);
     }
   };
 
@@ -361,6 +364,8 @@ export default function MaintenanceTracker() {
     }
   };
 
+  const isFreeUser = !user?.plan_tier || user?.plan_tier === 'free';
+
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-4xl mx-auto">
@@ -373,32 +378,22 @@ export default function MaintenanceTracker() {
           {strings.back}
         </Button>
 
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
-            <Wrench className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
-            {strings.title}
-          </h1>
-          <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
-        </div>
-
+        {/* ✅ Post-Success Upgrade Nudge */}
         {showPostSuccessUpgrade && isFreeUser && (
           <div
             style={{
-              marginTop: 12,
               marginBottom: 16,
               padding: 12,
               borderRadius: 12,
               backgroundColor: "rgba(12,59,46,0.06)",
-              border: "2px dashed rgba(12,59,46,0.25)",
-              fontSize: "0.875rem",
+              border: "1px dashed rgba(12,59,46,0.25)",
+              fontSize: "0.85rem",
+              color: colors.textPrimary
             }}
           >
-            <strong>{language === 'th' ? 'เคล็ดลับ:' : 'Tip:'}</strong> {strings.upgradeTip}{" "}
+            <strong>{language === 'th' ? 'เคล็ดลับ:' : language === 'zh' ? '提示：' : language === 'ja' ? 'ヒント：' : language === 'ko' ? '팁:' : 'Tip:'}</strong> {strings.upgradeTip}{" "}
             <button
-              onClick={() => {
-                haptic.light();
-                navigate(createPageUrl("Account") + "#plans");
-              }}
+              onClick={() => navigate(createPageUrl("Account") + "#plans")}
               style={{
                 padding: "4px 10px",
                 borderRadius: 9999,
@@ -416,6 +411,14 @@ export default function MaintenanceTracker() {
           </div>
         )}
 
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
+            <Wrench className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
+            {strings.title}
+          </h1>
+          <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+        </div>
+
         <Button
           onClick={handleAddRequestClick}
           className="w-full mb-6 ls-cta-primary"
@@ -424,65 +427,36 @@ export default function MaintenanceTracker() {
           {strings.addRequest}
         </Button>
 
+        {/* ✅ Upgrade Modal for Free Users */}
         <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-          <DialogContent style={{
-            backgroundColor: colors.cardBg,
-            borderColor: colors.borderColor
-          }}>
+          <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
             <DialogHeader>
-              <DialogTitle style={{ color: colors.textPrimary }}>
-                {strings.upgradeRequired}
-              </DialogTitle>
+              <DialogTitle style={{ color: colors.textPrimary }}>{strings.upgradeRequired}</DialogTitle>
+              <DialogDescription style={{ color: colors.textSecondary }}>
+                {strings.upgradeMaintenanceBody}
+              </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <p style={{ color: colors.textSecondary, fontSize: "0.9rem", lineHeight: 1.5 }}>
-                {strings.upgradeMaintenanceDesc}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    haptic.light();
-                    setShowUpgradeModal(false);
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: "10px 14px",
-                    borderRadius: 8,
-                    border: `2px solid ${colors.borderColor}`,
-                    backgroundColor: colors.cardBg,
-                    color: colors.textPrimary,
-                    fontWeight: 600,
-                    fontSize: "0.875rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  {strings.maybeLater}
-                </button>
-                <Link to={createPageUrl("Account") + "#plans"} style={{ flex: 1 }}>
-                  <button
-                    onClick={() => haptic.medium()}
-                    style={{
-                      width: "100%",
-                      padding: "10px 14px",
-                      borderRadius: 8,
-                      backgroundColor: CTA_COLOR,
-                      color: "#FFFFFF",
-                      border: "none",
-                      fontWeight: 600,
-                      fontSize: "0.875rem",
-                      cursor: "pointer",
-                      boxShadow: "0 4px 8px rgba(12,59,46,0.25)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "6px"
-                    }}
-                  >
-                    {strings.viewPlans}
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </Link>
-              </div>
+            <div className="flex gap-3 mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowUpgradeModal(false)}
+                style={{ flex: 1 }}
+              >
+                {strings.maybeLater}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowUpgradeModal(false);
+                  navigate(createPageUrl("Account") + "#plans");
+                }}
+                style={{
+                  flex: 1,
+                  backgroundColor: CTA_COLOR,
+                  color: "#FFFFFF"
+                }}
+              >
+                {strings.viewPlans}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
