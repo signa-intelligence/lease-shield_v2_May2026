@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,7 +23,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
-import { CTA_COLOR } from "../components/shared/featureTheme";
 
 
 const PLAN_DETAILS = [
@@ -258,13 +258,6 @@ export default function Account() {
         const notificationSection = document.getElementById('notification-analytics');
         if (notificationSection) {
           notificationSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 300);
-    } else if (hash === '#plans') {
-      setTimeout(() => {
-        const plansSection = document.getElementById('plans');
-        if (plansSection) {
-          plansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }, 300);
     }
@@ -761,7 +754,9 @@ export default function Account() {
       bilingual: "Bilingual Templates",
       humanAndAiGeneration: "Human and AI generation",
       creditsNeverExpire: "Credits never expire",
-      purchaseCredits: "Purchase Credits"
+      purchaseCredits: "Purchase Credits",
+      currentPlanFree: "Current plan: Free",
+      freeUpgradeText: "You're on basic coverage. Upgrade to Lite, Protect, or Secure for full deposit and maintenance protection.",
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -898,7 +893,9 @@ export default function Account() {
       bilingual: "เทมเพลตสองภาษา",
       humanAndAiGeneration: "สร้างโดยมนุษย์และ AI",
       creditsNeverExpire: "เครดิตไม่หมดอายุ",
-      purchaseCredits: "ซื้อเครดิต"
+      purchaseCredits: "ซื้อเครดิต",
+      currentPlanFree: "แผนปัจจุบัน: ฟรี",
+      freeUpgradeText: "คุณอยู่ในการคุ้มครองพื้นฐาน อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อการป้องกันเงินมัดจำและการซ่อมบำรุงเต็มรูปแบบ",
     },
     zh: {
       pageTitle: "我的账户",
@@ -1035,7 +1032,9 @@ export default function Account() {
       bilingual: "双语模板",
       humanAndAiGeneration: "人工和AI生成",
       creditsNeverExpire: "积分永不过期",
-      purchaseCredits: "购买积分"
+      purchaseCredits: "购买积分",
+      currentPlanFree: "当前计划: 免费",
+      freeUpgradeText: "您目前使用的是基本保障。升级到 Lite、Protect 或 Secure 方案，即可获得完整的押金和维护保障。",
     },
     ja: {
       pageTitle: "マイアカウント",
@@ -1054,7 +1053,7 @@ export default function Account() {
       lightMode: "ライトモード",
       darkMode: "ダークモード",
       tenantAddress: "あなたの住所",
-      tenantAddressPlaceholder: "街道地址",
+      tenantAddressPlaceholder: "住所",
       tenantCity: "市",
       tenantCityPlaceholder: "バンコク",
       tenantState: "州/県",
@@ -1172,7 +1171,9 @@ export default function Account() {
       bilingual: "バイリンガルテンプレート",
       humanAndAiGeneration: "人間とAIの生成",
       creditsNeverExpire: "クレジットは期限切れになりません",
-      purchaseCredits: "クレジットを購入"
+      purchaseCredits: "クレジットを購入",
+      currentPlanFree: "現在のプラン: 無料",
+      freeUpgradeText: "あなたは基本的な補償を受けています。預金とメンテナンスの完全な保護のために、Lite、Protect、またはSecureにアップグレードしてください。",
     },
     ko: {
       pageTitle: "내 계정",
@@ -1309,7 +1310,9 @@ export default function Account() {
       bilingual: "이중 언어 템플릿",
       humanAndAiGeneration: "인간 및 AI 생성",
       creditsNeverExpire: "크레딧은 만료되지 않습니다",
-      purchaseCredits: "크레딧 구매"
+      purchaseCredits: "크레딧 구매",
+      currentPlanFree: "현재 계획: 무료",
+      freeUpgradeText: "기본 보장 상태입니다. 예치금 및 유지보수 전반에 대한 완벽한 보호를 위해 Lite, Protect 또는 Secure로 업그레이드하세요.",
     }
   };
 
@@ -1342,67 +1345,6 @@ export default function Account() {
             </div>
           </div>
         </div>
-
-        {/* ✅ NEW: Free User Upgrade Block */}
-        {isFree && (
-          <div
-            id="plans-intro"
-            style={{
-              marginBottom: 24,
-              padding: 20,
-              borderRadius: 16,
-              backgroundColor: "rgba(12,59,46,0.08)",
-              border: "2px solid rgba(12,59,46,0.2)",
-              boxShadow: "0 4px 6px rgba(12,59,46,0.1)"
-            }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Gift className="w-5 h-5" style={{ color: colors.textSecondary }} />
-              <div style={{ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", color: colors.textSecondary }}>
-                {language === 'th' ? 'แผนปัจจุบัน: ฟรี' : language === 'zh' ? '当前计划：免费' : language === 'ja' ? '現在のプラン：無料' : language === 'ko' ? '현재 계획: 무료' : 'Current plan: Free'}
-              </div>
-            </div>
-            <p style={{ fontSize: "0.9rem", marginBottom: 12, color: colors.textPrimary, lineHeight: 1.5 }}>
-              {language === 'th' 
-                ? 'คุณอยู่ในระดับการป้องกันพื้นฐาน อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อปลดล็อกเครื่องมือเงินมัดจำ ระบบการซ่อมบำรุง และอื่นๆ อีกมากมาย'
-                : language === 'zh'
-                  ? '您处于基本保护级别。升级到 Lite、Protect 或 Secure 以解锁押金工具、维护工作流程等。'
-                  : language === 'ja'
-                    ? '基本的な保護レベルにいます。Lite、Protect、または Secure にアップグレードして、敷金ツール、メンテナンスワークフローなどをアンロックしてください。'
-                    : language === 'ko'
-                      ? '기본 보호 수준에 있습니다. Lite, Protect 또는 Secure로 업그레이드하여 보증금 도구, 유지보수 워크플로 등을 잠금 해제하세요.'
-                      : 'You\'re on the basic protection level. Upgrade to Lite, Protect, or Secure to unlock deposit tools, maintenance workflows, and more.'}
-            </p>
-            <button
-              onClick={() => {
-                const el = document.getElementById("plans");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}
-              style={{
-                padding: "10px 16px",
-                borderRadius: 9999,
-                backgroundColor: CTA_COLOR,
-                color: "#FFFFFF",
-                border: "none",
-                fontWeight: 600,
-                fontSize: "0.875rem",
-                cursor: "pointer",
-                boxShadow: "0 8px 16px rgba(12,59,46,0.35)",
-                transition: "all 0.2s"
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = "translateY(-1px)";
-                e.target.style.boxShadow = "0 10px 20px rgba(12,59,46,0.45)";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = "translateY(0)";
-                e.target.style.boxShadow = "0 8px 16px rgba(12,59,46,0.35)";
-              }}
-            >
-              {language === 'th' ? 'อัปเกรดทันที' : language === 'zh' ? '立即升级' : language === 'ja' ? '今すぐアップグレード' : language === 'ko' ? '지금 업그레이드' : 'Upgrade now'}
-            </button>
-          </div>
-        )}
 
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
           <Card className="lg:col-span-2 border-none shadow-xl" style={{
@@ -2045,7 +1987,7 @@ export default function Account() {
                       boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                       transition: 'all 0.2s'
                     }}
-                    onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })}
+                    onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
                     onMouseEnter={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                     onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
                   >
@@ -2598,7 +2540,7 @@ export default function Account() {
         </div>
 
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <HelpCircle className="w-5 h-5 text-ls-forest" />
               {strings.helpSupport}
@@ -2712,7 +2654,7 @@ export default function Account() {
         </Card>
 
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader className="border-b" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED', borderBottomColor: colors.borderColor }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <Shield className="w-5 h-5 text-ls-forest" />
               {strings.dataPrivacy}
@@ -3022,7 +2964,59 @@ export default function Account() {
           </div>
         </div>
 
-        <div id="plans" className="mb-6">
+        {(!user?.plan_tier || user.plan_tier === 'free') && (
+          <div
+            id="plans-intro"
+            style={{
+              marginBottom: 24,
+              padding: 20,
+              borderRadius: 16,
+              backgroundColor: isDarkMode ? 'rgba(12,59,46,0.12)' : 'rgba(12,59,46,0.05)',
+              border: '1px solid rgba(12,59,46,0.18)',
+              boxShadow: '0 4px 6px rgba(12,59,46,0.1)'
+            }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Gift className="w-5 h-5" style={{ color: colors.textSecondary }} />
+              <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: colors.textSecondary }}>
+                {strings.currentPlanFree}
+              </div>
+            </div>
+            <p style={{ fontSize: '0.9rem', marginBottom: 12, color: colors.textPrimary, lineHeight: 1.5 }}>
+              {strings.freeUpgradeText}
+            </p>
+            <button
+              onClick={() => {
+                const el = document.getElementById('plans-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 9999,
+                backgroundColor: '#0C3B2E',
+                color: '#FFFFFF',
+                border: 'none',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                boxShadow: '0 8px 16px rgba(12,59,46,0.35)',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-1px)';
+                e.target.style.boxShadow = '0 10px 20px rgba(12,59,46,0.45)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 8px 16px rgba(12,59,46,0.35)';
+              }}
+            >
+              {strings.upgradeNow}
+            </button>
+          </div>
+        )}
+
+        <div id="plans-section" className="mb-6">
           <div className="flex items-center justify-center mb-6">
             <div className="rounded-xl p-2 shadow-md inline-flex items-center gap-3" style={{ backgroundColor: colors.cardBg }}>
               <button
@@ -3076,7 +3070,7 @@ export default function Account() {
           <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
           <p className="mb-6 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
           
-          <div id="plans" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
               const isCurrentPlan = currentPlanTier === plan.key;
