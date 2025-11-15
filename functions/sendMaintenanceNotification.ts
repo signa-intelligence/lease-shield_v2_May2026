@@ -1,3 +1,7 @@
+// LeaseShield TEMP: Translation disabled for MVP.
+// Emails send the original description only.
+// Do not reintroduce AI translation here without explicit product approval.
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { createMaintenanceRequestFlex } from './lineFlexTemplates.js';
 
@@ -20,87 +24,6 @@ Deno.serve(async (req) => {
     console.log('📧 Authenticated user:', authenticatedUser.email);
     console.log('🔧 Maintenance request ID:', maintenanceRequest.id);
 
-    // Helper: Detect language
-    const detectLanguage = async (text) => {
-      if (!text || text.trim().length < 3) return 'en';
-      try {
-        const response = await base44.integrations.Core.InvokeLLM({
-          prompt: `Return ONLY a 2-letter ISO language code (en, th, ja, ko, zh, etc.) for this text. If uncertain, return 'en'. Text: "${text.substring(0, 200)}"`,
-          response_json_schema: {
-            type: "object",
-            properties: { code: { type: "string" } }
-          }
-        });
-        const code = response?.code?.toLowerCase() || 'en';
-        return code.length === 2 ? code : 'en';
-      } catch (error) {
-        console.error('Language detection failed:', error);
-        return 'en';
-      }
-    };
-
-    // Helper: Translate text
-    const translateText = async (text, targetLang) => {
-      const baseText = (text || '').trim();
-      if (!baseText) return text;
-      if (!targetLang) return text;
-
-      try {
-        const detected = await detectLanguage(baseText);
-        if (detected && detected.toLowerCase() === targetLang.toLowerCase()) {
-          return baseText;
-        }
-
-        const langNames = {
-          en: 'English',
-          th: 'Thai',
-          ja: 'Japanese',
-          ko: 'Korean',
-          zh: 'Chinese'
-        };
-        
-        const targetName = langNames[targetLang] || targetLang;
-        
-        const response = await base44.integrations.Core.InvokeLLM({
-          prompt: `Translate this text to ${targetName}. Return ONLY the translation, no explanations or commentary. Preserve the meaning and tone. Text:\n\n${baseText}`,
-          response_json_schema: {
-            type: "object",
-            properties: { translation: { type: "string" } }
-          }
-        });
-        
-        const translation = (response && typeof response.translation === 'string' && response.translation.trim()) || '';
-        
-        if (!translation) {
-          return baseText;
-        }
-        
-        return translation;
-      } catch (error) {
-        console.error('translateText error:', error);
-        return text;
-      }
-    };
-
-    // Helper: Get recipient language
-    const getRecipientLanguage = (role, user) => {
-      if (user && typeof user.language === 'string' && user.language.trim().length > 0) {
-        return user.language;
-      }
-
-      const r = (role || '').toLowerCase();
-
-      if (r === 'juristic' || r === 'building' || r === 'manager') {
-        return 'th';
-      }
-
-      if (r === 'landlord' || r === 'owner') {
-        return 'en';
-      }
-
-      return 'en';
-    };
-
     // Fetch full user data with landlord/juristic contact info
     const users = await base44.asServiceRole.entities.User.filter({ 
       email: authenticatedUser.email 
@@ -119,10 +42,8 @@ Deno.serve(async (req) => {
     console.log('📧 Landlord email:', user.landlord_email || 'NOT SET');
     console.log('📧 Juristic email:', user.juristic_email || 'NOT SET');
 
-    // Detect language of maintenance description
+    // Get description text
     const description = maintenanceRequest.description || maintenanceRequest.issue_title || '';
-    const detectedLang = await detectLanguage(description);
-    console.log(`🌐 Detected language: ${detectedLang}`);
 
     // Get Resend API key for external emails
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
@@ -134,40 +55,6 @@ Deno.serve(async (req) => {
       if (trimmed.length === 0) return false;
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(trimmed);
-    };
-
-    // Helper: Build multilingual description section
-    const buildDescriptionSection = async (targetLang) => {
-      const baseText = (description || '').trim();
-      
-      if (!baseText) {
-        return '';
-      }
-
-      try {
-        const detectedLang = await detectLanguage(baseText);
-        const translated = await translateText(baseText, targetLang);
-
-        if (!translated || translated.trim().length === 0 || translated.trim() === baseText.trim()) {
-          return baseText.replace(/\n/g, '<br />');
-        }
-
-        const langLabel = targetLang === 'th' ? 'TH' : targetLang === 'ja' ? 'JA' : targetLang === 'ko' ? 'KO' : targetLang === 'zh' ? 'ZH' : 'EN';
-        const detectedLabel = detectedLang || 'unknown';
-
-        return [
-          `<p><strong>Translated for you (${langLabel}):</strong><br />`,
-          translated.replace(/\n/g, '<br />'),
-          `</p>`,
-          `<hr style="margin: 15px 0; border: none; border-top: 1px dashed #ccc;">`,
-          `<p><strong>Original (${detectedLabel}):</strong><br />`,
-          baseText.replace(/\n/g, '<br />'),
-          `</p>`
-        ].join('');
-      } catch (error) {
-        console.error('buildDescriptionSection translation error:', error);
-        return baseText.replace(/\n/g, '<br />');
-      }
     };
 
     // Helper function to send email via Resend
@@ -222,15 +109,12 @@ Deno.serve(async (req) => {
       user.tenant_zip
     ].filter(Boolean).join(', ') || (language === 'th' ? 'ไม่ได้ระบุ' : 'Not provided');
 
-    // Prepare landlord notification (English by default)
-    const landlordLang = getRecipientLanguage('landlord', user);
-    const landlordDescSection = await buildDescriptionSection(landlordLang);
-    
-    const landlordSubject = landlordLang === 'th'
+    // Prepare landlord notification
+    const landlordSubject = language === 'th'
       ? `🔧 แจ้งซ่อม: ${maintenanceRequest.issue_title}`
       : `🔧 Maintenance Request: ${maintenanceRequest.issue_title}`;
 
-    const landlordHtmlBody = landlordLang === 'th'
+    const landlordHtmlBody = language === 'th'
       ? `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
@@ -238,7 +122,7 @@ Deno.serve(async (req) => {
         </div>
         <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
           <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
-          ${landlordDescSection}
+          <p>${description.replace(/\n/g, '<br />')}</p>
           <p><strong>หมวดหมู่:</strong> ${maintenanceRequest.category}</p>
           <p><strong>ระดับความสำคัญ:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
           ${maintenanceRequest.property_address ? `<p><strong>ที่อยู่ทรัพย์สิน:</strong> ${maintenanceRequest.property_address}</p>` : ''}
@@ -270,7 +154,7 @@ Deno.serve(async (req) => {
         </div>
         <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
           <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
-          ${landlordDescSection}
+          <p>${description.replace(/\n/g, '<br />')}</p>
           <p><strong>Category:</strong> ${maintenanceRequest.category}</p>
           <p><strong>Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
           ${maintenanceRequest.property_address ? `<p><strong>Property Address:</strong> ${maintenanceRequest.property_address}</p>` : ''}
@@ -296,15 +180,12 @@ Deno.serve(async (req) => {
       </div>
       `;
 
-    // Prepare juristic notification (Thai by default)
-    const juristicLang = getRecipientLanguage('juristic', user);
-    const juristicDescSection = await buildDescriptionSection(juristicLang);
-
-    const juristicSubject = juristicLang === 'th'
+    // Prepare juristic notification
+    const juristicSubject = language === 'th'
       ? `🔧 แจ้งซ่อม: ${maintenanceRequest.issue_title}`
       : `🔧 Maintenance Request: ${maintenanceRequest.issue_title}`;
 
-    const juristicHtmlBody = juristicLang === 'th'
+    const juristicHtmlBody = language === 'th'
       ? `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
@@ -312,7 +193,7 @@ Deno.serve(async (req) => {
         </div>
         <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
           <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
-          ${juristicDescSection}
+          <p>${description.replace(/\n/g, '<br />')}</p>
           <p><strong>หมวดหมู่:</strong> ${maintenanceRequest.category}</p>
           <p><strong>ระดับความสำคัญ:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
           ${maintenanceRequest.property_address ? `<p><strong>ที่อยู่ทรัพย์สิน:</strong> ${maintenanceRequest.property_address}</p>` : ''}
@@ -344,7 +225,7 @@ Deno.serve(async (req) => {
         </div>
         <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
           <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
-          ${juristicDescSection}
+          <p>${description.replace(/\n/g, '<br />')}</p>
           <p><strong>Category:</strong> ${maintenanceRequest.category}</p>
           <p><strong>Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
           ${maintenanceRequest.property_address ? `<p><strong>Property Address:</strong> ${maintenanceRequest.property_address}</p>` : ''}
@@ -370,8 +251,7 @@ Deno.serve(async (req) => {
       </div>
       `;
 
-    // Tenant confirmation (in their own language)
-    const tenantDescSection = await buildDescriptionSection(language);
+    // Tenant confirmation
     const tenantSubject = language === 'th' ? '✅ สำเนาคำขอซ่อม' : '✅ Maintenance Request Copy';
 
     const tenantHtmlBody = language === 'th'
@@ -389,7 +269,7 @@ Deno.serve(async (req) => {
           </p>
           
           <h3 style="color: #0C3B2E; margin-top: 20px;">${maintenanceRequest.issue_title}</h3>
-          ${tenantDescSection}
+          <p>${description.replace(/\n/g, '<br />')}</p>
           <p><strong>หมวดหมู่:</strong> ${maintenanceRequest.category}</p>
           <p><strong>ระดับความสำคัญ:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
           ${maintenanceRequest.property_address ? `<p><strong>ที่อยู่:</strong> ${maintenanceRequest.property_address}</p>` : ''}
@@ -419,7 +299,7 @@ Deno.serve(async (req) => {
           </p>
           
           <h3 style="color: #0C3B2E; margin-top: 20px;">${maintenanceRequest.issue_title}</h3>
-          ${tenantDescSection}
+          <p>${description.replace(/\n/g, '<br />')}</p>
           <p><strong>Category:</strong> ${maintenanceRequest.category}</p>
           <p><strong>Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
           ${maintenanceRequest.property_address ? `<p><strong>Address:</strong> ${maintenanceRequest.property_address}</p>` : ''}
@@ -524,7 +404,7 @@ Deno.serve(async (req) => {
           category: maintenanceRequest.category,
           priority: maintenanceRequest.priority,
           propertyAddress: maintenanceRequest.property_address || '',
-          reportedDate: new Date(maintenanceRequest.reported_date).toLocaleDateString(landlordLang === 'th' ? 'th-TH' : 'en-US'),
+          reportedDate: new Date(maintenanceRequest.reported_date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US'),
           photoCount: maintenanceRequest.photo_urls?.length || 0,
           tenantName: user.full_name || user.email,
           token: acknowledgmentToken
@@ -533,7 +413,7 @@ Deno.serve(async (req) => {
         const landlordFlexMessage = createMaintenanceRequestFlex({
           ...flexData,
           role: 'landlord'
-        }, landlordLang);
+        }, language);
         
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
           userId: user.landlord_line.trim(),
@@ -582,7 +462,7 @@ Deno.serve(async (req) => {
           category: maintenanceRequest.category,
           priority: maintenanceRequest.priority,
           propertyAddress: maintenanceRequest.property_address || '',
-          reportedDate: new Date(maintenanceRequest.reported_date).toLocaleDateString(juristicLang === 'th' ? 'th-TH' : 'en-US'),
+          reportedDate: new Date(maintenanceRequest.reported_date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US'),
           photoCount: maintenanceRequest.photo_urls?.length || 0,
           tenantName: user.full_name || user.email,
           token: acknowledgmentToken
@@ -591,7 +471,7 @@ Deno.serve(async (req) => {
         const juristicFlexMessage = createMaintenanceRequestFlex({
           ...flexData,
           role: 'juristic'
-        }, juristicLang);
+        }, language);
         
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
           userId: user.juristic_line.trim(),
@@ -616,11 +496,6 @@ Deno.serve(async (req) => {
       acknowledgmentLinks: {
         landlord: landlordAcknowledgmentLink,
         juristic: juristicAcknowledgmentLink
-      },
-      translationInfo: {
-        detectedLanguage: detectedLang,
-        landlordLanguage: landlordLang,
-        juristicLanguage: juristicLang
       },
       debug: {
         userEmail: user.email,
