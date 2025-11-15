@@ -40,6 +40,7 @@ import {
 } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { ensureAuthenticated } from "../utils/authGuard";
 
 export default function Timeline() {
   const navigate = useNavigate();
@@ -49,7 +50,10 @@ export default function Timeline() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      const authenticatedUser = await ensureAuthenticated(window.location.pathname);
+      return authenticatedUser;
+    },
   });
 
   const { data: leases = [] } = useQuery({
@@ -371,7 +375,7 @@ export default function Timeline() {
     const monthEnd = endOfMonth(currentDate);
     
     return filteredEvents.filter(event => 
-      isAfter(event.date, monthStart) && isBefore(event.date, monthEnd)
+      isAfter(event.date, startOfDay(monthStart)) && isBefore(event.date, endOfDay(monthEnd))
     );
   }, [filteredEvents, currentDate]);
 
@@ -416,7 +420,7 @@ export default function Timeline() {
     const Icon = event.icon;
     const now = new Date();
     const daysUntil = differenceInDays(event.date, now);
-    const isOverdue = daysUntil < 0 && !event.isPast;
+    const isOverdue = daysUntil < 0 && !event.isPast; // event.isPast is for past recorded events, not necessarily overdue
     const isUrgent = daysUntil <= 7 && daysUntil >= 0;
 
     return (

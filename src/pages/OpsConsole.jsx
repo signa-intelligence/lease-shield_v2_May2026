@@ -30,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import CaseKanban from "../components/admin/CaseKanban";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import { ensureAuthenticated } from "../utils/authGuard"; // New import
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -56,7 +57,10 @@ function OpsConsoleContent() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      const authenticatedUser = await ensureAuthenticated(window.location.pathname);
+      return authenticatedUser;
+    },
   });
 
   const accessLevel = user?.access_level || 'user';

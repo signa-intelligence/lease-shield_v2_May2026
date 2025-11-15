@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +34,7 @@ import {
   primaryCtaStyle,
   primaryCtaHover
 } from "../components/shared/featureTheme";
+import { ensureAuthenticated } from "../utils/authGuard";
 
 const DOC_TYPE_CONFIG = {
   lease: { 
@@ -125,7 +127,10 @@ function EvidenceVaultContent() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      const authenticatedUser = await ensureAuthenticated(window.location.pathname);
+      return authenticatedUser;
+    },
   });
 
   const { data: documents = [], isLoading: isLoadingDocuments } = useQuery({
