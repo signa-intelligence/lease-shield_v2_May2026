@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -438,6 +437,28 @@ export default function Layout({ children, currentPageName }) {
               </button>
             </Link>
             <LanguageToggle />
+            {user && (!user.plan_tier || user.plan_tier === "free") && (
+              <Link to={createPageUrl("Account")}>
+                <button
+                  aria-label="Upgrade"
+                  onClick={() => haptic.light()}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: 9999,
+                    backgroundColor: "#0C3B2E",
+                    color: "#FFFFFF",
+                    border: "none",
+                    fontWeight: 600,
+                    fontSize: "0.75rem",
+                    cursor: "pointer",
+                    boxShadow: "0 8px 16px rgba(0,0,0,0.25)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Upgrade
+                </button>
+              </Link>
+            )}
             <Link to={createPageUrl("Account")}>
               <button
                 aria-label="Account Settings"
