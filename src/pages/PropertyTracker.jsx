@@ -559,7 +559,6 @@ function PropertyTrackerContent() {
     haptic.light();
     await queryClient.invalidateQueries({ queryKey: ['deposits'] });
     await queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-    toast.success(strings.refreshed);
   };
 
   const filteredMaintenanceRequests = maintenanceRequests.filter(request => {
