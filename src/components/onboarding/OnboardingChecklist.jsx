@@ -21,23 +21,20 @@ import { createPageUrl } from "@/utils";
 import { getFeatureCardStyles } from "@/components/shared/featureTheme";
 
 const OnboardingChecklist = ({ user, leases, deposits, documents, cases, maintenanceRequests = [], colors, language = 'en' }) => {
-  // Compute dark mode status
-  const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
-  
-  // Get feature themes
+  const isDarkMode = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+
   const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
   const depositsTheme = getFeatureCardStyles("deposits", isDarkMode);
   const maintenanceTheme = getFeatureCardStyles("maintenance", isDarkMode);
   const notificationsTheme = getFeatureCardStyles("notifications", isDarkMode);
-  
-  // Map task keys to themes
+
   const taskThemeMap = {
     upload_lease: leasesTheme,
     track_deposit: depositsTheme,
     report_maintenance: maintenanceTheme,
     upload_doc: depositsTheme,
     setup_profile: notificationsTheme,
-    enable_notifications: notificationsTheme
+    enable_notifications: notificationsTheme,
   };
 
   const t = {
@@ -317,18 +314,16 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
                 className="flex items-start gap-4 p-4 rounded-xl transition-all"
                 style={{
                   backgroundColor: task.completed 
-                    ? `${theme.iconColor}10`
-                    : colors.fieldBg,
-                  border: task.completed 
-                    ? `2px solid ${theme.iconColor}40`
-                    : `2px solid ${colors.borderColor}`
+                    ? (isDarkMode ? `${theme.iconBg}40` : `${theme.iconBg}80`)
+                    : colors.filterBg,
+                  border: `2px solid ${task.completed ? theme.borderColor : colors.borderColor}`
                 }}
               >
                 <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ 
-                    backgroundColor: task.completed ? theme.iconColor : theme.iconBg,
-                    color: '#FFFFFF'
+                    backgroundColor: theme.iconBg,
+                    color: theme.iconColor
                   }}
                 >
                   {task.completed ? (
@@ -352,9 +347,9 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
                       <Badge
                         className="flex-shrink-0"
                         style={{
-                          backgroundColor: `${theme.iconColor}20`,
-                          color: theme.iconColor,
-                          border: `1px solid ${theme.iconColor}40`,
+                          backgroundColor: isDarkMode ? `${theme.iconBg}40` : `${theme.iconBg}30`,
+                          color: theme.metricColor,
+                          border: `1px solid ${theme.borderColor}`,
                           fontSize: '10px'
                         }}
                       >
