@@ -14,14 +14,7 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ChatLog from "../components/maintenance/ChatLog";
-import { getFeatureCardStyles, CTA_COLOR } from "../components/shared/featureTheme";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { getFeatureCardStyles } from "../components/shared/featureTheme";
 
 export default function MaintenanceTracker() {
   const navigate = useNavigate();
@@ -31,8 +24,6 @@ export default function MaintenanceTracker() {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [photoFiles, setPhotoFiles] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showPostSuccessUpgrade, setShowPostSuccessUpgrade] = useState(false);
   
   const [formData, setFormData] = useState({
     issue_title: '',
@@ -69,12 +60,6 @@ export default function MaintenanceTracker() {
         property_address: '',
         reported_date: new Date().toISOString().split('T')[0]
       });
-
-      // Show upgrade nudge for free users
-      const isFreeUser = !user?.plan_tier || user?.plan_tier === 'free';
-      if (isFreeUser) {
-        setShowPostSuccessUpgrade(true);
-      }
 
       // Send notifications
       try {
@@ -137,12 +122,7 @@ export default function MaintenanceTracker() {
       requestSent: "Request sent to",
       recipients: "recipient(s)!",
       failedToCreate: "Failed to create request. Please try again.",
-      requestCreatedBy: "Request created by",
-      upgradeRequired: "Upgrade Required",
-      upgradeMaintenanceBody: "Unlimited tracked maintenance requests and notifications are available on paid plans. Upgrade to access the full workflow.",
-      viewPlans: "View Plans",
-      maybeLater: "Maybe Later",
-      upgradeTip: "Tip: Get priority landlord alerts and full maintenance history with a paid plan."
+      requestCreatedBy: "Request created by"
     },
     th: {
       title: "ติดตามการซ่อมบำรุง",
@@ -170,12 +150,7 @@ export default function MaintenanceTracker() {
       requestSent: "คำขอซ่อมถูกส่งแล้ว!\n\nแจ้งไปยัง:",
       recipients: "ผู้รับ",
       failedToCreate: "ไม่สามารถสร้างคำขอได้ กรุณาลองอีกครั้ง",
-      requestCreatedBy: "คำขอซ่อมถูกสร้างโดย",
-      upgradeRequired: "ต้องอัปเกรด",
-      upgradeMaintenanceBody: "คำขอซ่อมบำรุงแบบไม่จำกัดและการแจ้งเตือนพร้อมใช้งานในแผนแบบชำระเงิน อัปเกรดเพื่อเข้าถึงระบบการทำงานแบบเต็มรูปแบบ",
-      viewPlans: "ดูแผน",
-      maybeLater: "ภายหลัง",
-      upgradeTip: "เคล็ดลับ: รับการแจ้งเตือนเจ้าของบ้านแบบเร่งด่วนและประวัติการซ่อมบำรุงแบบเต็มรูปแบบด้วยแผนแบบชำระเงิน"
+      requestCreatedBy: "คำขอซ่อมถูกสร้างโดย"
     },
     zh: {
       title: "维护追踪器",
@@ -203,12 +178,7 @@ export default function MaintenanceTracker() {
       requestSent: "请求已发送至",
       recipients: "收件人！",
       failedToCreate: "创建请求失败。请重试。",
-      requestCreatedBy: "请求创建者",
-      upgradeRequired: "需要升级",
-      upgradeMaintenanceBody: "无限追踪的维护请求和通知在付费计划中可用。升级以访问完整工作流程。",
-      viewPlans: "查看计划",
-      maybeLater: "稍后再说",
-      upgradeTip: "提示：通过付费计划获得优先房东警报和完整的维护历史记录。"
+      requestCreatedBy: "请求创建者"
     },
     ja: {
       title: "メンテナンストラッカー",
@@ -236,12 +206,7 @@ export default function MaintenanceTracker() {
       requestSent: "リクエストが送信されました",
       recipients: "受信者！",
       failedToCreate: "リクエストの作成に失敗しました。もう一度お試しください。",
-      requestCreatedBy: "リクエスト作成者",
-      upgradeRequired: "アップグレードが必要",
-      upgradeMaintenanceBody: "無制限の追跡されたメンテナンスリクエストと通知は有料プランで利用できます。完全なワークフローにアクセスするにはアップグレードしてください。",
-      viewPlans: "プランを表示",
-      maybeLater: "後で",
-      upgradeTip: "ヒント：有料プランで優先家主アラートと完全なメンテナンス履歴を取得します。"
+      requestCreatedBy: "リクエスト作成者"
     },
     ko: {
       title: "유지보수 추적기",
@@ -269,12 +234,7 @@ export default function MaintenanceTracker() {
       requestSent: "요청이 전송되었습니다",
       recipients: "수신자！",
       failedToCreate: "요청 생성 실패. 다시 시도하세요.",
-      requestCreatedBy: "요청 생성자",
-      upgradeRequired: "업그레이드 필요",
-      upgradeMaintenanceBody: "무제한 추적 유지보수 요청 및 알림은 유료 계획에서 사용할 수 있습니다. 전체 워크플로에 액세스하려면 업그레이드하세요.",
-      viewPlans: "계획 보기",
-      maybeLater: "나중에",
-      upgradeTip: "팁: 유료 플랜으로 우선 집주인 알림과 전체 유지보수 내역을 받으세요."
+      requestCreatedBy: "요청 생성자"
     }
   };
 
@@ -298,15 +258,6 @@ export default function MaintenanceTracker() {
   const handleRemovePhoto = (index) => {
     setPhotoFiles(prev => prev.filter((_, i) => i !== index));
     setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleAddRequestClick = () => {
-    const isFreeUser = !user?.plan_tier || user?.plan_tier === 'free';
-    if (isFreeUser) {
-      setShowUpgradeModal(true);
-    } else {
-      setShowAddForm(!showAddForm);
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -364,8 +315,6 @@ export default function MaintenanceTracker() {
     }
   };
 
-  const isFreeUser = !user?.plan_tier || user?.plan_tier === 'free';
-
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-4xl mx-auto">
@@ -378,39 +327,6 @@ export default function MaintenanceTracker() {
           {strings.back}
         </Button>
 
-        {/* ✅ Post-Success Upgrade Nudge */}
-        {showPostSuccessUpgrade && isFreeUser && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: 12,
-              borderRadius: 12,
-              backgroundColor: "rgba(12,59,46,0.06)",
-              border: "1px dashed rgba(12,59,46,0.25)",
-              fontSize: "0.85rem",
-              color: colors.textPrimary
-            }}
-          >
-            <strong>{language === 'th' ? 'เคล็ดลับ:' : language === 'zh' ? '提示：' : language === 'ja' ? 'ヒント：' : language === 'ko' ? '팁:' : 'Tip:'}</strong> {strings.upgradeTip}{" "}
-            <button
-              onClick={() => navigate(createPageUrl("Account") + "#plans")}
-              style={{
-                padding: "4px 10px",
-                borderRadius: 9999,
-                backgroundColor: CTA_COLOR,
-                color: "#FFFFFF",
-                border: "none",
-                fontWeight: 600,
-                fontSize: "0.75rem",
-                cursor: "pointer",
-                marginLeft: 6,
-              }}
-            >
-              {strings.viewPlans}
-            </button>
-          </div>
-        )}
-
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
             <Wrench className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
@@ -420,46 +336,12 @@ export default function MaintenanceTracker() {
         </div>
 
         <Button
-          onClick={handleAddRequestClick}
+          onClick={() => setShowAddForm(!showAddForm)}
           className="w-full mb-6 ls-cta-primary"
         >
           <Plus className="w-5 h-5 mr-2" />
           {strings.addRequest}
         </Button>
-
-        {/* ✅ Upgrade Modal for Free Users */}
-        <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-          <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-            <DialogHeader>
-              <DialogTitle style={{ color: colors.textPrimary }}>{strings.upgradeRequired}</DialogTitle>
-              <DialogDescription style={{ color: colors.textSecondary }}>
-                {strings.upgradeMaintenanceBody}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex gap-3 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowUpgradeModal(false)}
-                style={{ flex: 1 }}
-              >
-                {strings.maybeLater}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowUpgradeModal(false);
-                  navigate(createPageUrl("Account") + "#plans");
-                }}
-                style={{
-                  flex: 1,
-                  backgroundColor: CTA_COLOR,
-                  color: "#FFFFFF"
-                }}
-              >
-                {strings.viewPlans}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         {showAddForm && (
           <Card 

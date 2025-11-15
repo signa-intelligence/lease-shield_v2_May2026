@@ -2,12 +2,11 @@
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
-import { CTA_COLOR } from "./components/shared/featureTheme";
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -137,7 +136,6 @@ export default function Layout({ children, currentPageName }) {
   const accessLevel = user?.access_level || 'user';
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
-  const isFreeUser = !user?.plan_tier || user?.plan_tier === 'free';
 
   const t = {
     en: {
@@ -149,8 +147,7 @@ export default function Layout({ children, currentPageName }) {
       admin: "Admin",
       search: "Search",
       timeline: "Timeline",
-      tagline: "Fair. Transparent. Protected.",
-      upgrade: "Upgrade"
+      tagline: "Fair. Transparent. Protected."
     },
     th: {
       appName: "ลีสชีลด์",
@@ -161,8 +158,7 @@ export default function Layout({ children, currentPageName }) {
       admin: "แอดมิน",
       search: "ค้นหา",
       timeline: "ไทม์ไลน์",
-      tagline: "ยุติธรรม • โปร่งใส • ปลอดภัย",
-      upgrade: "อัปเกรด"
+      tagline: "ยุติธรรม • โปร่งใส • ปลอดภัย"
     },
     zh: {
       appName: "租约盾",
@@ -173,8 +169,7 @@ export default function Layout({ children, currentPageName }) {
       admin: "管理",
       search: "搜索",
       timeline: "时间线",
-      tagline: "公平 • 透明 • 保护",
-      upgrade: "升级"
+      tagline: "公平 • 透明 • 保护"
     },
     ja: {
       appName: "リースシールド",
@@ -185,8 +180,7 @@ export default function Layout({ children, currentPageName }) {
       admin: "管理",
       search: "検索",
       timeline: "タイムライン",
-      tagline: "公正 • 透明 • 保護",
-      upgrade: "アップグレード"
+      tagline: "公正 • 透明 • 保護"
     },
     ko: {
       appName: "리스실드",
@@ -197,8 +191,7 @@ export default function Layout({ children, currentPageName }) {
       admin: "관리",
       search: "검색",
       timeline: "타임라인",
-      tagline: "공정 • 투명 • 보호",
-      upgrade: "업그레이드"
+      tagline: "공정 • 투명 • 보호"
     }
   };
 
@@ -237,16 +230,6 @@ export default function Layout({ children, currentPageName }) {
       label: strings.admin,
       route: createPageUrl("AdminConsole"),
       icon: Settings,
-    });
-  }
-
-  // Add upgrade tab for free users
-  if (isFreeUser) {
-    navTabs.push({
-      key: "upgrade",
-      label: strings.upgrade,
-      route: createPageUrl("Account") + "#plans",
-      icon: Star,
     });
   }
 
@@ -455,37 +438,6 @@ export default function Layout({ children, currentPageName }) {
               </button>
             </Link>
             <LanguageToggle />
-            {isFreeUser && (
-              <Link to={createPageUrl("Account") + "#plans"}>
-                <button
-                  aria-label={strings.upgrade}
-                  onClick={() => haptic.light()}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: 9999,
-                    backgroundColor: CTA_COLOR,
-                    border: "none",
-                    color: "#FFFFFF",
-                    fontWeight: 600,
-                    fontSize: "0.75rem",
-                    cursor: "pointer",
-                    boxShadow: "0 8px 16px rgba(12,59,46,0.35)",
-                    whiteSpace: "nowrap",
-                    transition: "all 0.2s"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = "translateY(-1px)";
-                    e.target.style.boxShadow = "0 10px 20px rgba(12,59,46,0.45)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = "translateY(0)";
-                    e.target.style.boxShadow = "0 8px 16px rgba(12,59,46,0.35)";
-                  }}
-                >
-                  {strings.upgrade}
-                </button>
-              </Link>
-            )}
             <Link to={createPageUrl("Account")}>
               <button
                 aria-label="Account Settings"

@@ -25,7 +25,7 @@ import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
-import { getFeatureCardStyles, CTA_COLOR } from "../components/shared/featureTheme";
+import { getFeatureCardStyles } from "../components/shared/featureTheme";
 
 function DashboardContent() {
   const [focusMode, setFocusMode] = React.useState(false);
@@ -156,7 +156,6 @@ function DashboardContent() {
   const accessLevel = user?.access_level || 'user';
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
-  const isFreeUser = !user?.plan_tier || user?.plan_tier === 'free';
 
   // Compute feature themes once
   const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
@@ -848,8 +847,6 @@ function DashboardContent() {
       noNotifications: "No notifications yet",
       noMaintenance: "No requests",
       analytics: "Analytics",
-      unlockFullProtection: "Unlock Full Protection",
-      upgradePromoDesc: "Get premium deposit tools, full maintenance workflows, and detailed reports with Lite, Protect, or Secure.",
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -893,8 +890,6 @@ function DashboardContent() {
       noNotifications: "ยังไม่มีการแจ้งเตือน",
       noMaintenance: "ไม่มีคำขอ",
       analytics: "วิเคราะห์",
-      unlockFullProtection: "ปลดล็อกการป้องกันแบบเต็มรูปแบบ",
-      upgradePromoDesc: "รับเครื่องมือเงินมัดจำพรีเมียม ระบบการซ่อมบำรุงแบบครบครัน และรายงานโดยละเอียดกับแผน Lite, Protect หรือ Secure",
     },
     zh: {
       welcome: "欢迎回来",
@@ -938,8 +933,6 @@ function DashboardContent() {
       noNotifications: "暂无通知",
       noMaintenance: "无请求",
       analytics: "分析",
-      unlockFullProtection: "解锁全面保护",
-      upgradePromoDesc: "通过 Lite、Protect 或 Secure 计划获得高级押金工具、完整的维护工作流程和详细报告。",
     },
     ja: {
       welcome: "おかえりなさい",
@@ -983,8 +976,6 @@ function DashboardContent() {
       noNotifications: "通知なし",
       noMaintenance: "リクエストなし",
       analytics: "分析",
-      unlockFullProtection: "完全な保護を解除",
-      upgradePromoDesc: "Lite、Protect、または Secure プランでプレミアム敷金ツール、完全なメンテナンスワークフロー、詳細なレポートを取得します。",
     },
     ko: {
       welcome: "다시 오신 것을 환영합니다",
@@ -1028,8 +1019,6 @@ function DashboardContent() {
       noNotifications: "알림 없음",
       noMaintenance: "요청 없음",
       analytics: "분석",
-      unlockFullProtection: "전체 보호 잠금 해제",
-      upgradePromoDesc: "Lite, Protect 또는 Secure 플랜으로 프리미엄 보증금 도구, 전체 유지보수 워크플로 및 상세 보고서를 받으세요.",
     }
   };
 
@@ -1155,7 +1144,7 @@ function DashboardContent() {
                     <>
                       <span style={{ color: '#FFFFFF' }}>ยุติธรรม。</span>
                       <span style={{ color: '#ECEFED' }}>โปร่งใส。</span>
-                      <span style={{ color: '#C7A338' }}>ปลอดภัย。</span>
+                      <span style={{ color: '#C7A338' }}>ปลอดภัย।</span>
                     </>
                   ) : (
                     <>
@@ -1902,34 +1891,34 @@ function DashboardContent() {
                                   }}
                                   onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
                                   onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                                >
+                                  {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
+                                </button>
+                              </Link>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => navigate(createPageUrl("PropertyTracker") + "#rent")}
+                                style={{
+                                  backgroundColor: rentTheme.buttonBg,
+                                  color: rentTheme.buttonText,
+                                  width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s",
+                                  marginTop: "12px"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                               >
-                                {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
+                                {strings.setupRent}
                               </button>
-                            </Link>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => navigate(createPageUrl("PropertyTracker") + "#rent")}
-                              style={{
-                                backgroundColor: rentTheme.buttonBg,
-                                color: rentTheme.buttonText,
-                                width: "100%",
-                                padding: "8px 12px",
-                                borderRadius: "8px",
-                                fontSize: "0.875rem",
-                                fontWeight: "600",
-                                border: "none",
-                                cursor: "pointer",
-                                transition: "all 0.2s",
-                                marginTop: "12px"
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
-                              onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-                            >
-                              {strings.setupRent}
-                            </button>
-                          )}
-                        </div>
+                            )}
+                          </div>
 
                           <div
                             className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
@@ -2613,52 +2602,6 @@ function DashboardContent() {
                         </div>
                       </div>
                     </>
-                  )}
-
-                  {/* ✅ NEW: Upgrade Promo Card for FREE users */}
-                  {isFreeUser && !isLoading && !focusMode && (
-                    <div
-                      className="mt-4"
-                      style={{
-                        padding: "16px",
-                        borderRadius: "16px",
-                        backgroundColor: "rgba(12,59,46,0.06)",
-                        border: "1px solid rgba(12,59,46,0.18)",
-                      }}
-                    >
-                      <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: 4, color: colors.textPrimary }}>
-                        {strings.unlockFullProtection}
-                      </h3>
-                      <p style={{ fontSize: "0.85rem", marginBottom: 12, color: colors.textSecondary }}>
-                        {strings.upgradePromoDesc}
-                      </p>
-                      <Link to={createPageUrl("Account") + "#plans"}>
-                        <button
-                          style={{
-                            padding: "8px 14px",
-                            borderRadius: 9999,
-                            backgroundColor: CTA_COLOR,
-                            color: "#FFFFFF",
-                            border: "none",
-                            fontWeight: 600,
-                            fontSize: "0.8rem",
-                            cursor: "pointer",
-                            boxShadow: "0 8px 16px rgba(12,59,46,0.35)",
-                            transition: "all 0.2s"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.transform = "translateY(-1px)";
-                            e.target.style.boxShadow = "0 10px 20px rgba(12,59,46,0.45)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.transform = "translateY(0)";
-                            e.target.style.boxShadow = "0 8px 16px rgba(12,59,46,0.35)";
-                          }}
-                        >
-                          {strings.viewPlans}
-                        </button>
-                      </Link>
-                    </div>
                   )}
                 </>
               )}

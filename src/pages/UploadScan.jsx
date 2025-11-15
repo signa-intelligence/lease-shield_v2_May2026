@@ -2,13 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,50 +23,32 @@ import {
   Save,
   Shield,
   Eye,
-  ExternalLink,
-  XCircle,
-  ArrowRight,
-  Calendar,
-  FileWarning,
-  TrendingDown,
-  TrendingUp,
-  AlertTriangle,
-  Info,
-  Plus,
-  ChevronDown,
-  ChevronUp
+  ExternalLink
 } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ProgressBreadcrumb from "../components/shared/ProgressBreadcrumb";
 import UploadProgress from "../components/shared/UploadProgress";
 import { haptic } from "../components/shared/HapticFeedback";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { CTA_COLOR } from "../components/shared/featureTheme";
-
 
 export default function UploadScanPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const [files, setFiles] = useState([]); // Replaces selectedFiles
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
-  const [showConfirmation, setShowConfirmation] = useState(false); // Kept for existing modal logic
-  const [leaseDetails, setLeaseDetails] = useState(null); // Kept for existing modal logic
-  const [pendingLeaseId, setPendingLeaseId] = useState(null); // Kept for existing modal logic
-  const [analysisStage, setAnalysisStage] = useState(''); // Kept for upload progress display
-  // New state variables for batch mode and upload progress
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [leaseDetails, setLeaseDetails] = useState(null);
+  const [pendingLeaseId, setPendingLeaseId] = useState(null);
+  const [analysisStage, setAnalysisStage] = useState('');
+  // New state variables for batch mode
   const [batchMode, setBatchMode] = useState(false);
-  const [filesUploaded, setFilesUploaded] = useState(0);
-  const [totalFiles, setTotalFiles] = useState(0);
+  const [batchResults, setBatchResults] = useState([]); // To store results of each file in batch
 
   // New state for viewing lease details
   const [selectedLease, setSelectedLease] = useState(null);
@@ -81,24 +57,23 @@ export default function UploadScanPage() {
 
   // NEW: Track current step for breadcrumb
   const [currentStep, setCurrentStep] = useState(0);
-  // NEW: Post-Scan Upgrade Nudge state
-  const [showPostScanUpgrade, setShowPostScanUpgrade] = useState(false);
 
+  const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
-    queryKey: ['currentUser'],
+    queryKey: ['user'],
     queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000
   });
 
-  const { data: leases = [], isLoading: leasesLoading } = useQuery({
+  const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
-    // initialData: [], // Removed as per outline, relying on actual fetch
+    initialData: [],
   });
 
-  const { data: allScans = [] } = useQuery({ // Kept as it's used for selectedScan logic
+  const { data: allScans = [] } = useQuery({
     queryKey: ['allScans'],
     queryFn: () => base44.entities.LeaseScan.list(),
     enabled: !!user,
@@ -107,7 +82,6 @@ export default function UploadScanPage() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
-  const isFreeUser = !user?.plan_tier || user?.plan_tier === 'free'; // New derived state
 
   // ✅ SCAN LIMIT ENFORCEMENT
   const getScanLimits = () => {
@@ -148,14 +122,12 @@ export default function UploadScanPage() {
   const scanStatus = canUploadLease();
 
   const colors = {
-    bg: isDarkMode ? '#1A1D1F' : '#F8FAFC', // Updated from #F9FAFB
+    bg: isDarkMode ? '#1A1D1F' : '#F9FAFB',
     cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
     textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
-    textSecondary: isDarkMode ? '#A8ABAD' : '#64748b', // Updated from #9CA3AF / #6B7280
+    textSecondary: isDarkMode ? '#9CA3AF' : '#6B7280',
     borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
     inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
-    accent: '#0C3B2E',
-    accentLight: isDarkMode ? '#0C3B2E40' : '#0C3B2E20'
   };
 
   const t = {
@@ -231,10 +203,7 @@ export default function UploadScanPage() {
       stepUpload: "Upload",
       stepAnalyze: "Analyze",
       stepResults: "Results",
-      stepTrack: "Track",
-      tip: "Tip:",
-      deepAiAnalysis: "Deeper AI analysis, extra reports, and unlimited scans are available on paid plans",
-      viewPlans: "View plans"
+      stepTrack: "Track"
     },
     th: {
       title: "สแกนสัญญาเช่า",
@@ -308,10 +277,7 @@ export default function UploadScanPage() {
       stepUpload: "อัปโหลด",
       stepAnalyze: "วิเคราะห์",
       stepResults: "ผลลัพธ์",
-      stepTrack: "ติดตาม",
-      tip: "เคล็ดลับ:",
-      deepAiAnalysis: "การวิเคราะห์ AI เชิงลึก รายงานเพิ่มเติม และการสแกนไม่จำกัดพร้อมใช้งานในแผนแบบชำระเงิน",
-      viewPlans: "ดูแผน"
+      stepTrack: "ติดตาม"
     },
     zh: {
       title: "扫描租约",
@@ -385,10 +351,7 @@ export default function UploadScanPage() {
       stepUpload: "上传",
       stepAnalyze: "分析",
       stepResults: "结果",
-      stepTrack: "追踪",
-      tip: "提示：",
-      deepAiAnalysis: "深入的 AI 分析、额外报告和无限扫描在付费计划中可用",
-      viewPlans: "查看计划"
+      stepTrack: "追踪"
     },
     ja: {
       title: "賃貸契約をスキャン",
@@ -462,10 +425,7 @@ export default function UploadScanPage() {
       stepUpload: "アップロード",
       stepAnalyze: "分析",
       stepResults: "結果",
-      stepTrack: "追跡",
-      tip: "ヒント：",
-      deepAiAnalysis: "詳細な AI 分析、追加レポート、および無制限スキャンは有料プランで利用できます",
-      viewPlans: "プランを表示"
+      stepTrack: "追跡"
     },
     ko: {
       title: "임대 계약 스캔",
@@ -539,10 +499,7 @@ export default function UploadScanPage() {
       stepUpload: "업로드",
       stepAnalyze: "분석",
       stepResults: "결과",
-      stepTrack: "추적",
-      tip: "팁:",
-      deepAiAnalysis: "심층 AI 분석, 추가 보고서 및 무제한 스캔은 유료 플랜에서 사용할 수 있습니다",
-      viewPlans: "계획 보기"
+      stepTrack: "추적"
     }
   };
 
@@ -562,12 +519,12 @@ export default function UploadScanPage() {
       setCurrentStep(1); // Analyzing step
     } else if (uploading) {
       setCurrentStep(1); // Also uploading/creating/scanning
-    } else if (files.length > 0) { // Changed from selectedFiles
+    } else if (selectedFiles.length > 0) {
       setCurrentStep(0); // Files selected, ready to upload
     } else {
       setCurrentStep(0); // Initial state or after completion/error
     }
-  }, [uploading, analyzing, files]); // Changed from selectedFiles
+  }, [uploading, analyzing, selectedFiles]);
 
   const updateLeaseMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Lease.update(id, data),
@@ -577,164 +534,181 @@ export default function UploadScanPage() {
     }
   });
 
-  const handleFileSelect = (e) => {
-    if (!scanStatus.allowed) return;
-    const selectedFiles = Array.from(e.target.files || e.dataTransfer?.files || []);
-    if (selectedFiles.length > 1) {
-      setBatchMode(true);
-    } else {
-      setBatchMode(false);
-    }
-    setFiles(prev => [...prev, ...selectedFiles]); // Append new files
-    setError(null);
-    setDragActive(false);
-  };
+  const handleUploadAll = async () => {
+    // ✅ CHECK SCAN LIMIT BEFORE UPLOAD
+    if (!scanStatus.allowed) {
+      const periodText = scanStatus.period === 'year'
+        ? (language === 'th' ? 'ปีนี้' : 'this year')
+        : (language === 'th' ? 'ตลอดชีพ' : 'lifetime');
 
-  const handleDrag = (e) => {
-    if (!scanStatus.allowed) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    if (!scanStatus.allowed) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    if (droppedFiles.length > 1) {
-      setBatchMode(true);
-    } else {
-      setBatchMode(false);
-    }
-    setFiles(prev => [...prev, ...droppedFiles]); // Append new files
-    setError(null);
-  };
-
-  const handleUploadAndAnalyze = async () => {
-    haptic.medium();
-    if (files.length === 0) return;
-
-    // Check scan limit using the existing scanStatus
-    if (!scanStatus.allowed || files.length > scanStatus.remaining) {
-      setError(
+      alert(
         language === 'th'
-          ? `คุณมีเหลือ ${scanStatus.remaining} การสแกนสำหรับ${getPeriodText(scanStatus.period)} กรุณาอัปโหลดไม่เกิน ${scanStatus.remaining} ไฟล์ หรืออัปเกรดเพื่อสแกนเพิ่มเติม`
-          : `You have ${scanStatus.remaining} scans remaining ${getPeriodText(scanStatus.period)}. Please upload no more than ${scanStatus.remaining} file(s) or upgrade for more scans.`
+          ? `คุณใช้ครบโควต้าการสแกนแล้ว (${scanStatus.used}/${scanStatus.limit} ${periodText})\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
+          : `You've reached your scan limit (${scanStatus.used}/${scanStatus.limit} ${periodText})\n\nUpgrade your plan for more scans`
       );
       return;
     }
 
+    if (selectedFiles.length === 0) {
+      setError(language === 'th' ? 'กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์' : 'Please select at least one file');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    haptic.medium();
+
+    // BATCH MODE: Upload multiple leases separately
+    if (selectedFiles.length > 1) {
+      setBatchMode(true);
+      setUploading(true);
+      setAnalyzing(false); // Batch upload is just uploading, not analyzing immediately
+      setError(null);
+      setUploadProgress(0); // Reset progress for batch
+      setCurrentStep(1); // Move to analyzing step
+      const batchResultsTemp = []; // Use a temporary array to store results for this batch operation
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        try {
+          setAnalysisStage(language === 'th' ? `กำลังอัปโหลดไฟล์ ${i + 1}/${selectedFiles.length}` : `Uploading file ${i + 1}/${selectedFiles.length}`);
+          setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
+
+          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          
+          const lease = await base44.entities.Lease.create({
+            file_url: file_url,
+            file_urls: [file_url], // Assuming each file is a single lease document
+            status: 'uploaded', // Leases created in batch mode are 'uploaded', not yet 'scanned'
+            created_by: user?.email // Ensure created_by is set
+          });
+          batchResultsTemp.push({ file: file.name, leaseId: lease.id, success: true });
+        } catch (err) {
+          console.error(`Batch upload error for file ${file.name}:`, err);
+          batchResultsTemp.push({ file: file.name, success: false, error: err.message });
+          // If one file fails, continue with others in the batch
+        }
+      }
+
+      setBatchResults(batchResultsTemp); // Store all batch results
+      setUploading(false);
+      setBatchMode(false); // Exit batch mode
+      setSelectedFiles([]); // Clear selected files after batch upload attempt
+      setUploadProgress(0);
+      setAnalysisStage(''); // Clear stage
+      setCurrentStep(0); // Reset after batch upload
+      queryClient.invalidateQueries({ queryKey: ['leases'] }); // Invalidate to show new 'uploaded' leases
+
+      const successCount = batchResultsTemp.filter(r => r.success).length;
+      // Provide a summary alert
+      alert(
+        language === 'th'
+          ? `อัปโหลดสำเร็จ ${successCount}/${batchResultsTemp.length} ไฟล์\n\nไฟล์ที่อัปโหลดสำเร็จแล้วจะปรากฏในรายการ "สัญญาเช่าทั้งหมด" และคุณสามารถเริ่มการวิเคราะห์ได้จากที่นั่น`
+          : `Successfully uploaded ${successCount}/${batchResultsTemp.length} files.\n\nSuccessfully uploaded files will appear in "All Leases" list, where you can initiate analysis.`
+      );
+      return; // Crucially, exit here for batch mode
+    }
+
+    // SINGLE MODE: Keep existing logic
     setUploading(true);
-    setAnalyzing(false);
     setError(null);
     setUploadProgress(0);
     setRetryCount(0);
-    setCurrentStep(1); // Set breadcrumb to Upload/Analyze
-    setTotalFiles(files.length);
-    setFilesUploaded(0);
-    setShowPostScanUpgrade(false); // Reset nudge state
+    setAnalysisStage('uploading');
+    setCurrentStep(1); // Move to analyzing
 
     let currentRetry = 0;
     const maxRetries = 3;
-    let uploadedLeases = []; // To store created lease objects
+    let createdLeaseId = null;
 
-    const attemptProcess = async () => {
+    const attemptUpload = async () => {
       try {
-        uploadedLeases = []; // Reset for retry
+        setAnalysisStage('uploading');
+        setUploadProgress(10);
 
-        // --- UPLOAD PHASE ---
-        setAnalysisStage(strings.analyzing.uploading);
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          setUploadProgress(Math.round(((i + 1) / files.length) * 50)); // First 50% for upload
-          setFilesUploaded(i); // Update count of files uploaded (before creating lease)
+        const uploadPromises = selectedFiles.map(file =>
+          base44.integrations.Core.UploadFile({ file })
+        );
 
-          const uploadResult = await base44.integrations.Core.UploadFile({ file });
-          const fileUrl = uploadResult.file_url;
+        const uploadResults = await Promise.all(uploadPromises);
+        const fileUrls = uploadResults.map(result => result.file_url);
+        setUploadProgress(30);
 
-          setAnalysisStage(strings.analyzing.creating); // Creating lease record
-          const leaseData = {
-            file_url: fileUrl,
-            file_urls: [fileUrl], // Assuming single file leads to single lease doc
-            status: 'uploaded',
-            created_by: user?.email
-          };
-          const createdLease = await base44.entities.Lease.create(leaseData);
-          uploadedLeases.push(createdLease);
-          setFilesUploaded(i + 1); // Update count of files for which leases are created
-        }
+        setAnalysisStage('creating');
+        setUploadProgress(40);
 
-        setUploading(false);
+        const lease = await base44.entities.Lease.create({
+          file_url: fileUrls[0],
+          file_urls: fileUrls,
+          status: 'uploaded',
+          created_by: user?.email // Ensure created_by is set
+        });
+        createdLeaseId = lease.id;
+        setUploadProgress(50);
+
         setAnalyzing(true);
-        setUploadProgress(0); // Reset for analysis phase
-        setCurrentStep(2); // Move breadcrumb to Analyze step
+        setUploading(false);
+        setAnalysisStage('scanning');
+        setUploadProgress(60);
 
-        // --- ANALYSIS PHASE ---
-        for (let i = 0; i < uploadedLeases.length; i++) {
-          const lease = uploadedLeases[i];
-          setAnalysisStage(strings.analyzing.scanning); // AI analyzing document
-          setUploadProgress(Math.round(((i + 1) / uploadedLeases.length) * 100)); // Last 50% for analysis
+        const { data: scanResponse } = await base44.functions.invoke('scanLease', {
+          fileUrls: fileUrls
+        });
 
-          const { data: analysisResponse } = await base44.functions.invoke('scanLease', {
-            leaseId: lease.id
-          });
-
-          if (!analysisResponse || !analysisResponse.success) {
-            throw new Error(analysisResponse?.error || 'Scan failed');
-          }
-
-          setAnalysisStage(strings.analyzing.extracting); // Extracting lease details
-          await base44.entities.Lease.update(lease.id, {
-            status: 'scanned',
-            ...analysisResponse.leaseData // Updated to use leaseData from the response
-          });
-          setAnalysisStage(strings.analyzing.finalizing); // Finalizing analysis
+        if (!scanResponse || !scanResponse.success) {
+          throw new Error(scanResponse?.error || 'Scan failed');
         }
 
-        setAnalyzing(false);
-        setUploadProgress(100);
-        setCurrentStep(2); // Stay on results step
+        const scanResult = scanResponse.result;
+        setAnalysisStage('extracting');
+        setUploadProgress(70);
 
-        // Invalidate queries to refresh lease list
+        await base44.entities.Lease.update(createdLeaseId, {
+          status: 'scanned',
+          property_address: scanResult.property_address || null,
+          start_date: scanResult.start_date || null,
+          end_date: scanResult.end_date || null,
+          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
+          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
+          language_detected: scanResult.language_detected || 'en'
+        });
+        setUploadProgress(80);
+
+        setAnalysisStage('finalizing');
+
+        await base44.entities.LeaseScan.create({
+          lease_id: createdLeaseId,
+          risk_score: scanResult.risk_score,
+          flags: scanResult.flags || [],
+          summary: scanResult.summary,
+          scan_full: scanResult,
+          version: '1.0'
+        });
+        setUploadProgress(100);
+        setCurrentStep(2); // Move to results step
+
+        if (scanResult.end_date) {
+          setLeaseDetails({
+            end_date: scanResult.end_date,
+            notice_period_days: scanResult.notice_period_days || 30
+          });
+          setPendingLeaseId(createdLeaseId);
+          setShowConfirmation(true);
+        } else {
+          // Open details modal instead of navigating
+          const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
+          const newLease = updatedLeases.find(l => l.id === createdLeaseId);
+          setSelectedLease(newLease);
+          setCurrentStep(2); // Still results step if no end date
+        }
+
+        setSelectedFiles([]);
         queryClient.invalidateQueries({ queryKey: ['leases'] });
         queryClient.invalidateQueries({ queryKey: ['allScans'] });
-
-        // Nudge for free users after successful scan(s)
-        if (isFreeUser) {
-          setShowPostScanUpgrade(true);
-        }
-
-        // If it was a single file upload, open its details modal
-        if (uploadedLeases.length === 1) {
-          const newLease = (await queryClient.fetchQuery({ queryKey: ['leases'] })).find(l => l.id === uploadedLeases[0].id);
-          if (newLease) {
-            setSelectedLease(newLease);
-            setCurrentStep(3); // Go to track deposit if details open
-          }
-        } else {
-          // For batch uploads, just show a success message
-          alert(
-            language === 'th'
-              ? `อัปโหลดและวิเคราะห์สำเร็จ ${uploadedLeases.length} ไฟล์\n\nสามารถดูรายละเอียดและจัดการสัญญาเช่าได้ในรายการ "สัญญาเช่าทั้งหมด"`
-              : `Successfully uploaded and analyzed ${uploadedLeases.length} files.\n\nYou can view and manage your leases in the "All Leases" list.`
-          );
-        }
-
-        setFiles([]); // Clear files after successful upload/analysis
-        setRetryCount(0); // Reset retry count
-        setAnalysisStage('');
 
       } catch (err) {
         console.error('❌ Upload/Analysis error:', err);
 
-        const isWordDoc = files.some(f =>
+        const isWordDoc = selectedFiles.some(f =>
           f.name.toLowerCase().endsWith('.doc') ||
           f.name.toLowerCase().endsWith('.docx')
         );
@@ -749,16 +723,16 @@ export default function UploadScanPage() {
 
           await new Promise(resolve => setTimeout(resolve, 2000 * currentRetry));
 
-          // Attempt to clean up any partially created leases before retrying
-          for (const lease of uploadedLeases) {
+          if (createdLeaseId && analysisStage !== 'uploading') {
             try {
-              await base44.entities.Lease.delete(lease.id);
+              await base44.entities.Lease.delete(createdLeaseId);
+              createdLeaseId = null;
             } catch (cleanupErr) {
-              console.error('Failed to cleanup lease during retry:', cleanupErr);
+              console.error('Failed to cleanup lease:', cleanupErr);
             }
           }
 
-          return attemptProcess(); // Retry the entire process
+          return attemptUpload();
         } else {
           let errorMessage;
 
@@ -778,15 +752,13 @@ export default function UploadScanPage() {
 
           setError(errorMessage);
 
-          // Final cleanup for any failed leases
-          for (const lease of uploadedLeases) {
+          if (createdLeaseId) {
             try {
-              await base44.entities.Lease.delete(lease.id);
+              await base44.entities.Lease.delete(createdLeaseId);
             } catch (cleanupErr) {
               console.error('Failed final cleanup:', cleanupErr);
             }
           }
-          setFiles([]); // Clear files after final failure
           setCurrentStep(0); // Reset step on error
         }
       } finally {
@@ -794,14 +766,11 @@ export default function UploadScanPage() {
         setAnalyzing(false);
         setUploadProgress(0);
         setAnalysisStage('');
-        setFilesUploaded(0);
-        setTotalFiles(0);
       }
     };
 
-    await attemptProcess();
+    await attemptUpload();
   };
-
 
   const handleConfirmLeaseDetails = async () => {
     if (!pendingLeaseId || !leaseDetails) return;
@@ -897,16 +866,32 @@ export default function UploadScanPage() {
     setSelectedLease(lease);
   };
 
+  const handleFileSelect = (e) => {
+    // Only allow file selection if upload is allowed
+    if (!scanStatus.allowed) return;
+    const files = Array.from(e.target.files || e.dataTransfer?.files || []);
+    setSelectedFiles(prev => [...prev, ...files]);
+    setError(null);
+    setDragActive(false);
+  };
+
+  const handleDrop = (e) => {
+    // Only allow drop if upload is allowed
+    if (!scanStatus.allowed) return;
+    e.preventDefault();
+    setDragActive(false);
+    const files = Array.from(e.dataTransfer.files);
+    setSelectedFiles(prev => [...prev, ...files]);
+    setError(null);
+  };
+
   const handleRemoveFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-    if (files.length - 1 <= 1) { // If only one file or zero files left
-      setBatchMode(false);
-    }
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleRetry = () => {
     setError(null);
-    setFiles([]); // Changed from selectedFiles
+    setSelectedFiles([]);
     setUploadProgress(0);
     setRetryCount(0);
     setAnalysisStage('');
@@ -988,41 +973,8 @@ export default function UploadScanPage() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
-        {/* ✅ Post-Scan Upgrade Nudge */}
-        {showPostScanUpgrade && isFreeUser && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: 12,
-              borderRadius: 12,
-              backgroundColor: "rgba(12,59,46,0.06)",
-              border: "1px dashed rgba(12,59,46,0.25)",
-              fontSize: "0.85rem",
-              color: colors.textPrimary
-            }}
-          >
-            <strong>{strings.tip}</strong> {strings.deepAiAnalysis}{" "}
-            <button
-              onClick={() => navigate(createPageUrl("Account") + "#plans")}
-              style={{
-                padding: "4px 10px",
-                borderRadius: 9999,
-                backgroundColor: CTA_COLOR,
-                color: "#FFFFFF",
-                border: "none",
-                fontWeight: 600,
-                fontSize: "0.75rem",
-                cursor: "pointer",
-                marginLeft: 6,
-              }}
-            >
-              {strings.viewPlans}
-            </button>
-          </div>
-        )}
-
         {/* NEW: Progress Breadcrumb */}
-        {(uploading || analyzing || files.length > 0) && ( // Changed from selectedFiles
+        {(uploading || analyzing || selectedFiles.length > 0) && (
           <div className="mb-6">
             <ProgressBreadcrumb
               steps={breadcrumbSteps}
@@ -1088,7 +1040,7 @@ export default function UploadScanPage() {
           </div>
         )}
 
-        {/* Lease Details Confirmation Modal (Kept for existing lease editing flow, no longer triggered by new scan) */}
+        {/* Lease Details Confirmation Modal */}
         {showConfirmation && leaseDetails && (
           <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
             <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
@@ -1255,10 +1207,10 @@ export default function UploadScanPage() {
                     ) : (
                       <div className="space-y-3">
                         <div>
-                          <Label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                          <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                             {strings.noticePeriodLabel}
-                          </Label>
-                          <Input
+                          </label>
+                          <input
                             type="number"
                             value={noticeSettings.notice_period_days}
                             onChange={(e) => setNoticeSettings({ notice_period_days: parseInt(e.target.value) || 30 })}
@@ -1400,8 +1352,7 @@ export default function UploadScanPage() {
               <UploadProgress
                 currentStage={analysisStage}
                 progress={uploadProgress}
-                fileCount={totalFiles} // Changed from selectedFiles.length
-                filesProcessed={filesUploaded} // New prop for batch progress
+                fileCount={selectedFiles.length}
                 primaryColor={colors.textPrimary}
                 secondaryColor={colors.textSecondary}
                 language={language}
@@ -1444,7 +1395,7 @@ export default function UploadScanPage() {
                 )}
 
                 {/* Batch Mode Info */}
-                {batchMode && files.length > 1 && ( // Condition for batchMode is now explicit
+                {selectedFiles.length > 1 && (
                   <div className="mb-4 p-4 rounded-lg" style={{
                     backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
                     border: '2px solid #3B82F6'
@@ -1466,10 +1417,10 @@ export default function UploadScanPage() {
                     backgroundColor: dragActive ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') : 'transparent',
                     pointerEvents: scanStatus.allowed ? 'auto' : 'none'
                   }}
-                  onDragEnter={handleDrag} // Changed to new handleDrag
-                  onDragLeave={handleDrag} // Changed to new handleDrag
-                  onDragOver={handleDrag} // Changed to new handleDrag
-                  onDrop={handleDrop} // Changed to new handleDrop
+                  onDragEnter={() => scanStatus.allowed && setDragActive(true)}
+                  onDragLeave={() => setDragActive(false)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleDrop}
                 >
                   <Upload className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4" style={{ color: colors.textSecondary }} />
                   <h3 className="text-lg md:text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
@@ -1523,13 +1474,13 @@ export default function UploadScanPage() {
                   </div>
                 </div>
 
-                {files.length > 0 && ( // Changed from selectedFiles
+                {selectedFiles.length > 0 && (
                   <div className="mt-6">
                     <h4 className="font-semibold mb-3" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? 'ไฟล์ที่เลือก' : 'Selected Files'} ({files.length})
+                      {language === 'th' ? 'ไฟล์ที่เลือก' : 'Selected Files'} ({selectedFiles.length})
                     </h4>
                     <div className="space-y-2">
-                      {files.map((file, index) => ( // Changed from selectedFiles
+                      {selectedFiles.map((file, index) => (
                         <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{
                           backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6'
                         }}>
@@ -1552,7 +1503,10 @@ export default function UploadScanPage() {
                       ))}
                     </div>
                     <button
-                      onClick={handleUploadAndAnalyze} // Changed to new handleUploadAndAnalyze
+                      onClick={() => {
+                        haptic.medium();
+                        handleUploadAll();
+                      }}
                       disabled={uploading || !scanStatus.allowed}
                       className={`w-full mt-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
                       style={{
