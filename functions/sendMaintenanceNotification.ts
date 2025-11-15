@@ -40,11 +40,17 @@ Deno.serve(async (req) => {
     };
 
     // Helper: Translate text
-    const translateText = async (text, targetLang, detectedLang) => {
-      if (!text || !targetLang) return text;
-      if (detectedLang === targetLang) return text;
-      
+    const translateText = async (text, targetLang) => {
+      const baseText = (text || '').trim();
+      if (!baseText) return text;
+      if (!targetLang) return text;
+
       try {
+        const detected = await detectLanguage(baseText);
+        if (detected && detected.toLowerCase() === targetLang.toLowerCase()) {
+          return baseText;
+        }
+
         const langNames = {
           en: 'English',
           th: 'Thai',
@@ -56,25 +62,42 @@ Deno.serve(async (req) => {
         const targetName = langNames[targetLang] || targetLang;
         
         const response = await base44.integrations.Core.InvokeLLM({
-          prompt: `Translate this text to ${targetName}. Return ONLY the translation, no explanations or commentary. Preserve the meaning and tone. Text: "${text}"`,
+          prompt: `Translate this text to ${targetName}. Return ONLY the translation, no explanations or commentary. Preserve the meaning and tone. Text:\n\n${baseText}`,
           response_json_schema: {
             type: "object",
             properties: { translation: { type: "string" } }
           }
         });
         
-        return response?.translation || text;
+        const translation = (response && typeof response.translation === 'string' && response.translation.trim()) || '';
+        
+        if (!translation) {
+          return baseText;
+        }
+        
+        return translation;
       } catch (error) {
-        console.error('Translation failed:', error);
+        console.error('translateText error:', error);
         return text;
       }
     };
 
     // Helper: Get recipient language
-    const getRecipientLanguage = (role, userLang) => {
-      if (userLang) return userLang;
-      if (role === 'juristic' || role === 'building' || role === 'manager') return 'th';
-      if (role === 'landlord' || role === 'owner') return 'en';
+    const getRecipientLanguage = (role, user) => {
+      if (user && typeof user.language === 'string' && user.language.trim().length > 0) {
+        return user.language;
+      }
+
+      const r = (role || '').toLowerCase();
+
+      if (r === 'juristic' || r === 'building' || r === 'manager') {
+        return 'th';
+      }
+
+      if (r === 'landlord' || r === 'owner') {
+        return 'en';
+      }
+
       return 'en';
     };
 
@@ -117,41 +140,33 @@ Deno.serve(async (req) => {
     const buildDescriptionSection = async (targetLang) => {
       const baseText = (description || '').trim();
       
-      if (!baseText || baseText.length < 3) {
-        return baseText;
+      if (!baseText) {
+        return '';
       }
 
       try {
-        const currentDetectedLang = await detectLanguage(baseText);
-        const translated = await translateText(baseText, targetLang, currentDetectedLang);
+        const detectedLang = await detectLanguage(baseText);
+        const translated = await translateText(baseText, targetLang);
 
-        if (!translated || translated.trim().length === 0) {
-          console.warn(`⚠️ Translation returned empty for targetLang=${targetLang}`);
-          return `<p><strong>Description:</strong><br/>${baseText.replace(/\n/g, '<br/>')}</p>`;
+        if (!translated || translated.trim().length === 0 || translated.trim() === baseText.trim()) {
+          return baseText.replace(/\n/g, '<br />');
         }
 
-        if (translated.trim() === baseText.trim() || currentDetectedLang === targetLang) {
-          return `<p><strong>Description:</strong><br/>${baseText.replace(/\n/g, '<br/>')}</p>`;
-        }
+        const langLabel = targetLang === 'th' ? 'TH' : targetLang === 'ja' ? 'JA' : targetLang === 'ko' ? 'KO' : targetLang === 'zh' ? 'ZH' : 'EN';
+        const detectedLabel = detectedLang || 'unknown';
 
-        const langCodes = {
-          en: 'EN', th: 'TH', ja: 'JA', ko: 'KO', zh: 'ZH'
-        };
-
-        const targetLabel = langCodes[targetLang] || targetLang.toUpperCase();
-        const sourceLabel = langCodes[currentDetectedLang] || currentDetectedLang.toUpperCase();
-
-        const translatedLabel = targetLang === 'th' ? 'แปลสำหรับคุณ' : 'Translated for you';
-        const originalLabel = targetLang === 'th' ? 'ข้อความต้นฉบับ' : 'Original message';
-
-        return `
-          <p><strong>${translatedLabel} (${targetLabel}):</strong><br/>${translated.replace(/\n/g, '<br/>')}</p>
-          <hr style="margin: 15px 0; border: none; border-top: 1px dashed #ccc;">
-          <p><strong>${originalLabel} (${sourceLabel}):</strong><br/>${baseText.replace(/\n/g, '<br/>')}</p>
-        `;
+        return [
+          `<p><strong>Translated for you (${langLabel}):</strong><br />`,
+          translated.replace(/\n/g, '<br />'),
+          `</p>`,
+          `<hr style="margin: 15px 0; border: none; border-top: 1px dashed #ccc;">`,
+          `<p><strong>Original (${detectedLabel}):</strong><br />`,
+          baseText.replace(/\n/g, '<br />'),
+          `</p>`
+        ].join('');
       } catch (error) {
-        console.error('❌ buildDescriptionSection error:', error);
-        return `<p><strong>Description:</strong><br/>${baseText.replace(/\n/g, '<br/>')}</p>`;
+        console.error('buildDescriptionSection translation error:', error);
+        return baseText.replace(/\n/g, '<br />');
       }
     };
 
@@ -208,7 +223,7 @@ Deno.serve(async (req) => {
     ].filter(Boolean).join(', ') || (language === 'th' ? 'ไม่ได้ระบุ' : 'Not provided');
 
     // Prepare landlord notification (English by default)
-    const landlordLang = getRecipientLanguage('landlord', null);
+    const landlordLang = getRecipientLanguage('landlord', user);
     const landlordDescSection = await buildDescriptionSection(landlordLang);
     
     const landlordSubject = landlordLang === 'th'
@@ -282,7 +297,7 @@ Deno.serve(async (req) => {
       `;
 
     // Prepare juristic notification (Thai by default)
-    const juristicLang = getRecipientLanguage('juristic', null);
+    const juristicLang = getRecipientLanguage('juristic', user);
     const juristicDescSection = await buildDescriptionSection(juristicLang);
 
     const juristicSubject = juristicLang === 'th'
