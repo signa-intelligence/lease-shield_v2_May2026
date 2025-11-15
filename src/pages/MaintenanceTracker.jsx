@@ -13,6 +13,7 @@ import { Wrench, Plus, Camera, Image as ImageIcon, X, Loader2, ArrowLeft, Save, 
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import ChatLog from "../components/maintenance/ChatLog";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
 
@@ -24,6 +25,8 @@ export default function MaintenanceTracker() {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [photoFiles, setPhotoFiles] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showPostUpgradeHint, setShowPostUpgradeHint] = useState(false);
   
   const [formData, setFormData] = useState({
     issue_title: '',
@@ -61,7 +64,10 @@ export default function MaintenanceTracker() {
         reported_date: new Date().toISOString().split('T')[0]
       });
 
-      // Send notifications
+      if (!user?.plan_tier || user.plan_tier === 'free') {
+        setShowPostUpgradeHint(true);
+      }
+
       try {
         const notificationResponse = await base44.functions.invoke('sendMaintenanceNotification', {
           maintenanceRequest: createdRequest
@@ -89,7 +95,7 @@ export default function MaintenanceTracker() {
     bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
     cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
     textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
-    textSecondary: isDarkMode ? '#A8ABAD' : '#64748b',
+    textSecondary: isDarkMode ? '#9CA3AF' : '#6B7280',
     borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
     inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
     sectionBg: isDarkMode ? '#353A3D' : '#F8FAFC'
@@ -122,7 +128,11 @@ export default function MaintenanceTracker() {
       requestSent: "Request sent to",
       recipients: "recipient(s)!",
       failedToCreate: "Failed to create request. Please try again.",
-      requestCreatedBy: "Request created by"
+      requestCreatedBy: "Request created by",
+      upgradeModalTitle: "Upgrade to Track Maintenance",
+      upgradeModalDesc: "Maintenance Tracker is available on paid plans. Upgrade to unlock professional request tracking and landlord notifications.",
+      viewPlans: "View Plans",
+      upgradeHintText: "Get priority landlord alerts and full maintenance history with a paid plan.",
     },
     th: {
       title: "ติดตามการซ่อมบำรุง",
@@ -150,7 +160,11 @@ export default function MaintenanceTracker() {
       requestSent: "คำขอซ่อมถูกส่งแล้ว!\n\nแจ้งไปยัง:",
       recipients: "ผู้รับ",
       failedToCreate: "ไม่สามารถสร้างคำขอได้ กรุณาลองอีกครั้ง",
-      requestCreatedBy: "คำขอซ่อมถูกสร้างโดย"
+      requestCreatedBy: "คำขอซ่อมถูกสร้างโดย",
+      upgradeModalTitle: "อัปเกรดเพื่อติดตามการซ่อมบำรุง",
+      upgradeModalDesc: "ระบบติดตามการซ่อมบำรุงใช้ได้กับแผนที่ชำระเงิน อัปเกรดเพื่อปลดล็อกระบบติดตามคำขอมืออาชีพและการแจ้งเตือนเจ้าของบ้าน",
+      viewPlans: "ดูแผน",
+      upgradeHintText: "รับการแจ้งเตือนเจ้าของบ้านแบบเร่งด่วนและประวัติการซ่อมบำรุงเต็มรูปแบบด้วยแผนที่ชำระเงิน",
     },
     zh: {
       title: "维护追踪器",
@@ -178,7 +192,11 @@ export default function MaintenanceTracker() {
       requestSent: "请求已发送至",
       recipients: "收件人！",
       failedToCreate: "创建请求失败。请重试。",
-      requestCreatedBy: "请求创建者"
+      requestCreatedBy: "请求创建者",
+      upgradeModalTitle: "升级以跟踪维护",
+      upgradeModalDesc: "维护跟踪器在付费计划中可用。升级以解锁专业的请求跟踪和房东通知。",
+      viewPlans: "查看计划",
+      upgradeHintText: "通过付费计划获取优先房东警报和完整的维护历史记录。",
     },
     ja: {
       title: "メンテナンストラッカー",
@@ -206,7 +224,11 @@ export default function MaintenanceTracker() {
       requestSent: "リクエストが送信されました",
       recipients: "受信者！",
       failedToCreate: "リクエストの作成に失敗しました。もう一度お試しください。",
-      requestCreatedBy: "リクエスト作成者"
+      requestCreatedBy: "リクエスト作成者",
+      upgradeModalTitle: "メンテナンス追跡にアップグレード",
+      upgradeModalDesc: "メンテナンス追跡は有料プランで利用できます。アップグレードして、プロフェッショナルなリクエスト追跡と家主への通知を解除します。",
+      viewPlans: "プランを見る",
+      upgradeHintText: "有料プランで優先家主アラートと完全なメンテナンス履歴を入手してください。",
     },
     ko: {
       title: "유지보수 추적기",
@@ -234,7 +256,11 @@ export default function MaintenanceTracker() {
       requestSent: "요청이 전송되었습니다",
       recipients: "수신자！",
       failedToCreate: "요청 생성 실패. 다시 시도하세요.",
-      requestCreatedBy: "요청 생성자"
+      requestCreatedBy: "요청 생성자",
+      upgradeModalTitle: "유지보수 추적을 위해 업그레이드",
+      upgradeModalDesc: "유지보수 추적기는 유료 플랜에서 사용할 수 있습니다. 전문적인 요청 추적 및 집주인 알림을 잠금 해제하려면 업그레이드하십시오.",
+      viewPlans: "플랜 보기",
+      upgradeHintText: "유료 플랜으로 우선적인 집주인 알림과 전체 유지보수 내역을 받아보세요.",
     }
   };
 
@@ -258,6 +284,14 @@ export default function MaintenanceTracker() {
   const handleRemovePhoto = (index) => {
     setPhotoFiles(prev => prev.filter((_, i) => i !== index));
     setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleNewRequestClick = () => {
+    if (!user || !user.plan_tier || user.plan_tier === 'free') {
+      setShowUpgradeModal(true);
+      return;
+    }
+    setShowAddForm(!showAddForm);
   };
 
   const handleSubmit = async (e) => {
@@ -327,6 +361,35 @@ export default function MaintenanceTracker() {
           {strings.back}
         </Button>
 
+        {/* ✅ NEW: Upgrade Modal */}
+        <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+          <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>{strings.upgradeModalTitle}</DialogTitle>
+              <DialogDescription style={{ color: colors.textSecondary }}>
+                {strings.upgradeModalDesc}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowUpgradeModal(false)}>
+                {strings.cancel}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowUpgradeModal(false);
+                  navigate(createPageUrl("Account") + '#plans');
+                }}
+                style={{
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF'
+                }}
+              >
+                {strings.viewPlans}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
             <Wrench className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
@@ -336,12 +399,52 @@ export default function MaintenanceTracker() {
         </div>
 
         <Button
-          onClick={() => setShowAddForm(!showAddForm)}
+          onClick={handleNewRequestClick}
           className="w-full mb-6 ls-cta-primary"
         >
           <Plus className="w-5 h-5 mr-2" />
           {strings.addRequest}
         </Button>
+
+        {/* ✅ NEW: Post-upgrade hint */}
+        {showPostUpgradeHint && (!user?.plan_tier || user.plan_tier === 'free') && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: 10,
+              borderRadius: 12,
+              backgroundColor: isDarkMode ? 'rgba(12,59,46,0.12)' : 'rgba(12,59,46,0.06)',
+              border: '1px dashed rgba(12,59,46,0.25)',
+              fontSize: '0.8rem',
+              color: colors.textPrimary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '8px'
+            }}
+          >
+            <span>
+              <strong>Tip:</strong> {strings.upgradeHintText}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(createPageUrl('Account') + '#plans')}
+              style={{
+                backgroundColor: '#0C3B2E',
+                color: '#FFFFFF',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                height: 'auto',
+                padding: '4px 8px',
+                borderColor: '#0C3B2E'
+              }}
+            >
+              {strings.viewPlans}
+            </Button>
+          </div>
+        )}
 
         {showAddForm && (
           <Card 

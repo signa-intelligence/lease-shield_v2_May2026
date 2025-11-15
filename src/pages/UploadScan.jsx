@@ -58,6 +58,9 @@ export default function UploadScanPage() {
   // NEW: Track current step for breadcrumb
   const [currentStep, setCurrentStep] = useState(0);
 
+  // NEW: State for post-scan upgrade hint
+  const [showPostScanHint, setShowPostScanHint] = useState(false);
+
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -203,7 +206,9 @@ export default function UploadScanPage() {
       stepUpload: "Upload",
       stepAnalyze: "Analyze",
       stepResults: "Results",
-      stepTrack: "Track"
+      stepTrack: "Track",
+      upgradeHintText: "Upgrade to unlock unlimited scans and advanced lease analysis.",
+      viewPlans: "View plans",
     },
     th: {
       title: "สแกนสัญญาเช่า",
@@ -277,7 +282,9 @@ export default function UploadScanPage() {
       stepUpload: "อัปโหลด",
       stepAnalyze: "วิเคราะห์",
       stepResults: "ผลลัพธ์",
-      stepTrack: "ติดตาม"
+      stepTrack: "ติดตาม",
+      upgradeHintText: "อัปเกรดเพื่อปลดล็อกการสแกนไม่จำกัดและการวิเคราะห์สัญญาขั้นสูง",
+      viewPlans: "ดูแผน",
     },
     zh: {
       title: "扫描租约",
@@ -301,8 +308,8 @@ export default function UploadScanPage() {
       noScans: "暂无扫描记录",
       scanDate: "扫描于",
       confirmNoticeTitle: "设置提前通知提醒",
-      confirmNoticeDesc: "我们检测到您的租约结束于",
       noticePeriodLabel: "提前通知期（天数）",
+      confirmNoticeDesc: "我们检测到您的租约结束于",
       noticePeriodHelp: "租约结束前需要通知房东的天数",
       skipReminder: "跳过",
       setReminder: "设置提醒",
@@ -351,7 +358,9 @@ export default function UploadScanPage() {
       stepUpload: "上传",
       stepAnalyze: "分析",
       stepResults: "结果",
-      stepTrack: "追踪"
+      stepTrack: "追踪",
+      upgradeHintText: "升级以解锁无限扫描和高级租约分析。",
+      viewPlans: "查看计划",
     },
     ja: {
       title: "賃貸契約をスキャン",
@@ -425,7 +434,9 @@ export default function UploadScanPage() {
       stepUpload: "アップロード",
       stepAnalyze: "分析",
       stepResults: "結果",
-      stepTrack: "追跡"
+      stepTrack: "追跡",
+      upgradeHintText: "無制限スキャンと高度な賃貸契約分析をアンロックするためにアップグレードしてください。",
+      viewPlans: "プランを見る",
     },
     ko: {
       title: "임대 계약 스캔",
@@ -499,7 +510,9 @@ export default function UploadScanPage() {
       stepUpload: "업로드",
       stepAnalyze: "분석",
       stepResults: "결과",
-      stepTrack: "추적"
+      stepTrack: "추적",
+      upgradeHintText: "무제한 스캔 및 고급 임대 계약 분석을 잠금 해제하려면 업그레이드하십시오.",
+      viewPlans: "플랜 보기",
     }
   };
 
@@ -535,6 +548,9 @@ export default function UploadScanPage() {
   });
 
   const handleUploadAll = async () => {
+    // Reset post-scan hint at the start of a new upload attempt
+    setShowPostScanHint(false);
+
     // ✅ CHECK SCAN LIMIT BEFORE UPLOAD
     if (!scanStatus.allowed) {
       const periodText = scanStatus.period === 'year'
@@ -693,12 +709,16 @@ export default function UploadScanPage() {
           });
           setPendingLeaseId(createdLeaseId);
           setShowConfirmation(true);
+          // showPostScanHint will be set in handleConfirmLeaseDetails or handleSkipConfirmation
         } else {
           // Open details modal instead of navigating
           const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
           const newLease = updatedLeases.find(l => l.id === createdLeaseId);
           setSelectedLease(newLease);
           setCurrentStep(2); // Still results step if no end date
+          if (userTier === 'free') {
+            setShowPostScanHint(true); // Show hint immediately if no end_date
+          }
         }
 
         setSelectedFiles([]);
@@ -797,6 +817,9 @@ export default function UploadScanPage() {
       const updatedLease = updatedLeases.find(l => l.id === pendingLeaseId);
       setSelectedLease(updatedLease);
       haptic.success();
+      if (userTier === 'free') {
+        setShowPostScanHint(true); // Show hint after confirming notice details
+      }
     } catch (err) {
       console.error('Failed to update lease details:', err);
       // Still open the modal even if update fails
@@ -805,6 +828,9 @@ export default function UploadScanPage() {
       setSelectedLease(updatedLease);
       setCurrentStep(3); // Even on error, we attempted to set it, so move to track
       haptic.error();
+      if (userTier === 'free') {
+        setShowPostScanHint(true); // Show hint even if update failed
+      }
     }
   };
 
@@ -816,6 +842,9 @@ export default function UploadScanPage() {
       const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
       const skippedLease = updatedLeases.find(l => l.id === pendingLeaseId);
       setSelectedLease(skippedLease);
+      if (userTier === 'free') {
+        setShowPostScanHint(true); // Show hint after skipping notice details
+      }
     }
   };
 
@@ -1010,6 +1039,39 @@ export default function UploadScanPage() {
             )}
           </div>
         </div>
+
+        {/* ✅ NEW: Post-scan upgrade hint */}
+        {showPostScanHint && userTier === 'free' && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: 10,
+              borderRadius: 12,
+              backgroundColor: isDarkMode ? 'rgba(12,59,46,0.12)' : 'rgba(12,59,46,0.06)',
+              border: '1px dashed rgba(12,59,46,0.25)',
+              fontSize: '0.8rem',
+              color: colors.textPrimary
+            }}
+          >
+            <strong>Tip:</strong> {strings.upgradeHintText}
+            <button
+              onClick={() => navigate(createPageUrl('Account') + '#plans')}
+              style={{
+                padding: '4px 8px',
+                borderRadius: 9999,
+                backgroundColor: '#0C3B2E',
+                color: '#FFFFFF',
+                border: 'none',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                marginLeft: 6,
+              }}
+            >
+              {strings.viewPlans}
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 p-4 rounded-lg border-2 border-red-200 animate-shake" style={{

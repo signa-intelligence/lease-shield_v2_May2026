@@ -847,6 +847,8 @@ function DashboardContent() {
       noNotifications: "No notifications yet",
       noMaintenance: "No requests",
       analytics: "Analytics",
+      upgradePromoTitle: "Unlock Full Protection",
+      upgradePromoText: "Upgrade to access advanced deposit tracking, maintenance workflows, and full AI-powered lease analysis.",
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -890,6 +892,8 @@ function DashboardContent() {
       noNotifications: "ยังไม่มีการแจ้งเตือน",
       noMaintenance: "ไม่มีคำขอ",
       analytics: "วิเคราะห์",
+      upgradePromoTitle: "ปลดล็อกการป้องกันเต็มรูปแบบ",
+      upgradePromoText: "อัปเกรดเพื่อเข้าถึงระบบติดตามเงินมัดจำขั้นสูง ระบบซ่อมบำรุง และการวิเคราะห์สัญญาเช่าด้วย AI แบบเต็มรูปแบบ",
     },
     zh: {
       welcome: "欢迎回来",
@@ -933,6 +937,8 @@ function DashboardContent() {
       noNotifications: "暂无通知",
       noMaintenance: "无请求",
       analytics: "分析",
+      upgradePromoTitle: "解锁全面保护",
+      upgradePromoText: "升级以获取高级押金跟踪、维护工作流和全AI驱动的租约分析。",
     },
     ja: {
       welcome: "おかえりなさい",
@@ -976,6 +982,8 @@ function DashboardContent() {
       noNotifications: "通知なし",
       noMaintenance: "リクエストなし",
       analytics: "分析",
+      upgradePromoTitle: "完全な保護を解除",
+      upgradePromoText: "高度な敷金追跡、メンテナンスワークフロー、およびAIを活用した完全な賃貸分析にアクセスするためにアップグレードしてください。",
     },
     ko: {
       welcome: "다시 오신 것을 환영합니다",
@@ -1019,6 +1027,8 @@ function DashboardContent() {
       noNotifications: "알림 없음",
       noMaintenance: "요청 없음",
       analytics: "분석",
+      upgradePromoTitle: "전체 보호 잠금 해제",
+      upgradePromoText: "고급 보증금 추적, 유지보수 워크플로 및 전체 AI 기반 임대 분석에 액세스하려면 업그레이드하세요。",
     }
   };
 
@@ -2077,14 +2087,12 @@ function DashboardContent() {
 
                             {activeMaintenanceCount > 0 && (
                               <div className="grid grid-cols-1 gap-2 mb-3">
-                                <div className="text-xs">
-                                  <p style={{ color: maintenanceTheme.titleColor, opacity: 0.7 }}>
-                                    {language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ'}
-                                  </p>
-                                  <p className="font-semibold" style={{ color: maintenanceTheme.metricColor }}>
-                                    {maintenanceRequests.filter(r => r.status === 'completed').length}
-                                  </p>
-                                </div>
+                                <p style={{ color: maintenanceTheme.titleColor, opacity: 0.7 }} className="text-xs">
+                                  {language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ'}
+                                </p>
+                                <p className="font-semibold" style={{ color: maintenanceTheme.metricColor }}>
+                                  {maintenanceRequests.filter(r => r.status === 'completed').length}
+                                </p>
                               </div>
                             )}
 
@@ -2136,6 +2144,42 @@ function DashboardContent() {
                             )}
                           </div>
                         </div>
+                        
+                        {/* ✅ NEW: Upgrade promo for FREE users - MOBILE */}
+                        {(!user?.plan_tier || user.plan_tier === 'free') && (
+                          <div
+                            style={{
+                              marginTop: 16,
+                              padding: 16,
+                              borderRadius: 16,
+                              backgroundColor: isDarkMode ? 'rgba(12,59,46,0.12)' : 'rgba(12,59,46,0.06)',
+                              border: '1px solid rgba(12,59,46,0.18)',
+                            }}
+                          >
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 4, color: colors.textPrimary }}>
+                              {strings.upgradePromoTitle}
+                            </h3>
+                            <p style={{ fontSize: '0.85rem', marginBottom: 12, color: colors.textSecondary }}>
+                              {strings.upgradePromoText}
+                            </p>
+                            <Link to={createPageUrl('Account') + '#plans'}>
+                              <button
+                                style={{
+                                  padding: '8px 14px',
+                                  borderRadius: 9999,
+                                  backgroundColor: '#0C3B2E',
+                                  color: '#FFFFFF',
+                                  border: 'none',
+                                  fontWeight: 600,
+                                  fontSize: '0.8rem',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {strings.viewPlans}
+                              </button>
+                            </Link>
+                          </div>
+                        )}
                       </div>
 
                       {/* DESKTOP LAYOUT */}
@@ -2544,14 +2588,12 @@ function DashboardContent() {
 
                           {activeMaintenanceCount > 0 && (
                             <div className="grid grid-cols-1 gap-2 mb-3">
-                              <div className="text-xs">
-                                <p style={{ color: maintenanceTheme.titleColor, opacity: 0.7 }}>
-                                  {language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ'}
-                                </p>
-                                <p className="font-semibold" style={{ color: maintenanceTheme.metricColor }}>
-                                  {maintenanceRequests.filter(r => r.status === 'completed').length}
-                                </p>
-                              </div>
+                              <p style={{ color: maintenanceTheme.titleColor, opacity: 0.7 }} className="text-xs">
+                                {language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ'}
+                              </p>
+                              <p className="font-semibold" style={{ color: maintenanceTheme.metricColor }}>
+                                {maintenanceRequests.filter(r => r.status === 'completed').length}
+                              </p>
                             </div>
                           )}
 
@@ -2600,6 +2642,43 @@ function DashboardContent() {
                             </button>
                           )}
                         </div>
+
+                        {/* ✅ NEW: Upgrade promo for FREE users - DESKTOP */}
+                        {(!user?.plan_tier || user.plan_tier === 'free') && (
+                          <div
+                            className="col-span-4"
+                            style={{
+                              marginTop: 16,
+                              padding: 16,
+                              borderRadius: 16,
+                              backgroundColor: isDarkMode ? 'rgba(12,59,46,0.12)' : 'rgba(12,59,46,0.06)',
+                              border: '1px solid rgba(12,59,46,0.18)',
+                            }}
+                          >
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 4, color: colors.textPrimary }}>
+                              {strings.upgradePromoTitle}
+                            </h3>
+                            <p style={{ fontSize: '0.85rem', marginBottom: 12, color: colors.textSecondary }}>
+                              {strings.upgradePromoText}
+                            </p>
+                            <Link to={createPageUrl('Account') + '#plans'}>
+                              <button
+                                style={{
+                                  padding: '8px 14px',
+                                  borderRadius: 9999,
+                                  backgroundColor: '#0C3B2E',
+                                  color: '#FFFFFF',
+                                  border: 'none',
+                                  fontWeight: 600,
+                                  fontSize: '0.8rem',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {strings.viewPlans}
+                              </button>
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     </>
                   )}

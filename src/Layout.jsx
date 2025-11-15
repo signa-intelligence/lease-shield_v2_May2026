@@ -1,7 +1,8 @@
+
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -146,6 +147,7 @@ export default function Layout({ children, currentPageName }) {
       admin: "Admin",
       search: "Search",
       timeline: "Timeline",
+      upgrade: "Upgrade",
       tagline: "Fair. Transparent. Protected."
     },
     th: {
@@ -157,6 +159,7 @@ export default function Layout({ children, currentPageName }) {
       admin: "แอดมิน",
       search: "ค้นหา",
       timeline: "ไทม์ไลน์",
+      upgrade: "อัปเกรด",
       tagline: "ยุติธรรม • โปร่งใส • ปลอดภัย"
     },
     zh: {
@@ -168,6 +171,7 @@ export default function Layout({ children, currentPageName }) {
       admin: "管理",
       search: "搜索",
       timeline: "时间线",
+      upgrade: "升级",
       tagline: "公平 • 透明 • 保护"
     },
     ja: {
@@ -179,6 +183,7 @@ export default function Layout({ children, currentPageName }) {
       admin: "管理",
       search: "検索",
       timeline: "タイムライン",
+      upgrade: "アップグレード",
       tagline: "公正 • 透明 • 保護"
     },
     ko: {
@@ -190,6 +195,7 @@ export default function Layout({ children, currentPageName }) {
       admin: "관리",
       search: "검색",
       timeline: "타임라인",
+      upgrade: "업그레이드",
       tagline: "공정 • 투명 • 보호"
     }
   };
@@ -229,6 +235,15 @@ export default function Layout({ children, currentPageName }) {
       label: strings.admin,
       route: createPageUrl("AdminConsole"),
       icon: Settings,
+    });
+  }
+
+  if (user && (!user.plan_tier || user.plan_tier === 'free')) {
+    navTabs.push({
+      key: 'upgrade',
+      label: strings.upgrade,
+      route: createPageUrl('Account') + '#plans',
+      icon: Star,
     });
   }
 
@@ -437,25 +452,25 @@ export default function Layout({ children, currentPageName }) {
               </button>
             </Link>
             <LanguageToggle />
-            {user && (!user.plan_tier || user.plan_tier === "free") && (
-              <Link to={createPageUrl("Account")}>
+            {user && (!user.plan_tier || user.plan_tier === 'free') && (
+              <Link to={createPageUrl("Account") + '#plans'}>
                 <button
                   aria-label="Upgrade"
                   onClick={() => haptic.light()}
                   style={{
-                    padding: "6px 12px",
+                    padding: '6px 12px',
                     borderRadius: 9999,
-                    backgroundColor: "#0C3B2E",
-                    color: "#FFFFFF",
-                    border: "none",
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF',
+                    border: 'none',
                     fontWeight: 600,
-                    fontSize: "0.75rem",
-                    cursor: "pointer",
-                    boxShadow: "0 8px 16px rgba(0,0,0,0.25)",
-                    whiteSpace: "nowrap",
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.25)',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  Upgrade
+                  {strings.upgrade}
                 </button>
               </Link>
             )}
@@ -532,7 +547,10 @@ export default function Layout({ children, currentPageName }) {
         }}>
           {navTabs.map((tab) => {
             const Icon = tab.icon;
-            const isActive = isActiveTab(tab.route);
+            // For the upgrade tab, we might need a more specific active check if its route includes a hash
+            const isActive = tab.key === 'upgrade' 
+              ? location.pathname + location.hash === tab.route 
+              : location.pathname === tab.route;
             
             return (
               <Link

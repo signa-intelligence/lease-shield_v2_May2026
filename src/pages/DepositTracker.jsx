@@ -29,6 +29,7 @@ function DepositTrackerContent() {
   const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
   const [selectedDispute, setSelectedDispute] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [formData, setFormData] = useState({
     deposit_amount: '',
     deposit_paid_date: '',
@@ -171,6 +172,9 @@ function DepositTrackerContent() {
       searchDeposits: "Search by property address...",
       noResultsFound: "No deposits found",
       tryDifferentSearch: "Try a different search term",
+      upgradeModalTitle: "Upgrade to Manage Deposits",
+      upgradeModalDesc: "Deposit Tracker is available on paid plans. Upgrade to unlock secure deposit logging and tracking.",
+      viewPlans: "View Plans",
     },
     th: {
       depositTracker: "ติดตามเงินมัดจำ",
@@ -220,6 +224,9 @@ function DepositTrackerContent() {
       searchDeposits: "ค้นหาด้วยที่อยู่ทรัพย์สิน...",
       noResultsFound: "ไม่พบเงินมัดจำ",
       tryDifferentSearch: "ลองค้นหาด้วยคำอื่น",
+      upgradeModalTitle: "อัปเกรดเพื่อจัดการเงินมัดจำ",
+      upgradeModalDesc: "ระบบติดตามเงินมัดจำใช้ได้กับแผนที่ชำระเงิน อัปเกรดเพื่อปลดล็อกการบันทึกและติดตามเงินมัดจำอย่างปลอดภัย",
+      viewPlans: "ดูแผน",
     }
   };
 
@@ -235,6 +242,15 @@ function DepositTrackerContent() {
     return deposit.property_address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
            deposit.notes?.toLowerCase().includes(searchQuery.toLowerCase());
   });
+
+  const handleAddDepositClick = () => {
+    if (!user || !user.plan_tier || user.plan_tier === 'free') {
+      setShowUpgradeModal(true);
+      return;
+    }
+    haptic.light();
+    setShowAddForm(true);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -359,6 +375,35 @@ function DepositTrackerContent() {
             {strings.back}
           </Button>
 
+          {/* NEW: Upgrade Modal */}
+          <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+            <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+              <DialogHeader>
+                <DialogTitle style={{ color: colors.textPrimary }}>{strings.upgradeModalTitle}</DialogTitle>
+                <DialogDescription style={{ color: colors.textSecondary }}>
+                  {strings.upgradeModalDesc}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setShowUpgradeModal(false)}>
+                  {strings.cancel}
+                </Button>
+                <Button
+                  onClick={() => {
+                    haptic.medium();
+                    navigate(createPageUrl("Account") + '#plans');
+                  }}
+                  style={{
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF'
+                  }}
+                >
+                  {strings.viewPlans}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={disputeDialogOpen} onOpenChange={setDisputeDialogOpen}>
             <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
               <DialogHeader>
@@ -451,10 +496,7 @@ function DepositTrackerContent() {
             </div>
             {deposits.length > 0 && (
               <Button
-                onClick={() => {
-                  haptic.light();
-                  setShowAddForm(!showAddForm);
-                }}
+                onClick={handleAddDepositClick}
                 className="ls-cta-primary w-full sm:w-auto"
                 size="sm"
               >
@@ -660,10 +702,7 @@ function DepositTrackerContent() {
                 {strings.noDepositsDesc}
               </p>
               <Button
-                onClick={() => {
-                  haptic.medium();
-                  setShowAddForm(true);
-                }}
+                onClick={handleAddDepositClick}
                 className="ls-cta-primary"
               >
                 <Plus className="w-5 h-5 mr-2" />
