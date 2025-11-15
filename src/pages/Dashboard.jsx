@@ -25,7 +25,7 @@ import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
-import { getFeatureCardStyles } from "../components/shared/featureTheme";
+import { getFeatureCardStyles, CTA_COLOR } from "../components/shared/featureTheme";
 
 function DashboardContent() {
   const [focusMode, setFocusMode] = React.useState(false);
@@ -156,6 +156,7 @@ function DashboardContent() {
   const accessLevel = user?.access_level || 'user';
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
+  const isFreeUser = !user?.plan_tier || user?.plan_tier === 'free';
 
   // Compute feature themes once
   const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
@@ -847,6 +848,8 @@ function DashboardContent() {
       noNotifications: "No notifications yet",
       noMaintenance: "No requests",
       analytics: "Analytics",
+      unlockFullProtection: "Unlock Full Protection",
+      upgradeForAdvancedTools: "Get premium deposit tools, full maintenance workflows, and detailed reports with Lite, Protect, or Secure.",
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -890,6 +893,8 @@ function DashboardContent() {
       noNotifications: "ยังไม่มีการแจ้งเตือน",
       noMaintenance: "ไม่มีคำขอ",
       analytics: "วิเคราะห์",
+      unlockFullProtection: "ปลดล็อกการป้องกันเต็มรูปแบบ",
+      upgradeForAdvancedTools: "รับเครื่องมือเงินมัดจำระดับพรีเมียม เวิร์กโฟลว์การซ่อมบำรุงแบบเต็มรูปแบบ และรายงานโดยละเอียดด้วยแผน Lite, Protect หรือ Secure",
     },
     zh: {
       welcome: "欢迎回来",
@@ -933,6 +938,8 @@ function DashboardContent() {
       noNotifications: "暂无通知",
       noMaintenance: "无请求",
       analytics: "分析",
+      unlockFullProtection: "解锁全面保护",
+      upgradeForAdvancedTools: "使用Lite、Protect或Secure计划获取高级押金工具、完整的维护工作流程和详细报告。",
     },
     ja: {
       welcome: "おかえりなさい",
@@ -976,6 +983,8 @@ function DashboardContent() {
       noNotifications: "通知なし",
       noMaintenance: "リクエストなし",
       analytics: "分析",
+      unlockFullProtection: "完全保護を解除",
+      upgradeForAdvancedTools: "Lite、Protect、またはSecureで、プレミアム敷金ツール、完全なメンテナンスワークフロー、詳細なレポートを取得します。",
     },
     ko: {
       welcome: "다시 오신 것을 환영합니다",
@@ -1019,6 +1028,8 @@ function DashboardContent() {
       noNotifications: "알림 없음",
       noMaintenance: "요청 없음",
       analytics: "분석",
+      unlockFullProtection: "전체 보호 잠금 해제",
+      upgradeForAdvancedTools: "Lite, Protect 또는 Secure로 프리미엄 보증금 도구、전체 유지보수 워크플로 및 상세 보고서를 받으세요。",
     }
   };
 
@@ -1144,7 +1155,7 @@ function DashboardContent() {
                     <>
                       <span style={{ color: '#FFFFFF' }}>ยุติธรรม。</span>
                       <span style={{ color: '#ECEFED' }}>โปร่งใส。</span>
-                      <span style={{ color: '#C7A338' }}>ปลอดภัย।</span>
+                      <span style={{ color: '#C7A338' }}>ปลอดภัย。</span>
                     </>
                   ) : (
                     <>
@@ -2056,7 +2067,7 @@ function DashboardContent() {
                             className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
                               backgroundColor: maintenanceTheme.cardBg,
-                              borderLeft: `4px solid ${maintenanceTheme.borderColor}`
+                              borderLeft: `44px solid ${maintenanceTheme.borderColor}`
                             }}
                           >
                             <div className="flex items-start justify-between mb-3">
@@ -2600,11 +2611,72 @@ function DashboardContent() {
                             </button>
                           )}
                         </div>
-                      </div>
-                    </>
+                      </>
                   )}
                 </>
               )}
+            </div>
+          )}
+
+          {/* NEW: Upgrade Promo Card for Free Users */}
+          {isFreeUser && (
+            <div
+              style={{
+                marginTop: "16px",
+                marginBottom: "24px",
+                padding: "20px",
+                borderRadius: "16px",
+                backgroundColor: "rgba(12,59,46,0.06)",
+                border: "2px solid rgba(12,59,46,0.18)",
+              }}
+            >
+              <h3 style={{ 
+                fontSize: "1.1rem", 
+                fontWeight: 700, 
+                marginBottom: 8,
+                color: colors.textPrimary
+              }}>
+                {strings.unlockFullProtection}
+              </h3>
+              <p style={{ 
+                fontSize: "0.875rem", 
+                marginBottom: 14,
+                color: colors.textSecondary,
+                lineHeight: "1.5"
+              }}>
+                {strings.upgradeForAdvancedTools}
+              </p>
+              <Link to={createPageUrl("Account") + "#plans"}>
+                <button
+                  onClick={() => haptic.medium()}
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: 9999,
+                    backgroundColor: CTA_COLOR,
+                    color: "#FFFFFF",
+                    border: "none",
+                    fontWeight: 600,
+                    fontSize: "0.875rem",
+                    cursor: "pointer",
+                    boxShadow: "0 8px 14px rgba(12,59,46,0.3)",
+                    transition: "all 0.2s",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                    e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 8px 14px rgba(12,59,46,0.3)";
+                  }}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  {strings.viewPlans}
+                </button>
+              </Link>
             </div>
           )}
 
