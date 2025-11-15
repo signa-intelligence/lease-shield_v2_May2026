@@ -2193,7 +2193,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: '#10B981',
                         color: '#FFFFFF',
-                        border: '2px solid '#10B981',
+                        border: '2px solid '#10B981'',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
