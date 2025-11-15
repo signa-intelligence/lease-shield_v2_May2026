@@ -50,7 +50,6 @@ function DepositTrackerContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Define language, isDarkMode, and theme here, after user data is potentially available
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const theme = getFeatureCardStyles("deposits", isDarkMode);
@@ -229,7 +228,6 @@ function DepositTrackerContent() {
   const handleRefresh = async () => {
     haptic.light();
     await queryClient.invalidateQueries({ queryKey: ['deposits'] });
-    toast.success(strings.refreshed);
   };
 
   const filteredDeposits = deposits.filter(deposit => {
@@ -443,8 +441,8 @@ function DepositTrackerContent() {
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
-                <Wallet className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
+              <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.titleColor }}>
+                <Wallet className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.iconColor }} />
                 {strings.depositTracker}
               </h1>
               <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>
@@ -481,12 +479,12 @@ function DepositTrackerContent() {
             <Card 
               className="mb-6 shadow-xl" 
               style={{ 
-                background: theme.background,
-                borderLeft: `4px solid ${theme.borderLeftColor}`
+                background: theme.cardBg,
+                borderLeft: `4px solid ${theme.borderColor}`
               }}
             >
               <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-                <CardTitle style={{ color: theme.headerColor }}>{strings.addDeposit}</CardTitle>
+                <CardTitle style={{ color: theme.titleColor }}>{strings.addDeposit}</CardTitle>
               </CardHeader>
               <CardContent className="p-4 md:p-6">
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -694,9 +692,9 @@ function DepositTrackerContent() {
                     key={deposit.id} 
                     className="shadow-lg hover:shadow-xl transition-all duration-300" 
                     style={{
-                      background: theme.background,
-                      borderLeft: `4px solid ${theme.borderLeftColor}`,
-                      border: isUrgent ? `2px solid ${theme.accent}` : 'none'
+                      background: theme.cardBg,
+                      borderLeft: `4px solid ${theme.borderColor}`,
+                      border: isUrgent ? `2px solid ${theme.borderColor}` : 'none'
                     }}
                   >
                     <CardHeader className="pb-3 sm:pb-4" style={{
@@ -762,7 +760,7 @@ function DepositTrackerContent() {
                         <div>
                           <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.returnsOn}</p>
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" style={{ color: theme.accent }} />
+                            <Calendar className="w-4 h-4" style={{ color: theme.iconColor }} />
                             <p className="text-sm sm:text-base font-semibold" style={{ color: theme.metricColor }}>
                               {format(new Date(deposit.expected_return_date), 'MMM d, yyyy')}
                             </p>
