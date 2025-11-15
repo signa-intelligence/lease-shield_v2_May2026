@@ -18,8 +18,28 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { getFeatureCardStyles } from "@/components/shared/featureTheme";
 
 const OnboardingChecklist = ({ user, leases, deposits, documents, cases, maintenanceRequests = [], colors, language = 'en' }) => {
+  // Compute dark mode status
+  const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  
+  // Get feature themes
+  const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
+  const depositsTheme = getFeatureCardStyles("deposits", isDarkMode);
+  const maintenanceTheme = getFeatureCardStyles("maintenance", isDarkMode);
+  const notificationsTheme = getFeatureCardStyles("notifications", isDarkMode);
+  
+  // Map task keys to themes
+  const taskThemeMap = {
+    upload_lease: leasesTheme,
+    track_deposit: depositsTheme,
+    report_maintenance: maintenanceTheme,
+    upload_doc: depositsTheme,
+    setup_profile: notificationsTheme,
+    enable_notifications: notificationsTheme
+  };
+
   const t = {
     en: {
       title: "Getting Started",
@@ -181,7 +201,6 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       label: strings.tasks.uploadLease,
       description: strings.tasks.uploadLeaseDesc,
       icon: Upload,
-      color: '#3B82F6',
       completed: leases.length > 0,
       route: "UploadScan",
       points: 25
@@ -191,7 +210,6 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       label: strings.tasks.trackDeposit,
       description: strings.tasks.trackDepositDesc,
       icon: Wallet,
-      color: '#C7A338',
       completed: deposits.length > 0,
       route: "PropertyTracker",
       points: 20
@@ -201,7 +219,6 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       label: strings.tasks.reportMaintenance,
       description: strings.tasks.reportMaintenanceDesc,
       icon: Wrench,
-      color: '#F59E0B',
       completed: maintenanceRequests.length > 0,
       route: "PropertyTracker",
       points: 15
@@ -211,7 +228,6 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       label: strings.tasks.uploadDoc,
       description: strings.tasks.uploadDocDesc,
       icon: FileText,
-      color: '#10B981',
       completed: documents.length >= 3,
       route: "EvidenceVault",
       points: 15
@@ -221,7 +237,6 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       label: strings.tasks.setupProfile,
       description: strings.tasks.setupProfileDesc,
       icon: User,
-      color: '#8B5CF6',
       completed: user?.phone && user?.tenant_address,
       route: "Account",
       points: 10
@@ -231,7 +246,6 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       label: strings.tasks.enableNotifications,
       description: strings.tasks.enableNotificationsDesc,
       icon: Bell,
-      color: '#06B6D4',
       completed: user?.email_notifications || user?.line_notifications,
       route: "Account",
       points: 10
@@ -295,6 +309,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
         <div className="space-y-3">
           {tasks.map((task) => {
             const TaskIcon = task.icon;
+            const theme = taskThemeMap[task.id] || leasesTheme;
             
             return (
               <div
@@ -302,19 +317,24 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
                 className="flex items-start gap-4 p-4 rounded-xl transition-all"
                 style={{
                   backgroundColor: task.completed 
-                    ? `${task.color}10`
-                    : colors.filterBg,
-                  border: `2px solid ${task.completed ? task.color + '40' : colors.borderColor}`
+                    ? `${theme.iconColor}10`
+                    : colors.fieldBg,
+                  border: task.completed 
+                    ? `2px solid ${theme.iconColor}40`
+                    : `2px solid ${colors.borderColor}`
                 }}
               >
                 <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: task.completed ? task.color : colors.borderColor }}
+                  style={{ 
+                    backgroundColor: task.completed ? theme.iconColor : theme.iconBg,
+                    color: '#FFFFFF'
+                  }}
                 >
                   {task.completed ? (
-                    <CheckCircle2 className="w-5 h-5 text-white" />
+                    <CheckCircle2 className="w-5 h-5" />
                   ) : (
-                    <TaskIcon className="w-5 h-5 text-white" />
+                    <TaskIcon className="w-5 h-5" />
                   )}
                 </div>
 
@@ -332,9 +352,9 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
                       <Badge
                         className="flex-shrink-0"
                         style={{
-                          backgroundColor: `${task.color}20`,
-                          color: task.color,
-                          border: `1px solid ${task.color}40`,
+                          backgroundColor: `${theme.iconColor}20`,
+                          color: theme.iconColor,
+                          border: `1px solid ${theme.iconColor}40`,
                           fontSize: '10px'
                         }}
                       >
@@ -348,8 +368,8 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
                       <button
                         className="mt-2 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
                         style={{
-                          backgroundColor: task.color,
-                          color: '#FFFFFF'
+                          backgroundColor: theme.buttonBg,
+                          color: theme.buttonText
                         }}
                       >
                         {strings.actions.start}
