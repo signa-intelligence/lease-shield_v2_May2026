@@ -7,7 +7,6 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
-import { ensureAuthenticated } from "./components/shared/authGuard";
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -68,10 +67,7 @@ export default function Layout({ children, currentPageName }) {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: async () => {
-      const authenticatedUser = await ensureAuthenticated(window.location.pathname);
-      return authenticatedUser;
-    },
+    queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000,
   });
 

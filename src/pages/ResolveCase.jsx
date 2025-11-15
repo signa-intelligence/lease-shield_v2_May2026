@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, AlertCircle, Loader2, CheckCircle2, Upload, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ensureAuthenticated } from "../components/shared/authGuard";
 
 export default function ResolveCase() {
   const navigate = useNavigate();
@@ -34,10 +33,7 @@ export default function ResolveCase() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: async () => {
-      const authenticatedUser = await ensureAuthenticated(window.location.pathname);
-      return authenticatedUser;
-    },
+    queryFn: () => base44.auth.me(),
   });
 
   const { data: deposits = [] } = useQuery({
@@ -378,7 +374,8 @@ export default function ResolveCase() {
                   </p>
                 </div>
               </div>
-            )}
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit}>

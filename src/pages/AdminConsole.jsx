@@ -29,7 +29,6 @@ import ReminderControl from "../components/admin/ReminderControl";
 import NotificationHistory from "../components/admin/NotificationHistory";
 import CaseKanban from "../components/admin/CaseKanban";
 import UserImpersonation from "../components/admin/UserImpersonation";
-import { ensureAuthenticated } from "../components/shared/authGuard";
 
 export default function AdminConsole() {
   const [seedingDemo, setSeedingDemo] = useState(false);
@@ -47,10 +46,7 @@ export default function AdminConsole() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: async () => {
-      const authenticatedUser = await ensureAuthenticated(window.location.pathname);
-      return authenticatedUser;
-    },
+    queryFn: () => base44.auth.me(),
   });
 
   const { data: users = [] } = useQuery({
@@ -523,7 +519,7 @@ export default function AdminConsole() {
       showKanban: "显示看板",
       revenueAnalyticsTitle: "收入和业务分析",
       revenueAnalyticsDesc: "查看收入、用户和功能购买洞察",
-      viewAnalyticsButton: "分析查看", // Changed from "View Analytics" to "分析查看" for better Chinese context
+      viewAnalyticsButton: "查看分析",
     },
     ja: {
       adminConsole: "管理コンソール",

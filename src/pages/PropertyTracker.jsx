@@ -31,7 +31,6 @@ import {
   CTA_COLOR,
   CTA_COLOR_DISABLED
 } from "../components/shared/featureTheme";
-import { ensureAuthenticated } from "../components/shared/authGuard";
 
 function PropertyTrackerContent() {
   const navigate = useNavigate();
@@ -63,10 +62,7 @@ function PropertyTrackerContent() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: async () => {
-      const authenticatedUser = await ensureAuthenticated(window.location.pathname);
-      return authenticatedUser;
-    },
+    queryFn: () => base44.auth.me(),
   });
 
   const { data: deposits = [] } = useQuery({

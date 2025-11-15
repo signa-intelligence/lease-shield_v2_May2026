@@ -23,7 +23,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
-import { ensureAuthenticated, handleLogout as logout } from "../components/shared/authGuard";
 
 
 const PLAN_DETAILS = [
@@ -221,10 +220,7 @@ export default function Account() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: async () => {
-      const authenticatedUser = await ensureAuthenticated(window.location.pathname);
-      return authenticatedUser;
-    },
+    queryFn: () => base44.auth.me(),
   });
 
   React.useEffect(() => {
@@ -3396,7 +3392,7 @@ export default function Account() {
           <Button
             variant="outline"
             className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-            onClick={logout}
+            onClick={() => base44.auth.logout()}
             style={{ 
               backgroundColor: colors.cardBg, 
               borderColor: isDarkMode ? '#EF4444' : '#FECACA', 
