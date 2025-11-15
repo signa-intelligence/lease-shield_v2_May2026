@@ -157,6 +157,14 @@ function DashboardContent() {
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
 
+  // Compute feature themes once
+  const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
+  const depositsTheme = getFeatureCardStyles("deposits", isDarkMode);
+  const rentTheme = getFeatureCardStyles("rent", isDarkMode);
+  const notificationsTheme = getFeatureCardStyles("notifications", isDarkMode);
+  const casesTheme = getFeatureCardStyles("cases", isDarkMode);
+  const maintenanceTheme = getFeatureCardStyles("maintenance", isDarkMode);
+
   const [checkingOverdue, setCheckingOverdue] = React.useState(false);
   
   const checkAndNotifyOverdue = React.useCallback(async () => {
@@ -1063,14 +1071,6 @@ function DashboardContent() {
 
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
 
-  // Feature card themes
-  const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
-  const depositsTheme = getFeatureCardStyles("deposits", isDarkMode);
-  const rentTheme = getFeatureCardStyles("rent", isDarkMode);
-  const notificationsTheme = getFeatureCardStyles("notifications", isDarkMode);
-  const casesTheme = getFeatureCardStyles("cases", isDarkMode);
-  const maintenanceTheme = getFeatureCardStyles("maintenance", isDarkMode);
-
   if (!isLoading && !hasAnyData && !showOnboarding && !shouldShowOnboardingChecklist) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
@@ -1678,7 +1678,6 @@ function DashboardContent() {
                         />
 
                         <div className="grid grid-cols-2 gap-3">
-                          {/* ACTIVE LEASES */}
                           <div
                             className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
@@ -1771,7 +1770,6 @@ function DashboardContent() {
                             )}
                           </div>
 
-                          {/* DEPOSITS TRACKED */}
                           <div
                             className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
@@ -1838,12 +1836,11 @@ function DashboardContent() {
                             </Link>
                           </div>
                           
-                          {/* RENT TRACKED */}
                           <div
                             className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
                               backgroundColor: rentTheme.cardBg,
-                              borderLeft: `4px solid ${rentTheme.borderColor}`
+                              borderLeft: `44px solid ${rentTheme.borderColor}`
                             }}
                           >
                             <div className="flex items-start justify-between mb-3">
@@ -1923,7 +1920,6 @@ function DashboardContent() {
                             )}
                           </div>
 
-                          {/* NOTIFICATIONS */}
                           <div
                             className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
@@ -1998,7 +1994,6 @@ function DashboardContent() {
                             )}
                           </div>
                           
-                          {/* ACTIVE CASES */}
                           <div
                             className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
@@ -2057,7 +2052,6 @@ function DashboardContent() {
                             </Link>
                           </div>
 
-                          {/* MAINTENANCE */}
                           <div
                             className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
