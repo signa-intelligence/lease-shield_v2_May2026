@@ -1532,7 +1532,7 @@ function DashboardContent() {
                                 <span>{strings.leaseEnds}: {format(new Date(lease.end_date), 'MMM d, yyyy')}</span>
                               )}
                               {lease.notice_period_days && (
-                                <span>{strings.noticePeriod}: {lease.notice_period_days} {strings.days}</span>
+                                <span>{lease.notice_period_days} {strings.days}</span>
                               )}
                             </div>
                           </div>
@@ -1873,7 +1873,7 @@ function DashboardContent() {
                             )}
 
                             {rentTrackedCount > 0 ? (
-                              <Link to={createPageUrl("PropertyTracker")}>
+                              <Link to={createPageUrl("PropertyTracker") + "#rent"}>
                                 <button
                                   type="button"
                                   style={{
@@ -1898,7 +1898,7 @@ function DashboardContent() {
                             ) : (
                               <button
                                 type="button"
-                                onClick={() => navigate(createPageUrl("PropertyTracker"))}
+                                onClick={() => navigate(createPageUrl("PropertyTracker") + "#rent")}
                                 style={{
                                   backgroundColor: rentTheme.buttonBg,
                                   color: rentTheme.buttonText,
@@ -2112,9 +2112,27 @@ function DashboardContent() {
                                 </button>
                               </Link>
                             ) : (
-                              <div className="text-xs text-center py-2" style={{ color: maintenanceTheme.titleColor, opacity: 0.6 }}>
-                                {strings.noMaintenance}
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => navigate(createPageUrl("PropertyTracker") + "#maintenance")}
+                                style={{
+                                  backgroundColor: maintenanceTheme.buttonBg,
+                                  color: maintenanceTheme.buttonText,
+                                  width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s",
+                                  marginTop: "12px"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                              >
+                                {language === 'en' ? 'New Request' : language === 'zh' ? '新请求' : language === 'ja' ? '新しいリクエスト' : language === 'ko' ? '새 요청' : 'คำขอใหม่'}
+                              </button>
                             )}
                           </div>
                         </div>
@@ -2122,7 +2140,6 @@ function DashboardContent() {
 
                       {/* DESKTOP LAYOUT */}
                       <div className="hidden lg:grid lg:grid-cols-4 gap-3" style={{ animation: 'slideDown 0.3s ease-out', gridAutoRows: 'minmax(0, 1fr)' }}>
-                        {/* ACTIVE LEASES */}
                         <div
                           className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
                           style={{
@@ -2213,7 +2230,6 @@ function DashboardContent() {
                           )}
                         </div>
 
-                        {/* DEPOSITS TRACKED */}
                         <div
                           className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
                           style={{
@@ -2279,7 +2295,6 @@ function DashboardContent() {
                           </Link>
                         </div>
                         
-                        {/* RENT TRACKED */}
                         <div
                           className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
                           style={{
@@ -2317,7 +2332,7 @@ function DashboardContent() {
                           )}
 
                           {rentTrackedCount > 0 ? (
-                            <Link to={createPageUrl("PropertyTracker")}>
+                            <Link to={createPageUrl("PropertyTracker") + "#rent"}>
                               <button
                                 type="button"
                                 style={{
@@ -2341,7 +2356,7 @@ function DashboardContent() {
                           ) : (
                             <button
                               type="button"
-                              onClick={() => navigate(createPageUrl("PropertyTracker"))}
+                              onClick={() => navigate(createPageUrl("PropertyTracker") + "#rent")}
                               style={{
                                 backgroundColor: rentTheme.buttonBg,
                                 color: rentTheme.buttonText,
@@ -2374,7 +2389,6 @@ function DashboardContent() {
                           />
                         </div>
 
-                        {/* NOTIFICATIONS */}
                         <div
                           className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
                           style={{
@@ -2448,7 +2462,6 @@ function DashboardContent() {
                           )}
                         </div>
                         
-                        {/* ACTIVE CASES */}
                         <div
                           className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
                           style={{
@@ -2506,7 +2519,6 @@ function DashboardContent() {
                           </Link>
                         </div>
 
-                        {/* MAINTENANCE */}
                         <div
                           className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
                           style={{
@@ -2566,9 +2578,26 @@ function DashboardContent() {
                               </button>
                             </Link>
                           ) : (
-                            <div className="text-xs text-center py-2" style={{ color: maintenanceTheme.titleColor, opacity: 0.6 }}>
-                              {strings.noMaintenance}
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => navigate(createPageUrl("PropertyTracker") + "#maintenance")}
+                              style={{
+                                backgroundColor: maintenanceTheme.buttonBg,
+                                color: maintenanceTheme.buttonText,
+                                width: "100%",
+                                padding: "8px 12px",
+                                borderRadius: "8px",
+                                fontSize: "0.875rem",
+                                fontWeight: "600",
+                                border: "none",
+                                cursor: "pointer",
+                                transition: "all 0.2s"
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                              onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                            >
+                              {language === 'en' ? 'New Request' : language === 'zh' ? '新请求' : language === 'ja' ? '新しいリクエスト' : language === 'ko' ? '새 요청' : 'คำขอใหม่'}
+                            </button>
                           )}
                         </div>
                       </div>

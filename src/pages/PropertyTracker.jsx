@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +15,7 @@ import {
   DollarSign, ArrowLeft, Camera, Image as ImageIcon, Loader2, Trash2, Archive, Hash
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { compressMultipleImages } from "../components/shared/ImageCompression";
 import { haptic } from "../components/shared/HapticFeedback";
@@ -34,6 +34,7 @@ import {
 
 function PropertyTrackerContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [expandedSections, setExpandedSections] = useState({
@@ -53,6 +54,11 @@ function PropertyTrackerContent() {
   const [compressionStats, setCompressionStats] = useState(null);
   const [maintenanceSearchQuery, setMaintenanceSearchQuery] = useState('');
   const [maintenanceStatusFilter, setMaintenanceStatusFilter] = useState('all');
+
+  // Section refs for scroll-to navigation
+  const depositRef = useRef(null);
+  const rentRef = useRef(null);
+  const maintenanceRef = useRef(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -296,7 +302,6 @@ function PropertyTrackerContent() {
       active: "Active",
       imagesOptimized: "Images Optimized",
       imagesOptimizedDesc: "images • Saved",
-      refreshed: "Refreshed successfully",
       processingError: "Processing error occurred",
       searchMaintenance: "Search by title or description...",
       filterByStatus: "Filter by status",
@@ -357,7 +362,6 @@ function PropertyTrackerContent() {
       active: "ใช้งาน",
       imagesOptimized: "ปรับขนาดไฟล์แล้ว", 
       imagesOptimizedDesc: "รูป • ประหยัด",
-      refreshed: "รีเฟรชสำเร็จ",
       processingError: "เกิดข้อผิดพลาด",
       searchMaintenance: "ค้นหาด้วยหัวข้อหรือรายละเอียด...",
       filterByStatus: "กรองตามสถานะ",
@@ -418,7 +422,6 @@ function PropertyTrackerContent() {
       active: "活跃",
       imagesOptimized: "图片已优化",
       imagesOptimizedDesc: "图片 • 已保存",
-      refreshed: "刷新成功",
       processingError: "处理错误",
       searchMaintenance: "按标题或描述搜索...",
       filterByStatus: "按状态筛选",
@@ -479,7 +482,6 @@ function PropertyTrackerContent() {
       active: "アクティブ",
       imagesOptimized: "画像を最適化しました",
       imagesOptimizedDesc: "画像 • 保存済み",
-      refreshed: "更新成功",
       processingError: "処理エラーが発生しました",
       searchMaintenance: "タイトルまたは説明で検索...",
       filterByStatus: "ステータスでフィルター",
@@ -540,7 +542,6 @@ function PropertyTrackerContent() {
       active: "활성",
       imagesOptimized: "이미지 최적화됨",
       imagesOptimizedDesc: "이미지 • 저장됨",
-      refreshed: "새로고침 성공",
       processingError: "처리 오류 발생",
       searchMaintenance: "제목 또는 설명으로 검색...",
       filterByStatus: "상태별 필터",
@@ -560,6 +561,32 @@ function PropertyTrackerContent() {
     await queryClient.invalidateQueries({ queryKey: ['deposits'] });
     await queryClient.invalidateQueries({ queryKey: ['maintenance'] });
   };
+
+  // Handle hash-based section navigation
+  useEffect(() => {
+    if (!location.hash) return;
+    
+    const sectionMap = {
+      '#rent': rentRef,
+      '#maintenance': maintenanceRef,
+      '#deposit': depositRef,
+      '#deposits': depositRef
+    };
+    
+    const targetRef = sectionMap[location.hash];
+    if (targetRef?.current) {
+      setTimeout(() => {
+        targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setExpandedSections(prev => {
+          const newState = { ...prev };
+          if (location.hash === '#rent') newState.rent = true;
+          if (location.hash === '#maintenance') newState.maintenance = true;
+          if (location.hash === '#deposit' || location.hash === '#deposits') newState.deposit = true;
+          return newState;
+        });
+      }, 100);
+    }
+  }, [location.hash]);
 
   const filteredMaintenanceRequests = maintenanceRequests.filter(request => {
     const matchesSearch = maintenanceSearchQuery === '' || 
@@ -1045,7 +1072,7 @@ function PropertyTrackerContent() {
             </div>
           </div>
 
-          <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
+          <Card ref={depositRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
             <CardHeader
               className="cursor-pointer"
               onClick={() => toggleSection('deposit')}
@@ -1227,7 +1254,7 @@ function PropertyTrackerContent() {
             )}
           </Card>
 
-          <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.rentAccent}` }}>
+          <Card ref={rentRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.rentAccent}` }}>
             <CardHeader
               className="cursor-pointer"
               onClick={() => toggleSection('rent')}
@@ -1417,7 +1444,7 @@ function PropertyTrackerContent() {
             )}
           </Card>
 
-          <Card className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.maintenanceAccent}` }}>
+          <Card ref={maintenanceRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.maintenanceAccent}` }}>
             <CardHeader
               className="cursor-pointer"
               onClick={() => toggleSection('maintenance')}
@@ -1645,6 +1672,7 @@ function PropertyTrackerContent() {
                                       className="w-full h-24 object-cover rounded-lg border-2"
                                       style={{ borderColor: colors.borderColor }}
                                       loadingColor="#F59E0B"
+                                      onClick={() => { haptic.light(); window.open(preview, '_blank')}}
                                     />
                                     <button
                                       type="button"
@@ -1680,7 +1708,7 @@ function PropertyTrackerContent() {
                             }}>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent style={{ backgroundColor: colors.cardBg }}>
                               <SelectItem value="plumbing">Plumbing</SelectItem>
                               <SelectItem value="electrical">Electrical</SelectItem>
                               <SelectItem value="structural">Structural</SelectItem>
@@ -1708,7 +1736,7 @@ function PropertyTrackerContent() {
                             }}>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent style={{ backgroundColor: colors.cardBg }}>
                               <SelectItem value="low">Low</SelectItem>
                               <SelectItem value="medium">Medium</SelectItem>
                               <SelectItem value="high">High</SelectItem>
