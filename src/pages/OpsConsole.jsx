@@ -30,7 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import CaseKanban from "../components/admin/CaseKanban";
 import { ToastProvider, useToast } from "../components/shared/Toast";
-import { ensureAuthenticated } from "../utils/authGuard"; // New import
+import { ensureAuthenticated } from "../components/shared/authGuard"; // Updated import path
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },

@@ -29,7 +29,7 @@ import ReminderControl from "../components/admin/ReminderControl";
 import NotificationHistory from "../components/admin/NotificationHistory";
 import CaseKanban from "../components/admin/CaseKanban";
 import UserImpersonation from "../components/admin/UserImpersonation";
-import { ensureAuthenticated } from "../utils/authGuard";
+import { ensureAuthenticated } from "../components/shared/authGuard";
 
 export default function AdminConsole() {
   const [seedingDemo, setSeedingDemo] = useState(false);
@@ -523,7 +523,7 @@ export default function AdminConsole() {
       showKanban: "显示看板",
       revenueAnalyticsTitle: "收入和业务分析",
       revenueAnalyticsDesc: "查看收入、用户和功能购买洞察",
-      viewAnalyticsButton: "查看分析",
+      viewAnalyticsButton: "分析查看", // Changed from "View Analytics" to "分析查看" for better Chinese context
     },
     ja: {
       adminConsole: "管理コンソール",

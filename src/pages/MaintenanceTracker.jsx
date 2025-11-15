@@ -16,7 +16,7 @@ import { createPageUrl } from "@/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import ChatLog from "../components/maintenance/ChatLog";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
-import { ensureAuthenticated } from "../components/shared/AuthGuard";
+import { ensureAuthenticated } from "../components/shared/authGuard";
 
 export default function MaintenanceTracker() {
   const navigate = useNavigate();
@@ -264,7 +264,7 @@ export default function MaintenanceTracker() {
       upgradeModalTitle: "유지보수 추적을 위해 업그레이드",
       upgradeModalDesc: "유지보수 추적기는 유료 플랜에서 사용할 수 있습니다. 전문적인 요청 추적 및 집주인 알림을 잠금 해제하려면 업그레이드하십시오.",
       viewPlans: "플랜 보기",
-      upgradeHintText: "유료 플랜으로 우선적인 집주인 알림과 전체 유지보수 내역을 받아보세요.",
+      upgradeHintText: "유료 플랜으로 우선적인 집주인 알림과 전체 유지보수 내역을 받아보세요。",
     }
   };
 

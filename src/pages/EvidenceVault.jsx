@@ -34,7 +34,7 @@ import {
   primaryCtaStyle,
   primaryCtaHover
 } from "../components/shared/featureTheme";
-import { ensureAuthenticated } from "../utils/authGuard";
+import { ensureAuthenticated } from "../components/shared/authGuard";
 
 const DOC_TYPE_CONFIG = {
   lease: { 
@@ -832,7 +832,7 @@ function EvidenceVaultContent() {
       error: "错误",
       fileSelected: "个文件已选",
       filesSelected: "个文件已选",
-      preparing: "准备上传...",
+      preparing: "上传准备中...",
       compressing: "压缩图片...",
       uploadingFiles: "上传文件...",
       savingDocuments: "保存文档...",

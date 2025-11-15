@@ -20,7 +20,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
-import { ensureAuthenticated } from "../components/shared/AuthGuard"; // Changed import path
+import { ensureAuthenticated } from "../components/shared/authGuard";
 
 function DepositTrackerContent() {
   const navigate = useNavigate();

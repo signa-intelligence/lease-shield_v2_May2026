@@ -26,7 +26,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
-import { ensureAuthenticated } from "../utils/authGuard";
+import { ensureAuthenticated } from "../components/shared/authGuard"; // Updated import path
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },

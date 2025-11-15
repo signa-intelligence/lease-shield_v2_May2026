@@ -31,7 +31,7 @@ import {
   CTA_COLOR,
   CTA_COLOR_DISABLED
 } from "../components/shared/featureTheme";
-import { ensureAuthenticated } from "../utils/authGuard";
+import { ensureAuthenticated } from "../components/shared/authGuard";
 
 function PropertyTrackerContent() {
   const navigate = useNavigate();

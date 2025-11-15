@@ -40,7 +40,7 @@ import {
 } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ensureAuthenticated } from "../utils/authGuard";
+import { ensureAuthenticated } from "../components/shared/authGuard";
 
 export default function Timeline() {
   const navigate = useNavigate();
