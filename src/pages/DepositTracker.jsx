@@ -1,39 +1,38 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button"; // Keeping Button for the Back button and maybe the new form buttons if I don't custom style them fully
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Wallet, Plus, Calendar, Bell, AlertCircle, TrendingUp, X, Loader2, FileText } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
-import { useNavigate } from "react-router-dom"; // Re-adding useNavigate for dispute case
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ToastProvider, useToast } from "../components/shared/Toast";
-import FeatureGate from "../components/shared/FeatureGate";
+import { FeatureGate } from "../components/shared/FeatureGate";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { haptic } from "../components/shared/HapticFeedback";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
 
 function DepositTrackerContent() {
-  const navigate = useNavigate(); // Re-added useNavigate
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [editingDeposit, setEditingDeposit] = useState(null);
   const [formData, setFormData] = useState({
     deposit_amount: '',
     deposit_paid_date: '',
     expected_return_date: '',
-    status: 'tracking', // Default status for new deposits
+    status: 'tracking',
     notes: '',
     property_address: '',
     rent_amount: '',
     rent_due_day: '',
     rent_alerts_enabled: false,
-    rent_alert_days_before: 3 // Default value
+    rent_alert_days_before: 3
   });
   const [showDisputeDialog, setShowDisputeDialog] = useState(false);
   const [selectedDepositForDispute, setSelectedDepositForDispute] = useState(null);
@@ -74,7 +73,7 @@ function DepositTrackerContent() {
     fieldBg: '#353A3D',
     hoverBg: '#3A3D40'
   } : {
-    bg: '#F8FAFC', // Changed from ECEFED to F8FAFC for lighter bg in light mode
+    bg: '#F8FAFC',
     cardBg: '#FFFFFF',
     textPrimary: '#1A1D1F',
     textSecondary: '#64748b',
@@ -260,7 +259,6 @@ function DepositTrackerContent() {
   };
 
   const handleOpenDispute = (deposit) => {
-    // This button now directly navigates to the ResolveCase page with deposit details
     const params = new URLSearchParams({
       amount: deposit.deposit_amount.toString(),
       address: deposit.property_address || '',
@@ -332,7 +330,7 @@ function DepositTrackerContent() {
               onClick={() => {
                 haptic.medium();
                 setShowForm(!showForm);
-                if (showForm) { // If closing the form, reset editing state
+                if (showForm) {
                   setEditingDeposit(null);
                   resetForm();
                 }
@@ -582,7 +580,7 @@ function DepositTrackerContent() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <Wallet className="w-5 h-5" style={{ color: depositsTheme.iconColor }} />
+                              <Wallet className="w-5 h-5" style={{ color: depositsTheme.iconBg }} />
                               <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
                                 ฿{deposit.deposit_amount.toLocaleString()}
                               </h3>
