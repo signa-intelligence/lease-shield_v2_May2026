@@ -23,7 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
-
+import { CTA_COLOR } from "../components/shared/featureTheme";
 
 const PLAN_DETAILS = [
   {
@@ -258,6 +258,13 @@ export default function Account() {
         const notificationSection = document.getElementById('notification-analytics');
         if (notificationSection) {
           notificationSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+    } else if (hash === '#plans') {
+      setTimeout(() => {
+        const plansSection = document.getElementById('plans-section');
+        if (plansSection) {
+          plansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }, 300);
     }
@@ -1336,6 +1343,74 @@ export default function Account() {
           </div>
         </div>
 
+        {isFree && (
+          <div
+            id="plans-intro"
+            style={{
+              marginBottom: 24,
+              padding: 20,
+              borderRadius: 16,
+              background: `linear-gradient(135deg, ${CTA_COLOR} 0%, #047857 100%)`,
+              color: "#FFFFFF",
+              boxShadow: "0 10px 20px rgba(12,59,46,0.3)"
+            }}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div style={{ 
+                  marginBottom: 8, 
+                  fontSize: "0.75rem", 
+                  fontWeight: 600, 
+                  textTransform: "uppercase", 
+                  opacity: 0.9,
+                  letterSpacing: "0.05em"
+                }}>
+                  {language === 'th' ? 'แผนปัจจุบัน: ฟรี' : 'Current Plan: Free'}
+                </div>
+                <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: 6 }}>
+                  {language === 'th' ? 'ปลดล็อกการป้องกันเต็มรูปแบบ' : 'Unlock Full Protection'}
+                </h3>
+                <p style={{ fontSize: "0.9rem", opacity: 0.95, lineHeight: 1.5 }}>
+                  {language === 'th' 
+                    ? 'อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อเครื่องมือเงินมัดจำครบครัน เวิร์กโฟลว์การซ่อมบำรุงแบบเต็ม และการสนับสนุนจากผู้เชี่ยวชาญ'
+                    : 'Upgrade to Lite, Protect, or Secure for full deposit tools, complete maintenance workflows, and expert support.'
+                  }
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  haptic.medium();
+                  const el = document.getElementById("plans-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 9999,
+                  backgroundColor: "#FFFFFF",
+                  color: CTA_COLOR,
+                  border: "none",
+                  fontWeight: 700,
+                  fontSize: "0.875rem",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                  transition: "all 0.2s",
+                  whiteSpace: "nowrap"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 6px 14px rgba(0,0,0,0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.15)";
+                }}
+              >
+                {language === 'th' ? 'ดูแผน' : 'View Plans'}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
           <Card className="lg:col-span-2 border-none shadow-xl" style={{
             backgroundColor: colors.cardBg
@@ -2124,7 +2199,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: '#10B981',
                         color: '#FFFFFF',
-                        border: '2px solid #10B981',
+                        border: '2px solid '#10B981'',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -2368,7 +2443,7 @@ export default function Account() {
                         borderRadius: '8px',
                         backgroundColor: '#F59E0B',
                         color: '#FFFFFF',
-                        border: '2px solid #F59E0B',
+                        border: '2px solid '#F59E0B'',
                         fontWeight: 'bold',
                         fontSize: '13px',
                         cursor: 'pointer',
