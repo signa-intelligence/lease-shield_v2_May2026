@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1400,7 +1399,7 @@ export default function Account() {
                 e.target.style.boxShadow = "0 8px 16px rgba(12,59,46,0.35)";
               }}
             >
-              {language === 'th' ? 'อัปเกรดทันที' : language === 'zh' ? '立即升级' : language === 'ja' ? '今すぐアップグレード' : language === 'ko' ? '지금 업เกรด' : 'Upgrade now'}
+              {language === 'th' ? 'อัปเกรดทันที' : language === 'zh' ? '立即升级' : language === 'ja' ? '今すぐアップグレード' : language === 'ko' ? '지금 업그레이드' : 'Upgrade now'}
             </button>
           </div>
         )}
