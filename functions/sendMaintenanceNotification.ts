@@ -20,6 +20,64 @@ Deno.serve(async (req) => {
     console.log('📧 Authenticated user:', authenticatedUser.email);
     console.log('🔧 Maintenance request ID:', maintenanceRequest.id);
 
+    // Helper: Detect language
+    const detectLanguage = async (text) => {
+      if (!text || text.trim().length < 3) return 'en';
+      try {
+        const response = await base44.integrations.Core.InvokeLLM({
+          prompt: `Return ONLY a 2-letter ISO language code (en, th, ja, ko, zh, etc.) for this text. If uncertain, return 'en'. Text: "${text.substring(0, 200)}"`,
+          response_json_schema: {
+            type: "object",
+            properties: { code: { type: "string" } }
+          }
+        });
+        const code = response?.code?.toLowerCase() || 'en';
+        return code.length === 2 ? code : 'en';
+      } catch (error) {
+        console.error('Language detection failed:', error);
+        return 'en';
+      }
+    };
+
+    // Helper: Translate text
+    const translateText = async (text, targetLang, detectedLang) => {
+      if (!text || !targetLang) return text;
+      if (detectedLang === targetLang) return text;
+      
+      try {
+        const langNames = {
+          en: 'English',
+          th: 'Thai',
+          ja: 'Japanese',
+          ko: 'Korean',
+          zh: 'Chinese'
+        };
+        
+        const targetName = langNames[targetLang] || targetLang;
+        
+        const response = await base44.integrations.Core.InvokeLLM({
+          prompt: `Translate this text to ${targetName}. Return ONLY the translation, no explanations or commentary. Preserve the meaning and tone. Text: "${text}"`,
+          response_json_schema: {
+            type: "object",
+            properties: { translation: { type: "string" } }
+          }
+        });
+        
+        return response?.translation || text;
+      } catch (error) {
+        console.error('Translation failed:', error);
+        return text;
+      }
+    };
+
+    // Helper: Get recipient language
+    const getRecipientLanguage = (role, userLang) => {
+      if (userLang) return userLang;
+      if (role === 'juristic' || role === 'building' || role === 'manager') return 'th';
+      if (role === 'landlord' || role === 'owner') return 'en';
+      return 'en';
+    };
+
     // Fetch full user data with landlord/juristic contact info
     const users = await base44.asServiceRole.entities.User.filter({ 
       email: authenticatedUser.email 
@@ -37,13 +95,14 @@ Deno.serve(async (req) => {
     console.log('👤 Full user data loaded');
     console.log('📧 Landlord email:', user.landlord_email || 'NOT SET');
     console.log('📧 Juristic email:', user.juristic_email || 'NOT SET');
-    console.log('📱 User LINE token:', user.line_messaging_token || 'NOT SET');
-    console.log('📱 Landlord LINE:', user.landlord_line || 'NOT SET');
-    console.log('📱 Juristic LINE:', user.juristic_line || 'NOT SET');
+
+    // Detect language of maintenance description
+    const description = maintenanceRequest.description || maintenanceRequest.issue_title || '';
+    const detectedLang = await detectLanguage(description);
+    console.log(`🌐 Detected language: ${detectedLang}`);
 
     // Get Resend API key for external emails
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    console.log('🔑 Resend API Key configured:', !!RESEND_API_KEY);
 
     // Helper function to validate email
     const isValidEmail = (email) => {
@@ -52,6 +111,38 @@ Deno.serve(async (req) => {
       if (trimmed.length === 0) return false;
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(trimmed);
+    };
+
+    // Helper: Build multilingual description section
+    const buildDescriptionSection = async (targetLang) => {
+      if (!description || description.length < 5) {
+        return description;
+      }
+
+      const translated = await translateText(description, targetLang, detectedLang);
+
+      const langLabels = {
+        en: { for_you: 'Translated for you', original: 'Original message' },
+        th: { for_you: 'แปลสำหรับคุณ', original: 'ข้อความต้นฉบับ' },
+        ja: { for_you: 'あなたのための翻訳', original: '元のメッセージ' },
+        ko: { for_you: '번역됨', original: '원본 메시지' },
+        zh: { for_you: '为您翻译', original: '原始信息' }
+      };
+
+      const labels = langLabels[targetLang] || langLabels.en;
+      const langCodes = {
+        en: 'EN', th: 'TH', ja: 'JA', ko: 'KO', zh: 'ZH'
+      };
+
+      if (detectedLang === targetLang) {
+        return `<p><strong>${labels.original} (${langCodes[detectedLang] || detectedLang.toUpperCase()}):</strong><br/>${description}</p>`;
+      }
+
+      return `
+        <p><strong>${labels.for_you} (${langCodes[targetLang] || targetLang.toUpperCase()}):</strong><br/>${translated}</p>
+        <hr style="margin: 15px 0; border: none; border-top: 1px dashed #ccc;">
+        <p><strong>${labels.original} (${langCodes[detectedLang] || detectedLang.toUpperCase()}):</strong><br/>${description}</p>
+      `;
     };
 
     // Helper function to send email via Resend
@@ -97,13 +188,6 @@ Deno.serve(async (req) => {
     const appDomain = Deno.env.get('APP_DOMAIN') || 'app.leaseshield.asia';
     const landlordAcknowledgmentLink = `https://${appDomain}/acknowledge?token=${acknowledgmentToken}&role=landlord`;
     const juristicAcknowledgmentLink = `https://${appDomain}/acknowledge?token=${acknowledgmentToken}&role=juristic`;
-    console.log('🔗 Landlord acknowledgment link:', landlordAcknowledgmentLink);
-    console.log('🔗 Juristic acknowledgment link:', juristicAcknowledgmentLink);
-
-    // Prepare message content
-    const subject = language === 'th'
-      ? `🔧 แจ้งซ่อม: ${maintenanceRequest.issue_title}`
-      : `🔧 Maintenance Request: ${maintenanceRequest.issue_title}`;
 
     // Get tenant full address for display
     const tenantAddress = [
@@ -113,21 +197,15 @@ Deno.serve(async (req) => {
       user.tenant_zip
     ].filter(Boolean).join(', ') || (language === 'th' ? 'ไม่ได้ระบุ' : 'Not provided');
 
-    // Create Flex message data
-    const flexData = {
-      issueTitle: maintenanceRequest.issue_title,
-      description: maintenanceRequest.description || '',
-      category: maintenanceRequest.category,
-      priority: maintenanceRequest.priority,
-      propertyAddress: maintenanceRequest.property_address || '',
-      reportedDate: new Date(maintenanceRequest.reported_date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US'),
-      photoCount: maintenanceRequest.photo_urls?.length || 0,
-      tenantName: user.full_name || user.email,
-      token: acknowledgmentToken
-    };
+    // Prepare landlord notification (English by default)
+    const landlordLang = getRecipientLanguage('landlord', null);
+    const landlordDescSection = await buildDescriptionSection(landlordLang);
+    
+    const landlordSubject = landlordLang === 'th'
+      ? `🔧 แจ้งซ่อม: ${maintenanceRequest.issue_title}`
+      : `🔧 Maintenance Request: ${maintenanceRequest.issue_title}`;
 
-    // HTML body for landlord with acknowledgment button
-    const landlordHtmlBody = language === 'th'
+    const landlordHtmlBody = landlordLang === 'th'
       ? `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
@@ -135,7 +213,7 @@ Deno.serve(async (req) => {
         </div>
         <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
           <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
-          <p><strong>รายละเอียด:</strong><br/>${maintenanceRequest.description}</p>
+          ${landlordDescSection}
           <p><strong>หมวดหมู่:</strong> ${maintenanceRequest.category}</p>
           <p><strong>ระดับความสำคัญ:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
           ${maintenanceRequest.property_address ? `<p><strong>ที่อยู่ทรัพย์สิน:</strong> ${maintenanceRequest.property_address}</p>` : ''}
@@ -167,7 +245,7 @@ Deno.serve(async (req) => {
         </div>
         <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
           <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
-          <p><strong>Description:</strong><br/>${maintenanceRequest.description}</p>
+          ${landlordDescSection}
           <p><strong>Category:</strong> ${maintenanceRequest.category}</p>
           <p><strong>Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
           ${maintenanceRequest.property_address ? `<p><strong>Property Address:</strong> ${maintenanceRequest.property_address}</p>` : ''}
@@ -193,10 +271,84 @@ Deno.serve(async (req) => {
       </div>
       `;
 
-    // HTML body for juristic with acknowledgment button
-    const juristicHtmlBody = landlordHtmlBody.replace(landlordAcknowledgmentLink, juristicAcknowledgmentLink);
+    // Prepare juristic notification (Thai by default)
+    const juristicLang = getRecipientLanguage('juristic', null);
+    const juristicDescSection = await buildDescriptionSection(juristicLang);
 
-    // HTML body for tenant (confirmation copy - no acknowledgment button)
+    const juristicSubject = juristicLang === 'th'
+      ? `🔧 แจ้งซ่อม: ${maintenanceRequest.issue_title}`
+      : `🔧 Maintenance Request: ${maintenanceRequest.issue_title}`;
+
+    const juristicHtmlBody = juristicLang === 'th'
+      ? `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+          <h2 style="color: white; margin: 0;">🔧 แจ้งซ่อมใหม่</h2>
+        </div>
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+          <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
+          ${juristicDescSection}
+          <p><strong>หมวดหมู่:</strong> ${maintenanceRequest.category}</p>
+          <p><strong>ระดับความสำคัญ:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
+          ${maintenanceRequest.property_address ? `<p><strong>ที่อยู่ทรัพย์สิน:</strong> ${maintenanceRequest.property_address}</p>` : ''}
+          <p><strong>วันที่แจ้ง:</strong> ${new Date(maintenanceRequest.reported_date).toLocaleDateString('th-TH')}</p>
+          
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>ผู้เช่า:</strong> ${user.full_name || 'ไม่ทราบชื่อ'}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>อีเมล:</strong> ${user.email}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>เบอร์โทร:</strong> ${user.phone || 'ไม่ได้ระบุ'}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>ที่อยู่ผู้เช่า:</strong> ${tenantAddress}</p>
+          
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${juristicAcknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ✓ รับทราบและอัปเดตสถานะ
+            </a>
+            <p style="margin-top: 10px; font-size: 12px; color: #666;">คลิกเพื่อยืนยันว่าคุณได้รับทราบคำขอซ่อมนี้แล้ว และอัปเดตสถานะ</p>
+          </div>
+
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="font-size: 10px; color: #999; text-align: center;">ส่งจาก Lease Shield - www.leaseshield.asia</p>
+        </div>
+      </div>
+      `
+      : `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+          <h2 style="color: white; margin: 0;">🔧 New Maintenance Request</h2>
+        </div>
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+          <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
+          ${juristicDescSection}
+          <p><strong>Category:</strong> ${maintenanceRequest.category}</p>
+          <p><strong>Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
+          ${maintenanceRequest.property_address ? `<p><strong>Property Address:</strong> ${maintenanceRequest.property_address}</p>` : ''}
+          <p><strong>Reported:</strong> ${new Date(maintenanceRequest.reported_date).toLocaleDateString('en-US')}</p>
+          
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>Tenant:</strong> ${user.full_name || 'Unknown'}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>Email:</strong> ${user.email}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>Phone:</strong> ${user.phone || 'Not provided'}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>Tenant Address:</strong> ${tenantAddress}</p>
+          
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${juristicAcknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ✓ Acknowledge & Update Status
+            </a>
+            <p style="margin-top: 10px; font-size: 12px; color: #666;">Click to confirm you've received this request and update its status</p>
+          </div>
+
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="font-size: 10px; color: #999; text-align: center;">Sent from Lease Shield - www.leaseshield.asia</p>
+        </div>
+      </div>
+      `;
+
+    // Tenant confirmation (in their own language)
+    const tenantDescSection = await buildDescriptionSection(language);
+    const tenantSubject = language === 'th' ? '✅ สำเนาคำขอซ่อม' : '✅ Maintenance Request Copy';
+
     const tenantHtmlBody = language === 'th'
       ? `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -212,7 +364,7 @@ Deno.serve(async (req) => {
           </p>
           
           <h3 style="color: #0C3B2E; margin-top: 20px;">${maintenanceRequest.issue_title}</h3>
-          <p><strong>รายละเอียด:</strong><br/>${maintenanceRequest.description}</p>
+          ${tenantDescSection}
           <p><strong>หมวดหมู่:</strong> ${maintenanceRequest.category}</p>
           <p><strong>ระดับความสำคัญ:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
           ${maintenanceRequest.property_address ? `<p><strong>ที่อยู่:</strong> ${maintenanceRequest.property_address}</p>` : ''}
@@ -242,7 +394,7 @@ Deno.serve(async (req) => {
           </p>
           
           <h3 style="color: #0C3B2E; margin-top: 20px;">${maintenanceRequest.issue_title}</h3>
-          <p><strong>Description:</strong><br/>${maintenanceRequest.description}</p>
+          ${tenantDescSection}
           <p><strong>Category:</strong> ${maintenanceRequest.category}</p>
           <p><strong>Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
           ${maintenanceRequest.property_address ? `<p><strong>Address:</strong> ${maintenanceRequest.property_address}</p>` : ''}
@@ -265,7 +417,7 @@ Deno.serve(async (req) => {
       try {
         await base44.integrations.Core.SendEmail({
           to: user.email,
-          subject: language === 'th' ? '✅ สำเนาคำขอซ่อม' : '✅ Maintenance Request Copy',
+          subject: tenantSubject,
           body: tenantHtmlBody
         });
         console.log('✅ Tenant email sent successfully to:', user.email);
@@ -283,6 +435,18 @@ Deno.serve(async (req) => {
     console.log('📤 Attempting to send tenant LINE notification...');
     if (user.line_messaging_token && user.line_notifications !== false) {
       try {
+        const flexData = {
+          issueTitle: maintenanceRequest.issue_title,
+          description: maintenanceRequest.description || '',
+          category: maintenanceRequest.category,
+          priority: maintenanceRequest.priority,
+          propertyAddress: maintenanceRequest.property_address || '',
+          reportedDate: new Date(maintenanceRequest.reported_date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US'),
+          photoCount: maintenanceRequest.photo_urls?.length || 0,
+          tenantName: user.full_name || user.email,
+          token: acknowledgmentToken
+        };
+
         const tenantFlexMessage = createMaintenanceRequestFlex({
           ...flexData,
           role: 'tenant'
@@ -310,7 +474,7 @@ Deno.serve(async (req) => {
         console.log('📧 Sending to landlord via Resend:', user.landlord_email);
         const result = await sendViaResend(
           user.landlord_email.trim(),
-          subject,
+          landlordSubject,
           landlordHtmlBody,
           user.full_name || 'Lease Shield Tenant'
         );
@@ -329,12 +493,23 @@ Deno.serve(async (req) => {
     console.log('📤 Attempting to send landlord LINE notification...');
     if (user.landlord_line && user.landlord_line.trim()) {
       try {
+        const flexData = {
+          issueTitle: maintenanceRequest.issue_title,
+          description: maintenanceRequest.description || '',
+          category: maintenanceRequest.category,
+          priority: maintenanceRequest.priority,
+          propertyAddress: maintenanceRequest.property_address || '',
+          reportedDate: new Date(maintenanceRequest.reported_date).toLocaleDateString(landlordLang === 'th' ? 'th-TH' : 'en-US'),
+          photoCount: maintenanceRequest.photo_urls?.length || 0,
+          tenantName: user.full_name || user.email,
+          token: acknowledgmentToken
+        };
+
         const landlordFlexMessage = createMaintenanceRequestFlex({
           ...flexData,
           role: 'landlord'
-        }, language);
+        }, landlordLang);
         
-        // Try to send via LINE ID (this assumes landlord has added the OA)
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
           userId: user.landlord_line.trim(),
           flexMessage: landlordFlexMessage
@@ -357,7 +532,7 @@ Deno.serve(async (req) => {
         console.log('📧 Sending to juristic via Resend:', user.juristic_email);
         const result = await sendViaResend(
           user.juristic_email.trim(),
-          subject,
+          juristicSubject,
           juristicHtmlBody,
           user.full_name || 'Lease Shield Tenant'
         );
@@ -376,10 +551,22 @@ Deno.serve(async (req) => {
     console.log('📤 Attempting to send juristic LINE notification...');
     if (user.juristic_line && user.juristic_line.trim()) {
       try {
+        const flexData = {
+          issueTitle: maintenanceRequest.issue_title,
+          description: maintenanceRequest.description || '',
+          category: maintenanceRequest.category,
+          priority: maintenanceRequest.priority,
+          propertyAddress: maintenanceRequest.property_address || '',
+          reportedDate: new Date(maintenanceRequest.reported_date).toLocaleDateString(juristicLang === 'th' ? 'th-TH' : 'en-US'),
+          photoCount: maintenanceRequest.photo_urls?.length || 0,
+          tenantName: user.full_name || user.email,
+          token: acknowledgmentToken
+        };
+
         const juristicFlexMessage = createMaintenanceRequestFlex({
           ...flexData,
           role: 'juristic'
-        }, language);
+        }, juristicLang);
         
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
           userId: user.juristic_line.trim(),
@@ -404,6 +591,11 @@ Deno.serve(async (req) => {
       acknowledgmentLinks: {
         landlord: landlordAcknowledgmentLink,
         juristic: juristicAcknowledgmentLink
+      },
+      translationInfo: {
+        detectedLanguage: detectedLang,
+        landlordLanguage: landlordLang,
+        juristicLanguage: juristicLang
       },
       debug: {
         userEmail: user.email,
