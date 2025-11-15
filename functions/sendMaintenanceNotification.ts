@@ -115,34 +115,44 @@ Deno.serve(async (req) => {
 
     // Helper: Build multilingual description section
     const buildDescriptionSection = async (targetLang) => {
-      if (!description || description.length < 5) {
-        return description;
+      const baseText = (description || '').trim();
+      
+      if (!baseText || baseText.length < 3) {
+        return baseText;
       }
 
-      const translated = await translateText(description, targetLang, detectedLang);
+      try {
+        const currentDetectedLang = await detectLanguage(baseText);
+        const translated = await translateText(baseText, targetLang, currentDetectedLang);
 
-      const langLabels = {
-        en: { for_you: 'Translated for you', original: 'Original message' },
-        th: { for_you: 'แปลสำหรับคุณ', original: 'ข้อความต้นฉบับ' },
-        ja: { for_you: 'あなたのための翻訳', original: '元のメッセージ' },
-        ko: { for_you: '번역됨', original: '원본 메시지' },
-        zh: { for_you: '为您翻译', original: '原始信息' }
-      };
+        if (!translated || translated.trim().length === 0) {
+          console.warn(`⚠️ Translation returned empty for targetLang=${targetLang}`);
+          return `<p><strong>Description:</strong><br/>${baseText.replace(/\n/g, '<br/>')}</p>`;
+        }
 
-      const labels = langLabels[targetLang] || langLabels.en;
-      const langCodes = {
-        en: 'EN', th: 'TH', ja: 'JA', ko: 'KO', zh: 'ZH'
-      };
+        if (translated.trim() === baseText.trim() || currentDetectedLang === targetLang) {
+          return `<p><strong>Description:</strong><br/>${baseText.replace(/\n/g, '<br/>')}</p>`;
+        }
 
-      if (detectedLang === targetLang) {
-        return `<p><strong>${labels.original} (${langCodes[detectedLang] || detectedLang.toUpperCase()}):</strong><br/>${description}</p>`;
+        const langCodes = {
+          en: 'EN', th: 'TH', ja: 'JA', ko: 'KO', zh: 'ZH'
+        };
+
+        const targetLabel = langCodes[targetLang] || targetLang.toUpperCase();
+        const sourceLabel = langCodes[currentDetectedLang] || currentDetectedLang.toUpperCase();
+
+        const translatedLabel = targetLang === 'th' ? 'แปลสำหรับคุณ' : 'Translated for you';
+        const originalLabel = targetLang === 'th' ? 'ข้อความต้นฉบับ' : 'Original message';
+
+        return `
+          <p><strong>${translatedLabel} (${targetLabel}):</strong><br/>${translated.replace(/\n/g, '<br/>')}</p>
+          <hr style="margin: 15px 0; border: none; border-top: 1px dashed #ccc;">
+          <p><strong>${originalLabel} (${sourceLabel}):</strong><br/>${baseText.replace(/\n/g, '<br/>')}</p>
+        `;
+      } catch (error) {
+        console.error('❌ buildDescriptionSection error:', error);
+        return `<p><strong>Description:</strong><br/>${baseText.replace(/\n/g, '<br/>')}</p>`;
       }
-
-      return `
-        <p><strong>${labels.for_you} (${langCodes[targetLang] || targetLang.toUpperCase()}):</strong><br/>${translated}</p>
-        <hr style="margin: 15px 0; border: none; border-top: 1px dashed #ccc;">
-        <p><strong>${labels.original} (${langCodes[detectedLang] || detectedLang.toUpperCase()}):</strong><br/>${description}</p>
-      `;
     };
 
     // Helper function to send email via Resend
