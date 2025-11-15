@@ -30,6 +30,9 @@ Deno.serve(async (req) => {
 
     console.log('Processing event type:', event.type);
 
+    // ========================================
+    // CHECKOUT SESSION COMPLETED
+    // ========================================
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const metadata = session.metadata || {};
@@ -428,6 +431,150 @@ Deno.serve(async (req) => {
         }
 
         return Response.json({ ok: true, plan: metadata.plan }, { status: 200 });
+      }
+    }
+
+    // ========================================
+    // INVOICE PAYMENT SUCCEEDED (RENEWALS)
+    // ========================================
+    else if (event.type === 'invoice.payment_succeeded') {
+      const invoice = event.data.object;
+      const subscriptionId = invoice.subscription;
+      const customerId = invoice.customer;
+
+      // Only process subscription renewals
+      if (!subscriptionId) {
+        console.log('⚠️ invoice.payment_succeeded without subscription - skipping');
+        return Response.json({ ok: true, skipped: 'not_subscription' }, { status: 200 });
+      }
+
+      console.log('💰 Processing subscription renewal');
+      console.log('Subscription ID:', subscriptionId);
+      console.log('Customer ID:', customerId);
+
+      try {
+        const base44 = createClientFromRequest(req);
+        const users = await base44.asServiceRole.entities.User.list();
+        
+        // Find user by subscription ID first, then by customer ID
+        let user = users.find(u => u.stripe_subscription_id === subscriptionId);
+        if (!user) {
+          user = users.find(u => u.stripe_customer_id === customerId);
+        }
+
+        if (!user) {
+          console.error('❌ User not found for subscription:', subscriptionId, customerId);
+          return Response.json({ ok: true, warning: 'user_not_found' }, { status: 200 });
+        }
+
+        // Fetch subscription from Stripe to get new period end
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
+
+        console.log('✅ Updating renewal date:', renewalDate);
+
+        // Update user with active status and new renewal date
+        await base44.asServiceRole.entities.User.update(user.id, {
+          subscription_status: 'active',
+          plan_renews_at: renewalDate
+        });
+
+        console.log('✅ Subscription renewal recorded for:', user.email);
+
+        return Response.json({ ok: true, renewed: true }, { status: 200 });
+      } catch (err) {
+        console.error('❌ Error processing renewal:', err.message);
+        return Response.json({ ok: true, error: err.message }, { status: 200 });
+      }
+    }
+
+    // ========================================
+    // INVOICE PAYMENT FAILED
+    // ========================================
+    else if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object;
+      const subscriptionId = invoice.subscription;
+      const customerId = invoice.customer;
+
+      if (!subscriptionId) {
+        console.log('⚠️ invoice.payment_failed without subscription - skipping');
+        return Response.json({ ok: true, skipped: 'not_subscription' }, { status: 200 });
+      }
+
+      console.log('❌ Processing failed payment');
+      console.log('Subscription ID:', subscriptionId);
+      console.log('Customer ID:', customerId);
+
+      try {
+        const base44 = createClientFromRequest(req);
+        const users = await base44.asServiceRole.entities.User.list();
+        
+        // Find user by subscription ID first, then by customer ID
+        let user = users.find(u => u.stripe_subscription_id === subscriptionId);
+        if (!user) {
+          user = users.find(u => u.stripe_customer_id === customerId);
+        }
+
+        if (!user) {
+          console.error('❌ User not found for subscription:', subscriptionId, customerId);
+          return Response.json({ ok: true, warning: 'user_not_found' }, { status: 200 });
+        }
+
+        // Mark subscription as past due
+        await base44.asServiceRole.entities.User.update(user.id, {
+          subscription_status: 'past_due'
+        });
+
+        console.log('⚠️ Subscription marked as past_due for:', user.email);
+
+        return Response.json({ ok: true, marked_past_due: true }, { status: 200 });
+      } catch (err) {
+        console.error('❌ Error processing failed payment:', err.message);
+        return Response.json({ ok: true, error: err.message }, { status: 200 });
+      }
+    }
+
+    // ========================================
+    // SUBSCRIPTION DELETED (EXPIRY/CANCELLATION)
+    // ========================================
+    else if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object;
+      const subscriptionId = subscription.id;
+      const customerId = subscription.customer;
+
+      console.log('🚫 Processing subscription deletion');
+      console.log('Subscription ID:', subscriptionId);
+      console.log('Customer ID:', customerId);
+
+      try {
+        const base44 = createClientFromRequest(req);
+        const users = await base44.asServiceRole.entities.User.list();
+        
+        // Find user by subscription ID first, then by customer ID
+        let user = users.find(u => u.stripe_subscription_id === subscriptionId);
+        if (!user) {
+          user = users.find(u => u.stripe_customer_id === customerId);
+        }
+
+        if (!user) {
+          console.error('❌ User not found for subscription:', subscriptionId, customerId);
+          return Response.json({ ok: true, warning: 'user_not_found' }, { status: 200 });
+        }
+
+        // Downgrade user to free plan
+        await base44.asServiceRole.entities.User.update(user.id, {
+          plan_tier: 'free',
+          subscription_status: 'expired',
+          billing_interval: null,
+          plan_renews_at: null
+        });
+
+        console.log('✅ User downgraded to free plan:', user.email);
+
+        return Response.json({ ok: true, downgraded: true }, { status: 200 });
+      } catch (err) {
+        console.error('❌ Error processing subscription deletion:', err.message);
+        return Response.json({ ok: true, error: err.message }, { status: 200 });
       }
     }
 
