@@ -1,3 +1,4 @@
+
 // ⚠️ LeaseShield: Dashboard overview is stabilised.
 // Do not modify card themes, layout, or handlers without explicit product approval.
 
@@ -1665,6 +1666,7 @@ function DashboardContent() {
                     </div>
                   ) : (
                     <>
+                      {/* MOBILE LAYOUT */}
                       <div className="lg:hidden space-y-3" style={{ animation: 'slideDown 0.3s ease-out' }}>
                         <ProtectionScoreEnhanced
                           score={protectionScore}
@@ -2124,12 +2126,13 @@ function DashboardContent() {
                         </div>
                       </div>
 
+                      {/* DESKTOP LAYOUT */}
                       <div className="hidden lg:grid lg:grid-cols-4 gap-3" style={{ animation: 'slideDown 0.3s ease-out', gridAutoRows: 'minmax(0, 1fr)' }}>
                         <StatsCard
                           title={strings.activeLeases}
                           value={leases.length.toString()}
                           icon={FileText}
-                          scoreColor="#3B82F6"
+                          scoreColor={leasesTheme.borderColor}
                           miniStats={leases.length > 0 ? [
                             {
                               label: language === 'en' ? 'Scanned' : language === 'zh' ? '已扫描' : language === 'ja' ? 'スキャン済み' : language === 'ko' ? '스캔됨' : 'สแกนแล้ว',
@@ -2154,7 +2157,7 @@ function DashboardContent() {
                           title={strings.depositsTracked}
                           value={`฿${totalDepositValue.toLocaleString()}`}
                           icon={Wallet}
-                          scoreColor="#10B981"
+                          scoreColor={depositsTheme.borderColor}
                           miniStats={[
                             { 
                               label: language === 'en' ? 'Avg' : language === 'zh' ? '平均' : language === 'ja' ? '平均' : language === 'ko' ? '평균' : 'เฉลี่ย',
@@ -2177,7 +2180,7 @@ function DashboardContent() {
                           title={strings.rentTracked}
                           value={rentTrackedCount.toString()}
                           icon={Calendar}
-                          scoreColor="#0EA5E9"
+                          scoreColor={rentTheme.borderColor}
                           miniStats={rentTrackedCount > 0 ? [
                             {
                               label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน',
@@ -2209,7 +2212,7 @@ function DashboardContent() {
                           title={strings.notifications}
                           value={notificationLogs.length.toString()}
                           icon={Bell}
-                          scoreColor="#8B5CF6"
+                          scoreColor={notificationsTheme.borderColor}
                           miniStats={notificationLogs.length > 0 ? [
                             {
                               label: language === 'en' ? 'Sent' : language === 'zh' ? '已发送' : language === 'ja' ? '送信済み' : language === 'ko' ? '전송됨' : 'ส่งแล้ว',
@@ -2233,7 +2236,7 @@ function DashboardContent() {
                           title={strings.activeCases}
                           value={activeCases.length}
                           icon={Scale}
-                          scoreColor="#DC2626"
+                          scoreColor={casesTheme.borderColor}
                           miniStats={[
                             { 
                               label: language === 'en' ? 'Resolved' : language === 'zh' ? '已解决' : language === 'ja' ? '解決済み' : language === 'ko' ? '해결됨' : 'แก้ไข',
@@ -2252,7 +2255,7 @@ function DashboardContent() {
                           title={strings.maintenanceRequests}
                           value={activeMaintenanceCount.toString()}
                           icon={Wrench}
-                          scoreColor="#F59E0B"
+                          scoreColor={maintenanceTheme.borderColor}
                           miniStats={activeMaintenanceCount > 0 ? [
                             {
                               label: language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ',
