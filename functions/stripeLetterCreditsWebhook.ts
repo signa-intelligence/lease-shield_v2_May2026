@@ -1,27 +1,18 @@
-// ⚠️ DEPRECATED WEBHOOK - NO LONGER ACTIVE
-// 
-// This endpoint has been superseded by functions/stripeWebhook.js.
-// All Stripe event processing (credits, subscriptions, renewals) now happens
-// in the unified webhook to prevent double-processing and maintain consistency.
-//
-// This file remains present to avoid 500 errors on any legacy configured
-// Stripe webhook endpoints, but it performs NO database updates and sends
-// NO emails or notifications.
-//
-// To remove this safely:
-// 1. Go to Stripe Dashboard → Webhooks
-// 2. Remove any webhook pointing to this endpoint
-// 3. Confirm only stripeWebhook.js endpoint is active
-// 4. Then delete this file
+// ⚠️ DEPRECATED ENDPOINT - DO NOT USE
+// All Stripe webhook events are now processed in functions/stripeWebhook.js
+// This file is kept only to prevent 500 errors on old webhook URLs
+// It performs NO database operations and awards NO credits
 
 Deno.serve(async (req) => {
-  console.log('⚠️ DEPRECATED: stripeLetterCreditsWebhook called');
-  console.log('⚠️ This endpoint is a no-op. Unified handler is stripeWebhook.js');
-  console.log('⚠️ Please update Stripe webhook configuration to use stripeWebhook.js only');
+  console.log('⚠️⚠️⚠️ DEPRECATED ENDPOINT CALLED ⚠️⚠️⚠️');
+  console.log('[Stripe] stripeLetterCreditsWebhook is deprecated and inactive.');
+  console.log('[Stripe] All events are now handled by stripeWebhook.js');
+  console.log('[Stripe] This endpoint returns 200 OK without processing anything.');
+  console.log('[Stripe] Please update your Stripe webhook configuration to use the main webhook.');
   
   return Response.json({ 
     ok: true, 
     deprecated: true,
-    message: 'This webhook is deprecated. Use stripeWebhook.js for all Stripe events.'
+    message: 'This endpoint is deprecated. Use functions/stripeWebhook.js instead.'
   }, { status: 200 });
 });
