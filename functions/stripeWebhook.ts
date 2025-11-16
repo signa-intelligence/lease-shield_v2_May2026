@@ -1,9 +1,11 @@
-import { createClientFromRequest as createBase44ClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
-// redeployed on 2025-11-16 to fix deploymentNotFound / duplicate identifier
-const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
-const webhookSecret = Deno.env.get('webhook_stripe');
+// ---- CONFIG -----------------------------------------------------------------
+
+const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');   // use live key in prod
+const webhookSecret   = Deno.env.get('webhook_stripe');
+const RESEND_API_KEY  = Deno.env.get('RESEND_API_KEY');
 
 if (!stripeSecretKey) {
   console.error('❌ Missing SK_TEST_secret_key in Secrets');
@@ -16,6 +18,7 @@ const stripe = new Stripe(stripeSecretKey || '', {
   apiVersion: '2024-06-20',
 });
 
+// credits per price id for add-on credits
 const PRICE_CREDIT_MAP = {
   'price_1SR2b5QwoI6NhlUxbwA8JfsS': 1,
   'price_1SR2dLQwoI6NhlUxv0TkEsiZ': 3,
@@ -23,31 +26,38 @@ const PRICE_CREDIT_MAP = {
   'price_1SR2hXQwoI6NhlUxwahfstoL': 10,
 };
 
+// ---- MAIN HANDLER -----------------------------------------------------------
+
 Deno.serve(async (req) => {
   console.log('\n\n=== STRIPE WEBHOOK RECEIVED ===');
   console.log('Timestamp:', new Date().toISOString());
 
   try {
-    const rawBody = await req.text();
-    const signature = req.headers.get('stripe-signature');
+    // 1) RAW BODY + SIGNATURE
+    const rawBody   = await req.text();
+    const signature = req.headers.get('stripe-signature') || '';
 
-    console.log('📨 Webhook signature present:', !!signature);
-    console.log('🔐 Webhook secret configured:', !!webhookSecret);
+    console.log('Webhook signature present:', !!signature);
+    console.log('Webhook secret configured:', !!webhookSecret);
 
     if (!signature) {
       console.error('❌ No stripe-signature header found');
       return Response.json({ error: 'No signature provided' }, { status: 400 });
     }
-
     if (!webhookSecret) {
       console.error('❌ webhook_stripe secret not configured');
       return Response.json({ error: 'Webhook secret not configured' }, { status: 500 });
     }
 
+    // 2) VERIFY SIGNATURE — **must be async in this runtime**
     let event;
-
     try {
-      event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+      event = await stripe.webhooks.constructEventAsync(
+        rawBody,
+        signature,
+        webhookSecret,
+      );
+
       console.log('✅ WEBHOOK SIGNATURE VERIFIED');
       console.log('Event ID:', event.id);
       console.log('Event Type:', event.type);
@@ -60,16 +70,15 @@ Deno.serve(async (req) => {
     console.log('\n📋 EVENT OBJECT:');
     console.log(JSON.stringify(event.data.object, null, 2));
 
-    const base44 = createBase44ClientFromRequest(req);
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+    const base44 = createClientFromRequest(req);
 
-    // =========================================================
+    // =========================================================================
     // 1) CHECKOUT SESSION COMPLETED
-    // =========================================================
+    // =========================================================================
     if (event.type === 'checkout.session.completed') {
       console.log('\n💳 PROCESSING: checkout.session.completed');
 
-      const session = event.data.object;
+      const session  = event.data.object;
       const metadata = session.metadata || {};
 
       console.log('Session ID:', session.id);
@@ -79,7 +88,6 @@ Deno.serve(async (req) => {
       console.log('Client Reference ID:', session.client_reference_id);
       console.log('Customer Email:', session.customer_details && session.customer_details.email);
 
-      // Determine checkout type
       const isCreditsCheckout =
         metadata.type === 'credits' ||
         metadata.credits ||
@@ -93,14 +101,14 @@ Deno.serve(async (req) => {
       console.log('Is Credits:', isCreditsCheckout);
       console.log('Is Subscription:', isSubscriptionCheckout);
 
-      // =====================================================
+      // -----------------------------------------------------------------------
       // 1A) SUBSCRIPTION PATH
-      // =====================================================
+      // -----------------------------------------------------------------------
       if (isSubscriptionCheckout) {
         console.log('\n💎 SUBSCRIPTION CHECKOUT - STARTING PROCESSING');
 
-        const metaUserId = metadata.userId;
-        const customerId = session.customer || null;
+        const metaUserId  = metadata.userId;
+        const customerId  = session.customer || null;
         const clientRefId = session.client_reference_id || null;
         const email =
           (session.customer_details && session.customer_details.email) ||
@@ -121,19 +129,16 @@ Deno.serve(async (req) => {
           user = allUsers.find((u) => u.id === metaUserId);
           if (user) console.log('✅ User found by metadata.userId:', user.email);
         }
-
         // Priority 2: client_reference_id
         if (!user && clientRefId) {
           user = allUsers.find((u) => u.id === clientRefId);
           if (user) console.log('✅ User found by client_reference_id:', user.email);
         }
-
         // Priority 3: stripe_customer_id
         if (!user && customerId) {
           user = allUsers.find((u) => u.stripe_customer_id === customerId);
           if (user) console.log('✅ User found by stripe_customer_id:', user.email);
         }
-
         // Priority 4: email
         if (!user && email) {
           user = allUsers.find((u) => u.email === email);
@@ -158,9 +163,9 @@ Deno.serve(async (req) => {
               received: true,
               warning: 'user_not_found_for_subscription',
               userId: metaUserId,
-              clientRefId,
-              customerId,
-              email,
+              clientRefId: clientRefId,
+              customerId: customerId,
+              email: email,
             },
             { status: 200 },
           );
@@ -171,8 +176,7 @@ Deno.serve(async (req) => {
         console.log('  Email:', user.email);
         console.log('  Current plan_tier:', user.plan_tier);
 
-        // Plan data from metadata, with safe defaults
-        const planTier = (metadata.plan || 'lite').toLowerCase();
+        const planTier        = (metadata.plan || 'lite').toLowerCase();
         const billingInterval = (metadata.interval || 'monthly').toLowerCase();
 
         console.log('📋 PLAN DETAILS FROM METADATA:');
@@ -186,7 +190,6 @@ Deno.serve(async (req) => {
           console.warn('⚠️ metadata.interval missing - defaulting to "monthly"');
         }
 
-        // Renewal date
         const subscriptionId = session.subscription || null;
         let planRenewsAt = null;
 
@@ -209,15 +212,14 @@ Deno.serve(async (req) => {
           console.warn('⚠️ No subscription ID in session');
         }
 
-        // Included credits by tier
         const includedCredits = {
           lite: 3,
           protect: 5,
           secure: 10,
         };
 
-        const creditsToAdd = includedCredits[planTier] || 0;
-        const currentCredits = user.letter_credits || 0;
+        const creditsToAdd     = includedCredits[planTier] || 0;
+        const currentCredits   = user.letter_credits || 0;
         const newCreditBalance = currentCredits + creditsToAdd;
 
         console.log('💎 CREDITS:');
@@ -225,19 +227,17 @@ Deno.serve(async (req) => {
         console.log('  Current balance:', currentCredits);
         console.log('  New balance:', newCreditBalance);
 
-        // Update user record
-        console.log('\n🔄 UPDATING USER RECORD...');
-
         const updateData = {
-          plan_tier: planTier,
-          billing_interval: billingInterval,
-          plan_renews_at: planRenewsAt,
+          plan_tier:              planTier,
+          billing_interval:       billingInterval,
+          plan_renews_at:         planRenewsAt,
           stripe_subscription_id: subscriptionId,
-          stripe_customer_id: customerId,
-          subscription_status: 'active',
-          letter_credits: newCreditBalance,
+          stripe_customer_id:     customerId,
+          subscription_status:    'active',
+          letter_credits:         newCreditBalance,
         };
 
+        console.log('\n🔄 UPDATING USER RECORD...');
         console.log('Update payload:', JSON.stringify(updateData, null, 2));
 
         await base44.asServiceRole.entities.User.update(user.id, updateData);
@@ -245,13 +245,8 @@ Deno.serve(async (req) => {
         console.log('\n✅✅✅ SUBSCRIPTION ACTIVATED ✅✅✅');
         console.log('User ID:', user.id);
         console.log('Email:', user.email);
-        console.log('plan_tier:', planTier);
-        console.log('billing_interval:', billingInterval);
-        console.log('plan_renews_at:', planRenewsAt);
-        console.log('subscription_status: active');
-        console.log('letter_credits:', newCreditBalance);
 
-        // Payment record
+        // create payment record
         try {
           await base44.asServiceRole.entities.Payment.create({
             type: 'subscription',
@@ -269,12 +264,12 @@ Deno.serve(async (req) => {
           console.error('⚠️ Failed to create payment record:', paymentErr.message);
         }
 
-        // Email notification
+        // email
         const lang = user.language || 'en';
         const planLabels = {
-          lite: { en: 'Lite', th: 'ไลท์' },
+          lite:    { en: 'Lite',    th: 'ไลท์' },
           protect: { en: 'Protect', th: 'โปรเทค' },
-          secure: { en: 'Secure', th: 'ซีเคียว' },
+          secure:  { en: 'Secure',  th: 'ซีเคียว' },
         };
 
         const planLabel =
@@ -284,17 +279,13 @@ Deno.serve(async (req) => {
 
         const intervalLabel =
           billingInterval === 'annual'
-            ? lang === 'th'
-              ? 'รายปี'
-              : 'Annual'
-            : lang === 'th'
-              ? 'รายเดือน'
-              : 'Monthly';
+            ? (lang === 'th' ? 'รายปี' : 'Annual')
+            : (lang === 'th' ? 'รายเดือน' : 'Monthly');
 
         const subject =
           lang === 'th'
-            ? `ยินดีต้อนรับสู่ Lease Shield ${planLabel}!`
-            : `Welcome to Lease Shield ${planLabel}!`;
+            ? 'ยินดีต้อนรับสู่ Lease Shield ' + planLabel + '!'
+            : 'Welcome to Lease Shield ' + planLabel + '!';
 
         const amountForEmail = session.amount_total
           ? (session.amount_total / 100).toLocaleString()
@@ -359,7 +350,7 @@ Deno.serve(async (req) => {
             const resendResponse = await fetch('https://api.resend.com/emails', {
               method: 'POST',
               headers: {
-                Authorization: `Bearer ${RESEND_API_KEY}`,
+                Authorization: 'Bearer ' + RESEND_API_KEY,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
@@ -394,9 +385,9 @@ Deno.serve(async (req) => {
         );
       }
 
-      // =====================================================
+      // -----------------------------------------------------------------------
       // 1B) CREDITS PATH
-      // =====================================================
+      // -----------------------------------------------------------------------
       if (isCreditsCheckout && !isSubscriptionCheckout) {
         console.log('\n💰 CREDITS CHECKOUT - STARTING PROCESSING');
 
@@ -416,7 +407,7 @@ Deno.serve(async (req) => {
             '🔍 Lookup by metadata.userId:',
             metaUserId,
             '→',
-            user ? `✅ ${user.email}` : '❌',
+            user ? '✅ ' + user.email : '❌',
           );
         }
         if (!user && customerId) {
@@ -425,7 +416,7 @@ Deno.serve(async (req) => {
             '🔍 Lookup by stripe_customer_id:',
             customerId,
             '→',
-            user ? `✅ ${user.email}` : '❌',
+            user ? '✅ ' + user.email : '❌',
           );
         }
         if (!user && email) {
@@ -434,7 +425,7 @@ Deno.serve(async (req) => {
             '🔍 Lookup by email:',
             email,
             '→',
-            user ? `✅ ${user.email}` : '❌',
+            user ? '✅ ' + user.email : '❌',
           );
         }
 
@@ -460,13 +451,15 @@ Deno.serve(async (req) => {
             let totalCredits = 0;
 
             for (const item of items) {
-              const priceId = item.price && item.price.id ? item.price.id : '';
-              const qty = item.quantity || 1;
-              const perCredits = PRICE_CREDIT_MAP[priceId] || 0;
+              const priceId   = item.price && item.price.id ? item.price.id : '';
+              const qty       = item.quantity || 1;
+              const perCredit = PRICE_CREDIT_MAP[priceId] || 0;
 
-              if (perCredits > 0) {
-                totalCredits += perCredits * qty;
-                console.log(`  Price ${priceId}: ${perCredits} × ${qty} = ${perCredits * qty}`);
+              if (perCredit > 0) {
+                totalCredits += perCredit * qty;
+                console.log(
+                  '  Price ' + priceId + ': ' + perCredit + ' × ' + qty + ' = ' + (perCredit * qty),
+                );
               }
             }
 
@@ -480,9 +473,9 @@ Deno.serve(async (req) => {
         }
 
         if (creditsToAdd > 0) {
-          const currentCredits = user.letter_credits || 0;
-          const totalPurchased = user.total_credits_purchased || 0;
-          const newBalance = currentCredits + creditsToAdd;
+          const currentCredits    = user.letter_credits || 0;
+          const totalPurchased    = user.total_credits_purchased || 0;
+          const newBalance        = currentCredits + creditsToAdd;
           const newTotalPurchased = totalPurchased + creditsToAdd;
 
           console.log('🔄 UPDATING CREDITS');
@@ -530,16 +523,17 @@ Deno.serve(async (req) => {
       return Response.json({ received: true }, { status: 200 });
     }
 
-    // =========================================================
+    // =========================================================================
     // 2) RENEWALS & CANCELLATIONS
-    // =========================================================
+    // =========================================================================
+
     if (event.type === 'invoice.payment_succeeded') {
       console.log('\n🔄 PROCESSING: invoice.payment_succeeded (renewal)');
 
-      const invoice = event.data.object;
+      const invoice       = event.data.object;
       const subscriptionId = invoice.subscription || null;
-      const customerId = invoice.customer || null;
-      const billingReason = invoice.billing_reason;
+      const customerId     = invoice.customer || null;
+      const billingReason  = invoice.billing_reason;
 
       if (!subscriptionId || billingReason !== 'subscription_cycle') {
         console.log('⚠️ Not a renewal, skipping');
@@ -558,7 +552,7 @@ Deno.serve(async (req) => {
       }
 
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      const renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
+      const renewalDate  = new Date(subscription.current_period_end * 1000).toISOString();
 
       await base44.asServiceRole.entities.User.update(user.id, {
         subscription_status: 'active',
@@ -582,9 +576,9 @@ Deno.serve(async (req) => {
     if (event.type === 'invoice.payment_failed') {
       console.log('\n❌ PROCESSING: invoice.payment_failed');
 
-      const invoice = event.data.object;
+      const invoice       = event.data.object;
       const subscriptionId = invoice.subscription || null;
-      const customerId = invoice.customer || null;
+      const customerId     = invoice.customer || null;
 
       if (!subscriptionId) {
         return Response.json({ received: true }, { status: 200 });
@@ -609,9 +603,9 @@ Deno.serve(async (req) => {
     if (event.type === 'customer.subscription.deleted') {
       console.log('\n🚫 PROCESSING: customer.subscription.deleted');
 
-      const subscription = event.data.object;
+      const subscription   = event.data.object;
       const subscriptionId = subscription.id;
-      const customerId = subscription.customer || null;
+      const customerId     = subscription.customer || null;
 
       const users = await base44.asServiceRole.entities.User.list();
       let user = users.find((u) => u.stripe_subscription_id === subscriptionId);
