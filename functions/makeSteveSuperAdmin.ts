@@ -1,43 +1,53 @@
-import { createClient } from "npm:@base44/sdk@0.8.4";
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.4";
 
-// THIS VERSION USES SERVICE-ROLE CLIENT → FULL PERMISSIONS
-// It bypasses all user restrictions and forces the update.
+// Emergency utility: force Steve back to super_admin.
+// Call via GET in the browser once, then delete this function.
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClient({ role: "service" });
-
+    const base44 = createClientFromRequest(req);
     const targetEmail = "steve.l@signa-consultants.com";
-    console.log("🔧 Forcing super admin for:", targetEmail);
 
-    // Fetch all users
-    const users = await base44.entities.User.list();
+    console.log("🔧 makeSteveSuperAdmin starting for:", targetEmail);
 
-    const me = users.find(
-      (u) => u.email && u.email.toLowerCase() === targetEmail.toLowerCase()
-    );
+    // Get all users using service role
+    const users = await base44.asServiceRole.entities.User.list();
+
+    // Find Steve (case-insensitive)
+    const me = users.find((u) => {
+      return u.email && u.email.toLowerCase() === targetEmail.toLowerCase();
+    });
 
     if (!me) {
+      console.error("❌ User not found:", targetEmail);
       return Response.json(
-        { success: false, error: "User not found" },
+        { success: false, error: "user_not_found", email: targetEmail },
         { status: 404 },
       );
     }
 
-    // FORCE UPDATE
-    await base44.entities.User.update(me.id, {
+    // FORCE ROLE UPDATE
+    await base44.asServiceRole.entities.User.update(me.id, {
       role: "super_admin",
     });
 
-    console.log("✅ ROLE UPDATED TO SUPER ADMIN:", me.email);
+    console.log("✅ Super admin restored for:", me.email);
 
-    return Response.json({
-      success: true,
-      message: `Super admin restored for: ${me.email}`,
-    });
-
+    return Response.json(
+      {
+        success: true,
+        message: `Super admin restored for ${me.email}`,
+      },
+      { status: 200 },
+    );
   } catch (err) {
-    console.error("❌ ERROR:", err.message);
-    return Response.json({ success: false, error: err.message }, { status: 500 });
+    console.error("❌ makeSteveSuperAdmin error:", err && err.message);
+    return Response.json(
+      {
+        success: false,
+        error: (err && err.message) || "unknown_error",
+      },
+      { status: 500 },
+    );
   }
 });
