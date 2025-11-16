@@ -373,7 +373,7 @@ function DashboardContent() {
 
       const daysUntilDue = rentDeposit.rent_alert_days_before || 3;
       const propertyAddress = rentDeposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
-      const rentAmount = rentDeposit.rent_amount;
+      const rentAmount = rentDeposit.deposit_amount; // Corrected from rent_amount
       const dueDay = rentDeposit.rent_due_day;
 
       const flexMessage = {

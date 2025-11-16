@@ -633,8 +633,8 @@ export default function UploadScanPage() {
     setCurrentStep(1); // Move to analyzing
 
     let currentRetry = 0;
-    const maxRetries = 3;
     let createdLeaseId = null;
+    const maxRetries = 3;
 
     const attemptUpload = async () => {
       try {

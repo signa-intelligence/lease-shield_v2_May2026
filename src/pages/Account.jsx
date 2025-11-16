@@ -1503,7 +1503,7 @@ export default function Account() {
                     padding: '16px',
                     backgroundColor: colors.fieldBg,
                     borderRadius: '12px',
-                    borderLeft: '4px solid #1A1D1F'
+                    borderLeft: '4px solid '#1A1D1F''
                   }}>
                     <div className="flex items-center gap-3">
                       <div style={{
@@ -3392,7 +3392,7 @@ export default function Account() {
           <Button
             variant="outline"
             className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-            onClick={() => base44.auth.logout()}
+            onClick={() => base44.auth.logout('https://leaseshield.asia/')}
             style={{ 
               backgroundColor: colors.cardBg, 
               borderColor: isDarkMode ? '#EF4444' : '#FECACA', 
