@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -376,23 +377,28 @@ const ProtectionScoreEnhanced = ({
         <div className="mt-3 flex flex-wrap gap-2 justify-center">
           {achievements.map((achievement, idx) => {
             const Icon = achievement.icon;
+            
+            // Map each badge to its high-contrast color
+            const badgeColors = {
+              [strings.expert]: 'bg-amber-600 text-white',
+              [strings.selfProtector]: 'bg-yellow-700 text-white',
+              [strings.documenter]: 'bg-blue-700 text-white',
+              [strings.actionTaker]: 'bg-emerald-700 text-white'
+            };
+            
+            const colorClass = badgeColors[achievement.label] || 'bg-gray-600 text-white';
+            
             return (
               <Badge
                 key={idx}
-                className="px-3 py-1 text-xs sm:text-sm font-semibold rounded-full border"
+                className={`px-3 py-1 text-xs sm:text-sm font-semibold rounded-full shadow-sm ${colorClass}`}
                 style={{
-                  backgroundColor: `${achievement.color}15`,
-                  color: achievement.color,
-                  borderColor: `${achievement.color}40`,
                   animation: "fadeIn 0.5s ease-out",
                   animationDelay: `${idx * 0.1}s`,
                   animationFillMode: "backwards",
                 }}
               >
-                <Icon
-                  className="w-3.5 h-3.5 inline-block mr-1"
-                  style={{ color: achievement.color }}
-                />
+                <Icon className="w-3.5 h-3.5 inline-block mr-1" />
                 {achievement.label}
               </Badge>
             );
