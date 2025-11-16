@@ -218,6 +218,7 @@ export default function Account() {
   const [copiedLink, setCopiedLink] = useState(null);
   const [buyingCredits, setBuyingCredits] = useState({});
   const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [showManagePlanPanel, setShowManagePlanPanel] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -499,6 +500,45 @@ export default function Account() {
     }
   };
 
+  const handleDowngrade = async (targetPlan) => {
+    const plan = PLAN_DETAILS.find(p => p.key === targetPlan);
+    if (!plan) return;
+
+    haptic.medium();
+    setSubscribing(prev => ({ ...prev, [targetPlan]: true }));
+    try {
+      const amount = userBillingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
+      const intervalType = userBillingInterval === 'annual' ? 'year' : 'month';
+
+      const response = await base44.functions.invoke('createCheckout', {
+        mode: 'subscription',
+        amount: amount,
+        currency: 'thb',
+        description: `Lease Shield ${plan.label} - ${userBillingInterval === 'annual' ? 'Annual' : 'Monthly'}`,
+        successUrl: `${window.location.origin}/account?subscription=success`,
+        cancelUrl: `${window.location.origin}/account?subscription=cancelled`,
+        metadata: {
+          plan: targetPlan,
+          interval: intervalType
+        }
+      });
+      
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      } else {
+        haptic.error();
+        throw new Error('No checkout URL returned from server');
+      }
+    } catch (error) {
+      console.error('❌ Downgrade error:', error);
+      haptic.error();
+      const language = user?.language || 'en';
+      const errorMsg = error.response?.data?.details || error.response?.data?.error || error.message;
+      alert(`${language === 'th' ? 'ไม่สามารถเปลี่ยนแผนได้' : 'Failed to change plan'}\n\n${errorMsg}`);
+      setSubscribing(prev => ({ ...prev, [targetPlan]: false }));
+    }
+  };
+
   const handleCancelSubscription = async () => {
     const language = user?.language || 'en';
     if (!cancelReason) {
@@ -593,12 +633,18 @@ export default function Account() {
     }
   };
 
-  const currentPlanTier = user?.plan_tier || 'free';
-  const isFree = currentPlanTier === 'free';
+  const planTier = user?.plan_tier || 'free';
+  const userBillingInterval = user?.billing_interval || 'monthly';
+  const subscriptionStatus = user?.subscription_status || 'inactive';
+  const isFreePlan = planTier === 'free';
+  const isLitePlan = planTier === 'lite';
+  const isProtectPlan = planTier === 'protect';
+  const isSecurePlan = planTier === 'secure';
+  const isScheduledForCancellation = subscriptionStatus === 'cancelled' && user?.plan_renews_at;
+
   const language = user?.language || 'en';
   const currentTheme = user?.theme || 'dark';
   const isDarkMode = currentTheme === 'dark';
-  const isAboveLite = currentPlanTier === 'protect' || currentPlanTier === 'secure';
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -1319,8 +1365,7 @@ export default function Account() {
   };
 
   const strings = (t && t[language] && typeof t[language] === 'object') ? t[language] : t.en;
-  const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
-  const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
+  const currentPlan = PLAN_DETAILS.find(p => p.key === planTier);
 
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46462_M_gainfriends_2dbarcodes_GW.png";
 
@@ -1931,7 +1976,7 @@ export default function Account() {
             <CardContent className="p-6">
               <div className="text-center mb-4">
                 <div className="mb-3">
-                  <PlanBadge tier={currentPlanTier} />
+                  <PlanBadge tier={planTier} />
                   {isScheduledForCancellation && (
                     <div className="mt-2">
                       <Badge style={{
@@ -1948,11 +1993,11 @@ export default function Account() {
                   )}
                 </div>
                 <p className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                  {isFree ? strings.freePlanName : (PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly ? `฿${PLAN_DETAILS.find(p => p.key === currentPlanTier)?.priceMonthly}` : '—')}
+                  {isFreePlan ? strings.freePlanName : (currentPlan?.priceMonthly ? `฿${currentPlan?.priceMonthly}` : '—')}
                 </p>
-                {!isFree && user?.billing_interval && (
+                {!isFreePlan && userBillingInterval && (
                   <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-                    {user.billing_interval === 'annual' ? strings.billedAnnually : strings.billedMonthly}
+                    {userBillingInterval === 'annual' ? strings.billedAnnually : strings.billedMonthly}
                   </p>
                 )}
                 {user?.plan_renews_at && (
@@ -1962,7 +2007,7 @@ export default function Account() {
                 )}
               </div>
               
-              {isFree ? (
+              {isFreePlan ? (
                 <div className="space-y-3">
                   <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
                     <p style={{ fontSize: '14px', color: colors.textPrimary, fontWeight: '600', marginBottom: '8px' }}>
@@ -2004,7 +2049,7 @@ export default function Account() {
                       {strings.allActive}
                     </p>
                   </div>
-                  {(currentPlanTier === 'protect' || currentPlanTier === 'secure') && (
+                  {(isProtectPlan || isSecurePlan) && (
                     <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
                       <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
                         <Bell className="w-3 h-3 text-ls-gold" />
@@ -2014,12 +2059,7 @@ export default function Account() {
                   )}
                   
                   <button
-                    onClick={() => {
-                      const plansSection = document.getElementById('plans-section');
-                      if (plansSection) {
-                        plansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }}
+                    onClick={() => setShowManagePlanPanel(!showManagePlanPanel)}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -2036,69 +2076,248 @@ export default function Account() {
                       justifyContent: 'center',
                       gap: '8px'
                     }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#0a2f25';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#0C3B2E';
-                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                   >
                     <Settings className="w-4 h-4" />
-                    {language === 'th' ? 'เปลี่ยนแผน' : 'Change Plan'}
+                    {language === 'th' ? 'จัดการแผน' : 'Manage Plan'}
                   </button>
 
-                  <div style={{ marginTop: '8px' }}>
-                    <button
-                      onClick={() => setShowMoreOptions(!showMoreOptions)}
-                      style={{
-                        width: '100%',
-                        padding: '6px 0',
-                        backgroundColor: 'transparent',
-                        color: colors.textSecondary,
-                        border: 'none',
-                        fontWeight: '500',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.color = colors.textPrimary;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.color = colors.textSecondary;
-                      }}
-                    >
-                      {showMoreOptions ? (language === 'th' ? 'ซ่อนตัวเลือก' : 'Hide options') : (language === 'th' ? 'ตัวเลือกเพิ่มเติม' : 'More options')}
-                    </button>
+                  {showManagePlanPanel && (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '16px',
+                      backgroundColor: colors.fieldBg,
+                      borderRadius: '12px',
+                      border: `2px solid ${colors.borderColor}`
+                    }}>
+                      <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
+                        {language === 'th' ? 'เปลี่ยนแผนหรือช่วงการเรียกเก็บเงิน' : 'Change plan or billing cycle'}
+                      </p>
+                      
+                      {/* Upgrade options */}
+                      <div className="space-y-2 mb-4">
+                        {isLitePlan && (
+                          <>
+                            <button
+                              onClick={() => handleSubscribe('protect', userBillingInterval)}
+                              disabled={subscribing.protect}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                backgroundColor: subscribing.protect ? '#9CA3AF' : '#C7A338',
+                                color: '#FFFFFF',
+                                borderRadius: '8px',
+                                border: 'none',
+                                fontWeight: '600',
+                                fontSize: '13px',
+                                cursor: subscribing.protect ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                opacity: subscribing.protect ? 0.6 : 1
+                              }}
+                              onMouseEnter={(e) => !subscribing.protect && (e.target.style.backgroundColor = '#0C3B2E')}
+                              onMouseLeave={(e) => !subscribing.protect && (e.target.style.backgroundColor = '#C7A338')}
+                            >
+                              {subscribing.protect ? strings.processing : (language === 'th' ? 'อัปเกรดเป็น Protect' : 'Upgrade to Protect')}
+                            </button>
+                            {userBillingInterval === 'monthly' && (
+                              <button
+                                onClick={() => handleSubscribe('protect', 'annual')}
+                                disabled={subscribing.protect_annual}
+                                style={{
+                                  width: '100%',
+                                  padding: '10px 14px',
+                                  backgroundColor: subscribing.protect_annual ? '#9CA3AF' : '#0C3B2E',
+                                  color: '#FFFFFF',
+                                  borderRadius: '8px',
+                                  border: 'none',
+                                  fontWeight: '600',
+                                  fontSize: '13px',
+                                  cursor: subscribing.protect_annual ? 'not-allowed' : 'pointer',
+                                  transition: 'all 0.2s',
+                                  opacity: subscribing.protect_annual ? 0.6 : 1,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px'
+                                }}
+                                onMouseEnter={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#0a2f25')}
+                                onMouseLeave={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#0C3B2E')}
+                              >
+                                {subscribing.protect_annual ? strings.processing : (language === 'th' ? 'อัปเกรดเป็น Protect (รายปี)' : 'Upgrade to Protect (annual)')}
+                                <Badge className="bg-emerald-500 text-white text-xs">
+                                  {language === 'th' ? 'ประหยัด 17%' : 'Save 17%'}
+                                </Badge>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleSubscribe('secure', userBillingInterval)}
+                              disabled={subscribing.secure}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                backgroundColor: subscribing.secure ? '#9CA3AF' : '#1A1D1F',
+                                color: '#FFFFFF',
+                                borderRadius: '8px',
+                                border: 'none',
+                                fontWeight: '600',
+                                fontSize: '13px',
+                                cursor: subscribing.secure ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                opacity: subscribing.secure ? 0.6 : 1
+                              }}
+                              onMouseEnter={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#0a0a0a')}
+                              onMouseLeave={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#1A1D1F')}
+                            >
+                              {subscribing.secure ? strings.processing : (language === 'th' ? 'อัปเกรดเป็น Secure' : 'Upgrade to Secure')}
+                            </button>
+                          </>
+                        )}
+                        
+                        {isProtectPlan && (
+                          <>
+                            <button
+                              onClick={() => handleSubscribe('secure', userBillingInterval)}
+                              disabled={subscribing.secure}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                backgroundColor: subscribing.secure ? '#9CA3AF' : '#1A1D1F',
+                                color: '#FFFFFF',
+                                borderRadius: '8px',
+                                border: 'none',
+                                fontWeight: '600',
+                                fontSize: '13px',
+                                cursor: subscribing.secure ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                opacity: subscribing.secure ? 0.6 : 1
+                              }}
+                              onMouseEnter={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#0a0a0a')}
+                              onMouseLeave={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#1A1D1F')}
+                            >
+                              {subscribing.secure ? strings.processing : (language === 'th' ? 'อัปเกรดเป็น Secure' : 'Upgrade to Secure')}
+                            </button>
+                            {userBillingInterval === 'monthly' && (
+                              <button
+                                onClick={() => handleSubscribe('protect', 'annual')}
+                                disabled={subscribing.protect_annual}
+                                style={{
+                                  width: '100%',
+                                  padding: '10px 14px',
+                                  backgroundColor: subscribing.protect_annual ? '#9CA3AF' : '#C7A338',
+                                  color: '#FFFFFF',
+                                  borderRadius: '8px',
+                                  border: 'none',
+                                  fontWeight: '600',
+                                  fontSize: '13px',
+                                  cursor: subscribing.protect_annual ? 'not-allowed' : 'pointer',
+                                  transition: 'all 0.2s',
+                                  opacity: subscribing.protect_annual ? 0.6 : 1,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px'
+                                }}
+                                onMouseEnter={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#B89330')}
+                                onMouseLeave={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#C7A338')}
+                              >
+                                {subscribing.protect_annual ? strings.processing : (language === 'th' ? 'เปลี่ยนเป็นรายปี' : 'Switch to annual')}
+                                <Badge className="bg-emerald-500 text-white text-xs">
+                                  {language === 'th' ? 'ประหยัด 17%' : 'Save 17%'}
+                                </Badge>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDowngrade('lite')}
+                              disabled={subscribing.lite}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                backgroundColor: 'transparent',
+                                color: colors.textPrimary,
+                                borderRadius: '8px',
+                                border: `2px solid ${colors.borderColor}`,
+                                fontWeight: '500',
+                                fontSize: '13px',
+                                cursor: subscribing.lite ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                opacity: subscribing.lite ? 0.6 : 1
+                              }}
+                              onMouseEnter={(e) => !subscribing.lite && (e.target.style.borderColor = '#0C3B2E')}
+                              onMouseLeave={(e) => !subscribing.lite && (e.target.style.borderColor = colors.borderColor)}
+                            >
+                              {subscribing.lite ? strings.processing : (language === 'th' ? 'ลดเป็น Lite' : 'Downgrade to Lite')}
+                            </button>
+                          </>
+                        )}
 
-                    {showMoreOptions && (
-                      <div style={{ marginTop: '8px', textAlign: 'center' }}>
+                        {isSecurePlan && userBillingInterval === 'monthly' && (
+                          <div style={{
+                            padding: '12px',
+                            backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                            borderRadius: '8px',
+                            border: '2px solid #3B82F6'
+                          }}>
+                            <p className="text-sm font-semibold mb-2" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                              {language === 'th' ? 'ประหยัดมากขึ้นด้วยการเรียกเก็บรายปี' : 'Save more with annual billing'}
+                            </p>
+                            <p className="text-xs mb-3" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                              {language === 'th' 
+                                ? 'รักษาการป้องกัน Secure ของคุณในอัตรารายเดือนที่ต่ำกว่า'
+                                : 'Keep your Secure protection at a lower effective monthly rate.'}
+                            </p>
+                            <button
+                              onClick={() => handleSubscribe('secure', 'annual')}
+                              disabled={subscribing.secure_annual}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                backgroundColor: subscribing.secure_annual ? '#9CA3AF' : '#3B82F6',
+                                color: '#FFFFFF',
+                                borderRadius: '8px',
+                                border: 'none',
+                                fontWeight: '600',
+                                fontSize: '13px',
+                                cursor: subscribing.secure_annual ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                opacity: subscribing.secure_annual ? 0.6 : 1
+                              }}
+                              onMouseEnter={(e) => !subscribing.secure_annual && (e.target.style.backgroundColor = '#2563EB')}
+                              onMouseLeave={(e) => !subscribing.secure_annual && (e.target.style.backgroundColor = '#3B82F6')}
+                            >
+                              {subscribing.secure_annual ? strings.processing : (language === 'th' ? 'เปลี่ยนเป็นรายปี' : 'Switch to annual')}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Cancel option - smaller, secondary */}
+                      <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${colors.borderColor}` }}>
                         <button
-                          onClick={() => setShowCancelDialog(true)}
+                          onClick={() => {
+                            setShowManagePlanPanel(false);
+                            setShowCancelDialog(true);
+                          }}
                           style={{
-                            padding: '6px 12px',
+                            width: '100%',
+                            padding: '8px 12px',
                             backgroundColor: 'transparent',
                             color: '#EF4444',
                             borderRadius: '6px',
-                            fontWeight: '600',
+                            fontWeight: '500',
                             fontSize: '13px',
                             border: 'none',
                             cursor: 'pointer',
                             transition: 'all 0.2s'
                           }}
-                          onMouseEnter={(e) => {
-                            e.target.style.textDecoration = 'underline';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.textDecoration = 'none';
-                          }}
+                          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
                         >
                           {language === 'th' ? 'ยกเลิกการสมัครสมาชิก' : 'Cancel subscription'}
                         </button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -2887,7 +3106,7 @@ export default function Account() {
                 </div>
               )}
 
-              {isAboveLite && (
+              {(isProtectPlan || isSecurePlan) && (
                 <div className="p-4 rounded-lg border-2" style={{
                   backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
                   borderColor: '#3B82F6'
@@ -2910,10 +3129,7 @@ export default function Account() {
                   <button
                     onClick={() => {
                       setShowCancelDialog(false);
-                      const plansSection = document.getElementById('plans-section');
-                      if (plansSection) {
-                        plansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
+                      handleDowngrade('lite');
                     }}
                     style={{
                       width: '100%',
@@ -2927,14 +3143,10 @@ export default function Account() {
                       cursor: 'pointer',
                       transition: 'all 0.2s'
                     }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#2563EB';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#3B82F6';
-                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
                   >
-                    {language === 'th' ? 'ลดระดับแทน' : 'Downgrade instead'}
+                    {language === 'th' ? 'ลดเป็น Lite แทน' : 'Downgrade to Lite instead'}
                   </button>
                 </div>
               )}
@@ -3074,27 +3286,33 @@ export default function Account() {
           </div>
         </div>
 
-        {(!user?.plan_tier || user.plan_tier === 'free') && (
+        {isFreePlan && (
           <div
             id="plans-intro"
             style={{
               marginBottom: 24,
               padding: 20,
               borderRadius: 16,
-              backgroundColor: isDarkMode ? 'rgba(12,59,46,0.12)' : 'rgba(12,59,46,0.05)',
-              border: '1px solid rgba(12,59,46,0.18)',
-              boxShadow: '0 4px 6px rgba(12,59,46,0.1)'
+              backgroundColor: isDarkMode ? 'rgba(199,163,56,0.15)' : 'rgba(199,163,56,0.08)',
+              border: '2px solid rgba(199,163,56,0.25)',
+              boxShadow: '0 4px 6px rgba(199,163,56,0.1)'
             }}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <Gift className="w-5 h-5" style={{ color: colors.textSecondary }} />
-              <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: colors.textSecondary }}>
-                {strings.currentPlanFree}
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
+                  {language === 'th' ? 'ปลดล็อกการป้องกันเต็มรูปแบบ' : 'Unlock full protection'}
+                </h3>
+                <p style={{ fontSize: '0.9rem', marginBottom: 12, color: colors.textPrimary, lineHeight: 1.5 }}>
+                  {language === 'th'
+                    ? 'อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อเปิดใช้การติดตามเงินมัดจำ เวิร์กโฟลว์การซ่อมบำรุง และเครื่องมือส่งออกเต็มรูปแบบ แผนรายปีให้คุณค่าที่ดีที่สุด'
+                    : 'Upgrade to Lite, Protect or Secure to enable full deposit tracking, maintenance workflow and export tools. Annual plans offer the best value.'}
+                </p>
               </div>
             </div>
-            <p style={{ fontSize: '0.9rem', marginBottom: 12, color: colors.textPrimary, lineHeight: 1.5 }}>
-              {strings.freeUpgradeText}
-            </p>
             <button
               onClick={() => {
                 const el = document.getElementById('plans-section');
@@ -3102,23 +3320,23 @@ export default function Account() {
               }}
               style={{
                 padding: '10px 16px',
-                borderRadius: 9999,
-                backgroundColor: '#0C3B2E',
+                borderRadius: 8,
+                backgroundColor: '#C7A338',
                 color: '#FFFFFF',
                 border: 'none',
                 fontWeight: 600,
                 fontSize: '0.875rem',
                 cursor: 'pointer',
-                boxShadow: '0 8px 16px rgba(12,59,46,0.35)',
+                boxShadow: '0 4px 8px rgba(199,163,56,0.3)',
                 transition: 'all 0.2s'
               }}
               onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#0C3B2E';
                 e.target.style.transform = 'translateY(-1px)';
-                e.target.style.boxShadow = '0 10px 20px rgba(12,59,46,0.45)';
               }}
               onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#C7A338';
                 e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 8px 16px rgba(12,59,46,0.35)';
               }}
             >
               {strings.upgradeNow}
@@ -3183,31 +3401,31 @@ export default function Account() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {PLAN_DETAILS.map((plan) => {
               const Icon = plan.icon;
-              const isCurrentPlan = currentPlanTier === plan.key;
-              const isFreeplan = plan.key === 'free';
-              const isSecureTier = plan.key === 'secure';
-              const isLiteTier = plan.key === 'lite';
-              const displayPrice = isFreeplan ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
-              const displayInterval = isFreeplan ? '' : (billingInterval === 'annual' ? (language === 'th' ? '/ปี' : plan.intervalAnnual) : (language === 'th' ? '/เดือน' : plan.intervalMonthly));
+              const isCurrentPlan = planTier === plan.key;
+              const isFreeplanLocal = plan.key === 'free';
+              const isSecureTierLocal = plan.key === 'secure';
+              const isLiteTierLocal = plan.key === 'lite';
+              const displayPrice = isFreeplanLocal ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
+              const displayInterval = isFreeplanLocal ? '' : (billingInterval === 'annual' ? (language === 'th' ? '/ปี' : plan.intervalAnnual) : (language === 'th' ? '/เดือน' : plan.intervalMonthly));
               const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
-              const isSubscribing = subscribing[plan.key];
+              const isSubscribingForPlan = subscribing[plan.key];
               
               return (
                 <div
                   key={plan.key}
                   className={`relative border-2 transition-all duration-200 ${
                     plan.popular ? 'border-amber-400 shadow-lg' : ''
-                  } ${isSecureTier ? 'shadow-xl' : ''}`}
+                  } ${isSecureTierLocal ? 'shadow-xl' : ''}`}
                   style={{
-                    backgroundColor: isSecureTier 
+                    backgroundColor: isSecureTierLocal 
                       ? (isDarkMode ? '#1A2E27' : '#F0FDF4')
-                      : isLiteTier
+                      : isLiteTierLocal
                         ? (isDarkMode ? '#1C2D28' : '#F0FDF9')
                         : plan.popular 
                           ? (isDarkMode ? '#2D2520' : '#FFFBEB')
                           : colors.cardBg,
-                    borderColor: isSecureTier ? '#0C3B2E' : isLiteTier ? '#047857' : plan.popular ? '#C7A338' : colors.borderColor,
-                    borderWidth: isSecureTier ? '3px' : '2px',
+                    borderColor: isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : plan.popular ? '#C7A338' : colors.borderColor,
+                    borderWidth: isSecureTierLocal ? '3px' : '2px',
                     borderRadius: '12px',
                     padding: '16px',
                     display: 'flex',
@@ -3221,12 +3439,12 @@ export default function Account() {
                         ⭐ {language === 'th' ? 'ได้รับความนิยมมากที่สุด' : strings.mostPopular}
                       </Badge>
                     )}
-                    {billingInterval === 'annual' && !isFreeplan && !plan.popular && !isSecureTier && (
+                    {billingInterval === 'annual' && !isFreeplanLocal && !plan.popular && !isSecureTierLocal && (
                       <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
                         🏷️ {language === 'th' ? 'ฟรี 2 เดือน' : strings.monthsFree}
                       </Badge>
                     )}
-                    {isSecureTier && (
+                    {isSecureTierLocal && (
                       <Badge className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
                         👑 {language === 'th' ? 'พรีเมียม' : 'PREMIUM'}
                       </Badge>
@@ -3239,14 +3457,14 @@ export default function Account() {
                         width: '32px',
                         height: '32px',
                         borderRadius: '8px',
-                        backgroundColor: isSecureTier ? '#0C3B2E' : isLiteTier ? '#047857' : 'transparent',
+                        backgroundColor: isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}>
-                        <Icon className="w-6 h-6" style={{ color: (isSecureTier || isLiteTier) ? '#FFFFFF' : plan.bgColor }} />
+                        <Icon className="w-6 h-6" style={{ color: (isSecureTierLocal || isLiteTierLocal) ? '#FFFFFF' : plan.bgColor }} />
                       </div>
-                      <h3 className="text-xl font-bold" style={{ color: isSecureTier ? '#0C3B2E' : colors.textPrimary }}>
+                      <h3 className="text-xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : colors.textPrimary }}>
                         {plan.label}
                       </h3>
                     </div>
@@ -3259,13 +3477,13 @@ export default function Account() {
                   </div>
 
                   <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
-                    {isFreeplan ? (
+                    {isFreeplanLocal ? (
                       <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
                         {strings.freePlanName}
                       </div>
                     ) : (
                       <>
-                        <div className="text-3xl font-bold mb-1" style={{ color: isSecureTier ? '#0C3B2E' : '#C7A338' }}>
+                        <div className="text-3xl font-bold mb-1" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
                           ฿{displayPrice.toLocaleString()}
                         </div>
                         <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
@@ -3274,12 +3492,12 @@ export default function Account() {
                       </>
                     )}
                     <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {billingInterval === 'annual' && !isFreeplan && (
+                      {billingInterval === 'annual' && !isFreeplanLocal && (
                         <p className="text-xs" style={{ color: colors.textSecondary }}>
                           ฿{effectiveMonthly}{strings.perMonth}
                         </p>
                       )}
-                      {isFreeplan && (
+                      {isFreeplanLocal && (
                         <p className="text-xs" style={{ color: colors.textSecondary }}>
                           {strings.noCreditCard}
                         </p>
@@ -3293,7 +3511,7 @@ export default function Account() {
                         const isBold = benefit.startsWith('Everything in') || benefit.startsWith('ทุกอย่างใน');
                         return (
                           <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
-                            <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: isSecureTier ? '#0C3B2E' : '#0C3B2E' }} />
+                            <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#0C3B2E' }} />
                             <span style={{ fontWeight: isBold ? 'bold' : 'normal' }}>{benefit}</span>
                           </li>
                         );
@@ -3315,7 +3533,7 @@ export default function Account() {
                       >
                         {strings.currentPlanBadge}
                       </Button>
-                    ) : isFreeplan ? (
+                    ) : isFreeplanLocal ? (
                       <Button
                         disabled
                         className="w-full h-10 text-sm"
@@ -3331,18 +3549,18 @@ export default function Account() {
                     ) : (
                       <Button
                         onClick={() => handleSubscribe(plan.key, billingInterval)}
-                        disabled={isSubscribing}
+                        disabled={isSubscribingForPlan}
                         className="w-full h-10"
                         style={{
-                          backgroundColor: isSubscribing ? '#9CA3AF' : (isSecureTier ? '#0C3B2E' : isLiteTier ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E'),
+                          backgroundColor: isSubscribingForPlan ? '#9CA3AF' : (isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E'),
                           color: '#FFFFFF',
-                          cursor: isSubscribing ? 'not-allowed' : 'pointer',
-                          opacity: isSubscribing ? 0.7 : 1,
-                          fontSize: isSecureTier ? '15px' : '14px',
-                          fontWeight: isSecureTier ? '700' : '600'
+                          cursor: isSubscribingForPlan ? 'not-allowed' : 'pointer',
+                          opacity: isSubscribingForPlan ? 0.7 : 1,
+                          fontSize: isSecureTierLocal ? '15px' : '14px',
+                          fontWeight: isSecureTierLocal ? '700' : '600'
                         }}
                       >
-                        {isSubscribing ? strings.processing : `${strings.startPlan} ${plan.label}`}
+                        {isSubscribingForPlan ? strings.processing : `${strings.startPlan} ${plan.label}`}
                       </Button>
                     )}
                   </div>

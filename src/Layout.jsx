@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -134,7 +133,12 @@ export default function Layout({ children, currentPageName }) {
 
   const language = user?.language || 'en';
   const accessLevel = user?.access_level || 'user';
-  const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
+  const role = user?.role || '';
+  
+  const isAdmin = 
+    ['admin', 'super_admin', 'va'].includes(role) || 
+    ['admin', 'super_admin', 'va'].includes(accessLevel);
+
   const isDarkMode = user?.theme === 'dark';
 
   const t = {
@@ -193,7 +197,7 @@ export default function Layout({ children, currentPageName }) {
       property: "부동산",
       evidence: "증거",
       admin: "관리",
-      search: "ค้นหา", // Changed 'ค้นหา' to '검색' based on original Korean for 'Search'
+      search: "검색",
       timeline: "타임라인",
       upgrade: "업그레이드",
       tagline: "공정 • 투명 • 보호"
@@ -403,9 +407,9 @@ export default function Layout({ children, currentPageName }) {
             <span className="font-bold text-ls-forest text-base sm:text-lg truncate hidden md:block" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
               {strings.appName || "LEASE SHIELD"}
             </span>
-            {accessLevel !== 'user' && (
+            {isAdmin && (
               <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
-                {accessLevel === 'super_admin' ? 'SUPER ADMIN' : accessLevel === 'admin' ? 'ADMIN' : 'VA'}
+                {accessLevel === 'super_admin' ? 'SUPER ADMIN' : accessLevel === 'admin' ? 'ADMIN' : role === 'admin' ? 'ADMIN' : 'VA'}
               </span>
             )}
           </div>
@@ -547,7 +551,6 @@ export default function Layout({ children, currentPageName }) {
         }}>
           {navTabs.map((tab) => {
             const Icon = tab.icon;
-            // For the upgrade tab, we might need a more specific active check if its route includes a hash
             const isActive = tab.key === 'upgrade' 
               ? location.pathname + location.hash === tab.route 
               : location.pathname === tab.route;
