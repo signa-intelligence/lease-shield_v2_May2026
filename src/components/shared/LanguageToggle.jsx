@@ -25,11 +25,11 @@ export default function LanguageToggle() {
   const isDarkMode = user?.theme === 'dark';
 
   const languages = [
-    { code: 'en', name: 'English', flag: '🇬🇧', nativeName: 'English' },
-    { code: 'th', name: 'Thai', flag: '🇹🇭', nativeName: 'ไทย' },
-    { code: 'zh', name: 'Chinese', flag: '🇨🇳', nativeName: '简体中文' },
-    { code: 'ja', name: 'Japanese', flag: '🇯🇵', nativeName: '日本語' },
-    { code: 'ko', name: 'Korean', flag: '🇰🇷', nativeName: '한국어' }
+    { code: 'en', name: 'English', flag: 'EN', nativeName: 'English' },
+    { code: 'th', name: 'Thai', flag: 'TH', nativeName: 'ไทย' },
+    { code: 'zh', name: 'Chinese', flag: 'CN', nativeName: '简体中文' },
+    { code: 'ja', name: 'Japanese', flag: 'JP', nativeName: '日本語' },
+    { code: 'ko', name: 'Korean', flag: 'KR', nativeName: '한국어' }
   ];
 
   const currentLang = languages.find(l => l.code === currentLanguage);
@@ -38,7 +38,6 @@ export default function LanguageToggle() {
     haptic.light();
     updateLanguageMutation.mutate(langCode);
     
-    // Also save to localStorage for non-logged-in users
     localStorage.setItem('preferred_language', langCode);
   };
 
@@ -62,21 +61,24 @@ export default function LanguageToggle() {
           justifyContent: 'center',
           transition: 'all 0.2s',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          fontSize: '18px'
+          fontSize: '11px',
+          fontWeight: '700',
+          color: isDarkMode ? '#ECEFED' : '#0C3B2E'
         }}
         onMouseEnter={(e) => {
           e.target.style.backgroundColor = '#0C3B2E';
+          e.target.style.color = '#FFFFFF';
         }}
         onMouseLeave={(e) => {
           e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
+          e.target.style.color = isDarkMode ? '#ECEFED' : '#0C3B2E';
         }}
       >
-        <span>{currentLang?.flag || '🌐'}</span>
+        <span>{currentLang?.flag || 'EN'}</span>
       </button>
 
       {isOpen && (
         <>
-          {/* Backdrop */}
           <div
             style={{
               position: 'fixed',
@@ -89,7 +91,6 @@ export default function LanguageToggle() {
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Dropdown */}
           <div
             style={{
               position: 'absolute',
@@ -174,7 +175,17 @@ export default function LanguageToggle() {
                   }
                 }}
               >
-                <span style={{ fontSize: '20px' }}>{lang.flag}</span>
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: '700',
+                  backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
+                  padding: '4px 6px',
+                  borderRadius: '4px',
+                  minWidth: '28px',
+                  textAlign: 'center'
+                }}>
+                  {lang.flag}
+                </span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: '600' }}>{lang.nativeName}</div>
                   <div style={{ 

@@ -26,6 +26,7 @@ import Search from './pages/Search';
 import Timeline from './pages/Timeline';
 import EvidenceVault from './pages/EvidenceVault';
 import RevenueAnalytics from './pages/RevenueAnalytics';
+import AdminTemplates from './pages/AdminTemplates';
 import Layout from './Layout.jsx';
 
 
@@ -58,6 +59,7 @@ export const PAGES = {
     "Timeline": Timeline,
     "EvidenceVault": EvidenceVault,
     "RevenueAnalytics": RevenueAnalytics,
+    "AdminTemplates": AdminTemplates,
 }
 
 export const pagesConfig = {

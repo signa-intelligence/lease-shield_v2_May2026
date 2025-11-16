@@ -209,7 +209,7 @@ export default function Templates() {
 
   const t = {
     en: {
-      title: "Legal Letter Templates",
+      title: "Letter Templates",
       subtitle: "Professional bilingual escalation ladder - all templates available",
       creditBalance: "Credit Balance",
       credits: "Credits",
@@ -244,7 +244,7 @@ export default function Templates() {
       uploadFailed: "Upload failed. Please try again."
     },
     th: {
-      title: "เทมเพลตจดหมายทางกฎหมาย",
+      title: "เทมเพลตจดหมาย",
       subtitle: "บันไดการยกระดับมืออาชีพสองภาษา - ทุกเทมเพลตพร้อมใช้งาน",
       creditBalance: "เครดิตคงเหลือ",
       credits: "เครดิต",

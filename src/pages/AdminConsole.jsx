@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
+import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp, AlertCircle, UserX, UserCheck } from "lucide-react";
 import { format, differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
@@ -80,7 +80,7 @@ export default function AdminConsole() {
   });
 
   // ✅ COMPUTE SUPER ADMIN COUNT
-  const superAdmins = users.filter(u => u.access_level === 'super_admin');
+  const superAdmins = users.filter(u => u.access_level === 'super_admin' && u.is_active !== false && !u.deleted_at);
   const superAdminCount = superAdmins.length;
 
   const updateUserMutation = useMutation({
@@ -116,6 +116,10 @@ export default function AdminConsole() {
             message = lang === 'th'
               ? `🔔 อัปเดตบัญชี Lease Shield\n\nระดับการเข้าถึงของคุณถูกเปลี่ยนโดยแอดมิน\n\n• จาก: ${oldLevel.toUpperCase()}\n• เป็น: ${newLevel.toUpperCase()}\n\nตรวจสอบบัญชีของคุณ: app.leaseshield.asia/account`
               : `🔔 Lease Shield Account Update\n\nYour access level was changed by admin\n\n• From: ${oldLevel.toUpperCase()}\n• To: ${newLevel.toUpperCase()}\n\nCheck your account: app.leaseshield.asia/account`;
+          } else if (variables.data.is_active !== undefined) {
+            message = lang === 'th'
+              ? `🔔 อัปเดตบัญชี Lease Shield\n\nบัญชีของคุณถูก${variables.data.is_active ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}โดยแอดมิน\n\nตรวจสอบบัญชีของคุณ: app.leaseshield.asia/account`
+              : `🔔 Lease Shield Account Update\n\nYour account was ${variables.data.is_active ? 'enabled' : 'disabled'} by admin\n\nCheck your account: app.leaseshield.asia/account`;
           }
           
           if (message) {
@@ -133,7 +137,7 @@ export default function AdminConsole() {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (userId) => base44.entities.User.delete(userId),
+    mutationFn: (userId) => base44.entities.User.update(userId, { deleted_at: new Date().toISOString() }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });
     },
@@ -385,7 +389,7 @@ export default function AdminConsole() {
       manageSubscriptions: "Manage Subscriptions",
       manageCredits: "Manage Credits",
       sendNotifications: "Send Notifications",
-      manageTemplates: "Manage Templates",
+      manageTemplates: "Manage Letter Templates",
       deleteData: "Delete Data",
       accessOpsConsole: "Access Ops Console",
       leaseTrends: "Lease Upload Trends",
@@ -397,6 +401,18 @@ export default function AdminConsole() {
       revenueAnalyticsDesc: "View revenue, users, and feature purchase insights",
       viewAnalyticsButton: "View Analytics",
       superAdminWarning: "There must be at least one Super Admin at all times. Cannot change this user's role.",
+      disableUser: "Disable",
+      enableUser: "Enable",
+      removeUser: "Remove",
+      confirmDisable: "Are you sure you want to disable this user? They will not be able to sign in.",
+      confirmEnable: "Enable this user account?",
+      confirmRemove: "Are you sure you want to remove this user? This is a soft delete and can be reversed.",
+      cannotDisableSelf: "Cannot disable yourself",
+      cannotRemoveSelf: "Cannot remove yourself",
+      disabled: "Disabled",
+      deleted: "Deleted",
+      manageTemplatesDesc: "Upload and manage letter templates for users",
+      goToTemplates: "Manage Templates",
     },
     th: {
       adminConsole: "คอนโซลผู้ดูแล",
@@ -450,7 +466,7 @@ export default function AdminConsole() {
       manageSubscriptions: "จัดการการสมัครสมาชิก",
       manageCredits: "จัดการเครดิต",
       sendNotifications: "ส่งการแจ้งเตือน",
-      manageTemplates: "จัดการเทมเพลต",
+      manageTemplates: "จัดการเทมเพลตจดหมาย",
       deleteData: "ลบข้อมูล",
       accessOpsConsole: "เข้าถึงคอนโซลปฏิบัติการ",
       leaseTrends: "แนวโน้มการอัปโหลดสัญญา",
@@ -462,6 +478,18 @@ export default function AdminConsole() {
       revenueAnalyticsDesc: "ดูข้อมูลรายได้ ผู้ใช้ และการซื้อฟีเจอร์",
       viewAnalyticsButton: "เปิดดู",
       superAdminWarning: "ต้องมี Super Admin อย่างน้อยหนึ่งคนเสมอ ไม่สามารถเปลี่ยนบทบาทของผู้ใช้นี้ได้",
+      disableUser: "ปิดใช้งาน",
+      enableUser: "เปิดใช้งาน",
+      removeUser: "ลบ",
+      confirmDisable: "คุณแน่ใจหรือไม่ว่าต้องการปิดใช้งานผู้ใช้นี้? พวกเขาจะไม่สามารถเข้าสู่ระบบได้",
+      confirmEnable: "เปิดใช้งานบัญชีผู้ใช้นี้?",
+      confirmRemove: "คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้นี้? นี่คือการลบแบบซอฟต์และสามารถกู้คืนได้",
+      cannotDisableSelf: "ไม่สามารถปิดใช้งานตัวเองได้",
+      cannotRemoveSelf: "ไม่สามารถลบตัวเองได้",
+      disabled: "ปิดใช้งาน",
+      deleted: "ถูกลบ",
+      manageTemplatesDesc: "อัปโหลดและจัดการเทมเพลตจดหมายสำหรับผู้ใช้",
+      goToTemplates: "จัดการเทมเพลต",
     },
     zh: {
       adminConsole: "管理控制台",
@@ -515,7 +543,7 @@ export default function AdminConsole() {
       manageSubscriptions: "管理订阅",
       manageCredits: "管理积分",
       sendNotifications: "发送通知",
-      manageTemplates: "管理模板",
+      manageTemplates: "管理信件模板",
       deleteData: "删除数据",
       accessOpsConsole: "访问运营控制台",
       leaseTrends: "租约上传趋势",
@@ -527,6 +555,18 @@ export default function AdminConsole() {
       revenueAnalyticsDesc: "查看收入、用户和功能购买洞察",
       viewAnalyticsButton: "查看分析",
       superAdminWarning: "至少需要保留一名超级管理员。无法更改此用户的角色。",
+      disableUser: "禁用",
+      enableUser: "启用",
+      removeUser: "移除",
+      confirmDisable: "您确定要禁用此用户吗？他们将无法登录。",
+      confirmEnable: "启用此用户帐户？",
+      confirmRemove: "您确定要移除此用户吗？这是软删除，可以恢复。",
+      cannotDisableSelf: "无法禁用自己",
+      cannotRemoveSelf: "无法移除自己",
+      disabled: "已禁用",
+      deleted: "已删除",
+      manageTemplatesDesc: "上传和管理用户的信件模板",
+      goToTemplates: "管理模板",
     },
     ja: {
       adminConsole: "管理コンソール",
@@ -580,7 +620,7 @@ export default function AdminConsole() {
       manageSubscriptions: "サブスクリプション管理",
       manageCredits: "クレジット管理",
       sendNotifications: "通知を送信",
-      manageTemplates: "テンプレート管理",
+      manageTemplates: "レターテンプレート管理",
       deleteData: "データ削除",
       accessOpsConsole: "オペレーションコンソールアクセス",
       leaseTrends: "賃貸契約アップロードトレンド",
@@ -592,6 +632,18 @@ export default function AdminConsole() {
       revenueAnalyticsDesc: "収益、ユーザー、機能購入の洞察を表示",
       viewAnalyticsButton: "分析を表示",
       superAdminWarning: "常に少なくとも1人のスーパー管理者が必要です。このユーザーの役割を変更することはできません。",
+      disableUser: "無効化",
+      enableUser: "有効化",
+      removeUser: "削除",
+      confirmDisable: "このユーザーを無効にしますか？ログインできなくなります。",
+      confirmEnable: "このユーザーアカウントを有効にしますか？",
+      confirmRemove: "このユーザーを削除しますか？これはソフトデリートであり、元に戻すことができます。",
+      cannotDisableSelf: "自分自身を無効にすることはできません",
+      cannotRemoveSelf: "自分自身を削除することはできません",
+      disabled: "無効",
+      deleted: "削除済み",
+      manageTemplatesDesc: "ユーザー向けのレターテンプレートをアップロード・管理します",
+      goToTemplates: "テンプレート管理",
     },
     ko: {
       adminConsole: "관리 콘솔",
@@ -657,6 +709,18 @@ export default function AdminConsole() {
       revenueAnalyticsDesc: "수익, 사용자 및 기능 구매 통찰력 보기",
       viewAnalyticsButton: "분석 보기",
       superAdminWarning: "항상 최소 한 명의 슈퍼 관리자가 있어야 합니다. 이 사용자의 역할을 변경할 수 없습니다.",
+      disableUser: "비활성화",
+      enableUser: "활성화",
+      removeUser: "제거",
+      confirmDisable: "이 사용자를 비활성화하시겠습니까? 로그인할 수 없게 됩니다.",
+      confirmEnable: "이 사용자 계정을 활성화하시겠습니까?",
+      confirmRemove: "이 사용자를 제거하시겠습니까? 이는 소프트 삭제이며 되돌릴 수 있습니다.",
+      cannotDisableSelf: "자신을 비활성화할 수 없습니다",
+      cannotRemoveSelf: "자신을 제거할 수 없습니다",
+      disabled: "비활성화됨",
+      deleted: "삭제됨",
+      manageTemplatesDesc: "사용자를 위한 편지 템플릿 업로드 및 관리",
+      goToTemplates: "템플릿 관리",
     }
   };
 
@@ -752,6 +816,67 @@ export default function AdminConsole() {
       ...prev,
       [key]: !prev[key]
     }));
+  };
+
+  const handleDisableUser = async (targetUser) => {
+    if (targetUser.id === user.id) {
+      alert(strings.cannotDisableSelf);
+      return;
+    }
+
+    const isTargetUserSuperAdmin = targetUser.access_level === 'super_admin';
+    if (isTargetUserSuperAdmin && superAdminCount <= 1) {
+      alert(strings.superAdminWarning);
+      return;
+    }
+
+    if (!confirm(strings.confirmDisable)) return;
+
+    try {
+      await updateUserMutation.mutateAsync({
+        userId: targetUser.id,
+        data: { is_active: false }
+      });
+    } catch (error) {
+      console.error('Failed to disable user:', error);
+      alert(language === 'th' ? 'ไม่สามารถปิดใช้งานผู้ใช้ได้' : 'Failed to disable user');
+    }
+  };
+
+  const handleEnableUser = async (targetUser) => {
+    if (!confirm(strings.confirmEnable)) return;
+
+    try {
+      await updateUserMutation.mutateAsync({
+        userId: targetUser.id,
+        data: { is_active: true }
+      });
+    } catch (error) {
+      console.error('Failed to enable user:', error);
+      alert(language === 'th' ? 'ไม่สามารถเปิดใช้งานผู้ใช้ได้' : 'Failed to enable user');
+    }
+  };
+
+  const handleRemoveUser = async (targetUser) => {
+    if (targetUser.id === user.id) {
+      alert(strings.cannotRemoveSelf);
+      return;
+    }
+
+    const isTargetUserSuperAdmin = targetUser.access_level === 'super_admin';
+    if (isTargetUserSuperAdmin && superAdminCount <= 1) {
+      alert(strings.superAdminWarning);
+      return;
+    }
+
+    if (!confirm(strings.confirmRemove)) return;
+
+    try {
+      await deleteUserMutation.mutateAsync(targetUser.id);
+    } catch (error) {
+      console.error('Failed to remove user:', error);
+      alert(language === 'th' ? 'ไม่สามารถลบผู้ใช้ได้' : 'Failed to remove user');
+    }
   };
 
   const sortedUsers = [...users].sort((a, b) => {
@@ -1130,6 +1255,45 @@ export default function AdminConsole() {
           </DialogContent>
         </Dialog>
 
+        {isSuperAdmin && (
+          <Card className="mb-6 border-none shadow-lg" style={{ 
+            backgroundColor: colors.cardBg,
+            borderLeft: '6px solid #8B5CF6'
+          }}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    backgroundColor: '#8B5CF6',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                      {strings.manageTemplates}
+                    </h3>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      {strings.manageTemplatesDesc}
+                    </p>
+                  </div>
+                </div>
+                <Link to={createPageUrl("AdminTemplates")}>
+                  <Button className="bg-purple-600 hover:bg-purple-700">
+                    <FileText className="w-4 h-4 mr-2" />
+                    {strings.goToTemplates}
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle style={{ color: colors.textPrimary }}>{strings.userManagement}</CardTitle>
@@ -1157,13 +1321,17 @@ export default function AdminConsole() {
                     const isCurrentUserSuperAdmin = user?.access_level === 'super_admin';
                     const isTargetUserSuperAdmin = u.access_level === 'super_admin';
                     const canChangeRole = !(isTargetUserSuperAdmin && superAdminCount <= 1 && isCurrentUserSuperAdmin);
+                    const isDisabled = u.is_active === false;
+                    const isDeleted = !!u.deleted_at;
+                    const isSelf = u.id === user.id;
                     
                     return (
                       <tr
                         key={u.id}
                         style={{
                           borderBottom: `1px solid ${colors.borderColor}`,
-                          backgroundColor: idx % 2 === 0 ? colors.cardBg : (isDarkMode ? '#2A2D30' : '#F8FAFC')
+                          backgroundColor: idx % 2 === 0 ? colors.cardBg : (isDarkMode ? '#2A2D30' : '#F8FAFC'),
+                          opacity: (isDisabled || isDeleted) ? 0.6 : 1
                         }}
                       >
                         <td className="px-4 py-3">
@@ -1173,14 +1341,21 @@ export default function AdminConsole() {
                           <p className="text-xs" style={{ color: colors.textSecondary }}>{u.email}</p>
                         </td>
                         <td className="px-4 py-3">
-                          <Badge className={
-                            u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-                            u.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
-                            u.access_level === 'va' ? 'bg-amber-100 text-amber-800' :
-                            'bg-slate-100 text-slate-800'
-                          }>
-                            {u.access_level || 'user'}
-                          </Badge>
+                          <div className="flex flex-col gap-2">
+                            <Badge className={
+                              u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+                              u.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
+                              u.access_level === 'va' ? 'bg-amber-100 text-amber-800' :
+                              'bg-slate-100 text-slate-800'
+                            }>
+                              {u.access_level || 'user'}
+                            </Badge>
+                            {(isDisabled || isDeleted) && (
+                              <Badge className="bg-red-100 text-red-800">
+                                {isDeleted ? strings.deleted : strings.disabled}
+                              </Badge>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <Badge className={
@@ -1280,6 +1455,46 @@ export default function AdminConsole() {
                                 {strings.permissions}
                               </Button>
                             )}
+                            <div className="flex gap-1 mt-2">
+                              {isDeleted ? (
+                                <Badge variant="outline" className="text-xs bg-red-50 text-red-700">
+                                  {strings.deleted}
+                                </Badge>
+                              ) : isDisabled ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEnableUser(u)}
+                                  className="text-xs h-7 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                >
+                                  <UserCheck className="w-3 h-3 mr-1" />
+                                  {strings.enableUser}
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDisableUser(u)}
+                                  disabled={!canChangeRole && isSelf}
+                                  className="text-xs h-7 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                >
+                                  <Ban className="w-3 h-3 mr-1" />
+                                  {strings.disableUser}
+                                </Button>
+                              )}
+                              {!isDeleted && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleRemoveUser(u)}
+                                  disabled={(!canChangeRole && isSelf) || isSelf}
+                                  className="text-xs h-7 bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                                >
+                                  <UserX className="w-3 h-3 mr-1" />
+                                  {strings.removeUser}
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
