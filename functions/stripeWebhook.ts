@@ -3,7 +3,7 @@ import Stripe from 'npm:stripe@14.10.0';
 // redeployed on 2025-11-16 to fix deploymentNotFound
 
 const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
-const webhookSecret = Deno.env.get('Webhook_stripe');
+const webhookSecret = Deno.env.get('webhook_stripe');
 
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2024-06-20',
