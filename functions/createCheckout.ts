@@ -50,15 +50,17 @@ Deno.serve(async (req) => {
       allow_promotion_codes: true,
     };
 
-    // ✅ CREDITS: Dynamic one-time payment
+    // ========================================
+    // CREDITS: Dynamic one-time payment
+    // ========================================
     if (mode === 'payment' && amount) {
       const finalAmount = Math.round(amount * 100);
       console.log('✅ CREDITS - Creating one-time payment:', finalAmount, 'satang');
       
       sessionConfig.metadata = {
-        ...(metadata || {}),
         userId: user.id,
         type: 'credits',
+        credits: metadata?.credits || 1,
       };
 
       sessionConfig.line_items = [{
@@ -72,20 +74,26 @@ Deno.serve(async (req) => {
         },
         quantity: 1,
       }];
+
+      console.log('💰 Credits checkout metadata:', sessionConfig.metadata);
     } 
-    // ✅ SUBSCRIPTIONS: Pass explicit metadata
+    // ========================================
+    // SUBSCRIPTIONS: Explicit metadata
+    // ========================================
     else if (mode === 'subscription' && amount) {
       const finalAmount = Math.round(amount * 100);
-      const planTier = (metadata?.plan || '').toLowerCase() || 'lite';
-      const billingInterval = metadata?.interval === 'year' ? 'year' : 'month';
+      const planTier = (metadata?.plan || 'lite').toLowerCase();
+      const intervalRaw = metadata?.interval || 'month';
+      const billingInterval = intervalRaw === 'year' ? 'annual' : 'monthly';
       
-      console.log('✅ SUBSCRIPTION - Creating with metadata:', {
+      console.log('✅ SUBSCRIPTION - Creating with explicit metadata:', {
         userId: user.id,
         plan: planTier,
         interval: billingInterval,
         amount: finalAmount
       });
       
+      // ✅ EXPLICIT METADATA - Always include userId, plan, interval, type
       sessionConfig.metadata = {
         userId: user.id,
         type: 'subscription',
@@ -98,17 +106,18 @@ Deno.serve(async (req) => {
           currency: currency || 'thb',
           unit_amount: finalAmount,
           recurring: {
-            interval: billingInterval,
+            interval: intervalRaw === 'year' ? 'year' : 'month',
             interval_count: 1
           },
           product_data: {
-            name: description || 'Lease Shield Subscription',
+            name: description || `Lease Shield ${planTier.charAt(0).toUpperCase() + planTier.slice(1)} Plan`,
             description: description || 'Professional subscription service',
           },
         },
         quantity: 1,
       }];
 
+      // Also include metadata in subscription_data for redundancy
       sessionConfig.subscription_data = {
         metadata: {
           userId: user.id,
@@ -117,12 +126,18 @@ Deno.serve(async (req) => {
         }
       };
 
-      console.log('✅ Subscription metadata set:', sessionConfig.metadata);
+      console.log('✅ Subscription metadata confirmed:', sessionConfig.metadata);
+      console.log('✅ Subscription_data metadata:', sessionConfig.subscription_data.metadata);
     } 
-    // ❌ Legacy price IDs (deprecated)
+    // ========================================
+    // Legacy price IDs (deprecated)
+    // ========================================
     else if (priceId) {
       console.log('⚠️ Using legacy priceId:', priceId);
-      sessionConfig.metadata = metadata || {};
+      sessionConfig.metadata = {
+        userId: user.id,
+        ...(metadata || {}),
+      };
       sessionConfig.line_items = [{ price: priceId, quantity: 1 }];
     } 
     else {
