@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus";
-import { haptic } => "../components/shared/HapticFeedback";
+import { haptic } from "../components/shared/HapticFeedback";
 
 
 const PLAN_DETAILS = [
@@ -2779,7 +2779,7 @@ export default function Account() {
                 padding: '16px',
                 backgroundColor: colors.fieldBg,
                 borderRadius: '12px',
-                borderLeft: '4px solid #C7A338'
+                borderLeft: '44px solid #C7A338'
               }}>
                 <div className="flex items-start gap-3 justify-between flex-wrap">
                   <div className="flex items-start gap-3">
