@@ -257,8 +257,9 @@ export default function Account() {
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const highlight = urlParams.get('highlight');
+    const hash = window.location.hash;
     
-    if (highlight === 'plans') {
+    if (highlight === 'plans' || hash === '#plans' || hash === '#plans-section') {
       setTimeout(() => {
         const el = document.getElementById('plans-section');
         if (el) {
@@ -274,7 +275,6 @@ export default function Account() {
       }, 300);
     }
     
-    const hash = window.location.hash;
     if (hash === '#notifications') {
       setTimeout(() => {
         const notificationSection = document.getElementById('notification-analytics');
@@ -283,7 +283,7 @@ export default function Account() {
         }
       }, 300);
     }
-  }, []); // Changed dependency to [] as per outline
+  }, [location]);
 
   React.useEffect(() => {
     let intervalId;
@@ -424,7 +424,9 @@ export default function Account() {
     console.log('🔍 SUBSCRIPTION REQUEST:', { 
       planKey, 
       interval: billingInterval, 
-      amount 
+      amount,
+      userId: user.id,
+      email: user.email
     });
 
     setSubscribing(prev => ({ ...prev, [planKey]: true }));
@@ -457,7 +459,7 @@ export default function Account() {
       console.error('❌ Subscription error:', error);
       haptic.error();
       const language = user?.language || 'en';
-      const errorMsg = error.response?.data?.details || error.response?.data?.error || error.message;
+      const errorMsg = error.response?.data?.details || error.message;
       alert(`${language === 'th' ? 'ไม่สามารถสร้างการสมัครได้' : 'Failed to start subscription'}\n\n${errorMsg}`);
       setSubscribing(prev => ({ ...prev, [planKey]: false }));
     }
@@ -467,15 +469,15 @@ export default function Account() {
     haptic.medium();
     setBuyingCredits(prev => ({ ...prev, [pkg.id]: true }));
     try {
-      console.log('💰 Buying credits:', { packageId: pkg.id, credits: pkg.credits, price: pkg.price });
+      console.log('💰 Buying credits:', { packageId: pkg.id, credits: pkg.credits, price: pkg.price, userId: user.id });
       
       const response = await base44.functions.invoke('createCheckout', {
         mode: 'payment',
         amount: pkg.price,
         currency: 'thb',
         description: `${pkg.credits} Letter Credits`,
-        successUrl: `${window.location.origin}${createPageUrl('Account')}?payment=success`,
-        cancelUrl: `${window.location.origin}${createPageUrl('Account')}?payment=cancelled`,
+        successUrl: `${window.location.origin}${createPageUrl('Templates')}?payment=success`,
+        cancelUrl: `${window.location.origin}${createPageUrl('Templates')}?payment=cancelled`,
         metadata: {
           type: 'credits',
           userId: user.id,
@@ -493,7 +495,6 @@ export default function Account() {
     } catch (error) {
       console.error('❌ Credit purchase error:', error);
       haptic.error();
-      const language = user?.language || 'en';
       alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
     } finally {
       setBuyingCredits(prev => ({ ...prev, [pkg.id]: false }));
@@ -540,6 +541,14 @@ export default function Account() {
       const amount = userBillingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
       const billingInterval = userBillingInterval === 'annual' ? 'annual' : 'monthly';
 
+      console.log('🔍 DOWNGRADE REQUEST:', { 
+        targetPlan, 
+        interval: billingInterval,
+        amount,
+        userId: user.id,
+        email: user.email
+      });
+
       const response = await base44.functions.invoke('createCheckout', {
         mode: 'subscription',
         amount: amount,
@@ -566,7 +575,7 @@ export default function Account() {
       console.error('❌ Downgrade error:', error);
       haptic.error();
       const language = user?.language || 'en';
-      const errorMsg = error.response?.data?.details || error.response?.data?.error || error.message;
+      const errorMsg = error.response?.data?.details || error.message;
       alert(`${language === 'th' ? 'ไม่สามารถเปลี่ยนแผนได้' : 'Failed to change plan'}\n\n${errorMsg}`);
       setSubscribing(prev => ({ ...prev, [targetPlan]: false }));
     }
