@@ -1313,8 +1313,8 @@ function DashboardContent() {
                     style={{
                       padding: '8px 16px',
                       backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                      color: '#0C3B2E',
-                      border: `2px solid #0C3B2E`,
+                      color: isDarkMode ? '#FFFFFF' : '#1A1D1F',
+                      border: `2px solid ${isDarkMode ? '#4B5563' : '#D1D5DB'}`,
                       borderRadius: '12px',
                       fontSize: '14px',
                       fontWeight: '600',
@@ -1326,11 +1326,13 @@ function DashboardContent() {
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#0C3B2E';
+                      e.target.style.borderColor = '#0C3B2E';
                       e.target.style.color = '#FFFFFF';
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#FFFFFF';
-                      e.target.style.color = '#0C3B2E';
+                      e.target.style.borderColor = isDarkMode ? '#4B5563' : '#D1D5DB';
+                      e.target.style.color = isDarkMode ? '#FFFFFF' : '#1A1D1F';
                     }}
                   >
                     <BarChart3 className="w-4 h-4" />

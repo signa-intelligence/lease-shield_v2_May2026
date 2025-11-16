@@ -405,7 +405,7 @@ export default function Layout({ children, currentPageName }) {
               alt="Lease Shield"
               className="hidden md:block h-12 w-12 flex-shrink-0"
             />
-            <span className="font-bold text-ls-forest text-base sm:text-lg truncate hidden md:block" style={{ color: isDarkMode ? colors.textPrimary : '#0C3B2E' }}>
+            <span className="font-bold text-base sm:text-lg truncate hidden md:block" style={{ color: isDarkMode ? '#FFFFFF' : '#0C3B2E' }}>
               {strings.appName || "LEASE SHIELD"}
             </span>
             {isAdmin && (

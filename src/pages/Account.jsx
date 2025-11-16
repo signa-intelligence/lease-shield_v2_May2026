@@ -883,7 +883,7 @@ export default function Account() {
       freeIncludes: "แผนฟรีประกอบด้วย:",
       freeBenefit1: "สแกนสัญญาเช่า 1 ครั้ง (ตลอดชีพ)",
       freeBenefit2: "แสดงตัวอย่างคะแนนความเสี่ยงพื้นฐาน",
-      freeBenefit3: "3 ไฟล์ (พื้นที่เก็บข้อมูล 100MB)",
+      freeBenefit3: "3 ไฟล์ (พื้นที่ 100MB)",
       freeBenefit4: "เครื่องมือติดตามเงินมัดจำแบบอ่านอย่างเดียว",
       upgradeNow: "อัปเกรดเลย",
       allActive: "ฟีเจอร์ทั้งหมดใช้งานได้",
@@ -1410,7 +1410,7 @@ export default function Account() {
   const strings = (t && t[language] && typeof t[language] === 'object') ? t[language] : t.en;
   const currentPlan = PLAN_DETAILS.find(p => p.key === planTier);
 
-  const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46462_M_gainfriends_2dbarcodes_GW.png";
+  const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46460_M_gainfriends_2dbarcodes_GW.png";
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
@@ -1455,13 +1455,15 @@ export default function Account() {
                     style={{
                       padding: '8px 16px',
                       borderRadius: '8px',
-                      border: '2px solid #0C3B2E',
-                      backgroundColor: colors.cardBg,
-                      color: '#0C3B2E',
+                      border: 'none',
+                      backgroundColor: isDarkMode ? '#0C3B2E' : '#FFFFFF',
+                      color: isDarkMode ? '#FFFFFF' : '#0C3B2E',
                       fontWeight: 'bold',
                       fontSize: '14px',
                       cursor: 'pointer',
-                      transition: 'all 0.2s'
+                      transition: 'all 0.2s',
+                      boxShadow: isDarkMode ? '0 2px 6px rgba(199,163,56,0.3)' : 'none',
+                      border: isDarkMode ? 'none' : '2px solid #0C3B2E'
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#C7A338';
@@ -1469,9 +1471,9 @@ export default function Account() {
                       e.target.style.color = '#FFFFFF';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = colors.cardBg;
-                      e.target.style.borderColor = '#0C3B2E';
-                      e.target.style.color = '#0C3B2E';
+                      e.target.style.backgroundColor = isDarkMode ? '#0C3B2E' : '#FFFFFF';
+                      e.target.style.borderColor = isDarkMode ? '#0C3B2E' : '#0C3B2E';
+                      e.target.style.color = isDarkMode ? '#FFFFFF' : '#0C3B2E';
                     }}
                   >
                     {strings.editProfile}
