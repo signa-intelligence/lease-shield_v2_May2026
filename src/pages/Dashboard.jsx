@@ -1134,7 +1134,7 @@ function DashboardContent() {
 
             {isFreeTier && (
               <button
-                onClick={() => navigate(createPageUrl("Account") + '#plans-section')}
+                onClick={() => navigate(createPageUrl("Account") + '?highlight=plans')}
                 style={{
                   width: '100%',
                   padding: '10px 16px',
@@ -2230,8 +2230,9 @@ function DashboardContent() {
                             <p style={{ fontSize: '0.85rem', marginBottom: 12, color: colors.textSecondary }}>
                               {strings.upgradePromoText}
                             </p>
-                            <Link to={createPageUrl('Account') + '#plans'}>
+                            <Link to={createPageUrl('Account') + '?highlight=plans'}>
                               <button
+                                onClick={() => haptic.light()}
                                 style={{
                                   padding: '8px 14px',
                                   borderRadius: 9999,
@@ -2419,7 +2420,7 @@ function DashboardContent() {
                               <div className="flex items-center gap-2 mb-1">
                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: rentTheme.iconBg }}>
                                   <Calendar className="w-4 h-4" style={{ color: rentTheme.iconColor }} />
-                                </div>
+                                  </div>
                                 <h3 className="text-sm font-semibold" style={{ color: rentTheme.titleColor }}>
                                   {strings.rentTracked}
                                 </h3>
@@ -2729,8 +2730,9 @@ function DashboardContent() {
                             <p style={{ fontSize: '0.85rem', marginBottom: 12, color: colors.textSecondary }}>
                               {strings.upgradePromoText}
                             </p>
-                            <Link to={createPageUrl('Account') + '#plans'}>
+                            <Link to={createPageUrl('Account') + '?highlight=plans'}>
                               <button
+                                onClick={() => haptic.light()}
                                 style={{
                                   padding: '8px 14px',
                                   borderRadius: 9999,
@@ -2777,7 +2779,7 @@ function DashboardContent() {
                       : "You're on Lite. Upgrade anytime for higher scan limits and more alerts."}
                   </p>
                 </div>
-                <Link to={createPageUrl("Account") + '#plans-section'}>
+                <Link to={createPageUrl("Account") + '?highlight=plans'}>
                   <button
                     onClick={() => haptic.medium()}
                     style={{
@@ -2958,7 +2960,7 @@ function DashboardContent() {
                     {strings.upgradeDesc}
                   </p>
                 </div>
-                <Link to={createPageUrl("Account")} className="w-full">
+                <Link to={createPageUrl("Account") + '?highlight=plans'} className="w-full">
                   <button
                     onClick={() => haptic.medium()}
                     style={{

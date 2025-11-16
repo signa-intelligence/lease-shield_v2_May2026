@@ -57,9 +57,11 @@ Deno.serve(async (req) => {
       const finalAmount = Math.round(amount * 100);
       console.log('✅ CREDITS - Creating one-time payment:', finalAmount, 'satang');
       
+      // ✅ ENSURE METADATA INCLUDES: type, userId, email, credits
       sessionConfig.metadata = {
-        userId: user.id,
         type: 'credits',
+        userId: user.id,
+        email: user.email,
         credits: metadata?.credits || 1,
       };
 
@@ -84,19 +86,23 @@ Deno.serve(async (req) => {
       const finalAmount = Math.round(amount * 100);
       const planTier = (metadata?.plan || 'lite').toLowerCase();
       const intervalRaw = metadata?.interval || 'month';
-      const billingInterval = intervalRaw === 'year' ? 'annual' : 'monthly';
+      
+      // ✅ NORMALIZE interval to 'monthly' or 'annual' for webhook
+      const billingInterval = (intervalRaw === 'year' || intervalRaw === 'annual') ? 'annual' : 'monthly';
       
       console.log('✅ SUBSCRIPTION - Creating with explicit metadata:', {
         userId: user.id,
+        email: user.email,
         plan: planTier,
         interval: billingInterval,
         amount: finalAmount
       });
       
-      // ✅ EXPLICIT METADATA - Always include userId, plan, interval, type
+      // ✅ EXPLICIT METADATA - Always include type, userId, email, plan, interval
       sessionConfig.metadata = {
-        userId: user.id,
         type: 'subscription',
+        userId: user.id,
+        email: user.email,
         plan: planTier,
         interval: billingInterval,
       };
@@ -106,7 +112,7 @@ Deno.serve(async (req) => {
           currency: currency || 'thb',
           unit_amount: finalAmount,
           recurring: {
-            interval: intervalRaw === 'year' ? 'year' : 'month',
+            interval: (intervalRaw === 'year' || intervalRaw === 'annual') ? 'year' : 'month',
             interval_count: 1
           },
           product_data: {
@@ -120,13 +126,15 @@ Deno.serve(async (req) => {
       // Also include metadata in subscription_data for redundancy
       sessionConfig.subscription_data = {
         metadata: {
+          type: 'subscription',
           userId: user.id,
+          email: user.email,
           plan: planTier,
           interval: billingInterval,
         }
       };
 
-      console.log('✅ Subscription metadata confirmed:', sessionConfig.metadata);
+      console.log('✅ Session metadata:', sessionConfig.metadata);
       console.log('✅ Subscription_data metadata:', sessionConfig.subscription_data.metadata);
     } 
     // ========================================
@@ -136,6 +144,7 @@ Deno.serve(async (req) => {
       console.log('⚠️ Using legacy priceId:', priceId);
       sessionConfig.metadata = {
         userId: user.id,
+        email: user.email,
         ...(metadata || {}),
       };
       sessionConfig.line_items = [{ price: priceId, quantity: 1 }];
