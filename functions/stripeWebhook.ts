@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
+// redeployed on 2025-11-16 to fix deploymentNotFound
 
 const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
 const webhookSecret = Deno.env.get('Webhook_stripe');
