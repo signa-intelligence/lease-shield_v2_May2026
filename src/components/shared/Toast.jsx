@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import React, { createContext, useContext, useState } from "react";
+import { CheckCircle, XCircle, Info, AlertTriangle, X } from "lucide-react";
 
 const ToastContext = createContext();
 
@@ -14,28 +14,28 @@ export const useToast = () => {
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback((message, type = 'success', duration = 3000) => {
+  const addToast = (message, type = 'info', duration = type === 'success' ? 2000 : 4000) => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type, duration }]);
+    
+    setTimeout(() => {
+      removeToast(id);
+    }, duration);
+  };
 
-    if (duration > 0) {
-      setTimeout(() => {
-        removeToast(id);
-      }, duration);
-    }
-  }, []);
-
-  const removeToast = useCallback((id) => {
+  const removeToast = (id) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
-  }, []);
+  };
 
-  const success = useCallback((message) => addToast(message, 'success'), [addToast]);
-  const error = useCallback((message) => addToast(message, 'error'), [addToast]);
-  const info = useCallback((message) => addToast(message, 'info'), [addToast]);
-  const warning = useCallback((message) => addToast(message, 'warning'), [addToast]);
+  const toast = {
+    success: (message, options = {}) => addToast(message, 'success', options.duration || 2000),
+    error: (message, options = {}) => addToast(message, 'error', options.duration || 4000),
+    info: (message, options = {}) => addToast(message, 'info', options.duration || 4000),
+    warning: (message, options = {}) => addToast(message, 'warning', options.duration || 4000),
+  };
 
   return (
-    <ToastContext.Provider value={{ success, error, info, warning }}>
+    <ToastContext.Provider value={toast}>
       {children}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </ToastContext.Provider>
@@ -46,147 +46,94 @@ const ToastContainer = ({ toasts, onRemove }) => {
   if (toasts.length === 0) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: '80px',
-        right: '16px',
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        maxWidth: '400px',
-        width: '100%',
-        padding: '0 16px',
-      }}
+    <div 
+      className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
+      style={{ maxWidth: '90vw', width: 'auto' }}
     >
-      {toasts.map((toast) => (
-        <Toast key={toast.id} toast={toast} onRemove={onRemove} />
+      {toasts.map(toast => (
+        <Toast key={toast.id} {...toast} onClose={() => onRemove(toast.id)} />
       ))}
     </div>
   );
 };
 
-const Toast = ({ toast, onRemove }) => {
+const Toast = ({ id, message, type, onClose }) => {
   const [isExiting, setIsExiting] = useState(false);
 
-  const handleRemove = () => {
+  const handleClose = () => {
     setIsExiting(true);
-    setTimeout(() => onRemove(toast.id), 200);
+    setTimeout(onClose, 300);
   };
 
   const config = {
     success: {
-      icon: CheckCircle2,
+      icon: CheckCircle,
       bg: '#10B981',
-      bgLight: '#D1FAE5',
-      text: '#065F46',
+      text: '#FFFFFF'
     },
     error: {
-      icon: AlertCircle,
+      icon: XCircle,
       bg: '#EF4444',
-      bgLight: '#FEE2E2',
-      text: '#991B1B',
+      text: '#FFFFFF'
+    },
+    warning: {
+      icon: AlertTriangle,
+      bg: '#F59E0B',
+      text: '#FFFFFF'
     },
     info: {
       icon: Info,
       bg: '#3B82F6',
-      bgLight: '#DBEAFE',
-      text: '#1E40AF',
-    },
-    warning: {
-      icon: AlertCircle,
-      bg: '#F59E0B',
-      bgLight: '#FEF3C7',
-      text: '#92400E',
-    },
+      text: '#FFFFFF'
+    }
   };
 
-  const { icon: Icon, bg, bgLight, text } = config[toast.type];
+  const { icon: Icon, bg, text } = config[type] || config.info;
 
   return (
     <div
+      className="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg"
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '16px',
-        backgroundColor: bgLight,
-        borderLeft: `4px solid ${bg}`,
-        borderRadius: '12px',
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-        transform: isExiting ? 'translateX(400px)' : 'translateX(0)',
-        opacity: isExiting ? 0 : 1,
-        transition: 'all 0.2s ease',
-        animation: isExiting ? 'none' : 'slideInRight 0.3s ease-out',
+        backgroundColor: bg,
+        color: text,
+        minWidth: '280px',
+        maxWidth: '400px',
+        animation: isExiting ? 'slideOutRight 0.3s ease-out' : 'slideInRight 0.3s ease-out'
       }}
     >
-      <style>
-        {`
-          @keyframes slideInRight {
-            from {
-              transform: translateX(400px);
-              opacity: 0;
-            }
-            to {
-              transform: translateX(0);
-              opacity: 1;
-            }
-          }
-        `}
-      </style>
-      
-      <div
-        style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: '50%',
-          backgroundColor: bg,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        <Icon className="w-5 h-5 text-white" />
-      </div>
-
-      <p
-        style={{
-          flex: 1,
-          fontSize: '14px',
-          fontWeight: '600',
-          color: text,
-          margin: 0,
-        }}
-      >
-        {toast.message}
-      </p>
-
+      <Icon className="w-5 h-5 flex-shrink-0" />
+      <span className="flex-1 text-sm font-medium">{message}</span>
       <button
-        onClick={handleRemove}
-        style={{
-          padding: '4px',
-          backgroundColor: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          borderRadius: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.15s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.backgroundColor = 'transparent';
-        }}
+        onClick={handleClose}
+        className="flex-shrink-0 hover:opacity-70 transition-opacity"
+        aria-label="Close"
       >
-        <X className="w-4 h-4" style={{ color: text }} />
+        <X className="w-4 h-4" />
       </button>
+
+      <style jsx>{`
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideOutRight {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 };
-
-export default ToastProvider;
