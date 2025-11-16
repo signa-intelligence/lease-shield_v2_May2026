@@ -108,7 +108,10 @@ export default function ScanPreview() {
       depositTracked: "Deposit Already Tracked",
       viewDeposits: "View Deposits",
       depositAmount: "Security Deposit",
-      leaseScanned: "Lease Analyzed Successfully!"
+      leaseScanned: "Lease Analyzed Successfully!",
+      upgradeToUnlock: "Upgrade to Unlock",
+      upgradeNow: "Upgrade Now",
+      back: "Back"
     },
     th: {
       backToScans: "กลับไปที่การสแกน",
@@ -132,7 +135,10 @@ export default function ScanPreview() {
       depositTracked: "ติดตามเงินมัดจำแล้ว",
       viewDeposits: "ดูเงินมัดจำ",
       depositAmount: "เงินมัดจำ",
-      leaseScanned: "วิเคราะห์สัญญาเช่าสำเร็จ!"
+      leaseScanned: "วิเคราะห์สัญญาเช่าสำเร็จ!",
+      upgradeToUnlock: "อัปเกรดเพื่อปลดล็อค",
+      upgradeNow: "อัปเกรดตอนนี้",
+      back: "กลับ"
     },
     zh: {
       backToScans: "返回扫描",
@@ -156,7 +162,10 @@ export default function ScanPreview() {
       depositTracked: "押金已追踪",
       viewDeposits: "查看押金",
       depositAmount: "押金",
-      leaseScanned: "租约分析成功！"
+      leaseScanned: "租约分析成功！",
+      upgradeToUnlock: "升级以解锁",
+      upgradeNow: "立即升级",
+      back: "返回"
     },
     ja: {
       backToScans: "スキャンに戻る",
@@ -180,7 +189,10 @@ export default function ScanPreview() {
       depositTracked: "敷金は既に追跡中",
       viewDeposits: "敷金を表示",
       depositAmount: "敷金",
-      leaseScanned: "賃貸契約分析成功！"
+      leaseScanned: "賃貸契約分析成功！",
+      upgradeToUnlock: "アップグレードしてロックを解除",
+      upgradeNow: "今すぐアップグレード",
+      back: "戻る"
     },
     ko: {
       backToScans: "스캔으로 돌아가기",
@@ -204,7 +216,10 @@ export default function ScanPreview() {
       depositTracked: "보증금이 이미 추적 중",
       viewDeposits: "보증금 보기",
       depositAmount: "보증금",
-      leaseScanned: "임대 계약 분석 성공！"
+      leaseScanned: "임대 계약 분석 성공！",
+      upgradeToUnlock: "업그레이드하여 잠금 해제",
+      upgradeNow: "지금 업그레이드",
+      back: "뒤로"
     }
   };
 
@@ -228,12 +243,14 @@ export default function ScanPreview() {
     bg: '#1A1D1F',
     cardBg: '#2A2D30',
     textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD'
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40'
   } : {
     bg: '#F8FAFC',
     cardBg: '#FFFFFF',
     textPrimary: '#1A1D1F',
-    textSecondary: '#64748b'
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB'
   };
 
   const getDisplayFlags = () => {
@@ -501,10 +518,10 @@ export default function ScanPreview() {
                             : 'Upgrade to Lite, Protect, or Secure to view full report with detailed recommendations')}
                     </p>
                     <button
-                      onClick={() => navigate(createPageUrl("Account"))}
+                      onClick={() => navigate(createPageUrl("Account") + '?highlight=plans')}
                       style={{
                         width: '100%',
-                        backgroundColor: '#0C3B2E',
+                        backgroundColor: '#8B5CF6',
                         color: '#FFFFFF',
                         padding: '14px 24px',
                         borderRadius: '10px',
@@ -517,22 +534,53 @@ export default function ScanPreview() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '8px',
-                        boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)'
+                        boxShadow: '0 4px 6px rgba(139, 92, 246, 0.3)',
+                        marginBottom: '12px'
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#0a2f25';
+                        e.target.style.backgroundColor = '#7C3AED';
                         e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 6px 10px rgba(12, 59, 46, 0.4)';
+                        e.target.style.boxShadow = '0 6px 10px rgba(139, 92, 246, 0.4)';
                       }}
                       onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.backgroundColor = '#8B5CF6';
                         e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
+                        e.target.style.boxShadow = '0 4px 6px rgba(139, 92, 246, 0.3)';
                       }}
                     >
                       <span style={{ fontWeight: 'bold', fontSize: '16px' }}>
-                        {language === 'th' ? 'อัปเกรดเพื่อปลดล็อค' : 'Upgrade to Unlock'}
+                        {language === 'th' ? 'อัปเกรดเพื่อปลดล็อค' : 'Upgrade Now'}
                       </span>
+                    </button>
+                    <button
+                      onClick={() => navigate(-1)}
+                      style={{
+                        width: '100%',
+                        backgroundColor: 'transparent',
+                        color: colors.textPrimary,
+                        padding: '10px 16px',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        border: `2px solid ${colors.borderColor}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.borderColor = '#8B5CF6';
+                        e.target.style.color = '#8B5CF6';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.borderColor = colors.borderColor;
+                        e.target.style.color = colors.textPrimary;
+                      }}
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>{language === 'th' ? 'กลับ' : 'Back'}</span>
                     </button>
                   </div>
                 </div>

@@ -845,6 +845,8 @@ function DashboardContent() {
       rentTracked: "Rent Tracked",
       setupRent: "Setup Rent",
       maintenanceRequests: "Maintenance",
+      reportMaintenance: "Report maintenance issue", // NEW
+      enableNotifications: "Enable notifications", // NEW
       noNotifications: "No notifications yet",
       noMaintenance: "No requests",
       analytics: "Analytics",
@@ -890,6 +892,8 @@ function DashboardContent() {
       rentTracked: "ติดตามค่าเช่า",
       setupRent: "ตั้งค่าเช่า",
       maintenanceRequests: "การซ่อมบำรุง",
+      reportMaintenance: "รายงานปัญหาซ่อมบำรุง", // NEW
+      enableNotifications: "เปิดการแจ้งเตือน", // NEW
       noNotifications: "ยังไม่มีการแจ้งเตือน",
       noMaintenance: "ไม่มีคำขอ",
       analytics: "วิเคราะห์",
@@ -935,6 +939,8 @@ function DashboardContent() {
       rentTracked: "追踪的租金",
       setupRent: "设置租金",
       maintenanceRequests: "维护请求",
+      reportMaintenance: "报告维护问题", // NEW
+      enableNotifications: "启用通知", // NEW
       noNotifications: "暂无通知",
       noMaintenance: "无请求",
       analytics: "分析",
@@ -980,6 +986,8 @@ function DashboardContent() {
       rentTracked: "追跡中の家賃",
       setupRent: "家賃を設定",
       maintenanceRequests: "メンテナンス",
+      reportMaintenance: "メンテナンスの問題を報告", // NEW
+      enableNotifications: "通知を有効にする", // NEW
       noNotifications: "通知なし",
       noMaintenance: "リクエストなし",
       analytics: "分析",
@@ -1025,6 +1033,8 @@ function DashboardContent() {
       rentTracked: "추적 중인 임대료",
       setupRent: "임대료 설정",
       maintenanceRequests: "유지보수",
+      reportMaintenance: "유지보수 문제 보고", // NEW
+      enableNotifications: "알림 활성화", // NEW
       noNotifications: "알림 없음",
       noMaintenance: "요청 없음",
       analytics: "분석",
@@ -1130,6 +1140,68 @@ function DashboardContent() {
             >
               <Shield className="w-5 h-5" />
               {strings.uploadLease}
+            </button>
+
+            <button
+              onClick={() => navigate(createPageUrl("PropertyTracker") + '#maintenance')}
+              style={{
+                width: '100%',
+                padding: '12px 18px',
+                backgroundColor: 'transparent',
+                color: colors.textPrimary,
+                borderRadius: '10px',
+                border: `2px solid ${colors.borderColor}`,
+                fontWeight: '500',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = '#F59E0B';
+                e.target.style.color = '#F59E0B';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = colors.borderColor;
+                e.target.style.color = colors.textPrimary;
+              }}
+            >
+              <Wrench className="w-4 h-4" />
+              {strings.reportMaintenance}
+            </button>
+
+            <button
+              onClick={() => navigate(createPageUrl("Account") + '#notification-analytics')}
+              style={{
+                width: '100%',
+                padding: '12px 18px',
+                backgroundColor: 'transparent',
+                color: colors.textPrimary,
+                borderRadius: '10px',
+                border: `2px solid ${colors.borderColor}`,
+                fontWeight: '500',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = '#8B5CF6';
+                e.target.style.color = '#8B5CF6';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = colors.borderColor;
+                e.target.style.color = colors.textPrimary;
+              }}
+            >
+              <Bell className="w-4 h-4" />
+              {strings.enableNotifications}
             </button>
 
             {isFreeTier && (
@@ -2232,7 +2304,6 @@ function DashboardContent() {
                             </p>
                             <Link to={createPageUrl('Account') + '?highlight=plans'}>
                               <button
-                                onClick={() => haptic.light()}
                                 style={{
                                   padding: '8px 14px',
                                   borderRadius: 9999,
@@ -2420,7 +2491,7 @@ function DashboardContent() {
                               <div className="flex items-center gap-2 mb-1">
                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: rentTheme.iconBg }}>
                                   <Calendar className="w-4 h-4" style={{ color: rentTheme.iconColor }} />
-                                  </div>
+                                </div>
                                 <h3 className="text-sm font-semibold" style={{ color: rentTheme.titleColor }}>
                                   {strings.rentTracked}
                                 </h3>
@@ -2732,7 +2803,6 @@ function DashboardContent() {
                             </p>
                             <Link to={createPageUrl('Account') + '?highlight=plans'}>
                               <button
-                                onClick={() => haptic.light()}
                                 style={{
                                   padding: '8px 14px',
                                   borderRadius: 9999,

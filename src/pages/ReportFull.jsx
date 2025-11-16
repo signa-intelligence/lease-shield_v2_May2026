@@ -100,7 +100,10 @@ export default function ReportFull() {
       trackYourSecurityDeposit: "Track your security deposit",
       generateLetter: "Generate Letter",
       professionalTenantLetters: "Professional tenant letters",
-      failedToGenerateLetters: "Failed to generate letters. Please try again."
+      failedToGenerateLetters: "Failed to generate letters. Please try again.",
+      moreDetailedIssues: "More Detailed Issue(s)",
+      upgradeToUnlock: "Upgrade to Unlock",
+      backToSummary: "Back to Summary"
     },
     th: {
       autoGenerateLetters: "สร้างจดหมายอัตโนมัติ",
@@ -140,7 +143,10 @@ export default function ReportFull() {
       trackYourSecurityDeposit: "ติดตามเงินมัดจำของคุณ",
       generateLetter: "สร้างจดหมาย",
       professionalTenantLetters: "จดหมายสำหรับผู้เช่ามืออาชีพ",
-      failedToGenerateLetters: "ไม่สามารถสร้างจดหมายได้ กรุณาลองอีกครั้ง"
+      failedToGenerateLetters: "ไม่สามารถสร้างจดหมายได้ กรุณาลองอีกครั้ง",
+      moreDetailedIssues: "เหลืออีก {count} ปัญหาโดยละเอียด",
+      upgradeToUnlock: "อัปเกรดเพื่อปลดล็อค",
+      backToSummary: "กลับไปที่สรุป"
     },
     zh: {
       autoGenerateLetters: "自动生成信件",
@@ -180,7 +186,10 @@ export default function ReportFull() {
       trackYourSecurityDeposit: "追踪您的押金",
       generateLetter: "生成信件",
       professionalTenantLetters: "专业租户信件",
-      failedToGenerateLetters: "生成信件失败。请重试。"
+      failedToGenerateLetters: "生成信件失败。请重试。",
+      moreDetailedIssues: "{count} 个更详细的问题",
+      upgradeToUnlock: "升级以解锁",
+      backToSummary: "返回摘要"
     },
     ja: {
       autoGenerateLetters: "自動レター生成",
@@ -220,7 +229,10 @@ export default function ReportFull() {
       trackYourSecurityDeposit: "敷金を追跡",
       generateLetter: "レターを生成",
       professionalTenantLetters: "プロフェッショナルな賃借人レター",
-      failedToGenerateLetters: "レターの生成に失敗しました。もう一度お試しください。"
+      failedToGenerateLetters: "レターの生成に失敗しました。もう一度お試しください。",
+      moreDetailedIssues: "その他 {count} 件の詳細な問題",
+      upgradeToUnlock: "アップグレードしてロック解除",
+      backToSummary: "概要に戻る"
     },
     ko: {
       autoGenerateLetters: "자동 편지 생성",
@@ -260,7 +272,10 @@ export default function ReportFull() {
       trackYourSecurityDeposit: "보증금 추적",
       generateLetter: "편지 생성",
       professionalTenantLetters: "전문 임차인 편지",
-      failedToGenerateLetters: "편지 생성에 실패했습니다. 다시 시도해주세요."
+      failedToGenerateLetters: "편지 생성에 실패했습니다. 다시 시도해주세요.",
+      moreDetailedIssues: "{count}개의 상세 문제 더 보기",
+      upgradeToUnlock: "업그레이드하여 잠금 해제",
+      backToSummary: "요약으로 돌아가기"
     }
   };
 
@@ -628,8 +643,8 @@ export default function ReportFull() {
                         <div className="flex-1">
                           <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
                             {language === 'th' 
-                              ? `เหลืออีก ${hiddenFlagsCount} ปัญหาโดยละเอียด` 
-                              : `${hiddenFlagsCount} More Detailed Issue${hiddenFlagsCount > 1 ? 's' : ''}`}
+                              ? strings.moreDetailedIssues.replace('{count}', hiddenFlagsCount)
+                              : `${hiddenFlagsCount} ${strings.moreDetailedIssues.replace('{count}', hiddenFlagsCount)}`}
                           </h4>
                           <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
                             {language === 'th' 
@@ -637,10 +652,19 @@ export default function ReportFull() {
                               : 'Upgrade to Protect or Secure to view complete analysis with detailed recommendations'}
                           </p>
                           <Button
-                            onClick={() => navigate(createPageUrl("Account"))}
+                            onClick={() => navigate(createPageUrl("Account") + '?highlight=plans')}
                             className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800"
                           >
-                            {language === 'th' ? 'อัปเกรดเพื่อปลดล็อค' : 'Upgrade to Unlock'}
+                            {strings.upgradeToUnlock}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => navigate(createPageUrl("ScanPreview") + `?scanId=${scanId}`)}
+                            className="w-full mt-2"
+                            style={isDarkMode ? { borderColor: colors.borderColor, color: colors.textPrimary } : {}}
+                          >
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            {strings.backToSummary}
                           </Button>
                         </div>
                       </div>
