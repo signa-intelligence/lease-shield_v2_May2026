@@ -1,45 +1,82 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.4";
 
-/**
- * One-time script to restore steve.l@signa-consultants.com as super admin
- * This is a direct update that bypasses safeguards (intentional for recovery)
- */
+// One-shot utility: promote Steve to super admin.
+// Run once, confirm success, then you can delete this function if you want.
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    
-    // Find Steve's user record
-    const allUsers = await base44.asServiceRole.entities.User.list();
-    const steveUser = allUsers.find(u => u.email === 'steve.l@signa-consultants.com');
 
-    if (!steveUser) {
-      return Response.json({ error: 'User steve.l@signa-consultants.com not found' }, { status: 404 });
+    const targetEmail = "steve.l@signa-consultants.com";
+
+    console.log("🔍 makeSteveSuperAdmin starting for:", targetEmail);
+
+    // Fetch all users
+    const users = await base44.asServiceRole.entities.User.list();
+    console.log("👥 Users found:", users.length);
+
+    // Find Steve by email (case-insensitive)
+    const me = users.find(
+      (u) =>
+        u.email &&
+        u.email.toLowerCase() === targetEmail.toLowerCase()
+    );
+
+    if (!me) {
+      console.error("❌ User not found for email:", targetEmail);
+      return Response.json(
+        {
+          success: false,
+          error: "user_not_found",
+          email: targetEmail,
+        },
+        { status: 404 },
+      );
     }
 
-    console.log('Found user:', steveUser.email, '| Current role:', steveUser.role);
+    // Count current super admins (for info only)
+    const superAdmins = users.filter(
+      (u) =>
+        u.role === "super_admin" ||
+        u.is_super_admin === true ||
+        u.admin_role === "super_admin"
+    );
 
-    // Update to super admin
-    await base44.asServiceRole.entities.User.update(steveUser.id, {
-      role: 'super_admin',
-      access_level: 'super_admin',
-      is_super_admin: true
-    });
+    console.log("🔐 Current super admins:", superAdmins.map(u => u.email));
 
-    console.log('✅ User updated to super_admin');
+    // Build aggressive update payload (covers multiple possible schemas)
+    const updateData = {
+      role: "super_admin",
+      is_super_admin: true,
+      is_admin: true,
+      admin_role: "super_admin",
+      can_access_admin: true,
+    };
 
-    return Response.json({ 
-      success: true,
-      message: 'steve.l@signa-consultants.com is now a super admin',
-      user: {
-        id: steveUser.id,
-        email: steveUser.email,
-        role: 'super_admin',
-        access_level: 'super_admin',
-        is_super_admin: true
-      }
-    });
+    console.log("🛠 Updating user:", me.email, "→ super_admin");
+    await base44.asServiceRole.entities.User.update(me.id, updateData);
+
+    console.log("✅ Promotion complete for:", me.email);
+
+    return Response.json(
+      {
+        success: true,
+        updatedUserId: me.id,
+        email: me.email,
+        previousRole: me.role || null,
+        superAdminCountBefore: superAdmins.length,
+        appliedUpdate: updateData,
+      },
+      { status: 200 },
+    );
   } catch (error) {
-    console.error('❌ Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error("❌ makeSteveSuperAdmin error:", error);
+    return Response.json(
+      {
+        success: false,
+        error: String(error.message || error),
+      },
+      { status: 500 },
+    );
   }
 });
