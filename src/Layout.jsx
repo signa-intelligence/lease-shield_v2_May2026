@@ -262,7 +262,7 @@ export default function Layout({ children, currentPageName }) {
     borderColor: '#3A3D40',
     textPrimary: '#ECEFED',
     textSecondary: '#A8ABAD',
-    topBarBg: '#1A1D1F',
+    topBarBg: '#6B7280', // Changed this line
     bottomTabBg: '#1A1D1F',
     hoverBg: '#3A3D40'
   } : {
