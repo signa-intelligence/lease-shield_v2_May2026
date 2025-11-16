@@ -237,6 +237,7 @@ function PropertyTrackerContent() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+  const isFreeTier = user?.tier === 'free'; // Added for the change
 
   const colors = {
     bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
@@ -1142,9 +1143,15 @@ function PropertyTrackerContent() {
               <CardContent className="p-6">
                 {(!deposit || deposit.deposit_amount === 0) && !editingDeposit ? (
                   <div className="text-center py-8">
-                    <Wallet className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                    <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noDeposit}</p>
-                    <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addDepositDesc}</p>
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#C7A33820' }}>
+                      <Wallet className="w-8 h-8" style={{ color: colors.depositAccent }} />
+                    </div>
+                    <p className="font-semibold mb-2 text-lg" style={{ color: colors.textPrimary }}>
+                      No deposit tracked yet
+                    </p>
+                    <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: colors.textSecondary }}>
+                      Add your first property so LeaseShield can link deposits, rent schedules and maintenance to the right unit.
+                    </p>
                     <Button 
                       onClick={() => {
                         haptic.light();
@@ -1156,6 +1163,12 @@ function PropertyTrackerContent() {
                       <Plus className="w-4 h-4 mr-2" />
                       {strings.addDeposit}
                     </Button>
+
+                    {isFreeTier && (
+                      <p className="text-xs mt-4" style={{ color: colors.textSecondary }}>
+                        Advanced tracking and export tools are available on paid plans, with annual options for better value.
+                      </p>
+                    )}
                   </div>
                 ) : editingDeposit ? (
                   <div className="space-y-4">

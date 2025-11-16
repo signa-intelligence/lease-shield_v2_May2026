@@ -1081,20 +1081,87 @@ function DashboardContent() {
   };
 
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
+  const isFreeTier = !user?.plan_tier || user.plan_tier === 'free';
 
   if (!isLoading && !hasAnyData && !showOnboarding && !shouldShowOnboardingChecklist) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
-        <EmptyState
-          icon={Shield}
-          title={strings.noDataYet}
-          description={strings.getStartedDesc}
-          illustration="leases"
-          actionLabel={strings.uploadLease}
-          onAction={() => navigate(createPageUrl("UploadScan"))}
-          secondaryActionLabel={language === 'th' ? 'ดูแผนการป้องกัน' : 'View Protection Plans'}
-          onSecondaryAction={() => navigate(createPageUrl("Account"))}
-        />
+        <div className="max-w-xl mx-auto p-6">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4" style={{ backgroundColor: '#0C3B2E' }}>
+              <Shield className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold mb-3" style={{ color: colors.textPrimary }}>
+              Welcome to LeaseShield
+            </h1>
+            <p className="text-base mb-6" style={{ color: colors.textSecondary }}>
+              Start by uploading your first lease and tracking the deposit so we can protect you from day one.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => navigate(createPageUrl("UploadScan"))}
+              style={{
+                width: '100%',
+                padding: '14px 20px',
+                backgroundColor: '#0C3B2E',
+                color: '#FFFFFF',
+                borderRadius: '12px',
+                border: 'none',
+                fontWeight: '600',
+                fontSize: '16px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 8px rgba(12,59,46,0.3)',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#C7A338';
+                e.target.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#0C3B2E';
+                e.target.style.transform = 'translateY(0)';
+              }}
+            >
+              <Shield className="w-5 h-5" />
+              {strings.uploadLease}
+            </button>
+
+            {isFreeTier && (
+              <button
+                onClick={() => navigate(createPageUrl("Account") + '#plans-section')}
+                style={{
+                  width: '100%',
+                  padding: '10px 16px',
+                  backgroundColor: 'transparent',
+                  color: colors.textSecondary,
+                  borderRadius: '8px',
+                  border: 'none',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  textAlign: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.color = colors.textPrimary;
+                  e.target.style.textDecoration = 'underline';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = colors.textSecondary;
+                  e.target.style.textDecoration = 'none';
+                }}
+              >
+                See plans
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -1851,7 +1918,7 @@ function DashboardContent() {
                             className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
                               backgroundColor: rentTheme.cardBg,
-                              borderLeft: `4px solid ${rentTheme.borderColor}`
+                              borderLeft: `44px solid ${rentTheme.borderColor}`
                             }}
                           >
                             <div className="flex items-start justify-between mb-3">

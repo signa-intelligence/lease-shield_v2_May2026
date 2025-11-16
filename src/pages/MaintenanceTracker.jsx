@@ -16,11 +16,13 @@ import { createPageUrl } from "@/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import ChatLog from "../components/maintenance/ChatLog";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
+import { useHapticFeedback } from "@/components/haptic";
 
-export default function MaintenanceTracker() {
+export default function MaintenanceTrackerPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [showAddForm, setShowAddForm] = useState(false);
+  const haptic = useHapticFeedback();
+  const [showAddRequest, setShowAddRequest] = useState(false); // Renamed from showAddForm
   const [expandedRequest, setExpandedRequest] = useState(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [photoFiles, setPhotoFiles] = useState([]);
@@ -42,7 +44,7 @@ export default function MaintenanceTracker() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: requests = [], isLoading } = useQuery({
+  const { data: maintenanceRequests = [], isLoading } = useQuery({ // Renamed 'requests' to 'maintenanceRequests'
     queryKey: ['maintenance'],
     queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
@@ -52,7 +54,7 @@ export default function MaintenanceTracker() {
     mutationFn: (data) => base44.entities.MaintenanceRequest.create(data),
     onSuccess: async (createdRequest) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-      setShowAddForm(false);
+      setShowAddRequest(false); // Changed from setShowAddForm
       setPhotoFiles([]);
       setPhotoPreviews([]);
       setFormData({
@@ -291,7 +293,7 @@ export default function MaintenanceTracker() {
       setShowUpgradeModal(true);
       return;
     }
-    setShowAddForm(!showAddForm);
+    setShowAddRequest(!showAddRequest); // Changed from setShowAddForm
   };
 
   const handleSubmit = async (e) => {
@@ -350,7 +352,7 @@ export default function MaintenanceTracker() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6 pb-28" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"
@@ -361,7 +363,7 @@ export default function MaintenanceTracker() {
           {strings.back}
         </Button>
 
-        {/* ✅ NEW: Upgrade Modal */}
+        {/* Upgrade Modal */}
         <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
           <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
             <DialogHeader>
@@ -406,7 +408,7 @@ export default function MaintenanceTracker() {
           {strings.addRequest}
         </Button>
 
-        {/* ✅ NEW: Post-upgrade hint */}
+        {/* Post-upgrade hint */}
         {showPostUpgradeHint && (!user?.plan_tier || user.plan_tier === 'free') && (
           <div
             style={{
@@ -446,7 +448,7 @@ export default function MaintenanceTracker() {
           </div>
         )}
 
-        {showAddForm && (
+        {showAddRequest && ( // Changed from showAddForm
           <Card 
             className="mb-6 border-none shadow-xl" 
             style={{ 
@@ -597,7 +599,7 @@ export default function MaintenanceTracker() {
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setShowAddForm(false);
+                      setShowAddRequest(false); // Changed from setShowAddForm
                       setPhotoFiles([]);
                       setPhotoPreviews([]);
                     }}
@@ -629,19 +631,56 @@ export default function MaintenanceTracker() {
           </Card>
         )}
 
-        {requests.length === 0 ? (
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-12 text-center">
-              <Wrench className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-              <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                {strings.noRequests}
-              </h3>
-              <p style={{ color: colors.textSecondary }}>{strings.noRequestsDesc}</p>
-            </CardContent>
-          </Card>
+        {maintenanceRequests.length === 0 ? (
+          <div className="max-w-2xl mx-auto mt-8">
+            <div className="text-center py-12 px-6 rounded-2xl" style={{ backgroundColor: colors.cardBg, border: `2px solid ${colors.borderColor}` }}>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F59E0B20' }}>
+                <Wrench className="w-8 h-8 text-orange-600" />
+              </div>
+              <h2 className="text-2xl font-bold mb-3" style={{ color: colors.textPrimary }}>
+                No maintenance requests yet
+              </h2>
+              <p className="text-base mb-6" style={{ color: colors.textSecondary }}>
+                Use LeaseShield to log issues in writing so you have a timestamped trail with photos, description and status.
+              </p>
+              
+              <button
+                onClick={() => {
+                  haptic.medium();
+                  setShowAddRequest(true);
+                }}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF',
+                  borderRadius: '12px',
+                  border: 'none',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 8px rgba(12,59,46,0.3)',
+                  transition: 'all 0.2s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#C7A338';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#0C3B2E';
+                  e.target.style.transform = 'translateY(0)';
+                }}
+              >
+                <Plus className="w-5 h-5" />
+                Create first request
+              </button>
+            </div>
+          </div>
         ) : (
-          <div className="grid gap-4">
-            {requests.map((request) => (
+          <div className="max-w-5xl mx-auto space-y-4">
+            {maintenanceRequests.map((request) => (
               <Card 
                 key={request.id} 
                 className="border-none shadow-lg" 
