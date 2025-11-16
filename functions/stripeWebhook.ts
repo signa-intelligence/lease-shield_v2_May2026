@@ -1,11 +1,14 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
-const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
-  apiVersion: '2023-10-16',
+const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
+const webhookSecret = Deno.env.get('Webhook_stripe');
+
+const stripe = new Stripe(stripeSecretKey, {
+  apiVersion: '2024-06-20',
 });
 
-// Price ID to credits mapping (from legacy webhook)
+// Price ID to credits mapping
 const PRICE_CREDIT_MAP = {
   'price_1SR2b5QwoI6NhlUxbwA8JfsS': 1,
   'price_1SR2dLQwoI6NhlUxv0TkEsiZ': 3,
@@ -17,18 +20,22 @@ Deno.serve(async (req) => {
   console.log('=== STRIPE WEBHOOK RECEIVED ===');
   
   try {
+    const rawBody = await req.text();
     const signature = req.headers.get('stripe-signature');
-    const webhookSecret = Deno.env.get('Webhook_stripe');
-    
+
     if (!signature || !webhookSecret) {
-      console.error('Missing signature or webhook secret');
+      console.error('❌ Missing signature or webhook secret');
       return Response.json({ error: 'Missing signature or webhook secret' }, { status: 400 });
     }
 
-    const body = await req.text();
-    let event = JSON.parse(body);
-
-    console.log('Processing event type:', event.type);
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+      console.log('✅ Webhook signature verified. Event type:', event.type);
+    } catch (err) {
+      console.error('❌ Stripe webhook signature verification failed:', err.message);
+      return Response.json({ error: 'Invalid signature' }, { status: 400 });
+    }
 
     // ========================================
     // CHECKOUT SESSION COMPLETED
@@ -42,7 +49,6 @@ Deno.serve(async (req) => {
       const base44 = createClientFromRequest(req);
       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
       
-      // Find user by customer ID or email
       const users = await base44.asServiceRole.entities.User.list();
       
       let user = users.find(u => 
@@ -55,10 +61,9 @@ Deno.serve(async (req) => {
       }
 
       // ========================================
-      // CREDITS PURCHASE FLOW (UNIFIED)
+      // CREDITS PURCHASE FLOW
       // ========================================
       
-      // Detect credits purchase by metadata OR by fetching line items with price IDs
       let isCreditsFlow = metadata.type === 'credits';
       let creditsToAdd = 0;
 
@@ -69,7 +74,6 @@ Deno.serve(async (req) => {
       } 
       // Method 2: Price ID-based (legacy pre-created prices)
       else if (session.mode === 'payment' && !metadata.plan) {
-        // Fetch full session with line items to check price IDs
         try {
           const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
             expand: ['line_items.data.price'],
@@ -108,9 +112,8 @@ Deno.serve(async (req) => {
           total_credits_purchased: totalPurchased + creditsToAdd
         });
 
-        console.log('✅✅✅ CREDITS SUCCESSFULLY UPDATED! ✅✅✅');
+        console.log('✅ CREDITS UPDATED!');
         console.log('User:', user.email);
-        console.log('Previous credits:', currentCredits);
         console.log('Added credits:', creditsToAdd);
         console.log('New balance:', currentCredits + creditsToAdd);
 
@@ -169,7 +172,6 @@ Deno.serve(async (req) => {
           </div>
           `;
 
-        // Send via Resend with no-reply@leaseshield.asia
         if (RESEND_API_KEY) {
           try {
             const resendResponse = await fetch('https://api.resend.com/emails', {
@@ -188,7 +190,7 @@ Deno.serve(async (req) => {
 
             const resendData = await resendResponse.json();
             if (resendResponse.ok) {
-              console.log('✅ Credits email sent via Resend. Message ID:', resendData.id);
+              console.log('✅ Credits email sent. Message ID:', resendData.id);
             } else {
               console.error('❌ Resend email failed:', resendData);
             }
@@ -236,11 +238,10 @@ Deno.serve(async (req) => {
       // ========================================
       
       if (session.mode === 'subscription' && metadata.plan) {
-        console.log('💳💳💳 Processing SUBSCRIPTION UPGRADE! 💳💳💳');
+        console.log('💳 Processing SUBSCRIPTION UPGRADE!');
         console.log('Plan:', metadata.plan);
         console.log('Interval:', metadata.interval);
 
-        // Fetch subscription details from Stripe
         const subscriptions = await stripe.subscriptions.list({
           customer: customerId,
           status: 'active',
@@ -253,8 +254,6 @@ Deno.serve(async (req) => {
         }
 
         const subscription = subscriptions.data[0];
-        
-        // ✅ CRITICAL FIX: Use correct period end date
         const renewalTimestamp = subscription.current_period_end;
         const renewalDate = new Date(renewalTimestamp * 1000).toISOString();
         
@@ -263,7 +262,6 @@ Deno.serve(async (req) => {
         console.log('  End:', renewalDate);
         console.log('  Interval:', metadata.interval);
 
-        // ✅ CALCULATE INCLUDED LETTER CREDITS
         const includedCredits = {
           'lite': 3,
           'protect': 5,
@@ -272,30 +270,25 @@ Deno.serve(async (req) => {
         const creditsToAdd = includedCredits[metadata.plan] || 0;
         const currentCredits = user.letter_credits || 0;
         
-        console.log('💳 Adding included credits:');
-        console.log('  Plan:', metadata.plan);
-        console.log('  Current credits:', currentCredits);
-        console.log('  Credits to add:', creditsToAdd);
-        console.log('  New balance:', currentCredits + creditsToAdd);
+        console.log('💳 Adding included credits:', creditsToAdd);
 
-        // ✅ UPDATE USER PLAN + ADD CREDITS
         await base44.asServiceRole.entities.User.update(user.id, {
           plan_tier: metadata.plan,
           billing_interval: metadata.interval,
           plan_renews_at: renewalDate,
           stripe_subscription_id: subscription.id,
+          stripe_customer_id: customerId,
           subscription_status: 'active',
-          letter_credits: currentCredits + creditsToAdd // ✅ ADD INCLUDED CREDITS!
+          letter_credits: currentCredits + creditsToAdd
         });
 
-        console.log('✅✅✅ SUBSCRIPTION + CREDITS SUCCESSFULLY UPDATED! ✅✅✅');
+        console.log('✅ SUBSCRIPTION + CREDITS UPDATED!');
         console.log('User:', user.email);
         console.log('New plan:', metadata.plan);
         console.log('Billing:', metadata.interval);
         console.log('Renews:', renewalDate);
         console.log('Letter credits:', currentCredits + creditsToAdd);
 
-        // Create payment record
         await base44.asServiceRole.entities.Payment.create({
           type: 'subscription',
           amount: parseFloat((session.amount_total / 100).toFixed(2)),
@@ -306,7 +299,6 @@ Deno.serve(async (req) => {
           created_by: user.email
         });
 
-        // Send confirmation email via Resend
         const lang = user.language || 'en';
         const planLabels = {
           lite: { en: 'Lite', th: 'ไลท์' },
@@ -367,7 +359,6 @@ Deno.serve(async (req) => {
           </div>
           `;
 
-        // Send via Resend with no-reply@leaseshield.asia
         if (RESEND_API_KEY) {
           try {
             const resendResponse = await fetch('https://api.resend.com/emails', {
@@ -386,7 +377,7 @@ Deno.serve(async (req) => {
 
             const resendData = await resendResponse.json();
             if (resendResponse.ok) {
-              console.log('✅ Subscription email sent via Resend. Message ID:', resendData.id);
+              console.log('✅ Subscription email sent. Message ID:', resendData.id);
             } else {
               console.error('❌ Resend email failed:', resendData);
             }
@@ -395,11 +386,9 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ✅ FIXED LINE NOTIFICATION - USE CORRECT DATE!
         if (user.line_messaging_token && user.line_notifications) {
           console.log('📱 Sending LINE subscription notification...');
           
-          // Format date for LINE display
           const displayDate = new Date(renewalDate);
           const formattedDate = lang === 'th'
             ? displayDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -423,7 +412,7 @@ Deno.serve(async (req) => {
             });
 
             if (lineResponse.ok) {
-              console.log('✅ LINE subscription notification sent with date:', formattedDate);
+              console.log('✅ LINE subscription notification sent');
             }
           } catch (lineError) {
             console.error('⚠️ LINE notification error:', lineError.message);
@@ -432,6 +421,8 @@ Deno.serve(async (req) => {
 
         return Response.json({ ok: true, plan: metadata.plan }, { status: 200 });
       }
+
+      return Response.json({ ok: true, message: 'Checkout completed but no action needed' }, { status: 200 });
     }
 
     // ========================================
@@ -441,14 +432,19 @@ Deno.serve(async (req) => {
       const invoice = event.data.object;
       const subscriptionId = invoice.subscription;
       const customerId = invoice.customer;
+      const billingReason = invoice.billing_reason;
 
-      // Only process subscription renewals
       if (!subscriptionId) {
         console.log('⚠️ invoice.payment_succeeded without subscription - skipping');
         return Response.json({ ok: true, skipped: 'not_subscription' }, { status: 200 });
       }
 
-      console.log('💰 Processing subscription renewal');
+      if (billingReason !== 'subscription_cycle') {
+        console.log('⚠️ invoice.payment_succeeded but not a renewal (reason:', billingReason, ') - skipping');
+        return Response.json({ ok: true, skipped: 'not_renewal' }, { status: 200 });
+      }
+
+      console.log('🔄 Processing subscription renewal');
       console.log('Subscription ID:', subscriptionId);
       console.log('Customer ID:', customerId);
 
@@ -456,27 +452,34 @@ Deno.serve(async (req) => {
         const base44 = createClientFromRequest(req);
         const users = await base44.asServiceRole.entities.User.list();
         
-        // Find user by subscription ID first, then by customer ID
         let user = users.find(u => u.stripe_subscription_id === subscriptionId);
         if (!user) {
           user = users.find(u => u.stripe_customer_id === customerId);
         }
 
         if (!user) {
-          console.error('❌ User not found for subscription:', subscriptionId, customerId);
+          console.error('❌ User not found for subscription:', subscriptionId);
           return Response.json({ ok: true, warning: 'user_not_found' }, { status: 200 });
         }
 
-        // Fetch subscription from Stripe to get new period end
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         const renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
 
         console.log('✅ Updating renewal date:', renewalDate);
 
-        // Update user with active status and new renewal date
         await base44.asServiceRole.entities.User.update(user.id, {
           subscription_status: 'active',
           plan_renews_at: renewalDate
+        });
+
+        await base44.asServiceRole.entities.Payment.create({
+          type: 'subscription',
+          amount: parseFloat((invoice.amount_paid / 100).toFixed(2)),
+          currency: 'THB',
+          provider: 'stripe',
+          status: 'paid',
+          external_id: invoice.id,
+          created_by: user.email
         });
 
         console.log('✅ Subscription renewal recorded for:', user.email);
@@ -495,6 +498,8 @@ Deno.serve(async (req) => {
       const invoice = event.data.object;
       const subscriptionId = invoice.subscription;
       const customerId = invoice.customer;
+      const attemptCount = invoice.attempt_count;
+      const amountDue = invoice.amount_due;
 
       if (!subscriptionId) {
         console.log('⚠️ invoice.payment_failed without subscription - skipping');
@@ -504,28 +509,32 @@ Deno.serve(async (req) => {
       console.log('❌ Processing failed payment');
       console.log('Subscription ID:', subscriptionId);
       console.log('Customer ID:', customerId);
+      console.log('Attempt:', attemptCount);
+      console.log('Amount due:', amountDue / 100, 'THB');
 
       try {
         const base44 = createClientFromRequest(req);
         const users = await base44.asServiceRole.entities.User.list();
         
-        // Find user by subscription ID first, then by customer ID
         let user = users.find(u => u.stripe_subscription_id === subscriptionId);
         if (!user) {
           user = users.find(u => u.stripe_customer_id === customerId);
         }
 
         if (!user) {
-          console.error('❌ User not found for subscription:', subscriptionId, customerId);
+          console.error('❌ User not found for subscription:', subscriptionId);
           return Response.json({ ok: true, warning: 'user_not_found' }, { status: 200 });
         }
 
-        // Mark subscription as past due
         await base44.asServiceRole.entities.User.update(user.id, {
           subscription_status: 'past_due'
         });
 
         console.log('⚠️ Subscription marked as past_due for:', user.email);
+        console.log('User ID:', user.id);
+        console.log('Subscription ID:', subscriptionId);
+        console.log('Amount:', amountDue / 100, 'THB');
+        console.log('Attempt:', attemptCount);
 
         return Response.json({ ok: true, marked_past_due: true }, { status: 200 });
       } catch (err) {
@@ -541,32 +550,33 @@ Deno.serve(async (req) => {
       const subscription = event.data.object;
       const subscriptionId = subscription.id;
       const customerId = subscription.customer;
+      const endedAt = subscription.ended_at;
 
       console.log('🚫 Processing subscription deletion');
       console.log('Subscription ID:', subscriptionId);
       console.log('Customer ID:', customerId);
+      console.log('Ended at:', endedAt ? new Date(endedAt * 1000).toISOString() : 'unknown');
 
       try {
         const base44 = createClientFromRequest(req);
         const users = await base44.asServiceRole.entities.User.list();
         
-        // Find user by subscription ID first, then by customer ID
         let user = users.find(u => u.stripe_subscription_id === subscriptionId);
         if (!user) {
           user = users.find(u => u.stripe_customer_id === customerId);
         }
 
         if (!user) {
-          console.error('❌ User not found for subscription:', subscriptionId, customerId);
+          console.error('❌ User not found for subscription:', subscriptionId);
           return Response.json({ ok: true, warning: 'user_not_found' }, { status: 200 });
         }
 
-        // Downgrade user to free plan
         await base44.asServiceRole.entities.User.update(user.id, {
           plan_tier: 'free',
           subscription_status: 'expired',
           billing_interval: null,
-          plan_renews_at: null
+          stripe_subscription_id: null,
+          plan_renews_at: endedAt ? new Date(endedAt * 1000).toISOString() : null
         });
 
         console.log('✅ User downgraded to free plan:', user.email);
@@ -578,12 +588,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('Event not handled:', event.type);
-    return Response.json({ ok: true }, { status: 200 });
+    // ========================================
+    // UNHANDLED EVENT TYPES
+    // ========================================
+    else {
+      console.log('ℹ️ Unhandled Stripe event type:', event.type);
+      return Response.json({ received: true }, { status: 200 });
+    }
     
   } catch (error) {
     console.error('❌ WEBHOOK ERROR:', error.message);
-    console.error('Error details:', error);
+    console.error('Error stack:', error.stack);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
