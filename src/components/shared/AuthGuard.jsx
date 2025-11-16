@@ -1,33 +1,56 @@
+// src/components/shared/AuthGuard.jsx
+//
+// Simple authentication guard for LeaseShield.
+// Uses Base44 built-in auth and does NOT change behaviour
+// except redirecting unauthenticated users to the login page.
+
+import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 
-/**
- * Ensures the user is authenticated. If not, redirects to Base44's login page.
- * @param {string} nextUrl - URL to redirect to after successful login
- * @returns {Promise<object|null>} User object if authenticated, null if redirecting
- */
-export async function ensureAuthenticated(nextUrl) {
-  try {
-    const user = await base44.auth.me();
-    if (!user || !user.id) {
-      await base44.auth.redirectToLogin(nextUrl || window.location.pathname);
-      return null;
-    }
-    return user;
-  } catch (error) {
-    console.error('Auth check failed:', error);
-    await base44.auth.redirectToLogin(nextUrl || window.location.pathname);
-    return null;
-  }
-}
+const AuthGuard = ({ children }) => {
+  const [loading, setLoading] = useState(true);
+  const [isAuthed, setIsAuthed] = useState(false);
 
-/**
- * Handles logout and redirects to marketing site
- */
-export async function handleLogout() {
-  try {
-    await base44.auth.logout('https://leaseshield.asia/');
-  } catch (error) {
-    console.error('Logout failed:', error);
-    window.location.href = 'https://leaseshield.asia/';
-  }
-}
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkAuth() {
+      try {
+        const me = await base44.auth.me();
+        if (cancelled) return;
+
+        if (me) {
+          setIsAuthed(true);
+        } else {
+          // Redirect to Base44 login, then back to current app
+          const nextUrl = window.location.pathname + window.location.search;
+          await base44.auth.redirectToLogin(nextUrl);
+        }
+      } catch (err) {
+        console.error("AuthGuard: auth check failed", err);
+        if (!cancelled) {
+          const nextUrl = window.location.pathname + window.location.search;
+          await base44.auth.redirectToLogin(nextUrl);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    checkAuth();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // While checking auth, render nothing to avoid flicker
+  if (loading) return null;
+  if (!isAuthed) return null;
+
+  return <>{children}</>;
+};
+
+export default AuthGuard;
