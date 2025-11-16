@@ -255,10 +255,17 @@ export default function Account() {
   }, [queryClient]);
 
   React.useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
+    const urlParams = new URLSearchParams(window.location.search);
     const highlight = urlParams.get('highlight');
     
-    if (highlight === 'plan') {
+    if (highlight === 'plans') {
+      setTimeout(() => {
+        const el = document.getElementById('plans-section');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+    } else if (highlight === 'plan') {
       setTimeout(() => {
         const el = document.getElementById('account-current-plan');
         if (el) {
@@ -267,7 +274,7 @@ export default function Account() {
       }, 300);
     }
     
-    const hash = location.hash;
+    const hash = window.location.hash;
     if (hash === '#notifications') {
       setTimeout(() => {
         const notificationSection = document.getElementById('notification-analytics');
@@ -276,7 +283,7 @@ export default function Account() {
         }
       }, 300);
     }
-  }, [location]);
+  }, []); // Changed dependency to [] as per outline
 
   React.useEffect(() => {
     let intervalId;
@@ -320,15 +327,14 @@ export default function Account() {
     };
   }, [queryClient]);
 
-  const isDark = document.documentElement.classList.contains('dark');
-  const initialTheme = isDark ? 'dark' : 'light';
-
+  // isDark and initialTheme moved inside useEffect for formData for better reactivity.
+  // The state definitions below use a direct check for the initial render fallback.
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
     phone: user?.phone || '',
     country: user?.country || '',
     language: user?.language || 'en',
-    theme: user?.theme || initialTheme,
+    theme: user?.theme || (document.documentElement.classList.contains('dark') ? 'dark' : 'light'),
     tenant_address: user?.tenant_address || '',
     tenant_city: user?.tenant_city || '',
     tenant_state: user?.tenant_state || '',
@@ -352,6 +358,9 @@ export default function Account() {
 
   React.useEffect(() => {
     if (user) {
+      const isDark = document.documentElement.classList.contains('dark');
+      const initialTheme = isDark ? 'dark' : 'light';
+      
       setFormData({
         full_name: user.full_name || '',
         phone: user.phone || '',
@@ -377,7 +386,7 @@ export default function Account() {
         juristic_line: user.juristic_line || ''
       });
     }
-  }, [user, initialTheme]);
+  }, [user]);
 
   const updateProfileMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
@@ -659,7 +668,8 @@ export default function Account() {
   const isScheduledForCancellation = subscriptionStatus === 'cancelled' && user?.plan_renews_at;
 
   const language = user?.language || 'en';
-  const currentTheme = user?.theme || initialTheme;
+  const isDark = document.documentElement.classList.contains('dark');
+  const currentTheme = user?.theme || (isDark ? 'dark' : 'light');
   const isDarkMode = currentTheme === 'dark';
 
   const colors = isDarkMode ? {
@@ -3362,231 +3372,233 @@ export default function Account() {
           </div>
         )}
 
-        <div id="plans-section" className="mb-6">
-          <div className="flex items-center justify-center mb-6">
-            <div className="rounded-xl p-2 shadow-md inline-flex items-center gap-3" style={{ backgroundColor: colors.cardBg }}>
-              <button
-                onClick={() => setBillingInterval('monthly')}
-                style={{
-                  padding: '10px 24px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '14px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  backgroundColor: billingInterval === 'monthly' ? '#0C3B2E' : 'transparent',
-                  color: billingInterval === 'monthly' ? '#FFFFFF' : colors.textPrimary
-                }}
-              >
-                {strings.monthly}
-              </button>
-              <button
-                onClick={() => setBillingInterval('annual')}
-                style={{
-                  padding: '10px 24px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '14px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  backgroundColor: billingInterval === 'annual' ? '#0C3B2E' : 'transparent',
-                  color: billingInterval === 'annual' ? '#FFFFFF' : colors.textPrimary,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                {strings.annual}
-                <span style={{
-                  padding: '2px 8px',
-                  borderRadius: '6px',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  backgroundColor: '#C7A338',
-                  color: '#FFFFFF'
-                }}>
-                  {strings.save17}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
-          <p className="mb-6 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {PLAN_DETAILS.map((plan) => {
-              const Icon = plan.icon;
-              const isCurrentPlan = planTier === plan.key;
-              const isFreeplanLocal = plan.key === 'free';
-              const isSecureTierLocal = plan.key === 'secure';
-              const isLiteTierLocal = plan.key === 'lite';
-              const displayPrice = isFreeplanLocal ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
-              const displayInterval = isFreeplanLocal ? '' : (billingInterval === 'annual' ? (language === 'th' ? '/ปี' : plan.intervalAnnual) : (language === 'th' ? '/เดือน' : plan.intervalMonthly));
-              const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
-              const isSubscribingForPlan = subscribing[plan.key];
-              
-              return (
-                <div
-                  key={plan.key}
-                  className={`relative border-2 transition-all duration-200 ${
-                    plan.popular ? 'border-amber-400 shadow-lg' : ''
-                  } ${isSecureTierLocal ? 'shadow-xl' : ''}`}
+        <section id="plans-section">
+          <div className="mb-6">
+            <div className="flex items-center justify-center mb-6">
+              <div className="rounded-xl p-2 shadow-md inline-flex items-center gap-3" style={{ backgroundColor: colors.cardBg }}>
+                <button
+                  onClick={() => setBillingInterval('monthly')}
                   style={{
-                    backgroundColor: isSecureTierLocal 
-                      ? (isDarkMode ? '#1A2E27' : '#F0FDF4')
-                      : isLiteTierLocal
-                        ? (isDarkMode ? '#1C2D28' : '#F0FDF9')
-                        : plan.popular 
-                          ? (isDarkMode ? '#2D2520' : '#FFFBEB')
-                          : colors.cardBg,
-                    borderColor: isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : plan.popular ? '#C7A338' : colors.borderColor,
-                    borderWidth: isSecureTierLocal ? '3px' : '2px',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minHeight: '520px'
+                    padding: '10px 24px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    backgroundColor: billingInterval === 'monthly' ? '#0C3B2E' : 'transparent',
+                    color: billingInterval === 'monthly' ? '#FFFFFF' : colors.textPrimary
                   }}
                 >
-                  <div style={{ height: '24px', marginBottom: '12px' }}>
-                    {plan.popular && (
-                      <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                        ⭐ {language === 'th' ? 'ได้รับความนิยมมากที่สุด' : strings.mostPopular}
-                      </Badge>
-                    )}
-                    {billingInterval === 'annual' && !isFreeplanLocal && !plan.popular && !isSecureTierLocal && (
-                      <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                        🏷️ {language === 'th' ? 'ฟรี 2 เดือน' : strings.monthsFree}
-                      </Badge>
-                    )}
-                    {isSecureTierLocal && (
-                      <Badge className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                        👑 {language === 'th' ? 'พรีเมียม' : 'PREMIUM'}
-                      </Badge>
-                    )}
-                  </div>
+                  {strings.monthly}
+                </button>
+                <button
+                  onClick={() => setBillingInterval('annual')}
+                  style={{
+                    padding: '10px 24px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    backgroundColor: billingInterval === 'annual' ? '#0C3B2E' : 'transparent',
+                    color: billingInterval === 'annual' ? '#FFFFFF' : colors.textPrimary,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  {strings.annual}
+                  <span style={{
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    backgroundColor: '#C7A338',
+                    color: '#FFFFFF'
+                  }}>
+                    {strings.save17}
+                  </span>
+                </button>
+              </div>
+            </div>
 
-                  <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        backgroundColor: isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : 'transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <Icon className="w-6 h-6" style={{ color: (isSecureTierLocal || isLiteTierLocal) ? '#FFFFFF' : plan.bgColor }} />
-                      </div>
-                      <h3 className="text-xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : colors.textPrimary }}>
-                        {plan.label}
-                      </h3>
-                    </div>
-                    <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                      {language === 'th' ? plan.taglineTh : strings[plan.tagline]}
-                    </p>
-                    <p className="text-xs line-clamp-2" style={{ color: colors.textSecondary }}>
-                      {language === 'th' ? plan.descriptionTh : strings[plan.description]}
-                    </p>
-                  </div>
-
-                  <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
-                    {isFreeplanLocal ? (
-                      <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
-                        {strings.freePlanName}
-                      </div>
-                    ) : (
-                      <>
-                        <div className="text-3xl font-bold mb-1" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
-                          ฿{displayPrice.toLocaleString()}
-                        </div>
-                        <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                          {displayInterval}
-                        </div>
-                      </>
-                    )}
-                    <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {billingInterval === 'annual' && !isFreeplanLocal && (
-                        <p className="text-xs" style={{ color: colors.textSecondary }}>
-                          ฿{effectiveMonthly}{strings.perMonth}
-                        </p>
+            <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
+            <p className="mb-6 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {PLAN_DETAILS.map((plan) => {
+                const Icon = plan.icon;
+                const isCurrentPlan = planTier === plan.key;
+                const isFreeplanLocal = plan.key === 'free';
+                const isSecureTierLocal = plan.key === 'secure';
+                const isLiteTierLocal = plan.key === 'lite';
+                const displayPrice = isFreeplanLocal ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
+                const displayInterval = isFreeplanLocal ? '' : (billingInterval === 'annual' ? (language === 'th' ? '/ปี' : plan.intervalAnnual) : (language === 'th' ? '/เดือน' : plan.intervalMonthly));
+                const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
+                const isSubscribingForPlan = subscribing[plan.key];
+                
+                return (
+                  <div
+                    key={plan.key}
+                    className={`relative border-2 transition-all duration-200 ${
+                      plan.popular ? 'border-amber-400 shadow-lg' : ''
+                    } ${isSecureTierLocal ? 'shadow-xl' : ''}`}
+                    style={{
+                      backgroundColor: isSecureTierLocal 
+                        ? (isDarkMode ? '#1A2E27' : '#F0FDF4')
+                        : isLiteTierLocal
+                          ? (isDarkMode ? '#1C2D28' : '#F0FDF9')
+                          : plan.popular 
+                            ? (isDarkMode ? '#2D2520' : '#FFFBEB')
+                            : colors.cardBg,
+                      borderColor: isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : plan.popular ? '#C7A338' : colors.borderColor,
+                      borderWidth: isSecureTierLocal ? '3px' : '2px',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      minHeight: '520px'
+                    }}
+                  >
+                    <div style={{ height: '24px', marginBottom: '12px' }}>
+                      {plan.popular && (
+                        <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                          ⭐ {language === 'th' ? 'ได้รับความนิยมมากที่สุด' : strings.mostPopular}
+                        </Badge>
                       )}
-                      {isFreeplanLocal && (
-                        <p className="text-xs" style={{ color: colors.textSecondary }}>
-                          {strings.noCreditCard}
-                        </p>
+                      {billingInterval === 'annual' && !isFreeplanLocal && !plan.popular && !isSecureTierLocal && (
+                        <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                          🏷️ {language === 'th' ? 'ฟรี 2 เดือน' : strings.monthsFree}
+                        </Badge>
+                      )}
+                      {isSecureTierLocal && (
+                        <Badge className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                          👑 {language === 'th' ? 'พรีเมียม' : 'PREMIUM'}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <div style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          backgroundColor: isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <Icon className="w-6 h-6" style={{ color: (isSecureTierLocal || isLiteTierLocal) ? '#FFFFFF' : plan.bgColor }} />
+                        </div>
+                        <h3 className="text-xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : colors.textPrimary }}>
+                          {plan.label}
+                        </h3>
+                      </div>
+                      <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                        {language === 'th' ? plan.taglineTh : strings[plan.tagline]}
+                      </p>
+                      <p className="text-xs line-clamp-2" style={{ color: colors.textSecondary }}>
+                        {language === 'th' ? plan.descriptionTh : strings[plan.description]}
+                      </p>
+                    </div>
+
+                    <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
+                      {isFreeplanLocal ? (
+                        <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
+                          {strings.freePlanName}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-3xl font-bold mb-1" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
+                            ฿{displayPrice.toLocaleString()}
+                          </div>
+                          <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                            {displayInterval}
+                          </div>
+                        </>
+                      )}
+                      <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {billingInterval === 'annual' && !isFreeplanLocal && (
+                          <p className="text-xs" style={{ color: colors.textSecondary }}>
+                            ฿{effectiveMonthly}{strings.perMonth}
+                          </p>
+                        )}
+                        {isFreeplanLocal && (
+                          <p className="text-xs" style={{ color: colors.textSecondary }}>
+                            {strings.noCreditCard}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ flex: 1, marginBottom: '12px' }}>
+                      <ul className="space-y-2">
+                        {(language === 'th' ? plan.benefitsTh : plan.benefits).map((benefit, idx) => {
+                          const isBold = benefit.startsWith('Everything in') || benefit.startsWith('ทุกอย่างใน');
+                          return (
+                            <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
+                              <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#0C3B2E' }} />
+                              <span style={{ fontWeight: isBold ? 'bold' : 'normal' }}>{benefit}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+
+                    <div className="mt-auto">
+                      {isCurrentPlan ? (
+                        <Button
+                          disabled
+                          className="w-full h-10 text-sm"
+                          style={{
+                            backgroundColor: colors.fieldBg,
+                            color: colors.textSecondary,
+                            cursor: 'not-allowed',
+                            border: `2px solid ${colors.borderColor}`
+                          }}
+                        >
+                          {strings.currentPlanBadge}
+                        </Button>
+                      ) : isFreeplanLocal ? (
+                        <Button
+                          disabled
+                          className="w-full h-10 text-sm"
+                          style={{
+                            backgroundColor: colors.cardBg,
+                            color: colors.textSecondary,
+                            cursor: 'not-allowed',
+                            border: `2px solid ${colors.textSecondary}`
+                          }}
+                        >
+                          {strings.signupFree}
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleSubscribe(plan.key, billingInterval)}
+                          disabled={isSubscribingForPlan}
+                          className="w-full h-10"
+                          style={{
+                            backgroundColor: isSubscribingForPlan ? '#9CA3AF' : (isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E'),
+                            color: '#FFFFFF',
+                            cursor: isSubscribingForPlan ? 'not-allowed' : 'pointer',
+                            opacity: isSubscribingForPlan ? 0.7 : 1,
+                            fontSize: isSecureTierLocal ? '15px' : '14px',
+                            fontWeight: isSecureTierLocal ? '700' : '600'
+                          }}
+                        >
+                          {isSubscribingForPlan ? strings.processing : `${strings.startPlan} ${plan.label}`}
+                        </Button>
                       )}
                     </div>
                   </div>
-
-                  <div style={{ flex: 1, marginBottom: '12px' }}>
-                    <ul className="space-y-2">
-                      {(language === 'th' ? plan.benefitsTh : plan.benefits).map((benefit, idx) => {
-                        const isBold = benefit.startsWith('Everything in') || benefit.startsWith('ทุกอย่างใน');
-                        return (
-                          <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
-                            <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#0C3B2E' }} />
-                            <span style={{ fontWeight: isBold ? 'bold' : 'normal' }}>{benefit}</span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-
-                  <div className="mt-auto">
-                    {isCurrentPlan ? (
-                      <Button
-                        disabled
-                        className="w-full h-10 text-sm"
-                        style={{
-                          backgroundColor: colors.fieldBg,
-                          color: colors.textSecondary,
-                          cursor: 'not-allowed',
-                          border: `2px solid ${colors.borderColor}`
-                        }}
-                      >
-                        {strings.currentPlanBadge}
-                      </Button>
-                    ) : isFreeplanLocal ? (
-                      <Button
-                        disabled
-                        className="w-full h-10 text-sm"
-                        style={{
-                          backgroundColor: colors.cardBg,
-                          color: colors.textSecondary,
-                          cursor: 'not-allowed',
-                          border: `2px solid ${colors.textSecondary}`
-                        }}
-                      >
-                        {strings.signupFree}
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => handleSubscribe(plan.key, billingInterval)}
-                        disabled={isSubscribingForPlan}
-                        className="w-full h-10"
-                        style={{
-                          backgroundColor: isSubscribingForPlan ? '#9CA3AF' : (isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E'),
-                          color: '#FFFFFF',
-                          cursor: isSubscribingForPlan ? 'not-allowed' : 'pointer',
-                          opacity: isSubscribingForPlan ? 0.7 : 1,
-                          fontSize: isSecureTierLocal ? '15px' : '14px',
-                          fontWeight: isSecureTierLocal ? '700' : '600'
-                        }}
-                      >
-                        {isSubscribingForPlan ? strings.processing : `${strings.startPlan} ${plan.label}`}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </section>
 
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>

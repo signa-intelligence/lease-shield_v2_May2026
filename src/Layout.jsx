@@ -247,7 +247,7 @@ export default function Layout({ children, currentPageName }) {
     navTabs.push({
       key: 'upgrade',
       label: strings.upgrade,
-      route: createPageUrl('Account') + '?highlight=plan',
+      route: createPageUrl('Account') + '?highlight=plans',
       icon: Star,
     });
   }
@@ -458,7 +458,7 @@ export default function Layout({ children, currentPageName }) {
             </Link>
             <LanguageToggle />
             {user && (!user.plan_tier || user.plan_tier === 'free') && (
-              <Link to={createPageUrl("Account") + '?highlight=plan'}>
+              <Link to={createPageUrl("Account") + '?highlight=plans'}>
                 <button
                   aria-label="Upgrade"
                   onClick={() => haptic.light()}

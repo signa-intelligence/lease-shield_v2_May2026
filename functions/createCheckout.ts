@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     // ✅ CREDITS: Dynamic one-time payment
     if (mode === 'payment' && amount) {
       const finalAmount = Math.round(amount * 100);
-      console.log('✅ CREDITS - Creating dynamic one-time payment:', finalAmount, 'satang');
+      console.log('✅ CREDITS - Creating one-time payment:', finalAmount, 'satang');
       
       sessionConfig.metadata = {
         ...(metadata || {}),
@@ -73,23 +73,24 @@ Deno.serve(async (req) => {
         quantity: 1,
       }];
     } 
-    // ✅ SUBSCRIPTIONS: Pass explicit metadata for webhook
+    // ✅ SUBSCRIPTIONS: Pass explicit metadata
     else if (mode === 'subscription' && amount) {
       const finalAmount = Math.round(amount * 100);
-      const interval = metadata?.interval || 'month';
+      const planTier = (metadata?.plan || '').toLowerCase() || 'lite';
+      const billingInterval = metadata?.interval === 'year' ? 'year' : 'month';
       
       console.log('✅ SUBSCRIPTION - Creating with metadata:', {
         userId: user.id,
-        plan: metadata?.plan,
-        interval: interval,
+        plan: planTier,
+        interval: billingInterval,
+        amount: finalAmount
       });
       
-      // Ensure subscription metadata is complete
       sessionConfig.metadata = {
         userId: user.id,
-        plan: metadata?.plan || 'lite',
-        interval: interval === 'year' ? 'year' : 'month',
         type: 'subscription',
+        plan: planTier,
+        interval: billingInterval,
       };
 
       sessionConfig.line_items = [{
@@ -97,7 +98,7 @@ Deno.serve(async (req) => {
           currency: currency || 'thb',
           unit_amount: finalAmount,
           recurring: {
-            interval: interval,
+            interval: billingInterval,
             interval_count: 1
           },
           product_data: {
@@ -111,14 +112,14 @@ Deno.serve(async (req) => {
       sessionConfig.subscription_data = {
         metadata: {
           userId: user.id,
-          plan: metadata?.plan || 'lite',
-          interval: interval === 'year' ? 'year' : 'month',
+          plan: planTier,
+          interval: billingInterval,
         }
       };
 
       console.log('✅ Subscription metadata set:', sessionConfig.metadata);
     } 
-    // ❌ OLD WAY: Pre-created price IDs (deprecated)
+    // ❌ Legacy price IDs (deprecated)
     else if (priceId) {
       console.log('⚠️ Using legacy priceId:', priceId);
       sessionConfig.metadata = metadata || {};
@@ -129,12 +130,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing priceId or amount' }, { status: 400 });
     }
 
-    console.log('Session config:', JSON.stringify(sessionConfig, null, 2));
+    console.log('📤 Creating session with config:', JSON.stringify(sessionConfig, null, 2));
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
     console.log('✅ Checkout session created:', session.id);
-    console.log('✅ Checkout URL:', session.url);
+    console.log('✅ URL:', session.url);
 
     return Response.json({ url: session.url });
   } catch (error) {

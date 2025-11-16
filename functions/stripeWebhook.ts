@@ -55,15 +55,238 @@ Deno.serve(async (req) => {
       const base44 = createClientFromRequest(req);
       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
       
-      const isCreditsCheckout = metadata.type === 'credits' || (session.mode === 'payment' && !metadata.plan);
-      const isSubscriptionCheckout = metadata.type === 'subscription' || session.mode === 'subscription';
+      const isSubscriptionCheckout = session.mode === 'subscription' || metadata.type === 'subscription';
+      const isCreditsCheckout = session.mode === 'payment' || metadata.type === 'credits' || metadata.credits;
 
-      console.log('🔍 Checkout type detection:', { isCreditsCheckout, isSubscriptionCheckout });
+      console.log('🔍 Checkout type detection:', { isSubscriptionCheckout, isCreditsCheckout });
 
       // ========================================
-      // CREDITS PURCHASE FLOW
+      // SUBSCRIPTION FLOW - HANDLE FIRST
       // ========================================
-      if (isCreditsCheckout) {
+      if (isSubscriptionCheckout) {
+        console.log('💳 Processing SUBSCRIPTION checkout');
+
+        // 1) Resolve user
+        const users = await base44.asServiceRole.entities.User.list();
+        let user = null;
+
+        if (metadata.userId) {
+          user = users.find(u => u.id === metadata.userId);
+          console.log('🔍 User lookup by userId:', metadata.userId, '→', user ? '✅ Found' : '❌ Not found');
+        }
+
+        if (!user && session.client_reference_id) {
+          user = users.find(u => u.id === session.client_reference_id);
+          console.log('🔍 User lookup by client_reference_id:', session.client_reference_id, '→', user ? '✅ Found' : '❌ Not found');
+        }
+
+        if (!user && customerId) {
+          user = users.find(u => u.stripe_customer_id === customerId);
+          console.log('🔍 User lookup by stripe_customer_id:', customerId, '→', user ? '✅ Found' : '❌ Not found');
+        }
+
+        if (!user && email) {
+          user = users.find(u => u.email === email);
+          console.log('🔍 User lookup by email:', email, '→', user ? '✅ Found' : '❌ Not found');
+        }
+
+        if (!user) {
+          console.error('❌ Subscription completed but no matching user found:', {
+            userIdFromMetadata: metadata.userId,
+            clientReferenceId: session.client_reference_id,
+            stripeCustomer: customerId,
+            email: email,
+          });
+          return Response.json({ received: true, warning: 'user_not_found_for_subscription' }, { status: 200 });
+        }
+
+        console.log('✅ User resolved:', user.email, '(id:', user.id, ')');
+
+        // 2) Extract plan + interval from metadata
+        const planTier = (metadata.plan || '').toLowerCase() || 'lite';
+        const billingInterval = metadata.interval === 'year' ? 'year' : 'month';
+
+        console.log('📋 Subscription details:', { planTier, billingInterval });
+
+        // 3) Get subscription and renewal date
+        const subscriptionId = session.subscription;
+        let planRenewsAt = null;
+
+        if (subscriptionId) {
+          try {
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            if (subscription && subscription.current_period_end) {
+              planRenewsAt = new Date(subscription.current_period_end * 1000).toISOString();
+              console.log('📅 Subscription period end:', planRenewsAt);
+            }
+          } catch (err) {
+            console.error('⚠️ Failed to retrieve subscription:', err.message);
+          }
+        }
+
+        // 4) Calculate included credits
+        const includedCredits = {
+          'lite': 3,
+          'protect': 5,
+          'secure': 10
+        };
+        const creditsToAdd = includedCredits[planTier] || 0;
+        const currentCredits = user.letter_credits || 0;
+
+        console.log('💳 Adding included credits:', creditsToAdd);
+
+        // 5) Update user record with all subscription fields
+        await base44.asServiceRole.entities.User.update(user.id, {
+          plan_tier: planTier,
+          billing_interval: billingInterval,
+          plan_renews_at: planRenewsAt,
+          stripe_subscription_id: subscriptionId,
+          stripe_customer_id: customerId,
+          subscription_status: 'active',
+          letter_credits: currentCredits + creditsToAdd
+        });
+
+        console.log('✅✅✅ SUBSCRIPTION UPDATED! ✅✅✅');
+        console.log('User:', user.email);
+        console.log('Plan:', planTier);
+        console.log('Interval:', billingInterval);
+        console.log('Renews:', planRenewsAt);
+        console.log('Credits:', currentCredits + creditsToAdd);
+
+        // 6) Insert payment record
+        await base44.asServiceRole.entities.Payment.create({
+          type: 'subscription',
+          amount: parseFloat((session.amount_total / 100).toFixed(2)),
+          currency: 'THB',
+          provider: 'stripe',
+          status: 'paid',
+          external_id: session.id,
+          created_by: user.email
+        });
+
+        // 7) Send confirmation notifications
+        const lang = user.language || 'en';
+        const planLabels = {
+          lite: { en: 'Lite', th: 'ไลท์' },
+          protect: { en: 'Protect', th: 'โปรเทค' },
+          secure: { en: 'Secure', th: 'ซีเคียว' }
+        };
+
+        const planLabel = planLabels[planTier]?.[lang] || planTier;
+        const intervalLabel = billingInterval === 'year' 
+          ? (lang === 'th' ? 'รายปี' : 'Annual')
+          : (lang === 'th' ? 'รายเดือน' : 'Monthly');
+
+        const subject = lang === 'th'
+          ? `ยินดีต้อนรับสู่ Lease Shield ${planLabel}!`
+          : `Welcome to Lease Shield ${planLabel}!`;
+
+        const emailBody = lang === 'th'
+          ? `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(to right, #8B5CF6, #7C3AED); padding: 20px; border-radius: 8px 8px 0 0;">
+              <h2 style="color: white; margin: 0;">🎉 ยินดีต้อนรับสู่ ${planLabel}!</h2>
+            </div>
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+              <p>สวัสดี <strong>${user.full_name}</strong>,</p>
+              <p>การสมัครสมาชิกของคุณเปิดใช้งานแล้ว! 🎉</p>
+              <p style="background: #F5F3FF; padding: 16px; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+                <strong>แผน:</strong> ${planLabel}<br/>
+                <strong>การเรียกเก็บเงิน:</strong> ${intervalLabel}<br/>
+                <strong>ต่ออายุเมื่อ:</strong> ${planRenewsAt ? new Date(planRenewsAt).toLocaleDateString('th-TH') : 'N/A'}<br/>
+                <strong>จำนวนเงิน:</strong> ฿${(session.amount_total / 100).toLocaleString()}<br/>
+                <strong>เครดิตจดหมาย:</strong> ${currentCredits + creditsToAdd}
+              </p>
+              <p>คุณสามารถเข้าถึงฟีเจอร์ทั้งหมดในแผนของคุณได้แล้ว</p>
+              <p><a href="https://app.leaseshield.asia/account" style="color: #0C3B2E; font-weight: bold;">ดูบัญชีของคุณ →</a></p>
+              <p style="margin-top: 24px;">— ทีม Lease Shield</p>
+            </div>
+          </div>
+          `
+          : `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(to right, #8B5CF6, #7C3AED); padding: 20px; border-radius: 8px 8px 0 0;">
+              <h2 style="color: white; margin: 0;">🎉 Welcome to ${planLabel}!</h2>
+            </div>
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+              <p>Hi <strong>${user.full_name}</strong>,</p>
+              <p>Your subscription is now active! 🎉</p>
+              <p style="background: #F5F3FF; padding: 16px; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+                <strong>Plan:</strong> ${planLabel}<br/>
+                <strong>Billing:</strong> ${intervalLabel}<br/>
+                <strong>Renews:</strong> ${planRenewsAt ? new Date(planRenewsAt).toLocaleDateString('en-US') : 'N/A'}<br/>
+                <strong>Amount:</strong> ฿${(session.amount_total / 100).toLocaleString()}<br/>
+                <strong>Letter Credits:</strong> ${currentCredits + creditsToAdd}
+              </p>
+              <p>You now have access to all features in your plan.</p>
+              <p><a href="https://app.leaseshield.asia/account" style="color: #0C3B2E; font-weight: bold;">View Your Account →</a></p>
+              <p style="margin-top: 24px;">— The Lease Shield Team</p>
+            </div>
+          </div>
+          `;
+
+        if (RESEND_API_KEY) {
+          try {
+            const resendResponse = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${RESEND_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: 'Lease Shield <no-reply@leaseshield.asia>',
+                to: [user.email],
+                subject: subject,
+                html: emailBody,
+              }),
+            });
+
+            const resendData = await resendResponse.json();
+            if (resendResponse.ok) {
+              console.log('✅ Subscription email sent. Message ID:', resendData.id);
+            } else {
+              console.error('❌ Email failed:', resendData);
+            }
+          } catch (emailError) {
+            console.error('❌ Email error:', emailError);
+          }
+        }
+
+        if (user.line_messaging_token && user.line_notifications) {
+          const displayDate = planRenewsAt ? new Date(planRenewsAt) : new Date();
+          const formattedDate = lang === 'th'
+            ? displayDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
+            : displayDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+          
+          const lineMessage = lang === 'th'
+            ? `🎉 ยินดีต้อนรับสู่ ${planLabel}!\n\nการสมัครสมาชิกของคุณเปิดใช้งานแล้ว\nต่ออายุ: ${formattedDate}\nเครดิตจดหมาย: ${currentCredits + creditsToAdd}\n\nเข้าถึงฟีเจอร์ทั้งหมดได้เลย 🚀`
+            : `🎉 Welcome to ${planLabel}!\n\nYour subscription is now active\nRenews: ${formattedDate}\nLetter Credits: ${currentCredits + creditsToAdd}\n\nAccess all features now 🚀`;
+
+          try {
+            await fetch('https://api.line.me/v2/bot/message/push', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN')}`
+              },
+              body: JSON.stringify({
+                to: user.line_messaging_token,
+                messages: [{ type: 'text', text: lineMessage }]
+              })
+            });
+            console.log('✅ LINE notification sent');
+          } catch (lineError) {
+            console.error('⚠️ LINE error:', lineError.message);
+          }
+        }
+
+        return Response.json({ ok: true, subscriptionActivated: true, plan: planTier }, { status: 200 });
+      }
+
+      // ========================================
+      // CREDITS FLOW - ONLY IF NOT SUBSCRIPTION
+      // ========================================
+      if (!isSubscriptionCheckout && isCreditsCheckout) {
         console.log('💰 Processing CREDITS checkout');
 
         const users = await base44.asServiceRole.entities.User.list();
@@ -209,7 +432,7 @@ Deno.serve(async (req) => {
               : `🎉 Credits Added!\n\nYou purchased ${creditsToAdd} credits\nNew Balance: ${currentCredits + creditsToAdd} credits\n\nStart generating letters now 📝`;
 
             try {
-              const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
+              await fetch('https://api.line.me/v2/bot/message/push', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -220,10 +443,7 @@ Deno.serve(async (req) => {
                   messages: [{ type: 'text', text: lineMessage }]
                 })
               });
-
-              if (lineResponse.ok) {
-                console.log('✅ LINE notification sent');
-              }
+              console.log('✅ LINE notification sent');
             } catch (lineError) {
               console.error('⚠️ LINE error:', lineError.message);
             }
@@ -231,232 +451,10 @@ Deno.serve(async (req) => {
 
           return Response.json({ ok: true, credited: creditsToAdd }, { status: 200 });
         }
-
-        return Response.json({ ok: true, message: 'Credits checkout but no credits detected' }, { status: 200 });
-      }
-      
-      // ========================================
-      // SUBSCRIPTION PURCHASE FLOW
-      // ========================================
-      if (isSubscriptionCheckout) {
-        console.log('💳 Processing SUBSCRIPTION checkout');
-
-        // 1) Resolve user by userId metadata first
-        let userId = metadata.userId || session.client_reference_id;
-        let user = null;
-
-        const users = await base44.asServiceRole.entities.User.list();
-
-        if (userId) {
-          user = users.find(u => u.id === userId);
-          console.log('🔍 User lookup by userId:', userId, '→', user ? '✅ Found' : '❌ Not found');
-        }
-
-        if (!user && customerId) {
-          user = users.find(u => u.stripe_customer_id === customerId);
-          console.log('🔍 User lookup by stripe_customer_id:', customerId, '→', user ? '✅ Found' : '❌ Not found');
-        }
-
-        if (!user && email) {
-          user = users.find(u => u.email === email);
-          console.log('🔍 User lookup by email:', email, '→', user ? '✅ Found' : '❌ Not found');
-        }
-
-        if (!user) {
-          console.error('❌ Subscription completed but no matching user found:', {
-            userIdFromMetadata: metadata.userId,
-            clientReferenceId: session.client_reference_id,
-            stripeCustomer: customerId,
-            email: email,
-          });
-          return Response.json({ received: true, warning: 'user_not_found_for_subscription' }, { status: 200 });
-        }
-
-        console.log('✅ User resolved:', user.email);
-
-        // 2) Extract plan + interval from metadata
-        const planTier = (metadata.plan || '').toLowerCase() || 'lite';
-        const billingInterval = metadata.interval === 'year' ? 'year' : 'month';
-
-        console.log('📋 Subscription details:', { planTier, billingInterval });
-
-        // 3) Get subscription and renewal date
-        const subscriptionId = session.subscription;
-        let planRenewsAt = null;
-
-        if (subscriptionId) {
-          try {
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            const periodEnd = subscription.current_period_end;
-            planRenewsAt = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
-            console.log('📅 Subscription period end:', planRenewsAt);
-          } catch (err) {
-            console.error('⚠️ Failed to retrieve subscription:', err.message);
-          }
-        }
-
-        // 4) Calculate included credits
-        const includedCredits = {
-          'lite': 3,
-          'protect': 5,
-          'secure': 10
-        };
-        const creditsToAdd = includedCredits[planTier] || 0;
-        const currentCredits = user.letter_credits || 0;
-
-        console.log('💳 Adding included credits:', creditsToAdd);
-
-        // 5) Update user record
-        await base44.asServiceRole.entities.User.update(user.id, {
-          plan_tier: planTier,
-          billing_interval: billingInterval,
-          plan_renews_at: planRenewsAt,
-          stripe_subscription_id: subscriptionId,
-          stripe_customer_id: customerId,
-          subscription_status: 'active',
-          letter_credits: currentCredits + creditsToAdd
-        });
-
-        console.log('✅ SUBSCRIPTION UPDATED:', {
-          user: user.email,
-          plan: planTier,
-          interval: billingInterval,
-          renews: planRenewsAt,
-          credits: currentCredits + creditsToAdd
-        });
-
-        // 6) Insert payment record
-        await base44.asServiceRole.entities.Payment.create({
-          type: 'subscription',
-          amount: parseFloat((session.amount_total / 100).toFixed(2)),
-          currency: 'THB',
-          provider: 'stripe',
-          status: 'paid',
-          external_id: session.id,
-          created_by: user.email
-        });
-
-        // 7) Send confirmation notifications
-        const lang = user.language || 'en';
-        const planLabels = {
-          lite: { en: 'Lite', th: 'ไลท์' },
-          protect: { en: 'Protect', th: 'โปรเทค' },
-          secure: { en: 'Secure', th: 'ซีเคียว' }
-        };
-
-        const planLabel = planLabels[planTier]?.[lang] || planTier;
-        const intervalLabel = billingInterval === 'year' 
-          ? (lang === 'th' ? 'รายปี' : 'Annual')
-          : (lang === 'th' ? 'รายเดือน' : 'Monthly');
-
-        const subject = lang === 'th'
-          ? `ยินดีต้อนรับสู่ Lease Shield ${planLabel}!`
-          : `Welcome to Lease Shield ${planLabel}!`;
-
-        const emailBody = lang === 'th'
-          ? `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(to right, #8B5CF6, #7C3AED); padding: 20px; border-radius: 8px 8px 0 0;">
-              <h2 style="color: white; margin: 0;">🎉 ยินดีต้อนรับสู่ ${planLabel}!</h2>
-            </div>
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
-              <p>สวัสดี <strong>${user.full_name}</strong>,</p>
-              <p>การสมัครสมาชิกของคุณเปิดใช้งานแล้ว! 🎉</p>
-              <p style="background: #F5F3FF; padding: 16px; border-radius: 8px; border-left: 4px solid #8B5CF6;">
-                <strong>แผน:</strong> ${planLabel}<br/>
-                <strong>การเรียกเก็บเงิน:</strong> ${intervalLabel}<br/>
-                <strong>ต่ออายุเมื่อ:</strong> ${planRenewsAt ? new Date(planRenewsAt).toLocaleDateString('th-TH') : 'N/A'}<br/>
-                <strong>จำนวนเงิน:</strong> ฿${(session.amount_total / 100).toLocaleString()}<br/>
-                <strong>เครดิตจดหมาย:</strong> ${currentCredits + creditsToAdd}
-              </p>
-              <p>คุณสามารถเข้าถึงฟีเจอร์ทั้งหมดในแผนของคุณได้แล้ว</p>
-              <p><a href="https://app.leaseshield.asia/account" style="color: #0C3B2E; font-weight: bold;">ดูบัญชีของคุณ →</a></p>
-              <p style="margin-top: 24px;">— ทีม Lease Shield</p>
-            </div>
-          </div>
-          `
-          : `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(to right, #8B5CF6, #7C3AED); padding: 20px; border-radius: 8px 8px 0 0;">
-              <h2 style="color: white; margin: 0;">🎉 Welcome to ${planLabel}!</h2>
-            </div>
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
-              <p>Hi <strong>${user.full_name}</strong>,</p>
-              <p>Your subscription is now active! 🎉</p>
-              <p style="background: #F5F3FF; padding: 16px; border-radius: 8px; border-left: 4px solid #8B5CF6;">
-                <strong>Plan:</strong> ${planLabel}<br/>
-                <strong>Billing:</strong> ${intervalLabel}<br/>
-                <strong>Renews:</strong> ${planRenewsAt ? new Date(planRenewsAt).toLocaleDateString('en-US') : 'N/A'}<br/>
-                <strong>Amount:</strong> ฿${(session.amount_total / 100).toLocaleString()}<br/>
-                <strong>Letter Credits:</strong> ${currentCredits + creditsToAdd}
-              </p>
-              <p>You now have access to all features in your plan.</p>
-              <p><a href="https://app.leaseshield.asia/account" style="color: #0C3B2E; font-weight: bold;">View Your Account →</a></p>
-              <p style="margin-top: 24px;">— The Lease Shield Team</p>
-            </div>
-          </div>
-          `;
-
-        if (RESEND_API_KEY) {
-          try {
-            const resendResponse = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${RESEND_API_KEY}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                from: 'Lease Shield <no-reply@leaseshield.asia>',
-                to: [user.email],
-                subject: subject,
-                html: emailBody,
-              }),
-            });
-
-            const resendData = await resendResponse.json();
-            if (resendResponse.ok) {
-              console.log('✅ Subscription email sent. Message ID:', resendData.id);
-            } else {
-              console.error('❌ Email failed:', resendData);
-            }
-          } catch (emailError) {
-            console.error('❌ Email error:', emailError);
-          }
-        }
-
-        if (user.line_messaging_token && user.line_notifications) {
-          const displayDate = planRenewsAt ? new Date(planRenewsAt) : new Date();
-          const formattedDate = lang === 'th'
-            ? displayDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
-            : displayDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-          
-          const lineMessage = lang === 'th'
-            ? `🎉 ยินดีต้อนรับสู่ ${planLabel}!\n\nการสมัครสมาชิกของคุณเปิดใช้งานแล้ว\nต่ออายุ: ${formattedDate}\nเครดิตจดหมาย: ${currentCredits + creditsToAdd}\n\nเข้าถึงฟีเจอร์ทั้งหมดได้เลย 🚀`
-            : `🎉 Welcome to ${planLabel}!\n\nYour subscription is now active\nRenews: ${formattedDate}\nLetter Credits: ${currentCredits + creditsToAdd}\n\nAccess all features now 🚀`;
-
-          try {
-            await fetch('https://api.line.me/v2/bot/message/push', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN')}`
-              },
-              body: JSON.stringify({
-                to: user.line_messaging_token,
-                messages: [{ type: 'text', text: lineMessage }]
-              })
-            });
-            console.log('✅ LINE notification sent');
-          } catch (lineError) {
-            console.error('⚠️ LINE error:', lineError.message);
-          }
-        }
-
-        return Response.json({ ok: true, subscriptionActivated: true, plan: planTier }, { status: 200 });
       }
 
       console.log('⚠️ checkout.session.completed but no recognized flow');
-      return Response.json({ ok: true, message: 'No action needed' }, { status: 200 });
+      return Response.json({ received: true }, { status: 200 });
     }
 
     // ========================================
