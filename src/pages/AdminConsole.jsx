@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp } from "lucide-react";
+import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
 import { format, differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
@@ -78,6 +78,10 @@ export default function AdminConsole() {
     queryFn: () => base44.entities.Document.list(),
     enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
   });
+
+  // ✅ COMPUTE SUPER ADMIN COUNT
+  const superAdmins = users.filter(u => u.access_level === 'super_admin');
+  const superAdminCount = superAdmins.length;
 
   const updateUserMutation = useMutation({
     mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data),
@@ -392,6 +396,7 @@ export default function AdminConsole() {
       revenueAnalyticsTitle: "Revenue & Business Analytics",
       revenueAnalyticsDesc: "View revenue, users, and feature purchase insights",
       viewAnalyticsButton: "View Analytics",
+      superAdminWarning: "There must be at least one Super Admin at all times. Cannot change this user's role.",
     },
     th: {
       adminConsole: "คอนโซลผู้ดูแล",
@@ -456,6 +461,7 @@ export default function AdminConsole() {
       revenueAnalyticsTitle: "วิเคราะห์รายได้และธุรกิจ",
       revenueAnalyticsDesc: "ดูข้อมูลรายได้ ผู้ใช้ และการซื้อฟีเจอร์",
       viewAnalyticsButton: "เปิดดู",
+      superAdminWarning: "ต้องมี Super Admin อย่างน้อยหนึ่งคนเสมอ ไม่สามารถเปลี่ยนบทบาทของผู้ใช้นี้ได้",
     },
     zh: {
       adminConsole: "管理控制台",
@@ -520,6 +526,7 @@ export default function AdminConsole() {
       revenueAnalyticsTitle: "收入和业务分析",
       revenueAnalyticsDesc: "查看收入、用户和功能购买洞察",
       viewAnalyticsButton: "查看分析",
+      superAdminWarning: "至少需要保留一名超级管理员。无法更改此用户的角色。",
     },
     ja: {
       adminConsole: "管理コンソール",
@@ -584,6 +591,7 @@ export default function AdminConsole() {
       revenueAnalyticsTitle: "収益とビジネス分析",
       revenueAnalyticsDesc: "収益、ユーザー、機能購入の洞察を表示",
       viewAnalyticsButton: "分析を表示",
+      superAdminWarning: "常に少なくとも1人のスーパー管理者が必要です。このユーザーの役割を変更することはできません。",
     },
     ko: {
       adminConsole: "관리 콘솔",
@@ -648,6 +656,7 @@ export default function AdminConsole() {
       revenueAnalyticsTitle: "수익 및 비즈니스 분석",
       revenueAnalyticsDesc: "수익, 사용자 및 기능 구매 통찰력 보기",
       viewAnalyticsButton: "분석 보기",
+      superAdminWarning: "항상 최소 한 명의 슈퍼 관리자가 있어야 합니다. 이 사용자의 역할을 변경할 수 없습니다.",
     }
   };
 
@@ -1145,6 +1154,9 @@ export default function AdminConsole() {
                     const lastUpdate = new Date(u.updated_date || u.created_date);
                     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
                     const isOnline = lastUpdate > fiveMinutesAgo;
+                    const isCurrentUserSuperAdmin = user?.access_level === 'super_admin';
+                    const isTargetUserSuperAdmin = u.access_level === 'super_admin';
+                    const canChangeRole = !(isTargetUserSuperAdmin && superAdminCount <= 1 && isCurrentUserSuperAdmin);
                     
                     return (
                       <tr
@@ -1220,6 +1232,7 @@ export default function AdminConsole() {
                                 userId: u.id,
                                 data: { access_level: val }
                               })}
+                              disabled={!canChangeRole}
                             >
                               <SelectTrigger className="w-32 h-8 text-xs">
                                 <SelectValue />
@@ -1228,9 +1241,17 @@ export default function AdminConsole() {
                                 <SelectItem value="user">User</SelectItem>
                                 <SelectItem value="va">VA</SelectItem>
                                 <SelectItem value="admin">Admin</SelectItem>
-                                <SelectItem value="super_admin">Super Admin</SelectItem>
+                                {isSuperAdmin && (
+                                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                                )}
                               </SelectContent>
                             </Select>
+                            {!canChangeRole && (
+                                <div className="flex items-center gap-1 text-red-500 text-xs">
+                                    <AlertCircle className="w-3 h-3" />
+                                    <span>{strings.superAdminWarning}</span>
+                                </div>
+                            )}
                             <Select
                               value={u.plan_tier || 'free'}
                               onValueChange={(val) => updateUserMutation.mutate({
