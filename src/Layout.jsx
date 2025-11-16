@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -246,7 +247,7 @@ export default function Layout({ children, currentPageName }) {
     navTabs.push({
       key: 'upgrade',
       label: strings.upgrade,
-      route: createPageUrl('Account') + '#plans',
+      route: createPageUrl('Account') + '?highlight=plan',
       icon: Star,
     });
   }
@@ -457,7 +458,7 @@ export default function Layout({ children, currentPageName }) {
             </Link>
             <LanguageToggle />
             {user && (!user.plan_tier || user.plan_tier === 'free') && (
-              <Link to={createPageUrl("Account") + '#plans'}>
+              <Link to={createPageUrl("Account") + '?highlight=plan'}>
                 <button
                   aria-label="Upgrade"
                   onClick={() => haptic.light()}
@@ -552,7 +553,7 @@ export default function Layout({ children, currentPageName }) {
           {navTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = tab.key === 'upgrade' 
-              ? location.pathname + location.hash === tab.route 
+              ? location.pathname + location.search === tab.route 
               : location.pathname === tab.route;
             
             return (
