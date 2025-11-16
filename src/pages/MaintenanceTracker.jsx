@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,13 +15,12 @@ import { createPageUrl } from "@/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import ChatLog from "../components/maintenance/ChatLog";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
-import { useHapticFeedback } from "@/components/haptic";
+import { haptic } from "../components/shared/HapticFeedback";
 
 export default function MaintenanceTrackerPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const haptic = useHapticFeedback();
-  const [showAddRequest, setShowAddRequest] = useState(false); // Renamed from showAddForm
+  const [showAddRequest, setShowAddRequest] = useState(false);
   const [expandedRequest, setExpandedRequest] = useState(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [photoFiles, setPhotoFiles] = useState([]);
@@ -44,7 +42,7 @@ export default function MaintenanceTrackerPage() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: maintenanceRequests = [], isLoading } = useQuery({ // Renamed 'requests' to 'maintenanceRequests'
+  const { data: maintenanceRequests = [], isLoading } = useQuery({
     queryKey: ['maintenance'],
     queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
@@ -54,7 +52,7 @@ export default function MaintenanceTrackerPage() {
     mutationFn: (data) => base44.entities.MaintenanceRequest.create(data),
     onSuccess: async (createdRequest) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
-      setShowAddRequest(false); // Changed from setShowAddForm
+      setShowAddRequest(false);
       setPhotoFiles([]);
       setPhotoPreviews([]);
       setFormData({
@@ -293,7 +291,7 @@ export default function MaintenanceTrackerPage() {
       setShowUpgradeModal(true);
       return;
     }
-    setShowAddRequest(!showAddRequest); // Changed from setShowAddForm
+    setShowAddRequest(!showAddRequest);
   };
 
   const handleSubmit = async (e) => {
@@ -363,7 +361,6 @@ export default function MaintenanceTrackerPage() {
           {strings.back}
         </Button>
 
-        {/* Upgrade Modal */}
         <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
           <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
             <DialogHeader>
@@ -408,7 +405,6 @@ export default function MaintenanceTrackerPage() {
           {strings.addRequest}
         </Button>
 
-        {/* Post-upgrade hint */}
         {showPostUpgradeHint && (!user?.plan_tier || user.plan_tier === 'free') && (
           <div
             style={{
@@ -448,7 +444,7 @@ export default function MaintenanceTrackerPage() {
           </div>
         )}
 
-        {showAddRequest && ( // Changed from showAddForm
+        {showAddRequest && (
           <Card 
             className="mb-6 border-none shadow-xl" 
             style={{ 
@@ -599,7 +595,7 @@ export default function MaintenanceTrackerPage() {
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setShowAddRequest(false); // Changed from setShowAddForm
+                      setShowAddRequest(false);
                       setPhotoFiles([]);
                       setPhotoPreviews([]);
                     }}
