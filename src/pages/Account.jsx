@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins, TrendingUp } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationPreferences from "../components/settings/NotificationPreferences";
 import NotificationAnalytics from "../components/dashboard/NotificationAnalytics";
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus";
-import { haptic } from "../components/shared/HapticFeedback";
+import { haptic } => "../components/shared/HapticFeedback";
 
 
 const PLAN_DETAILS = [
@@ -217,6 +217,7 @@ export default function Account() {
   const [cancelFeedback, setCancelFeedback] = useState('');
   const [copiedLink, setCopiedLink] = useState(null);
   const [buyingCredits, setBuyingCredits] = useState({});
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -597,6 +598,7 @@ export default function Account() {
   const language = user?.language || 'en';
   const currentTheme = user?.theme || 'dark';
   const isDarkMode = currentTheme === 'dark';
+  const isAboveLite = currentPlanTier === 'protect' || currentPlanTier === 'secure';
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -1731,7 +1733,7 @@ export default function Account() {
                           border: `2px solid ${colors.borderColor}`,
                           backgroundColor: colors.inputBg,
                           color: colors.textPrimary,
-                          borderRadius: '8px',
+                          borderRadius: '88px',
                           padding: '10px 12px',
                           fontSize: '14px'
                         }}
@@ -2045,30 +2047,58 @@ export default function Account() {
                     {language === 'th' ? 'เปลี่ยนแผน' : 'Change Plan'}
                   </button>
 
-                  <button
-                    onClick={() => setShowCancelDialog(true)}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      backgroundColor: 'transparent',
-                      color: '#EF4444',
-                      borderRadius: '6px',
-                      fontWeight: '600',
-                      fontSize: '13px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      textAlign: 'center'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.textDecoration = 'underline';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.textDecoration = 'none';
-                    }}
-                  >
-                    {language === 'th' ? 'ยกเลิกการสมัครสมาชิก' : 'Cancel subscription'}
-                  </button>
+                  <div style={{ marginTop: '8px' }}>
+                    <button
+                      onClick={() => setShowMoreOptions(!showMoreOptions)}
+                      style={{
+                        width: '100%',
+                        padding: '6px 0',
+                        backgroundColor: 'transparent',
+                        color: colors.textSecondary,
+                        border: 'none',
+                        fontWeight: '500',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.color = colors.textPrimary;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.color = colors.textSecondary;
+                      }}
+                    >
+                      {showMoreOptions ? (language === 'th' ? 'ซ่อนตัวเลือก' : 'Hide options') : (language === 'th' ? 'ตัวเลือกเพิ่มเติม' : 'More options')}
+                    </button>
+
+                    {showMoreOptions && (
+                      <div style={{ marginTop: '8px', textAlign: 'center' }}>
+                        <button
+                          onClick={() => setShowCancelDialog(true)}
+                          style={{
+                            padding: '6px 12px',
+                            backgroundColor: 'transparent',
+                            color: '#EF4444',
+                            borderRadius: '6px',
+                            fontWeight: '600',
+                            fontSize: '13px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.textDecoration = 'underline';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.textDecoration = 'none';
+                          }}
+                        >
+                          {language === 'th' ? 'ยกเลิกการสมัครสมาชิก' : 'Cancel subscription'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -2854,6 +2884,58 @@ export default function Account() {
                       </li>
                     ))}
                   </ul>
+                </div>
+              )}
+
+              {isAboveLite && (
+                <div className="p-4 rounded-lg border-2" style={{
+                  backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                  borderColor: '#3B82F6'
+                }}>
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                      <TrendingUp className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                        {language === 'th' ? 'พิจารณาลดระดับแทน' : 'Consider downgrading instead'}
+                      </p>
+                      <p className="text-sm" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                        {language === 'th' 
+                          ? 'แทนที่จะยกเลิกทั้งหมด คุณสามารถประหยัดเงินโดยเปลี่ยนเป็นแผนที่ต่ำกว่าและรักษาการป้องกันหลักไว้'
+                          : 'Instead of cancelling completely, you can save money by switching to a lower plan and keep key protections active.'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowCancelDialog(false);
+                      const plansSection = document.getElementById('plans-section');
+                      if (plansSection) {
+                        plansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 16px',
+                      backgroundColor: '#3B82F6',
+                      color: '#FFFFFF',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      fontSize: '14px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#2563EB';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#3B82F6';
+                    }}
+                  >
+                    {language === 'th' ? 'ลดระดับแทน' : 'Downgrade instead'}
+                  </button>
                 </div>
               )}
 
