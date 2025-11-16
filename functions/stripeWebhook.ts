@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -33,13 +32,13 @@ Deno.serve(async (req) => {
     }
 
     if (!webhookSecret) {
-      console.error('❌ Webhook_stripe secret not configured');
+      console.error('❌ webhook_stripe secret not configured');
       return Response.json({ error: 'Webhook secret not configured' }, { status: 500 });
     }
 
     let event;
     try {
-      event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+      event = await stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
       console.log('✅ WEBHOOK SIGNATURE VERIFIED');
       console.log('Event ID:', event.id);
       console.log('Event Type:', event.type);
@@ -534,6 +533,7 @@ Deno.serve(async (req) => {
         });
         console.log('✅ Downgraded to free:', user.email);
       }
+
       return Response.json({ received: true }, { status: 200 });
     }
 
