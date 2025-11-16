@@ -8,7 +8,6 @@ const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2024-06-20',
 });
 
-// Price ID to credits mapping
 const PRICE_CREDIT_MAP = {
   'price_1SR2b5QwoI6NhlUxbwA8JfsS': 1,
   'price_1SR2dLQwoI6NhlUxv0TkEsiZ': 3,
@@ -33,7 +32,7 @@ Deno.serve(async (req) => {
       event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
       console.log('✅ Webhook signature verified. Event type:', event.type);
     } catch (err) {
-      console.error('❌ Stripe webhook signature verification failed:', err.message);
+      console.error('❌ Webhook signature verification failed:', err.message);
       return Response.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
@@ -46,249 +45,287 @@ Deno.serve(async (req) => {
       const customerId = session.customer;
       const email = session.customer_details?.email;
       
+      console.log('[StripeWebhook] checkout.session.completed:', {
+        mode: session.mode,
+        metadata,
+        customer: customerId,
+        client_reference_id: session.client_reference_id,
+      });
+
       const base44 = createClientFromRequest(req);
       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
       
-      const users = await base44.asServiceRole.entities.User.list();
-      
-      let user = users.find(u => 
-        u.stripe_customer_id === customerId || u.email === email
-      );
+      const isCreditsCheckout = metadata.type === 'credits' || (session.mode === 'payment' && !metadata.plan);
+      const isSubscriptionCheckout = metadata.type === 'subscription' || session.mode === 'subscription';
 
-      if (!user) {
-        console.error('❌ User not found for:', email, customerId);
-        return Response.json({ error: 'User not found' }, { status: 404 });
-      }
+      console.log('🔍 Checkout type detection:', { isCreditsCheckout, isSubscriptionCheckout });
 
       // ========================================
       // CREDITS PURCHASE FLOW
       // ========================================
-      
-      let isCreditsFlow = metadata.type === 'credits';
-      let creditsToAdd = 0;
+      if (isCreditsCheckout) {
+        console.log('💰 Processing CREDITS checkout');
 
-      // Method 1: Metadata-based (dynamic price_data)
-      if (metadata.type === 'credits' && metadata.credits) {
-        creditsToAdd = parseInt(metadata.credits);
-        console.log('💰 CREDITS (metadata): Adding', creditsToAdd, 'credits');
-      } 
-      // Method 2: Price ID-based (legacy pre-created prices)
-      else if (session.mode === 'payment' && !metadata.plan) {
-        try {
-          const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
-            expand: ['line_items.data.price'],
+        const users = await base44.asServiceRole.entities.User.list();
+        let user = users.find(u => u.stripe_customer_id === customerId || u.email === email);
+
+        if (!user) {
+          console.error('❌ User not found for credits:', email, customerId);
+          return Response.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        let creditsToAdd = 0;
+
+        if (metadata.credits) {
+          creditsToAdd = parseInt(metadata.credits);
+          console.log('💰 CREDITS (metadata):', creditsToAdd);
+        } else {
+          try {
+            const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+              expand: ['line_items.data.price'],
+            });
+
+            const items = fullSession.line_items?.data || [];
+            let totalCredits = 0;
+
+            for (const item of items) {
+              const price = item.price;
+              const qty = item.quantity || 1;
+              const perCredits = PRICE_CREDIT_MAP[price.id] || 0;
+              if (perCredits > 0) {
+                totalCredits += perCredits * qty;
+              }
+            }
+
+            if (totalCredits > 0) {
+              creditsToAdd = totalCredits;
+              console.log('💰 CREDITS (price IDs):', creditsToAdd);
+            }
+          } catch (err) {
+            console.error('⚠️ Failed to retrieve line items:', err.message);
+          }
+        }
+
+        if (creditsToAdd > 0) {
+          const currentCredits = user.letter_credits || 0;
+          const totalPurchased = user.total_credits_purchased || 0;
+
+          await base44.asServiceRole.entities.User.update(user.id, {
+            letter_credits: currentCredits + creditsToAdd,
+            total_credits_purchased: totalPurchased + creditsToAdd
           });
 
-          const items = fullSession.line_items?.data || [];
-          let totalCredits = 0;
+          console.log('✅ CREDITS UPDATED:', {
+            user: user.email,
+            added: creditsToAdd,
+            newBalance: currentCredits + creditsToAdd
+          });
 
-          for (const item of items) {
-            const price = item.price;
-            const qty = item.quantity || 1;
-            const perCredits = PRICE_CREDIT_MAP[price.id] || 0;
-            if (perCredits > 0) {
-              totalCredits += perCredits * qty;
-            }
-          }
+          await base44.asServiceRole.entities.Payment.create({
+            type: 'addon',
+            amount: parseFloat((session.amount_total / 100).toFixed(2)),
+            currency: 'THB',
+            provider: 'stripe',
+            status: 'paid',
+            external_id: session.id,
+            created_by: user.email
+          });
 
-          if (totalCredits > 0) {
-            isCreditsFlow = true;
-            creditsToAdd = totalCredits;
-            console.log('💰 CREDITS (price IDs): Adding', creditsToAdd, 'credits');
-          }
-        } catch (err) {
-          console.error('⚠️ Failed to retrieve line items:', err.message);
-        }
-      }
-
-      if (isCreditsFlow && creditsToAdd > 0) {
-        console.log('🪙 Processing CREDITS purchase');
-        
-        const currentCredits = user.letter_credits || 0;
-        const totalPurchased = user.total_credits_purchased || 0;
-
-        await base44.asServiceRole.entities.User.update(user.id, {
-          letter_credits: currentCredits + creditsToAdd,
-          total_credits_purchased: totalPurchased + creditsToAdd
-        });
-
-        console.log('✅ CREDITS UPDATED!');
-        console.log('User:', user.email);
-        console.log('Added credits:', creditsToAdd);
-        console.log('New balance:', currentCredits + creditsToAdd);
-
-        await base44.asServiceRole.entities.Payment.create({
-          type: 'addon',
-          amount: parseFloat((session.amount_total / 100).toFixed(2)),
-          currency: 'THB',
-          provider: 'stripe',
-          status: 'paid',
-          external_id: session.id,
-          created_by: user.email
-        });
-
-        const lang = user.language || 'en';
-        const subject = lang === 'th' 
-          ? `ซื้อเครดิต ${creditsToAdd} เครดิตสำเร็จ` 
-          : `${creditsToAdd} Credits Purchased Successfully`;
-        
-        const emailBody = lang === 'th'
-          ? `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(to right, #C7A338, #B89330); padding: 20px; border-radius: 8px 8px 0 0;">
-              <h2 style="color: white; margin: 0;">💰 ซื้อเครดิตสำเร็จ</h2>
-            </div>
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
-              <p>สวัสดี <strong>${user.full_name}</strong>,</p>
-              <p>เครดิตของคุณเพิ่มแล้ว! 🎉</p>
-              <p style="background: #FFF7ED; padding: 16px; border-radius: 8px; border-left: 4px solid #C7A338;">
-                <strong>เครดิตที่ซื้อ:</strong> ${creditsToAdd}<br/>
-                <strong>ยอดคงเหลือใหม่:</strong> ${currentCredits + creditsToAdd}<br/>
-                <strong>จำนวนเงิน:</strong> ฿${(session.amount_total / 100).toLocaleString()}
-              </p>
-              <p>ใช้เครดิตของคุณเพื่อสร้างจดหมายทางกฎหมายมืออาชีพได้ทันที</p>
-              <p><a href="https://app.leaseshield.asia/templates" style="color: #0C3B2E; font-weight: bold;">ดูเทมเพลต →</a></p>
-              <p style="margin-top: 24px;">— ทีม Lease Shield</p>
-            </div>
-          </div>
-          `
-          : `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(to right, #C7A338, #B89330); padding: 20px; border-radius: 8px 8px 0 0;">
-              <h2 style="color: white; margin: 0;">💰 Credits Purchase Successful</h2>
-            </div>
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
-              <p>Hi <strong>${user.full_name}</strong>,</p>
-              <p>Your credits have been added! 🎉</p>
-              <p style="background: #FFF7ED; padding: 16px; border-radius: 8px; border-left: 4px solid #C7A338;">
-                <strong>Credits Purchased:</strong> ${creditsToAdd}<br/>
-                <strong>New Balance:</strong> ${currentCredits + creditsToAdd}<br/>
-                <strong>Amount Paid:</strong> ฿${(session.amount_total / 100).toLocaleString()}
-              </p>
-              <p>Use your credits to generate professional legal letters instantly.</p>
-              <p><a href="https://app.leaseshield.asia/templates" style="color: #0C3B2E; font-weight: bold;">View Templates →</a></p>
-              <p style="margin-top: 24px;">— The Lease Shield Team</p>
-            </div>
-          </div>
-          `;
-
-        if (RESEND_API_KEY) {
-          try {
-            const resendResponse = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${RESEND_API_KEY}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                from: 'Lease Shield <no-reply@leaseshield.asia>',
-                to: [user.email],
-                subject: subject,
-                html: emailBody,
-              }),
-            });
-
-            const resendData = await resendResponse.json();
-            if (resendResponse.ok) {
-              console.log('✅ Credits email sent. Message ID:', resendData.id);
-            } else {
-              console.error('❌ Resend email failed:', resendData);
-            }
-          } catch (emailError) {
-            console.error('❌ Email error:', emailError);
-          }
-        }
-
-        if (user.line_messaging_token && user.line_notifications) {
-          console.log('📱 Sending LINE notification...');
+          const lang = user.language || 'en';
+          const subject = lang === 'th' 
+            ? `ซื้อเครดิต ${creditsToAdd} เครดิตสำเร็จ` 
+            : `${creditsToAdd} Credits Purchased Successfully`;
           
-          const lineMessage = lang === 'th'
-            ? `🎉 เครดิตเพิ่มแล้ว!\n\nคุณซื้อ ${creditsToAdd} เครดิต\nยอดคงเหลือ: ${currentCredits + creditsToAdd} เครดิต\n\nใช้สร้างจดหมายได้ทันที 📝`
-            : `🎉 Credits Added!\n\nYou purchased ${creditsToAdd} credits\nNew Balance: ${currentCredits + creditsToAdd} credits\n\nStart generating letters now 📝`;
+          const emailBody = lang === 'th'
+            ? `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(to right, #C7A338, #B89330); padding: 20px; border-radius: 8px 8px 0 0;">
+                <h2 style="color: white; margin: 0;">💰 ซื้อเครดิตสำเร็จ</h2>
+              </div>
+              <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+                <p>สวัสดี <strong>${user.full_name}</strong>,</p>
+                <p>เครดิตของคุณเพิ่มแล้ว! 🎉</p>
+                <p style="background: #FFF7ED; padding: 16px; border-radius: 8px; border-left: 4px solid #C7A338;">
+                  <strong>เครดิตที่ซื้อ:</strong> ${creditsToAdd}<br/>
+                  <strong>ยอดคงเหลือใหม่:</strong> ${currentCredits + creditsToAdd}<br/>
+                  <strong>จำนวนเงิน:</strong> ฿${(session.amount_total / 100).toLocaleString()}
+                </p>
+                <p>ใช้เครดิตของคุณเพื่อสร้างจดหมายทางกฎหมายมืออาชีพได้ทันที</p>
+                <p><a href="https://app.leaseshield.asia/templates" style="color: #0C3B2E; font-weight: bold;">ดูเทมเพลต →</a></p>
+                <p style="margin-top: 24px;">— ทีม Lease Shield</p>
+              </div>
+            </div>
+            `
+            : `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(to right, #C7A338, #B89330); padding: 20px; border-radius: 8px 8px 0 0;">
+                <h2 style="color: white; margin: 0;">💰 Credits Purchase Successful</h2>
+              </div>
+              <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+                <p>Hi <strong>${user.full_name}</strong>,</p>
+                <p>Your credits have been added! 🎉</p>
+                <p style="background: #FFF7ED; padding: 16px; border-radius: 8px; border-left: 4px solid #C7A338;">
+                  <strong>Credits Purchased:</strong> ${creditsToAdd}<br/>
+                  <strong>New Balance:</strong> ${currentCredits + creditsToAdd}<br/>
+                  <strong>Amount Paid:</strong> ฿${(session.amount_total / 100).toLocaleString()}
+                </p>
+                <p>Use your credits to generate professional legal letters instantly.</p>
+                <p><a href="https://app.leaseshield.asia/templates" style="color: #0C3B2E; font-weight: bold;">View Templates →</a></p>
+                <p style="margin-top: 24px;">— The Lease Shield Team</p>
+              </div>
+            </div>
+            `;
 
-          try {
-            const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN')}`
-              },
-              body: JSON.stringify({
-                to: user.line_messaging_token,
-                messages: [{ type: 'text', text: lineMessage }]
-              })
-            });
+          if (RESEND_API_KEY) {
+            try {
+              const resendResponse = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${RESEND_API_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'Lease Shield <no-reply@leaseshield.asia>',
+                  to: [user.email],
+                  subject: subject,
+                  html: emailBody,
+                }),
+              });
 
-            if (lineResponse.ok) {
-              console.log('✅ LINE notification sent!');
-            } else {
-              const errorText = await lineResponse.text();
-              console.error('⚠️ LINE notification failed:', errorText);
+              const resendData = await resendResponse.json();
+              if (resendResponse.ok) {
+                console.log('✅ Credits email sent. Message ID:', resendData.id);
+              } else {
+                console.error('❌ Email failed:', resendData);
+              }
+            } catch (emailError) {
+              console.error('❌ Email error:', emailError);
             }
-          } catch (lineError) {
-            console.error('⚠️ LINE notification error:', lineError.message);
           }
+
+          if (user.line_messaging_token && user.line_notifications) {
+            const lineMessage = lang === 'th'
+              ? `🎉 เครดิตเพิ่มแล้ว!\n\nคุณซื้อ ${creditsToAdd} เครดิต\nยอดคงเหลือ: ${currentCredits + creditsToAdd} เครดิต\n\nใช้สร้างจดหมายได้ทันที 📝`
+              : `🎉 Credits Added!\n\nYou purchased ${creditsToAdd} credits\nNew Balance: ${currentCredits + creditsToAdd} credits\n\nStart generating letters now 📝`;
+
+            try {
+              const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN')}`
+                },
+                body: JSON.stringify({
+                  to: user.line_messaging_token,
+                  messages: [{ type: 'text', text: lineMessage }]
+                })
+              });
+
+              if (lineResponse.ok) {
+                console.log('✅ LINE notification sent');
+              }
+            } catch (lineError) {
+              console.error('⚠️ LINE error:', lineError.message);
+            }
+          }
+
+          return Response.json({ ok: true, credited: creditsToAdd }, { status: 200 });
         }
 
-        return Response.json({ ok: true, credited: creditsToAdd }, { status: 200 });
+        return Response.json({ ok: true, message: 'Credits checkout but no credits detected' }, { status: 200 });
       }
       
       // ========================================
       // SUBSCRIPTION PURCHASE FLOW
       // ========================================
-      
-      if (session.mode === 'subscription' && metadata.plan) {
-        console.log('💳 Processing SUBSCRIPTION UPGRADE!');
-        console.log('Plan:', metadata.plan);
-        console.log('Interval:', metadata.interval);
+      if (isSubscriptionCheckout) {
+        console.log('💳 Processing SUBSCRIPTION checkout');
 
-        const subscriptions = await stripe.subscriptions.list({
-          customer: customerId,
-          status: 'active',
-          limit: 1
-        });
+        // 1) Resolve user by userId metadata first
+        let userId = metadata.userId || session.client_reference_id;
+        let user = null;
 
-        if (subscriptions.data.length === 0) {
-          console.error('❌ No active subscription found');
-          return Response.json({ error: 'No active subscription' }, { status: 404 });
+        const users = await base44.asServiceRole.entities.User.list();
+
+        if (userId) {
+          user = users.find(u => u.id === userId);
+          console.log('🔍 User lookup by userId:', userId, '→', user ? '✅ Found' : '❌ Not found');
         }
 
-        const subscription = subscriptions.data[0];
-        const renewalTimestamp = subscription.current_period_end;
-        const renewalDate = new Date(renewalTimestamp * 1000).toISOString();
-        
-        console.log('📅 Subscription dates:');
-        console.log('  Start:', new Date(subscription.current_period_start * 1000).toISOString());
-        console.log('  End:', renewalDate);
-        console.log('  Interval:', metadata.interval);
+        if (!user && customerId) {
+          user = users.find(u => u.stripe_customer_id === customerId);
+          console.log('🔍 User lookup by stripe_customer_id:', customerId, '→', user ? '✅ Found' : '❌ Not found');
+        }
 
+        if (!user && email) {
+          user = users.find(u => u.email === email);
+          console.log('🔍 User lookup by email:', email, '→', user ? '✅ Found' : '❌ Not found');
+        }
+
+        if (!user) {
+          console.error('❌ Subscription completed but no matching user found:', {
+            userIdFromMetadata: metadata.userId,
+            clientReferenceId: session.client_reference_id,
+            stripeCustomer: customerId,
+            email: email,
+          });
+          return Response.json({ received: true, warning: 'user_not_found_for_subscription' }, { status: 200 });
+        }
+
+        console.log('✅ User resolved:', user.email);
+
+        // 2) Extract plan + interval from metadata
+        const planTier = (metadata.plan || '').toLowerCase() || 'lite';
+        const billingInterval = metadata.interval === 'year' ? 'year' : 'month';
+
+        console.log('📋 Subscription details:', { planTier, billingInterval });
+
+        // 3) Get subscription and renewal date
+        const subscriptionId = session.subscription;
+        let planRenewsAt = null;
+
+        if (subscriptionId) {
+          try {
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            const periodEnd = subscription.current_period_end;
+            planRenewsAt = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
+            console.log('📅 Subscription period end:', planRenewsAt);
+          } catch (err) {
+            console.error('⚠️ Failed to retrieve subscription:', err.message);
+          }
+        }
+
+        // 4) Calculate included credits
         const includedCredits = {
           'lite': 3,
           'protect': 5,
           'secure': 10
         };
-        const creditsToAdd = includedCredits[metadata.plan] || 0;
+        const creditsToAdd = includedCredits[planTier] || 0;
         const currentCredits = user.letter_credits || 0;
-        
+
         console.log('💳 Adding included credits:', creditsToAdd);
 
+        // 5) Update user record
         await base44.asServiceRole.entities.User.update(user.id, {
-          plan_tier: metadata.plan,
-          billing_interval: metadata.interval,
-          plan_renews_at: renewalDate,
-          stripe_subscription_id: subscription.id,
+          plan_tier: planTier,
+          billing_interval: billingInterval,
+          plan_renews_at: planRenewsAt,
+          stripe_subscription_id: subscriptionId,
           stripe_customer_id: customerId,
           subscription_status: 'active',
           letter_credits: currentCredits + creditsToAdd
         });
 
-        console.log('✅ SUBSCRIPTION + CREDITS UPDATED!');
-        console.log('User:', user.email);
-        console.log('New plan:', metadata.plan);
-        console.log('Billing:', metadata.interval);
-        console.log('Renews:', renewalDate);
-        console.log('Letter credits:', currentCredits + creditsToAdd);
+        console.log('✅ SUBSCRIPTION UPDATED:', {
+          user: user.email,
+          plan: planTier,
+          interval: billingInterval,
+          renews: planRenewsAt,
+          credits: currentCredits + creditsToAdd
+        });
 
+        // 6) Insert payment record
         await base44.asServiceRole.entities.Payment.create({
           type: 'subscription',
           amount: parseFloat((session.amount_total / 100).toFixed(2)),
@@ -299,6 +336,7 @@ Deno.serve(async (req) => {
           created_by: user.email
         });
 
+        // 7) Send confirmation notifications
         const lang = user.language || 'en';
         const planLabels = {
           lite: { en: 'Lite', th: 'ไลท์' },
@@ -306,8 +344,8 @@ Deno.serve(async (req) => {
           secure: { en: 'Secure', th: 'ซีเคียว' }
         };
 
-        const planLabel = planLabels[metadata.plan]?.[lang] || metadata.plan;
-        const intervalLabel = metadata.interval === 'year' 
+        const planLabel = planLabels[planTier]?.[lang] || planTier;
+        const intervalLabel = billingInterval === 'year' 
           ? (lang === 'th' ? 'รายปี' : 'Annual')
           : (lang === 'th' ? 'รายเดือน' : 'Monthly');
 
@@ -327,7 +365,7 @@ Deno.serve(async (req) => {
               <p style="background: #F5F3FF; padding: 16px; border-radius: 8px; border-left: 4px solid #8B5CF6;">
                 <strong>แผน:</strong> ${planLabel}<br/>
                 <strong>การเรียกเก็บเงิน:</strong> ${intervalLabel}<br/>
-                <strong>ต่ออายุเมื่อ:</strong> ${new Date(renewalDate).toLocaleDateString('th-TH')}<br/>
+                <strong>ต่ออายุเมื่อ:</strong> ${planRenewsAt ? new Date(planRenewsAt).toLocaleDateString('th-TH') : 'N/A'}<br/>
                 <strong>จำนวนเงิน:</strong> ฿${(session.amount_total / 100).toLocaleString()}<br/>
                 <strong>เครดิตจดหมาย:</strong> ${currentCredits + creditsToAdd}
               </p>
@@ -348,7 +386,7 @@ Deno.serve(async (req) => {
               <p style="background: #F5F3FF; padding: 16px; border-radius: 8px; border-left: 4px solid #8B5CF6;">
                 <strong>Plan:</strong> ${planLabel}<br/>
                 <strong>Billing:</strong> ${intervalLabel}<br/>
-                <strong>Renews:</strong> ${new Date(renewalDate).toLocaleDateString('en-US')}<br/>
+                <strong>Renews:</strong> ${planRenewsAt ? new Date(planRenewsAt).toLocaleDateString('en-US') : 'N/A'}<br/>
                 <strong>Amount:</strong> ฿${(session.amount_total / 100).toLocaleString()}<br/>
                 <strong>Letter Credits:</strong> ${currentCredits + creditsToAdd}
               </p>
@@ -379,7 +417,7 @@ Deno.serve(async (req) => {
             if (resendResponse.ok) {
               console.log('✅ Subscription email sent. Message ID:', resendData.id);
             } else {
-              console.error('❌ Resend email failed:', resendData);
+              console.error('❌ Email failed:', resendData);
             }
           } catch (emailError) {
             console.error('❌ Email error:', emailError);
@@ -387,9 +425,7 @@ Deno.serve(async (req) => {
         }
 
         if (user.line_messaging_token && user.line_notifications) {
-          console.log('📱 Sending LINE subscription notification...');
-          
-          const displayDate = new Date(renewalDate);
+          const displayDate = planRenewsAt ? new Date(planRenewsAt) : new Date();
           const formattedDate = lang === 'th'
             ? displayDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
             : displayDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -399,7 +435,7 @@ Deno.serve(async (req) => {
             : `🎉 Welcome to ${planLabel}!\n\nYour subscription is now active\nRenews: ${formattedDate}\nLetter Credits: ${currentCredits + creditsToAdd}\n\nAccess all features now 🚀`;
 
           try {
-            const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
+            await fetch('https://api.line.me/v2/bot/message/push', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -410,19 +446,17 @@ Deno.serve(async (req) => {
                 messages: [{ type: 'text', text: lineMessage }]
               })
             });
-
-            if (lineResponse.ok) {
-              console.log('✅ LINE subscription notification sent');
-            }
+            console.log('✅ LINE notification sent');
           } catch (lineError) {
-            console.error('⚠️ LINE notification error:', lineError.message);
+            console.error('⚠️ LINE error:', lineError.message);
           }
         }
 
-        return Response.json({ ok: true, plan: metadata.plan }, { status: 200 });
+        return Response.json({ ok: true, subscriptionActivated: true, plan: planTier }, { status: 200 });
       }
 
-      return Response.json({ ok: true, message: 'Checkout completed but no action needed' }, { status: 200 });
+      console.log('⚠️ checkout.session.completed but no recognized flow');
+      return Response.json({ ok: true, message: 'No action needed' }, { status: 200 });
     }
 
     // ========================================
@@ -434,19 +468,12 @@ Deno.serve(async (req) => {
       const customerId = invoice.customer;
       const billingReason = invoice.billing_reason;
 
-      if (!subscriptionId) {
-        console.log('⚠️ invoice.payment_succeeded without subscription - skipping');
-        return Response.json({ ok: true, skipped: 'not_subscription' }, { status: 200 });
-      }
-
-      if (billingReason !== 'subscription_cycle') {
-        console.log('⚠️ invoice.payment_succeeded but not a renewal (reason:', billingReason, ') - skipping');
+      if (!subscriptionId || billingReason !== 'subscription_cycle') {
+        console.log('⚠️ invoice.payment_succeeded - not a renewal, skipping');
         return Response.json({ ok: true, skipped: 'not_renewal' }, { status: 200 });
       }
 
       console.log('🔄 Processing subscription renewal');
-      console.log('Subscription ID:', subscriptionId);
-      console.log('Customer ID:', customerId);
 
       try {
         const base44 = createClientFromRequest(req);
@@ -458,14 +485,12 @@ Deno.serve(async (req) => {
         }
 
         if (!user) {
-          console.error('❌ User not found for subscription:', subscriptionId);
+          console.error('❌ User not found for renewal:', subscriptionId);
           return Response.json({ ok: true, warning: 'user_not_found' }, { status: 200 });
         }
 
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         const renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
-
-        console.log('✅ Updating renewal date:', renewalDate);
 
         await base44.asServiceRole.entities.User.update(user.id, {
           subscription_status: 'active',
@@ -482,11 +507,11 @@ Deno.serve(async (req) => {
           created_by: user.email
         });
 
-        console.log('✅ Subscription renewal recorded for:', user.email);
+        console.log('✅ Renewal recorded:', { user: user.email, renews: renewalDate });
 
         return Response.json({ ok: true, renewed: true }, { status: 200 });
       } catch (err) {
-        console.error('❌ Error processing renewal:', err.message);
+        console.error('❌ Renewal error:', err.message);
         return Response.json({ ok: true, error: err.message }, { status: 200 });
       }
     }
@@ -502,15 +527,11 @@ Deno.serve(async (req) => {
       const amountDue = invoice.amount_due;
 
       if (!subscriptionId) {
-        console.log('⚠️ invoice.payment_failed without subscription - skipping');
+        console.log('⚠️ invoice.payment_failed - not subscription, skipping');
         return Response.json({ ok: true, skipped: 'not_subscription' }, { status: 200 });
       }
 
-      console.log('❌ Processing failed payment');
-      console.log('Subscription ID:', subscriptionId);
-      console.log('Customer ID:', customerId);
-      console.log('Attempt:', attemptCount);
-      console.log('Amount due:', amountDue / 100, 'THB');
+      console.log('❌ Failed payment:', { subscriptionId, customerId, attempt: attemptCount, amount: amountDue / 100 });
 
       try {
         const base44 = createClientFromRequest(req);
@@ -522,7 +543,7 @@ Deno.serve(async (req) => {
         }
 
         if (!user) {
-          console.error('❌ User not found for subscription:', subscriptionId);
+          console.error('❌ User not found for failed payment:', subscriptionId);
           return Response.json({ ok: true, warning: 'user_not_found' }, { status: 200 });
         }
 
@@ -530,15 +551,11 @@ Deno.serve(async (req) => {
           subscription_status: 'past_due'
         });
 
-        console.log('⚠️ Subscription marked as past_due for:', user.email);
-        console.log('User ID:', user.id);
-        console.log('Subscription ID:', subscriptionId);
-        console.log('Amount:', amountDue / 100, 'THB');
-        console.log('Attempt:', attemptCount);
+        console.log('⚠️ Marked past_due:', user.email);
 
         return Response.json({ ok: true, marked_past_due: true }, { status: 200 });
       } catch (err) {
-        console.error('❌ Error processing failed payment:', err.message);
+        console.error('❌ Failed payment processing error:', err.message);
         return Response.json({ ok: true, error: err.message }, { status: 200 });
       }
     }
@@ -552,10 +569,7 @@ Deno.serve(async (req) => {
       const customerId = subscription.customer;
       const endedAt = subscription.ended_at;
 
-      console.log('🚫 Processing subscription deletion');
-      console.log('Subscription ID:', subscriptionId);
-      console.log('Customer ID:', customerId);
-      console.log('Ended at:', endedAt ? new Date(endedAt * 1000).toISOString() : 'unknown');
+      console.log('🚫 Subscription deleted:', { subscriptionId, customerId, endedAt: endedAt ? new Date(endedAt * 1000).toISOString() : null });
 
       try {
         const base44 = createClientFromRequest(req);
@@ -567,7 +581,7 @@ Deno.serve(async (req) => {
         }
 
         if (!user) {
-          console.error('❌ User not found for subscription:', subscriptionId);
+          console.error('❌ User not found for deleted subscription:', subscriptionId);
           return Response.json({ ok: true, warning: 'user_not_found' }, { status: 200 });
         }
 
@@ -579,11 +593,11 @@ Deno.serve(async (req) => {
           plan_renews_at: endedAt ? new Date(endedAt * 1000).toISOString() : null
         });
 
-        console.log('✅ User downgraded to free plan:', user.email);
+        console.log('✅ Downgraded to free:', user.email);
 
         return Response.json({ ok: true, downgraded: true }, { status: 200 });
       } catch (err) {
-        console.error('❌ Error processing subscription deletion:', err.message);
+        console.error('❌ Subscription deletion error:', err.message);
         return Response.json({ ok: true, error: err.message }, { status: 200 });
       }
     }
@@ -592,13 +606,13 @@ Deno.serve(async (req) => {
     // UNHANDLED EVENT TYPES
     // ========================================
     else {
-      console.log('ℹ️ Unhandled Stripe event type:', event.type);
+      console.log('ℹ️ Unhandled event type:', event.type);
       return Response.json({ received: true }, { status: 200 });
     }
     
   } catch (error) {
     console.error('❌ WEBHOOK ERROR:', error.message);
-    console.error('Error stack:', error.stack);
+    console.error('Stack:', error.stack);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

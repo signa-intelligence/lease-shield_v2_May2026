@@ -1,8 +1,8 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
 const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
-  apiVersion: '2023-10-16',
+  apiVersion: '2024-06-20',
 });
 
 Deno.serve(async (req) => {
@@ -43,18 +43,24 @@ Deno.serve(async (req) => {
 
     const sessionConfig = {
       customer: customerId,
+      client_reference_id: user.id,
       mode: mode || 'subscription',
       success_url: finalSuccessUrl,
       cancel_url: finalCancelUrl,
-      metadata: metadata || {},
       allow_promotion_codes: true,
     };
 
-    // ✅ CREDITS: Dynamic one-time payment (already working)
+    // ✅ CREDITS: Dynamic one-time payment
     if (mode === 'payment' && amount) {
       const finalAmount = Math.round(amount * 100);
       console.log('✅ CREDITS - Creating dynamic one-time payment:', finalAmount, 'satang');
       
+      sessionConfig.metadata = {
+        ...(metadata || {}),
+        userId: user.id,
+        type: 'credits',
+      };
+
       sessionConfig.line_items = [{
         price_data: {
           currency: currency || 'thb',
@@ -67,13 +73,25 @@ Deno.serve(async (req) => {
         quantity: 1,
       }];
     } 
-    // ✅ SUBSCRIPTIONS: FINAL SIMPLE APPROACH - Let Stripe handle dates naturally
+    // ✅ SUBSCRIPTIONS: Pass explicit metadata for webhook
     else if (mode === 'subscription' && amount) {
       const finalAmount = Math.round(amount * 100);
-      const interval = metadata?.interval || 'month'; // 'month' or 'year'
+      const interval = metadata?.interval || 'month';
       
-      console.log('✅ SUBSCRIPTION - Creating with natural Stripe billing:', finalAmount, 'satang', interval);
+      console.log('✅ SUBSCRIPTION - Creating with metadata:', {
+        userId: user.id,
+        plan: metadata?.plan,
+        interval: interval,
+      });
       
+      // Ensure subscription metadata is complete
+      sessionConfig.metadata = {
+        userId: user.id,
+        plan: metadata?.plan || 'lite',
+        interval: interval === 'year' ? 'year' : 'month',
+        type: 'subscription',
+      };
+
       sessionConfig.line_items = [{
         price_data: {
           currency: currency || 'thb',
@@ -90,17 +108,20 @@ Deno.serve(async (req) => {
         quantity: 1,
       }];
 
-      // ✅ MINIMAL subscription_data - let Stripe handle the billing cycle
       sessionConfig.subscription_data = {
-        metadata: metadata || {}
-        // NO trial_end, NO billing_cycle_anchor - completely natural
+        metadata: {
+          userId: user.id,
+          plan: metadata?.plan || 'lite',
+          interval: interval === 'year' ? 'year' : 'month',
+        }
       };
 
-      console.log('✅ Subscription will use Stripe default billing cycle for', interval);
+      console.log('✅ Subscription metadata set:', sessionConfig.metadata);
     } 
     // ❌ OLD WAY: Pre-created price IDs (deprecated)
     else if (priceId) {
       console.log('⚠️ Using legacy priceId:', priceId);
+      sessionConfig.metadata = metadata || {};
       sessionConfig.line_items = [{ price: priceId, quantity: 1 }];
     } 
     else {
