@@ -1,108 +1,81 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import React, { createContext, useContext, useState } from 'react';
+import { CheckCircle2, X, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
 const ToastContext = createContext();
 
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within ToastProvider');
-  }
-  return context;
-};
+export const useToast = () => useContext(ToastContext);
 
-export const ToastProvider = ({ children }) => {
+export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback((message, type = 'success', duration = 3000) => {
+  const addToast = (message, type = 'info', duration = 3000) => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type, duration }]);
+    
+    setTimeout(() => {
+      removeToast(id);
+    }, duration);
+  };
 
-    if (duration > 0) {
-      setTimeout(() => {
-        removeToast(id);
-      }, duration);
-    }
-  }, []);
-
-  const removeToast = useCallback((id) => {
+  const removeToast = (id) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
-  }, []);
-
-  const success = useCallback((message) => addToast(message, 'success'), [addToast]);
-  const error = useCallback((message) => addToast(message, 'error'), [addToast]);
-  const info = useCallback((message) => addToast(message, 'info'), [addToast]);
-  const warning = useCallback((message) => addToast(message, 'warning'), [addToast]);
+  };
 
   return (
-    <ToastContext.Provider value={{ success, error, info, warning }}>
+    <ToastContext.Provider value={{
+      success: (msg, opts) => addToast(msg, 'success', opts?.duration || 2000),
+      error: (msg, opts) => addToast(msg, 'error', opts?.duration || 3000),
+      info: (msg, opts) => addToast(msg, 'info', opts?.duration || 3000),
+      warning: (msg, opts) => addToast(msg, 'warning', opts?.duration || 3000),
+    }}>
       {children}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </ToastContext.Provider>
   );
-};
+}
 
-const ToastContainer = ({ toasts, onRemove }) => {
-  if (toasts.length === 0) return null;
-
+function ToastContainer({ toasts, onRemove }) {
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: '80px',
-        right: '16px',
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        maxWidth: '400px',
-        width: '100%',
-        padding: '0 16px',
-      }}
-    >
-      {toasts.map((toast) => (
-        <Toast key={toast.id} toast={toast} onRemove={onRemove} />
+    <div style={{
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      zIndex: 9999,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
+      maxWidth: '90vw',
+      width: '320px'
+    }}>
+      {toasts.map(toast => (
+        <Toast key={toast.id} {...toast} onClose={() => onRemove(toast.id)} />
       ))}
     </div>
   );
-};
+}
 
-const Toast = ({ toast, onRemove }) => {
-  const [isExiting, setIsExiting] = useState(false);
-
-  const handleRemove = () => {
-    setIsExiting(true);
-    setTimeout(() => onRemove(toast.id), 200);
-  };
-
-  const config = {
+function Toast({ message, type, onClose }) {
+  const styles = {
     success: {
-      icon: CheckCircle2,
       bg: '#10B981',
-      bgLight: '#D1FAE5',
-      text: '#065F46',
+      icon: CheckCircle2
     },
     error: {
-      icon: AlertCircle,
       bg: '#EF4444',
-      bgLight: '#FEE2E2',
-      text: '#991B1B',
+      icon: AlertCircle
     },
     info: {
-      icon: Info,
       bg: '#3B82F6',
-      bgLight: '#DBEAFE',
-      text: '#1E40AF',
+      icon: Info
     },
     warning: {
-      icon: AlertCircle,
       bg: '#F59E0B',
-      bgLight: '#FEF3C7',
-      text: '#92400E',
-    },
+      icon: AlertTriangle
+    }
   };
 
-  const { icon: Icon, bg, bgLight, text } = config[toast.type];
+  const config = styles[type] || styles.info;
+  const Icon = config.icon;
 
   return (
     <div
@@ -110,83 +83,56 @@ const Toast = ({ toast, onRemove }) => {
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        padding: '16px',
-        backgroundColor: bgLight,
-        borderLeft: `4px solid ${bg}`,
+        backgroundColor: config.bg,
+        color: '#FFFFFF',
+        padding: '12px 16px',
         borderRadius: '12px',
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-        transform: isExiting ? 'translateX(400px)' : 'translateX(0)',
-        opacity: isExiting ? 0 : 1,
-        transition: 'all 0.2s ease',
-        animation: isExiting ? 'none' : 'slideInRight 0.3s ease-out',
+        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+        animation: 'slideInRight 0.3s ease-out',
+        minHeight: '48px'
       }}
     >
-      <style>
-        {`
-          @keyframes slideInRight {
-            from {
-              transform: translateX(400px);
-              opacity: 0;
-            }
-            to {
-              transform: translateX(0);
-              opacity: 1;
-            }
-          }
-        `}
-      </style>
-      
-      <div
-        style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: '50%',
-          backgroundColor: bg,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        <Icon className="w-5 h-5 text-white" />
-      </div>
-
-      <p
-        style={{
-          flex: 1,
-          fontSize: '14px',
-          fontWeight: '600',
-          color: text,
-          margin: 0,
-        }}
-      >
-        {toast.message}
-      </p>
-
+      <Icon className="w-5 h-5 flex-shrink-0" />
+      <span style={{
+        flex: 1,
+        fontSize: '14px',
+        fontWeight: '500',
+        lineHeight: '1.4'
+      }}>
+        {message}
+      </span>
       <button
-        onClick={handleRemove}
+        onClick={onClose}
         style={{
-          padding: '4px',
-          backgroundColor: 'transparent',
+          background: 'none',
           border: 'none',
+          color: '#FFFFFF',
           cursor: 'pointer',
-          borderRadius: '4px',
+          padding: '4px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transition: 'all 0.15s ease',
+          opacity: 0.8,
+          transition: 'opacity 0.2s'
         }}
-        onMouseEnter={(e) => {
-          e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.backgroundColor = 'transparent';
-        }}
+        onMouseEnter={(e) => e.target.style.opacity = 1}
+        onMouseLeave={(e) => e.target.style.opacity = 0.8}
       >
-        <X className="w-4 h-4" style={{ color: text }} />
+        <X className="w-4 h-4" />
       </button>
+
+      <style jsx>{`
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(100px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      `}</style>
     </div>
   );
-};
-
-export default ToastProvider;
+}

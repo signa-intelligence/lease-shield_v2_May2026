@@ -20,7 +20,7 @@ const ProtectionScoreEnhanced = ({
 }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
+  const [touchEnd, setTouchEnd] = (0);
   const [dismissing, setDismissing] = useState(false);
   const queryClient = useQueryClient();
 
@@ -374,33 +374,28 @@ const ProtectionScoreEnhanced = ({
       </div>
 
       {achievements.length > 0 && (
-        <div className="flex items-center gap-1 mt-2 flex-wrap justify-center">
+        <div className="mt-3 flex flex-wrap gap-2 justify-center">
           {achievements.map((achievement, idx) => {
             const Icon = achievement.icon;
             return (
-              <div
+              <Badge
                 key={idx}
-                className="flex items-center gap-1 px-2 py-1 rounded-full"
+                className="px-3 py-1 text-xs sm:text-sm font-semibold rounded-full border"
                 style={{
                   backgroundColor: `${achievement.color}15`,
-                  border: `1px solid ${achievement.color}30`,
+                  color: achievement.color,
+                  borderColor: `${achievement.color}40`,
                   animation: "fadeIn 0.5s ease-out",
                   animationDelay: `${idx * 0.1}s`,
                   animationFillMode: "backwards",
                 }}
-                title={achievement.label}
               >
                 <Icon
-                  className="w-3 h-3"
+                  className="w-3.5 h-3.5 inline-block mr-1"
                   style={{ color: achievement.color }}
                 />
-                <span
-                  className="text-[10px] font-bold"
-                  style={{ color: achievement.color }}
-                >
-                  {achievement.label}
-                </span>
-              </div>
+                {achievement.label}
+              </Badge>
             );
           })}
         </div>
