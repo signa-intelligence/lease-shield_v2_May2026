@@ -156,6 +156,7 @@ function DashboardContent() {
   const accessLevel = user?.access_level || 'user';
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
+  const isLitePlan = user?.plan_tier === 'lite';
 
   // Compute feature themes once
   const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
@@ -2199,7 +2200,7 @@ function DashboardContent() {
                                 </div>
                                 <h3 className="text-sm font-semibold" style={{ color: leasesTheme.titleColor }}>
                                   {strings.activeLeases}
-                                </h3>
+                                  </h3>
                               </div>
                               <p className="text-3xl font-bold" style={{ color: leasesTheme.metricColor }}>
                                 {leases.length}
@@ -2684,6 +2685,62 @@ function DashboardContent() {
                   )}
                 </>
               )}
+            </div>
+          )}
+
+          {/* ✅ NEW: Lite Plan Upsell Card (after Overview, before hero) */}
+          {isLitePlan && (
+            <div 
+              className="mb-6 p-5 rounded-2xl shadow-lg"
+              style={{
+                background: isDarkMode 
+                  ? 'linear-gradient(135deg, rgba(199,163,56,0.15) 0%, rgba(12,59,46,0.15) 100%)'
+                  : 'linear-gradient(135deg, rgba(199,163,56,0.08) 0%, rgba(12,59,46,0.08) 100%)',
+                border: `2px solid ${isDarkMode ? 'rgba(199,163,56,0.3)' : 'rgba(12,59,46,0.2)'}`,
+              }}
+            >
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? 'ปลดล็อกการป้องกันเพิ่มเติมด้วย Protect & Secure' : 'Unlock more protection with Protect & Secure'}
+                  </h3>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {language === 'th' 
+                      ? 'คุณอยู่ในแผน Lite อัปเกรดได้ตลอดเวลาเพื่อขีดจำกัดการสแกนที่สูงขึ้นและการแจ้งเตือนเพิ่มเติม'
+                      : "You're on Lite. Upgrade anytime for higher scan limits and more alerts."}
+                  </p>
+                </div>
+                <Link to={createPageUrl("Account") + '#plans-section'}>
+                  <button
+                    onClick={() => haptic.medium()}
+                    style={{
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      backgroundColor: '#0C3B2E',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      fontWeight: '600',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 8px rgba(12,59,46,0.3)',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#C7A338';
+                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.boxShadow = '0 6px 10px rgba(199,163,56,0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#0C3B2E';
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 8px rgba(12,59,46,0.3)';
+                    }}
+                  >
+                    {language === 'th' ? 'ดูตัวเลือกการอัปเกรด' : 'See upgrade options'}
+                  </button>
+                </Link>
+              </div>
             </div>
           )}
 

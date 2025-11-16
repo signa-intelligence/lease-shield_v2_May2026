@@ -1320,7 +1320,7 @@ export default function Account() {
   const currentPlan = PLAN_DETAILS.find(p => p.key === currentPlanTier);
   const isScheduledForCancellation = user?.subscription_status === 'cancelled' && user?.plan_renews_at;
 
-  const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46467_M_gainfriends_2dbarcodes_GW.png";
+  const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46462_M_gainfriends_2dbarcodes_GW.png";
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
@@ -2012,16 +2012,21 @@ export default function Account() {
                   )}
                   
                   <button
-                    onClick={() => setShowCancelDialog(true)}
+                    onClick={() => {
+                      const plansSection = document.getElementById('plans-section');
+                      if (plansSection) {
+                        plansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
-                      backgroundColor: 'transparent',
-                      color: colors.textPrimary,
+                      backgroundColor: '#0C3B2E',
+                      color: '#FFFFFF',
                       borderRadius: '8px',
                       fontWeight: 'bold',
                       fontSize: '14px',
-                      border: `2px solid ${colors.borderColor}`,
+                      border: 'none',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       display: 'flex',
@@ -2030,16 +2035,39 @@ export default function Account() {
                       gap: '8px'
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = colors.hoverBg;
-                      e.target.style.borderColor = '#EF4444';
+                      e.target.style.backgroundColor = '#0a2f25';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = 'transparent';
-                      e.target.style.borderColor = colors.borderColor;
+                      e.target.style.backgroundColor = '#0C3B2E';
                     }}
                   >
                     <Settings className="w-4 h-4" />
-                    {strings.cancelPlan}
+                    {language === 'th' ? 'เปลี่ยนแผน' : 'Change Plan'}
+                  </button>
+
+                  <button
+                    onClick={() => setShowCancelDialog(true)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      backgroundColor: 'transparent',
+                      color: '#EF4444',
+                      borderRadius: '6px',
+                      fontWeight: '600',
+                      fontSize: '13px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      textAlign: 'center'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.textDecoration = 'underline';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.textDecoration = 'none';
+                    }}
+                  >
+                    {language === 'th' ? 'ยกเลิกการสมัครสมาชิก' : 'Cancel subscription'}
                   </button>
                 </div>
               )}

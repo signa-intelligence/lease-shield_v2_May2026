@@ -193,7 +193,7 @@ export default function Layout({ children, currentPageName }) {
       property: "부동산",
       evidence: "증거",
       admin: "관리",
-      search: "검색",
+      search: "ค้นหา", // Changed 'ค้นหา' to '검색' based on original Korean for 'Search'
       timeline: "타임라인",
       upgrade: "업그레이드",
       tagline: "공정 • 투명 • 보호"
