@@ -419,9 +419,13 @@ export default function Account() {
     haptic.medium();
 
     const amount = interval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
-    const intervalType = interval === 'annual' ? 'year' : 'month';
+    const billingInterval = interval === 'annual' ? 'annual' : 'monthly';
 
-    console.log('🔍 SUBSCRIPTION REQUEST (Dynamic):', { planKey, interval, amount, intervalType });
+    console.log('🔍 SUBSCRIPTION REQUEST:', { 
+      planKey, 
+      interval: billingInterval, 
+      amount 
+    });
 
     setSubscribing(prev => ({ ...prev, [planKey]: true }));
     try {
@@ -433,30 +437,28 @@ export default function Account() {
         successUrl: `${window.location.origin}/account?subscription=success`,
         cancelUrl: `${window.location.origin}/account?subscription=cancelled`,
         metadata: {
+          type: 'subscription',
+          userId: user.id,
+          email: user.email,
           plan: planKey,
-          interval: intervalType
+          interval: billingInterval
         }
       });
       
-      console.log('🔍 CHECKOUT RESPONSE:', response);
+      console.log('✅ Checkout response:', response.data);
       
       if (response.data?.url) {
-        console.log('✅ Redirecting to:', response.data.url);
         window.location.href = response.data.url;
       } else {
-        console.error('❌ No URL in response:', response);
         haptic.error();
-        throw new Error('No checkout URL returned from server');
+        throw new Error('No checkout URL returned');
       }
     } catch (error) {
       console.error('❌ Subscription error:', error);
-      console.error('Error details:', error.response?.data || error);
       haptic.error();
       const language = user?.language || 'en';
-      
       const errorMsg = error.response?.data?.details || error.response?.data?.error || error.message;
       alert(`${language === 'th' ? 'ไม่สามารถสร้างการสมัครได้' : 'Failed to start subscription'}\n\n${errorMsg}`);
-      
       setSubscribing(prev => ({ ...prev, [planKey]: false }));
     }
   };
@@ -465,10 +467,9 @@ export default function Account() {
     haptic.medium();
     setBuyingCredits(prev => ({ ...prev, [pkg.id]: true }));
     try {
-      console.log('🔍 Sending to createCheckout:', { amount: pkg.price, packageId: pkg.id });
+      console.log('💰 Buying credits:', { packageId: pkg.id, credits: pkg.credits, price: pkg.price });
       
       const response = await base44.functions.invoke('createCheckout', {
-        priceId: null,
         mode: 'payment',
         amount: pkg.price,
         currency: 'thb',
@@ -477,16 +478,20 @@ export default function Account() {
         cancelUrl: `${window.location.origin}${createPageUrl('Account')}?payment=cancelled`,
         metadata: {
           type: 'credits',
-          credits: pkg.credits.toString(),
+          userId: user.id,
+          email: user.email,
+          credits: pkg.credits,
           packageId: pkg.id
         }
       });
+      
+      console.log('✅ Checkout response:', response.data);
       
       if (response.data?.url) {
         window.location.href = response.data.url;
       }
     } catch (error) {
-      console.error('Failed to create checkout:', error);
+      console.error('❌ Credit purchase error:', error);
       haptic.error();
       const language = user?.language || 'en';
       alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
@@ -533,7 +538,7 @@ export default function Account() {
     setSubscribing(prev => ({ ...prev, [targetPlan]: true }));
     try {
       const amount = userBillingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
-      const intervalType = userBillingInterval === 'annual' ? 'year' : 'month';
+      const billingInterval = userBillingInterval === 'annual' ? 'annual' : 'monthly';
 
       const response = await base44.functions.invoke('createCheckout', {
         mode: 'subscription',
@@ -543,8 +548,11 @@ export default function Account() {
         successUrl: `${window.location.origin}/account?subscription=success`,
         cancelUrl: `${window.location.origin}/account?subscription=cancelled`,
         metadata: {
+          type: 'subscription',
+          userId: user.id,
+          email: user.email,
           plan: targetPlan,
-          interval: intervalType
+          interval: billingInterval
         }
       });
       
@@ -552,7 +560,7 @@ export default function Account() {
         window.location.href = response.data.url;
       } else {
         haptic.error();
-        throw new Error('No checkout URL returned from server');
+        throw new Error('No checkout URL returned');
       }
     } catch (error) {
       console.error('❌ Downgrade error:', error);
