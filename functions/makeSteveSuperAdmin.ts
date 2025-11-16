@@ -1,53 +1,45 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.4";
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
-// Emergency utility: force Steve back to super_admin.
-// Call via GET in the browser once, then delete this function.
-
+/**
+ * One-time script to restore steve.l@signa-consultants.com as super admin
+ * This is a direct update that bypasses safeguards (intentional for recovery)
+ */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const targetEmail = "steve.l@signa-consultants.com";
+    
+    // Find Steve's user record
+    const allUsers = await base44.asServiceRole.entities.User.list();
+    const steveUser = allUsers.find(u => u.email === 'steve.l@signa-consultants.com');
 
-    console.log("🔧 makeSteveSuperAdmin starting for:", targetEmail);
-
-    // Get all users using service role
-    const users = await base44.asServiceRole.entities.User.list();
-
-    // Find Steve (case-insensitive)
-    const me = users.find((u) => {
-      return u.email && u.email.toLowerCase() === targetEmail.toLowerCase();
-    });
-
-    if (!me) {
-      console.error("❌ User not found:", targetEmail);
-      return Response.json(
-        { success: false, error: "user_not_found", email: targetEmail },
-        { status: 404 },
-      );
+    if (!steveUser) {
+      return Response.json({ error: 'User steve.l@signa-consultants.com not found' }, { status: 404 });
     }
 
-    // FORCE ROLE UPDATE
-    await base44.asServiceRole.entities.User.update(me.id, {
-      role: "super_admin",
+    console.log('Found user:', steveUser.email, '| Current role:', steveUser.role);
+
+    // Update to super admin
+    await base44.asServiceRole.entities.User.update(steveUser.id, {
+      role: 'super_admin',
+      access_level: 'super_admin',
+      is_super_admin: true
     });
 
-    console.log("✅ Super admin restored for:", me.email);
+    console.log('✅ User updated to super_admin');
 
-    return Response.json(
-      {
-        success: true,
-        message: `Super admin restored for ${me.email}`,
-      },
-      { status: 200 },
-    );
-  } catch (err) {
-    console.error("❌ makeSteveSuperAdmin error:", err && err.message);
-    return Response.json(
-      {
-        success: false,
-        error: (err && err.message) || "unknown_error",
-      },
-      { status: 500 },
-    );
+    return Response.json({ 
+      success: true,
+      message: 'steve.l@signa-consultants.com is now a super admin',
+      user: {
+        id: steveUser.id,
+        email: steveUser.email,
+        role: 'super_admin',
+        access_level: 'super_admin',
+        is_super_admin: true
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
