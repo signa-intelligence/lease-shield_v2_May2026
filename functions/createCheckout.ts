@@ -36,8 +36,17 @@ Deno.serve(async (req) => {
       await base44.auth.updateMe({ stripe_customer_id: customerId });
     }
 
-    const finalSuccessUrl = successUrl || `https://app.leaseshield.asia/account?${mode === 'subscription' ? 'subscription=success' : 'payment=success'}`;
-    const finalCancelUrl = cancelUrl || `https://app.leaseshield.asia/account?${mode === 'subscription' ? 'subscription=cancelled' : 'payment=cancelled'}`;
+    // ✅ IMPROVED: Redirect logic based on mode
+    const finalSuccessUrl = successUrl || (
+      mode === 'subscription' 
+        ? `https://app.leaseshield.asia/account?subscription=success`
+        : `https://app.leaseshield.asia/templates?payment=success`
+    );
+    const finalCancelUrl = cancelUrl || (
+      mode === 'subscription'
+        ? `https://app.leaseshield.asia/account?subscription=cancelled`
+        : `https://app.leaseshield.asia/templates?payment=cancelled`
+    );
     
     console.log('✅ Using URLs:', { finalSuccessUrl, finalCancelUrl });
 
@@ -51,13 +60,12 @@ Deno.serve(async (req) => {
     };
 
     // ========================================
-    // CREDITS: Dynamic one-time payment
+    // CREDITS: One-time payment with PromptPay
     // ========================================
     if (mode === 'payment' && amount) {
       const finalAmount = Math.round(amount * 100);
       console.log('✅ CREDITS - Creating one-time payment:', finalAmount, 'satang');
       
-      // ✅ ENSURE METADATA INCLUDES: type, userId, email, credits
       sessionConfig.metadata = {
         type: 'credits',
         userId: user.id,
@@ -70,25 +78,27 @@ Deno.serve(async (req) => {
           currency: currency || 'thb',
           unit_amount: finalAmount,
           product_data: {
-            name: description || 'Lease Shield Service',
-            description: description || 'Professional service',
+            name: description || 'Letter Credits',
+            description: description || 'Lease Shield Letter Credits',
           },
         },
         quantity: 1,
       }];
 
+      // ✅ ENABLE CARD + PROMPTPAY FOR ONE-TIME PAYMENTS
+      sessionConfig.payment_method_types = ['card', 'promptpay'];
+
       console.log('💰 Credits checkout metadata:', sessionConfig.metadata);
+      console.log('💳 Payment methods: card, promptpay');
     } 
     // ========================================
-    // SUBSCRIPTIONS: Explicit metadata
+    // SUBSCRIPTIONS: Card only (PromptPay not supported)
     // ========================================
     else if (mode === 'subscription' && amount) {
       const finalAmount = Math.round(amount * 100);
       const planTier = (metadata?.plan || 'lite').toLowerCase();
-      const intervalRaw = metadata?.interval || 'month';
-      
-      // ✅ NORMALIZE interval to 'monthly' or 'annual' for webhook
-      const billingInterval = (intervalRaw === 'year' || intervalRaw === 'annual') ? 'annual' : 'monthly';
+      const intervalRaw = metadata?.interval || 'monthly';
+      const billingInterval = intervalRaw === 'year' || intervalRaw === 'annual' ? 'annual' : 'monthly';
       
       console.log('✅ SUBSCRIPTION - Creating with explicit metadata:', {
         userId: user.id,
@@ -98,7 +108,6 @@ Deno.serve(async (req) => {
         amount: finalAmount
       });
       
-      // ✅ EXPLICIT METADATA - Always include type, userId, email, plan, interval
       sessionConfig.metadata = {
         type: 'subscription',
         userId: user.id,
@@ -112,7 +121,7 @@ Deno.serve(async (req) => {
           currency: currency || 'thb',
           unit_amount: finalAmount,
           recurring: {
-            interval: (intervalRaw === 'year' || intervalRaw === 'annual') ? 'year' : 'month',
+            interval: intervalRaw === 'year' || intervalRaw === 'annual' ? 'year' : 'month',
             interval_count: 1
           },
           product_data: {
@@ -123,7 +132,6 @@ Deno.serve(async (req) => {
         quantity: 1,
       }];
 
-      // Also include metadata in subscription_data for redundancy
       sessionConfig.subscription_data = {
         metadata: {
           type: 'subscription',
@@ -134,8 +142,12 @@ Deno.serve(async (req) => {
         }
       };
 
+      // ✅ CARD ONLY FOR SUBSCRIPTIONS (PromptPay doesn't support recurring)
+      sessionConfig.payment_method_types = ['card'];
+
       console.log('✅ Session metadata:', sessionConfig.metadata);
       console.log('✅ Subscription_data metadata:', sessionConfig.subscription_data.metadata);
+      console.log('💳 Payment methods: card only');
     } 
     // ========================================
     // Legacy price IDs (deprecated)
