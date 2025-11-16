@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +19,7 @@ const ProtectionScoreEnhanced = ({
 }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = (0);
+  const [touchEnd, setTouchEnd] = useState(0);
   const [dismissing, setDismissing] = useState(false);
   const queryClient = useQueryClient();
 
