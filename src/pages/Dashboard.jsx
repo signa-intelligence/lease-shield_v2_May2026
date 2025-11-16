@@ -1514,7 +1514,7 @@ function DashboardContent() {
                       {checkingOverdue ? (
                         <>
                           <Loader2 className="w-3 h-3 animate-spin" />
-                          {strings.running}
+                          Overdue Only
                         </>
                       ) : (
                         <>
@@ -1990,7 +1990,7 @@ function DashboardContent() {
                             className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
                             style={{
                               backgroundColor: rentTheme.cardBg,
-                              borderLeft: `44px solid ${rentTheme.borderColor}`
+                              borderLeft: `4px solid ${rentTheme.borderColor}`
                             }}
                           >
                             <div className="flex items-start justify-between mb-3">
