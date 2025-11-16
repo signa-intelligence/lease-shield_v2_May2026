@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -486,85 +487,139 @@ const ProtectionScoreEnhanced = ({
                   transform: `translateX(-${currentSlide * 100}%)`
                 }}
               >
-                {activeRecommendations.map((rec, idx) => (
-                  <div 
-                    key={idx}
-                    className="min-w-full px-1"
-                  >
-                    <div className="relative">
-                      <Link to={createPageUrl(rec.route)}>
-                        <div
-                          className="p-3 rounded-lg cursor-pointer transition-all duration-200 hover:scale-105"
+                {activeRecommendations.map((rec, idx) => {
+                  const isLocked = rec.requiresPaid && user?.plan_tier === 'free';
+                  const extraCount = rec.extraCount || 0;
+                  
+                  return (
+                    <div 
+                      key={idx}
+                      className="min-w-full px-1"
+                    >
+                      <div className="relative">
+                        {/* Dismiss button */}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDismissRecommendation(rec);
+                          }}
+                          disabled={dismissing}
                           style={{
-                            backgroundColor: `${scoreColor}10`,
-                            border: `1px solid ${scoreColor}30`,
+                            position: 'absolute',
+                            top: '8px',
+                            right: '8px',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            border: 'none',
+                            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                            color: '#FFFFFF',
+                            cursor: dismissing ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: dismissing ? 0.5 : 1,
+                            transition: 'all 0.2s',
+                            zIndex: 10
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!dismissing) {
+                              e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
+                              e.target.style.transform = 'scale(1.1)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!dismissing) {
+                              e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                              e.target.style.transform = 'scale(1)';
+                            }
                           }}
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold pr-6" style={{ color: colors.textPrimary }}>
-                              {rec.action}
-                            </span>
-                            <Badge
-                              style={{
-                                backgroundColor: scoreColor,
-                                color: '#FFFFFF',
-                                fontSize: '10px',
-                                padding: '2px 6px'
-                              }}
-                            >
-                              +{rec.points}
-                            </Badge>
+                          <X className="w-3 h-3" />
+                        </button>
+
+                        <Link to={createPageUrl(rec.route)}>
+                          <div
+                            className="p-3 rounded-lg cursor-pointer transition-all duration-200 hover:scale-105"
+                            style={{
+                              backgroundColor: `${scoreColor}10`,
+                              border: `1px solid ${scoreColor}30`,
+                            }}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-bold pr-6" style={{ color: colors.textPrimary }}>
+                                {rec.action}
+                              </span>
+                              <Badge
+                                style={{
+                                  backgroundColor: scoreColor,
+                                  color: '#FFFFFF',
+                                  fontSize: '10px',
+                                  padding: '2px 6px'
+                                }}
+                              >
+                                +{rec.points}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center justify-end">
+                              <ChevronRight className="w-4 h-4" style={{ color: scoreColor }} />
+                            </div>
                           </div>
-                          <div className="flex items-center justify-end">
-                            <ChevronRight className="w-4 h-4" style={{ color: scoreColor }} />
+                        </Link>
+                        
+                        {isLocked && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '8px',
+                              right: '8px',
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              backgroundColor: '#EF4444',
+                              color: '#FFFFFF',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                              zIndex: 10
+                            }}
+                          >
+                            X
                           </div>
-                        </div>
-                      </Link>
-                      
-                      {/* Dismiss button */}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDismissRecommendation(rec);
-                        }}
-                        disabled={dismissing}
-                        style={{
-                          position: 'absolute',
-                          top: '8px',
-                          right: '8px',
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          border: 'none',
-                          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                          color: '#FFFFFF',
-                          cursor: dismissing ? 'not-allowed' : 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          opacity: dismissing ? 0.5 : 1,
-                          transition: 'all 0.2s',
-                          zIndex: 10
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!dismissing) {
-                            e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
-                            e.target.style.transform = 'scale(1.1)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!dismissing) {
-                            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-                            e.target.style.transform = 'scale(1)';
-                          }
-                        }}
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                        )}
+                        
+                        {extraCount > 0 && !isLocked && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '8px',
+                              right: '8px',
+                              minWidth: '24px',
+                              height: '24px',
+                              borderRadius: '12px',
+                              backgroundColor: '#10B981',
+                              color: '#FFFFFF',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              padding: '0 6px',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                              zIndex: 10
+                            }}
+                          >
+                            +{extraCount}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
