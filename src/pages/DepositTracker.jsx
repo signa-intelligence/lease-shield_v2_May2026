@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -168,8 +169,10 @@ function DepositTrackerContent() {
       dispute: "Dispute",
       save: "Save",
       cancel: "Cancel",
-      noDeposits: "No Deposits Tracked",
-      noDepositsDesc: "Start tracking your security deposits to stay protected",
+      noDeposits: "No deposits tracked yet",
+      noDepositsDesc: "Start by adding your first deposit so LeaseShield can monitor due dates, returns and disputes for this property.",
+      addDepositButton: "Add deposit", // New string
+      upgradeForFullTools: "Upgrade for full deposit tools", // New string
       daysRemaining: "days remaining",
       overdue: "OVERDUE",
       paidOn: "Paid on",
@@ -220,8 +223,10 @@ function DepositTrackerContent() {
       dispute: "มีข้อพิพาท",
       save: "บันทึก",
       cancel: "ยกเลิก",
-      noDeposits: "ไม่มีเงินมัดจำที่ติดตาม",
-      noDepositsDesc: "เริ่มติดตามเงินมัดจำของคุณเพื่อรักษาความปลอดภัย",
+      noDeposits: "ยังไม่มีเงินมัดจำที่ติดตาม", // New translation
+      noDepositsDesc: "เริ่มต้นด้วยการเพิ่มเงินมัดจำแรกของคุณ เพื่อให้ LeaseShield สามารถตรวจสอบวันครบกำหนด, การคืนเงิน และข้อพิพาทสำหรับอสังหาริมทรัพย์นี้", // New translation
+      addDepositButton: "เพิ่มเงินมัดจำ", // New translation
+      upgradeForFullTools: "อัปเกรดเพื่อเครื่องมือจัดการเงินมัดจำแบบเต็มรูปแบบ", // New translation
       daysRemaining: "วันคงเหลือ",
       overdue: "เกินกำหนด",
       paidOn: "จ่ายเมื่อ",
@@ -714,79 +719,37 @@ function DepositTrackerContent() {
           {isLoading ? (
             <SkeletonLoader variant="card" count={4} colors={colors} />
           ) : filteredDeposits.length === 0 ? (
-            <div className="max-w-2xl mx-auto">
-              <div className="text-center py-12 px-6 rounded-2xl" style={{ backgroundColor: colors.cardBg, border: `2px solid ${colors.borderColor}` }}>
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#0C3B2E20' }}>
-                  <Wallet className="w-8 h-8" style={{ color: '#0C3B2E' }} />
-                </div>
-                <h2 className="text-2xl font-bold mb-3" style={{ color: colors.textPrimary }}>
-                  No deposits tracked yet
-                </h2>
-                <p className="text-base mb-6" style={{ color: colors.textSecondary }}>
-                  Track your deposits so you have a clear, time-stamped record if anything goes wrong at move-out.
-                </p>
-                
+            <div className="rounded-xl border border-dashed p-4 sm:p-5 mb-4" style={{ borderColor: "#D1D5DB", backgroundColor: "#F9FAFB" }}>
+              <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>
+                {strings.noDeposits}
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 mb-3" style={{ color: colors.textSecondary }}>
+                {strings.noDepositsDesc}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => {
                     haptic.medium();
-                    setShowAddForm(true); // Changed from setShowAddDeposit to setShowAddForm
+                    setShowAddForm(true);
                   }}
-                  style={{
-                    padding: '12px 24px',
-                    backgroundColor: '#0C3B2E',
-                    color: '#FFFFFF',
-                    borderRadius: '12px',
-                    border: 'none',
-                    fontWeight: '600',
-                    fontSize: '16px',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 8px rgba(12,59,46,0.3)',
-                    transition: 'all 0.2s',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#C7A338';
-                    e.target.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#0C3B2E';
-                    e.target.style.transform = 'translateY(0)';
-                  }}
+                  className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
+                  style={{ backgroundColor: "#0C3B2E", color: "#FFFFFF" }}
                 >
-                  <Plus className="w-5 h-5" />
-                  Add first deposit
+                  {strings.addDepositButton}
                 </button>
-
                 {isFreeTier && (
-                  <div className="mt-6 pt-6 border-t" style={{ borderColor: colors.borderColor }}>
-                    <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
-                      Need full deposit protection and export tools? Upgrade to Lite, Protect or Secure. Annual plans offer the best value.
-                    </p>
-                    <button
-                      onClick={() => navigate(createPageUrl("Account") + '#plans')} // Changed to #plans for consistency
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: 'transparent',
-                        color: '#0C3B2E',
-                        borderRadius: '8px',
-                        border: 'none',
-                        fontWeight: '500',
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.textDecoration = 'underline';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.textDecoration = 'none';
-                      }}
-                    >
-                      View plans
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptic.light();
+                      navigate(createPageUrl("Account") + '#plans');
+                    }}
+                    className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
+                    style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: "#FFFFFF" }}
+                  >
+                    {strings.upgradeForFullTools}
+                  </button>
                 )}
               </div>
             </div>
@@ -882,7 +845,7 @@ function DepositTrackerContent() {
                               'bg-blue-100 text-blue-800 border-blue-200'
                             } border`}>
                               {isOverdue
-                                ? `${strings.overdue} ${Math.abs(daysRemaining)} days`
+                                ? `${Math.abs(daysRemaining)} ${strings.overdue}`
                                 : `${daysRemaining} ${strings.daysRemaining}`
                               }
                             </Badge>

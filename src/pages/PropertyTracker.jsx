@@ -1142,33 +1142,37 @@ function PropertyTrackerContent() {
             {expandedSections.deposit && (
               <CardContent className="p-6">
                 {(!deposit || deposit.deposit_amount === 0) && !editingDeposit ? (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#C7A33820' }}>
-                      <Wallet className="w-8 h-8" style={{ color: colors.depositAccent }} />
+                  <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#D1D5DB", backgroundColor: "#F9FAFB" }}>
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">No properties added yet</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-3">
+                      Add your first property to start tracking deposits, rent schedules and maintenance in one place.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          haptic.light();
+                          setEditingDeposit(true);
+                        }}
+                        className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
+                        style={{ backgroundColor: "#0C3B2E", color: "#FFFFFF" }}
+                      >
+                        Add property
+                      </button>
+                      {isFreeTier && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            haptic.light();
+                            navigate(createPageUrl("Account") + '#plans');
+                          }}
+                          className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
+                          style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: "#FFFFFF" }}
+                        >
+                          Upgrade for advanced tracking
+                        </button>
+                      )}
                     </div>
-                    <p className="font-semibold mb-2 text-lg" style={{ color: colors.textPrimary }}>
-                      No deposit tracked yet
-                    </p>
-                    <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: colors.textSecondary }}>
-                      Add your first property so LeaseShield can link deposits, rent schedules and maintenance to the right unit.
-                    </p>
-                    <Button 
-                      onClick={() => {
-                        haptic.light();
-                        setEditingDeposit(true);
-                      }} 
-                      className="bg-ls-gold hover:bg-ls-gold/90 text-ls-charcoal"
-                      style={{ minHeight: '44px' }}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      {strings.addDeposit}
-                    </Button>
-
-                    {isFreeTier && (
-                      <p className="text-xs mt-4" style={{ color: colors.textSecondary }}>
-                        Advanced tracking and export tools are available on paid plans, with annual options for better value.
-                      </p>
-                    )}
                   </div>
                 ) : editingDeposit ? (
                   <div className="space-y-4">
@@ -1802,20 +1806,37 @@ function PropertyTrackerContent() {
                 )}
 
                 {maintenanceRequests.length === 0 && !showAddMaintenance && (
-                  <div className="text-center py-8">
-                    <Wrench className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                    <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noMaintenance}</p>
-                    <Button 
-                      onClick={() => {
-                        haptic.light();
-                        setShowAddMaintenance(true);
-                      }} 
-                      className="bg-orange-600 hover:bg-orange-700 text-white"
-                      style={{ minHeight: '44px' }}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      {strings.addMaintenance}
-                    </Button>
+                  <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#FCD34D", backgroundColor: "#FFFBEB" }}>
+                    <h3 className="font-semibold text-sm sm:text-base mb-1">No maintenance requests yet</h3>
+                    <p className="text-xs sm:text-sm text-gray-700 mb-3">
+                      Log your first maintenance issue so you have a clear record with timestamps, photos and notifications.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          haptic.light();
+                          setShowAddMaintenance(true);
+                        }}
+                        className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
+                        style={{ backgroundColor: "#0C3B2E", color: "#FFFFFF" }}
+                      >
+                        New maintenance request
+                      </button>
+                      {isFreeTier && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            haptic.light();
+                            navigate(createPageUrl("Account") + '#plans');
+                          }}
+                          className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
+                          style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: "#FFFFFF" }}
+                        >
+                          Upgrade for full maintenance history
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
 

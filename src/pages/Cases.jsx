@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -152,6 +153,9 @@ function CasesContent() {
       priorityHandling: "Priority case handling",
       noCases: "No Cases Yet",
       noCasesDesc: "Open a case to get professional help with deposit recovery or lease disputes",
+      noCasesCreatedYet: "No cases created yet",
+      noCasesCreatedYetDesc: "When there's a dispute, log a case here to keep all messages, evidence and timelines in one protected place.",
+      upgradeForDisputeTools: "Upgrade for dispute support tools",
       caseNumber: "Case",
       opened: "Opened",
       disputeAmount: "Dispute Amount",
@@ -186,6 +190,9 @@ function CasesContent() {
       priorityHandling: "จัดการคดีแบบเร่งด่วน",
       noCases: "ยังไม่มีคดี",
       noCasesDesc: "เปิดคดีเพื่อรับความช่วยเหลือจากมืออาชีพในการเรียกคืนเงินมัดจำหรือข้อพิพาท",
+      noCasesCreatedYet: "ยังไม่มีการสร้างกรณี",
+      noCasesCreatedYetDesc: "เมื่อเกิดข้อพิพาท ให้บันทึกกรณีที่นี่เพื่อเก็บข้อความ, หลักฐาน และไทม์ไลน์ทั้งหมดไว้ในที่เดียวที่ปลอดภัย",
+      upgradeForDisputeTools: "อัปเกรดเพื่อเครื่องมือสนับสนุนข้อพิพาท",
       caseNumber: "คดี",
       opened: "เปิดเมื่อ",
       disputeAmount: "จำนวนเงินพิพาท",
@@ -220,6 +227,9 @@ function CasesContent() {
       priorityHandling: "优先案件处理",
       noCases: "暂无案件",
       noCasesDesc: "开启案件以获得押金回收或租赁纠纷的专业帮助",
+      noCasesCreatedYet: "尚未创建案件",
+      noCasesCreatedYetDesc: "当发生争议时，在此处记录案件，将所有消息、证据和时间线集中保存在一个受保护的地方。",
+      upgradeForDisputeTools: "升级以获取争议支持工具",
       caseNumber: "案件",
       opened: "开启于",
       disputeAmount: "争议金额",
@@ -254,6 +264,9 @@ function CasesContent() {
       priorityHandling: "優先ケース処理",
       noCases: "ケースなし",
       noCasesDesc: "敷金回収または賃貸紛争に関する専門的な支援を受けるためにケースを開いてください",
+      noCasesCreatedYet: "まだケースは作成されていません",
+      noCasesCreatedYetDesc: "紛争が発生した場合、メッセージ、証拠、タイムラインをすべて1つの保護された場所に保持するために、ここでケースを記録してください。",
+      upgradeForDisputeTools: "紛争支援ツールにアップグレード",
       caseNumber: "ケース",
       opened: "開設日",
       disputeAmount: "紛争金額",
@@ -288,6 +301,9 @@ function CasesContent() {
       priorityHandling: "우선 사례 처리",
       noCases: "아직 사례 없음",
       noCasesDesc: "보증금 회수 또는 임대 분쟁에 대한 전문적인 도움을 받으려면 사례를 여세요",
+      noCasesCreatedYet: "아직 생성된 사례가 없습니다",
+      noCasesCreatedYetDesc: "분쟁이 발생하면, 모든 메시지, 증거 및 타임라인을 하나의 보호된 장소에 보관하기 위해 여기에 사례를 기록하십시오.",
+      upgradeForDisputeTools: "분쟁 지원 도구를 위한 업그레이드",
       caseNumber: "사례",
       opened: "개설일",
       disputeAmount: "분쟁 금액",
@@ -509,14 +525,38 @@ function CasesContent() {
           {isLoading ? (
             <SkeletonLoader variant="card" count={3} colors={colors} />
           ) : cases.length === 0 ? (
-            <EmptyState
-              icon={Scale}
-              title={strings.noCases}
-              description={strings.noCasesDesc}
-              illustration="cases"
-              actionLabel={strings.openNewCase}
-              onAction={() => navigate(createPageUrl("ResolveCase"))}
-            />
+            <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#FCA5A5", backgroundColor: "#FEF2F2" }}>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">{strings.noCasesCreatedYet}</h3>
+              <p className="text-xs sm:text-sm text-gray-700 mb-3">
+                {strings.noCasesCreatedYetDesc}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic.medium();
+                    navigate(createPageUrl("ResolveCase"));
+                  }}
+                  className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
+                  style={{ backgroundColor: "#0C3B2E", color: "#FFFFFF" }}
+                >
+                  {strings.openNewCase}
+                </button>
+                {(!user?.plan_tier || user.plan_tier === 'free') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptic.light();
+                      navigate(createPageUrl("Account") + '#plans');
+                    }}
+                    className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
+                    style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: "#FFFFFF" }}
+                  >
+                    {strings.upgradeForDisputeTools}
+                  </button>
+                )}
+              </div>
+            </div>
           ) : filteredCases.length === 0 ? (
             <div className="text-center py-12">
               <AlertCircle className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />

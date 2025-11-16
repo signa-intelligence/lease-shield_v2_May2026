@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,7 +24,7 @@ import BottomSheet from "../components/shared/BottomSheet";
 import MobileFormInput from "../components/shared/MobileFormInput";
 import LazyImage from "../components/shared/LazyImage";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
-import EmptyState from "../components/shared/EmptyState";
+// Removed EmptyState import as it's no longer used
 import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
@@ -662,7 +663,7 @@ function EvidenceVaultContent() {
       viewTemplatesDesc: "Professional letter templates for common rental situations.",
       noDocuments: "No Documents Yet",
       noDocumentsDesc: "Start building your evidence vault for better protection. All your uploaded documents are securely stored here.",
-      uploadFirst: "Upload First Document",
+      uploadFirst: "Upload First Document", // This string is no longer used due to the new empty state, but kept for completeness
       deleteConfirm: "Are you sure?",
       confirmDelete: "Are you sure you want to delete this file?",
       confirmBulkDelete: "Are you sure you want to delete {count} file(s)?" ,
@@ -708,7 +709,10 @@ function EvidenceVaultContent() {
       editFailed: "Failed to update document",
       deleteFailed: "Failed to delete document",
       pleaseSelectDocuments: "Please select documents",
-      downloadFailed: "Failed to download file"
+      downloadFailed: "Failed to download file",
+      noEvidenceTitle: "No evidence uploaded yet",
+      noEvidenceDescription: "Upload photos, videos and documents now so you have a time-stamped record if there's a dispute later.",
+      upgradeVaultStorage: "Upgrade for full vault storage"
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -776,7 +780,10 @@ function EvidenceVaultContent() {
       editFailed: "ไม่สามารถอัปเดตเอกสารได้",
       deleteFailed: "ไม่สามารถลบเอกสารได้",
       pleaseSelectDocuments: "กรุณาเลือกเอกสาร",
-      downloadFailed: "ไม่สามารถดาวน์โหลดไฟล์ได้"
+      downloadFailed: "ไม่สามารถดาวน์โหลดไฟล์ได้",
+      noEvidenceTitle: "ยังไม่มีหลักฐานที่อัปโหลด",
+      noEvidenceDescription: "อัปโหลดรูปภาพ วิดีโอ และเอกสารตอนนี้ เพื่อให้คุณมีบันทึกพร้อมประทับเวลาหากเกิดข้อพิพาทในภายหลัง",
+      upgradeVaultStorage: "อัปเกรดเพื่อจัดเก็บคลังข้อมูลเต็มรูปแบบ"
     },
     zh: {
       back: "返回仪表板",
@@ -844,7 +851,10 @@ function EvidenceVaultContent() {
       editFailed: "更新文档失败",
       deleteFailed: "删除文档失败",
       pleaseSelectDocuments: "请选择文档",
-      downloadFailed: "下载文件失败"
+      downloadFailed: "下载文件失败",
+      noEvidenceTitle: "尚未上传任何证据",
+      noEvidenceDescription: "立即上传照片、视频和文件，以便在以后发生争议时拥有带时间戳的记录。",
+      upgradeVaultStorage: "升级以获得完整的证据库存储"
     },
     ja: {
       back: "ダッシュボードに戻る",
@@ -912,7 +922,10 @@ function EvidenceVaultContent() {
       editFailed: "ドキュメントの更新に失敗しました",
       deleteFailed: "ドキュメントの削除に失敗しました",
       pleaseSelectDocuments: "ドキュメントを選択してください",
-      downloadFailed: "ファイルのダウンロードに失敗しました"
+      downloadFailed: "ファイルのダウンロードに失敗しました",
+      noEvidenceTitle: "まだ証拠がアップロードされていません",
+      noEvidenceDescription: "紛争が発生した場合にタイムスタンプ付きの記録を残すため、写真、ビデオ、ドキュメントを今すぐアップロードしてください。",
+      upgradeVaultStorage: "完全な保管庫ストレージにアップグレード"
     },
     ko: {
       back: "대시보드로 돌아가기",
@@ -980,7 +993,10 @@ function EvidenceVaultContent() {
       editFailed: "문서 업데이트 실패",
       deleteFailed: "문서 삭제 실패",
       pleaseSelectDocuments: "문서를 선택하세요",
-      downloadFailed: "파일 다운로드 실패"
+      downloadFailed: "파일 다운로드 실패",
+      noEvidenceTitle: "아직 증거가 업로드되지 않았습니다.",
+      noEvidenceDescription: "분쟁 발생 시 타임스탬프가 찍힌 기록을 가질 수 있도록 지금 사진, 동영상 및 문서를 업로드하세요.",
+      upgradeVaultStorage: "전체 볼트 저장 공간을 위해 업그레이드"
     }
   }[language] || {
     back: "Back to Dashboard",
@@ -1048,7 +1064,10 @@ function EvidenceVaultContent() {
     editFailed: "Failed to update document",
     deleteFailed: "Failed to delete document",
     pleaseSelectDocuments: "Please select documents",
-    downloadFailed: "Failed to download file"
+    downloadFailed: "Failed to download file",
+    noEvidenceTitle: "No evidence uploaded yet",
+    noEvidenceDescription: "Upload photos, videos and documents now so you have a time-stamped record if there's a dispute later.",
+    upgradeVaultStorage: "Upgrade for full vault storage"
   };
 
   return (
@@ -1584,15 +1603,38 @@ function EvidenceVaultContent() {
           {isLoadingDocuments ? (
             <SkeletonLoader variant="card" count={6} colors={colors} />
           ) : filteredDocuments.length === 0 ? (
-            <EmptyState
-              icon={FileText}
-              title={strings.noDocuments}
-              description={strings.noDocumentsDesc}
-              illustration="documents"
-              actionLabel={strings.uploadFirst}
-              onAction={() => setShowUploadDialog(true)}
-              colors={colors}
-            />
+            <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#E5E7EB", backgroundColor: "#F9FAFB" }}>
+              <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>{strings.noEvidenceTitle}</h3>
+              <p className="text-xs sm:text-sm mb-3" style={{ color: colors.textSecondary }}>
+                {strings.noEvidenceDescription}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic.medium();
+                    setShowUploadDialog(true);
+                  }}
+                  className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
+                  style={{ backgroundColor: "#0C3B2E", color: "#FFFFFF" }}
+                >
+                  {strings.uploadEvidence}
+                </button>
+                {(userTier === 'free') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptic.light();
+                      navigate(createPageUrl("Account") + '#plans');
+                    }}
+                    className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
+                    style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: "#FFFFFF" }}
+                  >
+                    {strings.upgradeVaultStorage}
+                  </button>
+                )}
+              </div>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDocuments.map((doc) => {

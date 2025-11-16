@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -628,50 +629,36 @@ export default function MaintenanceTrackerPage() {
         )}
 
         {maintenanceRequests.length === 0 ? (
-          <div className="max-w-2xl mx-auto mt-8">
-            <div className="text-center py-12 px-6 rounded-2xl" style={{ backgroundColor: colors.cardBg, border: `2px solid ${colors.borderColor}` }}>
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F59E0B20' }}>
-                <Wrench className="w-8 h-8 text-orange-600" />
-              </div>
-              <h2 className="text-2xl font-bold mb-3" style={{ color: colors.textPrimary }}>
-                No maintenance requests yet
-              </h2>
-              <p className="text-base mb-6" style={{ color: colors.textSecondary }}>
-                Use LeaseShield to log issues in writing so you have a timestamped trail with photos, description and status.
-              </p>
-              
+          <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#FCD34D", backgroundColor: "#FFFBEB" }}>
+            <h3 className="font-semibold text-sm sm:text-base mb-1">No maintenance requests yet</h3>
+            <p className="text-xs sm:text-sm text-gray-700 mb-3">
+              Log your first maintenance issue so you have a clear record with timestamps, photos and notifications.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
               <button
+                type="button"
                 onClick={() => {
                   haptic.medium();
-                  setShowAddRequest(true);
+                  handleNewRequestClick();
                 }}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#0C3B2E',
-                  color: '#FFFFFF',
-                  borderRadius: '12px',
-                  border: 'none',
-                  fontWeight: '600',
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 8px rgba(12,59,46,0.3)',
-                  transition: 'all 0.2s',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#C7A338';
-                  e.target.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#0C3B2E';
-                  e.target.style.transform = 'translateY(0)';
-                }}
+                className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
+                style={{ backgroundColor: "#0C3B2E", color: "#FFFFFF" }}
               >
-                <Plus className="w-5 h-5" />
-                Create first request
+                New maintenance request
               </button>
+              {(!user?.plan_tier || user.plan_tier === 'free') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic.light();
+                    navigate(createPageUrl("Account") + '#plans');
+                  }}
+                  className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
+                  style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: "#FFFFFF" }}
+                >
+                  Upgrade for full maintenance history
+                </button>
+              )}
             </div>
           </div>
         ) : (
