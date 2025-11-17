@@ -399,13 +399,18 @@ export default function Layout({ children, currentPageName }) {
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
               alt="Lease Shield"
               className="h-10 w-auto md:hidden flex-shrink-0"
+              style={{ opacity: isDarkMode ? 0.95 : 1 }}
             />
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
               alt="Lease Shield"
               className="hidden md:block h-12 w-12 flex-shrink-0"
+              style={{ opacity: isDarkMode ? 0.95 : 1 }}
             />
-            <span className="font-bold text-base sm:text-lg truncate hidden md:block" style={{ color: isDarkMode ? '#FFFFFF' : '#0C3B2E' }}>
+            <span className="font-bold text-base sm:text-lg truncate hidden md:block" style={{ 
+              color: isDarkMode ? '#ECEFED' : '#0C3B2E',
+              opacity: isDarkMode ? 0.95 : 1
+            }}>
               {strings.appName || "LEASE SHIELD"}
             </span>
             {isAdmin && (

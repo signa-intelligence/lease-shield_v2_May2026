@@ -111,7 +111,7 @@ const ProtectionScoreEnhanced = ({
       protections: '保護',
       actions: 'アクション',
       expert: 'エキスパート',
-      selfProtector: '自己保護者',
+      selfProtector: 'セルフプロテクター',
       documenter: 'ドキュメンター',
       actionTaker: '実行者',
       quickWins: 'クイックウィン',
@@ -151,6 +151,40 @@ const ProtectionScoreEnhanced = ({
     return { grade: 'D', label: strings.needsWork };
   };
 
+  const achievementBadges = {
+    expert: {
+      en: 'Expert',
+      th: 'ผู้เชี่ยวชาญ',
+      zh: '专家',
+      ja: 'エキスパート',
+      ko: '전문가',
+      color: isDarkMode ? '#FFD700' : '#C7A338', // Gold/Darker Gold
+      bgColor: isDarkMode ? 'rgba(255,215,0,0.25)' : 'rgba(199,163,56,0.15)',
+      borderColor: isDarkMode ? 'rgba(255,215,0,0.5)' : 'rgba(199,163,56,0.35)'
+    },
+    selfProtector: {
+      en: 'Self-Protector',
+      th: 'ป้องกันตนเอง',
+      zh: '自我保护者',
+      ja: 'セルフプロテクター',
+      ko: '자기 보호자',
+      color: isDarkMode ? '#10B981' : '#047857', // Emerald Green
+      bgColor: isDarkMode ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.15)',
+      borderColor: isDarkMode ? 'rgba(16,185,129,0.5)' : 'rgba(16,185,129,0.35)'
+    },
+    documenter: {
+      en: 'Documenter',
+      th: 'ผู้บันทึก',
+      zh: '文档员',
+      ja: 'ドキュメンター',
+      ko: '문서 작성자',
+      color: isDarkMode ? '#3B82F6' : '#2563EB', // Blue
+      bgColor: isDarkMode ? 'rgba(59,130,246,0.25)' : 'rgba(59,130,246,0.15)',
+      borderColor: isDarkMode ? 'rgba(59,130,246,0.5)' : 'rgba(59,130,246,0.35)'
+    }
+  };
+
+
   const scoreColor = getScoreColor(score);
   const { grade, label } = getScoreGrade(score);
 
@@ -187,33 +221,15 @@ const ProtectionScoreEnhanced = ({
     const achievements = [];
 
     if (score >= 85) {
-      achievements.push({
-        icon: Trophy,
-        label: strings.expert,
-        color: '#FFD700'
-      });
+      achievements.push('expert');
     }
     if (score >= 70) {
-      achievements.push({
-        icon: Star,
-        label: strings.selfProtector,
-        color: '#C7A338'
-      });
+      achievements.push('selfProtector');
     }
     if (breakdown.documentation >= 30) {
-      achievements.push({
-        icon: CheckCircle2,
-        label: strings.documenter,
-        color: '#3B82F6'
-      });
+      achievements.push('documenter');
     }
-    if (breakdown.proactiveActions >= 20) {
-      achievements.push({
-        icon: Zap,
-        label: strings.actionTaker,
-        color: '#10B981'
-      });
-    }
+    // Removed 'actionTaker' as it's not in the new badge config.
 
     return achievements;
   };
@@ -379,60 +395,59 @@ const ProtectionScoreEnhanced = ({
             </span>
           </div>
 
-          {achievements.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2 justify-center">
-              {achievements.map((achievement, idx) => {
-                const Icon = achievement.icon;
-
-                // Map each badge to its high-contrast color
-                const badgeColors = {
-                  [strings.expert]: 'bg-amber-600 text-white',
-                  [strings.selfProtector]: 'bg-yellow-700 text-white',
-                  [strings.documenter]: 'bg-blue-700 text-white',
-                  [strings.actionTaker]: 'bg-emerald-700 text-white'
-                };
-
-                const colorClass = badgeColors[achievement.label] || 'bg-gray-600 text-white';
-
-                return (
-                  <Badge
-                    key={idx}
-                    className={`px-3 py-1 text-xs sm:text-sm font-semibold rounded-full shadow-sm ${colorClass}`}
-                    style={{
-                      animation: "fadeIn 0.5s ease-out",
-                      animationDelay: `${idx * 0.1}s`,
-                      animationFillMode: "backwards",
-                    }}
-                  >
-                    <Icon className="w-3.5 h-3.5 inline-block mr-1" />
-                    {achievement.label}
-                  </Badge>
-                );
-              })}
+          {/* Percentile Badge */}
+          {percentile >= 75 && (
+            <div style={{
+              marginTop: 12,
+              padding: '6px 14px',
+              borderRadius: 9999,
+              backgroundColor: isDarkMode ? 'rgba(16,185,129,0.25)' : '#D1FAE5',
+              border: isDarkMode ? '2px solid rgba(16,185,129,0.5)' : '2px solid #6EE7B7',
+              textAlign: 'center',
+            }}>
+              <p style={{
+                fontSize: '0.75rem',
+                fontWeight: 'bold',
+                color: isDarkMode ? '#6EE7B7' : '#047857',
+                letterSpacing: '0.02em'
+              }}>
+                {strings.topPercentile.replace('{percentile}', percentile)}
+              </p>
             </div>
           )}
-        </div>
 
-        {/* Percentile Badge */}
-        {percentile >= 75 && (
+          {/* Achievement Badges */}
           <div style={{
-            marginTop: 12,
-            padding: '6px 14px',
-            borderRadius: 9999,
-            backgroundColor: isDarkMode ? 'rgba(16,185,129,0.2)' : '#D1FAE5',
-            border: isDarkMode ? '1px solid rgba(16,185,129,0.3)' : '1px solid #6EE7B7',
-            textAlign: 'center',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 6,
+            justifyContent: 'center',
+            marginTop: 12
           }}>
-            <p style={{
-              fontSize: '0.75rem',
-              fontWeight: 'bold',
-              color: isDarkMode ? '#6EE7B7' : '#047857',
-              letterSpacing: '0.02em'
-            }}>
-              {strings.topPercentile.replace('{percentile}', percentile)}
-            </p>
+            {achievements.map((badgeKey, idx) => {
+              const badgeConfig = achievementBadges[badgeKey];
+              if (!badgeConfig) return null; // Should not happen if getAchievements is in sync
+
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: 9999,
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    color: badgeConfig.color,
+                    backgroundColor: badgeConfig.bgColor,
+                    border: `2px solid ${badgeConfig.borderColor}`,
+                    letterSpacing: '0.01em'
+                  }}
+                >
+                  {badgeConfig[language] || badgeConfig.en}
+                </div>
+              );
+            })}
           </div>
-        )}
+        </div>
 
         <div className="space-y-3 mb-4">
           {categoryData.map((cat, idx) => (

@@ -26,6 +26,7 @@ import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 import LazyImage from "../components/shared/LazyImage";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import PageHeader from "../components/shared/PageHeader";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import {
   CTA_COLOR,
@@ -251,6 +252,8 @@ function PropertyTrackerContent() {
     rentAccent: '#3B82F6',
     maintenanceAccent: '#F59E0B'
   };
+
+  const maintenanceTheme = { accent: colors.maintenanceAccent };
 
   const t = {
     en: {
@@ -971,106 +974,94 @@ function PropertyTrackerContent() {
   return (
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
       <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-5xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => {
-              haptic.light();
-              navigate(createPageUrl("Dashboard"))
-            }}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {strings.back}
-          </Button>
+        <div className="max-w-7xl mx-auto">
+          
+          <PageHeader
+            title={strings.title}
+            subtitle={strings.subtitle}
+            icon={Wrench}
+            iconColor={maintenanceTheme.accent}
+            showBack={true}
+            backLabel={strings.back}
+            colors={colors}
+            backTo={createPageUrl("Dashboard")}
+          />
 
-          <div className="mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold mb-1 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <Home className="w-7 h-7 md:w-8 md:h-8 text-ls-forest" />
-                  {strings.title}
-                </h1>
-                <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
-              </div>
+          <div className="flex items-center gap-2 flex-wrap justify-end mb-6">
+            <button
+              type="button"
+              onClick={() => {
+                haptic.medium();
+                setEditingDeposit(true);
+                setExpandedSections(prev => ({ ...prev, deposit: true }));
+              }}
+              style={baseCtaStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "";
+                e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
+              }}
+            >
+              <Wallet className="w-4 h-4" />
+              {strings.uploadDepositTracker}
+            </button>
 
-              <div className="flex items-center gap-2 flex-wrap justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptic.medium();
-                    setEditingDeposit(true);
-                    setExpandedSections(prev => ({ ...prev, deposit: true }));
-                  }}
-                  style={baseCtaStyle}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "";
-                    e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
-                  }}
-                >
-                  <Wallet className="w-4 h-4" />
-                  {strings.uploadDepositTracker}
-                </button>
+            <button
+              type="button"
+              onClick={() => {
+                haptic.medium();
+                setEditingRent(true);
+                setExpandedSections(prev => ({ ...prev, rent: true }));
+              }}
+              style={baseCtaStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "";
+                e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
+              }}
+            >
+              <Calendar className="w-4 h-4" />
+              {strings.uploadRentSchedule}
+            </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptic.medium();
-                    setEditingRent(true);
-                    setExpandedSections(prev => ({ ...prev, rent: true }));
-                  }}
-                  style={baseCtaStyle}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "";
-                    e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
-                  }}
-                >
-                  <Calendar className="w-4 h-4" />
-                  {strings.uploadRentSchedule}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptic.medium();
-                    setShowAddMaintenance(true);
-                    setEditingMaintenance(null);
-                    setCompressionStats(null);
-                    setMaintenanceForm({
-                      issue_title: '', 
-                      description: '', 
-                      category: 'other', 
-                      priority: 'medium', 
-                      property_address: '', 
-                      reported_date: new Date().toISOString().split('T')[0]
-                    });
-                    setPhotoFiles([]);
-                    setPhotoPreviews([]);
-                    setExpandedSections(prev => ({ ...prev, maintenance: true }));
-                  }}
-                  style={baseCtaStyle}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "";
-                    e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
-                  }}
-                >
-                  <Wrench className="w-4 h-4" />
-                  {strings.newMaintenanceRequest}
-                </button>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                haptic.medium();
+                setShowAddMaintenance(true);
+                setEditingMaintenance(null);
+                setCompressionStats(null);
+                setMaintenanceForm({
+                  issue_title: '', 
+                  description: '', 
+                  category: 'other', 
+                  priority: 'medium', 
+                  property_address: '', 
+                  reported_date: new Date().toISOString().split('T')[0]
+                });
+                setPhotoFiles([]);
+                setPhotoPreviews([]);
+                setExpandedSections(prev => ({ ...prev, maintenance: true }));
+              }}
+              style={baseCtaStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "";
+                e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
+              }}
+            >
+              <Wrench className="w-4 h-4" />
+              {strings.newMaintenanceRequest}
+            </button>
           </div>
 
           <Card ref={depositRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>

@@ -1855,7 +1855,7 @@ function DashboardContent() {
                                   </p>
                                 </div>
                                 <div className="text-xs">
-                                  <p style={{ color: leasesTheme.titleColor, opacity: 0.7 }}>
+                                  <p style={{ color: leasesTheme.titleXlColor, opacity: 0.7 }}>
                                     {language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน'}
                                   </p>
                                   <p className="font-semibold" style={{ color: leasesTheme.metricColor }}>
@@ -2643,7 +2643,7 @@ function DashboardContent() {
                           className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
                           style={{
                             backgroundColor: casesTheme.cardBg,
-                            borderLeft: `4px solid ${casesTheme.borderColor}`
+                            borderLeft: `4ientemente solid ${casesTheme.borderColor}`
                           }}
                         >
                           <div className="flex items-start justify-between mb-3">
@@ -2670,7 +2670,7 @@ function DashboardContent() {
                               <p className="font-semibold" style={{ color: casesTheme.metricColor }}>
                                 {resolvedCases}
                               </p>
-                            </div>
+                              </div>
                           </div>
 
                           <Link to={createPageUrl("Cases")}>

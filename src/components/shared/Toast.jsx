@@ -8,7 +8,7 @@ export const useToast = () => useContext(ToastContext);
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = (message, type = 'info', duration = 3000) => {
+  const addToast = (message, type = 'info', duration = 2500) => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type, duration }]);
     
@@ -23,10 +23,10 @@ export function ToastProvider({ children }) {
 
   return (
     <ToastContext.Provider value={{
-      success: (msg, opts) => addToast(msg, 'success', opts?.duration || 2000),
+      success: (msg, opts) => addToast(msg, 'success', opts?.duration || 2500),
       error: (msg, opts) => addToast(msg, 'error', opts?.duration || 3000),
-      info: (msg, opts) => addToast(msg, 'info', opts?.duration || 3000),
-      warning: (msg, opts) => addToast(msg, 'warning', opts?.duration || 3000),
+      info: (msg, opts) => addToast(msg, 'info', opts?.duration || 2500),
+      warning: (msg, opts) => addToast(msg, 'warning', opts?.duration || 2500),
     }}>
       {children}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
@@ -87,7 +87,7 @@ function Toast({ message, type, onClose }) {
         color: '#FFFFFF',
         padding: '12px 16px',
         borderRadius: '12px',
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.25)',
         animation: 'slideInRight 0.3s ease-out',
         minHeight: '48px'
       }}
@@ -96,7 +96,7 @@ function Toast({ message, type, onClose }) {
       <span style={{
         flex: 1,
         fontSize: '14px',
-        fontWeight: '500',
+        fontWeight: '600',
         lineHeight: '1.4'
       }}>
         {message}
@@ -112,11 +112,11 @@ function Toast({ message, type, onClose }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          opacity: 0.8,
+          opacity: 0.9,
           transition: 'opacity 0.2s'
         }}
         onMouseEnter={(e) => e.target.style.opacity = 1}
-        onMouseLeave={(e) => e.target.style.opacity = 0.8}
+        onMouseLeave={(e) => e.target.style.opacity = 0.9}
       >
         <X className="w-4 h-4" />
       </button>
