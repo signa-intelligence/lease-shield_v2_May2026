@@ -133,12 +133,12 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const language = user?.language || 'en';
-  const accessLevel = user?.access_level || 'user';
-  const role = user?.role || '';
+  const role = user?.role || user?.access_level || 'user';
   
   const isAdmin = 
-    ['admin', 'super_admin', 'va'].includes(role) || 
-    ['admin', 'super_admin', 'va'].includes(accessLevel);
+    role === 'admin' || 
+    role === 'super_admin' || 
+    role === 'va';
 
   const isDarkMode = user?.theme === 'dark';
 
@@ -247,7 +247,7 @@ export default function Layout({ children, currentPageName }) {
     navTabs.push({
       key: 'upgrade',
       label: strings.upgrade,
-      route: createPageUrl('Account') + '?highlight=plans',
+      route: createPageUrl('Account') + '?showPlans=true',
       icon: Star,
     });
   }
@@ -317,6 +317,7 @@ export default function Layout({ children, currentPageName }) {
         
         .bottom-tabs {
           padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+          box-shadow: ${isDarkMode ? '0 -4px 24px rgba(0,0,0,0.5)' : '0 -4px 16px rgba(0,0,0,0.08)'};
         }
         
         .top-bar {
@@ -341,7 +342,6 @@ export default function Layout({ children, currentPageName }) {
             border-radius: 24px;
             margin-bottom: 16px;
             padding-bottom: 0;
-            box-shadow: ${isDarkMode ? '0 -4px 24px rgba(0,0,0,0.5)' : '0 -4px 16px rgba(0,0,0,0.08)'};
           }
         }
 
@@ -468,7 +468,7 @@ export default function Layout({ children, currentPageName }) {
             )}
             {isAdmin && (
               <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
-                {accessLevel === 'super_admin' ? 'SUPER ADMIN' : accessLevel === 'admin' ? 'ADMIN' : role === 'admin' ? 'ADMIN' : 'VA'}
+                {role === 'super_admin' ? 'SUPER ADMIN' : role === 'admin' ? 'ADMIN' : 'VA'}
               </span>
             )}
           </div>
@@ -477,7 +477,7 @@ export default function Layout({ children, currentPageName }) {
               <button
                 aria-label={strings.search || "Search"}
                 onClick={() => haptic.light()}
-                className={`btn-interaction ${isActiveTab(createPageUrl("Search")) ? 'is-active' : ''}`}
+                className="btn-interaction"
                 style={{
                   width: '36px',
                   height: '36px',
@@ -502,10 +502,10 @@ export default function Layout({ children, currentPageName }) {
             </Link>
             <LanguageToggle />
             {user && (!user.plan_tier || user.plan_tier === 'free') && (
-              <Link to={createPageUrl("Account") + '?highlight=plans'}>
+              <Link to={createPageUrl("Account") + '?showPlans=true'}>
                 <button
                   aria-label="Upgrade"
-                  onClick={() => haptic.light()}
+                  onClick={() => haptic.medium()}
                   className="btn-interaction"
                   style={{
                     padding: '6px 12px',
@@ -528,7 +528,7 @@ export default function Layout({ children, currentPageName }) {
               <button
                 aria-label="Account Settings"
                 onClick={() => haptic.light()}
-                className={`btn-interaction ${isActiveTab(createPageUrl("Account")) ? 'is-active' : ''}`}
+                className="btn-interaction"
                 style={{
                   width: '36px',
                   height: '36px',
@@ -575,8 +575,7 @@ export default function Layout({ children, currentPageName }) {
         style={{
           backgroundColor: colors.bottomTabBg,
           borderTopColor: colors.borderColor,
-          zIndex: 50,
-          boxShadow: isDarkMode ? '0 -4px 24px rgba(0,0,0,0.5)' : '0 -4px 16px rgba(0,0,0,0.08)'
+          zIndex: 50
         }}
       >
         <div className="flex items-center justify-around px-2 py-2" style={{
@@ -592,7 +591,7 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={tab.key}
                 to={tab.route}
-                className={`ripple-container ${isActive ? 'is-active' : ''}`}
+                className="ripple-container"
                 onClick={(e) => {
                   haptic.light();
                   createRipple(e, e.currentTarget);
@@ -625,7 +624,7 @@ export default function Layout({ children, currentPageName }) {
                 <span style={{ 
                   fontSize: '11px', 
                   fontWeight: '600', 
-                  whiteSpace: 'nowrap',
+                  whiteWhiteSpace: 'nowrap',
                   color: isActive ? '#FFFFFF' : colors.textPrimary,
                   transition: 'all 0.2s ease',
                   opacity: isActive ? 1 : 0.9

@@ -357,7 +357,6 @@ const ProtectionScoreEnhanced = ({
                 style={{
                   transition: "stroke-dasharray 1s ease-out",
                   filter: `drop-shadow(0 0 6px ${scoreColor}40)`,
-                  animation: 'scoreSparkle 2s ease-in-out'
                 }}
               />
             </svg>
@@ -450,49 +449,60 @@ const ProtectionScoreEnhanced = ({
           </div>
         </div>
 
-        <div className="space-y-3 mb-4">
-          {categoryData.map((cat, idx) => (
-            <div
-              key={cat.key}
-              style={{
-                animation: "slideInRight 0.5s ease-out",
-                animationDelay: `${idx * 0.1}s`,
-                animationFillMode: "backwards",
-              }}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1">
-                  <span className="text-sm">{cat.icon}</span>
-                  <span
-                    className="text-xs font-semibold"
-                    style={{ color: colors.textPrimary }}
-                  >
-                    {cat.label}
-                  </span>
-                </div>
-                <span
-                  className="text-xs font-bold"
-                  style={{ color: cat.color }}
-                >
-                  {cat.score}/{cat.maxScore}
-                </span>
-              </div>
-              <div
-                className="h-2 rounded-full overflow-hidden"
-                style={{ backgroundColor: colors.borderColor }}
-              >
-                <div
-                  className="h-full rounded-full transition-all duration-1000 ease-out"
-                  style={{
-                    width: `${(cat.score / cat.maxScore) * 100}%`,
-                    background: `linear-gradient(90deg, ${cat.color} 0%, ${cat.color}cc 100%)`,
-                    boxShadow: `0 0 6px ${cat.color}40`,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
+        {/* Small stat boxes with improved readability */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="p-3 rounded-lg" style={{
+            backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+            border: `1px solid ${isDarkMode ? '#3B82F6' : '#BFDBFE'}`
+          }}>
+            <p className="text-xs font-bold mb-1" style={{
+              color: isDarkMode ? '#93C5FD' : '#1E40AF',
+              opacity: 1
+            }}>
+              {strings.documentation}
+            </p>
+            <p className="text-lg font-extrabold" style={{
+              color: isDarkMode ? '#DBEAFE' : '#1E3A8A'
+            }}>
+              {breakdown.documentation}
+            </p>
+          </div>
+
+          <div className="p-3 rounded-lg" style={{
+            backgroundColor: isDarkMode ? '#1E3A2D' : '#F0FDF4',
+            border: `1px solid ${isDarkMode ? '#10B981' : '#A7F3D0'}`
+          }}>
+            <p className="text-xs font-bold mb-1" style={{
+              color: isDarkMode ? '#6EE7B7' : '#065F46',
+              opacity: 1
+            }}>
+              {strings.protections}
+            </p>
+            <p className="text-lg font-extrabold" style={{
+              color: isDarkMode ? '#D1FAE5' : '#064E3B'
+            }}>
+              {breakdown.activeProtections}
+            </p>
+          </div>
+
+          <div className="p-3 rounded-lg" style={{
+            backgroundColor: isDarkMode ? '#3A2D1C' : '#FFFBEB',
+            border: `1px solid ${isDarkMode ? '#F59E0B' : '#FDE68A'}`
+          }}>
+            <p className="text-xs font-bold mb-1" style={{
+              color: isDarkMode ? '#FCD34D' : '#92400E',
+              opacity: 1
+            }}>
+              {strings.actions}
+            </p>
+            <p className="text-lg font-extrabold" style={{
+              color: isDarkMode ? '#FEF3C7' : '#78350F'
+            }}>
+              {breakdown.proactiveActions}
+            </p>
+          </div>
         </div>
+
 
         {activeRecommendations && activeRecommendations.length > 0 && (
           <div className="mt-4">
@@ -780,17 +790,6 @@ const ProtectionScoreEnhanced = ({
           to {
             opacity: 1;
             transform: translateX(0);
-          }
-        }
-        @keyframes scoreSparkle {
-          0% {
-            filter: drop-shadow(0 0 6px ${scoreColor}40);
-          }
-          50% {
-            filter: drop-shadow(0 0 12px ${scoreColor}80);
-          }
-          100% {
-            filter: drop-shadow(0 0 6px ${scoreColor}40);
           }
         }
       `}</style>
