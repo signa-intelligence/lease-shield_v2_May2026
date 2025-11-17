@@ -21,11 +21,7 @@ const animationKeyframes = `
   @keyframes ripple {
     to { transform: scale(4); opacity: 0; }
   }
-  @keyframes tabHighlight {
-    0% { transform: scale(0.98); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  .btn-press:active {
+  .btn-press-feedback:active {
     transform: scale(0.97);
     transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -392,6 +388,37 @@ export default function Layout({ children, currentPageName }) {
 
         /* Animation utilities */
         ${animationKeyframes}
+
+        /* New styles for btn-interaction */
+        .btn-interaction {
+          transition: background-color 0.2s, color 0.2s, transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+        }
+        /* Specific hover state for buttons that are not currently active */
+        .btn-interaction:not(.is-active):hover {
+            background-color: var(--ls-forest) !important;
+        }
+        .btn-interaction:not(.is-active):hover svg {
+            color: #FFFFFF !important;
+        }
+        .btn-interaction:active {
+            transform: scale(0.97);
+        }
+
+        /* New styles for page-transition */
+        .page-transition {
+          animation: fadeIn 0.4s ease-out;
+        }
+
+        /* New styles for bottom tab interaction */
+        .ripple-container {
+          transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ripple-container:not(.is-active):hover {
+            background-color: ${colors.hoverBg};
+        }
+        .ripple-container:active {
+            transform: scale(0.97); /* Replicate btn-press-feedback effect */
+        }
       `}</style>
 
       {/* Top Bar */}
@@ -450,6 +477,7 @@ export default function Layout({ children, currentPageName }) {
               <button
                 aria-label={strings.search || "Search"}
                 onClick={() => haptic.light()}
+                className={`btn-interaction ${isActiveTab(createPageUrl("Search")) ? 'is-active' : ''}`}
                 style={{
                   width: '36px',
                   height: '36px',
@@ -460,22 +488,7 @@ export default function Layout({ children, currentPageName }) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.2s',
                   boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActiveTab(createPageUrl("Search"))) {
-                    e.currentTarget.style.backgroundColor = '#0C3B2E';
-                    const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = '#FFFFFF';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActiveTab(createPageUrl("Search"))) {
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
-                    const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = isDarkMode ? '#F9FAFB' : '#0C3B2E';
-                  }
                 }}
               >
                 <Search 
@@ -493,6 +506,7 @@ export default function Layout({ children, currentPageName }) {
                 <button
                   aria-label="Upgrade"
                   onClick={() => haptic.light()}
+                  className="btn-interaction"
                   style={{
                     padding: '6px 12px',
                     borderRadius: 9999,
@@ -514,6 +528,7 @@ export default function Layout({ children, currentPageName }) {
               <button
                 aria-label="Account Settings"
                 onClick={() => haptic.light()}
+                className={`btn-interaction ${isActiveTab(createPageUrl("Account")) ? 'is-active' : ''}`}
                 style={{
                   width: '36px',
                   height: '36px',
@@ -524,22 +539,7 @@ export default function Layout({ children, currentPageName }) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.2s',
                   boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActiveTab(createPageUrl("Account"))) {
-                    e.currentTarget.style.backgroundColor = '#0C3B2E';
-                    const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = '#FFFFFF';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActiveTab(createPageUrl("Account"))) {
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
-                    const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = isDarkMode ? '#F9FAFB' : '#0C3B2E';
-                  }
                 }}
               >
                 <User 
@@ -558,7 +558,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Main Content */}
       <main 
         ref={mainContentRef} 
-        className="main-content flex-1" 
+        className="main-content flex-1 page-transition" 
         style={{
           marginTop: '64px',
           paddingBottom: '80px',
@@ -592,7 +592,7 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={tab.key}
                 to={tab.route}
-                className="ripple-container btn-press"
+                className={`ripple-container ${isActive ? 'is-active' : ''}`}
                 onClick={(e) => {
                   haptic.light();
                   createRipple(e, e.currentTarget);
@@ -604,7 +604,7 @@ export default function Layout({ children, currentPageName }) {
                   justifyContent: 'center',
                   padding: '8px 10px',
                   borderRadius: '12px',
-                  transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)',
                   flex: 1,
                   minWidth: '60px',
                   maxWidth: '90px',
@@ -613,33 +613,22 @@ export default function Layout({ children, currentPageName }) {
                   position: 'relative',
                   overflow: 'hidden'
                 }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = colors.hoverBg;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }
-                }}
               >
-                <div style={{
-                  animation: isActive ? 'tabHighlight 150ms ease-out' : 'none'
-                }}>
-                  <Icon className="w-5 h-5 mb-1" style={{ 
+                <Icon 
+                  className={`w-5 h-5 mb-1 ${isActive ? 'tab-select' : ''}`} 
+                  style={{ 
                     animation: isActive ? 'pulse 2s infinite' : 'none',
                     color: isActive ? '#FFFFFF' : colors.textPrimary,
                     transition: 'all 0.2s ease'
-                  }} />
-                </div>
+                  }} 
+                />
                 <span style={{ 
                   fontSize: '11px', 
                   fontWeight: '600', 
                   whiteSpace: 'nowrap',
                   color: isActive ? '#FFFFFF' : colors.textPrimary,
                   transition: 'all 0.2s ease',
-                  animation: isActive ? 'fadeIn 150ms ease-out' : 'none'
+                  opacity: isActive ? 1 : 0.9
                 }}>
                   {tab.label}
                 </span>

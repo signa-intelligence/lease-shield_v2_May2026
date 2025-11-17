@@ -1,114 +1,106 @@
-import React from "react";
+import React from 'react';
 
-const SkeletonItem = ({ width = "100%", height = "20px", className = "", colors }) => {
+function Skeleton({ width = '100%', height = '20px', className = '', colors }) {
   return (
     <div
-      className={`skeleton-shimmer rounded ${className}`}
+      className={`skeleton-shimmer ${className}`}
       style={{
         width,
         height,
-        backgroundColor: colors?.borderColor || 'rgba(0,0,0,0.06)'
+        backgroundColor: colors?.cardBg || '#E5E7EB',
+        borderRadius: '8px',
+        position: 'relative',
+        overflow: 'hidden'
       }}
     />
   );
-};
+}
 
-const SkeletonLoader = ({ variant = "card", count = 3, colors = {} }) => {
-  const items = Array.from({ length: count }, (_, i) => i);
+export default function SkeletonLoader({ variant = 'card', count = 1, colors }) {
+  const defaultColors = colors || {
+    cardBg: '#E5E7EB',
+    borderColor: '#D1D5DB'
+  };
 
-  if (variant === "card") {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((i) => (
-          <div
-            key={i}
-            className="rounded-2xl p-4 border"
-            style={{
-              backgroundColor: colors.cardBg || '#FFFFFF',
-              borderColor: colors.borderColor || 'rgba(0,0,0,0.08)'
-            }}
-          >
+  const renderSkeleton = () => {
+    switch (variant) {
+      case 'card':
+        return (
+          <div className="rounded-2xl p-5 border" style={{
+            backgroundColor: defaultColors.cardBg,
+            borderColor: defaultColors.borderColor,
+            opacity: 0.6
+          }}>
             <div className="flex items-start gap-3 mb-4">
-              <SkeletonItem width="48px" height="48px" className="rounded-xl" colors={colors} />
-              <div className="flex-1 space-y-2">
-                <SkeletonItem width="60%" height="16px" colors={colors} />
-                <SkeletonItem width="40%" height="12px" colors={colors} />
+              <Skeleton width="48px" height="48px" colors={defaultColors} />
+              <div className="flex-1">
+                <Skeleton width="120px" height="16px" colors={defaultColors} className="mb-2" />
+                <Skeleton width="80px" height="24px" colors={defaultColors} />
               </div>
             </div>
-            <div className="space-y-2">
-              <SkeletonItem width="100%" height="12px" colors={colors} />
-              <SkeletonItem width="80%" height="12px" colors={colors} />
+            <Skeleton width="100%" height="36px" colors={defaultColors} />
+          </div>
+        );
+
+      case 'stat':
+        return (
+          <div className="rounded-xl p-4 border" style={{
+            backgroundColor: defaultColors.cardBg,
+            borderColor: defaultColors.borderColor,
+            opacity: 0.6
+          }}>
+            <Skeleton width="100px" height="14px" colors={defaultColors} className="mb-2" />
+            <Skeleton width="60px" height="28px" colors={defaultColors} className="mb-3" />
+            <Skeleton width="100%" height="32px" colors={defaultColors} />
+          </div>
+        );
+
+      case 'list':
+        return (
+          <div className="rounded-lg p-4 border mb-3" style={{
+            backgroundColor: defaultColors.cardBg,
+            borderColor: defaultColors.borderColor,
+            opacity: 0.6
+          }}>
+            <div className="flex items-center gap-3">
+              <Skeleton width="40px" height="40px" colors={defaultColors} />
+              <div className="flex-1">
+                <Skeleton width="180px" height="16px" colors={defaultColors} className="mb-2" />
+                <Skeleton width="120px" height="14px" colors={defaultColors} />
+              </div>
             </div>
           </div>
-        ))}
-      </div>
-    );
-  }
+        );
 
-  if (variant === "stat") {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((i) => (
-          <div
-            key={i}
-            className="rounded-2xl p-4 border"
-            style={{
-              backgroundColor: colors.cardBg || '#FFFFFF',
-              borderColor: colors.borderColor || 'rgba(0,0,0,0.08)'
-            }}
-          >
-            <SkeletonItem width="50%" height="14px" className="mb-3" colors={colors} />
-            <SkeletonItem width="70%" height="32px" className="mb-2" colors={colors} />
-            <SkeletonItem width="40%" height="12px" colors={colors} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (variant === "list") {
-    return (
-      <div className="space-y-3">
-        {items.map((i) => (
-          <div
-            key={i}
-            className="flex items-center gap-3 p-3 rounded-lg border"
-            style={{
-              backgroundColor: colors.cardBg || '#FFFFFF',
-              borderColor: colors.borderColor || 'rgba(0,0,0,0.08)'
-            }}
-          >
-            <SkeletonItem width="40px" height="40px" className="rounded-full" colors={colors} />
-            <div className="flex-1 space-y-2">
-              <SkeletonItem width="60%" height="14px" colors={colors} />
-              <SkeletonItem width="40%" height="12px" colors={colors} />
+      case 'table':
+        return (
+          <div className="border rounded-lg overflow-hidden" style={{ borderColor: defaultColors.borderColor }}>
+            <div className="p-3 border-b" style={{
+              backgroundColor: defaultColors.cardBg,
+              borderColor: defaultColors.borderColor,
+              opacity: 0.6
+            }}>
+              <Skeleton width="150px" height="16px" colors={defaultColors} />
+            </div>
+            <div className="p-3" style={{ backgroundColor: defaultColors.cardBg, opacity: 0.6 }}>
+              <Skeleton width="100%" height="14px" colors={defaultColors} className="mb-2" />
+              <Skeleton width="80%" height="14px" colors={defaultColors} />
             </div>
           </div>
-        ))}
-      </div>
-    );
-  }
+        );
 
-  if (variant === "table") {
-    return (
-      <div className="space-y-2">
-        <div className="grid grid-cols-4 gap-4 p-3 border-b" style={{ borderColor: colors.borderColor }}>
-          {[...Array(4)].map((_, i) => (
-            <SkeletonItem key={i} width="100%" height="14px" colors={colors} />
-          ))}
+      default:
+        return <Skeleton width="100%" height="100px" colors={defaultColors} />;
+    }
+  };
+
+  return (
+    <div className="content-fade-in">
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={index} className="mb-4">
+          {renderSkeleton()}
         </div>
-        {items.map((i) => (
-          <div key={i} className="grid grid-cols-4 gap-4 p-3 border-b" style={{ borderColor: colors.borderColor }}>
-            {[...Array(4)].map((_, j) => (
-              <SkeletonItem key={j} width="100%" height="12px" colors={colors} />
-            ))}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  return null;
-};
-
-export default SkeletonLoader;
+      ))}
+    </div>
+  );
+}

@@ -1,22 +1,19 @@
+
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 
 export default function StatsCard({
   title,
   value,
   icon: Icon,
-  bgGradient,
-  scoreColor,
   miniStats = [],
-  trend,
-  actionButton,
-  ctaText,
-  onCtaClick,
-  compact = false,
-  colors
+  trend, // Expected format: { value: string, color: string }
+  label, // Text for the button at the bottom of the card
+  route, // Link destination for the card
+  className, // Additional class names for the card's root div
+  haptic, // Haptic feedback object, e.g., { light: () => void }
+  colors // Custom color palette
 }) {
   const cardColors = colors || {
     cardBg: '#FFFFFF',
@@ -30,240 +27,151 @@ export default function StatsCard({
   // 🎨 UNIFIED COLOR MAPPING FOR DASHBOARD CARDS
   const CARD_STYLE_MAP = {
     'Active Leases': {
-      borderLeft: '#3A8DFF',
-      bgLight: '#E9F2FF',
-      bgDark: '#1E2A38'
+      border: '#3A8DFF',
+      iconBgLight: '#E9F2FF',
+      iconBgDark: '#1E2A38',
     },
     'Rent Tracked': {
-      borderLeft: '#529CFF',
-      bgLight: '#EAF3FF',
-      bgDark: '#1F2E40'
+      border: '#529CFF',
+      iconBgLight: '#EAF3FF',
+      iconBgDark: '#1F2E40',
     },
     'Notifications': {
-      borderLeft: '#A388FF',
-      bgLight: '#F2EDFF',
-      bgDark: '#27223A'
+      border: '#A388FF',
+      iconBgLight: '#F2EDFF',
+      iconBgDark: '#27223A',
     },
     'Maintenance': {
-      borderLeft: '#E8A93B',
-      bgLight: '#FBF5E6',
-      bgDark: '#3A2F1B'
+      border: '#E8A93B',
+      iconBgLight: '#FBF5E6',
+      iconBgDark: '#3A2F1B',
     },
     'Deposits Tracked': {
-      borderLeft: '#8C8C8C',
-      bgLight: '#F6F6F6',
-      bgDark: '#2A2A2A'
+      border: '#8C8C8C',
+      iconBgLight: '#F6F6F6',
+      iconBgDark: '#2A2A2A',
     },
     'Active Cases': {
-      borderLeft: '#8C8C8C',
-      bgLight: '#F6F6F6',
-      bgDark: '#2A2A2A'
+      border: '#8C8C8C',
+      iconBgLight: '#F6F6F6',
+      iconBgDark: '#2A2A2A',
     }
   };
 
-  const cardStyle = CARD_STYLE_MAP[title];
+  const specificCardTheme = CARD_STYLE_MAP[title];
 
-  // Use dashboard-card class for mapped cards, otherwise keep original behavior
-  const cardClassName = cardStyle 
-    ? "dashboard-card hover:shadow-xl transition-all duration-300 h-full"
-    : `border-none shadow-lg hover:shadow-xl transition-all duration-300 ${bgGradient || ''} h-full`;
+  const cardStyles = {
+    backgroundColor: cardColors.cardBg,
+    borderColor: specificCardTheme?.border || cardColors.borderColor,
+    iconBg: isDarkMode
+      ? (specificCardTheme?.iconBgDark || `${specificCardTheme?.border || cardColors.textPrimary}20`)
+      : (specificCardTheme?.iconBgLight || `${specificCardTheme?.border || cardColors.textPrimary}10`),
+    iconColor: specificCardTheme?.border || cardColors.textPrimary,
+    titleColor: specificCardTheme?.border || cardColors.textPrimary, // For h3 title and miniStats labels
+    metricColor: cardColors.textPrimary, // For main value and miniStats values
+    buttonBg: specificCardTheme?.border || cardColors.textPrimary,
+    buttonText: '#FFFFFF',
+  };
 
-  // Only apply custom background if NOT using dashboard-card class
-  const cardBackground = cardStyle 
-    ? undefined 
-    : (bgGradient ? undefined : (scoreColor ? (isDarkMode ? cardColors.cardBg : `${scoreColor}10`) : cardColors.cardBg));
-
-  const cardBorderLeft = cardStyle 
-    ? undefined 
-    : (bgGradient ? undefined : (scoreColor ? `4px solid ${scoreColor}` : undefined));
+  // CSS for icon-shimmer animation (add this to your global CSS or component styles if not already present):
+  /*
+  @keyframes shimmer-animation {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .icon-shimmer {
+    animation: shimmer-animation 0.2s ease-in-out;
+  }
+  */
 
   return (
-    <Card 
-      className={cardClassName}
-      style={{
-        backgroundColor: cardBackground,
-        borderLeft: cardBorderLeft
-      }}
-    >
-      <CardContent className="p-3 md:p-4 flex flex-col justify-between h-full">
+    <Link to={route}>
+      <div
+        onClick={() => {
+          haptic?.light(); // Safely call haptic feedback
+          const iconElement = document.querySelector(`#stat-icon-${title.replace(/\s/g, '-')}`);
+          if (iconElement) {
+            iconElement.classList.add('icon-shimmer');
+            setTimeout(() => {
+              iconElement.classList.remove('icon-shimmer');
+            }, 200);
+          }
+        }}
+        className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm transition-all duration-200 ${className || ''}`}
+        style={{
+          backgroundColor: cardStyles.backgroundColor,
+          borderLeft: `4px solid ${cardStyles.borderColor}`,
+          cursor: 'pointer'
+        }}
+      >
         <div className="flex items-start justify-between mb-3">
-          <div 
-            className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{
-              backgroundColor: bgGradient
-                ? 'rgba(255, 255, 255, 0.2)'
-                : cardStyle
-                  ? (isDarkMode ? `${cardStyle.borderLeft}30` : `${cardStyle.borderLeft}20`)
-                  : scoreColor 
-                    ? (isDarkMode ? `${scoreColor}30` : `${scoreColor}20`)
-                    : 'rgba(255, 255, 255, 0.2)'
-            }}
-          >
-            <Icon 
-              className="w-5 h-5 md:w-6 md:h-6" 
-              style={{ 
-                color: bgGradient 
-                  ? '#FFFFFF' 
-                  : cardStyle
-                    ? cardStyle.borderLeft
-                    : (scoreColor ? scoreColor : '#FFFFFF')
-              }} 
-            />
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div 
+                id={`stat-icon-${title.replace(/\s/g, '-')}`}
+                className="w-8 h-8 rounded-lg flex items-center justify-center" 
+                style={{ backgroundColor: cardStyles.iconBg }}
+              >
+                <Icon className="w-4 h-4" style={{ color: cardStyles.iconColor }} />
+              </div>
+              <h3 className="text-sm font-semibold" style={{ color: cardStyles.titleColor }}>
+                {title}
+              </h3>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold" style={{ color: cardStyles.metricColor }}>
+              {value}
+            </p>
           </div>
-          {trend !== undefined && (
-            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
-              trend > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-            }`}>
-              {trend > 0 ? (
-                <TrendingUp className="w-3 h-3" />
+          {trend && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-full" style={{ backgroundColor: trend.color + '20' }}>
+              {trend.value && String(trend.value).startsWith('-') ? (
+                <TrendingDown className="w-3 h-3" style={{ color: trend.color }} />
               ) : (
-                <TrendingDown className="w-3 h-3" />
+                <TrendingUp className="w-3 h-3" style={{ color: trend.color }} />
               )}
-              {Math.abs(trend)}%
+              <span className="text-xs font-semibold" style={{ color: trend.color }}>
+                {trend.value}
+              </span>
             </div>
           )}
         </div>
 
-        <div>
-          <p 
-            className="text-xs font-semibold mb-1 truncate" 
-            style={{ 
-              color: bgGradient 
-                ? 'rgba(255, 255, 255, 0.8)' 
-                : cardStyle
-                  ? (isDarkMode ? cardColors.textPrimary : cardStyle.borderLeft)
-                  : (scoreColor ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.8)')
-            }}
-          >
-            {title}
-          </p>
-          <p 
-            className="text-xl md:text-2xl font-bold truncate" 
-            style={{ 
-              color: bgGradient 
-                ? '#FFFFFF' 
-                : cardStyle
-                  ? cardColors.textPrimary
-                  : (scoreColor ? scoreColor : '#FFFFFF')
-            }}
-          >
-            {value}
-          </p>
-        </div>
-
         {miniStats && miniStats.length > 0 && (
-          <div className="flex items-center gap-3 mt-3 flex-wrap">
+          <div className="grid grid-cols-1 gap-2 mb-3">
             {miniStats.map((stat, idx) => (
               <div key={idx} className="text-xs">
-                <span 
-                  style={{ 
-                    color: bgGradient 
-                      ? 'rgba(255, 255, 255, 0.7)' 
-                      : cardStyle
-                        ? cardColors.textSecondary
-                        : (scoreColor ? cardColors.textSecondary : 'rgba(255, 255, 255, 0.7)'),
-                    marginRight: '4px'
-                  }}
-                >
-                  {stat.label}:
-                </span>
-                <span 
-                  className="font-bold"
-                  style={{ 
-                    color: bgGradient 
-                      ? '#FFFFFF' 
-                      : cardStyle
-                        ? cardColors.textPrimary
-                        : (scoreColor ? scoreColor : '#FFFFFF')
-                  }}
-                >
-                  {stat.value}
-                </span>
+                <p style={{ color: cardStyles.titleColor, opacity: 0.7 }}>{stat.label}</p>
+                <p className="font-semibold" style={{ color: cardStyles.metricColor }}>{stat.value}</p>
               </div>
             ))}
           </div>
         )}
 
-        {ctaText && onCtaClick && (
+        {label && (
           <button
-            onClick={onCtaClick}
-            className="mt-3 w-full py-2 px-3 rounded-lg text-xs font-bold transition-all hover:opacity-80"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault(); // Prevent Link navigation
+              haptic?.light(); // Safely call haptic feedback
+            }}
+            className="btn-interaction"
             style={{
-              backgroundColor: bgGradient 
-                ? 'rgba(255, 255, 255, 0.2)'
-                : cardStyle
-                  ? (isDarkMode ? `${cardStyle.borderLeft}40` : cardStyle.borderLeft)
-                  : (scoreColor || (isDarkMode ? cardColors.borderColor : '#FFFFFF')),
-              color: bgGradient 
-                ? '#FFFFFF' 
-                : cardStyle
-                  ? '#FFFFFF'
-                  : (scoreColor ? '#FFFFFF' : cardColors.textPrimary),
-              border: bgGradient 
-                ? '1px solid rgba(255, 255, 255, 0.4)' 
-                : cardStyle
-                  ? 'none'
-                  : (scoreColor ? 'none' : `2px solid ${cardColors.borderColor}`)
+              backgroundColor: cardStyles.buttonBg,
+              color: cardStyles.buttonText,
+              width: "100%",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              fontSize: "0.875rem",
+              fontWeight: "600",
+              border: "none",
+              cursor: "pointer"
             }}
           >
-            {ctaText}
+            {label}
           </button>
         )}
-
-        {actionButton && (
-          <Link to={actionButton.link} className="mt-3 block">
-            <button
-              className="w-full py-2 px-3 rounded-lg text-xs font-bold transition-all"
-              style={{
-                backgroundColor: bgGradient
-                  ? 'rgba(255, 255, 255, 0.3)'
-                  : cardStyle
-                    ? (isDarkMode ? `${cardStyle.borderLeft}40` : cardStyle.borderLeft)
-                    : (scoreColor
-                        ? (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)')
-                        : 'rgba(255, 255, 255, 0.3)'),
-                color: bgGradient 
-                  ? '#FFFFFF' 
-                  : cardStyle
-                    ? '#FFFFFF'
-                    : (scoreColor || '#FFFFFF'),
-                border: bgGradient
-                  ? '1px solid rgba(255, 255, 255, 0.4)'
-                  : cardStyle
-                    ? 'none'
-                    : (scoreColor
-                        ? `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : `${scoreColor}40`}`
-                        : '1px solid rgba(255, 255, 255, 0.4)'),
-                backdropFilter: 'blur(10px)'
-              }}
-              onMouseEnter={(e) => {
-                if (bgGradient) {
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
-                } else if (cardStyle) {
-                  e.target.style.backgroundColor = isDarkMode ? `${cardStyle.borderLeft}60` : `${cardStyle.borderLeft}CC`;
-                } else if (scoreColor) {
-                  e.target.style.backgroundColor = isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.3)';
-                } else {
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (bgGradient) {
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-                } else if (cardStyle) {
-                  e.target.style.backgroundColor = isDarkMode ? `${cardStyle.borderLeft}40` : cardStyle.borderLeft;
-                } else if (scoreColor) {
-                  e.target.style.backgroundColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)';
-                } else {
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-                }
-              }}
-            >
-              {actionButton.label}
-            </button>
-          </Link>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </Link>
   );
 }

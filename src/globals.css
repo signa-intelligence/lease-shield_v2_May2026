@@ -38,7 +38,6 @@
 
   * {
     @apply border-border;
-    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -49,93 +48,348 @@
   }
 }
 
-/* ============================================ */
-/* LEASESHIELD INTERACTION ANIMATIONS          */
-/* ============================================ */
-
-@keyframes pageEnter {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes modalEnter {
-  from {
-    opacity: 0;
-    transform: scale(1.1);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes modalExit {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-}
-
-@keyframes toastSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-@keyframes checkPop {
-  0% { transform: scale(0); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
-@keyframes iconPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
-@keyframes tabHighlight {
-  from {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  to {
-    transform: scale(1.05);
-    opacity: 1;
-  }
-}
-
-@keyframes scoreSparkle {
-  0%, 100% { opacity: 0; transform: scale(0.8) rotate(0deg); }
-  50% { opacity: 1; transform: scale(1) rotate(180deg); }
-}
-
 @layer components {
-  /* Bottom nav spacing */
+  /* ========================================
+     PAGE TRANSITIONS
+     ======================================== */
+  .page-transition {
+    animation: pageEnter 150ms ease-out;
+  }
+
+  @keyframes pageEnter {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ========================================
+     BUTTON INTERACTIONS
+     ======================================== */
+  .btn-interaction {
+    transition: transform 90ms cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 120ms ease,
+                box-shadow 120ms ease;
+  }
+
+  .btn-interaction:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+
+  @media (hover: hover) {
+    .btn-interaction:hover:not(:disabled) {
+      opacity: 0.92;
+    }
+  }
+
+  .btn-interaction:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  /* ========================================
+     CARD INTERACTIONS
+     ======================================== */
+  .card-interactive {
+    transition: transform 90ms cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 120ms ease;
+  }
+
+  @media (hover: hover) {
+    .card-interactive:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    }
+  }
+
+  .card-interactive:active {
+    transform: scale(0.98);
+  }
+
+  /* ========================================
+     ICON SHIMMER ON TAP
+     ======================================== */
+  @keyframes iconShimmer {
+    0% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.1);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .icon-shimmer {
+    animation: iconShimmer 200ms ease-out;
+  }
+
+  /* ========================================
+     LOADING FADE-IN
+     ======================================== */
+  .content-fade-in {
+    animation: contentFadeIn 150ms ease-out;
+  }
+
+  @keyframes contentFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* ========================================
+     SKELETON SHIMMER
+     ======================================== */
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  .dark .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+
+  /* ========================================
+     MODAL/DIALOG ANIMATIONS
+     ======================================== */
+  @keyframes modalEnter {
+    from {
+      opacity: 0;
+      transform: scale(1.1);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes modalExit {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+  }
+
+  .modal-enter {
+    animation: modalEnter 110ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .modal-exit {
+    animation: modalExit 90ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ========================================
+     TOAST ANIMATIONS
+     ======================================== */
+  @keyframes toastSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes toastExit {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
+
+  .toast-enter {
+    animation: toastSlideUp 140ms ease-out;
+  }
+
+  .toast-exit {
+    animation: toastExit 120ms ease-in;
+  }
+
+  /* ========================================
+     SUCCESS ICON PULSE
+     ======================================== */
+  @keyframes successPulse {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .success-pulse {
+    animation: successPulse 100ms ease-out;
+  }
+
+  /* ========================================
+     CHECKMARK POP
+     ======================================== */
+  @keyframes checkPop {
+    0% {
+      transform: scale(0.5);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .check-pop {
+    animation: checkPop 150ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  /* ========================================
+     SPARKLE ANIMATION (Protection Score)
+     ======================================== */
+  @keyframes sparkle {
+    0%, 100% {
+      opacity: 0;
+      transform: scale(0) rotate(0deg);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1) rotate(180deg);
+    }
+  }
+
+  .sparkle {
+    animation: sparkle 400ms ease-out;
+  }
+
+  /* ========================================
+     REVEAL ANIMATION (Scan Results)
+     ======================================== */
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: translateY(15px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .reveal-animation {
+    animation: reveal 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ========================================
+     BOTTOM NAV ANIMATIONS
+     ======================================== */
+  @keyframes tabSelect {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .tab-select {
+    animation: tabSelect 90ms ease-out;
+  }
+
+  /* ========================================
+     HOVER STATES (DESKTOP ONLY)
+     ======================================== */
+  @media (hover: hover) {
+    .hover-lift {
+      transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+    }
+
+    .hover-lift:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .hover-underline {
+      position: relative;
+    }
+
+    .hover-underline::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: currentColor;
+      transition: width 120ms ease;
+    }
+
+    .hover-underline:hover::after {
+      width: 100%;
+    }
+  }
+
+  /* ========================================
+     UTILITY CLASSES
+     ======================================== */
+  .bottom-tabs {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .dark .bottom-tabs {
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+  }
+
   .fab-bottom {
     position: fixed;
     right: 20px;
@@ -143,7 +397,6 @@
     z-index: 50;
   }
 
-  /* Premium dashboard card with subtle border */
   .dashboard-card {
     @apply rounded-2xl shadow-sm transition-all duration-200;
     border: 1px solid rgba(12, 59, 46, 0.08);
@@ -154,81 +407,10 @@
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
   }
 
-  /* Premium card with left accent border */
   .feature-card {
     @apply rounded-2xl shadow-sm transition-all duration-200;
   }
 
-  /* Button press animation */
-  .btn-press {
-    transition: transform 90ms cubic-bezier(0.4, 0, 0.2, 1);
-    user-select: none;
-  }
-
-  .btn-press:active:not(:disabled) {
-    transform: scale(0.96);
-  }
-
-  /* Card interaction animation */
-  .card-interactive {
-    transition: transform 120ms cubic-bezier(0.4, 0, 0.2, 1), 
-                box-shadow 120ms cubic-bezier(0.4, 0, 0.6, 1);
-    cursor: pointer;
-  }
-
-  @media (hover: hover) {
-    .card-interactive:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
-    }
-  }
-
-  .card-interactive:active {
-    transform: scale(0.98);
-  }
-
-  /* Smooth content fade-in */
-  .content-fade-in {
-    animation: fadeIn 150ms ease-out;
-  }
-
-  /* Page transition */
-  .page-transition {
-    animation: pageEnter 150ms ease-out;
-  }
-
-  /* Hover brightness (desktop only) */
-  @media (hover: hover) {
-    .hover-brightness:hover {
-      filter: brightness(1.08);
-      transition: filter 120ms ease;
-    }
-  }
-
-  /* Link underline animation (desktop only) */
-  @media (hover: hover) {
-    .link-animated {
-      position: relative;
-      text-decoration: none;
-    }
-
-    .link-animated::after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
-      left: 0;
-      width: 0;
-      height: 2px;
-      background-color: currentColor;
-      transition: width 120ms ease;
-    }
-
-    .link-animated:hover::after {
-      width: 100%;
-    }
-  }
-
-  /* Unified button styles */
   .btn-primary {
     background-color: var(--ls-forest);
     color: var(--ls-white);
@@ -238,7 +420,7 @@
     font-weight: 700;
     font-size: 0.875rem;
     box-shadow: 0 4px 12px rgba(12, 59, 46, 0.25);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 90ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .btn-primary:hover {
@@ -246,34 +428,7 @@
     box-shadow: 0 8px 16px rgba(12, 59, 46, 0.35);
   }
 
-  .btn-primary:active:not(:disabled) {
+  .btn-primary:active {
     transform: scale(0.96);
-  }
-
-  /* Bottom nav tab highlight animation */
-  .nav-tab-active {
-    animation: tabHighlight 150ms ease-out;
-  }
-
-  /* Skeleton shimmer */
-  .skeleton-shimmer {
-    background: linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0.04) 0%,
-      rgba(0, 0, 0, 0.08) 50%,
-      rgba(0, 0, 0, 0.04) 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  .dark .skeleton-shimmer {
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.05) 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(255, 255, 255, 0.05) 100%
-    );
-    background-size: 200% 100%;
   }
 }
