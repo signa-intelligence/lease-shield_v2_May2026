@@ -12,10 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
   Edit2, Save, X, Wrench, CheckCircle2,
-  DollarSign, ArrowLeft, Camera, Image as ImageIcon, Loader2, Trash2, Archive, Hash
+  DollarSign, ArrowLeft, Camera, Image as ImageIcon, Loader2, Trash2, Archive, Hash, Mic, Video
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { compressMultipleImages } from "../components/shared/ImageCompression";
 import { haptic } from "../components/shared/HapticFeedback";
@@ -28,6 +28,12 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   CTA_COLOR,
   CTA_COLOR_DISABLED
@@ -55,6 +61,12 @@ function PropertyTrackerContent() {
   const [compressionStats, setCompressionStats] = useState(null);
   const [maintenanceSearchQuery, setMaintenanceSearchQuery] = useState('');
   const [maintenanceStatusFilter, setMaintenanceStatusFilter] = useState('all');
+
+  // New state for voice/video
+  const [voiceFiles, setVoiceFiles] = useState([]);
+  const [videoFiles, setVideoFiles] = useState([]);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeModalType, setUpgradeModalType] = useState(''); // 'voice' or 'video'
 
   // Section refs for scroll-to navigation
   const depositRef = useRef(null);
@@ -138,49 +150,51 @@ function PropertyTrackerContent() {
       haptic.medium();
 
       const tempId = `optimistic-${Date.now()}-${Math.random()}`;
-      
+
       const optimisticItem = {
         ...newRequestData,
-        id: tempId, 
-        status: newRequestData.status || 'reported', 
-        __optimistic: true, 
+        id: tempId,
+        status: newRequestData.status || 'reported',
+        __optimistic: true,
       };
 
       optimistic.optimisticCreate(optimisticItem);
-      return { optimisticItem }; 
+      return { optimisticItem };
     },
-    onSuccess: (data) => { 
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       setShowAddMaintenance(false);
       setPhotoFiles([]);
       setPhotoPreviews([]);
+      setVoiceFiles([]);
+      setVideoFiles([]);
       setCompressionStats(null);
-      setMaintenanceForm({ 
+      setMaintenanceForm({
         issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
       });
       haptic.success();
 
       console.log('📤 Sending maintenance notifications...');
       base44.functions.invoke('sendMaintenanceNotification', {
-          maintenanceRequest: data 
-        }).then(notificationResponse => {
-          if (notificationResponse.data?.success) {
-            const sentCount = notificationResponse.data.notifications?.filter(n => n.status === 'sent').length || 0;
-            if (sentCount > 0) {
-              toast.success(
-                language === 'th'
-                  ? `✅ คำขอส่งแล้ว! แจ้ง ${sentCount} ผู้รับ`
-                  : `✅ Request sent! Notified ${sentCount} recipient(s)`
-              );
-            }
+        maintenanceRequest: data
+      }).then(notificationResponse => {
+        if (notificationResponse.data?.success) {
+          const sentCount = notificationResponse.data.notifications?.filter(n => n.status === 'sent').length || 0;
+          if (sentCount > 0) {
+            toast.success(
+              language === 'th'
+                ? `✅ คำขอส่งแล้ว! แจ้ง ${sentCount} ผู้รับ`
+                : `✅ Request sent! Notified ${sentCount} recipient(s)`
+            );
           }
-        }).catch(notifError => {
-          console.error('❌ Failed to send notifications:', notifError);
-        });
+        }
+      }).catch(notifError => {
+        console.error('❌ Failed to send notifications:', notifError);
+      });
     },
     onError: (error, variables, context) => {
       console.error('❌ createMaintenanceMutation error:', error);
-      optimistic.revert(context.optimisticItem.id); 
+      optimistic.revert(context.optimisticItem.id);
       haptic.error();
       toast.error(language === 'th'
         ? 'ไม่สามารถสร้างคำขอได้'
@@ -193,7 +207,7 @@ function PropertyTrackerContent() {
     onMutate: async ({ id, data }) => {
       haptic.medium();
       optimistic.optimisticUpdate(id, data);
-      return { id }; 
+      return { id };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
@@ -201,6 +215,8 @@ function PropertyTrackerContent() {
       setShowAddMaintenance(false);
       setPhotoFiles([]);
       setPhotoPreviews([]);
+      setVoiceFiles([]);
+      setVideoFiles([]);
       setCompressionStats(null);
       setMaintenanceForm({
         issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
@@ -210,7 +226,7 @@ function PropertyTrackerContent() {
     },
     onError: (error, variables, context) => {
       console.error('❌ updateMaintenanceMutation error:', error);
-      optimistic.revert(context.id); 
+      optimistic.revert(context.id);
       haptic.error();
       toast.error(language === 'th' ? 'อัปเดตไม่สำเร็จ' : 'Update failed');
     },
@@ -221,7 +237,7 @@ function PropertyTrackerContent() {
     onMutate: async (idToDelete) => {
       haptic.heavy();
       optimistic.optimisticDelete(idToDelete);
-      return { idToDelete }; 
+      return { idToDelete };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
@@ -230,7 +246,7 @@ function PropertyTrackerContent() {
     },
     onError: (error, variables, context) => {
       console.error('❌ deleteMaintenanceMutation error:', error);
-      optimistic.revert(context.idToDelete); 
+      optimistic.revert(context.idToDelete);
       haptic.error();
       toast.error(language === 'th' ? 'ลบไม่สำเร็จ' : 'Delete failed');
     },
@@ -238,7 +254,10 @@ function PropertyTrackerContent() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
-  const isFreeTier = user?.tier === 'free'; // Added for the change
+  const planTier = user?.plan_tier || 'free';
+  const isFreeTier = planTier === 'free';
+  const isProtectOrLite = planTier === 'protect' || planTier === 'lite';
+  const isSecureTier = planTier === 'secure';
 
   const colors = isDarkMode ? {
     bg: '#111827',
@@ -248,7 +267,10 @@ function PropertyTrackerContent() {
     borderColor: 'rgba(255,255,255,0.1)',
     inputBg: '#374151',
     fieldBg: '#374151',
-    hoverBg: '#3A3D40'
+    hoverBg: '#3A3D40',
+    depositAccent: '#C7A338',
+    rentAccent: '#3B82F6',
+    maintenanceAccent: '#F59E0B'
   } : {
     bg: '#F3F6F5',
     cardBg: '#FFFFFF',
@@ -257,7 +279,10 @@ function PropertyTrackerContent() {
     borderColor: 'rgba(12,59,46,0.08)',
     inputBg: '#FFFFFF',
     fieldBg: '#F8FAFC',
-    hoverBg: '#F1F5F9'
+    hoverBg: '#F1F5F9',
+    depositAccent: '#C7A338',
+    rentAccent: '#3B82F6',
+    maintenanceAccent: '#F59E0B'
   };
 
   const maintenanceTheme = { accent: colors.maintenanceAccent };
@@ -322,6 +347,23 @@ function PropertyTrackerContent() {
       uploadDepositTracker: "Upload deposit tracker",
       uploadRentSchedule: "Upload rent schedule",
       newMaintenanceRequest: "New maintenance request",
+      addVoiceNote: "Add Voice Note",
+      addVideo: "Add Video",
+      voiceNotesAdded: "voice note(s)",
+      videosAdded: "video(s)",
+      protectRequired: "Protect required",
+      secureRequired: "Secure required",
+      upgradeToProtectVoice: "Upgrade to Protect to add voice notes",
+      upgradeToProtectVoiceDesc: "Protect members can attach voice recordings to maintenance requests.",
+      upgradeToSecureVideo: "Upgrade to Secure to add video evidence",
+      upgradeToSecureVideoDesc: "Secure members can upload video for faster dispute resolution.",
+      upgradeToProtect: "Upgrade to Protect",
+      upgradeToSecure: "Upgrade to Secure",
+      maxVoiceReached: "Maximum 3 voice notes per request",
+      maxVideoReached: "Maximum 3 videos per request",
+      fileTooLarge: "File too large",
+      voiceMaxSize: "Voice notes must be under 5MB",
+      videoMaxSize: "Videos must be under 80MB"
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -371,7 +413,7 @@ function PropertyTrackerContent() {
       confirmClose: "ทำเครื่องหมายว่าเสร็จสิ้นและปิดคำขอนี้?",
       archived: "เก็บถาวร",
       active: "ใช้งาน",
-      imagesOptimized: "ปรับขนาดไฟล์แล้ว", 
+      imagesOptimized: "ปรับขนาดไฟล์แล้ว",
       imagesOptimizedDesc: "รูป • ประหยัด",
       processingError: "เกิดข้อผิดพลาด",
       searchMaintenance: "ค้นหาด้วยหัวข้อหรือรายละเอียด...",
@@ -382,6 +424,23 @@ function PropertyTrackerContent() {
       uploadDepositTracker: "อัปโหลดเงินมัดจำ",
       uploadRentSchedule: "อัปโหลดกำหนดค่าเช่า",
       newMaintenanceRequest: "คำขอซ่อมบำรุงใหม่",
+      addVoiceNote: "เพิ่มบันทึกเสียง",
+      addVideo: "เพิ่มวิดีโอ",
+      voiceNotesAdded: "บันทึกเสียง",
+      videosAdded: "วิดีโอ",
+      protectRequired: "ต้องการ Protect",
+      secureRequired: "ต้องการ Secure",
+      upgradeToProtectVoice: "อัปเกรดเป็น Protect เพื่อเพิ่มบันทึกเสียง",
+      upgradeToProtectVoiceDesc: "สมาชิก Protect สามารถแนบบันทึกเสียงกับคำขอซ่อมบำรุงได้",
+      upgradeToSecureVideo: "อัปเกรดเป็น Secure เพื่อเพิ่มวิดีโอหลักฐาน",
+      upgradeToSecureVideoDesc: "สมาชิก Secure สามารถอัปโหลดวิดีโอเพื่อแก้ไขข้อพิพาทได้เร็วขึ้น",
+      upgradeToProtect: "อัปเกรดเป็น Protect",
+      upgradeToSecure: "อัปเกรดเป็น Secure",
+      maxVoiceReached: "สูงสุด 3 บันทึกเสียงต่อคำขอ",
+      maxVideoReached: "สูงสุด 3 วิดีโอต่อคำขอ",
+      fileTooLarge: "ไฟล์ใหญ่เกินไป",
+      voiceMaxSize: "บันทึกเสียงต้องน้อยกว่า 5MB",
+      videoMaxSize: "วิดีโอต้องน้อยกว่า 80MB"
     },
     zh: {
       title: "物业追踪器",
@@ -442,6 +501,23 @@ function PropertyTrackerContent() {
       uploadDepositTracker: "上传押金追踪器",
       uploadRentSchedule: "上传租金时间表",
       newMaintenanceRequest: "新维护请求",
+      addVoiceNote: "添加语音备忘录",
+      addVideo: "添加视频",
+      voiceNotesAdded: "语音备忘录",
+      videosAdded: "视频",
+      protectRequired: "需要 Protect",
+      secureRequired: "需要 Secure",
+      upgradeToProtectVoice: "升级到 Protect 以添加语音备忘录",
+      upgradeToProtectVoiceDesc: "Protect 会员可以将录音附加到维护请求中。",
+      upgradeToSecureVideo: "升级到 Secure 以添加视频证据",
+      upgradeToSecureVideoDesc: "Secure 会员可以上传视频以加快争议解决。",
+      upgradeToProtect: "升级到 Protect",
+      upgradeToSecure: "升级到 Secure",
+      maxVoiceReached: "每个请求最多 3 个语音备忘录",
+      maxVideoReached: "每个请求最多 3 个视频",
+      fileTooLarge: "文件过大",
+      voiceMaxSize: "语音备忘录必须小于 5MB",
+      videoMaxSize: "视频必须小于 80MB"
     },
     ja: {
       title: "物件トラッカー",
@@ -502,6 +578,23 @@ function PropertyTrackerContent() {
       uploadDepositTracker: "敷金トラッカーをアップロード",
       uploadRentSchedule: "家賃スケジュールをアップロード",
       newMaintenanceRequest: "新しいメンテナンスリクエスト",
+      addVoiceNote: "音声メモを追加",
+      addVideo: "動画を追加",
+      voiceNotesAdded: "音声メモ",
+      videosAdded: "動画",
+      protectRequired: "Protectが必要",
+      secureRequired: "Secureが必要",
+      upgradeToProtectVoice: "音声メモを追加するにはProtectにアップグレード",
+      upgradeToProtectVoiceDesc: "Protect 会員はメンテナンスリクエストに録音を添付できます。",
+      upgradeToSecureVideo: "動画証拠を追加するにはSecureにアップグレード",
+      upgradeToSecureVideoDesc: "Secure 会員は動画をアップロードして、紛争解決を迅速化できます。",
+      upgradeToProtect: "Protectにアップグレード",
+      upgradeToSecure: "Secureにアップグレード",
+      maxVoiceReached: "1リクエストにつき最大3件の音声メモ",
+      maxVideoReached: "1リクエストにつき最大3件の動画",
+      fileTooLarge: "ファイルが大きすぎます",
+      voiceMaxSize: "音声メモは5MB未満である必要があります",
+      videoMaxSize: "動画は80MB未満である必要があります"
     },
     ko: {
       title: "부동산 추적기",
@@ -562,6 +655,23 @@ function PropertyTrackerContent() {
       uploadDepositTracker: "보증금 추적기 업로드",
       uploadRentSchedule: "임대료 일정 업로드",
       newMaintenanceRequest: "새 유지보수 요청",
+      addVoiceNote: "음성 메모 추가",
+      addVideo: "동영상 추가",
+      voiceNotesAdded: "음성 메모",
+      videosAdded: "동영상",
+      protectRequired: "Protect 필요",
+      secureRequired: "Secure 필요",
+      upgradeToProtectVoice: "음성 메모를 추가하려면 Protect로 업그레이드",
+      upgradeToProtectVoiceDesc: "Protect 회원은 유지보수 요청에 음성 녹음을 첨부할 수 있습니다.",
+      upgradeToSecureVideo: "동영상 증거를 추가하려면 Secure로 업그레이드",
+      upgradeToSecureVideoDesc: "Secure 회원은 더 빠른 분쟁 해결을 위해 동영상을 업로드할 수 있습니다.",
+      upgradeToProtect: "Protect로 업그레이드",
+      upgradeToSecure: "Secure로 업그레이드",
+      maxVoiceReached: "요청당 최대 3개의 음성 메모",
+      maxVideoReached: "요청당 최대 3개의 동영상",
+      fileTooLarge: "파일이 너무 큼",
+      voiceMaxSize: "음성 메모는 5MB 미만이어야 합니다",
+      videoMaxSize: "동영상은 80MB 미만이어야 합니다"
     }
   };
 
@@ -576,14 +686,14 @@ function PropertyTrackerContent() {
   // Handle hash-based section navigation
   useEffect(() => {
     if (!location.hash) return;
-    
+
     const sectionMap = {
       '#rent': rentRef,
       '#maintenance': maintenanceRef,
       '#deposit': depositRef,
       '#deposits': depositRef
     };
-    
+
     const targetRef = sectionMap[location.hash];
     if (targetRef?.current) {
       setTimeout(() => {
@@ -600,13 +710,13 @@ function PropertyTrackerContent() {
   }, [location.hash]);
 
   const filteredMaintenanceRequests = maintenanceRequests.filter(request => {
-    const matchesSearch = maintenanceSearchQuery === '' || 
+    const matchesSearch = maintenanceSearchQuery === '' ||
       request.issue_title?.toLowerCase().includes(maintenanceSearchQuery.toLowerCase()) ||
       request.description?.toLowerCase().includes(maintenanceSearchQuery.toLowerCase()) ||
       request.request_number?.toLowerCase().includes(maintenanceSearchQuery.toLowerCase());
-    
+
     const matchesStatus = maintenanceStatusFilter === 'all' || request.status === maintenanceStatusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -617,17 +727,17 @@ function PropertyTrackerContent() {
     if (maintenanceRequests.length === 0) {
       return 'MR-001';
     }
-    
+
     const existingNumbers = maintenanceRequests
       .filter(r => !r.__optimistic)
       .map(r => r.request_number)
-      .filter(num => num && typeof num === 'string' && num.startsWith('MR-')) 
+      .filter(num => num && typeof num === 'string' && num.startsWith('MR-'))
       .map(num => parseInt(num.split('-')[1]))
-      .filter(num => !isNaN(num)); 
-    
+      .filter(num => !isNaN(num));
+
     const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
     const nextNumber = maxNumber + 1;
-    
+
     return `MR-${String(nextNumber).padStart(3, '0')}`;
   };
 
@@ -637,6 +747,102 @@ function PropertyTrackerContent() {
       ...prev,
       [section]: !prev[section]
     }));
+  };
+
+  const handleVoiceNoteClick = () => {
+    if (isFreeTier) {
+      setUpgradeModalType('voice');
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    if (voiceFiles.length >= 3) {
+      toast.error(strings.maxVoiceReached);
+      return;
+    }
+
+    document.getElementById('voice-input').click();
+  };
+
+  const handleVideoClick = () => {
+    if (isFreeTier || isProtectOrLite) {
+      setUpgradeModalType('video');
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    if (videoFiles.length >= 3) {
+      toast.error(strings.maxVideoReached);
+      return;
+    }
+
+    document.getElementById('video-input').click();
+  };
+
+  const handleVoiceSelection = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const validFiles = files.filter(f => {
+      const isAudio = f.type.startsWith('audio/');
+      const isUnder5MB = f.size <= 5 * 1024 * 1024;
+
+      if (!isAudio) {
+        toast.error(language === 'th' ? 'กรุณาเลือกไฟล์เสียงเท่านั้น' : 'Please select audio files only');
+        return false;
+      }
+
+      if (!isUnder5MB) {
+        toast.error(`${strings.fileTooLarge}: ${f.name} - ${strings.voiceMaxSize}`);
+        return false;
+      }
+
+      return true;
+    });
+
+    const remaining = 3 - voiceFiles.length;
+    const toAdd = validFiles.slice(0, remaining);
+
+    setVoiceFiles(prev => [...prev, ...toAdd]);
+    haptic.light();
+  };
+
+  const handleVideoSelection = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const validFiles = files.filter(f => {
+      const isVideo = f.type.startsWith('video/');
+      const isUnder80MB = f.size <= 80 * 1024 * 1024;
+
+      if (!isVideo) {
+        toast.error(language === 'th' ? 'กรุณาเลือกไฟล์วิดีโอเท่านั้น' : 'Please select video files only');
+        return false;
+      }
+
+      if (!isUnder80MB) {
+        toast.error(`${strings.fileTooLarge}: ${f.name} - ${strings.videoMaxSize}`);
+        return false;
+      }
+
+      return true;
+    });
+
+    const remaining = 3 - videoFiles.length;
+    const toAdd = validFiles.slice(0, remaining);
+
+    setVideoFiles(prev => [...prev, ...toAdd]);
+    haptic.light();
+  };
+
+  const handleRemoveVoice = (index) => {
+    haptic.light();
+    setVoiceFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveVideo = (index) => {
+    haptic.light();
+    setVideoFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handlePhotoSelection = async (e) => {
@@ -651,13 +857,13 @@ function PropertyTrackerContent() {
     let processedImageFiles = [];
     if (imageFiles.length > 0) {
       const { files: compressed, stats } = await compressMultipleImages(imageFiles);
-      
+
       if (stats.compressedCount > 0) {
         setCompressionStats(stats);
       }
       processedImageFiles = compressed;
     }
-    
+
     const filesToAdd = [...processedImageFiles, ...nonImageFiles];
     setPhotoFiles(prev => [...prev, ...filesToAdd]);
 
@@ -681,7 +887,7 @@ function PropertyTrackerContent() {
       return !(i === indexToRemove && isNewFile);
     });
     setPhotoFiles(newPhotoFiles);
-    
+
     setPhotoPreviews(prev => prev.filter((_, i) => i !== indexToRemove));
   };
 
@@ -739,6 +945,8 @@ function PropertyTrackerContent() {
 
     try {
       let photoUrls = [];
+      let voiceUrls = [];
+      let videoUrls = [];
 
       if (photoFiles.length > 0) {
         setUploadingPhotos(true);
@@ -763,6 +971,33 @@ function PropertyTrackerContent() {
         setPhotoUploadProgress(100);
       }
 
+      if (voiceFiles.length > 0) {
+        setUploadingPhotos(true); // Indicate overall upload activity
+        setPhotoUploadStage('uploading_voice'); // New stage for voice
+        haptic.medium();
+        console.log('🎤 Uploading', voiceFiles.length, 'voice notes...');
+        const voicePromises = voiceFiles.map(file =>
+          base44.integrations.Core.UploadFile({ file })
+        );
+        const voiceResults = await Promise.all(voicePromises);
+        voiceUrls = voiceResults.map(result => result.file_url);
+        console.log('✅ Voice notes uploaded:', voiceUrls.length);
+      }
+
+      if (videoFiles.length > 0) {
+        setUploadingPhotos(true); // Indicate overall upload activity
+        setPhotoUploadStage('uploading_video'); // New stage for video
+        haptic.medium();
+        console.log('🎥 Uploading', videoFiles.length, 'videos...');
+        const videoPromises = videoFiles.map(file =>
+          base44.integrations.Core.UploadFile({ file })
+        );
+        const videoResults = await Promise.all(videoPromises);
+        videoUrls = videoResults.map(result => result.file_url);
+        console.log('✅ Videos uploaded:', videoUrls.length);
+      }
+
+
       const requestNumber = generateRequestNumber();
       console.log('🔢 Generated request number:', requestNumber);
 
@@ -786,6 +1021,8 @@ function PropertyTrackerContent() {
         request_number: requestNumber,
         created_by: user.email,
         photo_urls: photoUrls,
+        voice_notes: voiceUrls,
+        videos: videoUrls,
         communication_log: [initialLogEntry]
       };
 
@@ -802,7 +1039,7 @@ function PropertyTrackerContent() {
       setUploadingPhotos(false);
       setPhotoUploadStage('');
       setPhotoUploadProgress(0);
-      setCompressionStats(null); 
+      setCompressionStats(null);
       toast.error(strings.processingError);
     }
   };
@@ -821,6 +1058,8 @@ function PropertyTrackerContent() {
     });
     setPhotoFiles([]);
     setPhotoPreviews(request.photo_urls || []);
+    setVoiceFiles([]); // Clear new files, existing ones are in request.voice_notes
+    setVideoFiles([]); // Clear new files, existing ones are in request.videos
     setCompressionStats(null);
   };
 
@@ -829,27 +1068,63 @@ function PropertyTrackerContent() {
 
     try {
       let newUploadUrls = [];
-      if (photoFiles.length > 0) {
+      let newVoiceUrls = [];
+      let newVideoUrls = [];
+
+      let totalFilesToUpload = photoFiles.length + voiceFiles.length + videoFiles.length;
+      let uploadedFileCount = 0;
+
+      if (totalFilesToUpload > 0) {
         setUploadingPhotos(true);
         setPhotoUploadStage('compressing');
         setPhotoUploadProgress(10);
-        haptic.medium(); 
+        haptic.medium();
+      }
 
-        setPhotoUploadStage('uploading');
-        setPhotoUploadProgress(30);
 
+      if (photoFiles.length > 0) {
+        console.log('📸 Uploading', photoFiles.length, 'new photos...');
+        setPhotoUploadStage('uploading_photos');
         const uploadPromises = photoFiles.map(file =>
           base44.integrations.Core.UploadFile({ file })
         );
         newUploadUrls = await Promise.all(uploadPromises).then(results => results.map(result => result.file_url));
-        setPhotoUploadProgress(80);
-        
+        uploadedFileCount += photoFiles.length;
+        setPhotoUploadProgress((uploadedFileCount / totalFilesToUpload) * 100);
+      }
+
+      if (voiceFiles.length > 0) {
+        console.log('🎤 Uploading', voiceFiles.length, 'new voice notes...');
+        setPhotoUploadStage('uploading_voice');
+        const voicePromises = voiceFiles.map(file =>
+          base44.integrations.Core.UploadFile({ file })
+        );
+        newVoiceUrls = await Promise.all(voicePromises).then(results => results.map(result => result.file_url));
+        uploadedFileCount += voiceFiles.length;
+        setPhotoUploadProgress((uploadedFileCount / totalFilesToUpload) * 100);
+      }
+
+      if (videoFiles.length > 0) {
+        console.log('🎥 Uploading', videoFiles.length, 'new videos...');
+        setPhotoUploadStage('uploading_video');
+        const videoPromises = videoFiles.map(file =>
+          base44.integrations.Core.UploadFile({ file })
+        );
+        newVideoUrls = await Promise.all(videoPromises).then(results => results.map(result => result.file_url));
+        uploadedFileCount += videoFiles.length;
+        setPhotoUploadProgress((uploadedFileCount / totalFilesToUpload) * 100);
+      }
+      
+      if (totalFilesToUpload > 0) {
         setPhotoUploadStage('finalizing');
         setPhotoUploadProgress(100);
       }
 
+
       const remainingOriginalPhotoUrls = photoPreviews.filter(p => !p.startsWith('data:image') && !p.startsWith('blob:'));
       const finalPhotoUrls = [...remainingOriginalPhotoUrls, ...newUploadUrls];
+      const finalVoiceUrls = [...(editingMaintenance.voice_notes || []), ...newVoiceUrls];
+      const finalVideoUrls = [...(editingMaintenance.videos || []), ...newVideoUrls];
 
       const updateLogEntry = {
         timestamp: new Date().toISOString(),
@@ -869,8 +1144,10 @@ function PropertyTrackerContent() {
       const updatedData = {
         ...maintenanceForm,
         photo_urls: finalPhotoUrls,
+        voice_notes: finalVoiceUrls,
+        videos: finalVideoUrls,
         communication_log: updatedCommunicationLog,
-        created_by: user.email 
+        created_by: user.email
       };
 
       await updateMaintenanceMutation.mutateAsync({
@@ -887,7 +1164,7 @@ function PropertyTrackerContent() {
       setUploadingPhotos(false);
       setPhotoUploadStage('');
       setPhotoUploadProgress(0);
-      setCompressionStats(null); 
+      setCompressionStats(null);
       toast.error(strings.processingError);
     }
   };
@@ -980,9 +1257,9 @@ function PropertyTrackerContent() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
-      <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-7xl mx-auto">
-          
+
           <PageHeader
             title={strings.title}
             subtitle={strings.subtitle}
@@ -1045,15 +1322,17 @@ function PropertyTrackerContent() {
                 setEditingMaintenance(null);
                 setCompressionStats(null);
                 setMaintenanceForm({
-                  issue_title: '', 
-                  description: '', 
-                  category: 'other', 
-                  priority: 'medium', 
-                  property_address: '', 
+                  issue_title: '',
+                  description: '',
+                  category: 'other',
+                  priority: 'medium',
+                  property_address: '',
                   reported_date: new Date().toISOString().split('T')[0]
                 });
                 setPhotoFiles([]);
                 setPhotoPreviews([]);
+                setVoiceFiles([]);
+                setVideoFiles([]);
                 setExpandedSections(prev => ({ ...prev, maintenance: true }));
               }}
               style={baseCtaStyle}
@@ -1179,7 +1458,7 @@ function PropertyTrackerContent() {
                         label={strings.depositAmount}
                         type="number"
                         value={depositForm.deposit_amount}
-                        onChange={(e) => setDepositForm({...depositForm, deposit_amount: e.target.value})}
+                        onChange={(e) => setDepositForm({ ...depositForm, deposit_amount: e.target.value })}
                         icon={DollarSign}
                         colors={colors}
                         inputMode="decimal"
@@ -1188,7 +1467,7 @@ function PropertyTrackerContent() {
                       <MobileFormInput
                         label={strings.propertyAddress}
                         value={depositForm.property_address}
-                        onChange={(e) => setDepositForm({...depositForm, property_address: e.target.value})}
+                        onChange={(e) => setDepositForm({ ...depositForm, property_address: e.target.value })}
                         icon={Home}
                         colors={colors}
                       />
@@ -1198,7 +1477,7 @@ function PropertyTrackerContent() {
                         label={strings.paidDate}
                         type="date"
                         value={depositForm.deposit_paid_date}
-                        onChange={(e) => setDepositForm({...depositForm, deposit_paid_date: e.target.value})}
+                        onChange={(e) => setDepositForm({ ...depositForm, deposit_paid_date: e.target.value })}
                         icon={Calendar}
                         colors={colors}
                         required
@@ -1207,7 +1486,7 @@ function PropertyTrackerContent() {
                         label={strings.expectedReturn}
                         type="date"
                         value={depositForm.expected_return_date}
-                        onChange={(e) => setDepositForm({...depositForm, expected_return_date: e.target.value})}
+                        onChange={(e) => setDepositForm({ ...depositForm, expected_return_date: e.target.value })}
                         icon={Calendar}
                         colors={colors}
                         required
@@ -1216,14 +1495,14 @@ function PropertyTrackerContent() {
                     <MobileFormInput
                       label={strings.notes}
                       value={depositForm.notes}
-                      onChange={(e) => setDepositForm({...depositForm, notes: e.target.value})}
+                      onChange={(e) => setDepositForm({ ...depositForm, notes: e.target.value })}
                       multiline
                       rows={2}
                       colors={colors}
                     />
                     <div className="flex gap-2 justify-end">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => {
                           haptic.light();
                           setEditingDeposit(false);
@@ -1233,8 +1512,8 @@ function PropertyTrackerContent() {
                         <X className="w-4 h-4 mr-2" />
                         {strings.cancel}
                       </Button>
-                      <Button 
-                        onClick={handleDepositSubmit} 
+                      <Button
+                        onClick={handleDepositSubmit}
                         className="bg-ls-forest hover:bg-ls-forest/90"
                         style={{ minHeight: '44px' }}
                       >
@@ -1336,11 +1615,11 @@ function PropertyTrackerContent() {
                     <Calendar className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
                     <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noRent}</p>
                     <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addRentDesc}</p>
-                    <Button 
+                    <Button
                       onClick={() => {
                         haptic.light();
                         setEditingRent(true);
-                      }} 
+                      }}
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                       style={{ minHeight: '44px' }}
                     >
@@ -1355,7 +1634,7 @@ function PropertyTrackerContent() {
                         label={strings.rentAmount}
                         type="number"
                         value={rentForm.rent_amount}
-                        onChange={(e) => setRentForm({...rentForm, rent_amount: e.target.value})}
+                        onChange={(e) => setRentForm({ ...rentForm, rent_amount: e.target.value })}
                         icon={DollarSign}
                         colors={colors}
                         inputMode="decimal"
@@ -1365,7 +1644,7 @@ function PropertyTrackerContent() {
                         label={strings.rentDueDay}
                         type="number"
                         value={rentForm.rent_due_day}
-                        onChange={(e) => setRentForm({...rentForm, rent_due_day: e.target.value})}
+                        onChange={(e) => setRentForm({ ...rentForm, rent_due_day: e.target.value })}
                         placeholder="e.g., 5"
                         icon={Calendar}
                         colors={colors}
@@ -1378,7 +1657,7 @@ function PropertyTrackerContent() {
                         label={strings.alertDaysBefore}
                         type="number"
                         value={rentForm.rent_alert_days_before}
-                        onChange={(e) => setRentForm({...rentForm, rent_alert_days_before: e.target.value})}
+                        onChange={(e) => setRentForm({ ...rentForm, rent_alert_days_before: e.target.value })}
                         icon={Bell}
                         colors={colors}
                         inputMode="numeric"
@@ -1391,14 +1670,14 @@ function PropertyTrackerContent() {
                         checked={rentForm.rent_alerts_enabled}
                         onCheckedChange={(checked) => {
                           haptic.light();
-                          setRentForm({...rentForm, rent_alerts_enabled: checked});
+                          setRentForm({ ...rentForm, rent_alerts_enabled: checked });
                         }}
                       />
                       <Label style={{ color: colors.textPrimary }}>{strings.rentAlertsEnabled}</Label>
                     </div>
                     <div className="flex gap-2 justify-end">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => {
                           haptic.light();
                           setEditingRent(false);
@@ -1408,8 +1687,8 @@ function PropertyTrackerContent() {
                         <X className="w-4 h-4 mr-2" />
                         {strings.cancel}
                       </Button>
-                      <Button 
-                        onClick={handleRentSubmit} 
+                      <Button
+                        onClick={handleRentSubmit}
                         className="bg-blue-600 hover:bg-blue-700 text-white"
                         style={{ minHeight: '44px' }}
                       >
@@ -1507,13 +1786,15 @@ function PropertyTrackerContent() {
                       e.stopPropagation();
                       haptic.light();
                       setShowAddMaintenance(true);
-                      setEditingMaintenance(null); 
-                      setCompressionStats(null); 
-                      setMaintenanceForm({ 
+                      setEditingMaintenance(null);
+                      setCompressionStats(null);
+                      setMaintenanceForm({
                         issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
                       });
                       setPhotoFiles([]);
                       setPhotoPreviews([]);
+                      setVoiceFiles([]);
+                      setVideoFiles([]);
                     }}
                   >
                     <Edit2 className="w-4 h-4" />
@@ -1533,13 +1814,13 @@ function PropertyTrackerContent() {
                       colors={colors}
                       language={language}
                     />
-                    
+
                     <div>
                       <Label className="text-xs font-semibold mb-2 block" style={{ color: colors.textSecondary }}>
                         {strings.filterByStatus}
                       </Label>
-                      <Select 
-                        value={maintenanceStatusFilter} 
+                      <Select
+                        value={maintenanceStatusFilter}
                         onValueChange={(value) => {
                           haptic.light();
                           setMaintenanceStatusFilter(value);
@@ -1566,13 +1847,13 @@ function PropertyTrackerContent() {
                     <h3 className="font-bold mb-3" style={{ color: colors.textPrimary }}>
                       {editingMaintenance ? strings.edit : strings.addMaintenance}
                     </h3>
-                    
+
                     {uploadingPhotos && (
                       <div className="mb-4">
                         <UploadProgress
                           currentStage={photoUploadStage}
                           progress={photoUploadProgress}
-                          fileCount={photoFiles.length}
+                          fileCount={photoFiles.length + voiceFiles.length + videoFiles.length}
                           primaryColor={colors.textPrimary}
                           secondaryColor={colors.textSecondary}
                           language={language}
@@ -1605,21 +1886,177 @@ function PropertyTrackerContent() {
                       <MobileFormInput
                         label={strings.issueTitle}
                         value={maintenanceForm.issue_title}
-                        onChange={(e) => setMaintenanceForm({...maintenanceForm, issue_title: e.target.value})}
+                        onChange={(e) => setMaintenanceForm({ ...maintenanceForm, issue_title: e.target.value })}
                         icon={Wrench}
                         colors={colors}
                         required
                         autoFocus
                       />
-                      
+
                       <MobileFormInput
                         label={strings.description}
                         value={maintenanceForm.description}
-                        onChange={(e) => setMaintenanceForm({...maintenanceForm, description: e.target.value})}
+                        onChange={(e) => setMaintenanceForm({ ...maintenanceForm, description: e.target.value })}
                         multiline
                         rows={3}
                         colors={colors}
                       />
+
+                      {/* NEW: Voice Note and Video Upload Buttons */}
+                      <div className="flex gap-2 flex-wrap">
+                        <input
+                          id="voice-input"
+                          type="file"
+                          accept="audio/*"
+                          multiple
+                          onChange={handleVoiceSelection}
+                          className="hidden"
+                        />
+                        <input
+                          id="video-input"
+                          type="file"
+                          accept="video/*"
+                          multiple
+                          onChange={handleVideoSelection}
+                          className="hidden"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={handleVoiceNoteClick}
+                          disabled={isFreeTier}
+                          className="btn-interaction"
+                          style={{
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            border: `2px solid ${isFreeTier ? colors.borderColor : '#8B5CF6'}`,
+                            backgroundColor: isFreeTier ? colors.fieldBg : (isDarkMode ? '#4C1D95' : '#F3E8FF'),
+                            color: isFreeTier ? colors.textSecondary : '#8B5CF6',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            cursor: isFreeTier ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            opacity: isFreeTier ? 0.6 : 1,
+                            transition: 'all 0.2s',
+                            minHeight: '40px'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isFreeTier) {
+                              e.currentTarget.style.backgroundColor = '#8B5CF6';
+                              e.currentTarget.style.color = '#FFFFFF';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isFreeTier) {
+                              e.currentTarget.style.backgroundColor = isDarkMode ? '#4C1D95' : '#F3E8FF';
+                              e.currentTarget.style.color = '#8B5CF6';
+                            }
+                          }}
+                        >
+                          <Mic className="w-4 h-4" />
+                          {strings.addVoiceNote}
+                          {isFreeTier && (
+                            <span className="text-xs ml-1" style={{ color: colors.textSecondary }}>
+                              ({strings.protectRequired})
+                            </span>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleVideoClick}
+                          disabled={isFreeTier || isProtectOrLite}
+                          className="btn-interaction"
+                          style={{
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            border: `2px solid ${(isFreeTier || isProtectOrLite) ? colors.borderColor : '#EF4444'}`,
+                            backgroundColor: (isFreeTier || isProtectOrLite) ? colors.fieldBg : (isDarkMode ? '#7F1D1D' : '#FEE2E2'),
+                            color: (isFreeTier || isProtectOrLite) ? colors.textSecondary : '#EF4444',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            cursor: (isFreeTier || isProtectOrLite) ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            opacity: (isFreeTier || isProtectOrLite) ? 0.6 : 1,
+                            transition: 'all 0.2s',
+                            minHeight: '40px'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isFreeTier && !isProtectOrLite) {
+                              e.currentTarget.style.backgroundColor = '#EF4444';
+                              e.currentTarget.style.color = '#FFFFFF';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isFreeTier && !isProtectOrLite) {
+                              e.currentTarget.style.backgroundColor = isDarkMode ? '#7F1D1D' : '#FEE2E2';
+                              e.currentTarget.style.color = '#EF4444';
+                            }
+                          }}
+                        >
+                          <Video className="w-4 h-4" />
+                          {strings.addVideo}
+                          {(isFreeTier || isProtectOrLite) && (
+                            <span className="text-xs ml-1" style={{ color: colors.textSecondary }}>
+                              ({strings.secureRequired})
+                            </span>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Voice Notes Preview */}
+                      {voiceFiles.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                            {voiceFiles.length} {strings.voiceNotesAdded}
+                          </p>
+                          <div className="space-y-2">
+                            {voiceFiles.map((file, index) => (
+                              <div key={index} className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: colors.inputBg, border: `1px solid ${colors.borderColor}` }}>
+                                <Mic className="w-4 h-4 text-purple-600" />
+                                <span className="text-xs flex-1" style={{ color: colors.textPrimary }}>{file.name}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveVoice(index)}
+                                  className="text-red-600"
+                                  style={{ minWidth: '24px', minHeight: '24px' }}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Videos Preview */}
+                      {videoFiles.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                            {videoFiles.length} {strings.videosAdded}
+                          </p>
+                          <div className="space-y-2">
+                            {videoFiles.map((file, index) => (
+                              <div key={index} className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: colors.inputBg, border: `1px solid ${colors.borderColor}` }}>
+                                <Video className="w-4 h-4 text-red-600" />
+                                <span className="text-xs flex-1" style={{ color: colors.textPrimary }}>{file.name}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveVideo(index)}
+                                  className="text-red-600"
+                                  style={{ minWidth: '24px', minHeight: '24px' }}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       <div>
                         <Label style={{ color: colors.textPrimary }}>{strings.addPhotos}</Label>
@@ -1687,7 +2124,7 @@ function PropertyTrackerContent() {
                                       className="w-full h-24 object-cover rounded-lg border-2"
                                       style={{ borderColor: colors.borderColor }}
                                       loadingColor="#F59E0B"
-                                      onClick={() => { haptic.light(); window.open(preview, '_blank')}}
+                                      onClick={() => { haptic.light(); window.open(preview, '_blank') }}
                                     />
                                     <button
                                       type="button"
@@ -1708,15 +2145,15 @@ function PropertyTrackerContent() {
                       <div className="grid md:grid-cols-2 gap-3">
                         <div>
                           <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
-                          <Select 
-                            value={maintenanceForm.category} 
+                          <Select
+                            value={maintenanceForm.category}
                             onValueChange={(value) => {
                               haptic.light();
-                              setMaintenanceForm({...maintenanceForm, category: value});
+                              setMaintenanceForm({ ...maintenanceForm, category: value });
                             }}
                           >
-                            <SelectTrigger className="mt-2" style={{ 
-                              backgroundColor: colors.inputBg, 
+                            <SelectTrigger className="mt-2" style={{
+                              backgroundColor: colors.inputBg,
                               borderColor: colors.borderColor,
                               minHeight: '44px',
                               fontSize: '16px'
@@ -1736,15 +2173,15 @@ function PropertyTrackerContent() {
                         </div>
                         <div>
                           <Label style={{ color: colors.textPrimary }}>{strings.priority}</Label>
-                          <Select 
-                            value={maintenanceForm.priority} 
+                          <Select
+                            value={maintenanceForm.priority}
                             onValueChange={(value) => {
                               haptic.light();
-                              setMaintenanceForm({...maintenanceForm, priority: value});
+                              setMaintenanceForm({ ...maintenanceForm, priority: value });
                             }}
                           >
-                            <SelectTrigger className="mt-2" style={{ 
-                              backgroundColor: colors.inputBg, 
+                            <SelectTrigger className="mt-2" style={{
+                              backgroundColor: colors.inputBg,
                               borderColor: colors.borderColor,
                               minHeight: '44px',
                               fontSize: '16px'
@@ -1769,6 +2206,8 @@ function PropertyTrackerContent() {
                             setEditingMaintenance(null);
                             setPhotoFiles([]);
                             setPhotoPreviews([]);
+                            setVoiceFiles([]);
+                            setVideoFiles([]);
                             setCompressionStats(null);
                             setMaintenanceForm({
                               issue_title: '', description: '', category: 'other', priority: 'medium', property_address: '', reported_date: new Date().toISOString().split('T')[0]
@@ -1868,7 +2307,7 @@ function PropertyTrackerContent() {
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-2">
                                       {request.request_number && (
-                                        <Badge 
+                                        <Badge
                                           className="font-mono text-xs"
                                           style={{
                                             backgroundColor: isDarkMode ? colors.inputBg : '#F3F4F6',
@@ -1901,8 +2340,64 @@ function PropertyTrackerContent() {
                                           className="w-full h-20 object-cover rounded-lg border cursor-pointer"
                                           style={{ borderColor: colors.borderColor }}
                                           loadingColor="#F59E0B"
-                                          onClick={() => { haptic.light(); window.open(url, '_blank')}}
+                                          onClick={() => { haptic.light(); window.open(url, '_blank') }}
                                         />
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {request.voice_notes && request.voice_notes.length > 0 && (
+                                  <div className="mt-3 mb-2">
+                                    <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                                      🎤 {request.voice_notes.length} {strings.voiceNotesAdded}
+                                    </p>
+                                    <div className="space-y-1">
+                                      {request.voice_notes.map((url, index) => (
+                                        <a
+                                          key={index}
+                                          href={url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-2 p-2 rounded text-xs"
+                                          style={{
+                                            backgroundColor: isDarkMode ? '#4C1D95' : '#F3E8FF',
+                                            border: '1px solid #8B5CF6',
+                                            color: colors.textPrimary,
+                                            textDecoration: 'none'
+                                          }}
+                                        >
+                                          <Mic className="w-3 h-3 text-purple-600" />
+                                          Voice Note {index + 1}
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {request.videos && request.videos.length > 0 && (
+                                  <div className="mt-3 mb-2">
+                                    <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+                                      🎥 {request.videos.length} {strings.videosAdded}
+                                    </p>
+                                    <div className="space-y-1">
+                                      {request.videos.map((url, index) => (
+                                        <a
+                                          key={index}
+                                          href={url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-2 p-2 rounded text-xs"
+                                          style={{
+                                            backgroundColor: isDarkMode ? '#7F1D1D' : '#FEE2E2',
+                                            border: '1px solid #EF4444',
+                                            color: colors.textPrimary,
+                                            textDecoration: 'none'
+                                          }}
+                                        >
+                                          <Video className="w-3 h-3 text-red-600" />
+                                          Video {index + 1}
+                                        </a>
                                       ))}
                                     </div>
                                   </div>
@@ -1920,14 +2415,14 @@ function PropertyTrackerContent() {
                                           className="p-2 rounded-lg text-xs"
                                           style={{
                                             backgroundColor: log.sender === 'tenant' ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') :
-                                                             log.sender === 'landlord' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
-                                                             log.sender === 'juristic' ? (isDarkMode ? '#2D1C3A' : '#FAF5FF') :
-                                                             (isDarkMode ? colors.fieldBg : '#F3F4F6'),
+                                              log.sender === 'landlord' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
+                                                log.sender === 'juristic' ? (isDarkMode ? '#2D1C3A' : '#FAF5FF') :
+                                                  (isDarkMode ? colors.fieldBg : '#F3F4F6'),
                                             borderLeft: `3px solid ${
                                               log.sender === 'tenant' ? '#3B82F6' :
-                                              log.sender === 'landlord' ? '#F59E0B' :
-                                              log.sender === 'juristic' ? '#8B5CF6' :
-                                              '#6B7280'
+                                                log.sender === 'landlord' ? '#F59E0B' :
+                                                  log.sender === 'juristic' ? '#8B5CF6' :
+                                                    '#6B7280'
                                             }`
                                           }}
                                         >
@@ -1957,6 +2452,12 @@ function PropertyTrackerContent() {
                                   <span>⚡ {request.priority}</span>
                                   {request.photo_urls && request.photo_urls.length > 0 && (
                                     <span>📸 {request.photo_urls.length}</span>
+                                  )}
+                                  {request.voice_notes && request.voice_notes.length > 0 && (
+                                    <span>🎤 {request.voice_notes.length}</span>
+                                  )}
+                                  {request.videos && request.videos.length > 0 && (
+                                    <span>🎥 {request.videos.length}</span>
                                   )}
                                 </div>
 
@@ -2027,7 +2528,7 @@ function PropertyTrackerContent() {
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
                                       {request.request_number && (
-                                        <Badge 
+                                        <Badge
                                           className="font-mono text-xs"
                                           style={{
                                             backgroundColor: isDarkMode ? colors.inputBg : '#F3F4F6',
@@ -2071,6 +2572,70 @@ function PropertyTrackerContent() {
               </CardContent>
             )}
           </Card>
+
+          {/* Upgrade Modal */}
+          <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+            <DialogContent
+              className="modal-enter"
+              style={{
+                backgroundColor: colors.cardBg,
+                borderColor: colors.borderColor,
+                maxWidth: '500px',
+                width: '95vw'
+              }}
+            >
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3 text-lg" style={{ color: colors.textPrimary }}>
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{
+                      backgroundColor: upgradeModalType === 'voice' ? '#8B5CF6' : '#EF4444'
+                    }}
+                  >
+                    {upgradeModalType === 'voice' ? (
+                      <Mic className="w-6 h-6 text-white" />
+                    ) : (
+                      <Video className="w-6 h-6 text-white" />
+                    )}
+                  </div>
+                  <div>
+                    {upgradeModalType === 'voice' ? strings.upgradeToProtectVoice : strings.upgradeToSecureVideo}
+                  </div>
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="mt-4">
+                <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
+                  {upgradeModalType === 'voice' ? strings.upgradeToProtectVoiceDesc : strings.upgradeToSecureVideoDesc}
+                </p>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowUpgradeModal(false)}
+                    className="flex-1"
+                  >
+                    {strings.cancel}
+                  </Button>
+                  <Link
+                    to={createPageUrl("Account") + '?showPlans=true'}
+                    className="flex-1"
+                  >
+                    <Button
+                      onClick={() => haptic.medium()}
+                      className="w-full"
+                      style={{
+                        backgroundColor: upgradeModalType === 'voice' ? '#8B5CF6' : '#0C3B2E',
+                        color: '#FFFFFF'
+                      }}
+                    >
+                      {upgradeModalType === 'voice' ? strings.upgradeToProtect : strings.upgradeToSecure}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </PullToRefresh>
