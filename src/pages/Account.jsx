@@ -664,23 +664,23 @@ export default function Account() {
   const isDarkMode = currentTheme === 'dark';
 
   const colors = isDarkMode ? {
-    bg: '#1A1D1F',
+    bg: '#111827',
     cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D',
-    fieldBg: '#353A3D',
+    textPrimary: '#F9FAFB',
+    textSecondary: '#D1D5DB',
+    borderColor: 'rgba(255,255,255,0.1)',
+    inputBg: '#374151',
+    fieldBg: '#374151',
     hoverBg: '#3A3D40'
   } : {
-    bg: '#ECEFED',
+    bg: '#F3F6F5',
     cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
+    textPrimary: '#0F172A',
+    textSecondary: '#475569',
+    borderColor: 'rgba(12,59,46,0.08)',
     inputBg: '#FFFFFF',
-    fieldBg: '#ECEFED',
-    hoverBg: '#F8FAFC'
+    fieldBg: '#F8FAFC',
+    hoverBg: '#F1F5F9'
   };
 
   const t = {
@@ -1461,25 +1461,26 @@ export default function Account() {
                     style={{
                       padding: '8px 16px',
                       borderRadius: '8px',
-                      border: 'none',
-                      backgroundColor: isDarkMode ? '#0C3B2E' : '#FFFFFF',
-                      color: isDarkMode ? '#FFFFFF' : '#0C3B2E',
-                      fontWeight: 'bold',
+                      border: isDarkMode ? '2px solid #C7A338' : '2px solid #0C3B2E',
+                      backgroundColor: isDarkMode ? '#374151' : '#FFFFFF',
+                      color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
+                      fontWeight: '700',
                       fontSize: '14px',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
-                      boxShadow: isDarkMode ? '0 2px 6px rgba(199,163,56,0.3)' : 'none',
-                      border: isDarkMode ? 'none' : '2px solid #0C3B2E'
+                      boxShadow: isDarkMode ? '0 2px 8px rgba(199,163,56,0.3)' : '0 2px 6px rgba(0,0,0,0.08)'
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#C7A338';
                       e.target.style.borderColor = '#C7A338';
                       e.target.style.color = '#FFFFFF';
+                      e.target.style.boxShadow = '0 4px 12px rgba(199,163,56,0.4)';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = isDarkMode ? '#0C3B2E' : '#FFFFFF';
-                      e.target.style.borderColor = isDarkMode ? '#0C3B2E' : '#0C3B2E';
-                      e.target.style.color = isDarkMode ? '#FFFFFF' : '#0C3B2E';
+                      e.target.style.backgroundColor = isDarkMode ? '#374151' : '#FFFFFF';
+                      e.target.style.borderColor = isDarkMode ? '#C7A338' : '#0C3B2E';
+                      e.target.style.color = isDarkMode ? '#F9FAFB' : '#0C3B2E';
+                      e.target.style.boxShadow = isDarkMode ? '0 2px 8px rgba(199,163,56,0.3)' : '0 2px 6px rgba(0,0,0,0.08)';
                     }}
                   >
                     {strings.editProfile}

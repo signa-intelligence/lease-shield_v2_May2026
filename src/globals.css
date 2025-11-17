@@ -1,9 +1,55 @@
-css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    /* LeaseShield Brand Palette */
+    --ls-forest: #0C3B2E;
+    --ls-gold: #C7A338;
+    --ls-charcoal: #1A1D1F;
+    --ls-stone: #F3F6F5;
+    --ls-white: #FFFFFF;
+    
+    /* Light mode base colors */
+    --background: 243 246 245;
+    --foreground: 15 23 42;
+    --card: 0 0% 100%;
+    --card-foreground: 15 23 42;
+    --border: 12 59 46 / 0.08;
+    --primary: 12 59 46;
+    --primary-foreground: 0 0% 100%;
+    --accent: 45 55% 50%;
+    --accent-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    /* Dark mode base colors */
+    --background: 17 24 39;
+    --foreground: 249 250 251;
+    --card: 42 45 48;
+    --card-foreground: 236 239 237;
+    --border: 255 255 255 / 0.1;
+    --primary: 12 59 46;
+    --primary-foreground: 0 0% 100%;
+    --accent: 45 55% 50%;
+    --accent-foreground: 0 0% 100%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
 @layer components {
+  /* Bottom nav spacing */
   .fab-bottom {
     position: fixed;
     right: 20px;
@@ -11,9 +57,37 @@ css
     z-index: 50;
   }
 
+  /* Premium dashboard card with subtle border */
   .dashboard-card {
-    @apply rounded-2xl border-l-4 shadow-sm transition-colors duration-200;
-    @apply bg-[#F6F6F6] dark:bg-[#2A2A2A];
-    @apply border-[#8C8C8C];
+    @apply rounded-2xl shadow-sm transition-all duration-200;
+    border: 1px solid rgba(12, 59, 46, 0.08);
+  }
+
+  .dark .dashboard-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Premium card with left accent border */
+  .feature-card {
+    @apply rounded-2xl shadow-sm transition-all duration-200;
+  }
+
+  /* Unified button styles */
+  .btn-primary {
+    background-color: var(--ls-forest);
+    color: var(--ls-white);
+    border: 2px solid var(--ls-gold);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 12px rgba(12, 59, 46, 0.25);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(12, 59, 46, 0.35);
   }
 }

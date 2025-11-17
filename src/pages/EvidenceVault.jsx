@@ -623,20 +623,20 @@ function EvidenceVaultContent() {
   const storageCheck = canUploadFiles(0);
 
   const colors = isDarkMode ? {
-    bg: '#1A1D1F',
+    bg: '#111827',
     cardBg: '#2A2D30',
-    uploadBg: '#353A3D',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D'
+    uploadBg: '#374151',
+    textPrimary: '#F9FAFB',
+    textSecondary: '#D1D5DB',
+    borderColor: 'rgba(255,255,255,0.1)',
+    inputBg: '#374151'
   } : {
-    bg: '#ECEFED',
+    bg: '#F3F6F5',
     cardBg: '#FFFFFF',
     uploadBg: '#F8FAFC',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
+    textPrimary: '#0F172A',
+    textSecondary: '#475569',
+    borderColor: 'rgba(12,59,46,0.08)',
     inputBg: '#FFFFFF'
   };
 

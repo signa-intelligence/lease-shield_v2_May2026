@@ -683,25 +683,25 @@ function DashboardContent() {
     }
   };
 
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D',
-    fieldBg: '#353A3D',
-    hoverBg: '#3A3D40'
-  } : {
-    bg: '#ECEFED',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    inputBg: '#FFFFFF',
-    fieldBg: '#ECEFED',
-    hoverBg: '#F8FAFC'
-  };
+      const colors = isDarkMode ? {
+        bg: '#111827',
+        cardBg: '#2A2D30',
+        textPrimary: '#F9FAFB',
+        textSecondary: '#D1D5DB',
+        borderColor: 'rgba(255,255,255,0.1)',
+        inputBg: '#374151',
+        fieldBg: '#374151',
+        hoverBg: '#3A3D40'
+      } : {
+        bg: '#F3F6F5',
+        cardBg: '#FFFFFF',
+        textPrimary: '#0F172A',
+        textSecondary: '#475569',
+        borderColor: 'rgba(12,59,46,0.08)',
+        inputBg: '#FFFFFF',
+        fieldBg: '#F8FAFC',
+        hoverBg: '#F1F5F9'
+      };
 
   const calculateProtectionScore = () => {
     let score = 0;
@@ -1312,38 +1312,41 @@ function DashboardContent() {
                     </div>
                   </div>
 
-                  <Link to={createPageUrl("Analytics")}>
-                    <button
-                      onClick={() => haptic.light()}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                        color: isDarkMode ? '#FFFFFF' : '#1A1D1F',
-                        border: `2px solid ${isDarkMode ? '#4B5563' : '#D1D5DB'}`,
-                        borderRadius: '12px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#0C3B2E';
-                        e.target.style.borderColor = '#0C3B2E';
-                        e.target.style.color = '#FFFFFF';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#FFFFFF';
-                        e.target.style.borderColor = isDarkMode ? '#4B5563' : '#D1D5DB';
-                        e.target.style.color = isDarkMode ? '#FFFFFF' : '#1A1D1F';
-                      }}
-                    >
-                      <BarChart3 className="w-4 h-4" />
-                      {strings.analytics}
-                    </button>
-                  </Link>
+                <Link to={createPageUrl("Analytics")}>
+                  <button
+                    onClick={() => haptic.light()}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: isDarkMode ? '#374151' : '#FFFFFF',
+                      color: isDarkMode ? '#F9FAFB' : '#0F172A',
+                      border: isDarkMode ? '2px solid rgba(199,163,56,0.4)' : '2px solid rgba(12,59,46,0.2)',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.08)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#0C3B2E';
+                      e.target.style.borderColor = '#C7A338';
+                      e.target.style.color = '#FFFFFF';
+                      e.target.style.boxShadow = '0 4px 12px rgba(12,59,46,0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = isDarkMode ? '#374151' : '#FFFFFF';
+                      e.target.style.borderColor = isDarkMode ? 'rgba(199,163,56,0.4)' : 'rgba(12,59,46,0.2)';
+                      e.target.style.color = isDarkMode ? '#F9FAFB' : '#0F172A';
+                      e.target.style.boxShadow = isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.08)';
+                    }}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    {strings.analytics}
+                  </button>
+                </Link>
 
                   {isAdmin && (
                     <>

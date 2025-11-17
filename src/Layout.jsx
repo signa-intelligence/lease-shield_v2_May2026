@@ -257,23 +257,23 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const colors = isDarkMode ? {
-    bg: '#1A1D1F',
+    bg: '#111827',
     cardBg: '#2A2D30',
-    borderColor: '#3A3D40',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    topBarBg: '#6B7280', // Changed this line
-    bottomTabBg: '#1A1D1F',
+    borderColor: 'rgba(255,255,255,0.1)',
+    textPrimary: '#F9FAFB',
+    textSecondary: '#D1D5DB',
+    topBarBg: '#1F2937',
+    bottomTabBg: '#1F2937',
     hoverBg: '#3A3D40'
   } : {
-    bg: '#ECEFED',
+    bg: '#F3F6F5',
     cardBg: '#FFFFFF',
-    borderColor: '#E5E7EB',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
+    borderColor: 'rgba(12,59,46,0.08)',
+    textPrimary: '#0F172A',
+    textSecondary: '#475569',
     topBarBg: '#FFFFFF',
     bottomTabBg: '#FFFFFF',
-    hoverBg: '#F3F4F6'
+    hoverBg: '#F1F5F9'
   };
 
   return (
@@ -290,7 +290,7 @@ export default function Layout({ children, currentPageName }) {
           --ls-forest: #0C3B2E;
           --ls-gold: #C7A338;
           --ls-charcoal: #1A1D1F;
-          --ls-stone: #ECEFED;
+          --ls-stone: #F3F6F5;
           --ls-white: #FFFFFF;
           
           --primary: 166 60% 15%;
@@ -323,6 +323,7 @@ export default function Layout({ children, currentPageName }) {
           padding-top: env(safe-area-inset-top, 0px);
           height: auto;
           min-height: 64px;
+          box-shadow: ${isDarkMode ? '0 4px 12px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.04)'};
         }
         
         .main-content {
@@ -340,6 +341,7 @@ export default function Layout({ children, currentPageName }) {
             border-radius: 24px;
             margin-bottom: 16px;
             padding-bottom: 0;
+            box-shadow: ${isDarkMode ? '0 -4px 24px rgba(0,0,0,0.5)' : '0 -4px 16px rgba(0,0,0,0.08)'};
           }
         }
 
@@ -389,30 +391,50 @@ export default function Layout({ children, currentPageName }) {
       `}</style>
 
       {/* Top Bar */}
-      <div className="top-bar fixed top-0 left-0 right-0 border-b shadow-sm z-50" style={{
+      <div className="top-bar fixed top-0 left-0 right-0 border-b z-50" style={{
         backgroundColor: colors.topBarBg,
         borderBottomColor: colors.borderColor
       }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
-              alt="Lease Shield"
-              className="h-10 w-auto md:hidden flex-shrink-0"
-              style={{ opacity: isDarkMode ? 0.95 : 1 }}
-            />
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
-              alt="Lease Shield"
-              className="hidden md:block h-12 w-12 flex-shrink-0"
-              style={{ opacity: isDarkMode ? 0.95 : 1 }}
-            />
-            <span className="font-bold text-base sm:text-lg truncate hidden md:block" style={{ 
-              color: isDarkMode ? '#ECEFED' : '#0C3B2E',
-              opacity: isDarkMode ? 0.95 : 1
-            }}>
-              {strings.appName || "LEASE SHIELD"}
-            </span>
+            {isDarkMode ? (
+              <div className="h-10 px-3 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center md:hidden">
+                <img 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
+                  alt="Lease Shield"
+                  className="h-8 w-auto flex-shrink-0"
+                />
+              </div>
+            ) : (
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
+                alt="Lease Shield"
+                className="h-10 w-auto md:hidden flex-shrink-0"
+              />
+            )}
+            {isDarkMode ? (
+              <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur-sm rounded-lg">
+                <img 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
+                  alt="Lease Shield"
+                  className="h-9 w-9 flex-shrink-0"
+                />
+                <span className="font-bold text-base truncate" style={{ color: '#F9FAFB' }}>
+                  {strings.appName || "LEASE SHIELD"}
+                </span>
+              </div>
+            ) : (
+              <>
+                <img 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
+                  alt="Lease Shield"
+                  className="hidden md:block h-12 w-12 flex-shrink-0"
+                />
+                <span className="font-bold text-base sm:text-lg truncate hidden md:block" style={{ color: '#0C3B2E' }}>
+                  {strings.appName || "LEASE SHIELD"}
+                </span>
+              </>
+            )}
             {isAdmin && (
               <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
                 {accessLevel === 'super_admin' ? 'SUPER ADMIN' : accessLevel === 'admin' ? 'ADMIN' : role === 'admin' ? 'ADMIN' : 'VA'}
@@ -428,14 +450,14 @@ export default function Layout({ children, currentPageName }) {
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
-                  backgroundColor: isActiveTab(createPageUrl("Search")) ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
+                  backgroundColor: isActiveTab(createPageUrl("Search")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
                 }}
                 onMouseEnter={(e) => {
                   if (!isActiveTab(createPageUrl("Search"))) {
@@ -446,16 +468,16 @@ export default function Layout({ children, currentPageName }) {
                 }}
                 onMouseLeave={(e) => {
                   if (!isActiveTab(createPageUrl("Search"))) {
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
+                    e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
                     const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = isDarkMode ? '#ECEFED' : '#0C3B2E';
+                    if (icon) icon.style.color = isDarkMode ? '#F9FAFB' : '#0C3B2E';
                   }
                 }}
               >
                 <Search 
                   className="w-4 h-4 sm:w-5 sm:h-5" 
                   style={{ 
-                    color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : (isDarkMode ? '#ECEFED' : '#0C3B2E'),
+                    color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
                     transition: 'color 0.2s'
                   }}
                 />
@@ -472,11 +494,11 @@ export default function Layout({ children, currentPageName }) {
                     borderRadius: 9999,
                     backgroundColor: '#0C3B2E',
                     color: '#FFFFFF',
-                    border: 'none',
-                    fontWeight: 600,
+                    border: '2px solid #C7A338',
+                    fontWeight: 700,
                     fontSize: '0.75rem',
                     cursor: 'pointer',
-                    boxShadow: '0 8px 16px rgba(0,0,0,0.25)',
+                    boxShadow: '0 4px 12px rgba(12,59,46,0.3)',
                     whiteSpace: 'nowrap',
                   }}
                 >
@@ -492,14 +514,14 @@ export default function Layout({ children, currentPageName }) {
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
-                  backgroundColor: isActiveTab(createPageUrl("Account")) ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#ECEFED'),
+                  backgroundColor: isActiveTab(createPageUrl("Account")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
                 }}
                 onMouseEnter={(e) => {
                   if (!isActiveTab(createPageUrl("Account"))) {
@@ -510,16 +532,16 @@ export default function Layout({ children, currentPageName }) {
                 }}
                 onMouseLeave={(e) => {
                   if (!isActiveTab(createPageUrl("Account"))) {
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#353A3D' : '#ECEFED';
+                    e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
                     const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = isDarkMode ? '#ECEFED' : '#0C3B2E';
+                    if (icon) icon.style.color = isDarkMode ? '#F9FAFB' : '#0C3B2E';
                   }
                 }}
               >
                 <User 
                   className="w-4 h-4 sm:w-5 sm:h-5" 
                   style={{ 
-                    color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : (isDarkMode ? '#ECEFED' : '#0C3B2E'),
+                    color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
                     transition: 'color 0.2s'
                   }}
                 />
@@ -545,11 +567,12 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Bottom Navigation */}
       <nav 
-        className="bottom-tabs fixed bottom-0 left-0 right-0 border-t shadow-2xl" 
+        className="bottom-tabs fixed bottom-0 left-0 right-0 border-t" 
         style={{
           backgroundColor: colors.bottomTabBg,
           borderTopColor: colors.borderColor,
-          zIndex: 50
+          zIndex: 50,
+          boxShadow: isDarkMode ? '0 -4px 24px rgba(0,0,0,0.5)' : '0 -4px 16px rgba(0,0,0,0.08)'
         }}
       >
         <div className="flex items-center justify-around px-2 py-2" style={{

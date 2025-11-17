@@ -240,17 +240,24 @@ function PropertyTrackerContent() {
   const isDarkMode = user?.theme === 'dark';
   const isFreeTier = user?.tier === 'free'; // Added for the change
 
-  const colors = {
-    bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
-    cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
-    textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
-    textSecondary: isDarkMode ? '#A8ABAD' : '#64748b',
-    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
-    inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
-    sectionBg: isDarkMode ? '#353A3D' : '#F8FAFC',
-    depositAccent: '#C7A338',
-    rentAccent: '#3B82F6',
-    maintenanceAccent: '#F59E0B'
+  const colors = isDarkMode ? {
+    bg: '#111827',
+    cardBg: '#2A2D30',
+    textPrimary: '#F9FAFB',
+    textSecondary: '#D1D5DB',
+    borderColor: 'rgba(255,255,255,0.1)',
+    inputBg: '#374151',
+    fieldBg: '#374151',
+    hoverBg: '#3A3D40'
+  } : {
+    bg: '#F3F6F5',
+    cardBg: '#FFFFFF',
+    textPrimary: '#0F172A',
+    textSecondary: '#475569',
+    borderColor: 'rgba(12,59,46,0.08)',
+    inputBg: '#FFFFFF',
+    fieldBg: '#F8FAFC',
+    hoverBg: '#F1F5F9'
   };
 
   const maintenanceTheme = { accent: colors.maintenanceAccent };
@@ -1070,8 +1077,8 @@ function PropertyTrackerContent() {
               onClick={() => toggleSection('deposit')}
               style={{
                 background: isDarkMode
-                  ? `linear-gradient(to right, #2A2D30, #3A3420)`
-                  : `linear-gradient(to right, #FFFBEB, #FEF3C7)`,
+                  ? `linear-gradient(to right, ${colors.cardBg}, #3A3420)`
+                  : `linear-gradient(to right, ${colors.cardBg}, #FEF3C7)`,
                 borderBottom: expandedSections.deposit ? `1px solid ${colors.borderColor}` : 'none'
               }}
             >
@@ -1133,9 +1140,9 @@ function PropertyTrackerContent() {
             {expandedSections.deposit && (
               <CardContent className="p-6">
                 {(!deposit || deposit.deposit_amount === 0) && !editingDeposit ? (
-                  <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#D1D5DB", backgroundColor: "#F9FAFB" }}>
-                    <h3 className="font-semibold text-sm sm:text-base mb-1">No properties added yet</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-3">
+                  <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: colors.borderColor, backgroundColor: colors.fieldBg }}>
+                    <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>No properties added yet</h3>
+                    <p className="text-xs sm:text-sm mb-3" style={{ color: colors.textSecondary }}>
                       Add your first property to start tracking deposits, rent schedules and maintenance in one place.
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
@@ -1158,7 +1165,7 @@ function PropertyTrackerContent() {
                             navigate(createPageUrl("Account") + '#plans');
                           }}
                           className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
-                          style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: "#FFFFFF" }}
+                          style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: colors.cardBg }}
                         >
                           Upgrade for advanced tracking
                         </button>
@@ -1238,7 +1245,7 @@ function PropertyTrackerContent() {
                   </div>
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                       <div className="flex items-center gap-2 mb-2">
                         <DollarSign className="w-4 h-4 text-ls-gold" />
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.depositAmount}</p>
@@ -1247,7 +1254,7 @@ function PropertyTrackerContent() {
                         ฿{deposit.deposit_amount?.toLocaleString() || '0'}
                       </p>
                     </div>
-                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                       <div className="flex items-center gap-2 mb-2">
                         <Calendar className="w-4 h-4 text-ls-forest" />
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.expectedReturn}</p>
@@ -1268,8 +1275,8 @@ function PropertyTrackerContent() {
               onClick={() => toggleSection('rent')}
               style={{
                 background: isDarkMode
-                  ? `linear-gradient(to right, #2A2D30, #1E3A5F)`
-                  : `linear-gradient(to right, #EFF6FF, #DBEAFE)`,
+                  ? `linear-gradient(to right, ${colors.cardBg}, #1E3A5F)`
+                  : `linear-gradient(to right, ${colors.cardBg}, #DBEAFE)`,
                 borderBottom: expandedSections.rent ? `1px solid ${colors.borderColor}` : 'none'
               }}
             >
@@ -1413,7 +1420,7 @@ function PropertyTrackerContent() {
                   </div>
                 ) : (
                   <div className="grid md:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                       <div className="flex items-center gap-2 mb-2">
                         <DollarSign className="w-4 h-4 text-blue-600" />
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentAmount}</p>
@@ -1422,7 +1429,7 @@ function PropertyTrackerContent() {
                         ฿{deposit.rent_amount.toLocaleString()}
                       </p>
                     </div>
-                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                       <div className="flex items-center gap-2 mb-2">
                         <Calendar className="w-4 h-4 text-blue-600" />
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentDueDay}</p>
@@ -1431,7 +1438,7 @@ function PropertyTrackerContent() {
                         Day {deposit.rent_due_day}
                       </p>
                     </div>
-                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.sectionBg }}>
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                       <div className="flex items-center gap-2 mb-2">
                         <Bell className="w-4 h-4 text-blue-600" />
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.alertDaysBefore}</p>
@@ -1458,8 +1465,8 @@ function PropertyTrackerContent() {
               onClick={() => toggleSection('maintenance')}
               style={{
                 background: isDarkMode
-                  ? `linear-gradient(to right, #2A2D30, #3A2D1C)`
-                  : `linear-gradient(to right, #FFF7ED, #FFEDD5)`,
+                  ? `linear-gradient(to right, ${colors.cardBg}, #3A2D1C)`
+                  : `linear-gradient(to right, ${colors.cardBg}, #FFEDD5)`,
                 borderBottom: expandedSections.maintenance ? `1px solid ${colors.borderColor}` : 'none'
               }}
             >
@@ -1555,7 +1562,7 @@ function PropertyTrackerContent() {
                 )}
 
                 {(showAddMaintenance || editingMaintenance) && (
-                  <div className="mb-4 p-4 rounded-lg border-2 border-dashed" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
+                  <div className="mb-4 p-4 rounded-lg border-2 border-dashed" style={{ borderColor: colors.borderColor, backgroundColor: colors.fieldBg }}>
                     <h3 className="font-bold mb-3" style={{ color: colors.textPrimary }}>
                       {editingMaintenance ? strings.edit : strings.addMaintenance}
                     </h3>
@@ -1797,9 +1804,9 @@ function PropertyTrackerContent() {
                 )}
 
                 {maintenanceRequests.length === 0 && !showAddMaintenance && (
-                  <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#FCD34D", backgroundColor: "#FFFBEB" }}>
-                    <h3 className="font-semibold text-sm sm:text-base mb-1">No maintenance requests yet</h3>
-                    <p className="text-xs sm:text-sm text-gray-700 mb-3">
+                  <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: colors.borderColor, backgroundColor: colors.fieldBg }}>
+                    <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>No maintenance requests yet</h3>
+                    <p className="text-xs sm:text-sm mb-3" style={{ color: colors.textSecondary }}>
                       Log your first maintenance issue so you have a clear record with timestamps, photos and notifications.
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
@@ -1822,7 +1829,7 @@ function PropertyTrackerContent() {
                             navigate(createPageUrl("Account") + '#plans');
                           }}
                           className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
-                          style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: "#FFFFFF" }}
+                          style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: colors.cardBg }}
                         >
                           Upgrade for full maintenance history
                         </button>
@@ -1864,7 +1871,7 @@ function PropertyTrackerContent() {
                                         <Badge 
                                           className="font-mono text-xs"
                                           style={{
-                                            backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
+                                            backgroundColor: isDarkMode ? colors.inputBg : '#F3F4F6',
                                             color: colors.maintenanceAccent,
                                             border: `1px solid ${colors.maintenanceAccent}`,
                                             fontWeight: 'bold'
@@ -1915,7 +1922,7 @@ function PropertyTrackerContent() {
                                             backgroundColor: log.sender === 'tenant' ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') :
                                                              log.sender === 'landlord' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
                                                              log.sender === 'juristic' ? (isDarkMode ? '#2D1C3A' : '#FAF5FF') :
-                                                             (isDarkMode ? '#2A2D30' : '#F3F4F6'),
+                                                             (isDarkMode ? colors.fieldBg : '#F3F4F6'),
                                             borderLeft: `3px solid ${
                                               log.sender === 'tenant' ? '#3B82F6' :
                                               log.sender === 'landlord' ? '#F59E0B' :
@@ -2015,7 +2022,7 @@ function PropertyTrackerContent() {
                               deleteLabel={strings.delete}
                               colors={colors}
                             >
-                              <div className="p-3 rounded-lg border opacity-60" style={{ borderColor: colors.borderColor, backgroundColor: colors.sectionBg }}>
+                              <div className="p-3 rounded-lg border opacity-60" style={{ borderColor: colors.borderColor, backgroundColor: colors.fieldBg }}>
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
@@ -2023,7 +2030,7 @@ function PropertyTrackerContent() {
                                         <Badge 
                                           className="font-mono text-xs"
                                           style={{
-                                            backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6',
+                                            backgroundColor: isDarkMode ? colors.inputBg : '#F3F4F6',
                                             color: colors.textSecondary,
                                             border: `1px solid ${colors.borderColor}`
                                           }}

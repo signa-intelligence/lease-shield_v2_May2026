@@ -81,11 +81,11 @@ export default function Timeline() {
   const isDarkMode = user?.theme === 'dark';
 
   const colors = {
-    bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
+    bg: isDarkMode ? '#111827' : '#F3F6F5',
     cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
-    textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
-    textSecondary: isDarkMode ? '#A8ABAD' : '#64748b',
-    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
+    textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A',
+    textSecondary: isDarkMode ? '#D1D5DB' : '#475569',
+    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)',
     todayBg: isDarkMode ? '#1E3A5F' : '#EFF6FF',
     selectedBg: isDarkMode ? '#2D1C3A' : '#F5F3FF'
   };
@@ -346,7 +346,7 @@ export default function Timeline() {
     maintenance.forEach(req => {
       events.push({
         id: `maintenance-${req.id}`,
-        type: 'maintenance',
+            type: 'maintenance',
         subtype: 'reported',
         title: strings.maintenanceReported,
         description: req.issue_title || req.category,
