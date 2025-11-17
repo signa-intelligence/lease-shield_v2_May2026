@@ -1272,9 +1272,6 @@ function EvidenceVaultContent() {
                       </div>
                       <div className="flex-1">
                         <p className="font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                          {language === 'th' ? 'ปรับขนาดไฟล์แล้ว' : 'Images Optimized'}
-                        </p>
-                        <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
                           {language === 'th'
                             ? `${compressionStats.compressedCount} รูป • ประหยัด ${compressionStats.savedMB} MB`
                             : `${compressionStats.compressedCount} images • Saved ${compressionStats.savedMB} MB`
@@ -1570,7 +1567,10 @@ function EvidenceVaultContent() {
           {isLoadingDocuments ? (
             <SkeletonLoader variant="card" count={6} colors={colors} />
           ) : filteredDocuments.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#E5E7EB", backgroundColor: "#F9FAFB" }}>
+            <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ 
+              borderColor: colors.borderColor, 
+              backgroundColor: colors.uploadBg 
+            }}>
               <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>{strings.noEvidenceTitle}</h3>
               <p className="text-xs sm:text-sm mb-3" style={{ color: colors.textSecondary }}>
                 {strings.noEvidenceDescription}
@@ -1583,7 +1583,11 @@ function EvidenceVaultContent() {
                     setShowUploadDialog(true);
                   }}
                   className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
-                  style={{ backgroundColor: "#0C3B2E", color: "#FFFFFF" }}
+                  style={{ 
+                    backgroundColor: "#0C3B2E", 
+                    color: "#FFFFFF",
+                    border: `2px solid #C7A338`
+                  }}
                 >
                   {strings.uploadEvidence}
                 </button>
@@ -1595,7 +1599,11 @@ function EvidenceVaultContent() {
                       navigate(createPageUrl("Account") + '#plans');
                     }}
                     className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
-                    style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: "#FFFFFF" }}
+                    style={{ 
+                      borderColor: isDarkMode ? '#C7A338' : '#0C3B2E', 
+                      color: isDarkMode ? '#C7A338' : '#0C3B2E', 
+                      backgroundColor: colors.cardBg 
+                    }}
                   >
                     {strings.upgradeVaultStorage}
                   </button>
