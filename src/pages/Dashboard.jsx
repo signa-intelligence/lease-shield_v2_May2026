@@ -1,4 +1,3 @@
-
 // ⚠️ LeaseShield: Dashboard overview is stabilised.
 // Do not modify card themes, layout, or handlers without explicit product approval.
 
@@ -90,33 +89,33 @@ function DashboardContent() {
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const subscriptionStatus = urlParams.get('subscription');
-
+    
     if (subscriptionStatus === 'success' && user) {
       window.history.replaceState({}, '', window.location.pathname);
       toast.success(language === 'th' ? 'การสมัครสมาชิกสำเร็จ!' : 'Subscription successful!');
-
+      
       let pollCount = 0;
       const maxPolls = 12;
-
+      
       const pollInterval = setInterval(() => {
         pollCount++;
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-
+        
         if (pollCount >= maxPolls) {
           clearInterval(pollInterval);
         }
       }, 5000);
-
+      
       return () => clearInterval(pollInterval);
     }
   }, [queryClient, user, toast]);
 
   React.useEffect(() => {
     let intervalId;
-
+    
     const handleFocus = () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-
+      
       if (intervalId) {
         clearInterval(intervalId);
         intervalId = null;
@@ -126,24 +125,24 @@ function DashboardContent() {
       intervalId = setInterval(() => {
         count++;
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-
+        
         if (count >= 6) {
           clearInterval(intervalId);
           intervalId = null;
         }
       }, 5000);
     };
-
+    
     const handleBlur = () => {
       if (intervalId) {
         clearInterval(intervalId);
         intervalId = null;
       }
     };
-
+    
     window.addEventListener('focus', handleFocus);
     window.addEventListener('blur', handleBlur);
-
+    
     return () => {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('blur', handleBlur);
@@ -168,24 +167,24 @@ function DashboardContent() {
   const maintenanceTheme = getFeatureCardStyles("maintenance", isDarkMode);
 
   const [checkingOverdue, setCheckingOverdue] = React.useState(false);
-
+  
   const checkAndNotifyOverdue = React.useCallback(async () => {
     if (!deposits || deposits.length === 0) return;
-
+    
     setCheckingOverdue(true);
     try {
       const now = new Date();
       let notificationsSent = 0;
-
+      
       for (const deposit of deposits) {
         if (deposit.status !== 'tracking' || !deposit.expected_return_date) continue;
-
+        
         const expectedDate = new Date(deposit.expected_return_date);
         const daysDiff = Math.floor((expectedDate - now) / (1000 * 60 * 60 * 24));
-
+        
         if (daysDiff < 0) {
           console.log(`🚨 Overdue deposit found: ${deposit.id}, ${Math.abs(daysDiff)} days`);
-
+          
           try {
             const response = await base44.functions.invoke('sendOverdueNotification', {
               deposit: {
@@ -196,7 +195,7 @@ function DashboardContent() {
                 daysOverdue: Math.abs(daysDiff)
               }
             });
-
+            
             if (response.data?.success) {
               notificationsSent++;
               console.log(`✅ Notification sent for deposit ${deposit.id}`);
@@ -206,17 +205,17 @@ function DashboardContent() {
           }
         }
       }
-
+      
       if (notificationsSent > 0) {
         toast.success(
-          language === 'th'
-            ? `ส่งการแจ้งเตือน ${notificationsSent} รายการ`
+          language === 'th' 
+            ? `ส่งการแจ้งเตือน ${notificationsSent} รายการ` 
             : `Sent ${notificationsSent} notifications`
         );
       } else {
         toast.info(language === 'th' ? 'ไม่พบเงินมัดจำที่เกินกำหนด' : 'No overdue deposits found');
       }
-
+      
       queryClient.invalidateQueries({ queryKey: ['notificationLogs'] });
     } catch (error) {
       console.error('Failed to check overdue deposits:', error);
@@ -227,7 +226,7 @@ function DashboardContent() {
   }, [deposits, language, toast, queryClient]);
 
   const [triggeringReminders, setTriggeringReminders] = useState(false);
-
+  
   const triggerReminders = async () => {
     setTriggeringReminders(true);
     try {
@@ -238,18 +237,18 @@ function DashboardContent() {
   };
 
   const [runningScheduled, setRunningScheduled] = useState(false);
-
+  
   const runScheduledReminders = async () => {
     setRunningScheduled(true);
     try {
       const response = await base44.functions.invoke('scheduledReminders');
       console.log('📊 Scheduled reminders result:', response.data);
-
+      
       if (response.data?.success) {
         const { diagnostics } = response.data;
         toast.success(
-          language === 'th'
-            ? `ส่งแล้ว ${diagnostics.notifications_sent} การแจ้งเตือน (ตรวจสอบ ${diagnostics.users_checked} ผู้ใช้)`
+          language === 'th' 
+            ? `ส่งแล้ว ${diagnostics.notifications_sent} การแจ้งเตือน (ตรวจสอบ ${diagnostics.users_checked} ผู้ใช้)` 
             : `Sent ${diagnostics.notifications_sent} notifications (${diagnostics.users_checked} users checked)`
         );
       } else {
@@ -267,12 +266,12 @@ function DashboardContent() {
   const [testingSettings, setTestingSettings] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [testingBrowserFlex, setTestingBrowserFlex] = React.useState(false);
-
+  
   const testFlexFromBrowser = async () => {
     setTestingBrowserFlex(true);
     try {
       console.log('🧪 Testing Flex message from browser...');
-
+      
       const testFlex = {
         altText: '🧪 Test Flex Card',
         contents: {
@@ -307,30 +306,30 @@ function DashboardContent() {
           }
         }
       };
-
+      
       console.log('📦 Test Flex structure:', JSON.stringify(testFlex, null, 2));
-
+      
       if (!user.line_messaging_token) {
         alert('No LINE token found. Please connect LINE first.');
         setTestingBrowserFlex(false);
         return;
       }
-
+      
       console.log('📤 Sending to sendLineMessage...');
       const response = await base44.functions.invoke('sendLineMessage', {
         userId: user.line_messaging_token,
         flexMessage: testFlex
       });
-
+      
       console.log('✅ Response from sendLineMessage:', response.data);
-
+      
       if (response.data?.success) {
         toast.success(
-          language === 'th'
-            ? '✅ ส่ง Flex Card สำเร็จ! ตรวจสอบ LINE'
+          language === 'th' 
+            ? '✅ ส่ง Flex Card สำเร็จ! ตรวจสอบ LINE' 
             : '✅ Flex Card sent! Check your LINE'
         );
-
+        
         alert(
           `✅ TEST FLEX SENT!\n\n` +
           `Check your LINE now.\n\n` +
@@ -358,7 +357,7 @@ function DashboardContent() {
     setTestingRent(true);
     try {
       const rentDeposit = deposits.find(d => d.rent_amount && d.rent_due_day);
-
+      
       if (!rentDeposit) {
         alert(
           `❌ NO RENT CONFIGURED\n\n` +
@@ -375,12 +374,12 @@ function DashboardContent() {
 
       const daysUntilDue = rentDeposit.rent_alert_days_before || 3;
       const propertyAddress = rentDeposit.property_address || (language === 'th' ? 'ไม่ระบุ' : 'N/A');
-      const rentAmount = rentDeposit.deposit_amount; // Corrected from rent_amount
+      const rentAmount = rentDeposit.deposit_amount;
       const dueDay = rentDeposit.rent_due_day;
 
       const flexMessage = {
-        altText: language === 'th'
-          ? `💰 เตือนชำระค่าเช่า: ฿${rentAmount.toLocaleString()}`
+        altText: language === 'th' 
+          ? `💰 เตือนชำระค่าเช่า: ฿${rentAmount.toLocaleString()}` 
           : `💰 Rent Payment Reminder: ฿${rentAmount.toLocaleString()}`,
         contents: {
           type: 'bubble',
@@ -469,8 +468,8 @@ function DashboardContent() {
                   },
                   {
                     type: 'text',
-                    text: language === 'th'
-                      ? `ครบกำหนด: วันที่ ${dueDay} ของเดือน`
+                    text: language === 'th' 
+                      ? `ครบกำหนด: วันที่ ${dueDay} ของเดือน` 
                       : `Due: Day ${dueDay} of month`,
                     wrap: true,
                     color: '#1A1D1F',
@@ -493,8 +492,8 @@ function DashboardContent() {
                   },
                   {
                     type: 'text',
-                    text: language === 'th'
-                      ? `เหลืออีก ${daysUntilDue} วัน`
+                    text: language === 'th' 
+                      ? `เหลืออีก ${daysUntilDue} วัน` 
                       : `${daysUntilDue} days until due`,
                     wrap: true,
                     color: '#DC2626',
@@ -523,8 +522,8 @@ function DashboardContent() {
                   },
                   {
                     type: 'text',
-                    text: language === 'th'
-                      ? 'ชำระก่อนกำหนดเพื่อหลีกเลี่ยงค่าปรับ'
+                    text: language === 'th' 
+                      ? 'ชำระก่อนกำหนดเพื่อหลีกเลี่ยงค่าปรับ' 
                       : 'Pay early to avoid late fees',
                     size: 'xs',
                     color: '#64748b',
@@ -576,10 +575,10 @@ function DashboardContent() {
       }
 
       if (user.email_notifications) {
-        const subject = language === 'th'
-          ? '💰 เตือนชำระค่าเช่า - Lease Shield'
+        const subject = language === 'th' 
+          ? '💰 เตือนชำระค่าเช่า - Lease Shield' 
           : '💰 Rent Payment Reminder - Lease Shield';
-
+        
         const body = language === 'th'
           ? `💰 เตือนชำระค่าเช่า\n\n🏠 ทรัพย์สิน: ${propertyAddress}\n💵 จำนวน: ฿${rentAmount.toLocaleString()}\n📅 ครบกำหนด: วันที่ ${dueDay} ของเดือน\n⏰ เหลืออีก ${daysUntilDue} วัน\n\n💡 เคล็ดลับ: ชำระก่อนกำหนดเพื่อหลีกเลี่ยงค่าปรับ\n\nเปิดแอป → https://app.leaseshield.asia/DepositTracker`
           : `💰 Rent Payment Reminder\n\n🏠 Property: ${propertyAddress}\n💵 Amount: ฿${rentAmount.toLocaleString()}\n📅 Due: Day ${dueDay} of the month\n⏰ ${daysUntilDue} days until due\n\n💡 Tip: Pay early to avoid late fees\n\nOpen app → https://app.leaseshield.asia/DepositTracker`;
@@ -612,11 +611,11 @@ function DashboardContent() {
 
       if (channels.length > 0) {
         toast.success(
-          language === 'th'
-            ? `✅ ส่งการแจ้งเตือนค่าเช่าผ่าน ${channels.join(' & ')}`
+          language === 'th' 
+            ? `✅ ส่งการแจ้งเตือนค่าเช่าผ่าน ${channels.join(' & ')}` 
             : `✅ Rent reminder sent via ${channels.join(' & ')}`
         );
-
+        
         alert(
           `💰 RENT REMINDER SENT!\n\n` +
           `✅ Channels: ${channels.join(' & ')}\n\n` +
@@ -634,7 +633,7 @@ function DashboardContent() {
           `Account → Notification Settings`
         );
       }
-
+      
       queryClient.invalidateQueries({ queryKey: ['notificationLogs'] });
     } catch (error) {
       console.error('Rent test failed:', error);
@@ -650,7 +649,7 @@ function DashboardContent() {
     try {
       const response = await base44.functions.invoke('testDirectEmail');
       console.log('📧 Email test result:', response.data);
-
+      
       if (response.data?.success) {
         alert(
           `✅ TEST EMAIL SENT!\n\n` +
@@ -719,12 +718,12 @@ function DashboardContent() {
 
     const activeDepositsForProtectionScore = deposits.filter(d => d.status === 'tracking');
     if (activeDepositsForProtectionScore.length > 0) breakdown.activeProtections += 10;
-
+    
     const rentAlertsEnabled = deposits.some(d => d.rent_alerts_enabled);
     if (rentAlertsEnabled) breakdown.activeProtections += 7;
-
+    
     if (maintenanceRequests.length > 0) breakdown.activeProtections += 6;
-
+    
     if (user?.email_notifications || user?.line_notifications) breakdown.activeProtections += 7;
 
     const now = new Date();
@@ -752,9 +751,9 @@ function DashboardContent() {
     if (recentDocuments.length >= 3) breakdown.proactiveActions += 5;
 
     score = breakdown.documentation + breakdown.activeProtections + breakdown.proactiveActions;
-
+    
     const recommendations = [];
-
+    
     if (scannedLeases.length === 0) {
       recommendations.push({
         action: language === 'th' ? 'สแกนสัญญาเช่า' : 'Scan your lease',
@@ -771,7 +770,7 @@ function DashboardContent() {
         icon: 'Shield'
       });
     }
-
+    
     return { score, breakdown, recommendations: recommendations.slice(0, 5) };
   };
 
@@ -791,7 +790,6 @@ function DashboardContent() {
     return daysRemaining <= 30 && daysRemaining > 0;
   }).length;
   const resolvedCases = cases.filter(c => c.status === 'closed').length;
-  const unreadNotifications = notificationLogs.filter(n => n.status !== 'read').length; // Added this
 
   const urgentLeaseNotices = leases.filter(lease => {
     if (!lease.notice_deadline || !lease.notice_alerts_enabled) return false;
@@ -813,7 +811,7 @@ function DashboardContent() {
       subtitle: "Prevent rental problems before they happen.",
       activeLeases: "Active Leases",
       depositsTracked: "Deposits Tracked",
-      activeCases: "Active Cases", // Used for the card title
+      activeCases: "Active Cases",
       protectionScore: "Protection Score",
       protectRights: "Protect Your Rights",
       uploadCta: "Upload your lease for instant automated analysis and risk assessment",
@@ -854,16 +852,6 @@ function DashboardContent() {
       analytics: "Analytics",
       upgradePromoTitle: "Unlock Full Protection",
       upgradePromoText: "Upgrade to access advanced deposit tracking, maintenance workflows, and full AI-powered lease analysis.",
-      // New strings for StatsCard
-      leasesScanned: "Leases Scanned",
-      scanNewLease: "Scan New Lease",
-      totalValue: "Total Value",
-      trackDeposit: "Track Deposit",
-      openCase: "Open Case",
-      viewTimeline: "View Timeline",
-      evidenceUploaded: "Evidence Uploaded",
-      manageEvidence: "Manage Evidence",
-      totalFiles: "Total Files",
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -911,16 +899,6 @@ function DashboardContent() {
       analytics: "วิเคราะห์",
       upgradePromoTitle: "ปลดล็อกการป้องกันเต็มรูปแบบ",
       upgradePromoText: "อัปเกรดเพื่อเข้าถึงระบบติดตามเงินมัดจำขั้นสูง ระบบซ่อมบำรุง และการวิเคราะห์สัญญาเช่าด้วย AI แบบเต็มรูปแบบ",
-      // New strings for StatsCard
-      leasesScanned: "สัญญาเช่าที่สแกน",
-      scanNewLease: "สแกนสัญญาเช่าใหม่",
-      totalValue: "มูลค่ารวม",
-      trackDeposit: "ติดตามเงินมัดจำ",
-      openCase: "เปิดคดี",
-      evidenceUploaded: "หลักฐานที่อัปโหลด",
-      manageEvidence: "จัดการหลักฐาน",
-      viewTimeline: "ดูไทม์ไลน์",
-      totalFiles: "ไฟล์ทั้งหมด",
     },
     zh: {
       welcome: "欢迎回来",
@@ -968,16 +946,6 @@ function DashboardContent() {
       analytics: "分析",
       upgradePromoTitle: "解锁全面保护",
       upgradePromoText: "升级以获取高级押金跟踪、维护工作流和全AI驱动的租约分析。",
-      // New strings for StatsCard
-      leasesScanned: "已扫描租约",
-      scanNewLease: "扫描新租约",
-      totalValue: "总价值",
-      trackDeposit: "追踪押金",
-      openCase: "开启案件",
-      viewTimeline: "查看时间线",
-      evidenceUploaded: "已上传证据",
-      manageEvidence: "管理证据",
-      totalFiles: "文件总数",
     },
     ja: {
       welcome: "おかえりなさい",
@@ -1025,16 +993,6 @@ function DashboardContent() {
       analytics: "分析",
       upgradePromoTitle: "完全な保護を解除",
       upgradePromoText: "高度な敷金追跡、メンテナンスワークフロー、およびAIを活用した完全な賃貸分析にアクセスするためにアップグレードしてください。",
-      // New strings for StatsCard
-      leasesScanned: "スキャン済み賃貸契約",
-      scanNewLease: "新しい賃貸契約をスキャン",
-      totalValue: "合計金額",
-      trackDeposit: "敷金を追跡",
-      openCase: "ケースを開く",
-      viewTimeline: "タイムラインを表示",
-      evidenceUploaded: "アップロードされた証拠",
-      manageEvidence: "証拠を管理",
-      totalFiles: "合計ファイル数",
     },
     ko: {
       welcome: "다시 오신 것을 환영합니다",
@@ -1082,16 +1040,6 @@ function DashboardContent() {
       analytics: "분석",
       upgradePromoTitle: "전체 보호 잠금 해제",
       upgradePromoText: "고급 보증금 추적, 유지보수 워크플로 및 전체 AI 기반 임대 분석에 액세스하려면 업그레이드하세요。",
-      // New strings for StatsCard
-      leasesScanned: "스캔된 임대 계약",
-      scanNewLease: "새 임대 계약 스캔",
-      totalValue: "총 가치",
-      trackDeposit: "보증금 추적",
-      openCase: "사례 열기",
-      viewTimeline: "타임라인 보기",
-      evidenceUploaded: "업로드된 증거",
-      manageEvidence: "증거 관리",
-      totalFiles: "총 파일 수",
     }
   };
 
@@ -1115,22 +1063,22 @@ function DashboardContent() {
       user?.phone && user?.tenant_address,
       user?.email_notifications || user?.line_notifications
     ];
-
+    
     const completedCount = tasks.filter(Boolean).length;
     const allTasksComplete = completedCount === tasks.length;
-
+    
     return { completedCount, totalTasks: tasks.length, allTasksComplete };
   };
 
   const onboardingProgress = calculateOnboardingProgress();
-
+  
   const hasNoData = leases.length === 0 && deposits.length === 0 && documents.length === 0 && maintenanceRequests.length === 0;
   const shouldShowOnboardingChecklist = !user?.onboarding_completed && (hasNoData || !onboardingProgress.allTasksComplete);
 
   React.useEffect(() => {
     if (user && !user.onboarding_completed) {
       const hasAnyActivity = leases.length > 0 || deposits.length > 0 || documents.length > 0 || cases.length > 0;
-
+      
       if (!hasAnyActivity) {
       }
     }
@@ -1160,10 +1108,11 @@ function DashboardContent() {
               Start by uploading your first lease and tracking the deposit so we can protect you from day one.
             </p>
           </div>
-
+          
           <div className="space-y-3">
             <button
               onClick={() => navigate(createPageUrl("UploadScan"))}
+              className="btn-press"
               style={{
                 width: '100%',
                 padding: '14px 20px',
@@ -1196,6 +1145,7 @@ function DashboardContent() {
 
             <button
               onClick={() => navigate(createPageUrl("PropertyTracker") + '#maintenance')}
+              className="btn-press"
               style={{
                 width: '100%',
                 padding: '12px 18px',
@@ -1227,6 +1177,7 @@ function DashboardContent() {
 
             <button
               onClick={() => navigate(createPageUrl("Account") + '#notification-analytics')}
+              className="btn-press"
               style={{
                 width: '100%',
                 padding: '12px 18px',
@@ -1292,8 +1243,8 @@ function DashboardContent() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
-      <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
+      <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+
           <FloatingActionButton
             icon={Shield}
             label={strings.uploadLease}
@@ -1366,6 +1317,7 @@ function DashboardContent() {
                 <Link to={createPageUrl("Analytics")}>
                   <button
                     onClick={() => haptic.light()}
+                    className="btn-press hover-brightness"
                     style={{
                       padding: '8px 16px',
                       backgroundColor: isDarkMode ? '#374151' : '#FFFFFF',
@@ -1407,6 +1359,7 @@ function DashboardContent() {
                           testFlexFromBrowser();
                         }}
                         disabled={testingBrowserFlex}
+                        className="btn-press"
                         style={{
                           padding: '6px 12px',
                           backgroundColor: testingBrowserFlex ? '#9CA3AF' : '#8B5CF6',
@@ -1453,6 +1406,7 @@ function DashboardContent() {
                           testRentReminder();
                         }}
                         disabled={testingRent}
+                        className="btn-press"
                         style={{
                           padding: '6px 12px',
                           backgroundColor: testingRent ? '#9CA3AF' : '#10B981',
@@ -1499,6 +1453,7 @@ function DashboardContent() {
                           testDirectEmail();
                         }}
                         disabled={testingEmail}
+                        className="btn-press"
                         style={{
                           padding: '6px 12px',
                           backgroundColor: testingEmail ? '#9CA3AF' : '#EF4444',
@@ -1545,6 +1500,7 @@ function DashboardContent() {
                           checkAndNotifyOverdue();
                         }}
                         disabled={checkingOverdue}
+                        className="btn-press"
                         style={{
                           padding: '6px 12px',
                           backgroundColor: checkingOverdue ? '#9CA3AF' : '#F59E0B',
@@ -1591,6 +1547,7 @@ function DashboardContent() {
                           runScheduledReminders();
                         }}
                         disabled={runningScheduled}
+                        className="btn-press"
                         style={{
                           padding: '6px 12px',
                           backgroundColor: runningScheduled ? '#9CA3AF' : '#3B82F6',
@@ -1639,6 +1596,7 @@ function DashboardContent() {
                       haptic.light();
                       setFocusMode(!focusMode);
                     }}
+                    className="btn-press"
                     style={{
                       padding: '8px 16px',
                       backgroundColor: focusMode ? '#C7A338' : colors.cardBg,
@@ -1678,13 +1636,13 @@ function DashboardContent() {
                 const daysUntil = differenceInDays(new Date(lease.notice_deadline), now);
                 const isCritical = daysUntil <= 3;
                 const isUrgent = daysUntil <= 7;
-
+                
                 return (
-                  <Card
+                  <Card 
                     key={lease.id}
                     className="border-none shadow-xl overflow-hidden"
                     style={{
-                      background: isCritical
+                      background: isCritical 
                         ? 'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)'
                         : isUrgent
                           ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
@@ -1701,7 +1659,7 @@ function DashboardContent() {
                             <h3 className="text-lg font-bold text-white">
                               {strings.leaseNoticeAlert}
                             </h3>
-                            <Badge
+                            <Badge 
                               className="text-xs font-bold"
                               style={{
                                 backgroundColor: 'rgba(255, 255, 255, 0.3)',
@@ -1712,7 +1670,7 @@ function DashboardContent() {
                               {daysUntil === 0 ? strings.finalDay : `${daysUntil} ${strings.daysLeft}`}
                             </Badge>
                           </div>
-
+                          
                           <div className="space-y-2 mb-4">
                             <div className="flex items-center gap-2 text-white/90 text-sm">
                               <span className="font-semibold">{strings.mustNotifyBy}:</span>
@@ -1737,6 +1695,7 @@ function DashboardContent() {
                           <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => navigate(createPageUrl("Templates"))}
+                              className="btn-press"
                               style={{
                                 padding: '8px 16px',
                                 borderRadius: '8px',
@@ -1763,6 +1722,7 @@ function DashboardContent() {
                             </button>
                             <button
                               onClick={() => navigate(createPageUrl("UploadScan") + `?leaseId=${lease.id}`)}
+                              className="btn-press"
                               style={{
                                 padding: '8px 16px',
                                 borderRadius: '8px',
@@ -1814,12 +1774,1086 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* ✅ NEW: Lite Plan Upsell Card (after Overview, before hero) */}
+          {(!focusMode || urgentDeposits > 0 || activeCases.length > 0) && (
+            <div className="mb-6">
+              <button
+                onClick={() => toggleSection('stats')}
+                className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg hover:bg-opacity-80 transition-all btn-press"
+                style={{
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <h2 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+                  {language === 'th' ? 'ภาพรวม' : 'Overview'}
+                </h2>
+                {expandedSections.stats ? (
+                  <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                ) : (
+                  <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                )}
+              </button>
+
+              {expandedSections.stats && (
+                <>
+                  <style>
+                    {`
+                      @keyframes slideDown {
+                        from {
+                          opacity: 0;
+                          transform: translateY(-10px);
+                        }
+                        to {
+                          opacity: 1;
+                          transform: translateY(0);
+                        }
+                      }
+                    `}
+                  </style>
+
+                  {isLoading ? (
+                    <div className="grid grid-cols-2 gap-3" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                      <SkeletonLoader variant="stat" colors={colors} />
+                      <SkeletonLoader variant="stat" colors={colors} />
+                      <SkeletonLoader variant="stat" colors={colors} />
+                      <SkeletonLoader variant="stat" colors={colors} />
+                      <SkeletonLoader variant="stat" colors={colors} />
+                      <SkeletonLoader variant="stat" colors={colors} />
+                    </div>
+                  ) : (
+                    <>
+                      {/* MOBILE LAYOUT */}
+                      <div className="lg:hidden space-y-3 content-fade-in">
+                        <ProtectionScoreEnhanced
+                          score={protectionScore}
+                          breakdown={breakdown}
+                          recommendations={recommendations}
+                          language={language}
+                          colors={colors}
+                          user={user}
+                          isDarkMode={isDarkMode}
+                        />
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <Link to={createPageUrl("UploadScan")} className="card-interactive">
+                            <div
+                              className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
+                              style={{
+                                backgroundColor: leasesTheme.cardBg,
+                                borderLeft: `4px solid ${leasesTheme.borderColor}`
+                              }}
+                            >
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: leasesTheme.iconBg }}>
+                                      <FileText className="w-4 h-4" style={{ color: leasesTheme.iconColor }} />
+                                    </div>
+                                    <h3 className="text-sm font-semibold" style={{ color: leasesTheme.titleColor }}>
+                                      {strings.activeLeases}
+                                    </h3>
+                                  </div>
+                                  <p className="text-2xl sm:text-3xl font-bold" style={{ color: leasesTheme.metricColor }}>
+                                    {leases.length}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {leases.length > 0 && (
+                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                  <div className="text-xs">
+                                    <p style={{ color: leasesTheme.titleColor, opacity: 0.7 }}>
+                                      {language === 'en' ? 'Scanned' : language === 'zh' ? '已扫描' : language === 'ja' ? 'スキャン済み' : language === 'ko' ? '스캔됨' : 'สแกนแล้ว'}
+                                    </p>
+                                    <p className="font-semibold" style={{ color: leasesTheme.metricColor }}>
+                                      {scannedLeases.length}
+                                    </p>
+                                  </div>
+                                  <div className="text-xs">
+                                    <p style={{ color: leasesTheme.titleColor, opacity: 0.7 }}>
+                                      {language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน'}
+                                    </p>
+                                    <p className="font-semibold" style={{ color: leasesTheme.metricColor }}>
+                                      {leases.filter(l => l.notice_alerts_enabled).length}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {leases.length > 0 ? (
+                                <button
+                                  type="button"
+                                  className="btn-press"
+                                  style={{
+                                    backgroundColor: leasesTheme.buttonBg,
+                                    color: leasesTheme.buttonText,
+                                    width: "100%",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "600",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                                >
+                                  {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.preventDefault(); haptic.medium(); navigate(createPageUrl("UploadScan")); }}
+                                  className="btn-press"
+                                  style={{
+                                    backgroundColor: leasesTheme.buttonBg,
+                                    color: leasesTheme.buttonText,
+                                    width: "100%",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "600",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                                >
+                                  {strings.uploadFirstLease}
+                                </button>
+                              )}
+                            </div>
+                          </Link>
+
+                          <Link to={createPageUrl("DepositTracker")} className="card-interactive">
+                            <div
+                              className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
+                              style={{
+                                backgroundColor: depositsTheme.cardBg,
+                                borderLeft: `4px solid ${depositsTheme.borderColor}`
+                              }}
+                            >
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: depositsTheme.iconBg }}>
+                                      <Wallet className="w-4 h-4" style={{ color: depositsTheme.iconColor }} />
+                                    </div>
+                                    <h3 className="text-sm font-semibold" style={{ color: depositsTheme.titleColor }}>
+                                      {strings.depositsTracked}
+                                    </h3>
+                                  </div>
+                                  <p className="text-2xl sm:text-3xl font-bold" style={{ color: depositsTheme.metricColor }}>
+                                    ฿{totalDepositValue.toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2 mb-3">
+                                <div className="text-xs">
+                                  <p style={{ color: depositsTheme.titleColor, opacity: 0.7 }}>
+                                    {language === 'en' ? 'Avg' : language === 'zh' ? '平均' : language === 'ja' ? '平均' : language === 'ko' ? '평균' : 'เฉลี่ย'}
+                                  </p>
+                                  <p className="font-semibold" style={{ color: depositsTheme.metricColor }}>
+                                    {avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—'}
+                                  </p>
+                                </div>
+                                <div className="text-xs">
+                                  <p style={{ color: depositsTheme.titleColor, opacity: 0.7 }}>
+                                    {language === 'en' ? 'Soon' : language === 'zh' ? '即将' : language === 'ja' ? 'まもなく' : language === 'ko' ? '곧' : 'เร็วๆนี้'}
+                                  </p>
+                                  <p className="font-semibold" style={{ color: depositsTheme.metricColor }}>
+                                    {urgentDeposits}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => haptic.medium()}
+                                className="btn-press"
+                                style={{
+                                  backgroundColor: depositsTheme.buttonBg,
+                                  color: depositsTheme.buttonText,
+                                  width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                              >
+                                {language === 'en' ? 'Add' : language === 'zh' ? '添加' : language === 'ja' ? '追加' : language === 'ko' ? '추가' : 'เพิ่ม'}
+                              </button>
+                            </div>
+                          </Link>
+                          
+                          <Link to={createPageUrl("PropertyTracker") + "#rent"} className="card-interactive">
+                            <div
+                              className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
+                              style={{
+                                backgroundColor: rentTheme.cardBg,
+                                borderLeft: `4px solid ${rentTheme.borderColor}`
+                              }}
+                            >
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: rentTheme.iconBg }}>
+                                      <Calendar className="w-4 h-4" style={{ color: rentTheme.iconColor }} />
+                                    </div>
+                                    <h3 className="text-sm font-semibold" style={{ color: rentTheme.titleColor }}>
+                                      {strings.rentTracked}
+                                    </h3>
+                                  </div>
+                                  <p className="text-2xl sm:text-3xl font-bold" style={{ color: rentTheme.metricColor }}>
+                                    {rentTrackedCount}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {rentTrackedCount > 0 && (
+                                <div className="grid grid-cols-1 gap-2 mb-3">
+                                  <div className="text-xs">
+                                    <p style={{ color: rentTheme.titleColor, opacity: 0.7 }}>
+                                      {language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน'}
+                                    </p>
+                                    <p className="font-semibold" style={{ color: rentTheme.metricColor }}>
+                                      {deposits.filter(d => d.rent_alerts_enabled).length}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {rentTrackedCount > 0 ? (
+                                <button
+                                  type="button"
+                                  className="btn-press"
+                                  style={{
+                                    backgroundColor: rentTheme.buttonBg,
+                                    color: rentTheme.buttonText,
+                                    width: "100%",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "600",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                                >
+                                  {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.preventDefault(); haptic.medium(); navigate(createPageUrl("PropertyTracker") + "#rent"); }}
+                                  className="btn-press"
+                                  style={{
+                                    backgroundColor: rentTheme.buttonBg,
+                                    color: rentTheme.buttonText,
+                                    width: "100%",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "600",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                                >
+                                  {strings.setupRent}
+                                </button>
+                              )}
+                            </div>
+                          </Link>
+
+                          <Link to={createPageUrl("Account") + "#notifications"} className="card-interactive">
+                            <div
+                              className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
+                              style={{
+                                backgroundColor: notificationsTheme.cardBg,
+                                borderLeft: `4px solid ${notificationsTheme.borderColor}`
+                              }}
+                            >
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: notificationsTheme.iconBg }}>
+                                      <Bell className="w-4 h-4" style={{ color: notificationsTheme.iconColor }} />
+                                    </div>
+                                    <h3 className="text-sm font-semibold" style={{ color: notificationsTheme.titleColor }}>
+                                      {strings.notifications}
+                                    </h3>
+                                  </div>
+                                  <p className="text-2xl sm:text-3xl font-bold" style={{ color: notificationsTheme.metricColor }}>
+                                    {notificationLogs.length}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {notificationLogs.length > 0 && (
+                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                  <div className="text-xs">
+                                    <p style={{ color: notificationsTheme.titleColor, opacity: 0.7 }}>
+                                      {language === 'en' ? 'Sent' : language === 'zh' ? '已发送' : language === 'ja' ? '送信済み' : language === 'ko' ? '전송됨' : 'ส่งแล้ว'}
+                                    </p>
+                                    <p className="font-semibold" style={{ color: notificationsTheme.metricColor }}>
+                                      {notificationLogs.filter(n => n.status === 'sent').length}
+                                    </p>
+                                  </div>
+                                  <div className="text-xs">
+                                    <p style={{ color: notificationsTheme.titleColor, opacity: 0.7 }}>
+                                      {language === 'en' ? 'Failed' : language === 'zh' ? '失败' : language === 'ja' ? '失敗' : language === 'ko' ? '실패' : 'ล้มเหลว'}
+                                    </p>
+                                    <p className="font-semibold" style={{ color: notificationsTheme.metricColor }}>
+                                      {notificationLogs.filter(n => n.status === 'failed').length}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {notificationLogs.length > 0 ? (
+                                <button
+                                  type="button"
+                                  className="btn-press"
+                                  style={{
+                                    backgroundColor: notificationsTheme.buttonBg,
+                                    color: notificationsTheme.buttonText,
+                                    width: "100%",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "600",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                                >
+                                  {language === 'en' ? 'View All' : language === 'zh' ? '查看全部' : language === 'ja' ? 'すべて表示' : language === 'ko' ? '모두 보기' : 'ดูทั้งหมด'}
+                                </button>
+                              ) : (
+                                <div className="text-xs text-center py-2" style={{ color: notificationsTheme.titleColor, opacity: 0.6 }}>
+                                  {strings.noNotifications}
+                                </div>
+                              )}
+                            </div>
+                          </Link>
+                          
+                          <Link to={createPageUrl("Cases")} className="card-interactive">
+                            <div
+                              className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
+                              style={{
+                                backgroundColor: casesTheme.cardBg,
+                                borderLeft: `4px solid ${casesTheme.borderColor}`
+                              }}
+                            >
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: casesTheme.iconBg }}>
+                                      <Scale className="w-4 h-4" style={{ color: casesTheme.iconColor }} />
+                                    </div>
+                                    <h3 className="text-sm font-semibold" style={{ color: casesTheme.titleColor }}>
+                                      {strings.activeCases}
+                                    </h3>
+                                  </div>
+                                  <p className="text-2xl sm:text-3xl font-bold" style={{ color: casesTheme.metricColor }}>
+                                    {activeCases.length}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-2 mb-3">
+                                <div className="text-xs">
+                                  <p style={{ color: casesTheme.titleColor, opacity: 0.7 }}>
+                                    {language === 'en' ? 'Resolved' : language === 'zh' ? '已解决' : language === 'ja' ? '解決済み' : language === 'ko' ? '해결됨' : 'แก้ไข'}
+                                  </p>
+                                  <p className="font-semibold" style={{ color: casesTheme.metricColor }}>
+                                    {resolvedCases}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                className="btn-press"
+                                style={{
+                                  backgroundColor: casesTheme.buttonBg,
+                                  color: casesTheme.buttonText,
+                                  width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                              >
+                                {language === 'en' ? 'Open' : language === 'zh' ? '打开' : language === 'ja' ? '開く' : language === 'ko' ? '열기' : 'เปิด'}
+                              </button>
+                            </div>
+                          </Link>
+
+                          <Link to={createPageUrl("PropertyTracker") + "#maintenance"} className="card-interactive">
+                            <div
+                              className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm"
+                              style={{
+                                backgroundColor: maintenanceTheme.cardBg,
+                                borderLeft: `4px solid ${maintenanceTheme.borderColor}`
+                              }}
+                            >
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: maintenanceTheme.iconBg }}>
+                                      <Wrench className="w-4 h-4" style={{ color: maintenanceTheme.iconColor }} />
+                                    </div>
+                                    <h3 className="text-sm font-semibold" style={{ color: maintenanceTheme.titleColor }}>
+                                      {strings.maintenanceRequests}
+                                    </h3>
+                                  </div>
+                                  <p className="text-2xl sm:text-3xl font-bold" style={{ color: maintenanceTheme.metricColor }}>
+                                    {activeMaintenanceCount}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {activeMaintenanceCount > 0 && (
+                                <div className="grid grid-cols-1 gap-2 mb-3">
+                                  <p style={{ color: maintenanceTheme.titleColor, opacity: 0.7 }} className="text-xs">
+                                    {language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ'}
+                                  </p>
+                                  <p className="font-semibold" style={{ color: maintenanceTheme.metricColor }}>
+                                    {maintenanceRequests.filter(r => r.status === 'completed').length}
+                                  </p>
+                                </div>
+                              )}
+
+                              {activeMaintenanceCount > 0 ? (
+                                <button
+                                  type="button"
+                                  className="btn-press"
+                                  style={{
+                                    backgroundColor: maintenanceTheme.buttonBg,
+                                    color: maintenanceTheme.buttonText,
+                                    width: "100%",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "600",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                                >
+                                  {language === 'en' ? 'View' : language === 'zh' ? '查看' : language === 'ja' ? '見る' : language === 'ko' ? '보기' : 'ดู'}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.preventDefault(); haptic.medium(); navigate(createPageUrl("PropertyTracker") + "#maintenance"); }}
+                                  className="btn-press"
+                                  style={{
+                                    backgroundColor: maintenanceTheme.buttonBg,
+                                    color: maintenanceTheme.buttonText,
+                                    width: "100%",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "600",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                                >
+                                  {language === 'en' ? 'New Request' : language === 'zh' ? '新请求' : language === 'ja' ? '新しいリクエスト' : language === 'ko' ? '새 요청' : 'คำขอใหม่'}
+                                </button>
+                              )}
+                            </div>
+                          </Link>
+                        </div>
+                        
+                        {(!user?.plan_tier || user.plan_tier === 'free') && (
+                          <div
+                            style={{
+                              marginTop: 16,
+                              padding: 16,
+                              borderRadius: 16,
+                              backgroundColor: isDarkMode ? 'rgba(12,59,46,0.12)' : 'rgba(12,59,46,0.06)',
+                              border: '1px solid rgba(12,59,46,0.18)',
+                            }}
+                          >
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 4, color: colors.textPrimary }}>
+                              {strings.upgradePromoTitle}
+                            </h3>
+                            <p style={{ fontSize: '0.85rem', marginBottom: 12, color: colors.textSecondary }}>
+                              {strings.upgradePromoText}
+                            </p>
+                            <Link to={createPageUrl('Account') + '?highlight=plans'}>
+                              <button
+                                onClick={() => haptic.medium()}
+                                className="btn-press"
+                                style={{
+                                  padding: '8px 14px',
+                                  borderRadius: 9999,
+                                  backgroundColor: '#0C3B2E',
+                                  color: '#FFFFFF',
+                                  border: 'none',
+                                  fontWeight: 600,
+                                  fontSize: '0.8rem',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {strings.viewPlans}
+                              </button>
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* DESKTOP LAYOUT */}
+                      <div className="hidden lg:grid lg:grid-cols-4 gap-3 content-fade-in" style={{ gridAutoRows: 'minmax(0, 1fr)' }}>
+                        <Link to={createPageUrl("UploadScan")} className="card-interactive">
+                          <div
+                            className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
+                            style={{
+                              backgroundColor: leasesTheme.cardBg,
+                              borderLeft: `4px solid ${leasesTheme.borderColor}`
+                            }}
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: leasesTheme.iconBg }}>
+                                    <FileText className="w-4 h-4" style={{ color: leasesTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: leasesTheme.titleColor }}>
+                                    {strings.activeLeases}
+                                    </h3>
+                                </div>
+                                <p className="text-3xl font-bold" style={{ color: leasesTheme.metricColor }}>
+                                  {leases.length}
+                                </p>
+                              </div>
+                            </div>
+
+                            {leases.length > 0 && (
+                              <div className="grid grid-cols-2 gap-2 mb-3">
+                                <div className="text-xs">
+                                  <p style={{ color: leasesTheme.titleColor, opacity: 0.7 }}>
+                                    {language === 'en' ? 'Scanned' : language === 'zh' ? '已扫描' : language === 'ja' ? 'スキャン済み' : language === 'ko' ? '스캔됨' : 'สแกนแล้ว'}
+                                  </p>
+                                  <p className="font-semibold" style={{ color: leasesTheme.metricColor }}>
+                                    {scannedLeases.length}
+                                  </p>
+                                </div>
+                                <div className="text-xs">
+                                  <p style={{ color: leasesTheme.titleColor, opacity: 0.7 }}>
+                                    {language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน'}
+                                  </p>
+                                  <p className="font-semibold" style={{ color: leasesTheme.metricColor }}>
+                                    {leases.filter(l => l.notice_alerts_enabled).length}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {leases.length > 0 ? (
+                              <button
+                                type="button"
+                                className="btn-press"
+                                style={{
+                                  backgroundColor: leasesTheme.buttonBg,
+                                  color: leasesTheme.buttonText,
+                                  width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                              >
+                                {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); haptic.medium(); navigate(createPageUrl("UploadScan")); }}
+                                className="btn-press"
+                                style={{
+                                  backgroundColor: leasesTheme.buttonBg,
+                                  color: leasesTheme.buttonText,
+                                  width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                              >
+                                {strings.uploadFirstLease}
+                              </button>
+                            )}
+                          </div>
+                        </Link>
+
+                        <Link to={createPageUrl("DepositTracker")} className="card-interactive">
+                          <div
+                            className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
+                            style={{
+                              backgroundColor: depositsTheme.cardBg,
+                              borderLeft: `4px solid ${depositsTheme.borderColor}`
+                            }}
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: depositsTheme.iconBg }}>
+                                    <Wallet className="w-4 h-4" style={{ color: depositsTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: depositsTheme.titleColor }}>
+                                    {strings.depositsTracked}
+                                  </h3>
+                                </div>
+                                <p className="text-3xl font-bold" style={{ color: depositsTheme.metricColor }}>
+                                  ฿{totalDepositValue.toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 mb-3">
+                              <div className="text-xs">
+                                <p style={{ color: depositsTheme.titleColor, opacity: 0.7 }}>
+                                  {language === 'en' ? 'Avg' : language === 'zh' ? '平均' : language === 'ja' ? '平均' : language === 'ko' ? '평균' : 'เฉลี่ย'}
+                                </p>
+                                <p className="font-semibold" style={{ color: depositsTheme.metricColor }}>
+                                  {avgDeposit > 0 ? `฿${avgDeposit.toLocaleString()}` : '—'}
+                                </p>
+                              </div>
+                              <div className="text-xs">
+                                <p style={{ color: depositsTheme.titleColor, opacity: 0.7 }}>
+                                  {language === 'en' ? 'Soon' : language === 'zh' ? '即将' : language === 'ja' ? 'まもなく' : language === 'ko' ? '곧' : 'เร็วๆนี้'}
+                                </p>
+                                <p className="font-semibold" style={{ color: depositsTheme.metricColor }}>
+                                  {urgentDeposits}
+                                </p>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => haptic.medium()}
+                              className="btn-press"
+                              style={{
+                                backgroundColor: depositsTheme.buttonBg,
+                                color: depositsTheme.buttonText,
+                                width: "100%",
+                                padding: "8px 12px",
+                                borderRadius: "8px",
+                                fontSize: "0.875rem",
+                                fontWeight: "600",
+                                border: "none",
+                                cursor: "pointer",
+                                transition: "all 0.2s"
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                              onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                            >
+                              {language === 'en' ? 'Add' : language === 'zh' ? '添加' : language === 'ja' ? '追加' : language === 'ko' ? '추가' : 'เพิ่ม'}
+                            </button>
+                          </div>
+                        </Link>
+                        
+                        <Link to={createPageUrl("PropertyTracker") + "#rent"} className="card-interactive">
+                          <div
+                            className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
+                            style={{
+                              backgroundColor: rentTheme.cardBg,
+                              borderLeft: `4px solid ${rentTheme.borderColor}`
+                            }}
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: rentTheme.iconBg }}>
+                                    <Calendar className="w-4 h-4" style={{ color: rentTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: rentTheme.titleColor }}>
+                                    {strings.rentTracked}
+                                  </h3>
+                                </div>
+                                <p className="text-3xl font-bold" style={{ color: rentTheme.metricColor }}>
+                                  {rentTrackedCount}
+                                </p>
+                              </div>
+                            </div>
+
+                            {rentTrackedCount > 0 && (
+                              <div className="grid grid-cols-1 gap-2 mb-3">
+                                <div className="text-xs">
+                                  <p style={{ color: rentTheme.titleColor, opacity: 0.7 }}>
+                                    {language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน'}
+                                  </p>
+                                  <p className="font-semibold" style={{ color: rentTheme.metricColor }}>
+                                    {deposits.filter(d => d.rent_alerts_enabled).length}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {rentTrackedCount > 0 ? (
+                              <button
+                                type="button"
+                                className="btn-press"
+                                style={{
+                                  backgroundColor: rentTheme.buttonBg,
+                                  color: rentTheme.buttonText,
+                                  width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                              >
+                                {language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ'}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); haptic.medium(); navigate(createPageUrl("PropertyTracker") + "#rent"); }}
+                                className="btn-press"
+                                style={{
+                                  backgroundColor: rentTheme.buttonBg,
+                                  color: rentTheme.buttonText,
+                                  width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                              >
+                                {strings.setupRent}
+                              </button>
+                            )}
+                          </div>
+                        </Link>
+
+                        {/* PROTECTION SCORE - row-span-2 */}
+                        <div className="row-span-2">
+                          <ProtectionScoreEnhanced
+                            score={protectionScore}
+                            breakdown={breakdown}
+                            recommendations={recommendations}
+                            language={language}
+                            colors={colors}
+                            user={user}
+                            isDarkMode={isDarkMode}
+                          />
+                        </div>
+
+                        <Link to={createPageUrl("Account") + "#notifications"} className="card-interactive">
+                          <div
+                            className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
+                            style={{
+                              backgroundColor: notificationsTheme.cardBg,
+                              borderLeft: `4px solid ${notificationsTheme.borderColor}`
+                            }}
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: notificationsTheme.iconBg }}>
+                                    <Bell className="w-4 h-4" style={{ color: notificationsTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: notificationsTheme.titleColor }}>
+                                    {strings.notifications}
+                                  </h3>
+                                </div>
+                                <p className="text-3xl font-bold" style={{ color: notificationsTheme.metricColor }}>
+                                  {notificationLogs.length}
+                                </p>
+                              </div>
+                            </div>
+
+                            {notificationLogs.length > 0 && (
+                              <div className="grid grid-cols-2 gap-2 mb-3">
+                                <div className="text-xs">
+                                  <p style={{ color: notificationsTheme.titleColor, opacity: 0.7 }}>
+                                    {language === 'en' ? 'Sent' : language === 'zh' ? '已发送' : language === 'ja' ? '送信済み' : language === 'ko' ? '전송됨' : 'ส่งแล้ว'}
+                                  </p>
+                                  <p className="font-semibold" style={{ color: notificationsTheme.metricColor }}>
+                                    {notificationLogs.filter(n => n.status === 'sent').length}
+                                  </p>
+                                </div>
+                                <div className="text-xs">
+                                  <p style={{ color: notificationsTheme.titleColor, opacity: 0.7 }}>
+                                    {language === 'en' ? 'Failed' : language === 'zh' ? '失败' : language === 'ja' ? '失敗' : language === 'ko' ? '실패' : 'ล้มเหลว'}
+                                  </p>
+                                  <p className="font-semibold" style={{ color: notificationsTheme.metricColor }}>
+                                    {notificationLogs.filter(n => n.status === 'failed').length}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {notificationLogs.length > 0 ? (
+                              <button
+                                type="button"
+                                className="btn-press"
+                                style={{
+                                  backgroundColor: notificationsTheme.buttonBg,
+                                  color: notificationsTheme.buttonText,
+                                  width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                              >
+                                {language === 'en' ? 'View All' : language === 'zh' ? '查看全部' : language === 'ja' ? 'すべて表示' : language === 'ko' ? '모두 보기' : 'ดูทั้งหมด'}
+                              </button>
+                            ) : (
+                              <div className="text-xs text-center py-2" style={{ color: notificationsTheme.titleColor, opacity: 0.6 }}>
+                                {strings.noNotifications}
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                        
+                        <Link to={createPageUrl("Cases")} className="card-interactive">
+                          <div
+                            className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
+                            style={{
+                              backgroundColor: casesTheme.cardBg,
+                              borderLeft: `4px solid ${casesTheme.borderColor}`
+                            }}
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: casesTheme.iconBg }}>
+                                    <Scale className="w-4 h-4" style={{ color: casesTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: casesTheme.titleColor }}>
+                                    {strings.activeCases}
+                                  </h3>
+                                </div>
+                                <p className="text-3xl font-bold" style={{ color: casesTheme.metricColor }}>
+                                  {activeCases.length}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2 mb-3">
+                              <div className="text-xs">
+                                <p style={{ color: casesTheme.titleColor, opacity: 0.7 }}>
+                                  {language === 'en' ? 'Resolved' : language === 'zh' ? '已解决' : language === 'ja' ? '解決済み' : language === 'ko' ? '해결됨' : 'แก้ไข'}
+                                </p>
+                                <p className="font-semibold" style={{ color: casesTheme.metricColor }}>
+                                  {resolvedCases}
+                                </p>
+                                </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="btn-press"
+                              style={{
+                                backgroundColor: casesTheme.buttonBg,
+                                color: casesTheme.buttonText,
+                                width: "100%",
+                                padding: "8px 12px",
+                                borderRadius: "8px",
+                                fontSize: "0.875rem",
+                                fontWeight: "600",
+                                border: "none",
+                                cursor: "pointer",
+                                transition: "all 0.2s"
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                              onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                            >
+                              {language === 'en' ? 'Open' : language === 'zh' ? '打开' : language === 'ja' ? '開く' : language === 'ko' ? '열기' : 'เปิด'}
+                            </button>
+                          </div>
+                        </Link>
+
+                        <Link to={createPageUrl("PropertyTracker") + "#maintenance"} className="card-interactive">
+                          <div
+                            className="rounded-2xl p-5 flex flex-col justify-between shadow-sm"
+                            style={{
+                              backgroundColor: maintenanceTheme.cardBg,
+                              borderLeft: `4px solid ${maintenanceTheme.borderColor}`
+                            }}
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: maintenanceTheme.iconBg }}>
+                                    <Wrench className="w-4 h-4" style={{ color: maintenanceTheme.iconColor }} />
+                                  </div>
+                                  <h3 className="text-sm font-semibold" style={{ color: maintenanceTheme.titleColor }}>
+                                    {strings.maintenanceRequests}
+                                  </h3>
+                                </div>
+                                <p className="text-3xl font-bold" style={{ color: maintenanceTheme.metricColor }}>
+                                  {activeMaintenanceCount}
+                                </p>
+                              </div>
+                            </div>
+
+                            {activeMaintenanceCount > 0 && (
+                              <div className="grid grid-cols-1 gap-2 mb-3">
+                                <p style={{ color: maintenanceTheme.titleColor, opacity: 0.7 }} className="text-xs">
+                                  {language === 'en' ? 'Done' : language === 'zh' ? '完成' : language === 'ja' ? '完了' : language === 'ko' ? '완료' : 'เสร็จ'}
+                                </p>
+                                <p className="font-semibold" style={{ color: maintenanceTheme.metricColor }}>
+                                  {maintenanceRequests.filter(r => r.status === 'completed').length}
+                                </p>
+                              </div>
+                            )}
+
+                            {activeMaintenanceCount > 0 ? (
+                              <button
+                                type="button"
+                                className="btn-press"
+                                style={{
+                                  backgroundColor: maintenanceTheme.buttonBg,
+                                  color: maintenanceTheme.buttonText,
+                                  width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                              >
+                                {language === 'en' ? 'View' : language === 'zh' ? '查看' : language === 'ja' ? '見る' : language === 'ko' ? '보기' : 'ดู'}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); haptic.medium(); navigate(createPageUrl("PropertyTracker") + "#maintenance"); }}
+                                className="btn-press"
+                                style={{
+                                  backgroundColor: maintenanceTheme.buttonBg,
+                                  color: maintenanceTheme.buttonText,
+                                  width: "100%",
+                                  padding: "8px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "0.875rem",
+                                  fontWeight: "600",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                              >
+                                {language === 'en' ? 'New Request' : language === 'zh' ? '新请求' : language === 'ja' ? '新しいリクエスト' : language === 'ko' ? '새 요청' : 'คำขอใหม่'}
+                              </button>
+                            )}
+                          </div>
+                        </Link>
+
+                        {(!user?.plan_tier || user.plan_tier === 'free') && (
+                          <div
+                            className="col-span-4"
+                            style={{
+                              marginTop: 16,
+                              padding: 16,
+                              borderRadius: 16,
+                              backgroundColor: isDarkMode ? 'rgba(12,59,46,0.12)' : 'rgba(12,59,46,0.06)',
+                              border: '1px solid rgba(12,59,46,0.18)',
+                            }}
+                          >
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 4, color: colors.textPrimary }}>
+                              {strings.upgradePromoTitle}
+                            </h3>
+                            <p style={{ fontSize: '0.85rem', marginBottom: 12, color: colors.textSecondary }}>
+                              {strings.upgradePromoText}
+                            </p>
+                            <Link to={createPageUrl('Account') + '?highlight=plans'}>
+                              <button
+                                onClick={() => haptic.medium()}
+                                className="btn-press"
+                                style={{
+                                  padding: '8px 14px',
+                                  borderRadius: 9999,
+                                  backgroundColor: '#0C3B2E',
+                                  color: '#FFFFFF',
+                                  border: 'none',
+                                  fontWeight: 600,
+                                  fontSize: '0.8rem',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {strings.viewPlans}
+                              </button>
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
           {isLitePlan && (
-            <div
+            <div 
               className="mb-6 p-5 rounded-2xl shadow-lg"
               style={{
-                background: isDarkMode
+                background: isDarkMode 
                   ? 'linear-gradient(135deg, rgba(199,163,56,0.15) 0%, rgba(12,59,46,0.15) 100%)'
                   : 'linear-gradient(135deg, rgba(199,163,56,0.08) 0%, rgba(12,59,46,0.08) 100%)',
                 border: `2px solid ${isDarkMode ? 'rgba(199,163,56,0.3)' : 'rgba(12,59,46,0.2)'}`,
@@ -1831,7 +2865,7 @@ function DashboardContent() {
                     {language === 'th' ? 'ปลดล็อกการป้องกันเพิ่มเติมด้วย Protect & Secure' : 'Unlock more protection with Protect & Secure'}
                   </h3>
                   <p className="text-sm" style={{ color: colors.textSecondary }}>
-                    {language === 'th'
+                    {language === 'th' 
                       ? 'คุณอยู่ในแผน Lite อัปเกรดได้ตลอดเวลาเพื่อขีดจำกัดการสแกนที่สูงขึ้นและการแจ้งเตือนเพิ่มเติม'
                       : "You're on Lite. Upgrade anytime for higher scan limits and more alerts."}
                   </p>
@@ -1839,6 +2873,7 @@ function DashboardContent() {
                 <Link to={createPageUrl("Account") + '?highlight=plans'}>
                   <button
                     onClick={() => haptic.medium()}
+                    className="btn-press"
                     style={{
                       padding: '10px 20px',
                       borderRadius: '8px',
@@ -1870,170 +2905,9 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Main Content - Stats and Features */}
-          {!showOnboarding && (
-            <div className="content-fade-in">
-              <style>
-                {`
-                  @keyframes slideDown {
-                    from {
-                      opacity: 0;
-                      transform: translateY(-10px);
-                    }
-                    to {
-                      opacity: 1;
-                      transform: translateY(0);
-                    }
-                  }
-                `}
-              </style>
-
-              {isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  <SkeletonLoader variant="stat" colors={colors} />
-                  <SkeletonLoader variant="stat" colors={colors} />
-                  <SkeletonLoader variant="stat" colors={colors} />
-                  <SkeletonLoader variant="stat" colors={colors} />
-                  <SkeletonLoader variant="stat" colors={colors} />
-                  <SkeletonLoader variant="stat" colors={colors} />
-                </div>
-              ) : (
-                <>
-                  <div className="mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
-                    <ProtectionScoreEnhanced
-                      score={protectionScore}
-                      breakdown={breakdown}
-                      recommendations={recommendations}
-                      language={language}
-                      colors={colors}
-                      user={user}
-                    />
-                  </div>
-
-                  {/* Six Feature Cards - Enhanced with interactions */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
-                    {[
-                      {
-                        title: strings.leasesScanned,
-                        value: leases.length,
-                        icon: FileText,
-                        gradient: 'from-blue-500 to-blue-700',
-                        scoreColor: '#3B82F6',
-                        miniStats: [],
-                        route: createPageUrl("UploadScan"),
-                        label: strings.scanNewLease,
-                      },
-                      {
-                        title: strings.depositsTracked,
-                        value: deposits.length,
-                        icon: Wallet,
-                        gradient: 'from-emerald-500 to-emerald-700',
-                        scoreColor: '#10B981',
-                        miniStats: [
-                          { label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }
-                        ],
-                        route: createPageUrl("PropertyTracker") + "#deposit",
-                        label: strings.trackDeposit,
-                      },
-                      {
-                        title: strings.activeCases, // Changed from casesActive to activeCases string
-                        value: activeCases.length, // Corrected variable
-                        icon: Scale,
-                        gradient: 'from-red-500 to-red-700',
-                        scoreColor: '#EF4444',
-                        miniStats: [],
-                        route: createPageUrl("Cases"),
-                        label: strings.openCase,
-                      },
-                      {
-                        title: strings.rentTracked,
-                        value: rentTrackedCount,
-                        icon: Calendar,
-                        gradient: 'from-amber-500 to-amber-700',
-                        scoreColor: '#F59E0B',
-                        miniStats: [
-                          { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
-                        ],
-                        route: createPageUrl("PropertyTracker") + "#rent",
-                        label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ') : strings.setupRent,
-                      },
-                      {
-                        title: strings.notifications,
-                        value: unreadNotifications,
-                        icon: Bell,
-                        gradient: 'from-purple-500 to-purple-700',
-                        scoreColor: '#8B5CF6',
-                        miniStats: [],
-                        route: createPageUrl("Timeline"),
-                        label: strings.viewTimeline,
-                      },
-                      {
-                        title: strings.evidenceUploaded,
-                        value: documents.length,
-                        icon: FileText,
-                        gradient: 'from-indigo-500 to-indigo-700',
-                        scoreColor: '#6366F1',
-                        miniStats: [
-                          { label: strings.totalFiles, value: documents.length }
-                        ],
-                        route: createPageUrl("EvidenceVault"),
-                        label: strings.manageEvidence,
-                      }
-                    ].map((card, index) => (
-                      <StatsCard
-                        key={index}
-                        {...card}
-                        compact={false}
-                        colors={colors}
-                        className="card-interactive"
-                      />
-                    ))}
-                  </div>
-
-                  {/* ✅ NEW: Upgrade promo for FREE users (consolidated) */}
-                  {(!user?.plan_tier || user.plan_tier === 'free') && (
-                    <div
-                      className="col-span-4 mb-6" // Added mb-6 for spacing
-                      style={{
-                        padding: 16,
-                        borderRadius: 16,
-                        backgroundColor: isDarkMode ? 'rgba(12,59,46,0.12)' : 'rgba(12,59,46,0.06)',
-                        border: '1px solid rgba(12,59,46,0.18)',
-                      }}
-                    >
-                      <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 4, color: colors.textPrimary }}>
-                        {strings.upgradePromoTitle}
-                      </h3>
-                      <p style={{ fontSize: '0.85rem', marginBottom: 12, color: colors.textSecondary }}>
-                        {strings.upgradePromoText}
-                      </p>
-                      <Link to={createPageUrl('Account') + '?highlight=plans'}>
-                        <button
-                          style={{
-                            padding: '8px 14px',
-                            borderRadius: 9999,
-                            backgroundColor: '#0C3B2E',
-                            color: '#FFFFFF',
-                            border: 'none',
-                            fontWeight: 600,
-                            fontSize: '0.8rem',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {strings.viewPlans}
-                        </button>
-                      </Link>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-
           {expandedSections.quickActions && (
             <div style={{
-              background: isDarkMode
+              background: isDarkMode 
                 ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
                 : 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
               borderRadius: '24px',
@@ -2083,6 +2957,7 @@ function DashboardContent() {
                 <Link to={createPageUrl("UploadScan")} className="w-full">
                   <button
                     onClick={() => haptic.medium()}
+                    className="btn-press"
                     style={{
                       width: '100%',
                       backgroundColor: '#C7A338',
@@ -2181,6 +3056,7 @@ function DashboardContent() {
                 <Link to={createPageUrl("Account") + '?highlight=plans'} className="w-full">
                   <button
                     onClick={() => haptic.medium()}
+                    className="btn-press"
                     style={{
                       width: '100%',
                       backgroundColor: '#0C3B2E',
