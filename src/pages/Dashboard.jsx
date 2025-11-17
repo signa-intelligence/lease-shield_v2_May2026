@@ -1397,9 +1397,9 @@ function DashboardContent() {
                     className="btn-interaction"
                     style={{
                       padding: '8px 16px',
-                      backgroundColor: isDarkMode ? '#374151' : '#FFFFFF',
-                      color: isDarkMode ? '#F9FAFB' : '#0F172A',
-                      border: isDarkMode ? '2px solid rgba(199,163,56,0.4)' : '2px solid rgba(12,59,46,0.2)',
+                      backgroundColor: colors.fieldBg,
+                      color: colors.textPrimary,
+                      border: `2px solid ${colors.borderColor}`,
                       borderRadius: '12px',
                       fontSize: '14px',
                       fontWeight: '700',
@@ -1417,9 +1417,9 @@ function DashboardContent() {
                       e.target.style.boxShadow = '0 4px 12px rgba(12,59,46,0.3)';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = isDarkMode ? '#374151' : '#FFFFFF';
-                      e.target.style.borderColor = isDarkMode ? 'rgba(199,163,56,0.4)' : 'rgba(12,59,46,0.2)';
-                      e.target.style.color = isDarkMode ? '#F9FAFB' : '#0F172A';
+                      e.target.style.backgroundColor = colors.fieldBg;
+                      e.target.style.borderColor = colors.borderColor;
+                      e.target.style.color = colors.textPrimary;
                       e.target.style.boxShadow = isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.08)';
                     }}
                   >
@@ -1671,7 +1671,7 @@ function DashboardContent() {
                     className="btn-interaction"
                     style={{
                       padding: '8px 16px',
-                      backgroundColor: focusMode ? '#C7A338' : colors.cardBg,
+                      backgroundColor: focusMode ? '#C7A338' : colors.fieldBg,
                       color: focusMode ? '#FFFFFF' : colors.textPrimary,
                       border: `2px solid ${focusMode ? '#C7A338' : colors.borderColor}`,
                       borderRadius: '12px',
@@ -1681,15 +1681,21 @@ function DashboardContent() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
+                      boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.08)',
+                      transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
                       if (!focusMode) {
-                        e.target.style.backgroundColor = colors.borderColor;
+                        e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.borderColor = '#C7A338';
+                        e.target.style.color = '#FFFFFF';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!focusMode) {
-                        e.target.style.backgroundColor = colors.cardBg;
+                        e.target.style.backgroundColor = colors.fieldBg;
+                        e.target.style.borderColor = colors.borderColor;
+                        e.target.style.color = colors.textPrimary;
                       }
                     }}
                   >
