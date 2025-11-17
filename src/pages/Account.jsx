@@ -220,6 +220,9 @@ export default function Account() {
   const [buyingCredits, setBuyingCredits] = useState({});
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showManagePlanPanel, setShowManagePlanPanel] = useState(false);
+  const [showBillingDialog, setShowBillingDialog] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedInterval, setSelectedInterval] = useState('monthly');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -416,33 +419,44 @@ export default function Account() {
     const plan = PLAN_DETAILS.find(p => p.key === planKey);
     if (!plan) return;
 
-    haptic.medium();
+    // Show billing interval dialog first
+    setSelectedPlan(planKey);
+    setSelectedInterval(interval || 'monthly');
+    setShowBillingDialog(true);
+  };
 
-    const amount = interval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
-    const billingInterval = interval === 'annual' ? 'annual' : 'monthly';
+  const confirmSubscribe = async () => {
+    const plan = PLAN_DETAILS.find(p => p.key === selectedPlan);
+    if (!plan) return;
+
+    haptic.medium();
+    setShowBillingDialog(false);
+
+    const amount = selectedInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
+    const billingInterval = selectedInterval === 'annual' ? 'annual' : 'monthly';
 
     console.log('🔍 SUBSCRIPTION REQUEST:', { 
-      planKey, 
+      planKey: selectedPlan, 
       interval: billingInterval, 
       amount,
       userId: user.id,
       email: user.email
     });
 
-    setSubscribing(prev => ({ ...prev, [planKey]: true }));
+    setSubscribing(prev => ({ ...prev, [selectedPlan]: true }));
     try {
       const response = await base44.functions.invoke('createCheckout', {
         mode: 'subscription',
         amount: amount,
         currency: 'thb',
-        description: `Lease Shield ${plan.label} - ${interval === 'annual' ? 'Annual' : 'Monthly'}`,
+        description: `Lease Shield ${plan.label} - ${selectedInterval === 'annual' ? 'Annual' : 'Monthly'}`,
         successUrl: `${window.location.origin}/account?subscription=success`,
         cancelUrl: `${window.location.origin}/account?subscription=cancelled`,
         metadata: {
           type: 'subscription',
           userId: user.id,
           email: user.email,
-          plan: planKey,
+          plan: selectedPlan,
           interval: billingInterval
         }
       });
@@ -461,7 +475,7 @@ export default function Account() {
       const language = user?.language || 'en';
       const errorMsg = error.response?.data?.details || error.message;
       alert(`${language === 'th' ? 'ไม่สามารถสร้างการสมัครได้' : 'Failed to start subscription'}\n\n${errorMsg}`);
-      setSubscribing(prev => ({ ...prev, [planKey]: false }));
+      setSubscribing(prev => ({ ...prev, [selectedPlan]: false }));
     }
   };
 
@@ -535,50 +549,10 @@ export default function Account() {
     const plan = PLAN_DETAILS.find(p => p.key === targetPlan);
     if (!plan) return;
 
-    haptic.medium();
-    setSubscribing(prev => ({ ...prev, [targetPlan]: true }));
-    try {
-      const amount = userBillingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
-      const billingInterval = userBillingInterval === 'annual' ? 'annual' : 'monthly';
-
-      console.log('🔍 DOWNGRADE REQUEST:', { 
-        targetPlan, 
-        interval: billingInterval,
-        amount,
-        userId: user.id,
-        email: user.email
-      });
-
-      const response = await base44.functions.invoke('createCheckout', {
-        mode: 'subscription',
-        amount: amount,
-        currency: 'thb',
-        description: `Lease Shield ${plan.label} - ${userBillingInterval === 'annual' ? 'Annual' : 'Monthly'}`,
-        successUrl: `${window.location.origin}/account?subscription=success`,
-        cancelUrl: `${window.location.origin}/account?subscription=cancelled`,
-        metadata: {
-          type: 'subscription',
-          userId: user.id,
-          email: user.email,
-          plan: targetPlan,
-          interval: billingInterval
-        }
-      });
-      
-      if (response.data?.url) {
-        window.location.href = response.data.url;
-      } else {
-        haptic.error();
-        throw new Error('No checkout URL returned');
-      }
-    } catch (error) {
-      console.error('❌ Downgrade error:', error);
-      haptic.error();
-      const language = user?.language || 'en';
-      const errorMsg = error.response?.data?.details || error.message;
-      alert(`${language === 'th' ? 'ไม่สามารถเปลี่ยนแผนได้' : 'Failed to change plan'}\n\n${errorMsg}`);
-      setSubscribing(prev => ({ ...prev, [targetPlan]: false }));
-    }
+    // Show billing interval dialog first
+    setSelectedPlan(targetPlan);
+    setSelectedInterval(userBillingInterval || 'monthly'); // Assume user wants to keep their current billing interval for downgrade
+    setShowBillingDialog(true);
   };
 
   const handleCancelSubscription = async () => {
@@ -848,6 +822,15 @@ export default function Account() {
       purchaseCredits: "Purchase Credits",
       currentPlanFree: "Current plan: Free",
       freeUpgradeText: "You're on basic coverage. Upgrade to Lite, Protect, or Secure for full deposit and maintenance protection.",
+      chooseBillingInterval: "Choose Billing Cycle",
+      payMonthly: "Pay Monthly",
+      payAnnually: "Pay Annually",
+      annualSavings: "Save 17% annually",
+      bestValueBadge: "Best Value",
+      proceedToCheckout: "Proceed to Checkout",
+      upgradeToSecure: "Upgrade to Secure",
+      unlockPremium: "Unlock Premium Features",
+      secureFeatures: "Unlimited scans, priority support & 10 letter credits",
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -987,6 +970,15 @@ export default function Account() {
       purchaseCredits: "ซื้อเครดิต",
       currentPlanFree: "แผนปัจจุบัน: ฟรี",
       freeUpgradeText: "คุณอยู่ในการคุ้มครองพื้นฐาน อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อการป้องกันเงินมัดจำและการซ่อมบำรุงเต็มรูปแบบ",
+      chooseBillingInterval: "เลือกรอบการเรียกเก็บเงิน",
+      payMonthly: "ชำระรายเดือน",
+      payAnnually: "ชำระรายปี",
+      annualSavings: "ประหยัด 17% ต่อปี",
+      bestValueBadge: "คุ้มค่าที่สุด",
+      proceedToCheckout: "ไปที่การชำระเงิน",
+      upgradeToSecure: "อัปเกรดเป็น Secure",
+      unlockPremium: "ปลดล็อกฟีเจอร์พรีเมียม",
+      secureFeatures: "สแกนไม่จำกัด การสนับสนุนลำดับความสำคัญ และเครดิตจดหมาย 10 ใบ",
     },
     zh: {
       pageTitle: "我的账户",
@@ -1126,6 +1118,15 @@ export default function Account() {
       purchaseCredits: "购买积分",
       currentPlanFree: "当前计划: 免费",
       freeUpgradeText: "您目前使用的是基本保障。升级到 Lite、Protect 或 Secure 方案，即可获得完整的押金和维护保障。",
+      chooseBillingInterval: "选择计费周期",
+      payMonthly: "按月支付",
+      payAnnually: "按年支付",
+      annualSavings: "每年节省17%",
+      bestValueBadge: "最划算",
+      proceedToCheckout: "前往结账",
+      upgradeToSecure: "升级到Secure",
+      unlockPremium: "解锁高级功能",
+      secureFeatures: "无限次扫描，优先支持和10个信件积分",
     },
     ja: {
       pageTitle: "マイアカウント",
@@ -1265,6 +1266,15 @@ export default function Account() {
       purchaseCredits: "クレジットを購入",
       currentPlanFree: "現在のプラン: 無料",
       freeUpgradeText: "あなたは基本的な補償を受けています。預金とメンテナンスの完全な保護のために、Lite、Protect、またはSecureにアップグレードしてください。",
+      chooseBillingInterval: "請求サイクルを選択",
+      payMonthly: "月払い",
+      payAnnually: "年払い",
+      annualSavings: "年間17%節約",
+      bestValueBadge: "ベストバリュー",
+      proceedToCheckout: "チェックアウトに進む",
+      upgradeToSecure: "Secureにアップグレード",
+      unlockPremium: "プレミアム機能のロックを解除",
+      secureFeatures: "無制限スキャン、優先サポート、レタークレジット10枚",
     },
     ko: {
       pageTitle: "내 계정",
@@ -1404,6 +1414,15 @@ export default function Account() {
       purchaseCredits: "크레딧 구매",
       currentPlanFree: "현재 계획: 무료",
       freeUpgradeText: "기본 보장 상태입니다. 예치금 및 유지보수 전반에 대한 완벽한 보호를 위해 Lite, Protect 또는 Secure로 업그레이드하세요.",
+      chooseBillingInterval: "결제 주기 선택",
+      payMonthly: "월별 결제",
+      payAnnually: "연간 결제",
+      annualSavings: "연간 17% 절약",
+      bestValueBadge: "최고의 가치",
+      proceedToCheckout: "결제 진행",
+      upgradeToSecure: "Secure로 업그레이드",
+      unlockPremium: "프리미엄 기능 잠금 해제",
+      secureFeatures: "무제한 스캔, 우선 지원 및 10개의 레터 크레딧",
     }
   };
 
@@ -2072,7 +2091,7 @@ export default function Account() {
                         padding: '12px 16px',
                         backgroundColor: '#C7A338',
                         color: '#FFFFFF',
-                        borderRadius: '88px',
+                        borderRadius: '8px',
                         fontWeight: 'bold',
                         fontSize: '14px',
                         border: 'none',
@@ -2087,7 +2106,7 @@ export default function Account() {
                       {strings.upgradeNow}
                     </button>
                   </div>
-                ) : (
+                ) : isProtectPlan ? (
                   <div className="space-y-3">
                     <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #0C3B2E' }}>
                       <p className="text-sm flex items-center gap-2" style={{ color: colors.textPrimary }}>
@@ -2095,7 +2114,185 @@ export default function Account() {
                         {strings.allActive}
                       </p>
                     </div>
-                    {(isProtectPlan || isSecurePlan) && (
+                    <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
+                      <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
+                        <Bell className="w-3 h-3 text-ls-gold" />
+                        {strings.lineEnabled}
+                      </p>
+                    </div>
+                    
+                    {/* Upgrade to Secure CTA */}
+                    <div style={{
+                      padding: '16px',
+                      borderRadius: '12px',
+                      background: isDarkMode ? 'linear-gradient(135deg, #1A2E27 0%, #0C3B2E 100%)' : 'linear-gradient(135deg, #F0FDF4 0%, #D1FAE5 100%)',
+                      border: '2px solid #0C3B2E',
+                      marginTop: '12px'
+                    }}>
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center flex-shrink-0">
+                          <Crown className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-sm mb-1" style={{ color: colors.textPrimary }}>
+                            {strings.unlockPremium}
+                          </p>
+                          <p className="text-xs" style={{ color: colors.textSecondary }}>
+                            {strings.secureFeatures}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleSubscribe('secure', userBillingInterval)}
+                        disabled={subscribing.secure}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          backgroundColor: subscribing.secure ? '#9CA3AF' : '#0C3B2E',
+                          color: '#FFFFFF',
+                          borderRadius: '8px',
+                          border: 'none',
+                          fontWeight: '600',
+                          fontSize: '14px',
+                          cursor: subscribing.secure ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s',
+                          opacity: subscribing.secure ? 0.6 : 1
+                        }}
+                        onMouseEnter={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#0a2f25')}
+                        onMouseLeave={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#0C3B2E')}
+                      >
+                        {subscribing.secure ? strings.processing : strings.upgradeToSecure}
+                      </button>
+                    </div>
+                    
+                    <button
+                      onClick={() => setShowManagePlanPanel(!showManagePlanPanel)}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        backgroundColor: '#0C3B2E',
+                        color: '#FFFFFF',
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                    >
+                      <Settings className="w-4 h-4" />
+                      {language === 'th' ? 'จัดการแผน' : 'Manage Plan'}
+                    </button>
+
+                    {showManagePlanPanel && (
+                      <div style={{
+                        marginTop: '12px',
+                        padding: '16px',
+                        backgroundColor: colors.fieldBg,
+                        borderRadius: '12px',
+                        border: `2px solid ${colors.borderColor}`
+                      }}>
+                        <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
+                          {language === 'th' ? 'เปลี่ยนแผนหรือช่วงการเรียกเก็บเงิน' : 'Change plan or billing cycle'}
+                        </p>
+                        
+                        <div className="space-y-2 mb-4">
+                          {userBillingInterval === 'monthly' && (
+                            <button
+                              onClick={() => handleSubscribe('protect', 'annual')}
+                              disabled={subscribing.protect_annual}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                backgroundColor: subscribing.protect_annual ? '#9CA3AF' : '#C7A338',
+                                color: '#FFFFFF',
+                                borderRadius: '8px',
+                                border: 'none',
+                                fontWeight: '600',
+                                fontSize: '13px',
+                                cursor: subscribing.protect_annual ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                opacity: subscribing.protect_annual ? 0.6 : 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px'
+                              }}
+                              onMouseEnter={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#B89330')}
+                              onMouseLeave={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#C7A338')}
+                            >
+                              {subscribing.protect_annual ? strings.processing : (language === 'th' ? 'เปลี่ยนเป็นรายปี' : 'Switch to annual')}
+                              <Badge className="bg-emerald-500 text-white text-xs">
+                                {language === 'th' ? 'ประหยัด 17%' : 'Save 17%'}
+                              </Badge>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDowngrade('lite')}
+                            disabled={subscribing.lite}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              backgroundColor: 'transparent',
+                              color: colors.textPrimary,
+                              borderRadius: '8px',
+                              border: `2px solid ${colors.borderColor}`,
+                              fontWeight: '500',
+                              fontSize: '13px',
+                              cursor: subscribing.lite ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.2s',
+                              opacity: subscribing.lite ? 0.6 : 1
+                            }}
+                            onMouseEnter={(e) => !subscribing.lite && (e.target.style.borderColor = '#0C3B2E')}
+                            onMouseLeave={(e) => !subscribing.lite && (e.target.style.borderColor = colors.borderColor)}
+                          >
+                            {subscribing.lite ? strings.processing : (language === 'th' ? 'ลดเป็น Lite' : 'Downgrade to Lite')}
+                          </button>
+                        </div>
+
+                        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${colors.borderColor}` }}>
+                          <button
+                            onClick={() => {
+                              setShowManagePlanPanel(false);
+                              setShowCancelDialog(true);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px',
+                              backgroundColor: 'transparent',
+                              color: '#EF4444',
+                              borderRadius: '6px',
+                              fontWeight: '500',
+                              fontSize: '13px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                          >
+                            {language === 'th' ? 'ยกเลิกการสมัครสมาชิก' : 'Cancel subscription'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : ( // This block now covers Lite and Secure Plans
+                  <div className="space-y-3">
+                    <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #0C3B2E' }}>
+                      <p className="text-sm flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                        <CheckCircle2 className="w-4 h-4 text-ls-forest" />
+                        {strings.allActive}
+                      </p>
+                    </div>
+                    {/* This condition will be true for Secure, false for Lite */}
+                    {(isLitePlan || isSecurePlan) && (
                       <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
                         <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
                           <Bell className="w-3 h-3 text-ls-gold" />
@@ -2141,7 +2338,6 @@ export default function Account() {
                           {language === 'th' ? 'เปลี่ยนแผนหรือช่วงการเรียกเก็บเงิน' : 'Change plan or billing cycle'}
                         </p>
                         
-                        {/* Upgrade options */}
                         <div className="space-y-2 mb-4">
                           {isLitePlan && (
                             <>
@@ -2220,83 +2416,6 @@ export default function Account() {
                             </>
                           )}
                           
-                          {isProtectPlan && (
-                            <>
-                              <button
-                                onClick={() => handleSubscribe('secure', userBillingInterval)}
-                                disabled={subscribing.secure}
-                                style={{
-                                  width: '100%',
-                                  padding: '10px 14px',
-                                  backgroundColor: subscribing.secure ? '#9CA3AF' : '#1A1D1F',
-                                  color: '#FFFFFF',
-                                  borderRadius: '8px',
-                                  border: 'none',
-                                  fontWeight: '600',
-                                  fontSize: '13px',
-                                  cursor: subscribing.secure ? 'not-allowed' : 'pointer',
-                                  transition: 'all 0.2s',
-                                  opacity: subscribing.secure ? 0.6 : 1
-                                }}
-                                onMouseEnter={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#0a0a0a')}
-                                onMouseLeave={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#1A1D1F')}
-                              >
-                                {subscribing.secure ? strings.processing : (language === 'th' ? 'อัปเกรดเป็น Secure' : 'Upgrade to Secure')}
-                              </button>
-                              {userBillingInterval === 'monthly' && (
-                                <button
-                                  onClick={() => handleSubscribe('protect', 'annual')}
-                                  disabled={subscribing.protect_annual}
-                                  style={{
-                                    width: '100%',
-                                    padding: '10px 14px',
-                                    backgroundColor: subscribing.protect_annual ? '#9CA3AF' : '#C7A338',
-                                    color: '#FFFFFF',
-                                    borderRadius: '8px',
-                                    border: 'none',
-                                    fontWeight: '600',
-                                    fontSize: '13px',
-                                    cursor: subscribing.protect_annual ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.2s',
-                                    opacity: subscribing.protect_annual ? 0.6 : 1,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '6px'
-                                  }}
-                                  onMouseEnter={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#B89330')}
-                                  onMouseLeave={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#C7A338')}
-                                >
-                                  {subscribing.protect_annual ? strings.processing : (language === 'th' ? 'เปลี่ยนเป็นรายปี' : 'Switch to annual')}
-                                  <Badge className="bg-emerald-500 text-white text-xs">
-                                    {language === 'th' ? 'ประหยัด 17%' : 'Save 17%'}
-                                  </Badge>
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleDowngrade('lite')}
-                                disabled={subscribing.lite}
-                                style={{
-                                  width: '100%',
-                                  padding: '10px 14px',
-                                  backgroundColor: 'transparent',
-                                  color: colors.textPrimary,
-                                  borderRadius: '8px',
-                                  border: `2px solid ${colors.borderColor}`,
-                                  fontWeight: '500',
-                                  fontSize: '13px',
-                                  cursor: subscribing.lite ? 'not-allowed' : 'pointer',
-                                  transition: 'all 0.2s',
-                                  opacity: subscribing.lite ? 0.6 : 1
-                                }}
-                                onMouseEnter={(e) => !subscribing.lite && (e.target.style.borderColor = '#0C3B2E')}
-                                onMouseLeave={(e) => !subscribing.lite && (e.target.style.borderColor = colors.borderColor)}
-                              >
-                                {subscribing.lite ? strings.processing : (language === 'th' ? 'ลดเป็น Lite' : 'Downgrade to Lite')}
-                              </button>
-                            </>
-                          )}
-
                           {isSecurePlan && userBillingInterval === 'monthly' && (
                             <div style={{
                               padding: '12px',
@@ -2337,7 +2456,6 @@ export default function Account() {
                           )}
                         </div>
 
-                        {/* Cancel option - smaller, secondary */}
                         <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${colors.borderColor}` }}>
                           <button
                             onClick={() => {
@@ -3024,8 +3142,8 @@ export default function Account() {
                       fontSize: '14px',
                       textDecoration: 'none',
                       cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      display: 'inline-block'
+                      display: 'inline-block',
+                      transition: 'all 0.2s'
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#0C3B2E';
@@ -3619,7 +3737,106 @@ export default function Account() {
           </div>
         </section>
 
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+        {/* Billing Interval Selection Dialog */}
+        <Dialog open={showBillingDialog} onOpenChange={setShowBillingDialog}>
+          <DialogContent className="sm:max-w-md" style={{
+            backgroundColor: colors.cardBg,
+            borderColor: colors.borderColor
+          }}>
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>
+                {strings.chooseBillingInterval}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <button
+                onClick={() => setSelectedInterval('monthly')}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: `2px solid ${selectedInterval === 'monthly' ? '#0C3B2E' : colors.borderColor}`,
+                  backgroundColor: selectedInterval === 'monthly' ? (isDarkMode ? '#0C3B2E' : '#F0FDF4') : colors.cardBg,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-bold text-base mb-1" style={{ color: colors.textPrimary }}>
+                      {strings.payMonthly}
+                    </p>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
+                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceMonthly}/month` 
+                        : '—'}
+                    </p>
+                  </div>
+                  {selectedInterval === 'monthly' && (
+                    <CheckCircle2 className="w-5 h-5 text-ls-forest" />
+                  )}
+                </div>
+              </button>
+
+              <button
+                onClick={() => setSelectedInterval('annual')}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: `2px solid ${selectedInterval === 'annual' ? '#C7A338' : colors.borderColor}`,
+                  backgroundColor: selectedInterval === 'annual' ? (isDarkMode ? 'rgba(199,163,56,0.15)' : '#FFFBEB') : colors.cardBg,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                        {strings.payAnnually}
+                      </p>
+                      <Badge className="bg-emerald-500 text-white text-xs">
+                        {strings.bestValueBadge}
+                      </Badge>
+                    </div>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
+                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceAnnual}/year` 
+                        : '—'}
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: '#C7A338', fontWeight: '600' }}>
+                      {strings.annualSavings}
+                    </p>
+                  </div>
+                  {selectedInterval === 'annual' && (
+                    <CheckCircle2 className="w-5 h-5 text-ls-gold" />
+                  )}
+                </div>
+              </button>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowBillingDialog(false)}
+                  className="flex-1"
+                >
+                  {strings.cancel}
+                </Button>
+                <Button
+                  onClick={confirmSubscribe}
+                  className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
+                >
+                  {strings.proceedToCheckout}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Card id="letter-credits" className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
               <div className="flex items-center gap-3">

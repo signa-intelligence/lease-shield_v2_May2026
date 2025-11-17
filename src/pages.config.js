@@ -27,7 +27,7 @@ import Timeline from './pages/Timeline';
 import EvidenceVault from './pages/EvidenceVault';
 import RevenueAnalytics from './pages/RevenueAnalytics';
 import AdminTemplates from './pages/AdminTemplates';
-import Layout from './Layout.jsx';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -65,5 +65,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
-    Layout: Layout,
+    Layout: __Layout,
 };

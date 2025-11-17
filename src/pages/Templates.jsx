@@ -740,7 +740,7 @@ export default function Templates() {
                   </Badge>
                 </div>
                 <Button
-                  onClick={() => navigate(createPageUrl("Account") + '?highlight=plans#plans-section')}
+                  onClick={() => navigate(createPageUrl("Account") + '#letter-credits')}
                   className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 w-full md:w-auto"
                 >
                   <Coins className="w-4 h-4 mr-2" />
