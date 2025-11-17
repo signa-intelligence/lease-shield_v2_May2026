@@ -980,7 +980,7 @@ function PropertyTrackerContent() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
-      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-7xl mx-auto">
           
           <PageHeader

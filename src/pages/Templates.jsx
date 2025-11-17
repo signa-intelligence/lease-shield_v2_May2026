@@ -497,7 +497,7 @@ export default function Templates() {
     return (
       <Card
         key={isCustom ? template.id : template.id}
-        className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
+        className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 card-interactive ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
         style={{ backgroundColor: colors.cardBg }}
         onClick={() => handleTemplateClick(template)}
       >
@@ -541,7 +541,7 @@ export default function Templates() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
         
         {/* Upload Dialog */}

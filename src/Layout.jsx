@@ -21,7 +21,11 @@ const animationKeyframes = `
   @keyframes ripple {
     to { transform: scale(4); opacity: 0; }
   }
-  .btn-press-feedback:active {
+  @keyframes tabHighlight {
+    0% { transform: scale(0.98); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .btn-press:active {
     transform: scale(0.97);
     transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -588,7 +592,7 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={tab.key}
                 to={tab.route}
-                className="ripple-container btn-press-feedback"
+                className="ripple-container btn-press"
                 onClick={(e) => {
                   haptic.light();
                   createRipple(e, e.currentTarget);
@@ -600,7 +604,7 @@ export default function Layout({ children, currentPageName }) {
                   justifyContent: 'center',
                   padding: '8px 10px',
                   borderRadius: '12px',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
                   flex: 1,
                   minWidth: '60px',
                   maxWidth: '90px',
@@ -620,17 +624,22 @@ export default function Layout({ children, currentPageName }) {
                   }
                 }}
               >
-                <Icon className="w-5 h-5 mb-1" style={{ 
-                  animation: isActive ? 'pulse 2s infinite' : 'none',
-                  color: isActive ? '#FFFFFF' : colors.textPrimary,
-                  transition: 'all 0.2s ease'
-                }} />
+                <div style={{
+                  animation: isActive ? 'tabHighlight 150ms ease-out' : 'none'
+                }}>
+                  <Icon className="w-5 h-5 mb-1" style={{ 
+                    animation: isActive ? 'pulse 2s infinite' : 'none',
+                    color: isActive ? '#FFFFFF' : colors.textPrimary,
+                    transition: 'all 0.2s ease'
+                  }} />
+                </div>
                 <span style={{ 
                   fontSize: '11px', 
                   fontWeight: '600', 
                   whiteSpace: 'nowrap',
                   color: isActive ? '#FFFFFF' : colors.textPrimary,
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  animation: isActive ? 'fadeIn 150ms ease-out' : 'none'
                 }}>
                   {tab.label}
                 </span>

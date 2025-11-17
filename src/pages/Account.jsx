@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
+import PullToRefresh from '../components/shared/PullToRefresh';
 
 const PLAN_DETAILS = [
   {
@@ -647,6 +648,11 @@ export default function Account() {
     } else {
       handleCopyLink(role);
     }
+  };
+
+  const handleRefresh = async () => {
+    haptic.light();
+    await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
   };
 
   const planTier = user?.plan_tier || 'free';
@@ -1273,7 +1279,7 @@ export default function Account() {
       bestValueBadge: "ベストバリュー",
       proceedToCheckout: "チェックアウトに進む",
       upgradeToSecure: "Secureにアップグレード",
-      unlockPremium: "プレミアム機能のロックを解除",
+      unlockPremium: "解锁高级功能",
       secureFeatures: "無制限スキャン、優先サポート、レタークレジット10枚",
     },
     ko: {
@@ -1432,206 +1438,101 @@ export default function Account() {
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46460_M_gainfriends_2dbarcodes_GW.png";
 
   return (
-    <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-7xl mx-auto">
-        <PageHeader
-          title={strings.pageTitle}
-          subtitle={strings.pageSubtitle}
-          icon={User}
-          iconColor="#0C3B2E"
-          colors={colors}
-        />
+    <PullToRefresh onRefresh={handleRefresh} colors={colors}>
+      <div className="min-h-screen p-4 md:p-6 pb-32 page-transition" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-7xl mx-auto">
+          <PageHeader
+            title={strings.pageTitle}
+            subtitle={strings.pageSubtitle}
+            icon={User}
+            iconColor="#0C3B2E"
+            colors={colors}
+          />
 
-        <div className="grid lg:grid-cols-3 gap-6 mb-6">
-          <Card className="lg:col-span-2 border-none shadow-xl" style={{
-            backgroundColor: colors.cardBg
-          }}>
-            <CardHeader className="border-b pb-4" style={{
-              backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
-              borderBottomColor: colors.borderColor
+          <div className="grid lg:grid-cols-3 gap-6 mb-6">
+            <Card className="lg:col-span-2 border-none shadow-xl" style={{
+              backgroundColor: colors.cardBg
             }}>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <Settings className="w-5 h-5 text-ls-forest" />
-                  {strings.personalInfo}
-                </CardTitle>
-                {!isEditing && (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: isDarkMode ? '2px solid #C7A338' : '2px solid #0C3B2E',
-                      backgroundColor: isDarkMode ? '#374151' : '#FFFFFF',
-                      color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
-                      fontWeight: '700',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      boxShadow: isDarkMode ? '0 2px 8px rgba(199,163,56,0.3)' : '0 2px 6px rgba(0,0,0,0.08)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#C7A338';
-                      e.target.style.borderColor = '#C7A338';
-                      e.target.style.color = '#FFFFFF';
-                      e.target.style.boxShadow = '0 4px 12px rgba(199,163,56,0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = isDarkMode ? '#374151' : '#FFFFFF';
-                      e.target.style.borderColor = isDarkMode ? '#C7A338' : '#0C3B2E';
-                      e.target.style.color = isDarkMode ? '#F9FAFB' : '#0C3B2E';
-                      e.target.style.boxShadow = isDarkMode ? '0 2px 8px rgba(199,163,56,0.3)' : '0 2px 6px rgba(0,0,0,0.08)';
-                    }}
-                  >
-                    {strings.editProfile}
-                  </button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              {!isEditing ? (
-                <div className="space-y-3">
-                  <div style={{
-                    padding: '16px',
-                    backgroundColor: colors.fieldBg,
-                    borderRadius: '12px',
-                    borderLeft: '4px solid #0C3B2E'
-                  }}>
-                    <div className="flex items-center gap-3">
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#0C3B2E',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <User className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.fullName}</p>
-                        <p className="font-bold text-lg" style={{ color: colors.textPrimary }}>{user?.full_name}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{
-                    padding: '16px',
-                    backgroundColor: colors.fieldBg,
-                    borderRadius: '12px',
-                    borderLeft: '4px solid #C7A338'
-                  }}>
-                    <div className="flex items-center gap-3">
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#C7A338',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <Mail className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.email}</p>
-                        <p className="font-bold" style={{ color: colors.textPrimary }}>{user?.email}</p>
+              <CardHeader className="border-b pb-4" style={{
+                backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
+                borderBottomColor: colors.borderColor
+              }}>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                    <Settings className="w-5 h-5 text-ls-forest" />
+                    {strings.personalInfo}
+                  </CardTitle>
+                  {!isEditing && (
+                    <button
+                      onClick={() => {
+                        haptic.light();
+                        setIsEditing(true);
+                      }}
+                      className="btn-press"
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        border: isDarkMode ? '2px solid #C7A338' : '2px solid #0C3B2E',
+                        backgroundColor: isDarkMode ? '#374151' : '#FFFFFF',
+                        color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
+                        fontWeight: '700',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: isDarkMode ? '0 2px 8px rgba(199,163,56,0.3)' : '0 2px 6px rgba(0,0,0,0.08)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#C7A338';
+                        e.target.style.borderColor = '#C7A338';
+                        e.target.style.color = '#FFFFFF';
+                        e.target.style.boxShadow = '0 4px 12px rgba(199,163,56,0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = isDarkMode ? '#374151' : '#FFFFFF';
+                        e.target.style.borderColor = isDarkMode ? '#C7A338' : '#0C3B2E';
+                        e.target.style.color = isDarkMode ? '#F9FAFB' : '#0C3B2E';
+                        e.target.style.boxShadow = isDarkMode ? '0 2px 8px rgba(199,163,56,0.3)' : '0 2px 6px rgba(0,0,0,0.08)';
+                      }}
+                    >
+                      {strings.editProfile}
+                    </button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                {!isEditing ? (
+                  <div className="space-y-3">
+                    <div style={{
+                      padding: '16px',
+                      backgroundColor: colors.fieldBg,
+                      borderRadius: '12px',
+                      borderLeft: '4px solid #0C3B2E'
+                    }}>
+                      <div className="flex items-center gap-3">
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          backgroundColor: '#0C3B2E',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <User className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.fullName}</p>
+                          <p className="font-bold text-lg" style={{ color: colors.textPrimary }}>{user?.full_name}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div style={{
-                    padding: '16px',
-                    backgroundColor: colors.fieldBg,
-                    borderRadius: '12px',
-                    borderLeft: '4px solid #0C3B2E'
-                  }}>
-                    <div className="flex items-center gap-3">
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#0C3B2E',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <Phone className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.phone}</p>
-                        <p className="font-bold" style={{ color: colors.textPrimary }}>{user?.phone || strings.notProvided}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {(user?.tenant_address || user?.tenant_city || user?.tenant_state || user?.tenant_zip) && (
                     <div style={{
                       padding: '16px',
                       backgroundColor: colors.fieldBg,
                       borderRadius: '12px',
                       borderLeft: '4px solid #C7A338'
                     }}>
-                      <div className="flex items-start gap-3">
-                        <div style={{
-                          width: '40px',
-                          height: '40px',
-                          backgroundColor: '#C7A338',
-                          borderRadius: '10px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <Globe className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.tenantAddress}</p>
-                          <p className="font-bold" style={{ color: colors.textPrimary }}>
-                            {user?.tenant_address && <span>{user.tenant_address}<br /></span>}
-                            {user?.tenant_city && <span>{user.tenant_city}</span>}
-                            {user?.tenant_state && <span>, {user.tenant_state}</span>}
-                            {user?.tenant_zip && <span> {user.tenant_zip}</span>}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={{
-                    padding: '16px',
-                    backgroundColor: colors.fieldBg,
-                    borderRadius: '12px',
-                    borderLeft: '4px solid #1A1D1F'
-                  }}>
-                    <div className="flex items-center gap-3">
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#1A1D1F',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <Globe className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.language}</p>
-                        <p className="font-bold" style={{ color: colors.textPrimary }}>
-                          {user?.language === 'th' ? 'ไทย (Thai)' : user?.language === 'zh' ? '中文 (Chinese)' : user?.language === 'ja' ? '日本語 (Japanese)' : user?.language === 'ko' ? '한국어 (Korean)' : 'English'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{
-                    padding: '16px',
-                    backgroundColor: colors.fieldBg,
-                    borderRadius: '12px',
-                    borderLeft: '4px solid #C7A338'
-                  }}>
-                    <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div style={{
                           width: '40px',
@@ -1642,2361 +1543,2472 @@ export default function Account() {
                           alignItems: 'center',
                           justifyContent: 'center'
                         }}>
-                          {currentTheme === 'dark' ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                            </svg>
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="12" cy="12" r="5"></circle>
-                              <line x1="12" y1="1" x2="12" y2="3"></line>
-                              <line x1="12" y1="21" x2="12" y2="23"></line>
-                              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                              <line x1="1" y1="12" x2="3" y2="12"></line>
-                              <line x1="21" y1="12" x2="23" y2="12"></line>
-                              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                            </svg>
-                          )}
+                          <Mail className="w-5 h-5 text-white" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.theme}</p>
-                          <p className="font-bold" style={{ color: colors.textPrimary }}>
-                            {currentTheme === 'dark' ? strings.darkMode : strings.lightMode}
-                          </p>
+                          <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.email}</p>
+                          <p className="font-bold" style={{ color: colors.textPrimary }}>{user?.email}</p>
                         </div>
                       </div>
-                      <div className="flex rounded-lg p-1 shadow-sm" style={{ backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF' }}>
-                        <button
-                          onClick={() => handleThemeToggle('light')}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            border: 'none',
-                            backgroundColor: currentTheme === 'light' ? '#0C3B2E' : 'transparent',
-                            color: currentTheme === 'light' ? '#FFFFFF' : colors.textPrimary,
-                            fontWeight: currentTheme === 'light' ? 'bold' : 'normal',
-                            fontSize: '13px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="5"></circle>
-                            <line x1="12" y1="1" x2="12" y2="3"></line>
-                            <line x1="12" y1="21" x2="12" y2="23"></line>
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                            <line x1="1" y1="12" x2="3" y2="12"></line>
-                            <line x1="21" y1="12" x2="23" y2="12"></line>
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                          </svg>
-                          {language === 'th' ? 'สว่าง' : strings.lightMode}
-                        </button>
-                        <button
-                          onClick={() => handleThemeToggle('dark')}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            border: 'none',
-                            backgroundColor: currentTheme === 'dark' ? '#0C3B2E' : 'transparent',
-                            color: currentTheme === 'dark' ? '#FFFFFF' : colors.textPrimary,
-                            fontWeight: currentTheme === 'dark' ? 'bold' : 'normal',
-                            fontSize: '13px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                          </svg>
-                          {language === 'th' ? 'มืด' : strings.darkMode}
-                        </button>
-                      </div>
                     </div>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="full_name" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                      <User className="w-4 h-4 text-ls-forest" />
-                      {strings.fullName}
-                    </Label>
-                    <Input
-                      id="full_name"
-                      value={formData.full_name}
-                      onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                      placeholder={language === 'th' ? 'ชื่อ-นามสกุลของคุณ' : 'Your full name'}
-                      style={{
-                        border: `2px solid ${colors.borderColor}`,
-                        backgroundColor: colors.inputBg,
-                        color: colors.textPrimary,
-                        borderRadius: '8px',
-                        padding: '10px 12px',
-                        fontSize: '14px'
-                      }}
-                    />
-                  </div>
 
-                  <div>
-                    <Label className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                      <Mail className="w-4 h-4 text-ls-gold" />
-                      {strings.email}
-                    </Label>
-                    <div style={{
-                      padding: '10px 12px',
-                      backgroundColor: colors.fieldBg,
-                      borderRadius: '8px',
-                      border: `2px solid ${colors.borderColor}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <Lock className="w-4 h-4 text-slate-400" />
-                      <span style={{ color: colors.textPrimary, fontSize: '14px' }}>{user?.email}</span>
-                      <span style={{
-                        marginLeft: 'auto',
-                        fontSize: '11px',
-                        color: colors.textSecondary,
-                        fontStyle: 'italic'
-                      }}>
-                        {strings.cannotChange}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="phone" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                      <Phone className="w-4 h-4 text-ls-forest" />
-                      {strings.phone}
-                    </Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      placeholder={strings.phonePlaceholder}
-                      style={{
-                        border: `2px solid ${colors.borderColor}`,
-                        backgroundColor: colors.inputBg,
-                        color: colors.textPrimary,
-                        borderRadius: '8px',
-                        padding: '10px 12px',
-                        fontSize: '14px'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="tenant_address" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                      <Globe className="w-4 h-4 text-ls-gold" />
-                      {strings.tenantAddress}
-                    </Label>
-                    <Input
-                      id="tenant_address"
-                      value={formData.tenant_address}
-                      onChange={(e) => setFormData({...formData, tenant_address: e.target.value})}
-                      placeholder={strings.tenantAddressPlaceholder}
-                      style={{
-                        border: `2px solid ${colors.borderColor}`,
-                        backgroundColor: colors.inputBg,
-                        color: colors.textPrimary,
-                        borderRadius: '8px',
-                        padding: '10px 12px',
-                        fontSize: '14px'
-                      }}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="tenant_city" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                        {strings.tenantCity}
-                      </Label>
-                      <Input
-                        id="tenant_city"
-                        value={formData.tenant_city}
-                        onChange={(e) => setFormData({...formData, tenant_city: e.target.value})}
-                        placeholder={strings.tenantCityPlaceholder}
-                        style={{
-                          border: `2px solid ${colors.borderColor}`,
-                          backgroundColor: colors.inputBg,
-                          color: colors.textPrimary,
-                          borderRadius: '88px',
-                          padding: '10px 12px',
-                          fontSize: '14px'
-                        }}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="tenant_state" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                        {strings.tenantState}
-                      </Label>
-                      <Input
-                        id="tenant_state"
-                        value={formData.tenant_state}
-                        onChange={(e) => setFormData({...formData, tenant_state: e.target.value})}
-                        placeholder={strings.tenantStatePlaceholder}
-                        style={{
-                          border: `2px solid ${colors.borderColor}`,
-                          backgroundColor: colors.inputBg,
-                          color: colors.textPrimary,
-                          borderRadius: '8px',
-                          padding: '10px 12px',
-                          fontSize: '14px'
-                        }}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="tenant_zip" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                        {strings.tenantZip}
-                      </Label>
-                      <Input
-                        id="tenant_zip"
-                        value={formData.tenant_zip}
-                        onChange={(e) => setFormData({...formData, tenant_zip: e.target.value})}
-                        placeholder={strings.tenantZipPlaceholder}
-                        style={{
-                          border: `2px solid ${colors.borderColor}`,
-                          backgroundColor: colors.inputBg,
-                          color: colors.textPrimary,
-                          borderRadius: '8px',
-                          padding: '10px 12px',
-                          fontSize: '14px'
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="country" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                      <Globe className="w-4 h-4 text-ls-forest" />
-                      {strings.country}
-                    </Label>
-                    <Input
-                      id="country"
-                      value={formData.country}
-                      onChange={(e) => setFormData({...formData, country: e.target.value})}
-                      placeholder={strings.countryPlaceholder}
-                      style={{
-                        border: `2px solid ${colors.borderColor}`,
-                        backgroundColor: colors.inputBg,
-                        color: colors.textPrimary,
-                        borderRadius: '8px',
-                        padding: '10px 12px',
-                        fontSize: '14px'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="language" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.language}</Label>
-                    <Select value={formData.language} onValueChange={(value) => setFormData({...formData, language: value})}>
-                      <SelectTrigger style={{ backgroundColor: colors.inputBg, color: colors.textPrimary, borderColor: colors.borderColor }}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="th">ไทย (Thai)</SelectItem>
-                        <SelectItem value="zh">中文 (Chinese)</SelectItem>
-                        <SelectItem value="ja">日本語 (Japanese)</SelectItem>
-                        <SelectItem value="ko">한국어 (Korean)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="theme" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.theme}</Label>
-                    <Select value={formData.theme} onValueChange={(value) => setFormData({...formData, theme: value})}>
-                      <SelectTrigger style={{ backgroundColor: colors.inputBg, color: colors.textPrimary, borderColor: colors.borderColor }}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
-                        <SelectItem value="light">
-                          <div className="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="12" cy="12" r="5"></circle>
-                              <line x1="12" y1="1" x2="12" y2="3"></line>
-                              <line x1="12" y1="21" x2="12" y2="23"></line>
-                              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                              <line x1="1" y1="12" x2="3" y2="12"></line>
-                              <line x1="21" y1="12" x2="23" y2="12"></line>
-                              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                            </svg>
-                            {strings.lightMode}
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="dark">
-                          <div className="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                            </svg>
-                            {strings.darkMode}
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      type="submit"
-                      style={{
-                        flex: 1,
-                        padding: '12px 16px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '16px',
-                        border: 'none',
-                        backgroundColor: '#0C3B2E',
-                        color: '#FFFFFF',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#C7A338';
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 6px 8px rgba(199, 163, 56, 0.4)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#0C3B2E';
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
-                      }}
-                    >
-                      <Save className="w-4 h-4" />
-                      {strings.saveChanges}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(false)}
-                      style={{
-                        padding: '12px 24px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '16px',
-                        border: `2px solid ${colors.borderColor}`,
-                        backgroundColor: colors.cardBg,
-                        color: colors.textPrimary,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = colors.hoverBg;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = colors.cardBg;
-                      }}
-                    >
-                      {strings.cancel}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </CardContent>
-          </Card>
-
-          <section id="account-current-plan">
-            <Card className="border-none shadow-xl overflow-hidden" style={{
-              backgroundColor: colors.cardBg
-            }}>
-              <CardHeader className="border-b pb-4" style={{
-                backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
-                borderBottomColor: colors.borderColor
-              }}>
-                <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <Shield className="w-5 h-5 text-ls-forest" />
-                  {strings.currentPlan}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="text-center mb-4">
-                  <div className="mb-3">
-                    <PlanBadge tier={planTier} />
-                    {isScheduledForCancellation && (
-                      <div className="mt-2">
-                        <Badge style={{
-                          backgroundColor: isDarkMode ? '#EF444430' : '#FEE2E2',
-                          color: '#EF4444',
-                          border: isDarkMode ? '1px solid #EF444450' : '1px solid #FECACA',
-                          padding: '6px 12px',
-                          fontWeight: 'bold',
-                          borderRadius: '6px'
-                        }}>
-                          {strings.scheduledCancellation}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                    {isFreePlan ? strings.freePlanName : (currentPlan?.priceMonthly ? `฿${currentPlan?.priceMonthly}` : '—')}
-                  </p>
-                  {!isFreePlan && userBillingInterval && (
-                    <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-                      {userBillingInterval === 'annual' ? strings.billedAnnually : strings.billedMonthly}
-                    </p>
-                  )}
-                  {user?.plan_renews_at && (
-                    <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
-                      {isScheduledForCancellation ? strings.cancelScheduledFor : strings.renewsOn} {new Date(user.plan_renews_at).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-                
-                {isFreePlan ? (
-                  <div className="space-y-3">
-                    <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
-                      <p style={{ fontSize: '14px', color: colors.textPrimary, fontWeight: '600', marginBottom: '8px' }}>
-                        {strings.freeIncludes}
-                      </p>
-                      <ul style={{ fontSize: '12px', color: colors.textPrimary, lineHeight: '1.5' }}>
-                        <li>• {strings.freeBenefit1}</li>
-                        <li>• {strings.freeBenefit2}</li>
-                        <li>• {strings.freeBenefit3}</li>
-                        <li>• {strings.freeBenefit4}</li>
-                      </ul>
-                    </div>
-                    <button 
-                      style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        backgroundColor: '#C7A338',
-                        color: '#FFFFFF',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                        transition: 'all 0.2s'
-                      }}
-                      onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
-                    >
-                      {strings.upgradeNow}
-                    </button>
-                  </div>
-                ) : isProtectPlan ? (
-                  <div className="space-y-3">
-                    <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #0C3B2E' }}>
-                      <p className="text-sm flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                        <CheckCircle2 className="w-4 h-4 text-ls-forest" />
-                        {strings.allActive}
-                      </p>
-                    </div>
-                    <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
-                      <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
-                        <Bell className="w-3 h-3 text-ls-gold" />
-                        {strings.lineEnabled}
-                      </p>
-                    </div>
-                    
-                    {/* Upgrade to Secure CTA */}
                     <div style={{
                       padding: '16px',
+                      backgroundColor: colors.fieldBg,
                       borderRadius: '12px',
-                      background: isDarkMode ? 'linear-gradient(135deg, #1A2E27 0%, #0C3B2E 100%)' : 'linear-gradient(135deg, #F0FDF4 0%, #D1FAE5 100%)',
-                      border: '2px solid #0C3B2E',
-                      marginTop: '12px'
+                      borderLeft: '4px solid #0C3B2E'
                     }}>
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center flex-shrink-0">
-                          <Crown className="w-5 h-5 text-white" />
+                      <div className="flex items-center gap-3">
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          backgroundColor: '#0C3B2E',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <Phone className="w-4 h-4 text-white" />
                         </div>
                         <div className="flex-1">
-                          <p className="font-bold text-sm mb-1" style={{ color: colors.textPrimary }}>
-                            {strings.unlockPremium}
-                          </p>
-                          <p className="text-xs" style={{ color: colors.textSecondary }}>
-                            {strings.secureFeatures}
-                          </p>
+                          <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.phone}</p>
+                          <p className="font-bold" style={{ color: colors.textPrimary }}>{user?.phone || strings.notProvided}</p>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleSubscribe('secure', userBillingInterval)}
-                        disabled={subscribing.secure}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          backgroundColor: subscribing.secure ? '#9CA3AF' : '#0C3B2E',
-                          color: '#FFFFFF',
-                          borderRadius: '8px',
-                          border: 'none',
-                          fontWeight: '600',
-                          fontSize: '14px',
-                          cursor: subscribing.secure ? 'not-allowed' : 'pointer',
-                          transition: 'all 0.2s',
-                          opacity: subscribing.secure ? 0.6 : 1
-                        }}
-                        onMouseEnter={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#0a2f25')}
-                        onMouseLeave={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#0C3B2E')}
-                      >
-                        {subscribing.secure ? strings.processing : strings.upgradeToSecure}
-                      </button>
                     </div>
-                    
-                    <button
-                      onClick={() => setShowManagePlanPanel(!showManagePlanPanel)}
-                      style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        backgroundColor: '#0C3B2E',
-                        color: '#FFFFFF',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px'
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-                    >
-                      <Settings className="w-4 h-4" />
-                      {language === 'th' ? 'จัดการแผน' : 'Manage Plan'}
-                    </button>
 
-                    {showManagePlanPanel && (
+                    {(user?.tenant_address || user?.tenant_city || user?.tenant_state || user?.tenant_zip) && (
                       <div style={{
-                        marginTop: '12px',
                         padding: '16px',
                         backgroundColor: colors.fieldBg,
                         borderRadius: '12px',
-                        border: `2px solid ${colors.borderColor}`
+                        borderLeft: '4px solid #C7A338'
                       }}>
-                        <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'เปลี่ยนแผนหรือช่วงการเรียกเก็บเงิน' : 'Change plan or billing cycle'}
-                        </p>
-                        
-                        <div className="space-y-2 mb-4">
-                          {userBillingInterval === 'monthly' && (
-                            <button
-                              onClick={() => handleSubscribe('protect', 'annual')}
-                              disabled={subscribing.protect_annual}
-                              style={{
-                                width: '100%',
-                                padding: '10px 14px',
-                                backgroundColor: subscribing.protect_annual ? '#9CA3AF' : '#C7A338',
-                                color: '#FFFFFF',
-                                borderRadius: '8px',
-                                border: 'none',
-                                fontWeight: '600',
-                                fontSize: '13px',
-                                cursor: subscribing.protect_annual ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s',
-                                opacity: subscribing.protect_annual ? 0.6 : 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px'
-                              }}
-                              onMouseEnter={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#B89330')}
-                              onMouseLeave={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#C7A338')}
-                            >
-                              {subscribing.protect_annual ? strings.processing : (language === 'th' ? 'เปลี่ยนเป็นรายปี' : 'Switch to annual')}
-                              <Badge className="bg-emerald-500 text-white text-xs">
-                                {language === 'th' ? 'ประหยัด 17%' : 'Save 17%'}
-                              </Badge>
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDowngrade('lite')}
-                            disabled={subscribing.lite}
-                            style={{
-                              width: '100%',
-                              padding: '10px 14px',
-                              backgroundColor: 'transparent',
-                              color: colors.textPrimary,
-                              borderRadius: '8px',
-                              border: `2px solid ${colors.borderColor}`,
-                              fontWeight: '500',
-                              fontSize: '13px',
-                              cursor: subscribing.lite ? 'not-allowed' : 'pointer',
-                              transition: 'all 0.2s',
-                              opacity: subscribing.lite ? 0.6 : 1
-                            }}
-                            onMouseEnter={(e) => !subscribing.lite && (e.target.style.borderColor = '#0C3B2E')}
-                            onMouseLeave={(e) => !subscribing.lite && (e.target.style.borderColor = colors.borderColor)}
-                          >
-                            {subscribing.lite ? strings.processing : (language === 'th' ? 'ลดเป็น Lite' : 'Downgrade to Lite')}
-                          </button>
-                        </div>
-
-                        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${colors.borderColor}` }}>
-                          <button
-                            onClick={() => {
-                              setShowManagePlanPanel(false);
-                              setShowCancelDialog(true);
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              backgroundColor: 'transparent',
-                              color: '#EF4444',
-                              borderRadius: '6px',
-                              fontWeight: '500',
-                              fontSize: '13px',
-                              border: 'none',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                          >
-                            {language === 'th' ? 'ยกเลิกการสมัครสมาชิก' : 'Cancel subscription'}
-                          </button>
+                        <div className="flex items-start gap-3">
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            backgroundColor: '#C7A338',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <Globe className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.tenantAddress}</p>
+                            <p className="font-bold" style={{ color: colors.textPrimary }}>
+                              {user?.tenant_address && <span>{user.tenant_address}<br /></span>}
+                              {user?.tenant_city && <span>{user.tenant_city}</span>}
+                              {user?.tenant_state && <span>, {user.tenant_state}</span>}
+                              {user?.tenant_zip && <span> {user.tenant_zip}</span>}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     )}
-                  </div>
-                ) : ( // This block now covers Lite and Secure Plans
-                  <div className="space-y-3">
-                    <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #0C3B2E' }}>
-                      <p className="text-sm flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                        <CheckCircle2 className="w-4 h-4 text-ls-forest" />
-                        {strings.allActive}
-                      </p>
+
+                    <div style={{
+                      padding: '16px',
+                      backgroundColor: colors.fieldBg,
+                      borderRadius: '12px',
+                      borderLeft: '4px solid #1A1D1F'
+                    }}>
+                      <div className="flex items-center gap-3">
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          backgroundColor: '#1A1D1F',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <Globe className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.language}</p>
+                          <p className="font-bold" style={{ color: colors.textPrimary }}>
+                            {user?.language === 'th' ? 'ไทย (Thai)' : user?.language === 'zh' ? '中文 (Chinese)' : user?.language === 'ja' ? '日本語 (Japanese)' : user?.language === 'ko' ? '한국어 (Korean)' : 'English'}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    {/* This condition will be true for Secure, false for Lite */}
-                    {(isLitePlan || isSecurePlan) && (
+
+                    <div style={{
+                      padding: '16px',
+                      backgroundColor: colors.fieldBg,
+                      borderRadius: '12px',
+                      borderLeft: '4px solid #C7A338'
+                    }}>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            backgroundColor: '#C7A338',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            {currentTheme === 'dark' ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.theme}</p>
+                            <p className="font-bold" style={{ color: colors.textPrimary }}>
+                              {currentTheme === 'dark' ? strings.darkMode : strings.lightMode}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex rounded-lg p-1 shadow-sm" style={{ backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF' }}>
+                          <button
+                            onClick={() => handleThemeToggle('light')}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              backgroundColor: currentTheme === 'light' ? '#0C3B2E' : 'transparent',
+                              color: currentTheme === 'light' ? '#FFFFFF' : colors.textPrimary,
+                              fontWeight: currentTheme === 'light' ? 'bold' : 'normal',
+                              fontSize: '13px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="5"></circle>
+                              <line x1="12" y1="1" x2="12" y2="3"></line>
+                              <line x1="12" y1="21" x2="12" y2="23"></line>
+                              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                              <line x1="1" y1="12" x2="3" y2="12"></line>
+                              <line x1="21" y1="12" x2="23" y2="12"></line>
+                              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                            {language === 'th' ? 'สว่าง' : strings.lightMode}
+                          </button>
+                          <button
+                            onClick={() => handleThemeToggle('dark')}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              backgroundColor: currentTheme === 'dark' ? '#0C3B2E' : 'transparent',
+                              color: currentTheme === 'dark' ? '#FFFFFF' : colors.textPrimary,
+                              fontWeight: currentTheme === 'dark' ? 'bold' : 'normal',
+                              fontSize: '13px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                            </svg>
+                            {language === 'th' ? 'มืด' : strings.darkMode}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="full_name" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                        <User className="w-4 h-4 text-ls-forest" />
+                        {strings.fullName}
+                      </Label>
+                      <Input
+                        id="full_name"
+                        value={formData.full_name}
+                        onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                        placeholder={language === 'th' ? 'ชื่อ-นามสกุลของคุณ' : 'Your full name'}
+                        style={{
+                          border: `2px solid ${colors.borderColor}`,
+                          backgroundColor: colors.inputBg,
+                          color: colors.textPrimary,
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                        <Mail className="w-4 h-4 text-ls-gold" />
+                        {strings.email}
+                      </Label>
+                      <div style={{
+                        padding: '10px 12px',
+                        backgroundColor: colors.fieldBg,
+                        borderRadius: '8px',
+                        border: `2px solid ${colors.borderColor}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <Lock className="w-4 h-4 text-slate-400" />
+                        <span style={{ color: colors.textPrimary, fontSize: '14px' }}>{user?.email}</span>
+                        <span style={{
+                          marginLeft: 'auto',
+                          fontSize: '11px',
+                          color: colors.textSecondary,
+                          fontStyle: 'italic'
+                        }}>
+                          {strings.cannotChange}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="phone" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                        <Phone className="w-4 h-4 text-ls-forest" />
+                        {strings.phone}
+                      </Label>
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        placeholder={strings.phonePlaceholder}
+                        style={{
+                          border: `2px solid ${colors.borderColor}`,
+                          backgroundColor: colors.inputBg,
+                          color: colors.textPrimary,
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="tenant_address" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                        <Globe className="w-4 h-4 text-ls-gold" />
+                        {strings.tenantAddress}
+                      </Label>
+                      <Input
+                        id="tenant_address"
+                        value={formData.tenant_address}
+                        onChange={(e) => setFormData({...formData, tenant_address: e.target.value})}
+                        placeholder={strings.tenantAddressPlaceholder}
+                        style={{
+                          border: `2px solid ${colors.borderColor}`,
+                          backgroundColor: colors.inputBg,
+                          color: colors.textPrimary,
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="tenant_city" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                          {strings.tenantCity}
+                        </Label>
+                        <Input
+                          id="tenant_city"
+                          value={formData.tenant_city}
+                          onChange={(e) => setFormData({...formData, tenant_city: e.target.value})}
+                          placeholder={strings.tenantCityPlaceholder}
+                          style={{
+                            border: `2px solid ${colors.borderColor}`,
+                            backgroundColor: colors.inputBg,
+                            color: colors.textPrimary,
+                            borderRadius: '88px',
+                            padding: '10px 12px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="tenant_state" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                          {strings.tenantState}
+                        </Label>
+                        <Input
+                          id="tenant_state"
+                          value={formData.tenant_state}
+                          onChange={(e) => setFormData({...formData, tenant_state: e.target.value})}
+                          placeholder={strings.tenantStatePlaceholder}
+                          style={{
+                            border: `2px solid ${colors.borderColor}`,
+                            backgroundColor: colors.inputBg,
+                            color: colors.textPrimary,
+                            borderRadius: '8px',
+                            padding: '10px 12px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="tenant_zip" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                          {strings.tenantZip}
+                        </Label>
+                        <Input
+                          id="tenant_zip"
+                          value={formData.tenant_zip}
+                          onChange={(e) => setFormData({...formData, tenant_zip: e.target.value})}
+                          placeholder={strings.tenantZipPlaceholder}
+                          style={{
+                            border: `2px solid ${colors.borderColor}`,
+                            backgroundColor: colors.inputBg,
+                            color: colors.textPrimary,
+                            borderRadius: '8px',
+                            padding: '10px 12px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="country" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                        <Globe className="w-4 h-4 text-ls-forest" />
+                        {strings.country}
+                      </Label>
+                      <Input
+                        id="country"
+                        value={formData.country}
+                        onChange={(e) => setFormData({...formData, country: e.target.value})}
+                        placeholder={strings.countryPlaceholder}
+                        style={{
+                          border: `2px solid ${colors.borderColor}`,
+                          backgroundColor: colors.inputBg,
+                          color: colors.textPrimary,
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="language" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.language}</Label>
+                      <Select value={formData.language} onValueChange={(value) => setFormData({...formData, language: value})}>
+                        <SelectTrigger style={{ backgroundColor: colors.inputBg, color: colors.textPrimary, borderColor: colors.borderColor }}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="th">ไทย (Thai)</SelectItem>
+                          <SelectItem value="zh">中文 (Chinese)</SelectItem>
+                          <SelectItem value="ja">日本語 (Japanese)</SelectItem>
+                          <SelectItem value="ko">한국어 (Korean)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="theme" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.theme}</Label>
+                      <Select value={formData.theme} onValueChange={(value) => setFormData({...formData, theme: value})}>
+                        <SelectTrigger style={{ backgroundColor: colors.inputBg, color: colors.textPrimary, borderColor: colors.borderColor }}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                          <SelectItem value="light">
+                            <div className="flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                              </svg>
+                              {strings.lightMode}
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="dark">
+                            <div className="flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                              </svg>
+                              {strings.darkMode}
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        type="submit"
+                        style={{
+                          flex: 1,
+                          padding: '12px 16px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: 'none',
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF',
+                          cursor: 'pointer',
+                          boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#C7A338';
+                          e.target.style.transform = 'translateY(-2px)';
+                          e.target.style.boxShadow = '0 6px 8px rgba(199, 163, 56, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#0C3B2E';
+                          e.target.style.transform = 'translateY(0)';
+                          e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
+                        }}
+                      >
+                        <Save className="w-4 h-4" />
+                        {strings.saveChanges}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditing(false)}
+                        style={{
+                          padding: '12px 24px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: `2px solid ${colors.borderColor}`,
+                          backgroundColor: colors.cardBg,
+                          color: colors.textPrimary,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = colors.hoverBg;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = colors.cardBg;
+                        }}
+                      >
+                        {strings.cancel}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+
+            <section id="account-current-plan">
+              <Card className="border-none shadow-xl overflow-hidden" style={{
+                backgroundColor: colors.cardBg
+              }}>
+                <CardHeader className="border-b pb-4" style={{
+                  backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
+                  borderBottomColor: colors.borderColor
+                }}>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                    <Shield className="w-5 h-5 text-ls-forest" />
+                    {strings.currentPlan}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="text-center mb-4">
+                    <div className="mb-3">
+                      <PlanBadge tier={planTier} />
+                      {isScheduledForCancellation && (
+                        <div className="mt-2">
+                          <Badge style={{
+                            backgroundColor: isDarkMode ? '#EF444430' : '#FEE2E2',
+                            color: '#EF4444',
+                            border: isDarkMode ? '1px solid #EF444450' : '1px solid #FECACA',
+                            padding: '6px 12px',
+                            fontWeight: 'bold',
+                            borderRadius: '6px'
+                          }}>
+                            {strings.scheduledCancellation}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
+                      {isFreePlan ? strings.freePlanName : (currentPlan?.priceMonthly ? `฿${currentPlan?.priceMonthly}` : '—')}
+                    </p>
+                    {!isFreePlan && userBillingInterval && (
+                      <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
+                        {userBillingInterval === 'annual' ? strings.billedAnnually : strings.billedMonthly}
+                      </p>
+                    )}
+                    {user?.plan_renews_at && (
+                      <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                        {isScheduledForCancellation ? strings.cancelScheduledFor : strings.renewsOn} {new Date(user.plan_renews_at).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {isFreePlan ? (
+                    <div className="space-y-3">
+                      <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
+                        <p style={{ fontSize: '14px', color: colors.textPrimary, fontWeight: '600', marginBottom: '8px' }}>
+                          {strings.freeIncludes}
+                        </p>
+                        <ul style={{ fontSize: '12px', color: colors.textPrimary, lineHeight: '1.5' }}>
+                          <li>• {strings.freeBenefit1}</li>
+                          <li>• {strings.freeBenefit2}</li>
+                          <li>• {strings.freeBenefit3}</li>
+                          <li>• {strings.freeBenefit4}</li>
+                        </ul>
+                      </div>
+                      <button 
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          backgroundColor: '#C7A338',
+                          color: '#FFFFFF',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '14px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                          transition: 'all 0.2s'
+                        }}
+                        onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
+                      >
+                        {strings.upgradeNow}
+                      </button>
+                    </div>
+                  ) : isProtectPlan ? (
+                    <div className="space-y-3">
+                      <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #0C3B2E' }}>
+                        <p className="text-sm flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                          <CheckCircle2 className="w-4 h-4 text-ls-forest" />
+                          {strings.allActive}
+                        </p>
+                      </div>
                       <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
                         <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
                           <Bell className="w-3 h-3 text-ls-gold" />
                           {strings.lineEnabled}
                         </p>
                       </div>
-                    )}
-                    
-                    <button
-                      onClick={() => setShowManagePlanPanel(!showManagePlanPanel)}
-                      style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        backgroundColor: '#0C3B2E',
-                        color: '#FFFFFF',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px'
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
-                    >
-                      <Settings className="w-4 h-4" />
-                      {language === 'th' ? 'จัดการแผน' : 'Manage Plan'}
-                    </button>
-
-                    {showManagePlanPanel && (
+                      
+                      {/* Upgrade to Secure CTA */}
                       <div style={{
-                        marginTop: '12px',
                         padding: '16px',
-                        backgroundColor: colors.fieldBg,
                         borderRadius: '12px',
-                        border: `2px solid ${colors.borderColor}`
+                        background: isDarkMode ? 'linear-gradient(135deg, #1A2E27 0%, #0C3B2E 100%)' : 'linear-gradient(135deg, #F0FDF4 0%, #D1FAE5 100%)',
+                        border: '2px solid #0C3B2E',
+                        marginTop: '12px'
                       }}>
-                        <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'เปลี่ยนแผนหรือช่วงการเรียกเก็บเงิน' : 'Change plan or billing cycle'}
-                        </p>
-                        
-                        <div className="space-y-2 mb-4">
-                          {isLitePlan && (
-                            <>
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center flex-shrink-0">
+                            <Crown className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-bold text-sm mb-1" style={{ color: colors.textPrimary }}>
+                              {strings.unlockPremium}
+                            </p>
+                            <p className="text-xs" style={{ color: colors.textSecondary }}>
+                              {strings.secureFeatures}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleSubscribe('secure', userBillingInterval)}
+                          disabled={subscribing.secure}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            backgroundColor: subscribing.secure ? '#9CA3AF' : '#0C3B2E',
+                            color: '#FFFFFF',
+                            borderRadius: '8px',
+                            border: 'none',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            cursor: subscribing.secure ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                            opacity: subscribing.secure ? 0.6 : 1
+                          }}
+                          onMouseEnter={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#0a2f25')}
+                          onMouseLeave={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#0C3B2E')}
+                        >
+                          {subscribing.secure ? strings.processing : strings.upgradeToSecure}
+                        </button>
+                      </div>
+                      
+                      <button
+                        onClick={() => setShowManagePlanPanel(!showManagePlanPanel)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '14px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                      >
+                        <Settings className="w-4 h-4" />
+                        {language === 'th' ? 'จัดการแผน' : 'Manage Plan'}
+                      </button>
+
+                      {showManagePlanPanel && (
+                        <div style={{
+                          marginTop: '12px',
+                          padding: '16px',
+                          backgroundColor: colors.fieldBg,
+                          borderRadius: '12px',
+                          border: `2px solid ${colors.borderColor}`
+                        }}>
+                          <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
+                            {language === 'th' ? 'เปลี่ยนแผนหรือช่วงการเรียกเก็บเงิน' : 'Change plan or billing cycle'}
+                          </p>
+                          
+                          <div className="space-y-2 mb-4">
+                            {userBillingInterval === 'monthly' && (
                               <button
-                                onClick={() => handleSubscribe('protect', userBillingInterval)}
-                                disabled={subscribing.protect}
+                                onClick={() => handleSubscribe('protect', 'annual')}
+                                disabled={subscribing.protect_annual}
                                 style={{
                                   width: '100%',
                                   padding: '10px 14px',
-                                  backgroundColor: subscribing.protect ? '#9CA3AF' : '#C7A338',
+                                  backgroundColor: subscribing.protect_annual ? '#9CA3AF' : '#C7A338',
                                   color: '#FFFFFF',
                                   borderRadius: '8px',
                                   border: 'none',
                                   fontWeight: '600',
                                   fontSize: '13px',
-                                  cursor: subscribing.protect ? 'not-allowed' : 'pointer',
+                                  cursor: subscribing.protect_annual ? 'not-allowed' : 'pointer',
                                   transition: 'all 0.2s',
-                                  opacity: subscribing.protect ? 0.6 : 1
+                                  opacity: subscribing.protect_annual ? 0.6 : 1,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px'
                                 }}
-                                onMouseEnter={(e) => !subscribing.protect && (e.target.style.backgroundColor = '#0C3B2E')}
-                                onMouseLeave={(e) => !subscribing.protect && (e.target.style.backgroundColor = '#C7A338')}
+                                onMouseEnter={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#B89330')}
+                                onMouseLeave={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#C7A338')}
                               >
-                                {subscribing.protect ? strings.processing : (language === 'th' ? 'อัปเกรดเป็น Protect' : 'Upgrade to Protect')}
+                                {subscribing.protect_annual ? strings.processing : (language === 'th' ? 'เปลี่ยนเป็นรายปี' : 'Switch to annual')}
+                                <Badge className="bg-emerald-500 text-white text-xs">
+                                  {language === 'th' ? 'ประหยัด 17%' : 'Save 17%'}
+                                </Badge>
                               </button>
-                              {userBillingInterval === 'monthly' && (
+                            )}
+                            <button
+                              onClick={() => handleDowngrade('lite')}
+                              disabled={subscribing.lite}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                backgroundColor: 'transparent',
+                                color: colors.textPrimary,
+                                borderRadius: '8px',
+                                border: `2px solid ${colors.borderColor}`,
+                                fontWeight: '500',
+                                fontSize: '13px',
+                                cursor: subscribing.lite ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                opacity: subscribing.lite ? 0.6 : 1
+                              }}
+                              onMouseEnter={(e) => !subscribing.lite && (e.target.style.borderColor = '#0C3B2E')}
+                              onMouseLeave={(e) => !subscribing.lite && (e.target.style.borderColor = colors.borderColor)}
+                            >
+                              {subscribing.lite ? strings.processing : (language === 'th' ? 'ลดเป็น Lite' : 'Downgrade to Lite')}
+                            </button>
+                          </div>
+
+                          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${colors.borderColor}` }}>
+                            <button
+                              onClick={() => {
+                                setShowManagePlanPanel(false);
+                                setShowCancelDialog(true);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                backgroundColor: 'transparent',
+                                color: '#EF4444',
+                                borderRadius: '6px',
+                                fontWeight: '500',
+                                fontSize: '13px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                            >
+                              {language === 'th' ? 'ยกเลิกการสมัครสมาชิก' : 'Cancel subscription'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : ( // This block now covers Lite and Secure Plans
+                    <div className="space-y-3">
+                      <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #0C3B2E' }}>
+                        <p className="text-sm flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                          <CheckCircle2 className="w-4 h-4 text-ls-forest" />
+                          {strings.allActive}
+                        </p>
+                      </div>
+                      {/* This condition will be true for Secure, false for Lite */}
+                      {(isLitePlan || isSecurePlan) && (
+                        <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
+                          <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
+                            <Bell className="w-3 h-3 text-ls-gold" />
+                            {strings.lineEnabled}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <button
+                        onClick={() => setShowManagePlanPanel(!showManagePlanPanel)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          fontSize: '14px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                      >
+                        <Settings className="w-4 h-4" />
+                        {language === 'th' ? 'จัดการแผน' : 'Manage Plan'}
+                      </button>
+
+                      {showManagePlanPanel && (
+                        <div style={{
+                          marginTop: '12px',
+                          padding: '16px',
+                          backgroundColor: colors.fieldBg,
+                          borderRadius: '12px',
+                          border: `2px solid ${colors.borderColor}`
+                        }}>
+                          <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
+                            {language === 'th' ? 'เปลี่ยนแผนหรือช่วงการเรียกเก็บเงิน' : 'Change plan or billing cycle'}
+                          </p>
+                          
+                          <div className="space-y-2 mb-4">
+                            {isLitePlan && (
+                              <>
                                 <button
-                                  onClick={() => handleSubscribe('protect', 'annual')}
-                                  disabled={subscribing.protect_annual}
+                                  onClick={() => handleSubscribe('protect', userBillingInterval)}
+                                  disabled={subscribing.protect}
                                   style={{
                                     width: '100%',
                                     padding: '10px 14px',
-                                    backgroundColor: subscribing.protect_annual ? '#9CA3AF' : '#0C3B2E',
+                                    backgroundColor: subscribing.protect ? '#9CA3AF' : '#C7A338',
                                     color: '#FFFFFF',
                                     borderRadius: '8px',
                                     border: 'none',
                                     fontWeight: '600',
                                     fontSize: '13px',
-                                    cursor: subscribing.protect_annual ? 'not-allowed' : 'pointer',
+                                    cursor: subscribing.protect ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.2s',
-                                    opacity: subscribing.protect_annual ? 0.6 : 1,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '6px'
+                                    opacity: subscribing.protect ? 0.6 : 1
                                   }}
-                                  onMouseEnter={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#0a2f25')}
-                                  onMouseLeave={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#0C3B2E')}
+                                  onMouseEnter={(e) => !subscribing.protect && (e.target.style.backgroundColor = '#0C3B2E')}
+                                  onMouseLeave={(e) => !subscribing.protect && (e.target.style.backgroundColor = '#C7A338')}
                                 >
-                                  {subscribing.protect_annual ? strings.processing : (language === 'th' ? 'อัปเกรดเป็น Protect (รายปี)' : 'Upgrade to Protect (annual)')}
-                                  <Badge className="bg-emerald-500 text-white text-xs">
-                                    {language === 'th' ? 'ประหยัด 17%' : 'Save 17%'}
-                                  </Badge>
+                                  {subscribing.protect ? strings.processing : (language === 'th' ? 'อัปเกรดเป็น Protect' : 'Upgrade to Protect')}
                                 </button>
-                              )}
-                              <button
-                                onClick={() => handleSubscribe('secure', userBillingInterval)}
-                                disabled={subscribing.secure}
-                                style={{
-                                  width: '100%',
-                                  padding: '10px 14px',
-                                  backgroundColor: subscribing.secure ? '#9CA3AF' : '#1A1D1F',
-                                  color: '#FFFFFF',
-                                  borderRadius: '8px',
-                                  border: 'none',
-                                  fontWeight: '600',
-                                  fontSize: '13px',
-                                  cursor: subscribing.secure ? 'not-allowed' : 'pointer',
-                                  transition: 'all 0.2s',
-                                  opacity: subscribing.secure ? 0.6 : 1
-                                }}
-                                onMouseEnter={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#0a0a0a')}
-                                onMouseLeave={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#1A1D1F')}
-                              >
-                                {subscribing.secure ? strings.processing : (language === 'th' ? 'อัปเกรดเป็น Secure' : 'Upgrade to Secure')}
-                              </button>
-                            </>
-                          )}
-                          
-                          {isSecurePlan && userBillingInterval === 'monthly' && (
-                            <div style={{
-                              padding: '12px',
-                              backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-                              borderRadius: '8px',
-                              border: '2px solid #3B82F6'
-                            }}>
-                              <p className="text-sm font-semibold mb-2" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                                {language === 'th' ? 'ประหยัดมากขึ้นด้วยการเรียกเก็บรายปี' : 'Save more with annual billing'}
-                              </p>
-                              <p className="text-xs mb-3" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
-                                {language === 'th' 
-                                  ? 'รักษาการป้องกัน Secure ของคุณในอัตรารายเดือนที่ต่ำกว่า'
-                                  : 'Keep your Secure protection at a lower effective monthly rate.'}
-                              </p>
-                              <button
-                                onClick={() => handleSubscribe('secure', 'annual')}
-                                disabled={subscribing.secure_annual}
-                                style={{
-                                  width: '100%',
-                                  padding: '10px 14px',
-                                  backgroundColor: subscribing.secure_annual ? '#9CA3AF' : '#3B82F6',
-                                  color: '#FFFFFF',
-                                  borderRadius: '8px',
-                                  border: 'none',
-                                  fontWeight: '600',
-                                  fontSize: '13px',
-                                  cursor: subscribing.secure_annual ? 'not-allowed' : 'pointer',
-                                  transition: 'all 0.2s',
-                                  opacity: subscribing.secure_annual ? 0.6 : 1
-                                }}
-                                onMouseEnter={(e) => !subscribing.secure_annual && (e.target.style.backgroundColor = '#2563EB')}
-                                onMouseLeave={(e) => !subscribing.secure_annual && (e.target.style.backgroundColor = '#3B82F6')}
-                              >
-                                {subscribing.secure_annual ? strings.processing : (language === 'th' ? 'เปลี่ยนเป็นรายปี' : 'Switch to annual')}
-                              </button>
-                            </div>
-                          )}
+                                {userBillingInterval === 'monthly' && (
+                                  <button
+                                    onClick={() => handleSubscribe('protect', 'annual')}
+                                    disabled={subscribing.protect_annual}
+                                    style={{
+                                      width: '100%',
+                                      padding: '10px 14px',
+                                      backgroundColor: subscribing.protect_annual ? '#9CA3AF' : '#0C3B2E',
+                                      color: '#FFFFFF',
+                                      borderRadius: '8px',
+                                      border: 'none',
+                                      fontWeight: '600',
+                                      fontSize: '13px',
+                                      cursor: subscribing.protect_annual ? 'not-allowed' : 'pointer',
+                                      transition: 'all 0.2s',
+                                      opacity: subscribing.protect_annual ? 0.6 : 1,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '6px'
+                                    }}
+                                    onMouseEnter={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#0a2f25')}
+                                    onMouseLeave={(e) => !subscribing.protect_annual && (e.target.style.backgroundColor = '#0C3B2E')}
+                                  >
+                                    {subscribing.protect_annual ? strings.processing : (language === 'th' ? 'อัปเกรดเป็น Protect (รายปี)' : 'Upgrade to Protect (annual)')}
+                                    <Badge className="bg-emerald-500 text-white text-xs">
+                                      {language === 'th' ? 'ประหยัด 17%' : 'Save 17%'}
+                                    </Badge>
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleSubscribe('secure', userBillingInterval)}
+                                  disabled={subscribing.secure}
+                                  style={{
+                                    width: '100%',
+                                    padding: '10px 14px',
+                                    backgroundColor: subscribing.secure ? '#9CA3AF' : '#1A1D1F',
+                                    color: '#FFFFFF',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    cursor: subscribing.secure ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s',
+                                    opacity: subscribing.secure ? 0.6 : 1
+                                  }}
+                                  onMouseEnter={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#0a0a0a')}
+                                  onMouseLeave={(e) => !subscribing.secure && (e.target.style.backgroundColor = '#1A1D1F')}
+                                >
+                                  {subscribing.secure ? strings.processing : (language === 'th' ? 'อัปเกรดเป็น Secure' : 'Upgrade to Secure')}
+                                </button>
+                              </>
+                            )}
+                            
+                            {isSecurePlan && userBillingInterval === 'monthly' && (
+                              <div style={{
+                                padding: '12px',
+                                backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                                borderRadius: '8px',
+                                border: '2px solid #3B82F6'
+                              }}>
+                                <p className="text-sm font-semibold mb-2" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                                  {language === 'th' ? 'ประหยัดมากขึ้นด้วยการเรียกเก็บรายปี' : 'Save more with annual billing'}
+                                </p>
+                                <p className="text-xs mb-3" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                                  {language === 'th' 
+                                    ? 'รักษาการป้องกัน Secure ของคุณในอัตรารายเดือนที่ต่ำกว่า'
+                                    : 'Keep your Secure protection at a lower effective monthly rate.'}
+                                </p>
+                                <button
+                                  onClick={() => handleSubscribe('secure', 'annual')}
+                                  disabled={subscribing.secure_annual}
+                                  style={{
+                                    width: '100%',
+                                    padding: '10px 14px',
+                                    backgroundColor: subscribing.secure_annual ? '#9CA3AF' : '#3B82F6',
+                                    color: '#FFFFFF',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    cursor: subscribing.secure_annual ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s',
+                                    opacity: subscribing.secure_annual ? 0.6 : 1
+                                  }}
+                                  onMouseEnter={(e) => !subscribing.secure_annual && (e.target.style.backgroundColor = '#2563EB')}
+                                  onMouseLeave={(e) => !subscribing.secure_annual && (e.target.style.backgroundColor = '#3B82F6')}
+                                >
+                                  {subscribing.secure_annual ? strings.processing : (language === 'th' ? 'เปลี่ยนเป็นรายปี' : 'Switch to annual')}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${colors.borderColor}` }}>
+                            <button
+                              onClick={() => {
+                                setShowManagePlanPanel(false);
+                                setShowCancelDialog(true);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                backgroundColor: 'transparent',
+                                color: '#EF4444',
+                                borderRadius: '6px',
+                                fontWeight: '500',
+                                fontSize: '13px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                            >
+                              {language === 'th' ? 'ยกเลิกการสมัครสมาชิก' : 'Cancel subscription'}
+                            </button>
+                          </div>
                         </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </section>
+          </div>
 
-                        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${colors.borderColor}` }}>
-                          <button
-                            onClick={() => {
-                              setShowManagePlanPanel(false);
-                              setShowCancelDialog(true);
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              backgroundColor: 'transparent',
-                              color: '#EF4444',
-                              borderRadius: '6px',
-                              fontWeight: '500',
-                              fontSize: '13px',
-                              border: 'none',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                          >
-                            {language === 'th' ? 'ยกเลิกการสมัครสมาชิก' : 'Cancel subscription'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-        </div>
+          <div className="mb-6">
+            <LineConnectionStatus user={user} colors={colors} />
+          </div>
 
-        <div className="mb-6">
-          <LineConnectionStatus user={user} colors={colors} />
-        </div>
-
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader className="border-b pb-4" style={{
-            backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
-            borderBottomColor: colors.borderColor
-          }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-lg font-bold flex items-center gap-2 mb-1" style={{ color: colors.textPrimary }}>
-                  <User className="w-5 h-5 text-ls-forest" />
-                  {strings.landlordInfo}
-                </CardTitle>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.landlordInfoDesc}</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="mb-6 p-4 rounded-xl border-2 border-dashed" style={{
-              backgroundColor: isDarkMode ? '#2A2D30' : '#F0FDF4',
-              borderColor: isDarkMode ? '#10B981' : '#86EFAC'
+          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader className="border-b pb-4" style={{
+              backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
+              borderBottomColor: colors.borderColor
             }}>
-              <div className="flex items-start gap-3 mb-3">
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: '#10B981',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <MessageCircle className="w-5 h-5 text-white" />
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2 mb-1" style={{ color: colors.textPrimary }}>
+                    <User className="w-5 h-5 text-ls-forest" />
+                    {strings.landlordInfo}
+                  </CardTitle>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.landlordInfoDesc}</p>
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-bold mb-1" style={{ color: colors.textPrimary }}>{strings.landlordLineConnect}</h4>
-                  <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>{strings.connectLineOADesc}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleCopyLink('landlord')}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        backgroundColor: copiedLink === 'landlord' ? '#10B981' : (isDarkMode ? '#353A3D' : '#FFFFFF'),
-                        color: copiedLink === 'landlord' ? '#FFFFFF' : colors.textPrimary,
-                        border: `2px solid ${copiedLink === 'landlord' ? '#10B981' : colors.borderColor}`,
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (copiedLink !== 'landlord') {
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="mb-6 p-4 rounded-xl border-2 border-dashed" style={{
+                backgroundColor: isDarkMode ? '#2A2D30' : '#F0FDF4',
+                borderColor: isDarkMode ? '#10B981' : '#86EFAC'
+              }}>
+                <div className="flex items-start gap-3 mb-3">
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: '#10B981',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <MessageCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold mb-1" style={{ color: colors.textPrimary }}>{strings.landlordLineConnect}</h4>
+                    <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>{strings.connectLineOADesc}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => handleCopyLink('landlord')}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '8px',
+                          backgroundColor: copiedLink === 'landlord' ? '#10B981' : (isDarkMode ? '#353A3D' : '#FFFFFF'),
+                          color: copiedLink === 'landlord' ? '#FFFFFF' : colors.textPrimary,
+                          border: `2px solid ${copiedLink === 'landlord' ? '#10B981' : colors.borderColor}`,
+                          fontWeight: 'bold',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (copiedLink !== 'landlord') {
+                            e.target.style.borderColor = '#10B981';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (copiedLink !== 'landlord') {
+                            e.target.style.borderColor = colors.borderColor;
+                          }
+                        }}
+                      >
+                        {copiedLink === 'landlord' ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            {strings.linkCopied}
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            {strings.copyLink}
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleShareLink('landlord')}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '8px',
+                          backgroundColor: '#10B981',
+                          color: '#FFFFFF',
+                          border: '2px solid #10B981',
+                          fontWeight: 'bold',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#059669';
+                          e.target.style.borderColor = '#059669';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#10B981';
                           e.target.style.borderColor = '#10B981';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (copiedLink !== 'landlord') {
-                          e.target.style.borderColor = colors.borderColor;
-                        }
-                      }}
-                    >
-                      {copiedLink === 'landlord' ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          {strings.linkCopied}
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          {strings.copyLink}
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleShareLink('landlord')}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        backgroundColor: '#10B981',
-                        color: '#FFFFFF',
-                        border: '2px solid #10B981',
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#059669';
-                        e.target.style.borderColor = '#059669';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#10B981';
-                        e.target.style.borderColor = '#10B981';
-                      }}
-                    >
-                      <Share2 className="w-4 h-4" />
-                      {strings.shareLink}
-                    </button>
+                        }}
+                      >
+                        <Share2 className="w-4 h-4" />
+                        {strings.shareLink}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mb-4 text-center">
-              <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.orManualEntry}</p>
-            </div>
+              <div className="mb-4 text-center">
+                <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.orManualEntry}</p>
+              </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="landlord_name" style={{ color: colors.textPrimary }}>{strings.landlordName}</Label>
-                <Input
-                  id="landlord_name"
-                  value={landlordData.landlord_name}
-                  onChange={(e) => setLandlordData({...landlordData, landlord_name: e.target.value})}
-                  placeholder={language === 'th' ? 'ชื่อเจ้าของบ้าน' : 'Landlord name'}
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="landlord_name" style={{ color: colors.textPrimary }}>{strings.landlordName}</Label>
+                  <Input
+                    id="landlord_name"
+                    value={landlordData.landlord_name}
+                    onChange={(e) => setLandlordData({...landlordData, landlord_name: e.target.value})}
+                    placeholder={language === 'th' ? 'ชื่อเจ้าของบ้าน' : 'Landlord name'}
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="landlord_email" style={{ color: colors.textPrimary }}>{strings.landlordEmail}</Label>
+                  <Input
+                    id="landlord_email"
+                    type="email"
+                    value={landlordData.landlord_email}
+                    onChange={(e) => setLandlordData({...landlordData, landlord_email: e.target.value})}
+                    placeholder={language === 'th' ? 'landlord@example.com' : 'landlord@example.com'}
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="landlord_phone" style={{ color: colors.textPrimary }}>{strings.landlordPhone}</Label>
+                  <Input
+                    id="landlord_phone"
+                    value={landlordData.landlord_phone}
+                    onChange={(e) => setLandlordData({...landlordData, landlord_phone: e.target.value})}
+                    placeholder="+66 XX XXX XXXX"
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="landlord_line" style={{ color: colors.textPrimary }}>{strings.landlordLine}</Label>
+                  <Input
+                    id="landlord_line"
+                    value={landlordData.landlord_line}
+                    onChange={(e) => setLandlordData({...landlordData, landlord_line: e.target.value})}
+                    placeholder="@lineid"
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="landlord_address" style={{ color: colors.textPrimary }}>{strings.landlordAddress}</Label>
+                  <Textarea
+                    id="landlord_address"
+                    value={landlordData.landlord_address}
+                    onChange={(e) => setLandlordData({...landlordData, landlord_address: e.target.value})}
+                    placeholder={language === 'th' ? 'ที่อยู่เจ้าของบ้าน' : 'Landlord address'}
+                    className="mt-2"
+                    rows={2}
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="landlord_email" style={{ color: colors.textPrimary }}>{strings.landlordEmail}</Label>
-                <Input
-                  id="landlord_email"
-                  type="email"
-                  value={landlordData.landlord_email}
-                  onChange={(e) => setLandlordData({...landlordData, landlord_email: e.target.value})}
-                  placeholder={language === 'th' ? 'landlord@example.com' : 'landlord@example.com'}
-                  className="mt-2"
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={handleLandlordUpdate}
+                  disabled={updateProfileMutation.isPending}
                   style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    border: 'none',
+                    backgroundColor: updateProfileMutation.isPending ? '#9CA3AF' : '#0C3B2E',
+                    color: '#FFFFFF',
+                    cursor: updateProfileMutation.isPending ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    opacity: updateProfileMutation.isPending ? 0.6 : 1
                   }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="landlord_phone" style={{ color: colors.textPrimary }}>{strings.landlordPhone}</Label>
-                <Input
-                  id="landlord_phone"
-                  value={landlordData.landlord_phone}
-                  onChange={(e) => setLandlordData({...landlordData, landlord_phone: e.target.value})}
-                  placeholder="+66 XX XXX XXXX"
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
+                  onMouseEnter={(e) => {
+                    if (!updateProfileMutation.isPending) {
+                      e.target.style.backgroundColor = '#C7A338';
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 6px 8px rgba(199, 163, 56, 0.4)';
+                    }
                   }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="landlord_line" style={{ color: colors.textPrimary }}>{strings.landlordLine}</Label>
-                <Input
-                  id="landlord_line"
-                  value={landlordData.landlord_line}
-                  onChange={(e) => setLandlordData({...landlordData, landlord_line: e.target.value})}
-                  placeholder="@lineid"
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
+                  onMouseLeave={(e) => {
+                    if (!updateProfileMutation.isPending) {
+                      e.target.style.backgroundColor = '#0C3B2E';
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
+                    }
                   }}
-                />
+                >
+                  {updateProfileMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      {strings.saveContactInfo}
+                    </>
+                  )}
+                </button>
               </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="landlord_address" style={{ color: colors.textPrimary }}>{strings.landlordAddress}</Label>
-                <Textarea
-                  id="landlord_address"
-                  value={landlordData.landlord_address}
-                  onChange={(e) => setLandlordData({...landlordData, landlord_address: e.target.value})}
-                  placeholder={language === 'th' ? 'ที่อยู่เจ้าของบ้าน' : 'Landlord address'}
-                  className="mt-2"
-                  rows={2}
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={handleLandlordUpdate}
-                disabled={updateProfileMutation.isPending}
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  border: 'none',
-                  backgroundColor: updateProfileMutation.isPending ? '#9CA3AF' : '#0C3B2E',
-                  color: '#FFFFFF',
-                  cursor: updateProfileMutation.isPending ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  opacity: updateProfileMutation.isPending ? 0.6 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!updateProfileMutation.isPending) {
-                    e.target.style.backgroundColor = '#C7A338';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 8px rgba(199, 163, 56, 0.4)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!updateProfileMutation.isPending) {
-                    e.target.style.backgroundColor = '#0C3B2E';
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
-                  }
-                }}
-              >
-                {updateProfileMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    {strings.saveContactInfo}
-                  </>
-                )}
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader className="border-b pb-4" style={{
-            backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
-            borderBottomColor: colors.borderColor
-          }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-lg font-bold flex items-center gap-2 mb-1" style={{ color: colors.textPrimary }}>
-                  <Settings className="w-5 h-5 text-ls-gold" />
-                  {strings.juristicInfo}
-                </CardTitle>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.juristicInfoDesc}</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="mb-6 p-4 rounded-xl border-2 border-dashed" style={{
-              backgroundColor: isDarkMode ? '#2A2D30' : '#FFFBEB',
-              borderColor: isDarkMode ? '#F59E0B' : '#FDE047'
+          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader className="border-b pb-4" style={{
+              backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
+              borderBottomColor: colors.borderColor
             }}>
-              <div className="flex items-start gap-3 mb-3">
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: '#F59E0B',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <MessageCircle className="w-5 h-5 text-white" />
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2 mb-1" style={{ color: colors.textPrimary }}>
+                    <Settings className="w-5 h-5 text-ls-gold" />
+                    {strings.juristicInfo}
+                  </CardTitle>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.juristicInfoDesc}</p>
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-bold mb-1" style={{ color: colors.textPrimary }}>{strings.juristicLineConnect}</h4>
-                  <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>{strings.connectLineOADesc}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleCopyLink('juristic')}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        backgroundColor: copiedLink === 'juristic' ? '#F59E0B' : (isDarkMode ? '#353A3D' : '#FFFFFF'),
-                        color: copiedLink === 'juristic' ? '#FFFFFF' : colors.textPrimary,
-                        border: `2px solid ${copiedLink === 'juristic' ? '#F59E0B' : colors.borderColor}`,
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (copiedLink !== 'juristic') {
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="mb-6 p-4 rounded-xl border-2 border-dashed" style={{
+                backgroundColor: isDarkMode ? '#2A2D30' : '#FFFBEB',
+                borderColor: isDarkMode ? '#F59E0B' : '#FDE047'
+              }}>
+                <div className="flex items-start gap-3 mb-3">
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: '#F59E0B',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <MessageCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold mb-1" style={{ color: colors.textPrimary }}>{strings.juristicLineConnect}</h4>
+                    <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>{strings.connectLineOADesc}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => handleCopyLink('juristic')}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '8px',
+                          backgroundColor: copiedLink === 'juristic' ? '#F59E0B' : (isDarkMode ? '#353A3D' : '#FFFFFF'),
+                          color: copiedLink === 'juristic' ? '#FFFFFF' : colors.textPrimary,
+                          border: `2px solid ${copiedLink === 'juristic' ? '#F59E0B' : colors.borderColor}`,
+                          fontWeight: 'bold',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (copiedLink !== 'juristic') {
+                            e.target.style.borderColor = '#F59E0B';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (copiedLink !== 'juristic') {
+                            e.target.style.borderColor = colors.borderColor;
+                          }
+                        }}
+                      >
+                        {copiedLink === 'juristic' ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            {strings.linkCopied}
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            {strings.copyLink}
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleShareLink('juristic')}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '8px',
+                          backgroundColor: '#F59E0B',
+                          color: '#FFFFFF',
+                          border: '2px solid #F59E0B',
+                          fontWeight: 'bold',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#D97706';
+                          e.target.style.borderColor = '#D97706';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#F59E0B';
                           e.target.style.borderColor = '#F59E0B';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (copiedLink !== 'juristic') {
-                          e.target.style.borderColor = colors.borderColor;
-                        }
-                      }}
-                    >
-                      {copiedLink === 'juristic' ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          {strings.linkCopied}
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          {strings.copyLink}
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleShareLink('juristic')}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        backgroundColor: '#F59E0B',
-                        color: '#FFFFFF',
-                        border: '2px solid #F59E0B',
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#D97706';
-                        e.target.style.borderColor = '#D97706';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#F59E0B';
-                        e.target.style.borderColor = '#F59E0B';
-                      }}
-                    >
-                      <Share2 className="w-4 h-4" />
-                      {strings.shareLink}
-                    </button>
+                        }}
+                      >
+                        <Share2 className="w-4 h-4" />
+                        {strings.shareLink}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mb-4 text-center">
-              <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.orManualEntry}</p>
-            </div>
+              <div className="mb-4 text-center">
+                <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.orManualEntry}</p>
+              </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="juristic_name" style={{ color: colors.textPrimary }}>{strings.juristicName}</Label>
-                <Input
-                  id="juristic_name"
-                  value={juristicData.juristic_name}
-                  onChange={(e) => setJuristicData({...juristicData, juristic_name: e.target.value})}
-                  placeholder={language === 'th' ? 'ชื่อผู้ติดต่อ' : 'Contact name'}
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="juristic_name" style={{ color: colors.textPrimary }}>{strings.juristicName}</Label>
+                  <Input
+                    id="juristic_name"
+                    value={juristicData.juristic_name}
+                    onChange={(e) => setJuristicData({...juristicData, juristic_name: e.target.value})}
+                    placeholder={language === 'th' ? 'ชื่อผู้ติดต่อ' : 'Contact name'}
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="juristic_email" style={{ color: colors.textPrimary }}>{strings.juristicEmail}</Label>
+                  <Input
+                    id="juristic_email"
+                    type="email"
+                    value={juristicData.juristic_email}
+                    onChange={(e) => setJuristicData({...juristicData, juristic_email: e.target.value})}
+                    placeholder={language === 'th' ? 'juristic@example.com' : 'juristic@example.com'}
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="juristic_phone" style={{ color: colors.textPrimary }}>{strings.juristicPhone}</Label>
+                  <Input
+                    id="juristic_phone"
+                    value={juristicData.juristic_phone}
+                    onChange={(e) => setJuristicData({...juristicData, juristic_phone: e.target.value})}
+                    placeholder="+66 XX XXX XXXX"
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="juristic_line" style={{ color: colors.textPrimary }}>{strings.juristicLine}</Label>
+                  <Input
+                    id="juristic_line"
+                    value={juristicData.juristic_line}
+                    onChange={(e) => setJuristicData({...juristicData, juristic_line: e.target.value})}
+                    placeholder="@lineid"
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary
+                    }}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="juristic_email" style={{ color: colors.textPrimary }}>{strings.juristicEmail}</Label>
-                <Input
-                  id="juristic_email"
-                  type="email"
-                  value={juristicData.juristic_email}
-                  onChange={(e) => setJuristicData({...juristicData, juristic_email: e.target.value})}
-                  placeholder={language === 'th' ? 'juristic@example.com' : 'juristic@example.com'}
-                  className="mt-2"
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={handleJuristicUpdate}
+                  disabled={updateProfileMutation.isPending}
                   style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    border: 'none',
+                    backgroundColor: updateProfileMutation.isPending ? '#9CA3AF' : '#C7A338',
+                    color: updateProfileMutation.isPending ? '#FFFFFF' : '#1A1D1F',
+                    cursor: updateProfileMutation.isPending ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 6px rgba(199, 163, 56, 0.3)',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    opacity: updateProfileMutation.isPending ? 0.6 : 1
                   }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="juristic_phone" style={{ color: colors.textPrimary }}>{strings.juristicPhone}</Label>
-                <Input
-                  id="juristic_phone"
-                  value={juristicData.juristic_phone}
-                  onChange={(e) => setJuristicData({...juristicData, juristic_phone: e.target.value})}
-                  placeholder="+66 XX XXX XXXX"
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
+                  onMouseEnter={(e) => {
+                    if (!updateProfileMutation.isPending) {
+                      e.target.style.backgroundColor = '#0C3B2E';
+                      e.target.style.color = '#FFFFFF';
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 6px 8px rgba(12, 59, 46, 0.4)';
+                    }
                   }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="juristic_line" style={{ color: colors.textPrimary }}>{strings.juristicLine}</Label>
-                <Input
-                  id="juristic_line"
-                  value={juristicData.juristic_line}
-                  onChange={(e) => setJuristicData({...juristicData, juristic_line: e.target.value})}
-                  placeholder="@lineid"
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
+                  onMouseLeave={(e) => {
+                    if (!updateProfileMutation.isPending) {
+                      e.target.style.backgroundColor = '#C7A338';
+                      e.target.style.color = '#1A1D1F';
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 6px rgba(199, 163, 56, 0.3)';
+                    }
                   }}
-                />
+                >
+                  {updateProfileMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      {strings.saveContactInfo}
+                    </>
+                  )}
+                </button>
               </div>
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={handleJuristicUpdate}
-                disabled={updateProfileMutation.isPending}
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  border: 'none',
-                  backgroundColor: updateProfileMutation.isPending ? '#9CA3AF' : '#C7A338',
-                  color: updateProfileMutation.isPending ? '#FFFFFF' : '#1A1D1F',
-                  cursor: updateProfileMutation.isPending ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 6px rgba(199, 163, 56, 0.3)',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  opacity: updateProfileMutation.isPending ? 0.6 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!updateProfileMutation.isPending) {
-                    e.target.style.backgroundColor = '#0C3B2E';
-                    e.target.style.color = '#FFFFFF';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 8px rgba(12, 59, 46, 0.4)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!updateProfileMutation.isPending) {
-                    e.target.style.backgroundColor = '#C7A338';
-                    e.target.style.color = '#1A1D1F';
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 6px rgba(199, 163, 56, 0.3)';
-                  }
-                }}
-              >
-                {updateProfileMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    {strings.saveContactInfo}
-                  </>
-                )}
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <div className="grid lg:grid-cols-2 gap-6 mb-6">
-          <NotificationPreferences 
-            user={user} 
-            onUpdate={handleNotificationUpdate}
-            colors={colors}
-          />
-          <div id="notification-analytics">
-            <NotificationAnalytics 
-              language={language}
+          <div className="grid lg:grid-cols-2 gap-6 mb-6">
+            <NotificationPreferences 
+              user={user} 
+              onUpdate={handleNotificationUpdate}
               colors={colors}
             />
+            <div id="notification-analytics">
+              <NotificationAnalytics 
+                language={language}
+                colors={colors}
+              />
+            </div>
           </div>
-        </div>
 
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <HelpCircle className="w-5 h-5 text-ls-forest" />
-              {strings.helpSupport}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-              {strings.helpDesc}
-            </p>
-            
-            <div className="grid md:grid-cols-2 gap-4">
-              <Link to={createPageUrl("Support")}>
-                <div
+          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+              <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <HelpCircle className="w-5 h-5 text-ls-forest" />
+                {strings.helpSupport}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                {strings.helpDesc}
+              </p>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <Link to={createPageUrl("Support")}>
+                  <div
+                    style={{
+                      padding: '20px',
+                      backgroundColor: '#0C3B2E',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      height: '100%'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#0a2f25';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#0C3B2E';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <MessageCircle className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">
+                          {strings.submitRequest}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-white/80">
+                      {strings.submitDesc}
+                    </p>
+                  </div>
+                </Link>
+
+                <a
+                  href="mailto:support@leaseshield.asia"
                   style={{
                     padding: '20px',
-                    backgroundColor: '#0C3B2E',
+                    backgroundColor: colors.fieldBg,
                     borderRadius: '12px',
-                    cursor: 'pointer',
+                    borderLeft: '4px solid #C7A338',
+                    textDecoration: 'none',
+                    display: 'block',
                     transition: 'all 0.2s',
                     height: '100%'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#0a2f25';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.backgroundColor = '#C7A338';
+                    e.currentTarget.querySelectorAll('p').forEach(el => {
+                      el.style.color = '#FFFFFF';
+                    });
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#0C3B2E';
-                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.backgroundColor = colors.fieldBg;
+                    e.currentTarget.querySelectorAll('p:nth-child(1)').forEach(el => {
+                      el.style.color = colors.textPrimary;
+                    });
+                    e.currentTarget.querySelectorAll('p:nth-child(2)').forEach(el => {
+                      el.style.color = colors.textSecondary;
+                    });
+                    e.currentTarget.querySelectorAll('p:nth-child(3)').forEach(el => {
+                      el.style.color = colors.textSecondary;
+                    });
                   }}
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div style={{
                       width: '40px',
                       height: '40px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      backgroundColor: '#C7A338',
                       borderRadius: '10px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}>
-                      <MessageCircle className="w-5 h-5 text-white" />
+                      <Mail className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-bold text-white">
-                        {strings.submitRequest}
+                      <p className="font-bold" style={{ color: colors.textPrimary }}>
+                        {strings.directEmail}
                       </p>
                     </div>
                   </div>
-                  <p className="text-sm text-white/80">
-                    {strings.submitDesc}
+                  <p className="text-sm mb-2" style={{ color: colors.textSecondary }}>support@leaseshield.asia</p>
+                  <p className="text-xs" style={{ color: colors.textSecondary }}>
+                    {strings.responseTime}
                   </p>
-                </div>
-              </Link>
+                </a>
+              </div>
+            </CardContent>
+          </Card>
 
-              <a
-                href="mailto:support@leaseshield.asia"
-                style={{
-                  padding: '20px',
+          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+              <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <Shield className="w-5 h-5 text-ls-forest" />
+                {strings.dataPrivacy}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div style={{
+                  padding: '16px',
                   backgroundColor: colors.fieldBg,
                   borderRadius: '12px',
-                  borderLeft: '4px solid #C7A338',
-                  textDecoration: 'none',
-                  display: 'block',
-                  transition: 'all 0.2s',
-                  height: '100%'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#C7A338';
-                  e.currentTarget.querySelectorAll('p').forEach(el => {
-                    el.style.color = '#FFFFFF';
-                  });
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.fieldBg;
-                  e.currentTarget.querySelectorAll('p:nth-child(1)').forEach(el => {
-                    el.style.color = colors.textPrimary;
-                  });
-                  e.currentTarget.querySelectorAll('p:nth-child(2)').forEach(el => {
-                    el.style.color = colors.textSecondary;
-                  });
-                  e.currentTarget.querySelectorAll('p:nth-child(3)').forEach(el => {
-                    el.style.color = colors.textSecondary;
-                  });
-                }}
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#C7A338',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <Mail className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-bold" style={{ color: colors.textPrimary }}>
-                      {strings.directEmail}
-                    </p>
+                  borderLeft: '4px solid #0C3B2E'
+                }}>
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        backgroundColor: '#0C3B2E',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <FileText className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.privacyPolicy}</p>
+                        <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.privacyDesc}</p>
+                      </div>
+                    </div>
+                    <a
+                      href="https://www.leaseshield.asia/legal#privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        border: '2px solid #0C3B2E',
+                        backgroundColor: colors.cardBg,
+                        color: '#0C3B2E',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                        display: 'inline-block',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.color = '#FFFFFF';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = colors.cardBg;
+                        e.target.style.color = '#0C3B2E';
+                      }}
+                    >
+                      {strings.viewPolicy}
+                    </a>
                   </div>
                 </div>
-                <p className="text-sm mb-2" style={{ color: colors.textSecondary }}>support@leaseshield.asia</p>
-                <p className="text-xs" style={{ color: colors.textSecondary }}>
-                  {strings.responseTime}
-                </p>
-              </a>
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <Shield className="w-5 h-5 text-ls-forest" />
-              {strings.dataPrivacy}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <div style={{
-                padding: '16px',
-                backgroundColor: colors.fieldBg,
-                borderRadius: '12px',
-                borderLeft: '4px solid #0C3B2E'
-              }}>
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div className="flex items-center gap-3">
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#0C3B2E',
-                      borderRadius: '10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <FileText className="w-5 h-5 text-white" />
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: colors.fieldBg,
+                  borderRadius: '12px',
+                  borderLeft: '44px solid #C7A338'
+                }}>
+                  <div className="flex items-start gap-3 justify-between flex-wrap">
+                    <div className="flex items-start gap-3">
+                      <Download className="w-5 h-5 flex-shrink-0 mt-0.5 text-ls-gold" />
+                      <div>
+                        <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.exportData}</p>
+                        <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.exportDesc}</p>
+                      </div>
                     </div>
+                    <button
+                      onClick={handleExportData}
+                      disabled={exporting}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        border: '2px solid #C7A338',
+                        backgroundColor: exporting ? colors.fieldBg : colors.cardBg,
+                        color: exporting ? colors.textSecondary : '#C7A338',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        cursor: exporting ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        opacity: exporting ? 0.7 : 1
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!exporting) {
+                          e.target.style.backgroundColor = '#C7A338';
+                          e.target.style.color = '#FFFFFF';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!exporting) {
+                          e.target.style.backgroundColor = colors.cardBg;
+                          e.target.style.color = '#C7A338';
+                        }
+                      }}
+                    >
+                      {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                      {exporting ? strings.exporting : strings.export}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#FEE2E2',
+                  borderRadius: '12px',
+                  borderLeft: '4px solid #DC2626'
+                }}>
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.privacyPolicy}</p>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.privacyDesc}</p>
+                      <p className="font-semibold text-red-900 mb-1">{strings.deleteAccount}</p>
+                      <p className="text-sm text-red-800 mb-2">
+                        {strings.deleteDesc} <strong>privacy@leaseshield.asia</strong>
+                      </p>
+                      <p className="text-xs text-red-700">
+                        {strings.deleteNote}
+                      </p>
                     </div>
                   </div>
-                  <a
-                    href="https://www.leaseshield.asia/legal#privacy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: '2px solid #0C3B2E',
-                      backgroundColor: colors.cardBg,
-                      color: '#0C3B2E',
-                      fontWeight: 'bold',
-                      fontSize: '14px',
-                      textDecoration: 'none',
-                      cursor: 'pointer',
-                      display: 'inline-block',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#0C3B2E';
-                      e.target.style.color = '#FFFFFF';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = colors.cardBg;
-                      e.target.style.color = '#0C3B2E';
-                    }}
-                  >
-                    {strings.viewPolicy}
-                  </a>
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
-              <div style={{
-                padding: '16px',
-                backgroundColor: colors.fieldBg,
-                borderRadius: '12px',
-                borderLeft: '44px solid #C7A338'
-              }}>
-                <div className="flex items-start gap-3 justify-between flex-wrap">
-                  <div className="flex items-start gap-3">
-                    <Download className="w-5 h-5 flex-shrink-0 mt-0.5 text-ls-gold" />
-                    <div>
-                      <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.exportData}</p>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.exportDesc}</p>
-                    </div>
+          <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+            <DialogContent className="sm:max-w-2xl" style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor,
+              color: colors.textPrimary
+            }}>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3 text-xl" style={{ color: colors.textPrimary }}>
+                  <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <XCircle className="w-6 h-6 text-red-600" />
                   </div>
+                  <div>
+                    {strings.cancelDialogTitle}
+                    <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
+                      {strings.cancelDialogDesc}
+                    </p>
+                  </div>
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-6 mt-4">
+                {currentPlan && (
+                  <div className="p-4 rounded-lg" style={{
+                    backgroundColor: '#FEE2E2',
+                    border: '2px solid #FECACA'
+                  }}>
+                    <p className="font-semibold text-red-900 mb-3">{strings.whatYoullLose}:</p>
+                    <ul className="space-y-2 text-sm text-red-800">
+                      {(language === 'th' ? currentPlan.benefitsTh : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน')).map((benefit, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                          <span>{benefit}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {(isProtectPlan || isSecurePlan) && (
+                  <div className="p-4 rounded-lg border-2" style={{
+                    backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                    borderColor: '#3B82F6'
+                  }}>
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                        <TrendingUp className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                          {language === 'th' ? 'พิจารณาลดระดับแทน' : 'Consider downgrading instead'}
+                        </p>
+                        <p className="text-sm" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                          {language === 'th' 
+                            ? 'แทนที่จะยกเลิกทั้งหมด คุณสามารถประหยัดเงินโดยเปลี่ยนเป็นแผนที่ต่ำกว่าและรักษาการป้องกันหลักไว้'
+                            : 'Instead of cancelling completely, you can save money by switching to a lower plan and keep key protections active.'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowCancelDialog(false);
+                        handleDowngrade('lite');
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px 16px',
+                        backgroundColor: '#3B82F6',
+                        color: '#FFFFFF',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
+                    >
+                      {language === 'th' ? 'ลดเป็น Lite แทน' : 'Downgrade to Lite instead'}
+                    </button>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="cancelReason" style={{ color: colors.textPrimary }}>
+                      {strings.cancelReason} <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={cancelReason} onValueChange={setCancelReason}>
+                      <SelectTrigger style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}>
+                        <SelectValue placeholder={strings.selectReason} />
+                      </SelectTrigger>
+                      <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                        <SelectItem value="too_expensive">{strings.reasonTooExpensive}</SelectItem>
+                        <SelectItem value="not_using">{strings.reasonNotUsingEnough}</SelectItem>
+                        <SelectItem value="found_alternative">{strings.reasonFoundAlternative}</SelectItem>
+                        <SelectItem value="missing_features">{strings.reasonMissingFeatures}</SelectItem>
+                        <SelectItem value="technical_issues">{strings.reasonTechnicalIssues}</SelectItem>
+                        <SelectItem value="other">{strings.reasonOther}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="cancelFeedback" style={{ color: colors.textPrimary }}>
+                      {strings.additionalFeedback}
+                    </Label>
+                    <Textarea
+                      id="cancelFeedback"
+                      value={cancelFeedback}
+                      onChange={(e) => setCancelFeedback(e.target.value)}
+                      placeholder={strings.feedbackPlaceholder}
+                      rows={4}
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary,
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg" style={{
+                  backgroundColor: isDarkMode ? '#2A2D30' : '#F3F4F6',
+                  border: `1px solid ${colors.borderColor}`
+                }}>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {strings.downgradeNote.replace('{date}', user?.plan_renews_at ? new Date(user.plan_renews_at).toLocaleDateString() : '')}
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
                   <button
-                    onClick={handleExportData}
-                    disabled={exporting}
+                    onClick={() => setShowCancelDialog(false)}
+                    disabled={cancelling}
                     style={{
-                      padding: '8px 16px',
+                      flex: 1,
+                      padding: '12px 16px',
                       borderRadius: '8px',
-                      border: '2px solid #C7A338',
-                      backgroundColor: exporting ? colors.fieldBg : colors.cardBg,
-                      color: exporting ? colors.textSecondary : '#C7A338',
                       fontWeight: 'bold',
-                      fontSize: '14px',
-                      cursor: exporting ? 'not-allowed' : 'pointer',
+                      fontSize: '16px',
+                      border: 'none',
+                      backgroundColor: '#0C3B2E',
+                      color: '#FFFFFF',
+                      cursor: cancelling ? 'not-allowed' : 'pointer',
+                      opacity: cancelling ? 0.5 : 1,
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => !cancelling && (e.target.style.backgroundColor = '#0a2f25')}
+                    onMouseLeave={(e) => !cancelling && (e.target.style.backgroundColor = '#0C3B2E')}
+                  >
+                    {strings.keepSubscription}
+                  </button>
+                  <button
+                    onClick={handleCancelSubscription}
+                    disabled={cancelling || !cancelReason}
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '16px',
+                      border: 'none',
+                      backgroundColor: '#EF4444',
+                      color: '#FFFFFF',
+                      cursor: (cancelling || !cancelReason) ? 'not-allowed' : 'pointer',
+                      opacity: (cancelling || !cancelReason) ? 0.5 : 1,
                       transition: 'all 0.2s',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      opacity: exporting ? 0.7 : 1
+                      justifyContent: 'center',
+                      gap: '8px'
                     }}
-                    onMouseEnter={(e) => {
-                      if (!exporting) {
-                        e.target.style.backgroundColor = '#C7A338';
-                        e.target.style.color = '#FFFFFF';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!exporting) {
-                        e.target.style.backgroundColor = colors.cardBg;
-                        e.target.style.color = '#C7A338';
-                      }
-                    }}
+                    onMouseEnter={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#DC2626')}
+                    onMouseLeave={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#EF4444')}
                   >
-                    {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                    {exporting ? strings.exporting : strings.export}
+                    {cancelling ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {strings.cancelling}
+                      </>
+                    ) : (
+                      strings.confirmCancel
+                    )}
                   </button>
                 </div>
               </div>
+            </DialogContent>
+          </Dialog>
 
-              <div style={{
-                padding: '16px',
-                backgroundColor: '#FEE2E2',
-                borderRadius: '12px',
-                borderLeft: '4px solid #DC2626'
-              }}>
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-red-900 mb-1">{strings.deleteAccount}</p>
-                    <p className="text-sm text-red-800 mb-2">
-                      {strings.deleteDesc} <strong>privacy@leaseshield.asia</strong>
-                    </p>
-                    <p className="text-xs text-red-700">
-                      {strings.deleteNote}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-          <DialogContent className="sm:max-w-2xl" style={{
-            backgroundColor: colors.cardBg,
-            borderColor: colors.borderColor,
-            color: colors.textPrimary
+          <div style={{
+            background: 'linear-gradient(to right, #0C3B2E, #047857)',
+            borderRadius: '16px',
+            padding: '32px',
+            marginBottom: '32px',
+            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
           }}>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3 text-xl" style={{ color: colors.textPrimary }}>
-                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                  <XCircle className="w-6 h-6 text-red-600" />
+            <div className="text-center">
+              <Shield className="w-12 h-12 text-white mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-3">
+                {strings.preventionBannerTitle}
+              </h2>
+              <p className="text-white/90 text-lg mb-2">
+                {strings.preventionBannerSubtitle}
+              </p>
+              <p className="text-white/80 text-sm max-w-2xl mx-auto">
+                {strings.preventionBannerText}
+              </p>
+            </div>
+          </div>
+
+          {isFreePlan && (
+            <div
+              id="plans-intro"
+              style={{
+                marginBottom: 24,
+                padding: 20,
+                borderRadius: 16,
+                backgroundColor: isDarkMode ? 'rgba(199,163,56,0.15)' : 'rgba(199,163,56,0.08)',
+                border: '2px solid rgba(199,163,56,0.25)',
+                boxShadow: '0 4px 6px rgba(199,163,56,0.1)'
+              }}
+            >
+              <div className="flex items-start gap-3 mb-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  {strings.cancelDialogTitle}
-                  <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
-                    {strings.cancelDialogDesc}
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? 'ปลดล็อกการป้องกันเต็มรูปแบบ' : 'Unlock full protection'}
+                  </h3>
+                  <p style={{ fontSize: '0.9rem', marginBottom: 12, color: colors.textPrimary, lineHeight: 1.5 }}>
+                    {language === 'th'
+                      ? 'อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อเปิดใช้การติดตามเงินมัดจำ เวิร์กโฟลว์การซ่อมบำรุง และเครื่องมือส่งออกเต็มรูปแบบ แผนรายปีให้คุณค่าที่ดีที่สุด'
+                      : 'Upgrade to Lite, Protect or Secure to enable full deposit tracking, maintenance workflow and export tools. Annual plans offer the best value.'}
                   </p>
                 </div>
-              </DialogTitle>
-            </DialogHeader>
+              </div>
+              <button
+                onClick={() => {
+                  const el = document.getElementById('plans-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  backgroundColor: '#C7A338',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 8px rgba(199,163,56,0.3)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#0C3B2E';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#C7A338';
+                  e.target.style.transform = 'translateY(0)';
+                }}
+              >
+                {strings.upgradeNow}
+              </button>
+            </div>
+          )}
 
-            <div className="space-y-6 mt-4">
-              {currentPlan && (
-                <div className="p-4 rounded-lg" style={{
-                  backgroundColor: '#FEE2E2',
-                  border: '2px solid #FECACA'
-                }}>
-                  <p className="font-semibold text-red-900 mb-3">{strings.whatYoullLose}:</p>
-                  <ul className="space-y-2 text-sm text-red-800">
-                    {(language === 'th' ? currentPlan.benefitsTh : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน')).map((benefit, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                        <span>{benefit}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {(isProtectPlan || isSecurePlan) && (
-                <div className="p-4 rounded-lg border-2" style={{
-                  backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-                  borderColor: '#3B82F6'
-                }}>
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                        {language === 'th' ? 'พิจารณาลดระดับแทน' : 'Consider downgrading instead'}
-                      </p>
-                      <p className="text-sm" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
-                        {language === 'th' 
-                          ? 'แทนที่จะยกเลิกทั้งหมด คุณสามารถประหยัดเงินโดยเปลี่ยนเป็นแผนที่ต่ำกว่าและรักษาการป้องกันหลักไว้'
-                          : 'Instead of cancelling completely, you can save money by switching to a lower plan and keep key protections active.'}
-                      </p>
-                    </div>
-                  </div>
+          <section id="plans-section">
+            <div className="mb-6">
+              <div className="flex items-center justify-center mb-6">
+                <div className="rounded-xl p-2 shadow-md inline-flex items-center gap-3" style={{ backgroundColor: colors.cardBg }}>
                   <button
-                    onClick={() => {
-                      setShowCancelDialog(false);
-                      handleDowngrade('lite');
-                    }}
+                    onClick={() => setBillingInterval('monthly')}
                     style={{
-                      width: '100%',
-                      padding: '10px 16px',
-                      backgroundColor: '#3B82F6',
-                      color: '#FFFFFF',
+                      padding: '10px 24px',
                       borderRadius: '8px',
-                      fontWeight: '600',
+                      fontWeight: 'bold',
                       fontSize: '14px',
                       border: 'none',
                       cursor: 'pointer',
-                      transition: 'all 0.2s'
+                      transition: 'all 0.2s',
+                      backgroundColor: billingInterval === 'monthly' ? '#0C3B2E' : 'transparent',
+                      color: billingInterval === 'monthly' ? '#FFFFFF' : colors.textPrimary
                     }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
                   >
-                    {language === 'th' ? 'ลดเป็น Lite แทน' : 'Downgrade to Lite instead'}
+                    {strings.monthly}
+                  </button>
+                  <button
+                    onClick={() => setBillingInterval('annual')}
+                    style={{
+                      padding: '10px 24px',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      backgroundColor: billingInterval === 'annual' ? '#0C3B2E' : 'transparent',
+                      color: billingInterval === 'annual' ? '#FFFFFF' : colors.textPrimary,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    {strings.annual}
+                    <span style={{
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      backgroundColor: '#C7A338',
+                      color: '#FFFFFF'
+                    }}>
+                      {strings.save17}
+                    </span>
                   </button>
                 </div>
-              )}
-
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="cancelReason" style={{ color: colors.textPrimary }}>
-                    {strings.cancelReason} <span className="text-red-500">*</span>
-                  </Label>
-                  <Select value={cancelReason} onValueChange={setCancelReason}>
-                    <SelectTrigger style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}>
-                      <SelectValue placeholder={strings.selectReason} />
-                    </SelectTrigger>
-                    <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
-                      <SelectItem value="too_expensive">{strings.reasonTooExpensive}</SelectItem>
-                      <SelectItem value="not_using">{strings.reasonNotUsingEnough}</SelectItem>
-                      <SelectItem value="found_alternative">{strings.reasonFoundAlternative}</SelectItem>
-                      <SelectItem value="missing_features">{strings.reasonMissingFeatures}</SelectItem>
-                      <SelectItem value="technical_issues">{strings.reasonTechnicalIssues}</SelectItem>
-                      <SelectItem value="other">{strings.reasonOther}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="cancelFeedback" style={{ color: colors.textPrimary }}>
-                    {strings.additionalFeedback}
-                  </Label>
-                  <Textarea
-                    id="cancelFeedback"
-                    value={cancelFeedback}
-                    onChange={(e) => setCancelFeedback(e.target.value)}
-                    placeholder={strings.feedbackPlaceholder}
-                    rows={4}
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary,
-                      borderRadius: '8px',
-                      padding: '10px 12px',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
               </div>
 
-              <div className="p-4 rounded-lg" style={{
-                backgroundColor: isDarkMode ? '#2A2D30' : '#F3F4F6',
-                border: `1px solid ${colors.borderColor}`
-              }}>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>
-                  {strings.downgradeNote.replace('{date}', user?.plan_renews_at ? new Date(user.plan_renews_at).toLocaleDateString() : '')}
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowCancelDialog(false)}
-                  disabled={cancelling}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    border: 'none',
-                    backgroundColor: '#0C3B2E',
-                    color: '#FFFFFF',
-                    cursor: cancelling ? 'not-allowed' : 'pointer',
-                    opacity: cancelling ? 0.5 : 1,
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => !cancelling && (e.target.style.backgroundColor = '#0a2f25')}
-                  onMouseLeave={(e) => !cancelling && (e.target.style.backgroundColor = '#0C3B2E')}
-                >
-                  {strings.keepSubscription}
-                </button>
-                <button
-                  onClick={handleCancelSubscription}
-                  disabled={cancelling || !cancelReason}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    border: 'none',
-                    backgroundColor: '#EF4444',
-                    color: '#FFFFFF',
-                    cursor: (cancelling || !cancelReason) ? 'not-allowed' : 'pointer',
-                    opacity: (cancelling || !cancelReason) ? 0.5 : 1,
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                  onMouseEnter={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#DC2626')}
-                  onMouseLeave={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#EF4444')}
-                >
-                  {cancelling ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {strings.cancelling}
-                    </>
-                  ) : (
-                    strings.confirmCancel
-                  )}
-                </button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <div style={{
-          background: 'linear-gradient(to right, #0C3B2E, #047857)',
-          borderRadius: '16px',
-          padding: '32px',
-          marginBottom: '32px',
-          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
-        }}>
-          <div className="text-center">
-            <Shield className="w-12 h-12 text-white mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-3">
-              {strings.preventionBannerTitle}
-            </h2>
-            <p className="text-white/90 text-lg mb-2">
-              {strings.preventionBannerSubtitle}
-            </p>
-            <p className="text-white/80 text-sm max-w-2xl mx-auto">
-              {strings.preventionBannerText}
-            </p>
-          </div>
-        </div>
-
-        {isFreePlan && (
-          <div
-            id="plans-intro"
-            style={{
-              marginBottom: 24,
-              padding: 20,
-              borderRadius: 16,
-              backgroundColor: isDarkMode ? 'rgba(199,163,56,0.15)' : 'rgba(199,163,56,0.08)',
-              border: '2px solid rgba(199,163,56,0.25)',
-              boxShadow: '0 4px 6px rgba(199,163,56,0.1)'
-            }}
-          >
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? 'ปลดล็อกการป้องกันเต็มรูปแบบ' : 'Unlock full protection'}
-                </h3>
-                <p style={{ fontSize: '0.9rem', marginBottom: 12, color: colors.textPrimary, lineHeight: 1.5 }}>
-                  {language === 'th'
-                    ? 'อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อเปิดใช้การติดตามเงินมัดจำ เวิร์กโฟลว์การซ่อมบำรุง และเครื่องมือส่งออกเต็มรูปแบบ แผนรายปีให้คุณค่าที่ดีที่สุด'
-                    : 'Upgrade to Lite, Protect or Secure to enable full deposit tracking, maintenance workflow and export tools. Annual plans offer the best value.'}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                const el = document.getElementById('plans-section');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              style={{
-                padding: '10px 16px',
-                borderRadius: 8,
-                backgroundColor: '#C7A338',
-                color: '#FFFFFF',
-                border: 'none',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 8px rgba(199,163,56,0.3)',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#0C3B2E';
-                e.target.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#C7A338';
-                e.target.style.transform = 'translateY(0)';
-              }}
-            >
-              {strings.upgradeNow}
-            </button>
-          </div>
-        )}
-
-        <section id="plans-section">
-          <div className="mb-6">
-            <div className="flex items-center justify-center mb-6">
-              <div className="rounded-xl p-2 shadow-md inline-flex items-center gap-3" style={{ backgroundColor: colors.cardBg }}>
-                <button
-                  onClick={() => setBillingInterval('monthly')}
-                  style={{
-                    padding: '10px 24px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    backgroundColor: billingInterval === 'monthly' ? '#0C3B2E' : 'transparent',
-                    color: billingInterval === 'monthly' ? '#FFFFFF' : colors.textPrimary
-                  }}
-                >
-                  {strings.monthly}
-                </button>
-                <button
-                  onClick={() => setBillingInterval('annual')}
-                  style={{
-                    padding: '10px 24px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    backgroundColor: billingInterval === 'annual' ? '#0C3B2E' : 'transparent',
-                    color: billingInterval === 'annual' ? '#FFFFFF' : colors.textPrimary,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  {strings.annual}
-                  <span style={{
-                    padding: '2px 8px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    backgroundColor: '#C7A338',
-                    color: '#FFFFFF'
-                  }}>
-                    {strings.save17}
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
-            <p className="mb-6 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {PLAN_DETAILS.map((plan) => {
-                const Icon = plan.icon;
-                const isCurrentPlan = planTier === plan.key;
-                const isFreeplanLocal = plan.key === 'free';
-                const isSecureTierLocal = plan.key === 'secure';
-                const isLiteTierLocal = plan.key === 'lite';
-                const displayPrice = isFreeplanLocal ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
-                const displayInterval = isFreeplanLocal ? '' : (billingInterval === 'annual' ? (language === 'th' ? '/ปี' : plan.intervalAnnual) : (language === 'th' ? '/เดือน' : plan.intervalMonthly));
-                const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
-                const isSubscribingForPlan = subscribing[plan.key];
-                
-                return (
-                  <div
-                    key={plan.key}
-                    className={`relative border-2 transition-all duration-200 ${
-                      plan.popular ? 'border-amber-400 shadow-lg' : ''
-                    } ${isSecureTierLocal ? 'shadow-xl' : ''}`}
-                    style={{
-                      backgroundColor: isSecureTierLocal 
-                        ? (isDarkMode ? '#1A2E27' : '#F0FDF4')
-                        : isLiteTierLocal
-                          ? (isDarkMode ? '#1C2D28' : '#F0FDF9')
-                          : plan.popular 
-                            ? (isDarkMode ? '#2D2520' : '#FFFBEB')
-                            : colors.cardBg,
-                      borderColor: isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : plan.popular ? '#C7A338' : colors.borderColor,
-                      borderWidth: isSecureTierLocal ? '3px' : '2px',
-                      borderRadius: '12px',
-                      padding: '16px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      minHeight: '520px'
-                    }}
-                  >
-                    <div style={{ height: '24px', marginBottom: '12px' }}>
-                      {plan.popular && (
-                        <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          ⭐ {language === 'th' ? 'ได้รับความนิยมมากที่สุด' : strings.mostPopular}
-                        </Badge>
-                      )}
-                      {billingInterval === 'annual' && !isFreeplanLocal && !plan.popular && !isSecureTierLocal && (
-                        <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          🏷️ {language === 'th' ? 'ฟรี 2 เดือน' : strings.monthsFree}
-                        </Badge>
-                      )}
-                      {isSecureTierLocal && (
-                        <Badge className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          👑 {language === 'th' ? 'พรีเมียม' : 'PREMIUM'}
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <div style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '8px',
-                          backgroundColor: isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <Icon className="w-6 h-6" style={{ color: (isSecureTierLocal || isLiteTierLocal) ? '#FFFFFF' : plan.bgColor }} />
-                        </div>
-                        <h3 className="text-xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : colors.textPrimary }}>
-                          {plan.label}
-                        </h3>
-                      </div>
-                      <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                        {language === 'th' ? plan.taglineTh : strings[plan.tagline]}
-                      </p>
-                      <p className="text-xs line-clamp-2" style={{ color: colors.textSecondary }}>
-                        {language === 'th' ? plan.descriptionTh : strings[plan.description]}
-                      </p>
-                    </div>
-
-                    <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
-                      {isFreeplanLocal ? (
-                        <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
-                          {strings.freePlanName}
-                        </div>
-                      ) : (
-                        <>
-                          <div className="text-3xl font-bold mb-1" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
-                            ฿{displayPrice.toLocaleString()}
-                          </div>
-                          <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                            {displayInterval}
-                          </div>
-                        </>
-                      )}
-                      <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {billingInterval === 'annual' && !isFreeplanLocal && (
-                          <p className="text-xs" style={{ color: colors.textSecondary }}>
-                            ฿{effectiveMonthly}{strings.perMonth}
-                          </p>
+              <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
+              <p className="mb-6 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {PLAN_DETAILS.map((plan) => {
+                  const Icon = plan.icon;
+                  const isCurrentPlan = planTier === plan.key;
+                  const isFreeplanLocal = plan.key === 'free';
+                  const isSecureTierLocal = plan.key === 'secure';
+                  const isLiteTierLocal = plan.key === 'lite';
+                  const displayPrice = isFreeplanLocal ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
+                  const displayInterval = isFreeplanLocal ? '' : (billingInterval === 'annual' ? (language === 'th' ? '/ปี' : plan.intervalAnnual) : (language === 'th' ? '/เดือน' : plan.intervalMonthly));
+                  const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
+                  const isSubscribingForPlan = subscribing[plan.key];
+                  
+                  return (
+                    <div
+                      key={plan.key}
+                      className={`relative border-2 transition-all duration-200 ${
+                        plan.popular ? 'border-amber-400 shadow-lg' : ''
+                      } ${isSecureTierLocal ? 'shadow-xl' : ''}`}
+                      style={{
+                        backgroundColor: isSecureTierLocal 
+                          ? (isDarkMode ? '#1A2E27' : '#F0FDF4')
+                          : isLiteTierLocal
+                            ? (isDarkMode ? '#1C2D28' : '#F0FDF9')
+                            : plan.popular 
+                              ? (isDarkMode ? '#2D2520' : '#FFFBEB')
+                              : colors.cardBg,
+                        borderColor: isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : plan.popular ? '#C7A338' : colors.borderColor,
+                        borderWidth: isSecureTierLocal ? '3px' : '2px',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: '520px'
+                      }}
+                    >
+                      <div style={{ height: '24px', marginBottom: '12px' }}>
+                        {plan.popular && (
+                          <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                            ⭐ {language === 'th' ? 'ได้รับความนิยมมากที่สุด' : strings.mostPopular}
+                          </Badge>
                         )}
-                        {isFreeplanLocal && (
-                          <p className="text-xs" style={{ color: colors.textSecondary }}>
-                            {strings.noCreditCard}
-                          </p>
+                        {billingInterval === 'annual' && !isFreeplanLocal && !plan.popular && !isSecureTierLocal && (
+                          <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                            🏷️ {language === 'th' ? 'ฟรี 2 เดือน' : strings.monthsFree}
+                          </Badge>
                         )}
-                      </div>
-                    </div>
-
-                    <div style={{ flex: 1, marginBottom: '12px' }}>
-                      <ul className="space-y-2">
-                        {(language === 'th' ? plan.benefitsTh : plan.benefits).map((benefit, idx) => {
-                          const isBold = benefit.startsWith('Everything in') || benefit.startsWith('ทุกอย่างใน');
-                          return (
-                            <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
-                              <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#0C3B2E' }} />
-                              <span style={{ fontWeight: isBold ? 'bold' : 'normal' }}>{benefit}</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-
-                    <div className="mt-auto">
-                      {isCurrentPlan ? (
-                        <Button
-                          disabled
-                          className="w-full h-10 text-sm"
-                          style={{
-                            backgroundColor: colors.fieldBg,
-                            color: colors.textSecondary,
-                            cursor: 'not-allowed',
-                            border: `2px solid ${colors.borderColor}`
-                          }}
-                        >
-                          {strings.currentPlanBadge}
-                        </Button>
-                      ) : isFreeplanLocal ? (
-                        <Button
-                          disabled
-                          className="w-full h-10 text-sm"
-                          style={{
-                            backgroundColor: colors.cardBg,
-                            color: colors.textSecondary,
-                            cursor: 'not-allowed',
-                            border: `2px solid ${colors.textSecondary}`
-                          }}
-                        >
-                          {strings.signupFree}
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => handleSubscribe(plan.key, billingInterval)}
-                          disabled={isSubscribingForPlan}
-                          className="w-full h-10"
-                          style={{
-                            backgroundColor: isSubscribingForPlan ? '#9CA3AF' : (isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E'),
-                            color: '#FFFFFF',
-                            cursor: isSubscribingForPlan ? 'not-allowed' : 'pointer',
-                            opacity: isSubscribingForPlan ? 0.7 : 1,
-                            fontSize: isSecureTierLocal ? '15px' : '14px',
-                            fontWeight: isSecureTierLocal ? '700' : '600'
-                          }}
-                        >
-                          {isSubscribingForPlan ? strings.processing : `${strings.startPlan} ${plan.label}`}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Billing Interval Selection Dialog */}
-        <Dialog open={showBillingDialog} onOpenChange={setShowBillingDialog}>
-          <DialogContent className="sm:max-w-md" style={{
-            backgroundColor: colors.cardBg,
-            borderColor: colors.borderColor
-          }}>
-            <DialogHeader>
-              <DialogTitle style={{ color: colors.textPrimary }}>
-                {strings.chooseBillingInterval}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <button
-                onClick={() => setSelectedInterval('monthly')}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  border: `2px solid ${selectedInterval === 'monthly' ? '#0C3B2E' : colors.borderColor}`,
-                  backgroundColor: selectedInterval === 'monthly' ? (isDarkMode ? '#0C3B2E' : '#F0FDF4') : colors.cardBg,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-bold text-base mb-1" style={{ color: colors.textPrimary }}>
-                      {strings.payMonthly}
-                    </p>
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>
-                      {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
-                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceMonthly}/month` 
-                        : '—'}
-                    </p>
-                  </div>
-                  {selectedInterval === 'monthly' && (
-                    <CheckCircle2 className="w-5 h-5 text-ls-forest" />
-                  )}
-                </div>
-              </button>
-
-              <button
-                onClick={() => setSelectedInterval('annual')}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  border: `2px solid ${selectedInterval === 'annual' ? '#C7A338' : colors.borderColor}`,
-                  backgroundColor: selectedInterval === 'annual' ? (isDarkMode ? 'rgba(199,163,56,0.15)' : '#FFFBEB') : colors.cardBg,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  textAlign: 'left'
-                }}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold text-base" style={{ color: colors.textPrimary }}>
-                        {strings.payAnnually}
-                      </p>
-                      <Badge className="bg-emerald-500 text-white text-xs">
-                        {strings.bestValueBadge}
-                      </Badge>
-                    </div>
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>
-                      {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
-                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceAnnual}/year` 
-                        : '—'}
-                    </p>
-                    <p className="text-xs mt-1" style={{ color: '#C7A338', fontWeight: '600' }}>
-                      {strings.annualSavings}
-                    </p>
-                  </div>
-                  {selectedInterval === 'annual' && (
-                    <CheckCircle2 className="w-5 h-5 text-ls-gold" />
-                  )}
-                </div>
-              </button>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowBillingDialog(false)}
-                  className="flex-1"
-                >
-                  {strings.cancel}
-                </Button>
-                <Button
-                  onClick={confirmSubscribe}
-                  className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
-                >
-                  {strings.proceedToCheckout}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <Card id="letter-credits" className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-                  <Coins className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-                    {strings.buyCredits}
-                  </h2>
-                  <p className="text-sm font-normal" style={{ color: colors.textSecondary }}>
-                    {strings.oneLetterPerCredit}
-                  </p>
-                </div >
-              </div >
-              <div className="text-right flex items-center gap-2">
-                <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                  {strings.creditBalance}
-                </p>
-                <p className="text-3xl font-bold" style={{ color: '#C7A338' }}>
-                  {user?.letter_credits || 0}
-                </p>
-              </div >
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.accessTemplateLibrary}</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.bilingual}</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.humanAndAiGeneration}</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.creditsNeverExpire}</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {CREDIT_PACKAGES.map((pkg) => {
-                const pricePerCredit = Math.round(pkg.price / pkg.credits);
-                
-                return (
-                  <div
-                    key={pkg.id}
-                    className={`relative border-2 transition-all duration-200 flex flex-col ${
-                      pkg.popular ? 'border-amber-400 shadow-lg' : ''
-                    }`}
-                    style={{
-                      backgroundColor: pkg.popular 
-                        ? (isDarkMode ? '#2D2520' : '#FFFBEB')
-                        : colors.cardBg,
-                      borderColor: pkg.popular ? '#C7A338' : colors.borderColor,
-                      borderRadius: '12px',
-                      padding: '16px',
-                      minHeight: '240px'
-                    }}
-                  >
-                    <div style={{ height: '24px', marginBottom: '8px' }}>
-                      {pkg.popular && (
-                        <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          ⭐ {strings.mostPopular}
-                        </Badge>
-                      )}
-                      {pkg.savings >= 30 && !pkg.popular && (
-                        <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          💰 {strings.bestValue}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="text-center" style={{ height: '60px', marginBottom: '12px' }}>
-                      <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
-                        {pkg.credits}
-                      </div>
-                      <div className="text-xs" style={{ color: colors.textSecondary }}>
-                        {strings.credits}
-                      </div>
-                    </div>
-
-                    <div className="text-center" style={{ height: '80px', marginBottom: '12px' }}>
-                      <div className="text-2xl font-bold mb-1" style={{ color: '#C7A338' }}>
-                        ฿{pkg.price}
-                      </div>
-                      <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                        ฿{pricePerCredit} {strings.perCredit}
-                      </div>
-                      <div style={{ height: '22px' }}>
-                        {pkg.savings > 0 && (
-                          <Badge className="bg-emerald-100 text-emerald-700 text-xs">
-                            {strings.save} {pkg.savings}%
+                        {isSecureTierLocal && (
+                          <Badge className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                            👑 {language === 'th' ? 'พรีเมียม' : 'PREMIUM'}
                           </Badge>
                         )}
                       </div>
-                    </div>
 
-                    <div className="mt-auto">
-                      <button
-                        onClick={() => handleBuyCredits(pkg)}
-                        disabled={buyingCredits[pkg.id]}
-                        style={{
-                          display: 'block',
-                          width: '100%',
-                          padding: '10px 16px',
-                          textAlign: 'center',
-                          backgroundColor: buyingCredits[pkg.id] ? '#9CA3AF' : (pkg.popular ? '#C7A338' : '#0C3B2E'),
-                          color: '#FFFFFF',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          border: 'none',
-                          cursor: buyingCredits[pkg.id] ? 'not-allowed' : 'pointer',
-                          transition: 'all 0.2s',
-                          opacity: buyingCredits[pkg.id] ? 0.7 : 1
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!buyingCredits[pkg.id]) {
-                            e.target.style.backgroundColor = pkg.popular ? '#B89330' : '#0a2f25';
-                            e.target.style.transform = 'translateY(-1px)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!buyingCredits[pkg.id]) {
-                            e.target.style.backgroundColor = pkg.popular ? '#C7A338' : '#0C3B2E';
-                            e.target.style.transform = 'translateY(0)';
-                          }
-                        }}
-                      >
-                        {buyingCredits[pkg.id] ? (language === 'th' ? 'กำลังดำเนินการ...' : 'Processing...') : strings.buyNow}
-                      </button>
+                      <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            backgroundColor: isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <Icon className="w-6 h-6" style={{ color: (isSecureTierLocal || isLiteTierLocal) ? '#FFFFFF' : plan.bgColor }} />
+                          </div>
+                          <h3 className="text-xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : colors.textPrimary }}>
+                            {plan.label}
+                          </h3>
+                        </div>
+                        <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                          {language === 'th' ? plan.taglineTh : strings[plan.tagline]}
+                        </p>
+                        <p className="text-xs line-clamp-2" style={{ color: colors.textSecondary }}>
+                          {language === 'th' ? plan.descriptionTh : strings[plan.description]}
+                        </p>
+                      </div>
+
+                      <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
+                        {isFreeplanLocal ? (
+                          <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
+                            {strings.freePlanName}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-3xl font-bold mb-1" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
+                              ฿{displayPrice.toLocaleString()}
+                            </div>
+                            <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                              {displayInterval}
+                            </div>
+                          </>
+                        )}
+                        <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {billingInterval === 'annual' && !isFreeplanLocal && (
+                            <p className="text-xs" style={{ color: colors.textSecondary }}>
+                              ฿{effectiveMonthly}{strings.perMonth}
+                            </p>
+                          )}
+                          {isFreeplanLocal && (
+                            <p className="text-xs" style={{ color: colors.textSecondary }}>
+                              {strings.noCreditCard}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div style={{ flex: 1, marginBottom: '12px' }}>
+                        <ul className="space-y-2">
+                          {(language === 'th' ? plan.benefitsTh : plan.benefits).map((benefit, idx) => {
+                            const isBold = benefit.startsWith('Everything in') || benefit.startsWith('ทุกอย่างใน');
+                            return (
+                              <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
+                                <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#0C3B2E' }} />
+                                <span style={{ fontWeight: isBold ? 'bold' : 'normal' }}>{benefit}</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+
+                      <div className="mt-auto">
+                        {isCurrentPlan ? (
+                          <Button
+                            disabled
+                            className="w-full h-10 text-sm"
+                            style={{
+                              backgroundColor: colors.fieldBg,
+                              color: colors.textSecondary,
+                              cursor: 'not-allowed',
+                              border: `2px solid ${colors.borderColor}`
+                            }}
+                          >
+                            {strings.currentPlanBadge}
+                          </Button>
+                        ) : isFreeplanLocal ? (
+                          <Button
+                            disabled
+                            className="w-full h-10 text-sm"
+                            style={{
+                              backgroundColor: colors.cardBg,
+                              color: colors.textSecondary,
+                              cursor: 'not-allowed',
+                              border: `2px solid ${colors.textSecondary}`
+                            }}
+                          >
+                            {strings.signupFree}
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => handleSubscribe(plan.key, billingInterval)}
+                            disabled={isSubscribingForPlan}
+                            className="w-full h-10"
+                            style={{
+                              backgroundColor: isSubscribingForPlan ? '#9CA3AF' : (isSecureTierLocal ? '#0C3B2E' : isLiteTierLocal ? '#047857' : plan.popular ? '#C7A338' : '#0C3B2E'),
+                              color: '#FFFFFF',
+                              cursor: isSubscribingForPlan ? 'not-allowed' : 'pointer',
+                              opacity: isSubscribingForPlan ? 0.7 : 1,
+                              fontSize: isSecureTierLocal ? '15px' : '14px',
+                              fontWeight: isSecureTierLocal ? '700' : '600'
+                            }}
+                          >
+                            {isSubscribingForPlan ? strings.processing : `${strings.startPlan} ${plan.label}`}
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </section>
 
-        <div className="mt-8 mb-4">
-          <Button
-            variant="outline"
-            className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-            onClick={() => base44.auth.logout('https://leaseshield.asia/')}
-            style={{ 
-              backgroundColor: colors.cardBg, 
-              borderColor: isDarkMode ? '#EF4444' : '#FECACA', 
-              color: '#EF4444',
-              padding: '14px 20px',
-              fontSize: '16px',
-              fontWeight: 'bold'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = isDarkMode ? '#440000' : '#FEF2F2';
-              e.target.style.color = '#DC2626';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = colors.cardBg;
-              e.target.style.color = '#EF4444';
-            }}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            {strings.logout}
-          </Button>
+          {/* Billing Interval Selection Dialog */}
+          <Dialog open={showBillingDialog} onOpenChange={setShowBillingDialog}>
+            <DialogContent className="sm:max-w-md" style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor
+            }}>
+              <DialogHeader>
+                <DialogTitle style={{ color: colors.textPrimary }}>
+                  {strings.chooseBillingInterval}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <button
+                  onClick={() => setSelectedInterval('monthly')}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: `2px solid ${selectedInterval === 'monthly' ? '#0C3B2E' : colors.borderColor}`,
+                    backgroundColor: selectedInterval === 'monthly' ? (isDarkMode ? '#0C3B2E' : '#F0FDF4') : colors.cardBg,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-bold text-base mb-1" style={{ color: colors.textPrimary }}>
+                        {strings.payMonthly}
+                      </p>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                        {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
+                          ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceMonthly}/month` 
+                          : '—'}
+                      </p>
+                    </div>
+                    {selectedInterval === 'monthly' && (
+                      <CheckCircle2 className="w-5 h-5 text-ls-forest" />
+                    )}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setSelectedInterval('annual')}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: `2px solid ${selectedInterval === 'annual' ? '#C7A338' : colors.borderColor}`,
+                    backgroundColor: selectedInterval === 'annual' ? (isDarkMode ? 'rgba(199,163,56,0.15)' : '#FFFBEB') : colors.cardBg,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                          {strings.payAnnually}
+                        </p>
+                        <Badge className="bg-emerald-500 text-white text-xs">
+                          {strings.bestValueBadge}
+                        </Badge>
+                      </div>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                        {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
+                          ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceAnnual}/year` 
+                          : '—'}
+                      </p>
+                      <p className="text-xs mt-1" style={{ color: '#C7A338', fontWeight: '600' }}>
+                        {strings.annualSavings}
+                      </p>
+                    </div>
+                    {selectedInterval === 'annual' && (
+                      <CheckCircle2 className="w-5 h-5 text-ls-gold" />
+                    )}
+                  </div>
+                </button>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowBillingDialog(false)}
+                    className="flex-1"
+                  >
+                    {strings.cancel}
+                  </Button>
+                  <Button
+                    onClick={confirmSubscribe}
+                    className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
+                  >
+                    {strings.proceedToCheckout}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Card id="letter-credits" className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+              <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                    <Coins className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                      {strings.buyCredits}
+                    </h2>
+                    <p className="text-sm font-normal" style={{ color: colors.textSecondary }}>
+                      {strings.oneLetterPerCredit}
+                    </p>
+                  </div >
+                </div >
+                <div className="text-right flex items-center gap-2">
+                  <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                    {strings.creditBalance}
+                  </p>
+                  <p className="text-3xl font-bold" style={{ color: '#C7A338' }}>
+                    {user?.letter_credits || 0}
+                  </p>
+                </div >
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFF7ED' }}>
+                <div className="flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.accessTemplateLibrary}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.bilingual}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.humanAndAiGeneration}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span className="text-xs text-center" style={{ color: colors.textPrimary }}>{strings.creditsNeverExpire}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {CREDIT_PACKAGES.map((pkg) => {
+                  const pricePerCredit = Math.round(pkg.price / pkg.credits);
+                  
+                  return (
+                    <div
+                      key={pkg.id}
+                      className={`relative border-2 transition-all duration-200 flex flex-col ${
+                        pkg.popular ? 'border-amber-400 shadow-lg' : ''
+                      }`}
+                      style={{
+                        backgroundColor: pkg.popular 
+                          ? (isDarkMode ? '#2D2520' : '#FFFBEB')
+                          : colors.cardBg,
+                        borderColor: pkg.popular ? '#C7A338' : colors.borderColor,
+                        borderRadius: '12px',
+                        padding: '16px',
+                        minHeight: '240px'
+                      }}
+                    >
+                      <div style={{ height: '24px', marginBottom: '8px' }}>
+                        {pkg.popular && (
+                          <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                            ⭐ {strings.mostPopular}
+                          </Badge>
+                        )}
+                        {pkg.savings >= 30 && !pkg.popular && (
+                          <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
+                            💰 {strings.bestValue}
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <div className="text-center" style={{ height: '60px', marginBottom: '12px' }}>
+                        <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
+                          {pkg.credits}
+                        </div>
+                        <div className="text-xs" style={{ color: colors.textSecondary }}>
+                          {strings.credits}
+                        </div>
+                      </div>
+
+                      <div className="text-center" style={{ height: '80px', marginBottom: '12px' }}>
+                        <div className="text-2xl font-bold mb-1" style={{ color: '#C7A338' }}>
+                          ฿{pkg.price}
+                        </div>
+                        <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                          ฿{pricePerCredit} {strings.perCredit}
+                        </div>
+                        <div style={{ height: '22px' }}>
+                          {pkg.savings > 0 && (
+                            <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                              {strings.save} {pkg.savings}%
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-auto">
+                        <button
+                          onClick={() => handleBuyCredits(pkg)}
+                          disabled={buyingCredits[pkg.id]}
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            padding: '10px 16px',
+                            textAlign: 'center',
+                            backgroundColor: buyingCredits[pkg.id] ? '#9CA3AF' : (pkg.popular ? '#C7A338' : '#0C3B2E'),
+                            color: '#FFFFFF',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            border: 'none',
+                            cursor: buyingCredits[pkg.id] ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                            opacity: buyingCredits[pkg.id] ? 0.7 : 1
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!buyingCredits[pkg.id]) {
+                              e.target.style.backgroundColor = pkg.popular ? '#B89330' : '#0a2f25';
+                              e.target.style.transform = 'translateY(-1px)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!buyingCredits[pkg.id]) {
+                              e.target.style.backgroundColor = pkg.popular ? '#C7A338' : '#0C3B2E';
+                              e.target.style.transform = 'translateY(0)';
+                            }
+                          }}
+                        >
+                          {buyingCredits[pkg.id] ? (language === 'th' ? 'กำลังดำเนินการ...' : 'Processing...') : strings.buyNow}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="mt-8 mb-4">
+            <Button
+              variant="outline"
+              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+              onClick={() => base44.auth.logout('https://leaseshield.asia/')}
+              style={{ 
+                backgroundColor: colors.cardBg, 
+                borderColor: isDarkMode ? '#EF4444' : '#FECACA', 
+                color: '#EF4444',
+                padding: '14px 20px',
+                fontSize: '16px',
+                fontWeight: 'bold'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = isDarkMode ? '#440000' : '#FEF2F2';
+                e.target.style.color = '#DC2626';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = colors.cardBg;
+                e.target.style.color = '#EF4444';
+              }}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              {strings.logout}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </PullToRefresh>
   );
 }

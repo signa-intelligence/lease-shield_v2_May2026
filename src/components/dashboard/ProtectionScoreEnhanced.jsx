@@ -132,7 +132,7 @@ const ProtectionScoreEnhanced = ({
       actions: '조치',
       expert: '전문가',
       selfProtector: '자기보호자',
-      documenter: '문서 관리자',
+      documenter: '문서 작성자',
       actionTaker: '실행자',
       quickWins: '빠른 개선',
       resetHiddenTips: '숨겨진 팁 재설정',
@@ -357,6 +357,7 @@ const ProtectionScoreEnhanced = ({
                 style={{
                   transition: "stroke-dasharray 1s ease-out",
                   filter: `drop-shadow(0 0 6px ${scoreColor}40)`,
+                  animation: 'scoreSparkle 2s ease-in-out'
                 }}
               />
             </svg>
@@ -779,6 +780,17 @@ const ProtectionScoreEnhanced = ({
           to {
             opacity: 1;
             transform: translateX(0);
+          }
+        }
+        @keyframes scoreSparkle {
+          0% {
+            filter: drop-shadow(0 0 6px ${scoreColor}40);
+          }
+          50% {
+            filter: drop-shadow(0 0 12px ${scoreColor}80);
+          }
+          100% {
+            filter: drop-shadow(0 0 6px ${scoreColor}40);
           }
         }
       `}</style>

@@ -38,14 +38,15 @@ function ToastContainer({ toasts, onRemove }) {
   return (
     <div style={{
       position: 'fixed',
-      top: '20px',
+      bottom: '20px',
       right: '20px',
       zIndex: 9999,
       display: 'flex',
       flexDirection: 'column',
       gap: '12px',
       maxWidth: '90vw',
-      width: '320px'
+      width: '320px',
+      pointerEvents: 'none'
     }}>
       {toasts.map(toast => (
         <Toast key={toast.id} {...toast} onClose={() => onRemove(toast.id)} />
@@ -88,11 +89,14 @@ function Toast({ message, type, onClose }) {
         padding: '12px 16px',
         borderRadius: '12px',
         boxShadow: '0 10px 25px rgba(0, 0, 0, 0.25)',
-        animation: 'slideInRight 0.3s ease-out',
-        minHeight: '48px'
+        animation: 'toastSlideUp 140ms ease-out',
+        minHeight: '48px',
+        pointerEvents: 'auto'
       }}
     >
-      <Icon className="w-5 h-5 flex-shrink-0" />
+      <div style={{ animation: type === 'success' ? 'iconPulse 90ms ease-out' : 'none' }}>
+        <Icon className="w-5 h-5 flex-shrink-0" />
+      </div>
       <span style={{
         flex: 1,
         fontSize: '14px',
@@ -103,6 +107,7 @@ function Toast({ message, type, onClose }) {
       </span>
       <button
         onClick={onClose}
+        className="btn-press"
         style={{
           background: 'none',
           border: 'none',
@@ -120,19 +125,6 @@ function Toast({ message, type, onClose }) {
       >
         <X className="w-4 h-4" />
       </button>
-
-      <style jsx>{`
-        @keyframes slideInRight {
-          from {
-            opacity: 0;
-            transform: translateX(100px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }
