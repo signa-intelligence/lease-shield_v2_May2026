@@ -2357,7 +2357,7 @@ export default function Account() {
               className="cursor-pointer"
               onClick={() => {
                 haptic.light();
-                setExpandedNotifPrefs(prev => !prev);
+                setExpandedNotifPrefs(!expandedNotifPrefs);
               }}
               style={{ borderBottom: expandedNotifPrefs ? `1px solid ${colors.borderColor}` : 'none' }}
             >
@@ -3882,7 +3882,7 @@ export default function Account() {
                           const isBold = benefit.startsWith('Everything in') || benefit.startsWith('ทุกอย่างใน');
                           return (
                             <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
-                              <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#0C3B2E' }} />
+                              <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: (isSecureTierLocal || isLiteTierLocal) ? '#0C3B2E' : '#0C3B2E' }} />
                               <span style={{ fontWeight: isBold ? 'bold' : 'normal' }}>{benefit}</span>
                             </li>
                           );
