@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins, TrendingUp } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins, TrendingUp, ChevronUp, ChevronDown, BarChart3 } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationPreferences from "../components/settings/NotificationPreferences";
 import NotificationAnalytics from "../components/dashboard/NotificationAnalytics";
@@ -229,6 +229,9 @@ export default function Account() {
   const [downgradeStep, setDowngradeStep] = useState(1);
   const [downgradeReason, setDowngradeReason] = useState('');
   const [downgradeFeedback, setDowngradeFeedback] = useState('');
+  const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false); // New state for Notification Preferences expansion
+  const [expandedNotifAnalytics, setExpandedNotifAnalytics] = useState(false); // New state for Notification Analytics expansion
+
 
   const { data: user, refetch: refetchUser } = useQuery({
     queryKey: ['currentUser'],
@@ -298,6 +301,8 @@ export default function Account() {
     
     if (hash === '#notifications') {
       setTimeout(() => {
+        // Automatically expand notification analytics if hash is present
+        setExpandedNotifAnalytics(true); 
         const notificationSection = document.getElementById('notification-analytics');
         if (notificationSection) {
           notificationSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -587,7 +592,9 @@ export default function Account() {
     haptic.medium();
     setShowDowngradeFlow(false); // Close the downgrade dialog
     
-    handleSubscribe('lite', userBillingInterval); // userBillingInterval would be 'monthly' or 'annual'
+    // Determine the user's current billing interval for a seamless switch
+    const currentBillingInterval = user?.billing_interval || 'monthly';
+    handleSubscribe('lite', currentBillingInterval); 
   };
 
   // Handler for continuing to Free plan (goes to Step 2)
@@ -2344,11 +2351,67 @@ export default function Account() {
           <LineConnectionStatus user={user} colors={colors} />
         </div>
 
+        <div className="mb-6">
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader 
+              className="cursor-pointer"
+              onClick={() => {
+                haptic.light();
+                setExpandedNotifPrefs(prev => !prev);
+              }}
+              style={{ borderBottom: expandedNotifPrefs ? `1px solid ${colors.borderColor}` : 'none' }}
+            >
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <Bell className="w-5 h-5 text-ls-forest" />
+                  {language === 'th' ? 'การตั้งค่าการแจ้งเตือน' : 'Notification Preferences'}
+                </CardTitle>
+                {expandedNotifPrefs ? <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} /> : <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />}
+              </div>
+            </CardHeader>
+            {expandedNotifPrefs && (
+              <CardContent className="p-6">
+                <NotificationPreferences 
+                  user={user} 
+                  onUpdate={handleNotificationUpdate}
+                  colors={colors}
+                />
+              </CardContent>
+            )}
+          </Card>
+        </div>
+
+        <div className="mb-6">
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader 
+              className="cursor-pointer"
+              onClick={() => {
+                haptic.light();
+                setExpandedNotifAnalytics(!expandedNotifAnalytics);
+              }}
+              style={{ borderBottom: expandedNotifAnalytics ? `1px solid ${colors.borderColor}` : 'none' }}
+            >
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <BarChart3 className="w-5 h-5 text-ls-gold" />
+                  {language === 'th' ? 'สถิติการแจ้งเตือน' : 'Notification Insights'}
+                </CardTitle>
+                {expandedNotifAnalytics ? <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} /> : <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />}
+              </div>
+            </CardHeader>
+            {expandedNotifAnalytics && (
+              <CardContent className="p-6" id="notification-analytics">
+                <NotificationAnalytics 
+                  language={language}
+                  colors={colors}
+                />
+              </CardContent>
+            )}
+          </Card>
+        </div>
+
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader className="border-b pb-4" style={{
-            backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
-            borderBottomColor: colors.borderColor
-          }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-lg font-bold flex items-center gap-2 mb-1" style={{ color: colors.textPrimary }}>
@@ -2589,10 +2652,7 @@ export default function Account() {
         </Card>
 
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader className="border-b pb-4" style={{
-            backgroundColor: isDarkMode ? '#353A3D' : '#ECEFED',
-            borderBottomColor: colors.borderColor
-          }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-lg font-bold flex items-center gap-2 mb-1" style={{ color: colors.textPrimary }}>
@@ -2817,20 +2877,6 @@ export default function Account() {
             </div>
           </CardContent>
         </Card>
-
-        <div className="grid lg:grid-cols-2 gap-6 mb-6">
-          <NotificationPreferences 
-            user={user} 
-            onUpdate={handleNotificationUpdate}
-            colors={colors}
-          />
-          <div id="notification-analytics">
-            <NotificationAnalytics 
-              language={language}
-              colors={colors}
-            />
-          </div>
-        </div>
 
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>

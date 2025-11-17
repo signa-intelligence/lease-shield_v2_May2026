@@ -1991,8 +1991,8 @@ function DashboardContent() {
                     />
                   </div>
 
-                  {/* Six Feature Cards - Enhanced with interactions */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                  {/* Six Feature Cards - Fixed consistent grid layout */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
                     {[
                       {
                         title: strings.leasesScanned,
@@ -2017,8 +2017,8 @@ function DashboardContent() {
                         label: strings.trackDeposit,
                       },
                       {
-                        title: strings.activeCases, // Changed from casesActive to activeCases string
-                        value: activeCases.length, // Corrected variable
+                        title: strings.activeCases,
+                        value: activeCases.length,
                         icon: Scale,
                         gradient: 'from-red-500 to-red-700',
                         scoreColor: '#EF4444',
@@ -2061,13 +2061,14 @@ function DashboardContent() {
                         label: strings.manageEvidence,
                       }
                     ].map((card, index) => (
-                      <StatsCard
-                        key={index}
-                        {...card}
-                        compact={false}
-                        colors={colors}
-                        className="card-interactive"
-                      />
+                      <div key={index} className="w-full">
+                        <StatsCard
+                          {...card}
+                          compact={false}
+                          colors={colors}
+                          className="card-interactive h-full"
+                        />
+                      </div>
                     ))}
                   </div>
                 </>
