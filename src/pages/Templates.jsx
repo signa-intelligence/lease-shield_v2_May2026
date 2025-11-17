@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from "@/components/ui/select";
 import { haptic } from "../components/shared/HapticFeedback";
+import PageHeader from "../components/shared/PageHeader"; // Added import
 
 const TEMPLATES = [
   {
@@ -542,39 +543,7 @@ export default function Templates() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(createPageUrl("Dashboard"))}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          {strings.back}
-        </Button>
-
-        <div className="mb-8">
-          <div className="flex items-center justify-between gap-2 sm:gap-3 mb-2">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-ls-forest" />
-              <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
-            </div>
-            {isAdmin && (
-              <Button
-                onClick={() => setShowUploadDialog(true)}
-                className="bg-ls-forest hover:bg-ls-forest/90"
-                size="sm"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {strings.uploadTemplate}
-              </Button>
-            )}
-          </div>
-          <p className="text-sm sm:text-base mb-4" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
-          
-          <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs sm:text-sm">
-            {strings.allLetters}
-          </Badge>
-        </div>
-
+        
         {/* Upload Dialog */}
         <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
           <DialogContent className="sm:max-w-2xl" style={{
@@ -703,7 +672,36 @@ export default function Templates() {
           </DialogContent>
         </Dialog>
 
-        {/* SIMPLIFIED CREDIT BALANCE SECTION */}
+        <PageHeader
+          title={strings.title}
+          subtitle={strings.subtitle}
+          icon={FileText}
+          iconColor="#0C3B2E"
+          showBack={true}
+          backLabel={strings.back}
+          colors={colors}
+          actions={
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+              <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs sm:text-sm w-fit">
+                {strings.allLetters}
+              </Badge>
+              
+              {isAdmin && (
+                <Button
+                  onClick={() => setShowUploadDialog(true)}
+                  className="bg-ls-forest hover:bg-ls-forest/90"
+                  size="sm"
+                  style={{ height: '36px' }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {strings.uploadTemplate}
+                </Button>
+              )}
+            </div>
+          }
+        />
+
+        {/* Credit Balance Card */}
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -742,6 +740,7 @@ export default function Templates() {
                 <Button
                   onClick={() => navigate(createPageUrl("Account") + '#letter-credits')}
                   className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 w-full md:w-auto"
+                  style={{ height: '40px' }}
                 >
                   <Coins className="w-4 h-4 mr-2" />
                   {strings.purchaseCredits}

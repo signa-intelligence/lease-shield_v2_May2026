@@ -24,10 +24,10 @@ import BottomSheet from "../components/shared/BottomSheet";
 import MobileFormInput from "../components/shared/MobileFormInput";
 import LazyImage from "../components/shared/LazyImage";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
-// Removed EmptyState import as it's no longer used
 import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import PageHeader from "../components/shared/PageHeader";
 import {
   FEATURE_COLORS,
   CTA_COLOR,
@@ -36,65 +36,65 @@ import {
 } from "../components/shared/featureTheme";
 
 const DOC_TYPE_CONFIG = {
-  lease: { 
-    label_en: 'Lease', 
-    label_th: 'สัญญาเช่า', 
-    label_zh: '租约', 
-    label_ja: '賃貸契約', 
-    label_ko: '임대 계약', 
-    icon: FileText, 
-    color: 'bg-blue-100 text-blue-800', 
-    bgColor: '#3B82F6' 
+  lease: {
+    label_en: 'Lease',
+    label_th: 'สัญญาเช่า',
+    label_zh: '租约',
+    label_ja: '賃貸契約',
+    label_ko: '임대 계약',
+    icon: FileText,
+    color: 'bg-blue-100 text-blue-800',
+    bgColor: '#3B82F6'
   },
-  receipt: { 
-    label_en: 'Receipt', 
-    label_th: 'ใบเสร็จ', 
-    label_zh: '收据', 
-    label_ja: '領収書', 
-    label_ko: '영수증', 
-    icon: FileText, 
-    color: 'bg-emerald-100 text-emerald-800', 
-    bgColor: '#10B981' 
+  receipt: {
+    label_en: 'Receipt',
+    label_th: 'ใบเสร็จ',
+    label_zh: '收据',
+    label_ja: '領収書',
+    label_ko: '영수증',
+    icon: FileText,
+    color: 'bg-emerald-100 text-emerald-800',
+    bgColor: '#10B981'
   },
-  photo: { 
-    label_en: 'Photo', 
-    label_th: 'รูปภาพ', 
-    label_zh: '照片', 
-    label_ja: '写真', 
-    label_ko: '사진', 
-    icon: Camera, 
-    color: 'bg-purple-100 text-purple-800', 
-    bgColor: '#A855F7' 
+  photo: {
+    label_en: 'Photo',
+    label_th: 'รูปภาพ',
+    label_zh: '照片',
+    label_ja: '写真',
+    label_ko: '사진',
+    icon: Camera,
+    color: 'bg-purple-100 text-purple-800',
+    bgColor: '#A855F7'
   },
-  video: { 
-    label_en: 'Video', 
-    label_th: 'วิดีโอ', 
-    label_zh: '视频', 
-    label_ja: '動画', 
-    label_ko: '비디오', 
-    icon: FileVideo, 
-    color: 'bg-amber-100 text-amber-800', 
-    bgColor: '#F59E0B' 
+  video: {
+    label_en: 'Video',
+    label_th: 'วิดีโอ',
+    label_zh: '视频',
+    label_ja: '動画',
+    label_ko: '비디오',
+    icon: FileVideo,
+    color: 'bg-amber-100 text-amber-800',
+    bgColor: '#F59E0B'
   },
-  letter: { 
-    label_en: 'Letter', 
-    label_th: 'จดหมาย', 
-    label_zh: '信件', 
-    label_ja: 'レター', 
-    label_ko: '편지', 
-    icon: Mail, 
-    color: 'bg-indigo-100 text-indigo-800', 
-    bgColor: '#6366F1' 
+  letter: {
+    label_en: 'Letter',
+    label_th: 'จดหมาย',
+    label_zh: '信件',
+    label_ja: 'レター',
+    label_ko: '편지',
+    icon: Mail,
+    color: 'bg-indigo-100 text-indigo-800',
+    bgColor: '#6366F1'
   },
-  other: { 
-    label_en: 'Other', 
-    label_th: 'อื่น ๆ', 
-    label_zh: '其他', 
-    label_ja: 'その他', 
-    label_ko: '기타', 
-    icon: HelpCircle, 
-    color: 'bg-slate-100 text-slate-800', 
-    bgColor: '#64748B' 
+  other: {
+    label_en: 'Other',
+    label_th: 'อื่น ๆ',
+    label_zh: '其他',
+    label_ja: 'その他',
+    label_ko: '기타',
+    icon: HelpCircle,
+    color: 'bg-slate-100 text-slate-800',
+    bgColor: '#64748B'
   }
 };
 
@@ -161,7 +161,7 @@ function EvidenceVaultContent() {
   const canUploadFiles = (fileCount) => {
     const limits = getStorageLimits();
     const currentFileCount = documents.length;
-    
+
     // Check file count limit (Free tier only)
     if (user?.plan_tier === 'free' && currentFileCount + fileCount > limits.fileLimit) {
       return {
@@ -171,7 +171,7 @@ function EvidenceVaultContent() {
         limit: limits.fileLimit
       };
     }
-    
+
     // For storage, we'll do a rough check
     // Since we don't have exact file sizes in DB, we'll be permissive
     return {
@@ -185,7 +185,7 @@ function EvidenceVaultContent() {
     mutationFn: (data) => base44.entities.Document.create(data),
     onMutate: async (newDoc) => {
       haptic.light();
-      
+
       const tempId = `optimistic-${Date.now()}-${Math.random()}`;
       const optimisticItem = {
         ...newDoc,
@@ -287,7 +287,7 @@ function EvidenceVaultContent() {
       const { files: compressedFiles, stats } = await compressMultipleImages(uploadFiles, (progress) => {
         setUploadProgressPercent(Math.round(progress * 40)); // 0-40% for compression
       });
-      
+
       if (stats.compressedCount > 0) {
         setCompressionStats(stats);
       }
@@ -315,7 +315,7 @@ function EvidenceVaultContent() {
 
       await Promise.all(createPromises);
       setUploadProgressPercent(100);
-      
+
       // Query invalidation and haptic.success are handled by createDocumentMutation's onSuccess
       setShowUploadDialog(false);
       setUploadFiles([]);
@@ -345,8 +345,8 @@ function EvidenceVaultContent() {
 
   const handleToggleSelect = (docId) => {
     haptic.light();
-    setSelectedDocs(prev => 
-      prev.includes(docId) 
+    setSelectedDocs(prev =>
+      prev.includes(docId)
         ? prev.filter(id => id !== docId)
         : [...prev, docId]
     );
@@ -364,7 +364,7 @@ function EvidenceVaultContent() {
 
   const handleBulkDelete = async () => {
     if (selectedDocs.length === 0) return;
-    
+
     if (confirm(strings.confirmBulkDelete.replace('{count}', selectedDocs.length))) {
       // haptic.heavy() is now in onMutate of deleteDocumentMutation
       try {
@@ -424,7 +424,7 @@ function EvidenceVaultContent() {
     setExportingPdf(true);
     try {
       const response = await base44.functions.invoke('generateDataReport');
-      
+
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -483,7 +483,7 @@ function EvidenceVaultContent() {
 
   const handleSaveEdit = async () => {
     if (!editingDoc) return;
-    
+
     // haptic.medium() is now in onMutate of updateDocumentMutation
     try {
       await updateDocumentMutation.mutateAsync({
@@ -505,56 +505,56 @@ function EvidenceVaultContent() {
     haptic.light();
     const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
     const docLabel = doc.label || (
-      language === 'zh' ? config.label_zh : 
-      language === 'ja' ? config.label_ja : 
-      language === 'ko' ? config.label_ko : 
-      language === 'th' ? config.label_th : 
+      language === 'zh' ? config.label_zh :
+      language === 'ja' ? config.label_ja :
+      language === 'ko' ? config.label_ko :
+      language === 'th' ? config.label_th :
       config.label_en
     );
-    
+
     const subject = `${docLabel}`;
-    
+
     let body = '';
-    
+
     // For letters, extract and format as proper email
     if (doc.type === 'letter' && doc.html_content) {
       // Parse HTML properly using DOMParser
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(doc.html_content, 'text/html');
-      
+
       // Remove all non-content elements
       htmlDoc.querySelectorAll('style, script, .header, .footer, .section-title').forEach(el => el.remove());
-      
+
       // Get full text
       const fullText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
-      
+
       // Extract English letter: Start from "Dear" to closing
       let englishMatch = fullText.match(/Dear\s+[^,]+,[\s\S]*?(Warm regards|Best regards|Sincerely|Yours truly),?/i);
       let englishLetter = englishMatch ? englishMatch[0].trim() : '';
-      
+
       // Extract Thai letter: Start from "เรียน" to Thai closing
       let thaiMatch = fullText.match(/เรียน[^,]+,[\s\S]*?(ขอแสดงความนับถือ|ด้วยความเคารพ|ขอแสดงความเคารพ),?/);
       let thaiLetter = thaiMatch ? thaiMatch[0].trim() : '';
-      
+
       // Build email body: Thai header + Thai content + separator + English content
       let letterContent = 'ภาษาไทยด้านล่าง\n\n';
-      
+
       if (thaiLetter) {
         letterContent += thaiLetter;
       }
-      
+
       if (englishLetter) {
         if (thaiLetter) {
           letterContent += '\n\n---\n\n';
         }
         letterContent += englishLetter;
       }
-      
+
       // If no letters extracted, fallback
       if (!thaiLetter && !englishLetter) {
         letterContent += '[Letter content could not be extracted]';
       }
-      
+
       // Format final email with footer
       const createdByText = language === 'zh' ? '创建者' : language === 'ja' ? '作成者' : language === 'ko' ? '생성자' : language === 'th' ? 'สร้างโดย' : 'Created by';
       body = `${letterContent}\n\n---\n\n${createdByText} Lease Shield - https://www.leaseshield.asia`;
@@ -562,10 +562,10 @@ function EvidenceVaultContent() {
       // For other document types
       const documentText = language === 'zh' ? '文档' : language === 'ja' ? 'ドキュメント' : language === 'ko' ? '문서' : language === 'th' ? 'เอกสาร' : 'Document';
       const dateText = language === 'zh' ? '日期' : language === 'ja' ? '日付' : language === 'ko' ? '날짜' : language === 'th' ? 'วันที่' : 'Date';
-      
+
       body = `${documentText}: ${docLabel}\n${dateText}: ${format(new Date(doc.created_date), language === 'th' ? 'dd/MM/yyyy' : 'MMM d, yyyy')}\n\n${doc.file_url}`;
     }
-    
+
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoLink;
   };
@@ -592,7 +592,7 @@ function EvidenceVaultContent() {
 
       // Query invalidation and haptic.success are handled by updateDocumentMutation's onSuccess
       setAnnotatingDocument(null);
-      
+
       toast.success(strings.annotationSaved);
     } catch (error) {
       console.error('Failed to save annotation:', error);
@@ -1130,7 +1130,7 @@ function EvidenceVaultContent() {
                 }}>
                   {strings.cancel}
                 </Button>
-                <Button 
+                <Button
                   onClick={handleSaveEdit}
                   disabled={updateDocumentMutation.isPending}
                   className="bg-ls-forest hover:bg-ls-forest/90"
@@ -1161,7 +1161,7 @@ function EvidenceVaultContent() {
                   language === 'zh' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_zh :
                   language === 'ja' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_ja :
                   language === 'ko' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_ko :
-                  language === 'th' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_th : 
+                  language === 'th' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_th :
                   DOC_TYPE_CONFIG[viewingDoc?.type]?.label_en
                 )}
               </DialogTitle>
@@ -1212,7 +1212,7 @@ function EvidenceVaultContent() {
             )}
           </DialogContent>
         </Dialog>
-        
+
         {/* LetterPreview for letter types with html_content */}
         {viewingDoc?.type === 'letter' && viewingDoc?.html_content && (
           <LetterPreview
@@ -1271,11 +1271,11 @@ function EvidenceVaultContent() {
                         <CheckCircle2 className="w-3 h-3 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                        <p className="font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
                           {language === 'th' ? 'ปรับขนาดไฟล์แล้ว' : 'Images Optimized'}
                         </p>
                         <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
-                          {language === 'th' 
+                          {language === 'th'
                             ? `${compressionStats.compressedCount} รูป • ประหยัด ${compressionStats.savedMB} MB`
                             : `${compressionStats.compressedCount} images • Saved ${compressionStats.savedMB} MB`
                           }
@@ -1288,9 +1288,9 @@ function EvidenceVaultContent() {
                 <div>
                   <Label style={{ color: colors.textPrimary }}>{strings.uploadTypeLabel}</Label>
                   <Select value={uploadType} onValueChange={setUploadType}>
-                    <SelectTrigger className="mt-2" style={{ 
-                      backgroundColor: colors.inputBg, 
-                      borderColor: colors.borderColor, 
+                    <SelectTrigger className="mt-2" style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
                       color: colors.textPrimary,
                       minHeight: '44px',
                       fontSize: '16px'
@@ -1414,130 +1414,97 @@ function EvidenceVaultContent() {
           </div>
         </BottomSheet>
 
-        <Button
-          variant="ghost"
-          onClick={() => {
-            haptic.light();
-            navigate(createPageUrl("Dashboard"));
-          }}
-          className="mb-4"
-          style={{ color: colors.textSecondary }}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          {strings.back}
-        </Button>
+        <div className="max-w-7xl mx-auto">
+          <PageHeader
+            title={strings.title}
+            subtitle={strings.subtitle}
+            icon={Shield}
+            iconColor={evidenceAccent}
+            showBack={true}
+            backLabel={strings.back}
+            colors={colors}
+            onBack={() => navigate(createPageUrl("Dashboard"))}
+            actions={
+              <div className="flex flex-col sm:flex-row gap-3 items-center">
+                {/* Upload Evidence CTA */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic.medium();
+                    setShowUploadDialog(true);
+                  }}
+                  style={{
+                    ...primaryCtaStyle,
+                    padding: "10px 16px",
+                    fontSize: "0.875rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = primaryCtaHover.transform;
+                    e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "";
+                    e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                  }}
+                >
+                  <Upload className="w-4 h-4" />
+                  {strings.uploadEvidence}
+                </button>
 
-        <div className="mb-4 sm:mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Shield className="w-6 h-6 sm:w-8 sm:h-8" style={{ color: evidenceAccent }} />
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
-              </div>
-            </div>
-
-            {/* NEW: Upload Evidence CTA - Desktop */}
-            <div className="hidden sm:block">
-              <button
-                type="button"
-                onClick={() => {
-                  haptic.medium();
-                  setShowUploadDialog(true);
-                }}
-                style={primaryCtaStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = primaryCtaHover.transform;
-                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "";
-                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-                }}
-              >
-                <Upload className="w-4 h-4" />
-                {strings.uploadEvidence}
-              </button>
-            </div>
-          </div>
-          
-          {/* STORAGE USAGE INDICATOR */}
-          <div className="mt-3 flex gap-2">
-            <Badge className="bg-blue-100 text-blue-700 border-blue-200">
-              {strings.storageUsed
-                .replace('{used}', storageCheck.usedMB)
-                .replace('{limit}', storageLimits.limitMB)}
-            </Badge>
-            {userTier === 'free' && (
-              <Badge className={documents.length >= storageLimits.fileLimit ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}>
-                {strings.filesUsed
-                  .replace('{count}', documents.length)
-                  .replace('{limit}', storageLimits.fileLimit)}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* NEW: Upload Evidence CTA - Mobile (full width) */}
-        <div className="sm:hidden mb-4">
-          <button
-            type="button"
-            onClick={() => {
-              haptic.medium();
-              setShowUploadDialog(true);
-            }}
-            style={{
-              ...primaryCtaStyle,
-              width: "100%",
-              padding: "12px 16px",
-              fontSize: "1rem"
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = primaryCtaHover.transform;
-              e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "";
-              e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-            }}
-          >
-            <Upload className="w-5 h-5" />
-            {strings.uploadEvidence}
-          </button>
-        </div>
-
-        {/* Templates Link - now a separate card */}
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg, borderLeft: `4px solid ${evidenceAccent}` }}>
-          <CardContent className="p-0">
-            <Link to={createPageUrl("Templates")}>
-              <div
-                className="p-4 rounded-lg border-2 hover:shadow-md transition-all cursor-pointer"
-                onClick={() => haptic.light()}
-                style={{
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                  borderColor: evidenceAccent
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: evidenceAccent }}>
-                    <FileText className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm md:text-base" style={{ color: colors.textPrimary }}>
-                      {strings.viewTemplates}
-                    </p>
-                    <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>
-                      {strings.viewTemplatesDesc}
-                    </p>
-                  </div>
-                  <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: evidenceAccent }} />
+                {/* Storage Badges */}
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                    {strings.storageUsed
+                      .replace('{used}', storageCheck.usedMB)
+                      .replace('{limit}', storageLimits.limitMB)}
+                  </Badge>
+                  {userTier === 'free' && (
+                    <Badge className={documents.length >= storageLimits.fileLimit ? 'bg-red-100 text-red-700 text-xs' : 'bg-slate-100 text-slate-700 text-xs'}>
+                      {strings.filesUsed
+                        .replace('{count}', documents.length)
+                        .replace('{limit}', storageLimits.fileLimit)}
+                    </Badge>
+                  )}
                 </div>
               </div>
-            </Link>
-          </CardContent>
-        </Card>
+            }
+          />
 
-        <div className="max-w-7xl mx-auto">
+          {/* Templates Link Card */}
+          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg, borderLeft: `4px solid ${evidenceAccent}` }}>
+            <CardContent className="p-0">
+              <Link to={createPageUrl("Templates")}>
+                <div
+                  className="p-4 rounded-lg border-2 hover:shadow-md transition-all cursor-pointer"
+                  onClick={() => haptic.light()}
+                  style={{
+                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                    borderColor: evidenceAccent
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: evidenceAccent }}>
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm md:text-base" style={{ color: colors.textPrimary }}>
+                        {strings.viewTemplates}
+                      </p>
+                      <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>
+                        {strings.viewTemplatesDesc}
+                      </p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: evidenceAccent }} />
+                  </div>
+                </div>
+              </Link>
+            </CardContent>
+          </Card>
+
           {/* Recent Uploads Header and Bulk Actions */}
           {(isLoadingDocuments || filteredDocuments.length > 0) && (
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
@@ -1643,7 +1610,7 @@ function EvidenceVaultContent() {
                 const isImage = doc.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
                 const isVideo = doc.file_url?.match(/\.(mp4|mov|avi)$/i);
                 const isOptimistic = doc.__optimistic;
-                
+
                 return (
                   <SwipeToDelete
                     key={doc.id}
@@ -1654,8 +1621,8 @@ function EvidenceVaultContent() {
                   >
                     <Card
                       className={`overflow-hidden border-none shadow-lg hover:shadow-xl transition-all relative ${isSelected ? 'ring-2' : ''} ${isOptimistic ? 'opacity-60' : ''}`}
-                      style={{ 
-                        backgroundColor: colors.cardBg, 
+                      style={{
+                        backgroundColor: colors.cardBg,
                         borderColor: isSelected ? evidenceAccent : colors.borderColor,
                         borderLeft: isSelected ? `4px solid ${evidenceAccent}` : undefined
                       }}
@@ -1666,7 +1633,7 @@ function EvidenceVaultContent() {
                           <Loader2 className="w-8 h-8 animate-spin text-white" />
                         </div>
                       )}
-                      
+
                       {isImage ? (
                         <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
                           <LazyImage
@@ -1693,15 +1660,15 @@ function EvidenceVaultContent() {
                         </div>
                       ) : isVideo ? (
                         <div className="aspect-video bg-gray-900 relative">
-                          <video 
-                            src={doc.file_url} 
+                          <video
+                            src={doc.file_url}
                             className="w-full h-full object-cover"
                             controls
                             preload="metadata"
                           />
                         </div>
                       ) : (
-                        <div 
+                        <div
                           className="aspect-video flex flex-col items-center justify-center p-4"
                           style={{ backgroundColor: config.bgColor, color: 'white' }}
                         >

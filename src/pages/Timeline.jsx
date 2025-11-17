@@ -22,11 +22,11 @@ import {
   Grid3x3,
   TrendingUp
 } from "lucide-react";
-import { 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  eachDayOfInterval, 
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
   isSameMonth,
   isSameDay,
   addMonths,
@@ -40,6 +40,7 @@ import {
 } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import PageHeader from "../components/shared/PageHeader";
 
 export default function Timeline() {
   const navigate = useNavigate();
@@ -239,7 +240,6 @@ export default function Timeline() {
       noEvents: "이벤트를 찾을 수 없음",
       noEventsDesc: "다른 필터 또는 날짜 범위를 선택해보세요",
       upcomingDeadlines: "다가오는 마감일",
-      next30Days: "향후 30일",
       noUpcoming: "다가오는 마감일 없음",
       pastEvents: "과거 이벤트",
       viewDetails: "세부 정보 보기",
@@ -369,9 +369,9 @@ export default function Timeline() {
   const monthEvents = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
-    
-    return filteredEvents.filter(event => 
-      isAfter(event.date, monthStart) && isBefore(event.date, monthEnd)
+
+    return filteredEvents.filter(event =>
+      isAfter(event.date, startOfDay(monthStart)) && isBefore(event.date, endOfDay(monthEnd))
     );
   }, [filteredEvents, currentDate]);
 
@@ -379,7 +379,7 @@ export default function Timeline() {
     const now = new Date();
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    
+
     return filteredEvents
       .filter(event => isAfter(event.date, now) && isBefore(event.date, thirtyDaysFromNow))
       .slice(0, 10);
@@ -394,10 +394,16 @@ export default function Timeline() {
   }, [filteredEvents]);
 
   const calendarDays = useMemo(() => {
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(currentDate);
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    
+    // Determine the first day of the calendar grid (start of the week of the first day of the month)
+    const firstDayOfMonth = startOfMonth(currentDate);
+    const startDay = startOfDay(new Date(firstDayOfMonth.setDate(firstDayOfMonth.getDate() - firstDayOfMonth.getDay()))); // Go back to the Sunday of the first week
+
+    // Determine the last day of the calendar grid (end of the week of the last day of the month)
+    const lastDayOfMonth = endOfMonth(currentDate);
+    const endDay = endOfDay(new Date(lastDayOfMonth.setDate(lastDayOfMonth.getDate() + (6 - lastDayOfMonth.getDay())))); // Go forward to the Saturday of the last week
+
+    const days = eachDayOfInterval({ start: startDay, end: endDay });
+
     return days.map(day => ({
       date: day,
       events: filteredEvents.filter(event => isSameDay(event.date, day)),
@@ -405,6 +411,7 @@ export default function Timeline() {
       isCurrentMonth: isSameMonth(day, currentDate)
     }));
   }, [currentDate, filteredEvents]);
+
 
   const toggleType = (type) => {
     setSelectedTypes(prev =>
@@ -424,7 +431,7 @@ export default function Timeline() {
         className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-lg active:scale-95"
         style={{
           backgroundColor: colors.cardBg,
-          borderColor: event.urgent || isUrgent ? event.color : colors.borderColor,
+          borderColor: event.urgent || isUrgent || isOverdue ? event.color : colors.borderColor,
           borderLeftWidth: '6px',
           borderLeftColor: event.color
         }}
@@ -444,8 +451,8 @@ export default function Timeline() {
               </h4>
               {(isOverdue || isUrgent) && (
                 <Badge className={isOverdue ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}>
-                  {isOverdue 
-                    ? strings.overdue 
+                  {isOverdue
+                    ? strings.overdue
                     : `${daysUntil} ${daysUntil === 1 ? strings.day : strings.days}`}
                 </Badge>
               )}
@@ -480,101 +487,88 @@ export default function Timeline() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(createPageUrl("Dashboard"))}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          {strings.back}
-        </Button>
+        <PageHeader
+          title={strings.title}
+          subtitle={strings.subtitle}
+          icon={CalendarIcon}
+          iconColor="#0C3B2E"
+          showBack={true}
+          backLabel={strings.back}
+          onBack={() => navigate(createPageUrl("Dashboard"))}
+          colors={colors}
+          actions={
+            <div className="flex flex-wrap items-center justify-between gap-4 w-full">
+              <div className="flex gap-2 p-1 rounded-lg" style={{ backgroundColor: colors.cardBg, border: `2px solid ${colors.borderColor}` }}>
+                <button
+                  onClick={() => setViewMode('upcoming')}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                  style={{
+                    backgroundColor: viewMode === 'upcoming' ? '#0C3B2E' : 'transparent',
+                    color: viewMode === 'upcoming' ? '#FFFFFF' : colors.textPrimary
+                  }}
+                >
+                  <Clock className="w-4 h-4" />
+                  <span className="hidden sm:inline">{strings.upcoming}</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('calendar')}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                  style={{
+                    backgroundColor: viewMode === 'calendar' ? '#0C3B2E' : 'transparent',
+                    color: viewMode === 'calendar' ? '#FFFFFF' : colors.textPrimary
+                  }}
+                >
+                  <Grid3x3 className="w-4 h-4" />
+                  <span className="hidden sm:inline">{strings.calendar}</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                  style={{
+                    backgroundColor: viewMode === 'list' ? '#0C3B2E' : 'transparent',
+                    color: viewMode === 'list' ? '#FFFFFF' : colors.textPrimary
+                  }}
+                >
+                  <List className="w-4 h-4" />
+                  <span className="hidden sm:inline">{strings.list}</span>
+                </button>
+              </div>
 
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-ls-forest rounded-xl flex items-center justify-center">
-              <CalendarIcon className="w-6 h-6 text-white" />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedTypes([])}
+                  className="px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+                  style={{
+                    backgroundColor: selectedTypes.length === 0 ? '#0C3B2E' : colors.cardBg,
+                    color: selectedTypes.length === 0 ? '#FFFFFF' : colors.textPrimary,
+                    border: `2px solid ${selectedTypes.length === 0 ? '#0C3B2E' : colors.borderColor}`
+                  }}
+                >
+                  {strings.allTypes}
+                </button>
+                {[
+                  { key: 'lease', label: strings.leaseEvents, color: '#3B82F6' },
+                  { key: 'deposit', label: strings.depositEvents, color: '#C7A338' },
+                  { key: 'case', label: strings.caseEvents, color: '#8B5CF6' },
+                  { key: 'maintenance', label: strings.maintenanceEvents, color: '#F59E0B' }
+                ].map(({ key, label, color }) => (
+                  <button
+                    key={key}
+                    onClick={() => toggleType(key)}
+                    className="px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+                    style={{
+                      backgroundColor: selectedTypes.includes(key) ? color : colors.cardBg,
+                      color: selectedTypes.includes(key) ? '#FFFFFF' : colors.textPrimary,
+                      border: `2px solid ${selectedTypes.includes(key) ? color : colors.borderColor}`
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                {strings.title}
-              </h1>
-              <p className="text-sm" style={{ color: colors.textSecondary }}>
-                {strings.subtitle}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex gap-2 p-1 rounded-lg" style={{ backgroundColor: colors.cardBg, border: `2px solid ${colors.borderColor}` }}>
-            <button
-              onClick={() => setViewMode('upcoming')}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
-              style={{
-                backgroundColor: viewMode === 'upcoming' ? '#0C3B2E' : 'transparent',
-                color: viewMode === 'upcoming' ? '#FFFFFF' : colors.textPrimary
-              }}
-            >
-              <Clock className="w-4 h-4" />
-              <span className="hidden sm:inline">{strings.upcoming}</span>
-            </button>
-            <button
-              onClick={() => setViewMode('calendar')}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
-              style={{
-                backgroundColor: viewMode === 'calendar' ? '#0C3B2E' : 'transparent',
-                color: viewMode === 'calendar' ? '#FFFFFF' : colors.textPrimary
-              }}
-            >
-              <Grid3x3 className="w-4 h-4" />
-              <span className="hidden sm:inline">{strings.calendar}</span>
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
-              style={{
-                backgroundColor: viewMode === 'list' ? '#0C3B2E' : 'transparent',
-                color: viewMode === 'list' ? '#FFFFFF' : colors.textPrimary
-              }}
-            >
-              <List className="w-4 h-4" />
-              <span className="hidden sm:inline">{strings.list}</span>
-            </button>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setSelectedTypes([])}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${selectedTypes.length === 0 ? 'bg-ls-forest text-white' : ''}`}
-              style={{
-                backgroundColor: selectedTypes.length === 0 ? '#0C3B2E' : colors.cardBg,
-                color: selectedTypes.length === 0 ? '#FFFFFF' : colors.textPrimary,
-                border: `2px solid ${selectedTypes.length === 0 ? '#0C3B2E' : colors.borderColor}`
-              }}
-            >
-              {strings.allTypes}
-            </button>
-            {[
-              { key: 'lease', label: strings.leaseEvents, color: '#3B82F6' },
-              { key: 'deposit', label: strings.depositEvents, color: '#C7A338' },
-              { key: 'case', label: strings.caseEvents, color: '#8B5CF6' },
-              { key: 'maintenance', label: strings.maintenanceEvents, color: '#F59E0B' }
-            ].map(({ key, label, color }) => (
-              <button
-                key={key}
-                onClick={() => toggleType(key)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                style={{
-                  backgroundColor: selectedTypes.includes(key) ? color : colors.cardBg,
-                  color: selectedTypes.includes(key) ? '#FFFFFF' : colors.textPrimary,
-                  border: `2px solid ${selectedTypes.includes(key) ? color : colors.borderColor}`
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+          }
+        />
 
         {viewMode === 'upcoming' && (
           <div className="space-y-6">
@@ -667,19 +661,19 @@ export default function Timeline() {
               <div className="grid grid-cols-7 gap-2">
                 {calendarDays.map((dayData, idx) => {
                   const hasEvents = dayData.events.length > 0;
-                  const urgentEvent = dayData.events.find(e => e.urgent);
-                  
+                  const urgentEvent = dayData.events.find(e => e.urgent || (differenceInDays(e.date, new Date()) <= 7 && differenceInDays(e.date, new Date()) >= 0));
+
                   return (
                     <div
                       key={idx}
                       className="aspect-square p-2 rounded-lg transition-all cursor-pointer hover:shadow-md"
                       style={{
-                        backgroundColor: dayData.isToday 
+                        backgroundColor: dayData.isToday
                           ? colors.todayBg
                           : hasEvents
                             ? `${dayData.events[0].color}10`
                             : 'transparent',
-                        border: dayData.isToday 
+                        border: dayData.isToday
                           ? '2px solid #0C3B2E'
                           : urgentEvent
                             ? `2px solid ${urgentEvent.color}`

@@ -23,7 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
-
+import PageHeader from "../components/shared/PageHeader";
 
 const PLAN_DETAILS = [
   {
@@ -1434,26 +1434,13 @@ export default function Account() {
   return (
     <div className="min-h-screen p-4 md:p-6 pb-32" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: '#0C3B2E',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 6px rgba(12, 59, 46, 0.2)'
-            }}>
-              <User className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.pageTitle}</h1>
-              <p style={{ color: colors.textSecondary }}>{strings.pageSubtitle}</p>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title={strings.pageTitle}
+          subtitle={strings.pageSubtitle}
+          icon={User}
+          iconColor="#0C3B2E"
+          colors={colors}
+        />
 
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
           <Card className="lg:col-span-2 border-none shadow-xl" style={{

@@ -26,6 +26,7 @@ import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
+import PageHeader from "../components/shared/PageHeader";
 
 function DashboardContent() {
   const [focusMode, setFocusMode] = React.useState(false);
@@ -845,8 +846,8 @@ function DashboardContent() {
       rentTracked: "Rent Tracked",
       setupRent: "Setup Rent",
       maintenanceRequests: "Maintenance",
-      reportMaintenance: "Report maintenance issue", // NEW
-      enableNotifications: "Enable notifications", // NEW
+      reportMaintenance: "Report maintenance issue",
+      enableNotifications: "Enable notifications",
       noNotifications: "No notifications yet",
       noMaintenance: "No requests",
       analytics: "Analytics",
@@ -892,8 +893,8 @@ function DashboardContent() {
       rentTracked: "ติดตามค่าเช่า",
       setupRent: "ตั้งค่าเช่า",
       maintenanceRequests: "การซ่อมบำรุง",
-      reportMaintenance: "รายงานปัญหาซ่อมบำรุง", // NEW
-      enableNotifications: "เปิดการแจ้งเตือน", // NEW
+      reportMaintenance: "รายงานปัญหาซ่อมบำรุง",
+      enableNotifications: "เปิดการแจ้งเตือน",
       noNotifications: "ยังไม่มีการแจ้งเตือน",
       noMaintenance: "ไม่มีคำขอ",
       analytics: "วิเคราะห์",
@@ -939,8 +940,8 @@ function DashboardContent() {
       rentTracked: "追踪的租金",
       setupRent: "设置租金",
       maintenanceRequests: "维护请求",
-      reportMaintenance: "报告维护问题", // NEW
-      enableNotifications: "启用通知", // NEW
+      reportMaintenance: "报告维护问题",
+      enableNotifications: "启用通知",
       noNotifications: "暂无通知",
       noMaintenance: "无请求",
       analytics: "分析",
@@ -986,8 +987,8 @@ function DashboardContent() {
       rentTracked: "追跡中の家賃",
       setupRent: "家賃を設定",
       maintenanceRequests: "メンテナンス",
-      reportMaintenance: "メンテナンスの問題を報告", // NEW
-      enableNotifications: "通知を有効にする", // NEW
+      reportMaintenance: "メンテナンスの問題を報告",
+      enableNotifications: "通知を有効にする",
       noNotifications: "通知なし",
       noMaintenance: "リクエストなし",
       analytics: "分析",
@@ -1033,8 +1034,8 @@ function DashboardContent() {
       rentTracked: "추적 중인 임대료",
       setupRent: "임대료 설정",
       maintenanceRequests: "유지보수",
-      reportMaintenance: "유지보수 문제 보고", // NEW
-      enableNotifications: "알림 활성화", // NEW
+      reportMaintenance: "유지보수 문제 보고",
+      enableNotifications: "알림 활성화",
       noNotifications: "알림 없음",
       noMaintenance: "요청 없음",
       analytics: "분석",
@@ -1259,62 +1260,336 @@ function DashboardContent() {
           />
 
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
-                background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-              }}>
-                <div className="w-5 h-5 flex-shrink-0">
-                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
-                    <path d="M12 2L4 5V11C4 16 7 20.5 12 22C17 20.5 20 16 20 11V5L12 2Z" fill="#0C3B2E" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <rect x="9" y="11" width="6" height="5" rx="1" fill="#C7A338"/>
-                    <path d="M10 11V9.5C10 8.67 10.67 8 11.5 8H12.5C13.33 8 14 8.67 14 9.5V11" stroke="#C7A338" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <div className="flex items-center gap-2 text-sm sm:text-base font-semibold">
-                  {language === 'zh' ? (
+            <PageHeader
+              title={`${strings.welcome}, ${user?.full_name?.split(' ')[0] || 'User'}`}
+              subtitle={strings.subtitle}
+              colors={colors}
+              actions={
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
+                    background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                  }}>
+                    <div className="w-5 h-5 flex-shrink-0">
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+                        <path d="M12 2L4 5V11C4 16 7 20.5 12 22C17 20.5 20 16 20 11V5L12 2Z" fill="#0C3B2E" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <rect x="9" y="11" width="6" height="5" rx="1" fill="#C7A338"/>
+                        <path d="M10 11V9.5C10 8.67 10.67 8 11.5 8H12.5C13.33 8 14 8.67 14 9.5V11" stroke="#C7A338" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm sm:text-base font-semibold">
+                      {language === 'zh' ? (
+                        <>
+                          <span style={{ color: '#FFFFFF' }}>公平。</span>
+                          <span style={{ color: '#ECEFED' }}>透明。</span>
+                          <span style={{ color: '#C7A338' }}>保护。</span>
+                        </>
+                      ) : language === 'ja' ? (
+                        <>
+                          <span style={{ color: '#FFFFFF' }}>公正。</span>
+                          <span style={{ color: '#ECEFED' }}>透明。</span>
+                          <span style={{ color: '#C7A338' }}>保護。</span>
+                        </>
+                      ) : language === 'ko' ? (
+                        <>
+                          <span style={{ color: '#FFFFFF' }}>공정。</span>
+                          <span style={{ color: '#ECEFED' }}>투명。</span>
+                          <span style={{ color: '#C7A338' }}>보호。</span>
+                        </>
+                      ) : language === 'th' ? (
+                        <>
+                          <span style={{ color: '#FFFFFF' }}>ยุติธรรม。</span>
+                          <span style={{ color: '#ECEFED' }}>โปร่งใส。</span>
+                          <span style={{ color: '#C7A338' }}>ปลอดภัย。</span>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ color: '#FFFFFF' }}>Fair.</span>
+                          <span style={{ color: '#ECEFED' }}>Transparent.</span>
+                          <span style={{ color: '#C7A338' }}>Protected.</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <Link to={createPageUrl("Analytics")}>
+                    <button
+                      onClick={() => haptic.light()}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
+                        color: isDarkMode ? '#FFFFFF' : '#1A1D1F',
+                        border: `2px solid ${isDarkMode ? '#4B5563' : '#D1D5DB'}`,
+                        borderRadius: '12px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.borderColor = '#0C3B2E';
+                        e.target.style.color = '#FFFFFF';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#FFFFFF';
+                        e.target.style.borderColor = isDarkMode ? '#4B5563' : '#D1D5DB';
+                        e.target.style.color = isDarkMode ? '#FFFFFF' : '#1A1D1F';
+                      }}
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      {strings.analytics}
+                    </button>
+                  </Link>
+
+                  {isAdmin && (
                     <>
-                      <span style={{ color: '#FFFFFF' }}>公平。</span>
-                      <span style={{ color: '#ECEFED' }}>透明。</span>
-                      <span style={{ color: '#C7A338' }}>保护。</span>
-                    </>
-                  ) : language === 'ja' ? (
-                    <>
-                      <span style={{ color: '#FFFFFF' }}>公正。</span>
-                      <span style={{ color: '#ECEFED' }}>透明。</span>
-                      <span style={{ color: '#C7A338' }}>保護。</span>
-                    </>
-                  ) : language === 'ko' ? (
-                    <>
-                      <span style={{ color: '#FFFFFF' }}>공정。</span>
-                      <span style={{ color: '#ECEFED' }}>투명。</span>
-                      <span style={{ color: '#C7A338' }}>보호。</span>
-                    </>
-                  ) : language === 'th' ? (
-                    <>
-                      <span style={{ color: '#FFFFFF' }}>ยุติธรรม。</span>
-                      <span style={{ color: '#ECEFED' }}>โปร่งใส。</span>
-                      <span style={{ color: '#C7A338' }}>ปลอดภัย।</span>
-                    </>
-                  ) : (
-                    <>
-                      <span style={{ color: '#FFFFFF' }}>Fair.</span>
-                      <span style={{ color: '#ECEFED' }}>Transparent.</span>
-                      <span style={{ color: '#C7A338' }}>Protected.</span>
+                      <button
+                        onClick={() => {
+                          haptic.medium();
+                          testFlexFromBrowser();
+                        }}
+                        disabled={testingBrowserFlex}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: testingBrowserFlex ? '#9CA3AF' : '#8B5CF6',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: testingBrowserFlex ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          opacity: testingBrowserFlex ? 0.7 : 1,
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!testingBrowserFlex) {
+                            e.target.style.backgroundColor = '#7C3AED';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!testingBrowserFlex) {
+                            e.target.style.backgroundColor = '#8B5CF6';
+                          }
+                        }}
+                      >
+                        {testingBrowserFlex ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            {strings.sending}
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-3 h-3" />
+                            {strings.testBrowserFlex}
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          haptic.medium();
+                          testRentReminder();
+                        }}
+                        disabled={testingRent}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: testingRent ? '#9CA3AF' : '#10B981',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: testingRent ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          opacity: testingRent ? 0.7 : 1,
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!testingRent) {
+                            e.target.style.backgroundColor = '#059669';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!testingRent) {
+                            e.target.style.backgroundColor = '#10B981';
+                          }
+                        }}
+                      >
+                        {testingRent ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            {strings.running}
+                          </>
+                        ) : (
+                          <>
+                            <Wallet className="w-3 h-3" />
+                            {strings.testRent}
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          haptic.medium();
+                          testDirectEmail();
+                        }}
+                        disabled={testingEmail}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: testingEmail ? '#9CA3AF' : '#EF4444',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: testingEmail ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          opacity: testingEmail ? 0.7 : 1,
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!testingEmail) {
+                            e.target.style.backgroundColor = '#DC2626';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!testingEmail) {
+                            e.target.style.backgroundColor = '#EF4444';
+                          }
+                        }}
+                      >
+                        {testingEmail ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            {strings.sending}
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="w-3 h-3" />
+                            {strings.testEmail}
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          haptic.medium();
+                          checkAndNotifyOverdue();
+                        }}
+                        disabled={checkingOverdue}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: checkingOverdue ? '#9CA3AF' : '#F59E0B',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: checkingOverdue ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          opacity: checkingOverdue ? 0.7 : 1,
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!checkingOverdue) {
+                            e.target.style.backgroundColor = '#D97706';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!checkingOverdue) {
+                            e.target.style.backgroundColor = '#F59E0B';
+                          }
+                        }}
+                      >
+                        {checkingOverdue ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            Overdue Only
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-3 h-3" />
+                            Overdue Only
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          haptic.medium();
+                          runScheduledReminders();
+                        }}
+                        disabled={runningScheduled}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: runningScheduled ? '#9CA3AF' : '#3B82F6',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: runningScheduled ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          opacity: runningScheduled ? 0.7 : 1,
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!runningScheduled) {
+                            e.target.style.backgroundColor = '#2563EB';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!runningScheduled) {
+                            e.target.style.backgroundColor = '#3B82F6';
+                          }
+                        }}
+                        title={strings.checkAllUsers}
+                      >
+                        {runningScheduled ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            {strings.running}
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-3 h-3" />
+                            {strings.runFullCheck}
+                          </>
+                        )}
+                      </button>
                     </>
                   )}
-                </div>
-              </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <Link to={createPageUrl("Analytics")}>
                   <button
-                    onClick={() => haptic.light()}
+                    onClick={() => {
+                      haptic.light();
+                      setFocusMode(!focusMode);
+                    }}
                     style={{
                       padding: '8px 16px',
-                      backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                      color: isDarkMode ? '#FFFFFF' : '#1A1D1F',
-                      border: `2px solid ${isDarkMode ? '#4B5563' : '#D1D5DB'}`,
+                      backgroundColor: focusMode ? '#C7A338' : colors.cardBg,
+                      color: focusMode ? '#FFFFFF' : colors.textPrimary,
+                      border: `2px solid ${focusMode ? '#C7A338' : colors.borderColor}`,
                       borderRadius: '12px',
                       fontSize: '14px',
                       fontWeight: '600',
@@ -1325,306 +1600,22 @@ function DashboardContent() {
                       gap: '8px',
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#0C3B2E';
-                      e.target.style.borderColor = '#0C3B2E';
-                      e.target.style.color = '#FFFFFF';
+                      if (!focusMode) {
+                        e.target.style.backgroundColor = colors.borderColor;
+                      }
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#FFFFFF';
-                      e.target.style.borderColor = isDarkMode ? '#4B5563' : '#D1D5DB';
-                      e.target.style.color = isDarkMode ? '#FFFFFF' : '#1A1D1F';
+                      if (!focusMode) {
+                        e.target.style.backgroundColor = colors.cardBg;
+                      }
                     }}
                   >
-                    <BarChart3 className="w-4 h-4" />
-                    {strings.analytics}
+                    <Target className="w-4 h-4" />
+                    {focusMode ? strings.normalView : strings.focusMode}
                   </button>
-                </Link>
-
-                {isAdmin && (
-                  <>
-                    <button
-                      onClick={() => {
-                        haptic.medium();
-                        testFlexFromBrowser();
-                      }}
-                      disabled={testingBrowserFlex}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: testingBrowserFlex ? '#9CA3AF' : '#8B5CF6',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        cursor: testingBrowserFlex ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        opacity: testingBrowserFlex ? 0.7 : 1,
-                        whiteSpace: 'nowrap'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!testingBrowserFlex) {
-                          e.target.style.backgroundColor = '#7C3AED';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!testingBrowserFlex) {
-                          e.target.style.backgroundColor = '#8B5CF6';
-                        }
-                      }}
-                    >
-                      {testingBrowserFlex ? (
-                        <>
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          {strings.sending}
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="w-3 h-3" />
-                          {strings.testBrowserFlex}
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        haptic.medium();
-                        testRentReminder();
-                      }}
-                      disabled={testingRent}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: testingRent ? '#9CA3AF' : '#10B981',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        cursor: testingRent ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        opacity: testingRent ? 0.7 : 1,
-                        whiteSpace: 'nowrap'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!testingRent) {
-                          e.target.style.backgroundColor = '#059669';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!testingRent) {
-                          e.target.style.backgroundColor = '#10B981';
-                        }
-                      }}
-                    >
-                      {testingRent ? (
-                        <>
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          {strings.running}
-                        </>
-                      ) : (
-                        <>
-                          <Wallet className="w-3 h-3" />
-                          {strings.testRent}
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        haptic.medium();
-                        testDirectEmail();
-                      }}
-                      disabled={testingEmail}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: testingEmail ? '#9CA3AF' : '#EF4444',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        cursor: testingEmail ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        opacity: testingEmail ? 0.7 : 1,
-                        whiteSpace: 'nowrap'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!testingEmail) {
-                          e.target.style.backgroundColor = '#DC2626';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!testingEmail) {
-                          e.target.style.backgroundColor = '#EF4444';
-                        }
-                      }}
-                    >
-                      {testingEmail ? (
-                        <>
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          {strings.sending}
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="w-3 h-3" />
-                          {strings.testEmail}
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        haptic.medium();
-                        checkAndNotifyOverdue();
-                      }}
-                      disabled={checkingOverdue}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: checkingOverdue ? '#9CA3AF' : '#F59E0B',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        cursor: checkingOverdue ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        opacity: checkingOverdue ? 0.7 : 1,
-                        whiteSpace: 'nowrap'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!checkingOverdue) {
-                          e.target.style.backgroundColor = '#D97706';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!checkingOverdue) {
-                          e.target.style.backgroundColor = '#F59E0B';
-                        }
-                      }}
-                    >
-                      {checkingOverdue ? (
-                        <>
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          Overdue Only
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="w-3 h-3" />
-                          Overdue Only
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        haptic.medium();
-                        runScheduledReminders();
-                      }}
-                      disabled={runningScheduled}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: runningScheduled ? '#9CA3AF' : '#3B82F6',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        cursor: runningScheduled ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        opacity: runningScheduled ? 0.7 : 1,
-                        whiteSpace: 'nowrap'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!runningScheduled) {
-                          e.target.style.backgroundColor = '#2563EB';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!runningScheduled) {
-                          e.target.style.backgroundColor = '#3B82F6';
-                        }
-                      }}
-                      title={strings.checkAllUsers}
-                    >
-                      {runningScheduled ? (
-                        <>
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          {strings.running}
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="w-3 h-3" />
-                          {strings.runFullCheck}
-                        </>
-                      )}
-                    </button>
-                  </>
-                )}
-
-                <button
-                  onClick={() => {
-                    haptic.light();
-                    setFocusMode(!focusMode);
-                  }}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: focusMode ? '#C7A338' : colors.cardBg,
-                    color: focusMode ? '#FFFFFF' : colors.textPrimary,
-                    border: `2px solid ${focusMode ? '#C7A338' : colors.borderColor}`,
-                    borderRadius: '12px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!focusMode) {
-                      e.target.style.backgroundColor = colors.borderColor;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!focusMode) {
-                      e.target.style.backgroundColor = colors.cardBg;
-                    }
-                  }}
-                >
-                  <Target className="w-4 h-4" />
-                  {focusMode ? strings.normalView : strings.focusMode}
-                </button>
-              </div>
-            </div>
-            
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2" style={{ 
-              color: colors.textPrimary,
-              letterSpacing: '-0.02em'
-            }}>
-              {strings.welcome}, {user?.full_name?.split(' ')[0] || 'User'}
-            </h1>
-            <p style={{ 
-              color: colors.textSecondary, 
-              fontSize: '16px', 
-              lineHeight: '1.6',
-              fontWeight: '500'
-            }}>
-              {strings.subtitle}
-            </p>
+                </div>
+              }
+            />
           </div>
 
           {urgentLeaseNotices.length > 0 && (
