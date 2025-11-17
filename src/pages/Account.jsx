@@ -576,7 +576,46 @@ export default function Account() {
 
     haptic.medium();
     setShowManagePlanPanel(false);
-    setShowCancelDialog(true);
+    
+    setCancelling(true);
+    try {
+      const response = await base44.functions.invoke('cancelSubscription', {
+        reason: 'downgrade_to_free',
+        feedback: 'User chose to downgrade to free plan'
+      });
+
+      if (response.data?.success) {
+        refetchUser?.();
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        haptic.success();
+        alert(language === 'th' 
+          ? 'ลดระดับสำเร็จ คุณจะยังคงสามารถเข้าถึงฟีเจอร์ได้จนถึงวันที่ต่ออายุ' 
+          : 'Downgrade successful. You\'ll keep access until your renewal date.');
+      }
+    } catch (error) {
+      console.error('Downgrade to free error:', error);
+      haptic.error();
+      alert(language === 'th' 
+        ? 'ไม่สามารถลดระดับได้ กรุณาลองอีกครั้งหรือติดต่อฝ่ายสนับสนุน' 
+        : 'Failed to downgrade. Please try again or contact support.');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  // Downgrade to Lite handler
+  const handleDowngradeToLite = async () => {
+    const confirmMsg = language === 'th'
+      ? 'ลดเป็นแผน Lite? คุณจะสูญเสียฟีเจอร์ของ Protect/Secure'
+      : 'Downgrade to Lite? You\'ll lose Protect/Secure features.';
+    
+    if (!confirm(confirmMsg)) return;
+
+    haptic.medium();
+    setShowCancelDialog(false); // Close the cancel dialog first
+    
+    // Now call handleSubscribe for 'lite' plan, using the current user's billing interval
+    handleSubscribe('lite', userBillingInterval);
   };
 
   const handleCancelSubscription = async () => {
@@ -595,6 +634,7 @@ export default function Account() {
       });
 
       if (response.data?.success) {
+        refetchUser?.();
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         setShowCancelDialog(false);
         setCancelReason('');
@@ -2984,198 +3024,231 @@ export default function Account() {
         </Card>
 
         <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-          <DialogContent className="sm:max-w-2xl" style={{
-            backgroundColor: colors.cardBg,
-            borderColor: colors.borderColor,
-            color: colors.textPrimary
-          }}>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3 text-xl" style={{ color: colors.textPrimary }}>
-                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                  <XCircle className="w-6 h-6 text-red-600" />
+          <DialogContent 
+            className="modal-enter" 
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor,
+              color: colors.textPrimary,
+              maxHeight: '90vh',
+              width: '95vw',
+              maxWidth: '600px',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            <DialogHeader style={{ flexShrink: 0, paddingBottom: '12px' }}>
+              <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl" style={{ color: colors.textPrimary }}>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
                 </div>
                 <div>
                   {strings.cancelDialogTitle}
-                  <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
+                  <p className="text-xs sm:text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
                     {strings.cancelDialogDesc}
                   </p>
                 </div>
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-6 mt-4">
-              {currentPlan && (
-                <div className="p-4 rounded-lg" style={{
-                  backgroundColor: '#FEE2E2',
-                  border: '2px solid #FECACA'
-                }}>
-                  <p className="font-semibold text-red-900 mb-3">{strings.whatYoullLose}:</p>
-                  <ul className="space-y-2 text-sm text-red-800">
-                    {(language === 'th' ? currentPlan.benefitsTh : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน')).map((benefit, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                        <span>{benefit}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {(isProtectPlan || isSecurePlan) && (
-                <div className="p-4 rounded-lg border-2" style={{
-                  backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-                  borderColor: '#3B82F6'
-                }}>
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                        {language === 'th' ? 'พิจารณาลดระดับแทน' : 'Consider downgrading instead'}
-                      </p>
-                      <p className="text-sm" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
-                        {language === 'th' 
-                          ? 'แทนที่จะยกเลิกทั้งหมด คุณสามารถประหยัดเงินโดยเปลี่ยนเป็นแผนที่ต่ำกว่าและรักษาการป้องกันหลักไว้'
-                          : 'Instead of cancelling completely, you can save money by switching to a lower plan and keep key protections active.'}
-                      </p>
-                    </div>
+            <div 
+              style={{
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                flex: 1,
+                paddingRight: '4px',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
+              <div className="space-y-4 sm:space-y-6">
+                {currentPlan && (
+                  <div className="p-3 sm:p-4 rounded-lg" style={{
+                    backgroundColor: '#FEE2E2',
+                    border: '2px solid #FECACA'
+                  }}>
+                    <p className="font-semibold text-red-900 mb-2 sm:mb-3 text-sm">{strings.whatYoullLose}:</p>
+                    <ul className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-red-800">
+                      {(language === 'th' ? currentPlan.benefitsTh : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน')).map((benefit, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
+                          <span>{benefit}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <button
-                    onClick={() => {
-                      setShowCancelDialog(false);
-                      handleDowngradeToFree(); // Direct to free is the only option now exposed
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '10px 16px',
-                      backgroundColor: '#3B82F6',
-                      color: '#FFFFFF',
-                      borderRadius: '8px',
-                      fontWeight: '600',
-                      fontSize: '14px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
-                  >
-                    {language === 'th' ? 'ลดเป็น Lite แทน' : 'Downgrade to Lite instead'}
-                  </button>
-                </div>
-              )}
+                )}
 
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="cancelReason" style={{ color: colors.textPrimary }}>
-                    {strings.cancelReason} <span className="text-red-500">*</span>
-                  </Label>
-                  <Select value={cancelReason} onValueChange={setCancelReason}>
-                    <SelectTrigger style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}>
-                      <SelectValue placeholder={strings.selectReason} />
-                    </SelectTrigger>
-                    <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
-                      <SelectItem value="too_expensive">{strings.reasonTooExpensive}</SelectItem>
-                      <SelectItem value="not_using">{strings.reasonNotUsingEnough}</SelectItem>
-                      <SelectItem value="found_alternative">{strings.reasonFoundAlternative}</SelectItem>
-                      <SelectItem value="missing_features">{strings.reasonMissingFeatures}</SelectItem>
-                      <SelectItem value="technical_issues">{strings.reasonTechnicalIssues}</SelectItem>
-                      <SelectItem value="other">{strings.reasonOther}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {(isProtectPlan || isSecurePlan) && (
+                  <div className="p-3 sm:p-4 rounded-lg border-2" style={{
+                    backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                    borderColor: '#3B82F6'
+                  }}>
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold mb-1 text-sm" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                          {language === 'th' ? 'พิจารณาลดระดับแทน' : 'Consider downgrading instead'}
+                        </p>
+                        <p className="text-xs sm:text-sm" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                          {language === 'th' 
+                            ? 'แทนที่จะยกเลิกทั้งหมด คุณสามารถประหยัดเงินโดยเปลี่ยนเป็นแผนที่ต่ำกว่าและรักษาการป้องกันหลักไว้'
+                            : 'Instead of cancelling completely, you can save money by switching to a lower plan and keep key protections active.'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleDowngradeToLite}
+                      className="btn-interaction"
+                      style={{
+                        width: '100%',
+                        padding: '10px 16px',
+                        backgroundColor: '#3B82F6',
+                        color: '#FFFFFF',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
+                    >
+                      {language === 'th' ? 'ลดเป็น Lite แทน' : 'Downgrade to Lite instead'}
+                    </button>
+                  </div>
+                )}
+
+                <div className="space-y-3 sm:space-y-4">
+                  <div>
+                    <Label htmlFor="cancelReason" className="text-sm" style={{ color: colors.textPrimary }}>
+                      {strings.cancelReason} <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={cancelReason} onValueChange={setCancelReason}>
+                      <SelectTrigger className="mt-2" style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary,
+                        minHeight: '44px'
+                      }}>
+                        <SelectValue placeholder={strings.selectReason} />
+                      </SelectTrigger>
+                      <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                        <SelectItem value="too_expensive">{strings.reasonTooExpensive}</SelectItem>
+                        <SelectItem value="not_using">{strings.reasonNotUsingEnough}</SelectItem>
+                        <SelectItem value="found_alternative">{strings.reasonFoundAlternative}</SelectItem>
+                        <SelectItem value="missing_features">{strings.reasonMissingFeatures}</SelectItem>
+                        <SelectItem value="technical_issues">{strings.reasonTechnicalIssues}</SelectItem>
+                        <SelectItem value="other">{strings.reasonOther}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="cancelFeedback" className="text-sm" style={{ color: colors.textPrimary }}>
+                      {strings.additionalFeedback}
+                    </Label>
+                    <Textarea
+                      id="cancelFeedback"
+                      value={cancelFeedback}
+                      onChange={(e) => setCancelFeedback(e.target.value)}
+                      placeholder={strings.feedbackPlaceholder}
+                      rows={3}
+                      className="mt-2"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary,
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        fontSize: '14px',
+                        minHeight: '80px'
+                      }}
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="cancelFeedback" style={{ color: colors.textPrimary }}>
-                    {strings.additionalFeedback}
-                  </Label>
-                  <Textarea
-                    id="cancelFeedback"
-                    value={cancelFeedback}
-                    onChange={(e) => setCancelFeedback(e.target.value)}
-                    placeholder={strings.feedbackPlaceholder}
-                    rows={4}
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary,
-                      borderRadius: '8px',
-                      padding: '10px 12px',
-                      fontSize: '14px'
-                    }}
-                  />
+                <div className="p-3 sm:p-4 rounded-lg text-xs sm:text-sm" style={{
+                  backgroundColor: isDarkMode ? '#2A2D30' : '#F3F4F6',
+                  border: `1px solid ${colors.borderColor}`
+                }}>
+                  <p style={{ color: colors.textSecondary }}>
+                    {strings.downgradeNote.replace('{date}', user?.plan_renews_at ? new Date(user.plan_renews_at).toLocaleDateString() : '')}
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <div className="p-4 rounded-lg" style={{
-                backgroundColor: isDarkMode ? '#2A2D30' : '#F3F4F6',
-                border: `1px solid ${colors.borderColor}`
-              }}>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>
-                  {strings.downgradeNote.replace('{date}', user?.plan_renews_at ? new Date(user.plan_renews_at).toLocaleDateString() : '')}
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowCancelDialog(false)}
-                  disabled={cancelling}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    border: 'none',
-                    backgroundColor: '#0C3B2E',
-                    color: '#FFFFFF',
-                    cursor: cancelling ? 'not-allowed' : 'pointer',
-                    opacity: cancelling ? 0.5 : 1,
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => !cancelling && (e.target.style.backgroundColor = '#0a2f25')}
-                  onMouseLeave={(e) => !cancelling && (e.target.style.backgroundColor = '#0C3B2E')}
-                >
-                  {strings.keepSubscription}
-                </button>
-                <button
-                  onClick={handleCancelSubscription}
-                  disabled={cancelling || !cancelReason}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    border: 'none',
-                    backgroundColor: '#EF4444',
-                    color: '#FFFFFF',
-                    cursor: (cancelling || !cancelReason) ? 'not-allowed' : 'pointer',
-                    opacity: (cancelling || !cancelReason) ? 0.5 : 1,
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                  onMouseEnter={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#DC2626')}
-                  onMouseLeave={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#EF4444')}
-                >
-                  {cancelling ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {strings.cancelling}
-                    </>
-                  ) : (
-                    strings.confirmCancel
-                  )}
-                </button>
-              </div>
+            <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4" style={{ 
+              flexShrink: 0, 
+              borderTop: `1px solid ${colors.borderColor}`, 
+              paddingTop: '12px',
+              marginTop: '12px'
+            }}>
+              <button
+                onClick={() => {
+                  setShowCancelDialog(false);
+                  setCancelReason('');
+                  setCancelFeedback('');
+                }}
+                disabled={cancelling}
+                className="btn-interaction"
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  border: 'none',
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF',
+                  cursor: cancelling ? 'not-allowed' : 'pointer',
+                  opacity: cancelling ? 0.5 : 1,
+                  transition: 'all 0.2s',
+                  minHeight: '44px'
+                }}
+                onMouseEnter={(e) => !cancelling && (e.target.style.backgroundColor = '#0a2f25')}
+                onMouseLeave={(e) => !cancelling && (e.target.style.backgroundColor = '#0C3B2E')}
+              >
+                {strings.keepSubscription}
+              </button>
+              <button
+                onClick={handleCancelSubscription}
+                disabled={cancelling || !cancelReason}
+                className="btn-interaction"
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  border: 'none',
+                  backgroundColor: '#EF4444',
+                  color: '#FFFFFF',
+                  cursor: (cancelling || !cancelReason) ? 'not-allowed' : 'pointer',
+                  opacity: (cancelling || !cancelReason) ? 0.5 : 1,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  minHeight: '44px'
+                }}
+                onMouseEnter={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#DC2626')}
+                onMouseLeave={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#EF4444')}
+              >
+                {cancelling ? (
+                  <>
+                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                    <span className="text-xs sm:text-sm">{strings.cancelling}</span>
+                  </>
+                ) : (
+                  <span className="text-xs sm:text-sm">{strings.confirmCancel}</span>
+                )}
+              </button>
             </div>
           </DialogContent>
         </Dialog>
