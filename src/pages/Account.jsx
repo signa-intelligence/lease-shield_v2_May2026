@@ -223,6 +223,12 @@ export default function Account() {
   const [showBillingDialog, setShowBillingDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedInterval, setSelectedInterval] = useState('monthly');
+  
+  // New state for two-step downgrade flow
+  const [showDowngradeFlow, setShowDowngradeFlow] = useState(false);
+  const [downgradeStep, setDowngradeStep] = useState(1);
+  const [downgradeReason, setDowngradeReason] = useState('');
+  const [downgradeFeedback, setDowngradeFeedback] = useState('');
 
   const { data: user, refetch: refetchUser } = useQuery({
     queryKey: ['currentUser'],
@@ -566,27 +572,52 @@ export default function Account() {
     }
   };
 
-  // Downgrade to Free handler
-  const handleDowngradeToFree = async () => {
-    const confirmMsg = language === 'th'
-      ? 'ลดเป็นแผนฟรี? คุณจะสูญเสียฟีเจอร์พรีเมียมทันที'
-      : 'Downgrade to Free? You\'ll lose premium features immediately.';
+  // Opens Step 1 of downgrade flow (retention screen)
+  const handleDowngradeOrCancel = () => {
+    haptic.medium();
+    setShowManagePlanPanel(false); // Close manage plan panel
+    setDowngradeStep(1);
+    setDowngradeReason('');
+    setDowngradeFeedback('');
+    setShowDowngradeFlow(true);
+  };
+
+  // Handler for switching to Lite (immediate, no Step 2)
+  const handleSwitchToLite = async () => {
+    haptic.medium();
+    setShowDowngradeFlow(false); // Close the downgrade dialog
     
-    if (!confirm(confirmMsg)) return;
+    handleSubscribe('lite', userBillingInterval); // userBillingInterval would be 'monthly' or 'annual'
+  };
+
+  // Handler for continuing to Free plan (goes to Step 2)
+  const handleContinueToFree = () => {
+    haptic.light();
+    setDowngradeStep(2);
+  };
+
+  // Handler for confirming downgrade to Free (Step 2 confirmation)
+  const handleConfirmDowngradeToFree = async () => {
+    if (!downgradeReason) {
+      alert(language === 'th' ? 'กรุณาเลือกเหตุผล' : 'Please select a reason');
+      return;
+    }
 
     haptic.medium();
-    setShowManagePlanPanel(false);
-    
     setCancelling(true);
     try {
       const response = await base44.functions.invoke('cancelSubscription', {
-        reason: 'downgrade_to_free',
-        feedback: 'User chose to downgrade to free plan'
+        reason: downgradeReason,
+        feedback: downgradeFeedback || 'User chose to downgrade to free plan'
       });
 
       if (response.data?.success) {
         refetchUser?.();
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        setShowDowngradeFlow(false); // Close the downgrade dialog
+        setDowngradeStep(1); // Reset step
+        setDowngradeReason('');
+        setDowngradeFeedback('');
         haptic.success();
         alert(language === 'th' 
           ? 'ลดระดับสำเร็จ คุณจะยังคงสามารถเข้าถึงฟีเจอร์ได้จนถึงวันที่ต่ออายุ' 
@@ -601,21 +632,6 @@ export default function Account() {
     } finally {
       setCancelling(false);
     }
-  };
-
-  // Downgrade to Lite handler
-  const handleDowngradeToLite = async () => {
-    const confirmMsg = language === 'th'
-      ? 'ลดเป็นแผน Lite? คุณจะสูญเสียฟีเจอร์ของ Protect/Secure'
-      : 'Downgrade to Lite? You\'ll lose Protect/Secure features.';
-    
-    if (!confirm(confirmMsg)) return;
-
-    haptic.medium();
-    setShowCancelDialog(false); // Close the cancel dialog first
-    
-    // Now call handleSubscribe for 'lite' plan, using the current user's billing interval
-    handleSubscribe('lite', userBillingInterval);
   };
 
   const handleCancelSubscription = async () => {
@@ -896,7 +912,16 @@ export default function Account() {
       unlockPremium: "Unlock Premium Features",
       secureFeatures: "Unlimited scans, priority support & 10 letter credits",
       managementOptions: "Management options",
-      downgradeToFree: "Downgrade to Free"
+      downgradeToFree: "Downgrade to Free",
+      keepProtectionActive: "Keep your protection active?",
+      retentionCopy: "You'll lose important protections if you downgrade. You can switch to a lower-cost plan instead.",
+      switchToLite: "Switch to Lite",
+      continueToFree: "Continue to Free plan",
+      confirmDowngradeTitle: "Downgrade to Free plan",
+      confirmDowngradeWarning: "You'll lose Unlimited Lease Scans, Advanced Reminders, extra Letter Credits and other premium protections.",
+      reasonForDowngrade: "Reason for downgrading",
+      goBack: "Go back",
+      confirmDowngradeBtn: "Confirm downgrade to Free"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -1046,7 +1071,16 @@ export default function Account() {
       unlockPremium: "ปลดล็อกฟีเจอร์พรีเมียม",
       secureFeatures: "สแกนไม่จำกัด การสนับสนุนลำดับความสำคัญ และเครดิตจดหมาย 10 ใบ",
       managementOptions: "ตัวเลือกการจัดการ",
-      downgradeToFree: "ลดเป็นฟรี"
+      downgradeToFree: "ลดเป็นฟรี",
+      keepProtectionActive: "รักษาการป้องกันของคุณไว้?",
+      retentionCopy: "คุณจะสูญเสียการป้องกันที่สำคัญหากคุณลดระดับ คุณสามารถเปลี่ยนเป็นแผนที่ถูกกว่าแทนได้",
+      switchToLite: "เปลี่ยนเป็น Lite",
+      continueToFree: "ดำเนินการไปยังแผนฟรี",
+      confirmDowngradeTitle: "ลดเป็นแผนฟรี",
+      confirmDowngradeWarning: "คุณจะสูญเสียการสแกนสัญญาไม่จำกัด การแจ้งเตือนขั้นสูง เครดิตจดหมายเพิ่มเติม และการป้องกันพรีเมียมอื่นๆ",
+      reasonForDowngrade: "เหตุผลในการลดระดับ",
+      goBack: "กลับ",
+      confirmDowngradeBtn: "ยืนยันการลดเป็นฟรี"
     },
     zh: {
       pageTitle: "我的账户",
@@ -1196,7 +1230,16 @@ export default function Account() {
       unlockPremium: "解锁高级功能",
       secureFeatures: "无限次扫描，优先支持和10个信件积分",
       managementOptions: "管理选项",
-      downgradeToFree: "降级到免费"
+      downgradeToFree: "降级到免费",
+      keepProtectionActive: "保持您的保护活跃吗？",
+      retentionCopy: "如果您降级，您将失去重要的保护。您可以改为切换到更低成本的计划。",
+      switchToLite: "切换到Lite",
+      continueToFree: "继续到免费计划",
+      confirmDowngradeTitle: "降级到免费计划",
+      confirmDowngradeWarning: "您将失去无限次租约扫描、高级提醒、额外信件积分和其他高级保护。",
+      reasonForDowngrade: "降级原因",
+      goBack: "返回",
+      confirmDowngradeBtn: "确认降级到免费"
     },
     ja: {
       pageTitle: "マイアカウント",
@@ -1346,7 +1389,16 @@ export default function Account() {
       unlockPremium: "プレミアム機能のロックを解除",
       secureFeatures: "無制限スキャン、優先サポート、レタークレジット10枚",
       managementOptions: "管理オプション",
-      downgradeToFree: "無料プランにダウングレード"
+      downgradeToFree: "無料プランにダウングレード",
+      keepProtectionActive: "保護を継続しますか？",
+      retentionCopy: "ダウングレードすると、重要な保護が失われます。代わりに低コストのプランに切り替えることもできます。",
+      switchToLite: "Liteに切り替える",
+      continueToFree: "無料プランに進む",
+      confirmDowngradeTitle: "無料プランにダウングレード",
+      confirmDowngradeWarning: "無制限のリーススキャン、高度なリマインダー、追加のレタークレジット、その他のプレミアム保護が失われます。",
+      reasonForDowngrade: "ダウングレードの理由",
+      goBack: "戻る",
+      confirmDowngradeBtn: "無料プランへのダウングレードを確認"
     },
     ko: {
       pageTitle: "내 계정",
@@ -1496,7 +1548,16 @@ export default function Account() {
       unlockPremium: "프리미엄 기능 잠금 해제",
       secureFeatures: "무제한 스캔, 우선 지원 및 10개의 레터 크레딧",
       managementOptions: "관리 옵션",
-      downgradeToFree: "무료로 다운그레이드"
+      downgradeToFree: "무료로 다운그레이드",
+      keepProtectionActive: "보호를 계속 유지하시겠습니까?",
+      retentionCopy: "다운그레이드하시면 중요한 보호 기능을 잃게 됩니다. 대신 저렴한 요금제로 전환하실 수 있습니다.",
+      switchToLite: "Lite로 전환",
+      continueToFree: "무료 요금제로 계속 진행",
+      confirmDowngradeTitle: "무료 요금제로 다운그레이드",
+      confirmDowngradeWarning: "무제한 임대 스캔, 고급 알림, 추가 레터 크레딧 및 기타 프리미엄 보호 기능을 잃게 됩니다.",
+      reasonForDowngrade: "다운그레이드 이유",
+      goBack: "돌아가기",
+      confirmDowngradeBtn: "무료 요금제 다운그레이드 확인"
     }
   };
 
@@ -1904,7 +1965,7 @@ export default function Account() {
                           border: `2px solid ${colors.borderColor}`,
                           backgroundColor: colors.inputBg,
                           color: colors.textPrimary,
-                          borderRadius: '88px',
+                          borderRadius: '8px',
                           padding: '10px 12px',
                           fontSize: '14px'
                         }}
@@ -2226,7 +2287,7 @@ export default function Account() {
                         
                         <div className="space-y-2">
                           <button
-                            onClick={handleDowngradeToFree}
+                            onClick={handleDowngradeOrCancel}
                             className="btn-interaction"
                             style={{
                               width: '100%',
@@ -3023,6 +3084,322 @@ export default function Account() {
           </CardContent>
         </Card>
 
+        {/* TWO-STEP DOWNGRADE FLOW DIALOG */}
+        <Dialog open={showDowngradeFlow} onOpenChange={(open) => {
+          setShowDowngradeFlow(open);
+          if (!open) {
+            setDowngradeStep(1);
+            setDowngradeReason('');
+            setDowngradeFeedback('');
+          }
+        }}>
+          <DialogContent 
+            className="modal-enter" 
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor,
+              color: colors.textPrimary,
+              maxHeight: '90vh',
+              width: '95vw',
+              maxWidth: '600px',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            {downgradeStep === 1 ? (
+              <>
+                {/* STEP 1: RETENTION SCREEN */}
+                <DialogHeader style={{ flexShrink: 0, paddingBottom: '12px' }}>
+                  <DialogTitle className="text-xl sm:text-2xl font-bold text-center" style={{ color: colors.textPrimary }}>
+                    {strings.keepProtectionActive}
+                  </DialogTitle>
+                  <p className="text-sm sm:text-base text-center mt-2" style={{ color: colors.textSecondary }}>
+                    {strings.retentionCopy}
+                  </p>
+                </DialogHeader>
+
+                <div 
+                  style={{
+                    overflowY: 'auto',
+                    flex: 1,
+                    paddingRight: '4px',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                >
+                  <div className="space-y-4 py-4">
+                    {/* PRIMARY OPTION: Switch to Lite */}
+                    <div className="p-5 sm:p-6 rounded-xl border-2 shadow-lg" style={{
+                      backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                      borderColor: '#3B82F6'
+                    }}>
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                          <Zap className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                            Lite {language === 'th' ? '- แผนที่เหมาะสมที่สุด' : '- Best fit for most'}
+                          </h3>
+                          <p className="text-sm mb-3" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                            {language === 'th' 
+                              ? 'เพียง ฿390/เดือน - รักษาการป้องกันหลักและประหยัด 43% จากแผนปัจจุบัน'
+                              : 'Only ฿390/month - keep core protections and save 43% from current plan'}
+                          </p>
+                          <ul className="space-y-1 text-xs sm:text-sm mb-4" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                            <li className="flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4" />
+                              {language === 'th' ? '6 การสแกนสัญญาต่อปี' : '6 Lease Scans/year'}
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4" />
+                              {language === 'th' ? 'การแจ้งเตือนทางอีเมล' : 'Email Notifications'}
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4" />
+                              {language === 'th' ? 'ติดตามเงินมัดจำและการซ่อมบำรุง' : 'Deposit & Maintenance Tracking'}
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleSwitchToLite}
+                        className="btn-interaction"
+                        style={{
+                          width: '100%',
+                          padding: '14px 20px',
+                          backgroundColor: '#3B82F6',
+                          color: '#FFFFFF',
+                          borderRadius: '10px',
+                          fontWeight: '700',
+                          fontSize: '16px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          boxShadow: '0 4px 12px rgba(59,130,246,0.4)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#2563EB';
+                          e.target.style.transform = 'translateY(-2px)';
+                          e.target.style.boxShadow = '0 6px 16px rgba(59,130,246,0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#3B82F6';
+                          e.target.style.transform = 'translateY(0)';
+                          e.target.style.boxShadow = '0 4px 12px rgba(59,130,246,0.4)';
+                        }}
+                      >
+                        {strings.switchToLite}
+                      </button>
+                    </div>
+
+                    {/* SECONDARY OPTION: Continue to Free */}
+                    <div className="text-center pt-2">
+                      <button
+                        onClick={handleContinueToFree}
+                        className="btn-interaction"
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: 'transparent',
+                          color: colors.textSecondary,
+                          border: 'none',
+                          fontWeight: '500',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          textDecoration: 'underline'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.color = colors.textPrimary;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.color = colors.textSecondary;
+                        }}
+                      >
+                        {strings.continueToFree}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* STEP 2: REASON + CONFIRMATION FOR FREE */}
+                <DialogHeader style={{ flexShrink: 0, paddingBottom: '12px' }}>
+                  <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl" style={{ color: colors.textPrimary }}>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                      <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
+                    </div>
+                    <div>
+                      {strings.confirmDowngradeTitle}
+                      <p className="text-xs sm:text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
+                        {strings.confirmDowngradeWarning}
+                      </p>
+                    </div>
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div 
+                  style={{
+                    overflowY: 'auto',
+                    flex: 1,
+                    paddingRight: '4px',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                >
+                  <div className="space-y-4 py-4">
+                    {/* What you'll lose box */}
+                    {currentPlan && (
+                      <div className="p-3 sm:p-4 rounded-lg" style={{
+                        backgroundColor: '#FEE2E2',
+                        border: '2px solid #FECACA'
+                      }}>
+                        <p className="font-semibold text-red-900 mb-2 text-sm">{strings.whatYoullLose}:</p>
+                        <ul className="space-y-1 text-xs sm:text-sm text-red-800">
+                          {(language === 'th' ? currentPlan.benefitsTh : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน')).slice(0, 4).map((benefit, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
+                              <span>{benefit}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Reason dropdown */}
+                    <div>
+                      <Label htmlFor="downgradeReason" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                        {strings.reasonForDowngrade} <span className="text-red-500">*</span>
+                      </Label>
+                      <Select value={downgradeReason} onValueChange={setDowngradeReason}>
+                        <SelectTrigger className="mt-2" style={{
+                          backgroundColor: colors.inputBg,
+                          borderColor: colors.borderColor,
+                          color: colors.textPrimary,
+                          minHeight: '44px'
+                        }}>
+                          <SelectValue placeholder={strings.selectReason} />
+                        </SelectTrigger>
+                        <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                          <SelectItem value="too_expensive">{strings.reasonTooExpensive}</SelectItem>
+                          <SelectItem value="not_using">{strings.reasonNotUsingEnough}</SelectItem>
+                          <SelectItem value="found_alternative">{strings.reasonFoundAlternative}</SelectItem>
+                          <SelectItem value="missing_features">{strings.reasonMissingFeatures}</SelectItem>
+                          <SelectItem value="technical_issues">{strings.reasonTechnicalIssues}</SelectItem>
+                          <SelectItem value="other">{strings.reasonOther}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Optional feedback */}
+                    <div>
+                      <Label htmlFor="downgradeFeedback" className="text-sm" style={{ color: colors.textPrimary }}>
+                        {strings.additionalFeedback}
+                      </Label>
+                      <Textarea
+                        id="downgradeFeedback"
+                        value={downgradeFeedback}
+                        onChange={(e) => setDowngradeFeedback(e.target.value)}
+                        placeholder={strings.feedbackPlaceholder}
+                        rows={3}
+                        className="mt-2"
+                        style={{
+                          backgroundColor: colors.inputBg,
+                          borderColor: colors.borderColor,
+                          color: colors.textPrimary,
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+
+                    {/* Note about access until renewal */}
+                    <div className="p-3 rounded-lg text-xs sm:text-sm" style={{
+                      backgroundColor: isDarkMode ? '#2A2D30' : '#F3F4F6',
+                      border: `1px solid ${colors.borderColor}`
+                    }}>
+                      <p style={{ color: colors.textSecondary }}>
+                        {strings.downgradeNote.replace('{date}', user?.plan_renews_at ? new Date(user.plan_renews_at).toLocaleDateString() : '')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 2 buttons */}
+                <div className="flex gap-2 sm:gap-3 pt-3" style={{ 
+                  flexShrink: 0, 
+                  borderTop: `1px solid ${colors.borderColor}`, 
+                  paddingTop: '12px'
+                }}>
+                  <button
+                    onClick={() => {
+                      setDowngradeStep(1);
+                      setDowngradeReason('');
+                      setDowngradeFeedback('');
+                    }}
+                    disabled={cancelling}
+                    className="btn-interaction"
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      border: `2px solid ${colors.borderColor}`,
+                      backgroundColor: colors.cardBg,
+                      color: colors.textPrimary,
+                      cursor: cancelling ? 'not-allowed' : 'pointer',
+                      opacity: cancelling ? 0.5 : 1,
+                      transition: 'all 0.2s',
+                      minHeight: '44px'
+                    }}
+                    onMouseEnter={(e) => !cancelling && (e.target.style.backgroundColor = colors.hoverBg)}
+                    onMouseLeave={(e) => !cancelling && (e.target.style.backgroundColor = colors.cardBg)}
+                  >
+                    {strings.goBack}
+                  </button>
+                  <button
+                    onClick={handleConfirmDowngradeToFree}
+                    disabled={cancelling || !downgradeReason}
+                    className="btn-interaction"
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      border: 'none',
+                      backgroundColor: '#EF4444',
+                      color: '#FFFFFF',
+                      cursor: (cancelling || !downgradeReason) ? 'not-allowed' : 'pointer',
+                      opacity: (cancelling || !downgradeReason) ? 0.5 : 1,
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      minHeight: '44px'
+                    }}
+                    onMouseEnter={(e) => (!cancelling && downgradeReason) && (e.target.style.backgroundColor = '#DC2626')}
+                    onMouseLeave={(e) => (!cancelling && downgradeReason) && (e.target.style.backgroundColor = '#EF4444')}
+                  >
+                    {cancelling ? (
+                      <>
+                        <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                        <span className="text-xs sm:text-sm">{strings.cancelling}</span>
+                      </>
+                    ) : (
+                      <span className="text-xs sm:text-sm">{strings.confirmDowngradeBtn}</span>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* SEPARATE CANCEL SUBSCRIPTION DIALOG (full cancellation, not downgrade) */}
         <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
           <DialogContent 
             className="modal-enter" 
@@ -3055,20 +3432,19 @@ export default function Account() {
             <div 
               style={{
                 overflowY: 'auto',
-                overflowX: 'hidden',
                 flex: 1,
                 paddingRight: '4px',
                 WebkitOverflowScrolling: 'touch'
               }}
             >
-              <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-4 py-4">
                 {currentPlan && (
                   <div className="p-3 sm:p-4 rounded-lg" style={{
                     backgroundColor: '#FEE2E2',
                     border: '2px solid #FECACA'
                   }}>
-                    <p className="font-semibold text-red-900 mb-2 sm:mb-3 text-sm">{strings.whatYoullLose}:</p>
-                    <ul className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-red-800">
+                    <p className="font-semibold text-red-900 mb-2 text-sm">{strings.whatYoullLose}:</p>
+                    <ul className="space-y-1 text-xs sm:text-sm text-red-800">
                       {(language === 'th' ? currentPlan.benefitsTh : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน')).map((benefit, idx) => (
                         <li key={idx} className="flex items-start gap-2">
                           <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
@@ -3079,99 +3455,53 @@ export default function Account() {
                   </div>
                 )}
 
-                {(isProtectPlan || isSecurePlan) && (
-                  <div className="p-3 sm:p-4 rounded-lg border-2" style={{
-                    backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-                    borderColor: '#3B82F6'
-                  }}>
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold mb-1 text-sm" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                          {language === 'th' ? 'พิจารณาลดระดับแทน' : 'Consider downgrading instead'}
-                        </p>
-                        <p className="text-xs sm:text-sm" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
-                          {language === 'th' 
-                            ? 'แทนที่จะยกเลิกทั้งหมด คุณสามารถประหยัดเงินโดยเปลี่ยนเป็นแผนที่ต่ำกว่าและรักษาการป้องกันหลักไว้'
-                            : 'Instead of cancelling completely, you can save money by switching to a lower plan and keep key protections active.'}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={handleDowngradeToLite}
-                      className="btn-interaction"
-                      style={{
-                        width: '100%',
-                        padding: '10px 16px',
-                        backgroundColor: '#3B82F6',
-                        color: '#FFFFFF',
-                        borderRadius: '8px',
-                        fontWeight: '600',
-                        fontSize: '14px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#2563EB'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#3B82F6'}
-                    >
-                      {language === 'th' ? 'ลดเป็น Lite แทน' : 'Downgrade to Lite instead'}
-                    </button>
-                  </div>
-                )}
-
-                <div className="space-y-3 sm:space-y-4">
-                  <div>
-                    <Label htmlFor="cancelReason" className="text-sm" style={{ color: colors.textPrimary }}>
-                      {strings.cancelReason} <span className="text-red-500">*</span>
-                    </Label>
-                    <Select value={cancelReason} onValueChange={setCancelReason}>
-                      <SelectTrigger className="mt-2" style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.borderColor,
-                        color: colors.textPrimary,
-                        minHeight: '44px'
-                      }}>
-                        <SelectValue placeholder={strings.selectReason} />
-                      </SelectTrigger>
-                      <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
-                        <SelectItem value="too_expensive">{strings.reasonTooExpensive}</SelectItem>
-                        <SelectItem value="not_using">{strings.reasonNotUsingEnough}</SelectItem>
-                        <SelectItem value="found_alternative">{strings.reasonFoundAlternative}</SelectItem>
-                        <SelectItem value="missing_features">{strings.reasonMissingFeatures}</SelectItem>
-                        <SelectItem value="technical_issues">{strings.reasonTechnicalIssues}</SelectItem>
-                        <SelectItem value="other">{strings.reasonOther}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="cancelFeedback" className="text-sm" style={{ color: colors.textPrimary }}>
-                      {strings.additionalFeedback}
-                    </Label>
-                    <Textarea
-                      id="cancelFeedback"
-                      value={cancelFeedback}
-                      onChange={(e) => setCancelFeedback(e.target.value)}
-                      placeholder={strings.feedbackPlaceholder}
-                      rows={3}
-                      className="mt-2"
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.borderColor,
-                        color: colors.textPrimary,
-                        borderRadius: '8px',
-                        padding: '10px 12px',
-                        fontSize: '14px',
-                        minHeight: '80px'
-                      }}
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="cancelReason" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.cancelReason} <span className="text-red-500">*</span>
+                  </Label>
+                  <Select value={cancelReason} onValueChange={setCancelReason}>
+                    <SelectTrigger className="mt-2" style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary,
+                      minHeight: '44px'
+                    }}>
+                      <SelectValue placeholder={strings.selectReason} />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                      <SelectItem value="too_expensive">{strings.reasonTooExpensive}</SelectItem>
+                      <SelectItem value="not_using">{strings.reasonNotUsingEnough}</SelectItem>
+                      <SelectItem value="found_alternative">{strings.reasonFoundAlternative}</SelectItem>
+                      <SelectItem value="missing_features">{strings.reasonMissingFeatures}</SelectItem>
+                      <SelectItem value="technical_issues">{strings.reasonTechnicalIssues}</SelectItem>
+                      <SelectItem value="other">{strings.reasonOther}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="p-3 sm:p-4 rounded-lg text-xs sm:text-sm" style={{
+                <div>
+                  <Label htmlFor="cancelFeedback" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.additionalFeedback}
+                  </Label>
+                  <Textarea
+                    id="cancelFeedback"
+                    value={cancelFeedback}
+                    onChange={(e) => setCancelFeedback(e.target.value)}
+                    placeholder={strings.feedbackPlaceholder}
+                    rows={3}
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary,
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                <div className="p-3 rounded-lg text-xs sm:text-sm" style={{
                   backgroundColor: isDarkMode ? '#2A2D30' : '#F3F4F6',
                   border: `1px solid ${colors.borderColor}`
                 }}>
@@ -3182,11 +3512,10 @@ export default function Account() {
               </div>
             </div>
 
-            <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4" style={{ 
+            <div className="flex gap-2 sm:gap-3 pt-3" style={{ 
               flexShrink: 0, 
               borderTop: `1px solid ${colors.borderColor}`, 
-              paddingTop: '12px',
-              marginTop: '12px'
+              paddingTop: '12px'
             }}>
               <button
                 onClick={() => {
