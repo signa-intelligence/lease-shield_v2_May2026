@@ -1714,7 +1714,7 @@ function PropertyTrackerContent() {
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentDueDay}</p>
                       </div>
                       <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                        Day {deposit.rent_due_day}
+                        Day {deposit.rent_due_day || 'N/A'}
                       </p>
                     </div>
                     <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
