@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * Haptic Feedback Utility
  * Provides tactile feedback on PWA/mobile devices
@@ -7,68 +5,44 @@ import React from 'react';
 
 export const haptic = {
   light: () => {
-    try {
-      if ('vibrate' in navigator) {
-        navigator.vibrate(10);
-      }
-    } catch (err) {
-      // Silently fail - haptic is optional
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10);
     }
   },
   
   medium: () => {
-    try {
-      if ('vibrate' in navigator) {
-        navigator.vibrate(20);
-      }
-    } catch (err) {
-      // Silently fail
+    if ('vibrate' in navigator) {
+      navigator.vibrate(20);
     }
   },
   
   heavy: () => {
-    try {
-      if ('vibrate' in navigator) {
-        navigator.vibrate([30, 10, 30]);
-      }
-    } catch (err) {
-      // Silently fail
+    if ('vibrate' in navigator) {
+      navigator.vibrate([30, 10, 30]);
     }
   },
   
   success: () => {
-    try {
-      if ('vibrate' in navigator) {
-        navigator.vibrate([10, 50, 10]);
-      }
-    } catch (err) {
-      // Silently fail
+    if ('vibrate' in navigator) {
+      navigator.vibrate([10, 50, 10]);
     }
   },
   
   error: () => {
-    try {
-      if ('vibrate' in navigator) {
-        navigator.vibrate([50, 50, 50]);
-      }
-    } catch (err) {
-      // Silently fail
+    if ('vibrate' in navigator) {
+      navigator.vibrate([50, 50, 50]);
     }
   },
   
   // Wrapper for buttons
   tap: (intensity = 'light') => {
-    try {
-      if ('vibrate' in navigator) {
-        switch(intensity) {
-          case 'light': navigator.vibrate(10); break;
-          case 'medium': navigator.vibrate(20); break;
-          case 'heavy': navigator.vibrate(30); break;
-          default: navigator.vibrate(10);
-        }
+    if ('vibrate' in navigator) {
+      switch(intensity) {
+        case 'light': navigator.vibrate(10); break;
+        case 'medium': navigator.vibrate(20); break;
+        case 'heavy': navigator.vibrate(30); break;
+        default: navigator.vibrate(10);
       }
-    } catch (err) {
-      // Silently fail
     }
   }
 };
@@ -79,11 +53,7 @@ export const haptic = {
 export const withHaptic = (Component, intensity = 'light') => {
   return (props) => {
     const handleClick = (e) => {
-      try {
-        haptic.tap(intensity);
-      } catch (err) {
-        // Silently fail
-      }
+      haptic.tap(intensity);
       if (props.onClick) {
         props.onClick(e);
       }

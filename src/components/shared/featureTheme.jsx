@@ -224,7 +224,6 @@ export const FEATURE_COLORS = {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const CTA_COLOR = BRAND.forest; // Primary CTA green
-export const CTA_COLOR_DISABLED = '#9CA3AF'; // Disabled state
 
 export const primaryCtaStyle = {
   backgroundColor: BRAND.forest,
