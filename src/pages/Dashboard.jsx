@@ -2083,6 +2083,28 @@ function DashboardContent() {
           )}
 
 
+          {!focusMode && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                {isLoading ? (
+                  <SkeletonLoader variant="card" count={3} colors={colors} />
+                ) : (
+                  <>
+                    <RecentLeases leases={leases} language={language} />
+                    <NotificationSummary language={language} colors={colors} />
+                  </>
+                )}
+              </div>
+              <div>
+                {isLoading ? (
+                  <SkeletonLoader variant="card" colors={colors} />
+                ) : (
+                  <DepositAlert deposits={deposits} language={language} />
+                )}
+              </div>
+            </div>
+          )}
+
           {expandedSections.quickActions && (
             <div style={{
               background: isDarkMode
@@ -2167,28 +2189,6 @@ function DashboardContent() {
                     {strings.uploadLease}
                   </button>
                 </Link>
-              </div>
-            </div>
-          )}
-
-          {(!focusMode || expandedSections.content) && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-                {isLoading ? (
-                  <SkeletonLoader variant="card" count={3} colors={colors} />
-                ) : (
-                  <>
-                    <RecentLeases leases={leases} language={language} />
-                    <NotificationSummary language={language} colors={colors} />
-                  </>
-                )}
-              </div>
-              <div>
-                {isLoading ? (
-                  <SkeletonLoader variant="card" colors={colors} />
-                ) : (
-                  <DepositAlert deposits={deposits} language={language} />
-                )}
               </div>
             </div>
           )}
