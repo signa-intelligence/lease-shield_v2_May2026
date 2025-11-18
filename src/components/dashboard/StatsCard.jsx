@@ -1,4 +1,3 @@
-
 import React from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -8,12 +7,14 @@ export default function StatsCard({
   value,
   icon: Icon,
   miniStats = [],
-  trend, // Expected format: { value: string, color: string }
-  label, // Text for the button at the bottom of the card
-  route, // Link destination for the card
-  className, // Additional class names for the card's root div
-  haptic, // Haptic feedback object, e.g., { light: () => void }
-  colors // Custom color palette
+  trend,
+  label,
+  route,
+  className,
+  haptic,
+  colors,
+  gradient,
+  scoreColor
 }) {
   const cardColors = colors || {
     cardBg: '#FFFFFF',
@@ -24,114 +25,29 @@ export default function StatsCard({
 
   const isDarkMode = cardColors.cardBg === '#2A2D30';
 
-  // 🎨 UNIFIED COLOR MAPPING FOR DASHBOARD CARDS - RESTORED
-  const CARD_STYLE_MAP = {
-    'Leases Scanned': {
-      border: '#3B82F6',
-      iconBgLight: '#DBEAFE',
-      iconBgDark: '#1E3A5F',
-    },
-    'Deposits Tracked': {
-      border: '#10B981',
-      iconBgLight: '#D1FAE5',
-      iconBgDark: '#064E3B',
-    },
-    'Active Cases': {
-      border: '#EF4444',
-      iconBgLight: '#FEE2E2',
-      iconBgDark: '#7F1D1D',
-    },
-    'Rent Tracked': {
-      border: '#F59E0B',
-      iconBgLight: '#FEF3C7',
-      iconBgDark: '#78350F',
-    },
-    'Notifications': {
-      border: '#8B5CF6',
-      iconBgLight: '#EDE9FE',
-      iconBgDark: '#4C1D95',
-    },
-    'Evidence Uploaded': {
-      border: '#6366F1',
-      iconBgLight: '#E0E7FF',
-      iconBgDark: '#3730A3',
-    },
-    // Legacy mappings for backward compatibility
-    'Active Leases': {
-      border: '#3B82F6',
-      iconBgLight: '#DBEAFE',
-      iconBgDark: '#1E3A5F',
-    },
-    'Maintenance': {
-      border: '#F59E0B',
-      iconBgLight: '#FEF3C7',
-      iconBgDark: '#78350F',
-    },
-    // Multilingual support
-    'สัญญาเช่าที่สแกน': {
-      border: '#3B82F6',
-      iconBgLight: '#DBEAFE',
-      iconBgDark: '#1E3A5F',
-    },
-    'เงินมัดจำที่ติดตาม': {
-      border: '#10B981',
-      iconBgLight: '#D1FAE5',
-      iconBgDark: '#064E3B',
-    },
-    'คดีที่ดำเนินการ': {
-      border: '#EF4444',
-      iconBgLight: '#FEE2E2',
-      iconBgDark: '#7F1D1D',
-    },
-    'ติดตามค่าเช่า': {
-      border: '#F59E0B',
-      iconBgLight: '#FEF3C7',
-      iconBgDark: '#78350F',
-    },
-    'การแจ้งเตือน': {
-      border: '#8B5CF6',
-      iconBgLight: '#EDE9FE',
-      iconBgDark: '#4C1D95',
-    },
-    'หลักฐานที่อัปโหลด': {
-      border: '#6366F1',
-      iconBgLight: '#E0E7FF',
-      iconBgDark: '#3730A3',
-    }
-  };
-
-  const specificCardTheme = CARD_STYLE_MAP[title];
+  // Extract color from gradient if provided (e.g., "from-blue-500 to-blue-700" -> "#3B82F6")
+  const extractedColor = scoreColor || '#0C3B2E';
+  
+  // Generate lighter background for icon based on the main color
+  const iconBgLight = `${extractedColor}15`;
+  const iconBgDark = `${extractedColor}30`;
 
   const cardStyles = {
     backgroundColor: cardColors.cardBg,
-    borderColor: specificCardTheme?.border || cardColors.borderColor,
-    iconBg: isDarkMode
-      ? (specificCardTheme?.iconBgDark || `${specificCardTheme?.border || cardColors.textPrimary}20`)
-      : (specificCardTheme?.iconBgLight || `${specificCardTheme?.border || cardColors.textPrimary}10`),
-    iconColor: specificCardTheme?.border || cardColors.textPrimary,
-    titleColor: specificCardTheme?.border || cardColors.textPrimary, // For h3 title and miniStats labels
-    metricColor: cardColors.textPrimary, // For main value and miniStats values
-    buttonBg: specificCardTheme?.border || cardColors.textPrimary,
+    borderColor: extractedColor,
+    iconBg: isDarkMode ? iconBgDark : iconBgLight,
+    iconColor: extractedColor,
+    titleColor: extractedColor,
+    metricColor: cardColors.textPrimary,
+    buttonBg: extractedColor,
     buttonText: '#FFFFFF',
   };
-
-  // CSS for icon-shimmer animation (add this to your global CSS or component styles if not already present):
-  /*
-  @keyframes shimmer-animation {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  .icon-shimmer {
-    animation: shimmer-animation 0.2s ease-in-out;
-  }
-  */
 
   return (
     <Link to={route}>
       <div
         onClick={() => {
-          haptic?.light(); // Safely call haptic feedback
+          haptic?.light();
           const iconElement = document.querySelector(`#stat-icon-${title.replace(/\s/g, '-')}`);
           if (iconElement) {
             iconElement.classList.add('icon-shimmer');
@@ -194,7 +110,7 @@ export default function StatsCard({
           <button
             type="button"
             onClick={(e) => {
-              e.stopPropagation(); // Prevent double-firing but allow Link navigation
+              e.stopPropagation();
               haptic?.light();
             }}
             className="btn-interaction"
