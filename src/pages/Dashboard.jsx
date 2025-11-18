@@ -1,5 +1,4 @@
 
-
 // ⚠️ LeaseShield: Dashboard overview is stabilised.
 // Do not modify card themes, layout, or handlers without explicit product approval.
 
@@ -784,7 +783,7 @@ function DashboardContent() {
   const activeCases = cases.filter(c => !['closed'].includes(c.status));
 
   const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
-  const totalDepositValue = activeDeposits.reduce((sum, d => sum + (d.deposit_amount || 0), 0);
+  const totalDepositValue = activeDeposits.reduce((sum, d) => sum + (d.deposit_amount || 0), 0);
   const avgDeposit = activeDeposits.length > 0 ? Math.round(totalDepositValue / activeDeposits.length) : 0;
   const now = new Date();
   const urgentDeposits = activeDeposits.filter(d => {
