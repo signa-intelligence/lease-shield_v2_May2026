@@ -194,8 +194,8 @@ export default function StatsCard({
           <button
             type="button"
             onClick={(e) => {
-              e.preventDefault(); // Prevent Link navigation
-              haptic?.light(); // Safely call haptic feedback
+              e.stopPropagation(); // Prevent double-firing but allow Link navigation
+              haptic?.light();
             }}
             className="btn-interaction"
             style={{
