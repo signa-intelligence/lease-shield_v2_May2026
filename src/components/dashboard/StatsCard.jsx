@@ -24,37 +24,79 @@ export default function StatsCard({
 
   const isDarkMode = cardColors.cardBg === '#2A2D30';
 
-  // 🎨 UNIFIED COLOR MAPPING FOR DASHBOARD CARDS
+  // 🎨 UNIFIED COLOR MAPPING FOR DASHBOARD CARDS - RESTORED
   const CARD_STYLE_MAP = {
-    'Active Leases': {
-      border: '#3A8DFF',
-      iconBgLight: '#E9F2FF',
-      iconBgDark: '#1E2A38',
-    },
-    'Rent Tracked': {
-      border: '#529CFF',
-      iconBgLight: '#EAF3FF',
-      iconBgDark: '#1F2E40',
-    },
-    'Notifications': {
-      border: '#A388FF',
-      iconBgLight: '#F2EDFF',
-      iconBgDark: '#27223A',
-    },
-    'Maintenance': {
-      border: '#E8A93B',
-      iconBgLight: '#FBF5E6',
-      iconBgDark: '#3A2F1B',
+    'Leases Scanned': {
+      border: '#3B82F6',
+      iconBgLight: '#DBEAFE',
+      iconBgDark: '#1E3A5F',
     },
     'Deposits Tracked': {
-      border: '#8C8C8C',
-      iconBgLight: '#F6F6F6',
-      iconBgDark: '#2A2A2A',
+      border: '#10B981',
+      iconBgLight: '#D1FAE5',
+      iconBgDark: '#064E3B',
     },
     'Active Cases': {
-      border: '#8C8C8C',
-      iconBgLight: '#F6F6F6',
-      iconBgDark: '#2A2A2A',
+      border: '#EF4444',
+      iconBgLight: '#FEE2E2',
+      iconBgDark: '#7F1D1D',
+    },
+    'Rent Tracked': {
+      border: '#F59E0B',
+      iconBgLight: '#FEF3C7',
+      iconBgDark: '#78350F',
+    },
+    'Notifications': {
+      border: '#8B5CF6',
+      iconBgLight: '#EDE9FE',
+      iconBgDark: '#4C1D95',
+    },
+    'Evidence Uploaded': {
+      border: '#6366F1',
+      iconBgLight: '#E0E7FF',
+      iconBgDark: '#3730A3',
+    },
+    // Legacy mappings for backward compatibility
+    'Active Leases': {
+      border: '#3B82F6',
+      iconBgLight: '#DBEAFE',
+      iconBgDark: '#1E3A5F',
+    },
+    'Maintenance': {
+      border: '#F59E0B',
+      iconBgLight: '#FEF3C7',
+      iconBgDark: '#78350F',
+    },
+    // Multilingual support
+    'สัญญาเช่าที่สแกน': {
+      border: '#3B82F6',
+      iconBgLight: '#DBEAFE',
+      iconBgDark: '#1E3A5F',
+    },
+    'เงินมัดจำที่ติดตาม': {
+      border: '#10B981',
+      iconBgLight: '#D1FAE5',
+      iconBgDark: '#064E3B',
+    },
+    'คดีที่ดำเนินการ': {
+      border: '#EF4444',
+      iconBgLight: '#FEE2E2',
+      iconBgDark: '#7F1D1D',
+    },
+    'ติดตามค่าเช่า': {
+      border: '#F59E0B',
+      iconBgLight: '#FEF3C7',
+      iconBgDark: '#78350F',
+    },
+    'การแจ้งเตือน': {
+      border: '#8B5CF6',
+      iconBgLight: '#EDE9FE',
+      iconBgDark: '#4C1D95',
+    },
+    'หลักฐานที่อัปโหลด': {
+      border: '#6366F1',
+      iconBgLight: '#E0E7FF',
+      iconBgDark: '#3730A3',
     }
   };
 
