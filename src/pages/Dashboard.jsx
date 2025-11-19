@@ -28,6 +28,7 @@ import { getFeatureCardStyles } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
 
 function DashboardContent() {
+  const [focusMode, setFocusMode] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState({
     stats: true,
     quickActions: true,
@@ -157,7 +158,6 @@ function DashboardContent() {
   const isDarkMode = user?.theme === 'dark';
   const isLitePlan = user?.plan_tier === 'lite';
   const isFreeTier = !user?.plan_tier || user.plan_tier === 'free';
-  const focusModeEnabled = user?.focusModeEnabled || false;
 
   // Compute feature themes once
   const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
@@ -1663,18 +1663,16 @@ function DashboardContent() {
                   )}
 
                   <button
-                    onClick={async () => {
+                    onClick={() => {
                       haptic.light();
-                      const newFocusMode = !focusModeEnabled;
-                      await base44.auth.updateMe({ focusModeEnabled: newFocusMode });
-                      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+                      setFocusMode(prev => !prev);
                     }}
                     className="btn-interaction"
                     style={{
                       padding: '8px 16px',
-                      backgroundColor: focusModeEnabled ? '#C7A338' : colors.fieldBg,
-                      color: focusModeEnabled ? '#FFFFFF' : colors.textPrimary,
-                      border: `2px solid ${focusModeEnabled ? '#C7A338' : colors.borderColor}`,
+                      backgroundColor: focusMode ? '#C7A338' : colors.fieldBg,
+                      color: focusMode ? '#FFFFFF' : colors.textPrimary,
+                      border: `2px solid ${focusMode ? '#C7A338' : colors.borderColor}`,
                       borderRadius: '12px',
                       fontSize: '14px',
                       fontWeight: '600',
@@ -1686,14 +1684,14 @@ function DashboardContent() {
                       transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
-                      if (!focusModeEnabled) {
+                      if (!focusMode) {
                         e.target.style.backgroundColor = '#0C3B2E';
                         e.target.style.borderColor = '#C7A338';
                         e.target.style.color = '#FFFFFF';
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (!focusModeEnabled) {
+                      if (!focusMode) {
                         e.target.style.backgroundColor = colors.fieldBg;
                         e.target.style.borderColor = colors.borderColor;
                         e.target.style.color = colors.textPrimary;
@@ -1701,7 +1699,7 @@ function DashboardContent() {
                     }}
                   >
                     <Target className="w-4 h-4" />
-                    {focusModeEnabled ? strings.normalView : strings.focusMode}
+                    {focusMode ? strings.normalView : strings.focusMode}
                   </button>
                 </div>
               }
@@ -2084,7 +2082,7 @@ function DashboardContent() {
           )}
 
 
-          {!focusModeEnabled && (
+          {!focusMode && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 {isLoading ? (
@@ -2106,7 +2104,7 @@ function DashboardContent() {
             </div>
           )}
 
-          {!focusModeEnabled && expandedSections.quickActions && (
+          {!focusMode && expandedSections.quickActions && (
             <div style={{
               background: isDarkMode
                 ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
