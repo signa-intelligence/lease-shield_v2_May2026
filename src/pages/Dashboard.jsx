@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Mail, Calendar, BarChart3 } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, ChevronDown, ChevronUp, Zap, Loader2, AlertCircle, Mail, Calendar, BarChart3 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, format } from "date-fns";
@@ -28,7 +28,6 @@ import { getFeatureCardStyles } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
 
 function DashboardContent() {
-  const [focusMode, setFocusMode] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState({
     stats: true,
     quickActions: true,
@@ -1661,46 +1660,6 @@ function DashboardContent() {
                       </button>
                     </>
                   )}
-
-                  <button
-                    onClick={() => {
-                      haptic.light();
-                      setFocusMode(prev => !prev);
-                    }}
-                    className="btn-interaction"
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: focusMode ? '#C7A338' : colors.fieldBg,
-                      color: focusMode ? '#FFFFFF' : colors.textPrimary,
-                      border: `2px solid ${focusMode ? '#C7A338' : colors.borderColor}`,
-                      borderRadius: '12px',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.08)',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!focusMode) {
-                        e.target.style.backgroundColor = '#0C3B2E';
-                        e.target.style.borderColor = '#C7A338';
-                        e.target.style.color = '#FFFFFF';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!focusMode) {
-                        e.target.style.backgroundColor = colors.fieldBg;
-                        e.target.style.borderColor = colors.borderColor;
-                        e.target.style.color = colors.textPrimary;
-                      }
-                    }}
-                  >
-                    <Target className="w-4 h-4" />
-                    {focusMode ? strings.normalView : strings.focusMode}
-                  </button>
                 </div>
               }
             />
@@ -2082,29 +2041,27 @@ function DashboardContent() {
           )}
 
 
-          {!focusMode && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-                {isLoading ? (
-                  <SkeletonLoader variant="card" count={3} colors={colors} />
-                ) : (
-                  <>
-                    <RecentLeases leases={leases} language={language} />
-                    <NotificationSummary language={language} colors={colors} />
-                  </>
-                )}
-              </div>
-              <div>
-                {isLoading ? (
-                  <SkeletonLoader variant="card" colors={colors} />
-                ) : (
-                  <DepositAlert deposits={deposits} language={language} />
-                )}
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+              {isLoading ? (
+                <SkeletonLoader variant="card" count={3} colors={colors} />
+              ) : (
+                <>
+                  <RecentLeases leases={leases} language={language} />
+                  <NotificationSummary language={language} colors={colors} />
+                </>
+              )}
             </div>
-          )}
+            <div>
+              {isLoading ? (
+                <SkeletonLoader variant="card" colors={colors} />
+              ) : (
+                <DepositAlert deposits={deposits} language={language} />
+              )}
+            </div>
+          </div>
 
-          {!focusMode && expandedSections.quickActions && (
+          {expandedSections.quickActions && (
             <div style={{
               background: isDarkMode
                 ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
