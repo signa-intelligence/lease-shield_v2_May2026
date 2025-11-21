@@ -1,10 +1,11 @@
+
 // ⚠️ LeaseShield: Dashboard overview is stabilised.
 // Do not modify card themes, layout, or handlers without explicit product approval.
 
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, ChevronDown, ChevronUp, Zap, Loader2, AlertCircle, Mail, Calendar, BarChart3 } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Mail, Calendar, BarChart3 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, format } from "date-fns";
@@ -28,13 +29,11 @@ import { getFeatureCardStyles } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
 
 function DashboardContent() {
+  const [focusMode, setFocusMode] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState({
     stats: true,
     quickActions: true,
     content: true,
-    recentLeases: false,
-    notifications: false,
-    depositAlerts: false,
   });
   const [showOnboarding, setShowOnboarding] = React.useState(false);
   const navigate = useNavigate();
@@ -1663,6 +1662,48 @@ function DashboardContent() {
                       </button>
                     </>
                   )}
+
+                  <button
+                    onClick={() => {
+                      haptic.light();
+                      const newFocusMode = !focusMode;
+                      console.log('🎯 FOCUS MODE TOGGLED:', newFocusMode);
+                      setFocusMode(newFocusMode);
+                    }}
+                    className="btn-interaction"
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: focusMode ? '#C7A338' : colors.fieldBg,
+                      color: focusMode ? '#FFFFFF' : colors.textPrimary,
+                      border: `2px solid ${focusMode ? '#C7A338' : colors.borderColor}`,
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.08)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!focusMode) {
+                        e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.borderColor = '#C7A338';
+                        e.target.style.color = '#FFFFFF';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!focusMode) {
+                        e.target.style.backgroundColor = colors.fieldBg;
+                        e.target.style.borderColor = colors.borderColor;
+                        e.target.style.color = colors.textPrimary;
+                      }
+                    }}
+                  >
+                    <Target className="w-4 h-4" />
+                    {focusMode ? strings.normalView : strings.focusMode}
+                  </button>
                 </div>
               }
             />
@@ -1947,148 +1988,7 @@ function DashboardContent() {
                 </div>
               ) : (
                 <>
-                  {/* 2×4 Grid: 8 summary cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
-                    {/* Row 1 */}
-                    <StatsCard
-                      title={strings.leasesScanned}
-                      value={leases.length}
-                      icon={FileText}
-                      gradient="from-blue-500 to-blue-700"
-                      scoreColor="#3B82F6"
-                      miniStats={[]}
-                      route={createPageUrl("UploadScan")}
-                      label={strings.scanNewLease}
-                      compact={false}
-                      colors={colors}
-                      className="card-interactive h-full"
-                    />
-                    <StatsCard
-                      title={strings.depositsTracked}
-                      value={deposits.length}
-                      icon={Wallet}
-                      gradient="from-emerald-500 to-emerald-700"
-                      scoreColor="#10B981"
-                      miniStats={[{ label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }]}
-                      route={createPageUrl("PropertyTracker") + "#deposit"}
-                      label={strings.trackDeposit}
-                      compact={false}
-                      colors={colors}
-                      className="card-interactive h-full"
-                    />
-                    <StatsCard
-                      title={strings.activeCases}
-                      value={activeCases.length}
-                      icon={Scale}
-                      gradient="from-red-500 to-red-700"
-                      scoreColor="#EF4444"
-                      miniStats={[]}
-                      route={createPageUrl("Cases")}
-                      label={strings.openCase}
-                      compact={false}
-                      colors={colors}
-                      className="card-interactive h-full"
-                    />
-                    {/* Compact Protection Score Tile (top-right) */}
-                    <div
-                      onClick={() => {
-                        haptic.light();
-                        document.getElementById('protection-score-hero')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }}
-                      className="card-interactive cursor-pointer"
-                      style={{
-                        backgroundColor: colors.cardBg,
-                        borderRadius: '14px',
-                        border: `1px solid ${colors.borderColor}`,
-                        boxShadow: isDarkMode ? '0 6px 18px rgba(0,0,0,0.3)' : '0 6px 18px rgba(15,23,42,0.06)',
-                        padding: '20px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '12px',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <Shield className="w-8 h-8" style={{ color: '#10B981' }} />
-                      <div className="text-center">
-                        <h3 className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
-                          {strings.protectionScore}
-                        </h3>
-                        <div className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                          {protectionScore}%
-                        </div>
-                        <Badge className="mt-2" style={{ 
-                          backgroundColor: protectionScore >= 80 ? '#10B981' : protectionScore >= 60 ? '#F59E0B' : '#EF4444',
-                          color: '#FFFFFF'
-                        }}>
-                          {protectionScore >= 80 ? 'A+' : protectionScore >= 60 ? 'B' : 'C'}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Row 2 */}
-                    <StatsCard
-                      title={strings.rentTracked}
-                      value={rentTrackedCount}
-                      icon={Calendar}
-                      gradient="from-amber-500 to-amber-700"
-                      scoreColor="#F59E0B"
-                      miniStats={[{ label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }]}
-                      route={createPageUrl("PropertyTracker") + "#rent"}
-                      label={rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ') : strings.setupRent}
-                      compact={false}
-                      colors={colors}
-                      className="card-interactive h-full"
-                    />
-                    <StatsCard
-                      title={strings.notifications}
-                      value={unreadNotifications}
-                      icon={Bell}
-                      gradient="from-purple-500 to-purple-700"
-                      scoreColor="#8B5CF6"
-                      miniStats={[]}
-                      route={createPageUrl("Timeline")}
-                      label={strings.viewTimeline}
-                      compact={false}
-                      colors={colors}
-                      className="card-interactive h-full"
-                    />
-                    <StatsCard
-                      title={strings.evidenceUploaded}
-                      value={documents.length}
-                      icon={FileText}
-                      gradient="from-indigo-500 to-indigo-700"
-                      scoreColor="#6366F1"
-                      miniStats={[{ label: strings.totalFiles, value: documents.length }]}
-                      route={createPageUrl("EvidenceVault")}
-                      label={strings.manageEvidence}
-                      compact={false}
-                      colors={colors}
-                      className="card-interactive h-full"
-                    />
-                    {/* Empty slot or Deposit Alerts summary tile */}
-                    <div style={{
-                      backgroundColor: colors.cardBg,
-                      borderRadius: '14px',
-                      border: `1px solid ${colors.borderColor}`,
-                      boxShadow: isDarkMode ? '0 6px 18px rgba(0,0,0,0.3)' : '0 6px 18px rgba(15,23,42,0.06)',
-                      padding: '20px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      opacity: 0.5
-                    }}>
-                      <Wallet className="w-8 h-8" style={{ color: colors.textSecondary }} />
-                      <p className="text-xs mt-2 text-center" style={{ color: colors.textSecondary }}>
-                        {urgentDeposits} {language === 'th' ? 'แจ้งเตือน' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'alerts'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Protection Score Hero Section */}
-                  <div id="protection-score-hero" className="mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                  <div className="mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
                     <ProtectionScoreEnhanced
                       score={protectionScore}
                       breakdown={breakdown}
@@ -2098,130 +1998,116 @@ function DashboardContent() {
                       user={user}
                     />
                   </div>
+
+                  {/* Six Feature Cards - Fixed consistent grid layout */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                    {[
+                      {
+                        title: strings.leasesScanned,
+                        value: leases.length,
+                        icon: FileText,
+                        gradient: 'from-blue-500 to-blue-700',
+                        scoreColor: '#3B82F6',
+                        miniStats: [],
+                        route: createPageUrl("UploadScan"),
+                        label: strings.scanNewLease,
+                      },
+                      {
+                        title: strings.depositsTracked,
+                        value: deposits.length,
+                        icon: Wallet,
+                        gradient: 'from-emerald-500 to-emerald-700',
+                        scoreColor: '#10B981',
+                        miniStats: [
+                          { label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }
+                        ],
+                        route: createPageUrl("PropertyTracker") + "#deposit",
+                        label: strings.trackDeposit,
+                      },
+                      {
+                        title: strings.activeCases,
+                        value: activeCases.length,
+                        icon: Scale,
+                        gradient: 'from-red-500 to-red-700',
+                        scoreColor: '#EF4444',
+                        miniStats: [],
+                        route: createPageUrl("Cases"),
+                        label: strings.openCase,
+                      },
+                      {
+                        title: strings.rentTracked,
+                        value: rentTrackedCount,
+                        icon: Calendar,
+                        gradient: 'from-amber-500 to-amber-700',
+                        scoreColor: '#F59E0B',
+                        miniStats: [
+                          { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
+                        ],
+                        route: createPageUrl("PropertyTracker") + "#rent",
+                        label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ') : strings.setupRent,
+                      },
+                      {
+                        title: strings.notifications,
+                        value: unreadNotifications,
+                        icon: Bell,
+                        gradient: 'from-purple-500 to-purple-700',
+                        scoreColor: '#8B5CF6',
+                        miniStats: [],
+                        route: createPageUrl("Timeline"),
+                        label: strings.viewTimeline,
+                      },
+                      {
+                        title: strings.evidenceUploaded,
+                        value: documents.length,
+                        icon: FileText,
+                        gradient: 'from-indigo-500 to-indigo-700',
+                        scoreColor: '#6366F1',
+                        miniStats: [
+                          { label: strings.totalFiles, value: documents.length }
+                        ],
+                        route: createPageUrl("EvidenceVault"),
+                        label: strings.manageEvidence,
+                      }
+                    ].map((card, index) => (
+                      <div key={index} className="w-full">
+                        <StatsCard
+                          {...card}
+                          compact={false}
+                          colors={colors}
+                          className="card-interactive h-full"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
             </div>
           )}
 
 
-          {/* Collapsible Sections: Full Width */}
-          <div className="space-y-4">
-            {isLoading ? (
-              <SkeletonLoader variant="card" count={3} colors={colors} />
-            ) : (
-              <>
-                {/* Collapsible Recent Leases */}
-                <Card style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-                  <div 
-                    className="p-4 flex items-center justify-between cursor-pointer"
-                    onClick={() => {
-                      haptic.light();
-                      toggleSection('recentLeases');
-                    }}
-                    style={{ borderBottom: expandedSections.recentLeases ? `1px solid ${colors.borderColor}` : 'none' }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5" style={{ color: '#3B82F6' }} />
-                      <div>
-                        <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'สัญญาเช่าล่าสุด' : language === 'zh' ? '最近的租约' : language === 'ja' ? '最近のリース' : language === 'ko' ? '최근 임대' : 'Recent Leases'}
-                        </h3>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm" style={{ color: colors.textSecondary }}>
-                        {leases.length} {language === 'th' ? 'รายการ' : language === 'zh' ? '项' : language === 'ja' ? 'アイテム' : language === 'ko' ? '항목' : 'items'}
-                      </span>
-                      {expandedSections.recentLeases ? (
-                        <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
-                      ) : (
-                        <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
-                      )}
-                    </div>
-                  </div>
-                  {expandedSections.recentLeases && (
-                    <div>
-                      <RecentLeases leases={leases} language={language} />
-                    </div>
-                  )}
-                </Card>
+          {!focusMode && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                {isLoading ? (
+                  <SkeletonLoader variant="card" count={3} colors={colors} />
+                ) : (
+                  <>
+                    <RecentLeases leases={leases} language={language} />
+                    <NotificationSummary language={language} colors={colors} />
+                  </>
+                )}
+              </div>
+              <div>
+                {isLoading ? (
+                  <SkeletonLoader variant="card" colors={colors} />
+                ) : (
+                  <DepositAlert deposits={deposits} language={language} />
+                )}
+              </div>
+            </div>
+          )}
 
-                {/* Collapsible Notifications */}
-                <Card style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-                  <div 
-                    className="p-4 flex items-center justify-between cursor-pointer"
-                    onClick={() => {
-                      haptic.light();
-                      toggleSection('notifications');
-                    }}
-                    style={{ borderBottom: expandedSections.notifications ? `1px solid ${colors.borderColor}` : 'none' }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Bell className="w-5 h-5" style={{ color: '#8B5CF6' }} />
-                      <div>
-                        <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'การแจ้งเตือนของฉัน' : language === 'zh' ? '我的通知' : language === 'ja' ? '通知' : language === 'ko' ? '알림' : 'My Notifications'}
-                        </h3>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm" style={{ color: colors.textSecondary }}>
-                        {unreadNotifications} {language === 'th' ? 'รายการ' : language === 'zh' ? '项' : language === 'ja' ? 'アイテム' : language === 'ko' ? '항목' : 'notifications'}
-                      </span>
-                      {expandedSections.notifications ? (
-                        <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
-                      ) : (
-                        <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
-                      )}
-                    </div>
-                  </div>
-                  {expandedSections.notifications && (
-                    <div>
-                      <NotificationSummary language={language} colors={colors} />
-                    </div>
-                  )}
-                </Card>
-
-                {/* Collapsible Deposit Alerts */}
-                <Card style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-                  <div 
-                    className="p-4 flex items-center justify-between cursor-pointer"
-                    onClick={() => {
-                      haptic.light();
-                      toggleSection('depositAlerts');
-                    }}
-                    style={{ borderBottom: expandedSections.depositAlerts ? `1px solid ${colors.borderColor}` : 'none' }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Wallet className="w-5 h-5" style={{ color: '#10B981' }} />
-                      <div>
-                        <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'แจ้งเตือนเงินมัดจำ' : language === 'zh' ? '押金提醒' : language === 'ja' ? '敷金アラート' : language === 'ko' ? '보증금 알림' : 'Deposit Alerts'}
-                        </h3>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm" style={{ color: colors.textSecondary }}>
-                        {urgentDeposits} {language === 'th' ? 'รายการ' : language === 'zh' ? '项' : language === 'ja' ? 'アイテム' : language === 'ko' ? '항목' : 'alerts'}
-                      </span>
-                      {expandedSections.depositAlerts ? (
-                        <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
-                      ) : (
-                        <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
-                      )}
-                    </div>
-                  </div>
-                  {expandedSections.depositAlerts && (
-                    <div>
-                      <DepositAlert deposits={deposits} language={language} />
-                    </div>
-                  )}
-                </Card>
-              </>
-            )}
-          </div>
-
-          {expandedSections.quickActions && (
+          {!focusMode && expandedSections.quickActions && (
             <div style={{
               background: isDarkMode
                 ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'

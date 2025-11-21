@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -34,7 +35,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  CTA_COLOR
+  CTA_COLOR,
+  CTA_COLOR_DISABLED
 } from "../components/shared/featureTheme";
 
 function PropertyTrackerContent() {
@@ -1712,7 +1714,7 @@ function PropertyTrackerContent() {
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentDueDay}</p>
                       </div>
                       <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                        Day {deposit.rent_due_day || 'N/A'}
+                        Day {deposit.rent_due_day}
                       </p>
                     </div>
                     <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
