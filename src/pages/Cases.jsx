@@ -24,7 +24,7 @@ import LazyImage from "../components/shared/LazyImage";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
-import { getFeatureCardStyles } from "../components/shared/featureTheme";
+import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
@@ -451,7 +451,7 @@ function CasesContent() {
 
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
-              <Scale className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
+              <Scale className="w-7 h-7 md:w-8 md:h-8" style={{ color: FEATURE_COLORS.cases.accent }} />
               {strings.title}
             </h1>
             <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>
@@ -586,7 +586,7 @@ function CasesContent() {
                       className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
                       style={{ 
                         background: theme.background,
-                        borderLeft: `4px solid ${theme.borderLeftColor}`
+                        borderLeft: `4px solid ${FEATURE_COLORS.cases.accent}`
                       }}
                       onClick={() => {
                         haptic.light();
@@ -596,7 +596,7 @@ function CasesContent() {
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <Scale className="w-5 h-5 flex-shrink-0" style={{ color: theme.accent }} />
+                            <Scale className="w-5 h-5 flex-shrink-0" style={{ color: FEATURE_COLORS.cases.accent }} />
                             <CardTitle className="text-xl font-bold" style={{ color: theme.headerColor }}>
                               {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
                             </CardTitle>
