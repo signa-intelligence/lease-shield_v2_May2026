@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -231,7 +230,8 @@ export default function Account() {
   const [downgradeFeedback, setDowngradeFeedback] = useState('');
   const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false); // New state for Notification Preferences expansion
   const [expandedNotifAnalytics, setExpandedNotifAnalytics] = useState(false); // New state for Notification Analytics expansion
-
+  
+  const plansSectionRef = React.useRef(null);
 
   const { data: user, refetch: refetchUser } = useQuery({
     queryKey: ['currentUser'],
@@ -2255,7 +2255,15 @@ export default function Account() {
                     )}
                     
                     <button
-                      onClick={() => setShowManagePlanPanel(!showManagePlanPanel)}
+                      onClick={() => {
+                        haptic.medium();
+                        if (plansSectionRef.current) {
+                          plansSectionRef.current.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          });
+                        }
+                      }}
                       className="btn-interaction"
                       style={{
                         width: '100%',
@@ -2279,67 +2287,6 @@ export default function Account() {
                       <Settings className="w-4 h-4" />
                       {language === 'th' ? 'จัดการแผน' : 'Manage Plan'}
                     </button>
-
-                    {showManagePlanPanel && (
-                      <div style={{
-                        marginTop: '12px',
-                        padding: '16px',
-                        backgroundColor: colors.fieldBg,
-                        borderRadius: '12px',
-                        border: `2px solid ${colors.borderColor}`
-                      }}>
-                        <p className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
-                          {strings.managementOptions}
-                        </p>
-                        
-                        <div className="space-y-2">
-                          <button
-                            onClick={handleDowngradeOrCancel}
-                            className="btn-interaction"
-                            style={{
-                              width: '100%',
-                              padding: '10px 14px',
-                              backgroundColor: 'transparent',
-                              color: '#EF4444',
-                              borderRadius: '8px',
-                              border: `2px solid #EF4444`,
-                              fontWeight: '500',
-                              fontSize: '13px',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.target.style.background = isDarkMode ? 'rgba(239, 68, 68, 0.1)' : '#FEE2F2'}
-                            onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                          >
-                            {strings.downgradeToFree}
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setShowManagePlanPanel(false);
-                              setShowCancelDialog(true);
-                            }}
-                            className="btn-interaction"
-                            style={{
-                              width: '100%',
-                              padding: '10px 14px',
-                              backgroundColor: 'transparent',
-                              color: '#DC2626',
-                              borderRadius: '8px',
-                              border: 'none',
-                              fontWeight: '500',
-                              fontSize: '13px',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                          >
-                            {language === 'th' ? 'ยกเลิกการสมัครสมาชิก' : 'Cancel subscription'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </CardContent>
@@ -3706,7 +3653,7 @@ export default function Account() {
           </div>
         )}
 
-        <section id="plan-selector">
+        <section id="plan-selector" ref={plansSectionRef}>
           <div className="mb-6">
             <div className="flex items-center justify-center mb-6">
               <div className="rounded-xl p-2 shadow-md inline-flex items-center gap-3" style={{ backgroundColor: colors.cardBg }}>
@@ -3943,6 +3890,32 @@ export default function Account() {
               })}
             </div>
           </div>
+
+          {/* Subtle cancel subscription link */}
+          {!isFreePlan && (
+            <div style={{ marginTop: "16px", textAlign: "center" }}>
+              <p style={{ fontSize: "12px", color: colors.textSecondary }}>
+                {language === 'th' ? 'ต้องการยกเลิกการสมัครสมาชิก?' : language === 'zh' ? '需要取消订阅吗？' : language === 'ja' ? 'サブスクリプションをキャンセルする必要がありますか？' : language === 'ko' ? '구독을 취소해야 합니까？' : 'Need to cancel your subscription?'}{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowCancelDialog(true)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    margin: 0,
+                    cursor: "pointer",
+                    color: "#0C3B2E",
+                    textDecoration: "underline",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                  }}
+                >
+                  {language === 'th' ? 'จัดการหรือยกเลิกการสมัครสมาชิก' : language === 'zh' ? '管理或取消订阅' : language === 'ja' ? 'サブスクリプションを管理またはキャンセル' : language === 'ko' ? '구독 관리 또는 취소' : 'Manage or cancel subscription'}
+                </button>
+              </p>
+            </div>
+          )}
         </section>
 
         {/* Billing Interval Selection Dialog */}
