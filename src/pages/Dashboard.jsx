@@ -1,11 +1,10 @@
-
 // ⚠️ LeaseShield: Dashboard overview is stabilised.
 // Do not modify card themes, layout, or handlers without explicit product approval.
 
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, ChevronDown, ChevronUp, Target, Zap, Loader2, AlertCircle, Mail, Calendar, BarChart3 } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, ChevronDown, ChevronUp, Zap, Loader2, AlertCircle, Mail, Calendar, BarChart3 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, format } from "date-fns";
@@ -29,7 +28,6 @@ import { getFeatureCardStyles } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
 
 function DashboardContent() {
-  const [focusMode, setFocusMode] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState({
     stats: true,
     quickActions: true,
@@ -822,8 +820,6 @@ function DashboardContent() {
       upgradePremium: "Upgrade to Premium",
       upgradeDesc: "Get unlimited lease scans, priority case handling, and expert legal support",
       viewPlans: "View Plans",
-      focusMode: "Focus Mode",
-      normalView: "Normal View",
       uploadFirstLease: "Upload First Lease",
       noDataYet: "No Data Yet",
       getStartedDesc: "Start protecting your rental rights by uploading your lease agreement",
@@ -884,8 +880,6 @@ function DashboardContent() {
       upgradePremium: "อัปเกรดเป็นพรีเมียม",
       upgradeDesc: "รับการสแกนสัญญาไม่จำกัด การจัดการคดีแบบเร่งด่วน และการสนับสนุนจากผู้เชี่ยวชาญ",
       viewPlans: "ดูแผน",
-      focusMode: "โหมดโฟกัส",
-      normalView: "มุมมองปกติ",
       uploadFirstLease: "อัปโหลดสัญญาแรก",
       noDataYet: "ยังไม่มีข้อมูล",
       getStartedDesc: "เริ่มปกป้องสิทธิ์การเช่าของคุณโดยการอัปโหลดสัญญาเช่า",
@@ -946,8 +940,6 @@ function DashboardContent() {
       upgradePremium: "升级至高级版",
       upgradeDesc: "获得无限制租约扫描、优先案件处理和专家法律支持",
       viewPlans: "查看计划",
-      focusMode: "专注模式",
-      normalView: "正常视图",
       uploadFirstLease: "上传第一份租约",
       noDataYet: "暂无数据",
       getStartedDesc: "通过上传租赁协议开始保护您的租赁权利",
@@ -1008,8 +1000,6 @@ function DashboardContent() {
       upgradePremium: "プレミアムにアップグレード",
       upgradeDesc: "無制限の賃貸契約スキャン、優先ケース処理、専門家の法的サポートを取得",
       viewPlans: "プランを見る",
-      focusMode: "集中モード",
-      normalView: "通常表示",
       uploadFirstLease: "最初の賃貸契約をアップロード",
       noDataYet: "データなし",
       getStartedDesc: "賃貸契約をアップロードして賃貸権の保護を開始",
@@ -1070,8 +1060,6 @@ function DashboardContent() {
       upgradePremium: "프리미엄으로 업그레이드",
       upgradeDesc: "무제한 임대 계약 스캔, 우선 사례 처리 및 전문 법률 지원 받기",
       viewPlans: "계획 보기",
-      focusMode: "집중 모드",
-      normalView: "일반 보기",
       uploadFirstLease: "첫 번째 임대 계약 업로드",
       noDataYet: "아직 데이터 없음",
       getStartedDesc: "임대 계약을 업로드하여 임대 권리 보호 시작",
@@ -1662,48 +1650,6 @@ function DashboardContent() {
                       </button>
                     </>
                   )}
-
-                  <button
-                    onClick={() => {
-                      haptic.light();
-                      const newFocusMode = !focusMode;
-                      console.log('🎯 FOCUS MODE TOGGLED:', newFocusMode);
-                      setFocusMode(newFocusMode);
-                    }}
-                    className="btn-interaction"
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: focusMode ? '#C7A338' : colors.fieldBg,
-                      color: focusMode ? '#FFFFFF' : colors.textPrimary,
-                      border: `2px solid ${focusMode ? '#C7A338' : colors.borderColor}`,
-                      borderRadius: '12px',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.08)',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!focusMode) {
-                        e.target.style.backgroundColor = '#0C3B2E';
-                        e.target.style.borderColor = '#C7A338';
-                        e.target.style.color = '#FFFFFF';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!focusMode) {
-                        e.target.style.backgroundColor = colors.fieldBg;
-                        e.target.style.borderColor = colors.borderColor;
-                        e.target.style.color = colors.textPrimary;
-                      }
-                    }}
-                  >
-                    <Target className="w-4 h-4" />
-                    {focusMode ? strings.normalView : strings.focusMode}
-                  </button>
                 </div>
               }
             />
@@ -2084,9 +2030,7 @@ function DashboardContent() {
             </div>
           )}
 
-
-          {!focusMode && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 {isLoading ? (
                   <SkeletonLoader variant="card" count={3} colors={colors} />
@@ -2105,9 +2049,8 @@ function DashboardContent() {
                 )}
               </div>
             </div>
-          )}
 
-          {!focusMode && expandedSections.quickActions && (
+          {expandedSections.quickActions && (
             <div style={{
               background: isDarkMode
                 ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
