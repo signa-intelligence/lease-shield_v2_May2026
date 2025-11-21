@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -35,8 +34,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  CTA_COLOR,
-  CTA_COLOR_DISABLED
+  CTA_COLOR
 } from "../components/shared/featureTheme";
 
 function PropertyTrackerContent() {
