@@ -40,9 +40,10 @@ function MaintenanceRequestCard({
   handleSwipeComplete,
   handleEditMaintenance,
   handleCloseMaintenance,
-  handleDeleteMaintenance
+  handleDeleteMaintenance,
+  expanded,
+  onToggle
 }) {
-  const [expanded, setExpanded] = useState(false);
 
   return (
     <SwipeToDelete
@@ -60,7 +61,7 @@ function MaintenanceRequestCard({
         }}
         onClick={() => {
           haptic.light();
-          setExpanded(!expanded);
+          onToggle();
         }}
       >
         {/* Collapsed header - always visible */}
@@ -318,6 +319,7 @@ function PropertyTrackerContent() {
   const [compressionStats, setCompressionStats] = useState(null);
   const [maintenanceSearchQuery, setMaintenanceSearchQuery] = useState('');
   const [maintenanceStatusFilter, setMaintenanceStatusFilter] = useState('all');
+  const [expandedMaintenanceId, setExpandedMaintenanceId] = useState(null);
 
   // New state for voice/video
   const [voiceFiles, setVoiceFiles] = useState([]);
@@ -2567,6 +2569,8 @@ function PropertyTrackerContent() {
                               handleEditMaintenance={handleEditMaintenance}
                               handleCloseMaintenance={handleCloseMaintenance}
                               handleDeleteMaintenance={handleDeleteMaintenance}
+                              expanded={expandedMaintenanceId === request.id}
+                              onToggle={() => setExpandedMaintenanceId(expandedMaintenanceId === request.id ? null : request.id)}
                             />
                           ))}
 
