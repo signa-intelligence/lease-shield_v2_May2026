@@ -156,26 +156,26 @@ export const FEATURE_THEMES = {
   
   maintenance: {
     light: {
-      cardBg: '#FFFBEB',
-      borderColor: '#F59E0B',
-      iconBg: 'rgba(245,158,11,0.15)',
-      iconColor: '#D97706',
-      titleColor: '#78350F',
-      metricColor: '#B45309',
-      buttonBg: '#F59E0B',
+      cardBg: '#FFF8E1',
+      borderColor: '#FFA726',
+      iconBg: 'rgba(255,167,38,0.15)',
+      iconColor: '#FB8C00',
+      titleColor: '#E65100',
+      metricColor: '#F57C00',
+      buttonBg: '#FFA726',
       buttonText: '#FFFFFF',
-      accent: '#F59E0B'
+      accent: '#FFA726'
     },
     dark: {
       cardBg: '#2A2416',
-      borderColor: '#F59E0B',
-      iconBg: 'rgba(245,158,11,0.2)',
-      iconColor: '#FCD34D',
-      titleColor: '#FEF3C7',
-      metricColor: '#FDE68A',
-      buttonBg: '#F59E0B',
+      borderColor: '#FFA726',
+      iconBg: 'rgba(255,167,38,0.2)',
+      iconColor: '#FFD54F',
+      titleColor: '#FFF9C4',
+      metricColor: '#FFECB3',
+      buttonBg: '#FFA726',
       buttonText: '#FFFFFF',
-      accent: '#F59E0B'
+      accent: '#FFA726'
     }
   },
   
@@ -215,7 +215,7 @@ export const FEATURE_COLORS = {
   rent: { accent: '#F59E0B' },
   notifications: { accent: '#8B5CF6' },
   cases: { accent: '#EF4444' },
-  maintenance: { accent: '#F59E0B' },
+  maintenance: { accent: '#FFA726' },
   evidence: { accent: '#0EA5E9' }
 };
 
