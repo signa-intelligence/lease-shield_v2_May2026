@@ -32,6 +32,9 @@ function DashboardContent() {
     stats: true,
     quickActions: true,
     content: true,
+    recentLeases: false,
+    notifications: false,
+    depositAlerts: false,
   });
   const [showOnboarding, setShowOnboarding] = React.useState(false);
   const navigate = useNavigate();
@@ -1944,96 +1947,100 @@ function DashboardContent() {
                 </div>
               ) : (
                 <>
-                  <div className="mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
-                    <ProtectionScoreEnhanced
-                      score={protectionScore}
-                      breakdown={breakdown}
-                      recommendations={recommendations}
-                      language={language}
-                      colors={colors}
-                      user={user}
-                    />
-                  </div>
+                  {/* Desktop: 2×4 Grid Layout */}
+                  <div className="space-y-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                    {/* Row 1: Protection Score (right) */}
+                    <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+                      <ProtectionScoreEnhanced
+                        score={protectionScore}
+                        breakdown={breakdown}
+                        recommendations={recommendations}
+                        language={language}
+                        colors={colors}
+                        user={user}
+                      />
+                    </div>
 
-                  {/* Six Feature Cards - Fixed consistent grid layout */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
-                    {[
-                      {
-                        title: strings.leasesScanned,
-                        value: leases.length,
-                        icon: FileText,
-                        gradient: 'from-blue-500 to-blue-700',
-                        scoreColor: '#3B82F6',
-                        miniStats: [],
-                        route: createPageUrl("UploadScan"),
-                        label: strings.scanNewLease,
-                      },
-                      {
-                        title: strings.depositsTracked,
-                        value: deposits.length,
-                        icon: Wallet,
-                        gradient: 'from-emerald-500 to-emerald-700',
-                        scoreColor: '#10B981',
-                        miniStats: [
-                          { label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }
-                        ],
-                        route: createPageUrl("PropertyTracker") + "#deposit",
-                        label: strings.trackDeposit,
-                      },
-                      {
-                        title: strings.activeCases,
-                        value: activeCases.length,
-                        icon: Scale,
-                        gradient: 'from-red-500 to-red-700',
-                        scoreColor: '#EF4444',
-                        miniStats: [],
-                        route: createPageUrl("Cases"),
-                        label: strings.openCase,
-                      },
-                      {
-                        title: strings.rentTracked,
-                        value: rentTrackedCount,
-                        icon: Calendar,
-                        gradient: 'from-amber-500 to-amber-700',
-                        scoreColor: '#F59E0B',
-                        miniStats: [
-                          { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
-                        ],
-                        route: createPageUrl("PropertyTracker") + "#rent",
-                        label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ') : strings.setupRent,
-                      },
-                      {
-                        title: strings.notifications,
-                        value: unreadNotifications,
-                        icon: Bell,
-                        gradient: 'from-purple-500 to-purple-700',
-                        scoreColor: '#8B5CF6',
-                        miniStats: [],
-                        route: createPageUrl("Timeline"),
-                        label: strings.viewTimeline,
-                      },
-                      {
-                        title: strings.evidenceUploaded,
-                        value: documents.length,
-                        icon: FileText,
-                        gradient: 'from-indigo-500 to-indigo-700',
-                        scoreColor: '#6366F1',
-                        miniStats: [
-                          { label: strings.totalFiles, value: documents.length }
-                        ],
-                        route: createPageUrl("EvidenceVault"),
-                        label: strings.manageEvidence,
-                      }
-                    ].map((card, index) => (
-                      <div key={index} className="w-full">
-                        <StatsCard
-                          {...card}
-                          compact={false}
-                          colors={colors}
-                          className="card-interactive h-full"
-                        />
-                      </div>
-                    ))}
+                    {/* Row 2: Six Feature Cards in 2×3 grid */}
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                      {[
+                        {
+                          title: strings.leasesScanned,
+                          value: leases.length,
+                          icon: FileText,
+                          gradient: 'from-blue-500 to-blue-700',
+                          scoreColor: '#3B82F6',
+                          miniStats: [],
+                          route: createPageUrl("UploadScan"),
+                          label: strings.scanNewLease,
+                        },
+                        {
+                          title: strings.depositsTracked,
+                          value: deposits.length,
+                          icon: Wallet,
+                          gradient: 'from-emerald-500 to-emerald-700',
+                          scoreColor: '#10B981',
+                          miniStats: [
+                            { label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }
+                          ],
+                          route: createPageUrl("PropertyTracker") + "#deposit",
+                          label: strings.trackDeposit,
+                        },
+                        {
+                          title: strings.activeCases,
+                          value: activeCases.length,
+                          icon: Scale,
+                          gradient: 'from-red-500 to-red-700',
+                          scoreColor: '#EF4444',
+                          miniStats: [],
+                          route: createPageUrl("Cases"),
+                          label: strings.openCase,
+                        },
+                        {
+                          title: strings.rentTracked,
+                          value: rentTrackedCount,
+                          icon: Calendar,
+                          gradient: 'from-amber-500 to-amber-700',
+                          scoreColor: '#F59E0B',
+                          miniStats: [
+                            { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
+                          ],
+                          route: createPageUrl("PropertyTracker") + "#rent",
+                          label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ') : strings.setupRent,
+                        },
+                        {
+                          title: strings.notifications,
+                          value: unreadNotifications,
+                          icon: Bell,
+                          gradient: 'from-purple-500 to-purple-700',
+                          scoreColor: '#8B5CF6',
+                          miniStats: [],
+                          route: createPageUrl("Timeline"),
+                          label: strings.viewTimeline,
+                        },
+                        {
+                          title: strings.evidenceUploaded,
+                          value: documents.length,
+                          icon: FileText,
+                          gradient: 'from-indigo-500 to-indigo-700',
+                          scoreColor: '#6366F1',
+                          miniStats: [
+                            { label: strings.totalFiles, value: documents.length }
+                          ],
+                          route: createPageUrl("EvidenceVault"),
+                          label: strings.manageEvidence,
+                        }
+                      ].map((card, index) => (
+                        <div key={index} className="w-full">
+                          <StatsCard
+                            {...card}
+                            compact={false}
+                            colors={colors}
+                            className="card-interactive h-full"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </>
               )}
@@ -2047,8 +2054,73 @@ function DashboardContent() {
                 <SkeletonLoader variant="card" count={3} colors={colors} />
               ) : (
                 <>
-                  <RecentLeases leases={leases} language={language} />
-                  <NotificationSummary language={language} colors={colors} />
+                  {/* Collapsible Recent Leases */}
+                  <Card style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                    <div 
+                      className="p-4 flex items-center justify-between cursor-pointer"
+                      onClick={() => {
+                        haptic.light();
+                        toggleSection('recentLeases');
+                      }}
+                      style={{ borderBottom: expandedSections.recentLeases ? `1px solid ${colors.borderColor}` : 'none' }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5" style={{ color: '#3B82F6' }} />
+                        <div>
+                          <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                            {language === 'th' ? 'สัญญาเช่าล่าสุด' : language === 'zh' ? '最近的租约' : language === 'ja' ? '最近のリース' : language === 'ko' ? '최근 임대' : 'Recent Leases'}
+                          </h3>
+                          <p className="text-sm" style={{ color: colors.textSecondary }}>
+                            {leases.length} {language === 'th' ? 'รายการ' : language === 'zh' ? '项' : language === 'ja' ? 'アイテム' : language === 'ko' ? '항목' : 'items'}
+                          </p>
+                        </div>
+                      </div>
+                      {expandedSections.recentLeases ? (
+                        <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      )}
+                    </div>
+                    {expandedSections.recentLeases && (
+                      <div className="p-4">
+                        <RecentLeases leases={leases} language={language} />
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Collapsible Notifications */}
+                  <Card style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                    <div 
+                      className="p-4 flex items-center justify-between cursor-pointer"
+                      onClick={() => {
+                        haptic.light();
+                        toggleSection('notifications');
+                      }}
+                      style={{ borderBottom: expandedSections.notifications ? `1px solid ${colors.borderColor}` : 'none' }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Bell className="w-5 h-5" style={{ color: '#8B5CF6' }} />
+                        <div>
+                          <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                            {language === 'th' ? 'การแจ้งเตือนของฉัน' : language === 'zh' ? '我的通知' : language === 'ja' ? '通知' : language === 'ko' ? '알림' : 'My Notifications'}
+                          </h3>
+                          <p className="text-sm" style={{ color: colors.textSecondary }}>
+                            {unreadNotifications} {language === 'th' ? 'รายการ' : language === 'zh' ? '项' : language === 'ja' ? 'アイテム' : language === 'ko' ? '항목' : 'notifications'}
+                          </p>
+                        </div>
+                      </div>
+                      {expandedSections.notifications ? (
+                        <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      )}
+                    </div>
+                    {expandedSections.notifications && (
+                      <div className="p-4">
+                        <NotificationSummary language={language} colors={colors} />
+                      </div>
+                    )}
+                  </Card>
                 </>
               )}
             </div>
@@ -2056,7 +2128,41 @@ function DashboardContent() {
               {isLoading ? (
                 <SkeletonLoader variant="card" colors={colors} />
               ) : (
-                <DepositAlert deposits={deposits} language={language} />
+                <>
+                  {/* Collapsible Deposit Alerts */}
+                  <Card style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+                    <div 
+                      className="p-4 flex items-center justify-between cursor-pointer"
+                      onClick={() => {
+                        haptic.light();
+                        toggleSection('depositAlerts');
+                      }}
+                      style={{ borderBottom: expandedSections.depositAlerts ? `1px solid ${colors.borderColor}` : 'none' }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Wallet className="w-5 h-5" style={{ color: '#10B981' }} />
+                        <div>
+                          <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                            {language === 'th' ? 'แจ้งเตือนเงินมัดจำ' : language === 'zh' ? '押金提醒' : language === 'ja' ? '敷金アラート' : language === 'ko' ? '보증금 알림' : 'Deposit Alerts'}
+                          </h3>
+                          <p className="text-sm" style={{ color: colors.textSecondary }}>
+                            {urgentDeposits} {language === 'th' ? 'รายการ' : language === 'zh' ? '项' : language === 'ja' ? 'アイテム' : language === 'ko' ? '항목' : 'alerts'}
+                          </p>
+                        </div>
+                      </div>
+                      {expandedSections.depositAlerts ? (
+                        <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      )}
+                    </div>
+                    {expandedSections.depositAlerts && (
+                      <div className="p-4">
+                        <DepositAlert deposits={deposits} language={language} />
+                      </div>
+                    )}
+                  </Card>
+                </>
               )}
             </div>
           </div>
