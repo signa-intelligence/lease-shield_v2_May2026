@@ -41,7 +41,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import PageHeader from "../components/shared/PageHeader";
-import PullToRefresh from "@/components/shared/PullToRefresh"; // Assuming this is a local component
 
 export default function Timeline() {
   const navigate = useNavigate();
@@ -49,30 +48,30 @@ export default function Timeline() {
   const [viewMode, setViewMode] = useState('calendar');
   const [selectedTypes, setSelectedTypes] = useState([]);
 
-  const { data: user, refetch: refetchUser } = useQuery({
+  const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: leases = [], refetch: refetchLeases } = useQuery({
+  const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
 
-  const { data: deposits = [], refetch: refetchDeposits } = useQuery({
+  const { data: deposits = [] } = useQuery({
     queryKey: ['deposits'],
     queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
 
-  const { data: cases = [], refetch: refetchCases } = useQuery({
+  const { data: cases = [] } = useQuery({
     queryKey: ['cases'],
     queryFn: () => base44.entities.Case.filter({ user_email: user?.email }, '-created_date'),
     enabled: !!user,
   });
 
-  const { data: maintenance = [], refetch: refetchMaintenance } = useQuery({
+  const { data: maintenance = [] } = useQuery({
     queryKey: ['maintenance'],
     queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
@@ -485,313 +484,300 @@ export default function Timeline() {
     return weekdays[language]?.[idx] || weekdays['en'][idx];
   };
 
-  const handleRefresh = async () => {
-    await Promise.all([
-      refetchUser(),
-      refetchLeases(),
-      refetchDeposits(),
-      refetchCases(),
-      refetchMaintenance()
-    ]);
-    setCurrentDate(new Date()); // Reset calendar to today's month after refresh
-  };
-
   return (
-    <PullToRefresh onRefresh={handleRefresh} colors={colors}>
-      <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-7xl mx-auto">
-          <PageHeader
-            title={strings.title}
-            subtitle={strings.subtitle}
-            icon={CalendarIcon}
-            iconColor="#0C3B2E"
-            showBack={true}
-            backLabel={strings.back}
-            onBack={() => navigate(createPageUrl("Dashboard"))}
-            colors={colors}
-            actions={
-              <div className="flex flex-wrap items-center justify-between gap-4 w-full">
-                <div className="flex gap-2 p-1 rounded-lg" style={{ backgroundColor: colors.cardBg, border: `2px solid ${colors.borderColor}` }}>
-                  <button
-                    onClick={() => setViewMode('upcoming')}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
-                    style={{
-                      backgroundColor: viewMode === 'upcoming' ? '#0C3B2E' : 'transparent',
-                      color: viewMode === 'upcoming' ? '#FFFFFF' : colors.textPrimary
-                    }}
-                  >
-                    <Clock className="w-4 h-4" />
-                    <span className="hidden sm:inline">{strings.upcoming}</span>
-                  </button>
-                  <button
-                    onClick={() => setViewMode('calendar')}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
-                    style={{
-                      backgroundColor: viewMode === 'calendar' ? '#0C3B2E' : 'transparent',
-                      color: viewMode === 'calendar' ? '#FFFFFF' : colors.textPrimary
-                    }}
-                  >
-                    <Grid3x3 className="w-4 h-4" />
-                    <span className="hidden sm:inline">{strings.calendar}</span>
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
-                    style={{
-                      backgroundColor: viewMode === 'list' ? '#0C3B2E' : 'transparent',
-                      color: viewMode === 'list' ? '#FFFFFF' : colors.textPrimary
-                    }}
-                  >
-                    <List className="w-4 h-4" />
-                    <span className="hidden sm:inline">{strings.list}</span>
-                  </button>
-                </div>
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="max-w-7xl mx-auto">
+        <PageHeader
+          title={strings.title}
+          subtitle={strings.subtitle}
+          icon={CalendarIcon}
+          iconColor="#0C3B2E"
+          showBack={true}
+          backLabel={strings.back}
+          onBack={() => navigate(createPageUrl("Dashboard"))}
+          colors={colors}
+          actions={
+            <div className="flex flex-wrap items-center justify-between gap-4 w-full">
+              <div className="flex gap-2 p-1 rounded-lg" style={{ backgroundColor: colors.cardBg, border: `2px solid ${colors.borderColor}` }}>
+                <button
+                  onClick={() => setViewMode('upcoming')}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                  style={{
+                    backgroundColor: viewMode === 'upcoming' ? '#0C3B2E' : 'transparent',
+                    color: viewMode === 'upcoming' ? '#FFFFFF' : colors.textPrimary
+                  }}
+                >
+                  <Clock className="w-4 h-4" />
+                  <span className="hidden sm:inline">{strings.upcoming}</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('calendar')}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                  style={{
+                    backgroundColor: viewMode === 'calendar' ? '#0C3B2E' : 'transparent',
+                    color: viewMode === 'calendar' ? '#FFFFFF' : colors.textPrimary
+                  }}
+                >
+                  <Grid3x3 className="w-4 h-4" />
+                  <span className="hidden sm:inline">{strings.calendar}</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                  style={{
+                    backgroundColor: viewMode === 'list' ? '#0C3B2E' : 'transparent',
+                    color: viewMode === 'list' ? '#FFFFFF' : colors.textPrimary
+                  }}
+                >
+                  <List className="w-4 h-4" />
+                  <span className="hidden sm:inline">{strings.list}</span>
+                </button>
+              </div>
 
-                <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedTypes([])}
+                  className="px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+                  style={{
+                    backgroundColor: selectedTypes.length === 0 ? '#0C3B2E' : colors.cardBg,
+                    color: selectedTypes.length === 0 ? '#FFFFFF' : colors.textPrimary,
+                    border: `2px solid ${selectedTypes.length === 0 ? '#0C3B2E' : colors.borderColor}`
+                  }}
+                >
+                  {strings.allTypes}
+                </button>
+                {[
+                  { key: 'lease', label: strings.leaseEvents, color: '#3B82F6' },
+                  { key: 'deposit', label: strings.depositEvents, color: '#C7A338' },
+                  { key: 'case', label: strings.caseEvents, color: '#8B5CF6' },
+                  { key: 'maintenance', label: strings.maintenanceEvents, color: '#F59E0B' }
+                ].map(({ key, label, color }) => (
                   <button
-                    onClick={() => setSelectedTypes([])}
+                    key={key}
+                    onClick={() => toggleType(key)}
                     className="px-3 py-2 rounded-lg text-xs font-semibold transition-all"
                     style={{
-                      backgroundColor: selectedTypes.length === 0 ? '#0C3B2E' : colors.cardBg,
-                      color: selectedTypes.length === 0 ? '#FFFFFF' : colors.textPrimary,
-                      border: `2px solid ${selectedTypes.length === 0 ? '#0C3B2E' : colors.borderColor}`
+                      backgroundColor: selectedTypes.includes(key) ? color : colors.cardBg,
+                      color: selectedTypes.includes(key) ? '#FFFFFF' : colors.textPrimary,
+                      border: `2px solid ${selectedTypes.includes(key) ? color : colors.borderColor}`
                     }}
                   >
-                    {strings.allTypes}
+                    {label}
                   </button>
-                  {[
-                    { key: 'lease', label: strings.leaseEvents, color: '#3B82F6' },
-                    { key: 'deposit', label: strings.depositEvents, color: '#C7A338' },
-                    { key: 'case', label: strings.caseEvents, color: '#8B5CF6' },
-                    { key: 'maintenance', label: strings.maintenanceEvents, color: '#F59E0B' }
-                  ].map(({ key, label, color }) => (
-                    <button
-                      key={key}
-                      onClick={() => toggleType(key)}
-                      className="px-3 py-2 rounded-lg text-xs font-semibold transition-all"
-                      style={{
-                        backgroundColor: selectedTypes.includes(key) ? color : colors.cardBg,
-                        color: selectedTypes.includes(key) ? '#FFFFFF' : colors.textPrimary,
-                        border: `2px solid ${selectedTypes.includes(key) ? color : colors.borderColor}`
-                      }}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                ))}
+              </div>
+            </div>
+          }
+        />
+
+        {viewMode === 'upcoming' && (
+          <div className="space-y-6">
+            <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <TrendingUp className="w-5 h-5 text-ls-forest" />
+                  {strings.upcomingDeadlines}
+                  <Badge className="bg-blue-100 text-blue-800">{strings.next30Days}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {upcomingEvents.length === 0 ? (
+                  <div className="text-center py-12">
+                    <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                    <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noUpcoming}</p>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.noEventsDesc}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {upcomingEvents.map(event => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {pastEvents.length > 0 && (
+              <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                    <Clock className="w-5 h-5 text-ls-forest" />
+                    {strings.pastEvents}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 opacity-70">
+                    {pastEvents.map(event => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {viewMode === 'calendar' && (
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle style={{ color: colors.textPrimary }}>
+                  {format(currentDate, 'MMMM yyyy')}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentDate(new Date())}
+                  >
+                    {strings.today}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
-            }
-          />
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-7 gap-2 mb-2">
+                {[0, 1, 2, 3, 4, 5, 6].map((idx) => (
+                  <div key={idx} className="text-center text-xs font-bold py-2" style={{ color: colors.textSecondary }}>
+                    {getWeekdayLabel(idx)}
+                  </div>
+                ))}
+              </div>
 
-          {viewMode === 'upcoming' && (
-            <div className="space-y-6">
+              <div className="grid grid-cols-7 gap-2">
+                {calendarDays.map((dayData, idx) => {
+                  const hasEvents = dayData.events.length > 0;
+                  const urgentEvent = dayData.events.find(e => e.urgent || (differenceInDays(e.date, new Date()) <= 7 && differenceInDays(e.date, new Date()) >= 0));
+
+                  return (
+                    <div
+                      key={idx}
+                      className="aspect-square p-2 rounded-lg transition-all cursor-pointer hover:shadow-md"
+                      style={{
+                        backgroundColor: dayData.isToday
+                          ? colors.todayBg
+                          : hasEvents
+                            ? `${dayData.events[0].color}10`
+                            : 'transparent',
+                        border: dayData.isToday
+                          ? '2px solid #0C3B2E'
+                          : urgentEvent
+                            ? `2px solid ${urgentEvent.color}`
+                            : `1px solid ${colors.borderColor}`,
+                        opacity: dayData.isCurrentMonth ? 1 : 0.4
+                      }}
+                      onClick={() => {
+                        if (hasEvents && dayData.events[0].route) {
+                          navigate(dayData.events[0].route);
+                        }
+                      }}
+                    >
+                      <div className="text-xs font-bold mb-1" style={{ color: colors.textPrimary }}>
+                        {format(dayData.date, 'd')}
+                      </div>
+                      {hasEvents && (
+                        <div className="space-y-1">
+                          {dayData.events.slice(0, 2).map((event, eventIdx) => (
+                            <div
+                              key={eventIdx}
+                              className="w-full h-1 rounded-full"
+                              style={{ backgroundColor: event.color }}
+                            />
+                          ))}
+                          {dayData.events.length > 2 && (
+                            <div className="text-[8px] font-bold text-center" style={{ color: colors.textSecondary }}>
+                              +{dayData.events.length - 2}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {monthEvents.length > 0 && (
+                <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
+                  <h3 className="font-bold mb-4 text-sm" style={{ color: colors.textPrimary }}>
+                    {strings.eventsOn} {format(currentDate, 'MMMM')} ({monthEvents.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {monthEvents.slice(0, 5).map(event => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {viewMode === 'list' && (
+          <div className="space-y-6">
+            {upcomingEvents.length > 0 && (
               <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
                     <TrendingUp className="w-5 h-5 text-ls-forest" />
                     {strings.upcomingDeadlines}
-                    <Badge className="bg-blue-100 text-blue-800">{strings.next30Days}</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {upcomingEvents.length === 0 ? (
-                    <div className="text-center py-12">
-                      <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                      <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noUpcoming}</p>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.noEventsDesc}</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {upcomingEvents.map(event => (
-                        <EventCard key={event.id} event={event} />
-                      ))}
-                    </div>
-                  )}
+                  <div className="space-y-3">
+                    {upcomingEvents.map(event => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
+            )}
 
-              {pastEvents.length > 0 && (
-                <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                      <Clock className="w-5 h-5 text-ls-forest" />
-                      {strings.pastEvents}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3 opacity-70">
-                      {pastEvents.map(event => (
-                        <EventCard key={event.id} event={event} />
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-
-          {viewMode === 'calendar' && (
-            <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle style={{ color: colors.textPrimary }}>
-                    {format(currentDate, 'MMMM yyyy')}
+            {pastEvents.length > 0 && (
+              <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                    <Clock className="w-5 h-5 text-ls-forest" />
+                    {strings.pastEvents}
                   </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentDate(new Date())}
-                    >
-                      {strings.today}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 opacity-70">
+                    {pastEvents.map(event => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <div className="grid grid-cols-7 gap-2 mb-2">
-                  {[0, 1, 2, 3, 4, 5, 6].map((idx) => (
-                    <div key={idx} className="text-center text-xs font-bold py-2" style={{ color: colors.textSecondary }}>
-                      {getWeekdayLabel(idx)}
-                    </div>
-                  ))}
-                </div>
+                </CardContent>
+              </Card>
+            )}
 
-                <div className="grid grid-cols-7 gap-2">
-                  {calendarDays.map((dayData, idx) => {
-                    const hasEvents = dayData.events.length > 0;
-                    const urgentEvent = dayData.events.find(e => e.urgent || (differenceInDays(e.date, new Date()) <= 7 && differenceInDays(e.date, new Date()) >= 0));
-
-                    return (
-                      <div
-                        key={idx}
-                        className="aspect-square p-2 rounded-lg transition-all cursor-pointer hover:shadow-md"
-                        style={{
-                          backgroundColor: dayData.isToday
-                            ? colors.todayBg
-                            : hasEvents
-                              ? `${dayData.events[0].color}10`
-                              : 'transparent',
-                          border: dayData.isToday
-                            ? '2px solid #0C3B2E'
-                            : urgentEvent
-                              ? `2px solid ${urgentEvent.color}`
-                              : `1px solid ${colors.borderColor}`,
-                          opacity: dayData.isCurrentMonth ? 1 : 0.4
-                        }}
-                        onClick={() => {
-                          if (hasEvents && dayData.events[0].route) {
-                            navigate(dayData.events[0].route);
-                          }
-                        }}
-                      >
-                        <div className="text-xs font-bold mb-1" style={{ color: colors.textPrimary }}>
-                          {format(dayData.date, 'd')}
-                        </div>
-                        {hasEvents && (
-                          <div className="space-y-1">
-                            {dayData.events.slice(0, 2).map((event, eventIdx) => (
-                              <div
-                                key={eventIdx}
-                                className="w-full h-1 rounded-full"
-                                style={{ backgroundColor: event.color }}
-                              />
-                            ))}
-                            {dayData.events.length > 2 && (
-                              <div className="text-[8px] font-bold text-center" style={{ color: colors.textSecondary }}>
-                                +{dayData.events.length - 2}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {monthEvents.length > 0 && (
-                  <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
-                    <h3 className="font-bold mb-4 text-sm" style={{ color: colors.textPrimary }}>
-                      {strings.eventsOn} {format(currentDate, 'MMMM')} ({monthEvents.length})
-                    </h3>
-                    <div className="space-y-3">
-                      {monthEvents.slice(0, 5).map(event => (
-                        <EventCard key={event.id} event={event} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {viewMode === 'list' && (
-            <div className="space-y-6">
-              {upcomingEvents.length > 0 && (
-                <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                      <TrendingUp className="w-5 h-5 text-ls-forest" />
-                      {strings.upcomingDeadlines}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {upcomingEvents.map(event => (
-                        <EventCard key={event.id} event={event} />
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {pastEvents.length > 0 && (
-                <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                      <Clock className="w-5 h-5 text-ls-forest" />
-                      {strings.pastEvents}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3 opacity-70">
-                      {pastEvents.map(event => (
-                        <EventCard key={event.id} event={event} />
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {upcomingEvents.length === 0 && pastEvents.length === 0 && (
-                <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                  <CardContent className="p-12 text-center">
-                    <CalendarIcon className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                    <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                      {strings.noEvents}
-                    </h3>
-                    <p style={{ color: colors.textSecondary }}>{strings.noEventsDesc}</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </div>
+            {upcomingEvents.length === 0 && pastEvents.length === 0 && (
+              <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                <CardContent className="p-12 text-center">
+                  <CalendarIcon className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                  <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.noEvents}
+                  </h3>
+                  <p style={{ color: colors.textSecondary }}>{strings.noEventsDesc}</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
-    </PullToRefresh>
+    </div>
   );
 }

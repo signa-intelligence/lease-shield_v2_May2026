@@ -3957,30 +3957,61 @@ export default function Account() {
             }}
           >
             <DialogHeader>
-              <DialogTitle className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
+              <DialogTitle className="text-xl sm:text-2xl font-bold" style={{ color: colors.textPrimary }}>
                 {language === 'th' ? 'กำลังคิดจะลดระดับ?' : language === 'zh' ? '考虑降级？' : language === 'ja' ? 'ダウングレードを検討中？' : language === 'ko' ? '다운그레이드를 고려 중이신가요?' : 'Thinking about downgrading?'}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <p className="text-sm" style={{ color: colors.textSecondary }}>
-                {language === 'th' ? 'หากคุณลดระดับ คุณจะสูญเสีย:' : language === 'zh' ? '如果您降级，您将失去：' : language === 'ja' ? 'ダウングレードすると、以下を失います：' : language === 'ko' ? '다운그레이드하면 다음을 잃게 됩니다:' : 'If you downgrade, you\'ll lose:'}
+              <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                {language === 'th' 
+                  ? 'การลดระดับจะลบเครื่องมือป้องกันที่สำคัญและเพิ่มความเสี่ยงของคุณ' 
+                  : language === 'zh' 
+                    ? '降级会删除关键保护工具并增加您的风险。' 
+                    : language === 'ja' 
+                      ? 'ダウングレードすると、重要な保護ツールが削除され、リスクが高まります。' 
+                      : language === 'ko' 
+                        ? '다운그레이드하면 주요 보호 도구가 제거되고 위험이 증가합니다.' 
+                        : 'Downgrading removes key protection tools and increases your risk.'}
               </p>
-              <ul className="space-y-2 text-sm" style={{ color: colors.textPrimary }}>
-                <li className="flex items-start gap-2">
-                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <span>{language === 'th' ? 'การสแกนสัญญาเพิ่มเติม' : language === 'zh' ? '额外租约扫描' : language === 'ja' ? '追加リーススキャン' : language === 'ko' ? '추가 임대 스캔' : 'Extra lease scans'}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <span>{language === 'th' ? 'การแจ้งเตือนขั้นสูงและการเตือนอัตโนมัติ' : language === 'zh' ? '高级提醒和通知' : language === 'ja' ? '高度なリマインダーと通知' : language === 'ko' ? '고급 알림 및 리마인더' : 'Advanced reminders & notifications'}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <span>{language === 'th' ? 'การติดตามเงินมัดจำและการซ่อมบำรุงแบบเต็มรูปแบบ' : language === 'zh' ? '完整押金和维护追踪' : language === 'ja' ? '完全な敷金とメンテナンス追跡' : language === 'ko' ? '완전한 보증금 및 유지보수 추적' : 'Full deposit & maintenance tracking'}</span>
-                </li>
-              </ul>
+              <div className="p-4 rounded-lg" style={{
+                backgroundColor: isDarkMode ? '#2A1F1F' : '#FEE2E2',
+                border: `2px solid ${isDarkMode ? '#EF4444' : '#FECACA'}`
+              }}>
+                <p className="text-sm font-semibold mb-3" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                  {language === 'th' ? 'คุณจะสูญเสีย:' : language === 'zh' ? '您将失去：' : language === 'ja' ? '失うもの：' : language === 'ko' ? '잃게 될 것:' : 'You will lose:'}
+                </p>
+                <ul className="space-y-2 text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>{language === 'th' ? 'การแจ้งเตือนกำหนดเวลาขั้นสูง' : language === 'zh' ? '高级截止日期提醒' : language === 'ja' ? '高度な期限リマインダー' : language === 'ko' ? '고급 마감일 알림' : 'Advanced deadline reminders'}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>{language === 'th' ? 'การติดตามเงินมัดจำและการซ่อมบำรุงแบบเต็มรูปแบบ' : language === 'zh' ? '完整押金和维护追踪' : language === 'ja' ? '完全な敷金とメンテナンス追跡' : language === 'ko' ? '완전한 보증금 및 유지보수 추적' : 'Full deposit & maintenance tracking'}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>{language === 'th' ? 'การสนับสนุนคดีลำดับความสำคัญ' : language === 'zh' ? '优先案件支持' : language === 'ja' ? '優先ケースサポート' : language === 'ko' ? '우선 사례 지원' : 'Priority case support'}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>{language === 'th' ? 'การสแกนสัญญาเพิ่มเติม' : language === 'zh' ? '额外租约扫描' : language === 'ja' ? '追加リーススキャン' : language === 'ko' ? '추가 임대 스캔' : 'Additional lease scans'}</span>
+                  </li>
+                </ul>
+              </div>
+              <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                {language === 'th' 
+                  ? 'สิ่งนี้ทำให้การป้องกันของคุณอ่อนแอลง อยู่ในแผนปัจจุบันเพื่อรักษาสิทธิ์ของคุณให้ได้รับการป้องกันอย่างเต็มที่' 
+                  : language === 'zh' 
+                    ? '这会削弱您的保护。保持当前计划以全面保护您的权利。' 
+                    : language === 'ja' 
+                      ? 'これにより保護が弱まります。現在のプランを維持して、権利を完全に守りましょう。' 
+                      : language === 'ko' 
+                        ? '이는 보호를 약화시킵니다. 현재 플랜을 유지하여 권리를 완전히 보호하세요.' 
+                        : 'This weakens your protection. Stay on your current plan to keep your rights fully defended.'}
+              </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
+            <div className="flex flex-col sm:flex-row gap-3 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}`, paddingTop: '16px' }}>
               <button
                 onClick={() => {
                   haptic.light();
@@ -3989,20 +4020,27 @@ export default function Account() {
                 }}
                 className="w-full sm:flex-1 btn-interaction"
                 style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: `2px solid ${colors.borderColor}`,
+                  padding: '14px 20px',
+                  borderRadius: '10px',
+                  border: 'none',
                   backgroundColor: '#0C3B2E',
                   color: '#FFFFFF',
-                  fontWeight: '600',
-                  fontSize: '14px',
+                  fontWeight: '700',
+                  fontSize: '15px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  boxShadow: '0 4px 12px rgba(12,59,46,0.3)'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#0a2f25';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#0C3B2E';
+                  e.target.style.transform = 'translateY(0)';
+                }}
               >
-                {language === 'th' ? 'รักษาการป้องกันปัจจุบัน' : language === 'zh' ? '保持当前保护' : language === 'ja' ? '現在の保護を維持' : language === 'ko' ? '현재 보호 유지' : 'Keep my current protection'}
+                {language === 'th' ? 'รักษาการป้องกันของฉัน' : language === 'zh' ? '保持我的保护' : language === 'ja' ? '私の保護を維持' : language === 'ko' ? '내 보호 유지' : 'Keep My Protection'}
               </button>
               <button
                 onClick={() => {
@@ -4011,20 +4049,24 @@ export default function Account() {
                 }}
                 className="w-full sm:flex-1 btn-interaction"
                 style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: '#EF4444',
-                  color: '#FFFFFF',
-                  fontWeight: '600',
+                  padding: '14px 20px',
+                  borderRadius: '10px',
+                  border: `2px solid ${colors.borderColor}`,
+                  backgroundColor: 'transparent',
+                  color: '#EF4444',
+                  fontWeight: '500',
                   fontSize: '14px',
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#DC2626'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#EF4444'}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = isDarkMode ? 'rgba(239,68,68,0.1)' : '#FEE2E2';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                }}
               >
-                {language === 'th' ? 'ลดระดับต่อไป' : language === 'zh' ? '继续降级' : language === 'ja' ? 'ダウングレードを続行' : language === 'ko' ? '다운그레이드 계속' : 'Downgrade anyway'}
+                {language === 'th' ? 'ลดระดับต่อไป' : language === 'zh' ? '继续降级' : language === 'ja' ? 'ダウングレードを続行' : language === 'ko' ? '다운그레이드 계속' : 'Downgrade Anyway'}
               </button>
             </div>
           </DialogContent>
@@ -4047,73 +4089,96 @@ export default function Account() {
             </DialogHeader>
             <div className="space-y-4 mt-4" style={{ flex: 1 }}>
               <button
-                onClick={() => setSelectedInterval('monthly')}
+                onClick={() => {
+                  haptic.light();
+                  setSelectedInterval('monthly');
+                }}
                 style={{
                   width: '100%',
-                  padding: '16px',
+                  padding: '16px 18px',
                   borderRadius: '12px',
                   border: `2px solid ${selectedInterval === 'monthly' ? '#0C3B2E' : colors.borderColor}`,
-                  backgroundColor: selectedInterval === 'monthly' ? (isDarkMode ? '#0C3B2E' : '#F0FDF4') : colors.cardBg,
+                  backgroundColor: selectedInterval === 'monthly' ? (isDarkMode ? 'rgba(12,59,46,0.15)' : '#F0FDF4') : colors.cardBg,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  textAlign: 'left'
+                  textAlign: 'left',
+                  minHeight: '90px'
                 }}
               >
                 <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-bold text-base mb-1" style={{ color: colors.textPrimary }}>
+                  <div className="flex-1 pr-2">
+                    <p className="font-bold text-base mb-2" style={{ color: colors.textPrimary, whiteSpace: 'normal' }}>
                       {strings.payMonthly}
                     </p>
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    <p className="text-sm" style={{ color: colors.textSecondary, whiteSpace: 'normal' }}>
                       {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
-                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceMonthly}/month` 
+                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceMonthly}/${language === 'th' ? 'เดือน' : language === 'zh' ? '月' : language === 'ja' ? '月' : language === 'ko' ? '월' : 'month'}` 
                         : '—'}
                     </p>
                   </div>
                   {selectedInterval === 'monthly' && (
-                    <CheckCircle2 className="w-5 h-5 text-ls-forest" />
+                    <CheckCircle2 className="w-5 h-5 text-ls-forest flex-shrink-0" />
                   )}
                 </div>
               </button>
 
               <button
-                onClick={() => setSelectedInterval('annual')}
+                onClick={() => {
+                  haptic.light();
+                  setSelectedInterval('annual');
+                }}
                 style={{
                   width: '100%',
-                  padding: '16px',
+                  padding: '16px 18px',
                   borderRadius: '12px',
                   border: `2px solid ${selectedInterval === 'annual' ? '#10B981' : colors.borderColor}`,
                   backgroundColor: selectedInterval === 'annual' ? (isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5') : colors.cardBg,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   textAlign: 'left',
-                  boxShadow: selectedInterval === 'annual' ? '0 4px 12px rgba(16,185,129,0.2)' : 'none'
+                  boxShadow: selectedInterval === 'annual' ? '0 4px 12px rgba(16,185,129,0.25)' : 'none',
+                  minHeight: '110px'
                 }}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold text-base" style={{ color: colors.textPrimary }}>
-                        {strings.payAnnually}
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 pr-2">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <p className="font-bold text-base" style={{ color: colors.textPrimary, whiteSpace: 'normal' }}>
+                        {language === 'th' ? 'ชำระรายปี - ประหยัด 17%' : language === 'zh' ? '年付 - 节省17%' : language === 'ja' ? '年払い - 17%節約' : language === 'ko' ? '연간 결제 - 17% 절약' : 'Pay Annually – Save 17%'}
                       </p>
-                      <Badge className="bg-emerald-500 text-white text-xs font-bold">
-                        {strings.bestValueBadge}
+                      <Badge className="bg-emerald-600 text-white text-xs font-bold px-2 py-1">
+                        {language === 'th' ? 'คุ้มที่สุด' : language === 'zh' ? '最划算' : language === 'ja' ? 'ベストバリュー' : language === 'ko' ? '최고 가치' : 'Best Value'}
                       </Badge>
                     </div>
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    <p className="text-sm mb-1" style={{ color: colors.textSecondary, whiteSpace: 'normal' }}>
                       {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
-                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceAnnual}/year` 
+                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceAnnual}/${language === 'th' ? 'ปี' : language === 'zh' ? '年' : language === 'ja' ? '年' : language === 'ko' ? '년' : 'year'}` 
                         : '—'}
                     </p>
-                    <p className="text-xs mt-1 font-semibold" style={{ color: '#10B981' }}>
-                      {language === 'th' ? 'ประหยัด 17% เมื่อชำระรายปี' : language === 'zh' ? '年付节省17%' : language === 'ja' ? '年払いで17%節約' : language === 'ko' ? '연간 결제 시 17% 절약' : 'Save 17% when you pay yearly'}
+                    <p className="text-xs font-medium" style={{ color: '#10B981', whiteSpace: 'normal' }}>
+                      {language === 'th' ? '12 เดือนของการป้องกันเต็มรูปแบบในราคา 10 เดือน' : language === 'zh' ? '12个月的全面保护，只需支付10个月的价格' : language === 'ja' ? '10ヶ月分の価格で12ヶ月の完全な保護' : language === 'ko' ? '10개월 가격으로 12개월 완전 보호' : '12 months of full protection for the price of 10'}
                     </p>
                   </div>
                   {selectedInterval === 'annual' && (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
                   )}
                 </div>
               </button>
+
+              <div className="text-center pt-2">
+                <p className="text-xs" style={{ color: colors.textSecondary }}>
+                  {language === 'th' 
+                    ? 'อัปเกรดอย่างชาญฉลาด ประหยัด 17% การเรียกเก็บรายปีช่วยรักษาการป้องกันของคุณตลอดปีและลดการจัดการรายเดือน' 
+                    : language === 'zh' 
+                      ? '更智能升级。节省17%。年度计费锁定全年保护并减少每月管理。' 
+                      : language === 'ja' 
+                        ? 'よりスマートにアップグレード。17%節約。年間請求で1年間の保護をロックし、月次管理を削減。' 
+                        : language === 'ko' 
+                          ? '더 스마트하게 업그레이드하세요. 17% 절약. 연간 청구로 1년간 보호를 확보하고 월별 관리를 줄입니다.' 
+                          : 'Upgrade Smarter. Save 17%. Annual billing locks in your protection for the year and reduces monthly admin.'}
+                </p>
+              </div>
+            </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4" style={{ 
                 flexShrink: 0, 
@@ -4127,7 +4192,7 @@ export default function Account() {
                   }}
                   className="w-full sm:flex-1 btn-interaction"
                   style={{
-                    padding: '12px 16px',
+                    padding: '14px 18px',
                     borderRadius: '8px',
                     border: `2px solid ${colors.borderColor}`,
                     backgroundColor: colors.cardBg,
@@ -4137,7 +4202,11 @@ export default function Account() {
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                     whiteSpace: 'normal',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    minHeight: '48px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                   onMouseEnter={(e) => e.target.style.backgroundColor = colors.hoverBg}
                   onMouseLeave={(e) => e.target.style.backgroundColor = colors.cardBg}
@@ -4151,13 +4220,13 @@ export default function Account() {
                   }}
                   className="w-full sm:flex-1 btn-interaction"
                   style={{
-                    padding: '12px 16px',
+                    padding: '14px 18px',
                     borderRadius: '8px',
                     border: 'none',
                     backgroundColor: '#0C3B2E',
                     color: '#FFFFFF',
                     fontWeight: '700',
-                    fontSize: '14px',
+                    fontSize: '15px',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                     whiteSpace: 'normal',
@@ -4165,10 +4234,18 @@ export default function Account() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px'
+                    gap: '8px',
+                    minHeight: '48px',
+                    boxShadow: '0 4px 12px rgba(12,59,46,0.3)'
                   }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#0a2f25';
+                    e.target.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = '#0C3B2E';
+                    e.target.style.transform = 'translateY(0)';
+                  }}
                 >
                   {strings.proceedToCheckout}
                 </button>

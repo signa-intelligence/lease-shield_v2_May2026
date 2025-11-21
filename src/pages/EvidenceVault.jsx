@@ -1072,8 +1072,7 @@ function EvidenceVaultContent() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
-      <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-
+      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
         {/* Annotation Modal */}
         {annotatingDocument && (
           <DocumentAnnotation
@@ -1431,7 +1430,6 @@ function EvidenceVaultContent() {
                     haptic.medium();
                     setShowUploadDialog(true);
                   }}
-                  className="btn-press"
                   style={{
                     ...primaryCtaStyle,
                     padding: "10px 16px",
