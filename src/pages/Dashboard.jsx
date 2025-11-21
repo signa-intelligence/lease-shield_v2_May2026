@@ -32,6 +32,9 @@ function DashboardContent() {
     stats: true,
     quickActions: true,
     content: true,
+    recentLeases: false,
+    notifications: false,
+    depositAlerts: false,
   });
   const [showOnboarding, setShowOnboarding] = React.useState(false);
   const navigate = useNavigate();
@@ -1112,6 +1115,7 @@ function DashboardContent() {
   const strings = t[language] || t.en;
 
   const toggleSection = (section) => {
+    haptic.light();
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
@@ -2030,25 +2034,148 @@ function DashboardContent() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-                {isLoading ? (
-                  <SkeletonLoader variant="card" count={3} colors={colors} />
-                ) : (
-                  <>
-                    <RecentLeases leases={leases} language={language} />
-                    <NotificationSummary language={language} colors={colors} />
-                  </>
-                )}
-              </div>
-              <div>
-                {isLoading ? (
-                  <SkeletonLoader variant="card" colors={colors} />
-                ) : (
-                  <DepositAlert deposits={deposits} language={language} />
-                )}
-              </div>
-            </div>
+          <div className="space-y-4 sm:space-y-6 mb-8">
+            {isLoading ? (
+              <SkeletonLoader variant="card" count={3} colors={colors} />
+            ) : (
+              <>
+                {/* Recent Leases Section */}
+                <Card 
+                  className="border-none shadow-xl overflow-hidden"
+                  style={{ backgroundColor: colors.cardBg }}
+                >
+                  <div 
+                    className="cursor-pointer p-4 flex items-center justify-between border-b"
+                    style={{ borderBottomColor: colors.borderColor }}
+                    onClick={() => toggleSection('recentLeases')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        backgroundColor: '#3B82F6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <FileText className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                          {language === 'th' ? 'สัญญาเช่าล่าสุด' : language === 'zh' ? '最近的租约' : language === 'ja' ? '最近の賃貸契約' : language === 'ko' ? '최근 임대 계약' : 'Recent Leases'}
+                        </h3>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {leases.length} {language === 'th' ? 'รายการ' : language === 'zh' ? '项' : language === 'ja' ? '件' : language === 'ko' ? '항목' : 'items'}
+                        </p>
+                      </div>
+                    </div>
+                    {expandedSections.recentLeases ? (
+                      <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                    ) : (
+                      <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                    )}
+                  </div>
+                  {expandedSections.recentLeases && (
+                    <div className="p-4">
+                      <RecentLeases leases={leases} language={language} />
+                    </div>
+                  )}
+                </Card>
+
+                {/* Notifications Section */}
+                <Card 
+                  className="border-none shadow-xl overflow-hidden"
+                  style={{ backgroundColor: colors.cardBg }}
+                >
+                  <div 
+                    className="cursor-pointer p-4 flex items-center justify-between border-b"
+                    style={{ borderBottomColor: colors.borderColor }}
+                    onClick={() => toggleSection('notifications')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        backgroundColor: '#8B5CF6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Bell className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                          {language === 'th' ? 'การแจ้งเตือนของฉัน' : language === 'zh' ? '我的通知' : language === 'ja' ? 'マイ通知' : language === 'ko' ? '내 알림' : 'My Notifications'}
+                        </h3>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {unreadNotifications} {language === 'th' ? 'การแจ้งเตือน' : language === 'zh' ? '通知' : language === 'ja' ? '通知' : language === 'ko' ? '알림' : 'notifications'}
+                        </p>
+                      </div>
+                    </div>
+                    {expandedSections.notifications ? (
+                      <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                    ) : (
+                      <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                    )}
+                  </div>
+                  {expandedSections.notifications && (
+                    <div className="p-4">
+                      <NotificationSummary language={language} colors={colors} />
+                    </div>
+                  )}
+                </Card>
+
+                {/* Deposit Alerts Section */}
+                <Card 
+                  className="border-none shadow-xl overflow-hidden"
+                  style={{ backgroundColor: colors.cardBg }}
+                >
+                  <div 
+                    className="cursor-pointer p-4 flex items-center justify-between border-b"
+                    style={{ borderBottomColor: colors.borderColor }}
+                    onClick={() => toggleSection('depositAlerts')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        backgroundColor: '#10B981',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Wallet className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                          {language === 'th' ? 'การแจ้งเตือนเงินมัดจำ' : language === 'zh' ? '押金提醒' : language === 'ja' ? '敷金アラート' : language === 'ko' ? '보증금 알림' : 'Deposit Alerts'}
+                        </h3>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          {urgentDeposits > 0 
+                            ? `${urgentDeposits} ${language === 'th' ? 'การแจ้งเตือน' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'alerts'}`
+                            : (language === 'th' ? 'ทุกอย่างเรียบร้อย' : language === 'zh' ? '一切正常' : language === 'ja' ? 'すべて正常' : language === 'ko' ? '모두 정상' : 'All deposits on track')
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    {expandedSections.depositAlerts ? (
+                      <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                    ) : (
+                      <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                    )}
+                  </div>
+                  {expandedSections.depositAlerts && (
+                    <div className="p-4">
+                      <DepositAlert deposits={deposits} language={language} />
+                    </div>
+                  )}
+                </Card>
+              </>
+            )}
+          </div>
 
           {expandedSections.quickActions && (
             <div style={{
