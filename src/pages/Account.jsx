@@ -4197,12 +4197,12 @@ export default function Account() {
                     backgroundColor: colors.cardBg,
                     color: colors.textPrimary,
                     fontWeight: '600',
-                    fontSize: '14px',
+                    fontSize: '15px',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                     whiteSpace: 'normal',
                     textAlign: 'center',
-                    minHeight: '48px',
+                    minHeight: '52px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -4219,13 +4219,13 @@ export default function Account() {
                   }}
                   className="w-full sm:flex-1 btn-interaction"
                   style={{
-                    padding: '14px 18px',
-                    borderRadius: '8px',
+                    padding: '16px 20px',
+                    borderRadius: '10px',
                     border: 'none',
-                    backgroundColor: '#0C3B2E',
+                    backgroundColor: '#10B981',
                     color: '#FFFFFF',
                     fontWeight: '700',
-                    fontSize: '15px',
+                    fontSize: '16px',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                     whiteSpace: 'normal',
@@ -4234,19 +4234,29 @@ export default function Account() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    minHeight: '48px',
-                    boxShadow: '0 4px 12px rgba(12,59,46,0.3)'
+                    minHeight: '52px',
+                    boxShadow: '0 6px 16px rgba(16, 185, 129, 0.4)',
+                    lineHeight: '1.4'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#0a2f25';
-                    e.target.style.transform = 'translateY(-1px)';
+                    e.target.style.backgroundColor = '#059669';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 8px 20px rgba(16, 185, 129, 0.5)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#0C3B2E';
+                    e.target.style.backgroundColor = '#10B981';
                     e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
                   }}
                 >
-                  {strings.proceedToCheckout}
+                  <span style={{ 
+                    display: 'inline-block',
+                    color: '#FFFFFF',
+                    fontWeight: '700',
+                    fontSize: '16px'
+                  }}>
+                    {strings.proceedToCheckout}
+                  </span>
                 </button>
               </div>
             </div>
