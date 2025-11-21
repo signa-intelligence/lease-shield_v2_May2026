@@ -294,7 +294,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   CTA_COLOR,
-  CTA_COLOR_DISABLED
+  FEATURE_COLORS
 } from "../components/shared/featureTheme";
 
 function PropertyTrackerContent() {
@@ -527,9 +527,9 @@ function PropertyTrackerContent() {
     inputBg: '#374151',
     fieldBg: '#374151',
     hoverBg: '#3A3D40',
-    depositAccent: '#C7A338',
-    rentAccent: '#3B82F6',
-    maintenanceAccent: '#F59E0B'
+    depositAccent: FEATURE_COLORS.deposits.accent,
+    rentAccent: FEATURE_COLORS.rent.accent,
+    maintenanceAccent: FEATURE_COLORS.maintenance.accent
   } : {
     bg: '#F3F6F5',
     cardBg: '#FFFFFF',
@@ -539,12 +539,12 @@ function PropertyTrackerContent() {
     inputBg: '#FFFFFF',
     fieldBg: '#F8FAFC',
     hoverBg: '#F1F5F9',
-    depositAccent: '#C7A338',
-    rentAccent: '#3B82F6',
-    maintenanceAccent: '#F59E0B'
+    depositAccent: FEATURE_COLORS.deposits.accent,
+    rentAccent: FEATURE_COLORS.rent.accent,
+    maintenanceAccent: FEATURE_COLORS.maintenance.accent
   };
 
-  const maintenanceTheme = { accent: colors.maintenanceAccent };
+  const maintenanceTheme = { accent: FEATURE_COLORS.maintenance.accent };
 
   const t = {
     en: {

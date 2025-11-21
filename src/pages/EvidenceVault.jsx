@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -34,6 +33,8 @@ import {
   primaryCtaStyle,
   primaryCtaHover
 } from "../components/shared/featureTheme";
+
+const evidenceAccent = FEATURE_COLORS.evidence.accent;
 
 const DOC_TYPE_CONFIG = {
   lease: {
@@ -639,8 +640,6 @@ function EvidenceVaultContent() {
     borderColor: 'rgba(12,59,46,0.08)',
     inputBg: '#FFFFFF'
   };
-
-  const evidenceAccent = FEATURE_COLORS.evidence.accent;
 
   const strings = {
     en: {

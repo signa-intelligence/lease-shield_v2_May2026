@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -41,6 +40,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import PageHeader from "../components/shared/PageHeader";
+import { FEATURE_COLORS } from "../components/shared/featureTheme";
 
 export default function Timeline() {
   const navigate = useNavigate();
@@ -491,7 +491,7 @@ export default function Timeline() {
           title={strings.title}
           subtitle={strings.subtitle}
           icon={CalendarIcon}
-          iconColor="#0C3B2E"
+          iconColor={FEATURE_COLORS.leases.accent}
           showBack={true}
           backLabel={strings.back}
           onBack={() => navigate(createPageUrl("Dashboard"))}
@@ -503,7 +503,7 @@ export default function Timeline() {
                   onClick={() => setViewMode('upcoming')}
                   className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
                   style={{
-                    backgroundColor: viewMode === 'upcoming' ? '#0C3B2E' : 'transparent',
+                    backgroundColor: viewMode === 'upcoming' ? FEATURE_COLORS.leases.accent : 'transparent',
                     color: viewMode === 'upcoming' ? '#FFFFFF' : colors.textPrimary
                   }}
                 >
@@ -514,7 +514,7 @@ export default function Timeline() {
                   onClick={() => setViewMode('calendar')}
                   className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
                   style={{
-                    backgroundColor: viewMode === 'calendar' ? '#0C3B2E' : 'transparent',
+                    backgroundColor: viewMode === 'calendar' ? FEATURE_COLORS.leases.accent : 'transparent',
                     color: viewMode === 'calendar' ? '#FFFFFF' : colors.textPrimary
                   }}
                 >
@@ -525,7 +525,7 @@ export default function Timeline() {
                   onClick={() => setViewMode('list')}
                   className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
                   style={{
-                    backgroundColor: viewMode === 'list' ? '#0C3B2E' : 'transparent',
+                    backgroundColor: viewMode === 'list' ? FEATURE_COLORS.leases.accent : 'transparent',
                     color: viewMode === 'list' ? '#FFFFFF' : colors.textPrimary
                   }}
                 >
@@ -539,18 +539,18 @@ export default function Timeline() {
                   onClick={() => setSelectedTypes([])}
                   className="px-3 py-2 rounded-lg text-xs font-semibold transition-all"
                   style={{
-                    backgroundColor: selectedTypes.length === 0 ? '#0C3B2E' : colors.cardBg,
+                    backgroundColor: selectedTypes.length === 0 ? FEATURE_COLORS.leases.accent : colors.cardBg,
                     color: selectedTypes.length === 0 ? '#FFFFFF' : colors.textPrimary,
-                    border: `2px solid ${selectedTypes.length === 0 ? '#0C3B2E' : colors.borderColor}`
+                    border: `2px solid ${selectedTypes.length === 0 ? FEATURE_COLORS.leases.accent : colors.borderColor}`
                   }}
                 >
                   {strings.allTypes}
                 </button>
                 {[
-                  { key: 'lease', label: strings.leaseEvents, color: '#3B82F6' },
-                  { key: 'deposit', label: strings.depositEvents, color: '#C7A338' },
-                  { key: 'case', label: strings.caseEvents, color: '#8B5CF6' },
-                  { key: 'maintenance', label: strings.maintenanceEvents, color: '#F59E0B' }
+                  { key: 'lease', label: strings.leaseEvents, color: FEATURE_COLORS.leases.accent },
+                  { key: 'deposit', label: strings.depositEvents, color: FEATURE_COLORS.deposits.accent },
+                  { key: 'case', label: strings.caseEvents, color: FEATURE_COLORS.cases.accent },
+                  { key: 'maintenance', label: strings.maintenanceEvents, color: FEATURE_COLORS.maintenance.accent }
                 ].map(({ key, label, color }) => (
                   <button
                     key={key}
@@ -575,7 +575,7 @@ export default function Timeline() {
             <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <TrendingUp className="w-5 h-5 text-ls-forest" />
+                  <TrendingUp className="w-5 h-5" style={{ color: FEATURE_COLORS.leases.accent }} />
                   {strings.upcomingDeadlines}
                   <Badge className="bg-blue-100 text-blue-800">{strings.next30Days}</Badge>
                 </CardTitle>

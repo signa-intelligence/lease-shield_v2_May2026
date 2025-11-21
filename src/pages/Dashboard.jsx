@@ -24,7 +24,7 @@ import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
-import { getFeatureCardStyles } from "../components/shared/featureTheme";
+import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
 
 function DashboardContent() {
@@ -1957,7 +1957,7 @@ function DashboardContent() {
                         value: leases.length,
                         icon: FileText,
                         gradient: 'from-blue-500 to-blue-700',
-                        scoreColor: '#3B82F6',
+                        scoreColor: FEATURE_COLORS.leases.accent,
                         miniStats: [],
                         route: createPageUrl("UploadScan"),
                         label: strings.scanNewLease,
@@ -1967,7 +1967,7 @@ function DashboardContent() {
                         value: deposits.length,
                         icon: Wallet,
                         gradient: 'from-emerald-500 to-emerald-700',
-                        scoreColor: '#10B981',
+                        scoreColor: FEATURE_COLORS.deposits.accent,
                         miniStats: [
                           { label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }
                         ],
@@ -1979,7 +1979,7 @@ function DashboardContent() {
                         value: activeCases.length,
                         icon: Scale,
                         gradient: 'from-red-500 to-red-700',
-                        scoreColor: '#EF4444',
+                        scoreColor: FEATURE_COLORS.cases.accent,
                         miniStats: [],
                         route: createPageUrl("Cases"),
                         label: strings.openCase,
@@ -1989,7 +1989,7 @@ function DashboardContent() {
                         value: rentTrackedCount,
                         icon: Calendar,
                         gradient: 'from-amber-500 to-amber-700',
-                        scoreColor: '#F59E0B',
+                        scoreColor: FEATURE_COLORS.rent.accent,
                         miniStats: [
                           { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
                         ],
@@ -2001,7 +2001,7 @@ function DashboardContent() {
                         value: unreadNotifications,
                         icon: Bell,
                         gradient: 'from-purple-500 to-purple-700',
-                        scoreColor: '#8B5CF6',
+                        scoreColor: FEATURE_COLORS.notifications.accent,
                         miniStats: [],
                         route: createPageUrl("Timeline"),
                         label: strings.viewTimeline,
@@ -2011,7 +2011,7 @@ function DashboardContent() {
                         value: documents.length,
                         icon: FileText,
                         gradient: 'from-indigo-500 to-indigo-700',
-                        scoreColor: '#6366F1',
+                        scoreColor: FEATURE_COLORS.evidence.accent,
                         miniStats: [
                           { label: strings.totalFiles, value: documents.length }
                         ],
