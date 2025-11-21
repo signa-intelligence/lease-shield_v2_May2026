@@ -1816,8 +1816,8 @@ function PropertyTrackerContent() {
               onClick={() => toggleSection('rent')}
               style={{
                 background: isDarkMode
-                  ? `linear-gradient(to right, ${colors.cardBg}, #1E3A5F)`
-                  : `linear-gradient(to right, ${colors.cardBg}, #DBEAFE)`,
+                  ? `linear-gradient(to right, ${colors.cardBg}, rgba(245,158,11,0.15))`
+                  : `linear-gradient(to right, ${colors.cardBg}, #FFF3E0)`,
                 borderBottom: expandedSections.rent ? `1px solid ${colors.borderColor}` : 'none'
               }}
             >
@@ -1838,7 +1838,7 @@ function PropertyTrackerContent() {
                     <div className="text-lg font-bold">{strings.rentSection}</div>
                     {deposit?.rent_amount && deposit?.rent_due_day && (
                       <div className="text-sm font-normal mt-1">
-                        <Badge className="bg-blue-100 text-blue-800">
+                        <Badge style={{ backgroundColor: `${colors.rentAccent}20`, color: colors.rentAccent, border: `1px solid ${colors.rentAccent}` }}>
                           Day {deposit.rent_due_day} - ฿{deposit.rent_amount.toLocaleString()}
                         </Badge>
                       </div>
@@ -1882,8 +1882,10 @@ function PropertyTrackerContent() {
                         haptic.light();
                         setEditingRent(true);
                       }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                      style={{ minHeight: '44px' }}
+                      className="text-white"
+                      style={{ minHeight: '44px', backgroundColor: colors.rentAccent }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       {strings.addRent}
@@ -1951,8 +1953,10 @@ function PropertyTrackerContent() {
                       </Button>
                       <Button
                         onClick={handleRentSubmit}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                        style={{ minHeight: '44px' }}
+                        className="text-white"
+                        style={{ minHeight: '44px', backgroundColor: colors.rentAccent }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                       >
                         <Save className="w-4 h-4 mr-2" />
                         {strings.save}
@@ -1963,7 +1967,7 @@ function PropertyTrackerContent() {
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                       <div className="flex items-center gap-2 mb-2">
-                        <DollarSign className="w-4 h-4 text-blue-600" />
+                        <DollarSign className="w-4 h-4" style={{ color: colors.rentAccent }} />
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentAmount}</p>
                       </div>
                       <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
@@ -1972,7 +1976,7 @@ function PropertyTrackerContent() {
                     </div>
                     <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                       <div className="flex items-center gap-2 mb-2">
-                        <Calendar className="w-4 h-4 text-blue-600" />
+                        <Calendar className="w-4 h-4" style={{ color: colors.rentAccent }} />
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentDueDay}</p>
                       </div>
                       <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
@@ -1981,7 +1985,7 @@ function PropertyTrackerContent() {
                     </div>
                     <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                       <div className="flex items-center gap-2 mb-2">
-                        <Bell className="w-4 h-4 text-blue-600" />
+                        <Bell className="w-4 h-4" style={{ color: colors.rentAccent }} />
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.alertDaysBefore}</p>
                       </div>
                       <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
@@ -2006,8 +2010,8 @@ function PropertyTrackerContent() {
               onClick={() => toggleSection('maintenance')}
               style={{
                 background: isDarkMode
-                  ? `linear-gradient(to right, ${colors.cardBg}, #3A2D1C)`
-                  : `linear-gradient(to right, ${colors.cardBg}, #FFEDD5)`,
+                  ? `linear-gradient(to right, ${colors.cardBg}, rgba(249,168,37,0.15))`
+                  : `linear-gradient(to right, ${colors.cardBg}, #FFF8E1)`,
                 borderBottom: expandedSections.maintenance ? `1px solid ${colors.borderColor}` : 'none'
               }}
             >
@@ -2028,7 +2032,7 @@ function PropertyTrackerContent() {
                     <div className="text-lg font-bold">{strings.maintenanceSection}</div>
                     {activeRequests.length > 0 && (
                       <div className="text-sm font-normal mt-1">
-                        <Badge className="bg-orange-100 text-orange-800">
+                        <Badge style={{ backgroundColor: `${colors.maintenanceAccent}20`, color: colors.maintenanceAccent, border: `1px solid ${colors.maintenanceAccent}` }}>
                           {activeRequests.length} {strings.active}
                         </Badge>
                         {completedRequests.length > 0 && (
@@ -2483,9 +2487,11 @@ function PropertyTrackerContent() {
                         </Button>
                         <Button
                           onClick={editingMaintenance ? handleUpdateMaintenance : handleMaintenanceSubmit}
-                          className="bg-orange-600 hover:bg-orange-700"
+                          className="text-white"
                           disabled={uploadingPhotos}
-                          style={{ minHeight: '44px' }}
+                          style={{ minHeight: '44px', backgroundColor: colors.maintenanceAccent }}
+                          onMouseEnter={(e) => !uploadingPhotos && (e.currentTarget.style.opacity = '0.9')}
+                          onMouseLeave={(e) => !uploadingPhotos && (e.currentTarget.style.opacity = '1')}
                         >
                           {uploadingPhotos ? (
                             <>
