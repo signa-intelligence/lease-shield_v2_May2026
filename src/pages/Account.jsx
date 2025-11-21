@@ -221,6 +221,9 @@ export default function Account() {
   const [showBillingDialog, setShowBillingDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedInterval, setSelectedInterval] = useState('monthly');
+  const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
+  const [pendingDowngradePlan, setPendingDowngradePlan] = useState(null);
+  const [pendingDowngradeInterval, setPendingDowngradeInterval] = useState('monthly');
   
   // New state for two-step downgrade flow
   const [showDowngradeFlow, setShowDowngradeFlow] = useState(false);
@@ -450,9 +453,35 @@ export default function Account() {
     const plan = PLAN_DETAILS.find(p => p.key === planKey);
     if (!plan) return;
 
-    // Show billing interval dialog first
+    // Detect if this is an upgrade or downgrade
+    const currentPlanData = PLAN_DETAILS.find(p => p.key === planTier);
+    const targetPlanData = PLAN_DETAILS.find(p => p.key === planKey);
+    
+    const currentMonthlyPrice = currentPlanData?.priceMonthly || 0;
+    const targetMonthlyPrice = targetPlanData?.priceMonthly || 0;
+    
+    const isUpgrade = targetMonthlyPrice > currentMonthlyPrice;
+    const isDowngrade = targetMonthlyPrice < currentMonthlyPrice && !isFreePlan;
+
+    // If downgrading, show confirmation first
+    if (isDowngrade) {
+      setPendingDowngradePlan(planKey);
+      setPendingDowngradeInterval(interval || 'monthly');
+      setShowDowngradeConfirm(true);
+      return;
+    }
+
+    // Show billing interval dialog
     setSelectedPlan(planKey);
-    setSelectedInterval(interval || 'monthly');
+    // Pre-select annual for upgrades
+    setSelectedInterval(isUpgrade ? 'annual' : (interval || 'monthly'));
+    setShowBillingDialog(true);
+  };
+
+  const confirmDowngradeAndProceed = () => {
+    setShowDowngradeConfirm(false);
+    setSelectedPlan(pendingDowngradePlan);
+    setSelectedInterval(pendingDowngradeInterval);
     setShowBillingDialog(true);
   };
 
@@ -3916,18 +3945,107 @@ export default function Account() {
           )}
         </section>
 
+        {/* Downgrade Confirmation Dialog */}
+        <Dialog open={showDowngradeConfirm} onOpenChange={setShowDowngradeConfirm}>
+          <DialogContent 
+            className="modal-enter w-full max-w-lg" 
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor,
+              maxHeight: '85vh',
+              overflowY: 'auto'
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'กำลังคิดจะลดระดับ?' : language === 'zh' ? '考虑降级？' : language === 'ja' ? 'ダウングレードを検討中？' : language === 'ko' ? '다운그레이드를 고려 중이신가요?' : 'Thinking about downgrading?'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-sm" style={{ color: colors.textSecondary }}>
+                {language === 'th' ? 'หากคุณลดระดับ คุณจะสูญเสีย:' : language === 'zh' ? '如果您降级，您将失去：' : language === 'ja' ? 'ダウングレードすると、以下を失います：' : language === 'ko' ? '다운그레이드하면 다음을 잃게 됩니다:' : 'If you downgrade, you\'ll lose:'}
+              </p>
+              <ul className="space-y-2 text-sm" style={{ color: colors.textPrimary }}>
+                <li className="flex items-start gap-2">
+                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                  <span>{language === 'th' ? 'การสแกนสัญญาเพิ่มเติม' : language === 'zh' ? '额外租约扫描' : language === 'ja' ? '追加リーススキャン' : language === 'ko' ? '추가 임대 스캔' : 'Extra lease scans'}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                  <span>{language === 'th' ? 'การแจ้งเตือนขั้นสูงและการเตือนอัตโนมัติ' : language === 'zh' ? '高级提醒和通知' : language === 'ja' ? '高度なリマインダーと通知' : language === 'ko' ? '고급 알림 및 리마인더' : 'Advanced reminders & notifications'}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                  <span>{language === 'th' ? 'การติดตามเงินมัดจำและการซ่อมบำรุงแบบเต็มรูปแบบ' : language === 'zh' ? '完整押金和维护追踪' : language === 'ja' ? '完全な敷金とメンテナンス追跡' : language === 'ko' ? '완전한 보증금 및 유지보수 추적' : 'Full deposit & maintenance tracking'}</span>
+                </li>
+              </ul>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
+              <button
+                onClick={() => {
+                  haptic.light();
+                  setShowDowngradeConfirm(false);
+                  setPendingDowngradePlan(null);
+                }}
+                className="w-full sm:flex-1 btn-interaction"
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  border: `2px solid ${colors.borderColor}`,
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+              >
+                {language === 'th' ? 'รักษาการป้องกันปัจจุบัน' : language === 'zh' ? '保持当前保护' : language === 'ja' ? '現在の保護を維持' : language === 'ko' ? '현재 보호 유지' : 'Keep my current protection'}
+              </button>
+              <button
+                onClick={() => {
+                  haptic.medium();
+                  confirmDowngradeAndProceed();
+                }}
+                className="w-full sm:flex-1 btn-interaction"
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: '#EF4444',
+                  color: '#FFFFFF',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#DC2626'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#EF4444'}
+              >
+                {language === 'th' ? 'ลดระดับต่อไป' : language === 'zh' ? '继续降级' : language === 'ja' ? 'ダウングレードを続行' : language === 'ko' ? '다운그레이드 계속' : 'Downgrade anyway'}
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Billing Interval Selection Dialog */}
         <Dialog open={showBillingDialog} onOpenChange={setShowBillingDialog}>
-          <DialogContent className="sm:max-w-md" style={{
+          <DialogContent className="w-full max-w-lg" style={{
             backgroundColor: colors.cardBg,
-            borderColor: colors.borderColor
+            borderColor: colors.borderColor,
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
-            <DialogHeader>
+            <DialogHeader style={{ flexShrink: 0 }}>
               <DialogTitle style={{ color: colors.textPrimary }}>
                 {strings.chooseBillingInterval}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 mt-4" style={{ flex: 1 }}>
               <button
                 onClick={() => setSelectedInterval('monthly')}
                 style={{
@@ -3964,11 +4082,12 @@ export default function Account() {
                   width: '100%',
                   padding: '16px',
                   borderRadius: '12px',
-                  border: `2px solid ${selectedInterval === 'annual' ? '#C7A338' : colors.borderColor}`,
-                  backgroundColor: selectedInterval === 'annual' ? (isDarkMode ? 'rgba(199,163,56,0.15)' : '#FFFBEB') : colors.cardBg,
+                  border: `2px solid ${selectedInterval === 'annual' ? '#10B981' : colors.borderColor}`,
+                  backgroundColor: selectedInterval === 'annual' ? (isDarkMode ? 'rgba(16,185,129,0.15)' : '#ECFDF5') : colors.cardBg,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  textAlign: 'left'
+                  textAlign: 'left',
+                  boxShadow: selectedInterval === 'annual' ? '0 4px 12px rgba(16,185,129,0.2)' : 'none'
                 }}
               >
                 <div className="flex items-start justify-between mb-2">
@@ -3977,7 +4096,7 @@ export default function Account() {
                       <p className="font-bold text-base" style={{ color: colors.textPrimary }}>
                         {strings.payAnnually}
                       </p>
-                      <Badge className="bg-emerald-500 text-white text-xs">
+                      <Badge className="bg-emerald-500 text-white text-xs font-bold">
                         {strings.bestValueBadge}
                       </Badge>
                     </div>
@@ -3986,30 +4105,73 @@ export default function Account() {
                         ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceAnnual}/year` 
                         : '—'}
                     </p>
-                    <p className="text-xs mt-1" style={{ color: '#C7A338', fontWeight: '600' }}>
-                      {strings.annualSavings}
+                    <p className="text-xs mt-1 font-semibold" style={{ color: '#10B981' }}>
+                      {language === 'th' ? 'ประหยัด 17% เมื่อชำระรายปี' : language === 'zh' ? '年付节省17%' : language === 'ja' ? '年払いで17%節約' : language === 'ko' ? '연간 결제 시 17% 절약' : 'Save 17% when you pay yearly'}
                     </p>
                   </div>
                   {selectedInterval === 'annual' && (
-                    <CheckCircle2 className="w-5 h-5 text-ls-gold" />
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   )}
                 </div>
               </button>
 
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowBillingDialog(false)}
-                  className="flex-1"
+              <div className="flex flex-col sm:flex-row gap-3 pt-4" style={{ 
+                flexShrink: 0, 
+                borderTop: `1px solid ${colors.borderColor}`,
+                paddingTop: '16px' 
+              }}>
+                <button
+                  onClick={() => {
+                    haptic.light();
+                    setShowBillingDialog(false);
+                  }}
+                  className="w-full sm:flex-1 btn-interaction"
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    border: `2px solid ${colors.borderColor}`,
+                    backgroundColor: colors.cardBg,
+                    color: colors.textPrimary,
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'normal',
+                    textAlign: 'center'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = colors.hoverBg}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = colors.cardBg}
                 >
                   {strings.cancel}
-                </Button>
-                <Button
-                  onClick={confirmSubscribe}
-                  className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
+                </button>
+                <button
+                  onClick={() => {
+                    haptic.medium();
+                    confirmSubscribe();
+                  }}
+                  className="w-full sm:flex-1 btn-interaction"
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF',
+                    fontWeight: '700',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'normal',
+                    textAlign: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0a2f25'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                 >
                   {strings.proceedToCheckout}
-                </Button>
+                </button>
               </div>
             </div>
           </DialogContent>

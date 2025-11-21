@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -501,23 +500,33 @@ export default function Layout({ children, currentPageName }) {
               </button>
             </Link>
             <LanguageToggle />
-            {user && (!user.plan_tier || user.plan_tier === 'free') && (
+            {user && user.plan_tier !== 'secure' && (
               <Link to={createPageUrl("Account") + '?showPlans=true'}>
                 <button
                   aria-label="Upgrade"
                   onClick={() => haptic.medium()}
-                  className="btn-interaction"
+                  className="btn-interaction hidden sm:inline-flex"
                   style={{
-                    padding: '6px 12px',
+                    padding: '6px 14px',
                     borderRadius: 9999,
-                    backgroundColor: '#0C3B2E',
+                    backgroundColor: '#10B981',
                     color: '#FFFFFF',
-                    border: '2px solid #C7A338',
+                    border: '2px solid #10B981',
                     fontWeight: 700,
                     fontSize: '0.75rem',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(12,59,46,0.3)',
+                    boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
                     whiteSpace: 'nowrap',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#059669';
+                    e.target.style.borderColor = '#059669';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = '#10B981';
+                    e.target.style.borderColor = '#10B981';
                   }}
                 >
                   {strings.upgrade}
