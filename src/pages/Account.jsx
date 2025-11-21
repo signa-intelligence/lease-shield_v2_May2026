@@ -4178,7 +4178,6 @@ export default function Account() {
                           : 'Upgrade Smarter. Save 17%. Annual billing locks in your protection for the year and reduces monthly admin.'}
                 </p>
               </div>
-            </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4" style={{ 
                 flexShrink: 0, 
