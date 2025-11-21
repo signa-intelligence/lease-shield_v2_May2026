@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1271,7 +1270,7 @@ function PropertyTrackerContent() {
             backTo={createPageUrl("Dashboard")}
           />
 
-          <div className="flex items-center gap-2 flex-wrap justify-end mb-6">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:justify-end mb-6">
             <button
               type="button"
               onClick={() => {
@@ -1279,7 +1278,8 @@ function PropertyTrackerContent() {
                 setEditingDeposit(true);
                 setExpandedSections(prev => ({ ...prev, deposit: true }));
               }}
-              style={baseCtaStyle}
+              style={{ ...baseCtaStyle, width: '100%' }}
+              className="md:w-auto"
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-1px)";
                 e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
@@ -1300,7 +1300,8 @@ function PropertyTrackerContent() {
                 setEditingRent(true);
                 setExpandedSections(prev => ({ ...prev, rent: true }));
               }}
-              style={baseCtaStyle}
+              style={{ ...baseCtaStyle, width: '100%' }}
+              className="md:w-auto"
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-1px)";
                 e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
@@ -1335,7 +1336,8 @@ function PropertyTrackerContent() {
                 setVideoFiles([]);
                 setExpandedSections(prev => ({ ...prev, maintenance: true }));
               }}
-              style={baseCtaStyle}
+              style={{ ...baseCtaStyle, width: '100%' }}
+              className="md:w-auto"
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-1px)";
                 e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
