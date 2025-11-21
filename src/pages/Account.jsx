@@ -218,7 +218,6 @@ export default function Account() {
   const [copiedLink, setCopiedLink] = useState(null);
   const [buyingCredits, setBuyingCredits] = useState({});
   const [showMoreOptions, setShowMoreOptions] = useState(false);
-  const [showManagePlanPanel, setShowManagePlanPanel] = useState(false);
   const [showBillingDialog, setShowBillingDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedInterval, setSelectedInterval] = useState('monthly');
@@ -580,7 +579,6 @@ export default function Account() {
   // Opens Step 1 of downgrade flow (retention screen)
   const handleDowngradeOrCancel = () => {
     haptic.medium();
-    setShowManagePlanPanel(false); // Close manage plan panel
     setDowngradeStep(1);
     setDowngradeReason('');
     setDowngradeFeedback('');
