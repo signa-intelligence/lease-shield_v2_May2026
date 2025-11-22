@@ -943,6 +943,21 @@ function PropertyTrackerContent() {
     await queryClient.invalidateQueries({ queryKey: ['maintenance'] });
   };
 
+  const scrollToSection = (sectionId) => {
+    // Calculate fixed header height (top bar is ~64px) + small margin
+    const headerOffset = 80;
+    
+    setTimeout(() => {
+      const el = document.getElementById(sectionId);
+      if (!el) return;
+      
+      const rect = el.getBoundingClientRect();
+      const offsetTop = window.scrollY + rect.top - headerOffset;
+      
+      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+    }, 100);
+  };
+
   // Handle hash-based section navigation
   useEffect(() => {
     if (!location.hash) return;
@@ -1544,6 +1559,7 @@ function PropertyTrackerContent() {
                 haptic.medium();
                 setEditingDeposit(true);
                 setExpandedSections(prev => ({ ...prev, deposit: true }));
+                scrollToSection('deposit-section');
               }}
               style={{ ...baseCtaStyle, width: '100%' }}
               className="md:w-auto"
@@ -1566,9 +1582,7 @@ function PropertyTrackerContent() {
                 haptic.medium();
                 setEditingRent(true);
                 setExpandedSections(prev => ({ ...prev, rent: true }));
-                setTimeout(() => {
-                  document.getElementById('rent-schedule-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
+                scrollToSection('rent-schedule-section');
               }}
               style={{ ...baseCtaStyle, width: '100%' }}
               className="md:w-auto"
@@ -1605,6 +1619,7 @@ function PropertyTrackerContent() {
                 setVoiceFiles([]);
                 setVideoFiles([]);
                 setExpandedSections(prev => ({ ...prev, maintenance: true }));
+                scrollToSection('maintenance-section');
               }}
               style={{ ...baseCtaStyle, width: '100%' }}
               className="md:w-auto"
@@ -1622,7 +1637,7 @@ function PropertyTrackerContent() {
             </button>
           </div>
 
-          <Card ref={depositRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
+          <Card id="deposit-section" ref={depositRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
             <CardHeader
               className="cursor-pointer"
               onClick={() => toggleSection('deposit')}
@@ -2014,7 +2029,7 @@ function PropertyTrackerContent() {
             )}
           </Card>
 
-          <Card ref={maintenanceRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.maintenanceAccent}` }}>
+          <Card id="maintenance-section" ref={maintenanceRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.maintenanceAccent}` }}>
             <CardHeader
               className="cursor-pointer"
               onClick={() => toggleSection('maintenance')}
@@ -2166,7 +2181,6 @@ function PropertyTrackerContent() {
                         icon={Wrench}
                         colors={colors}
                         required
-                        autoFocus
                       />
 
                       <MobileFormInput
