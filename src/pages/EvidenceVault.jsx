@@ -1480,9 +1480,9 @@ function EvidenceVaultContent() {
           }}
           title={strings.uploadDocument}
           colors={colors}
-          maxHeight="85vh"
+          maxHeight="90vh"
         >
-          <div className="space-y-4 pb-4">
+          <div className="space-y-4" style={{ paddingBottom: '100px' }}>
             {uploading ? (
               <UploadProgress
                 currentStage={uploadStage}
@@ -1704,19 +1704,20 @@ function EvidenceVaultContent() {
                   />
                   <label htmlFor="bottomsheet-file-upload">
                     <div
-                      className="border-2 border-dashed rounded-xl p-8 text-center transition-colors active:scale-[0.98]"
+                      className="border-2 border-dashed rounded-xl text-center transition-colors active:scale-[0.98]"
                       style={{
                         borderColor: colors.borderColor,
                         backgroundColor: colors.uploadBg,
                         cursor: uploading ? 'not-allowed' : 'pointer',
-                        minHeight: '120px'
+                        padding: '16px',
+                        minHeight: '100px'
                       }}
                     >
-                      <Upload className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary }} />
-                      <p className="font-semibold mb-1 text-sm" style={{ color: colors.textPrimary }}>
+                      <Upload className="w-10 h-10 mx-auto mb-2" style={{ color: colors.textSecondary }} />
+                      <p className="font-semibold text-xs leading-tight" style={{ color: colors.textPrimary }}>
                         {strings.selectFiles}
                       </p>
-                      <p className="text-xs" style={{ color: colors.textSecondary }}>
+                      <p className="text-xs mt-1 leading-tight" style={{ color: colors.textSecondary }}>
                         {strings.supportedFormats}
                       </p>
                     </div>
@@ -1752,13 +1753,24 @@ function EvidenceVaultContent() {
                   </div>
                 )}
 
-                <div className="flex gap-3 pt-4">
+                {/* Sticky button footer */}
+                <div 
+                  className="fixed left-0 right-0 flex gap-3 p-4 border-t"
+                  style={{ 
+                    bottom: 'max(env(safe-area-inset-bottom, 0px), 80px)',
+                    backgroundColor: colors.cardBg,
+                    borderTopColor: colors.borderColor,
+                    zIndex: 10
+                  }}
+                >
                   <Button
                     variant="outline"
                     onClick={() => {
                       haptic.light();
                       setShowUploadDialog(false);
                       setUploadFiles([]);
+                      setVoiceFiles([]);
+                      setVideoFiles([]);
                       setCompressionStats(null);
                     }}
                     disabled={uploading}
