@@ -1782,18 +1782,28 @@ function EvidenceVaultContent() {
                   <Button
                     onClick={handleUpload}
                     disabled={uploading || (uploadFiles.length === 0 && voiceFiles.length === 0 && videoFiles.length === 0)}
-                    className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
-                    style={{ minHeight: '48px' }}
+                    className="flex-1"
+                    style={{ 
+                      minHeight: '48px',
+                      backgroundColor: '#0C3B2E',
+                      color: '#FFFFFF',
+                      fontWeight: '600',
+                      fontSize: '15px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
                   >
                     {uploading ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {strings.uploading}
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span style={{ color: '#FFFFFF' }}>{strings.uploading}</span>
                       </>
                     ) : (
                       <>
-                        <Upload className="w-4 h-4 mr-2" />
-                        {strings.uploadButton}
+                        <Upload className="w-4 h-4" />
+                        <span style={{ color: '#FFFFFF' }}>{strings.uploadButton}</span>
                       </>
                     )}
                   </Button>
