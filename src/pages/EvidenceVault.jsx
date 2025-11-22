@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye, Download, Edit2, Send, CheckCircle2 } from "lucide-react";
+import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye, Download, Edit2, Send, CheckCircle2, Mic } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -112,6 +112,12 @@ function EvidenceVaultContent() {
   const [compressionStats, setCompressionStats] = useState(null);
   const [uploadStage, setUploadStage] = useState('');
   const [uploadProgressPercent, setUploadProgressPercent] = useState(0);
+
+  // Voice/Video states
+  const [voiceFiles, setVoiceFiles] = useState([]);
+  const [videoFiles, setVideoFiles] = useState([]);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeModalType, setUpgradeModalType] = useState(''); // 'video'
 
   // Existing states for document management
   const [selectedDocs, setSelectedDocs] = useState([]);
@@ -257,8 +263,98 @@ function EvidenceVaultContent() {
     e.target.value = null; // Clear input so same file can be selected again
   };
 
+  const handleVideoClick = () => {
+    if (!isSecureTier) {
+      setUpgradeModalType('video');
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    if (videoFiles.length >= 3) {
+      toast.error(strings.maxVideoReached);
+      return;
+    }
+
+    document.getElementById('video-evidence-input').click();
+  };
+
+  const handleVoiceClick = () => {
+    if (voiceFiles.length >= 3) {
+      toast.error(strings.maxVoiceReached);
+      return;
+    }
+
+    document.getElementById('voice-evidence-input').click();
+  };
+
+  const handleVoiceSelection = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const validFiles = files.filter(f => {
+      const isAudio = f.type.startsWith('audio/');
+      const isUnder5MB = f.size <= 5 * 1024 * 1024;
+
+      if (!isAudio) {
+        toast.error(language === 'th' ? 'กรุณาเลือกไฟล์เสียงเท่านั้น' : 'Please select audio files only');
+        return false;
+      }
+
+      if (!isUnder5MB) {
+        toast.error(`${strings.fileTooLarge}: ${f.name} - ${strings.voiceMaxSize}`);
+        return false;
+      }
+
+      return true;
+    });
+
+    const remaining = 3 - voiceFiles.length;
+    const toAdd = validFiles.slice(0, remaining);
+
+    setVoiceFiles(prev => [...prev, ...toAdd]);
+    haptic.light();
+  };
+
+  const handleVideoSelection = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const validFiles = files.filter(f => {
+      const isVideo = f.type.startsWith('video/');
+      const isUnder80MB = f.size <= 80 * 1024 * 1024;
+
+      if (!isVideo) {
+        toast.error(language === 'th' ? 'กรุณาเลือกไฟล์วิดีโอเท่านั้น' : 'Please select video files only');
+        return false;
+      }
+
+      if (!isUnder80MB) {
+        toast.error(`${strings.fileTooLarge}: ${f.name} - ${strings.videoMaxSize}`);
+        return false;
+      }
+
+      return true;
+    });
+
+    const remaining = 3 - videoFiles.length;
+    const toAdd = validFiles.slice(0, remaining);
+
+    setVideoFiles(prev => [...prev, ...toAdd]);
+    haptic.light();
+  };
+
+  const handleRemoveVoice = (index) => {
+    haptic.light();
+    setVoiceFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveVideo = (index) => {
+    haptic.light();
+    setVideoFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleUpload = async () => {
-    if (uploadFiles.length === 0) {
+    if (uploadFiles.length === 0 && voiceFiles.length === 0 && videoFiles.length === 0) {
       setError(strings.selectFile);
       return;
     }
@@ -293,26 +389,34 @@ function EvidenceVaultContent() {
         setCompressionStats(stats);
       }
 
-      // Upload compressed files (40-70%)
+      // Upload all files (40-70%)
       setUploadStage('uploadingFiles');
       setUploadProgressPercent(40);
 
-      const uploadPromises = compressedFiles.map(file =>
+      const allFilesToUpload = [...compressedFiles, ...voiceFiles, ...videoFiles];
+      const uploadPromises = allFilesToUpload.map(file =>
         base44.integrations.Core.UploadFile({ file })
       );
 
       const results = await Promise.all(uploadPromises);
-      setUploadProgressPercent(70); // After all files uploaded
+      setUploadProgressPercent(70);
 
       // Save documents (70-100%)
       setUploadStage('savingDocuments');
-      const createPromises = results.map((result) =>
-        createDocumentMutation.mutateAsync({
-          type: uploadType,
+      const createPromises = results.map((result, idx) => {
+        let docType = uploadType;
+        if (idx >= compressedFiles.length && idx < compressedFiles.length + voiceFiles.length) {
+          docType = 'other'; // Voice notes saved as 'other'
+        } else if (idx >= compressedFiles.length + voiceFiles.length) {
+          docType = 'video';
+        }
+
+        return createDocumentMutation.mutateAsync({
+          type: docType,
           file_url: result.file_url,
-          label: uploadLabel || `${uploadType} - ${new Date().toLocaleDateString()}`,
-        })
-      );
+          label: uploadLabel || `${docType} - ${new Date().toLocaleDateString()}`,
+        });
+      });
 
       await Promise.all(createPromises);
       setUploadProgressPercent(100);
@@ -320,6 +424,8 @@ function EvidenceVaultContent() {
       // Query invalidation and haptic.success are handled by createDocumentMutation's onSuccess
       setShowUploadDialog(false);
       setUploadFiles([]);
+      setVoiceFiles([]);
+      setVideoFiles([]);
       setUploadType('photo'); // Reset to default
       setUploadLabel(''); // Clear custom label
       toast.success(strings.uploadSuccess);
@@ -620,6 +726,7 @@ function EvidenceVaultContent() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
+  const isSecureTier = userTier === 'secure';
   const storageLimits = getStorageLimits();
   const storageCheck = canUploadFiles(0);
 
@@ -711,7 +818,19 @@ function EvidenceVaultContent() {
       downloadFailed: "Failed to download file",
       noEvidenceTitle: "No evidence uploaded yet",
       noEvidenceDescription: "Upload photos, videos and documents now so you have a time-stamped record if there's a dispute later.",
-      upgradeVaultStorage: "Upgrade for full vault storage"
+      upgradeVaultStorage: "Upgrade for full vault storage",
+      addVoiceNote: "Add Voice Note",
+      addVideo: "Add Video (Secure required)",
+      voiceNotesAdded: "voice note(s)",
+      videosAdded: "video(s)",
+      upgradeToSecureVideo: "Upgrade to Secure for video evidence",
+      upgradeToSecureVideoDesc: "Secure members can upload videos for stronger dispute cases.",
+      upgradeToSecure: "Upgrade to Secure",
+      maxVoiceReached: "Maximum 3 voice notes",
+      maxVideoReached: "Maximum 3 videos",
+      fileTooLarge: "File too large",
+      voiceMaxSize: "Voice notes must be under 5MB",
+      videoMaxSize: "Videos must be under 80MB"
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -782,7 +901,19 @@ function EvidenceVaultContent() {
       downloadFailed: "ไม่สามารถดาวน์โหลดไฟล์ได้",
       noEvidenceTitle: "ยังไม่มีหลักฐานที่อัปโหลด",
       noEvidenceDescription: "อัปโหลดรูปภาพ วิดีโอ และเอกสารตอนนี้ เพื่อให้คุณมีบันทึกพร้อมประทับเวลาหากเกิดข้อพิพาทในภายหลัง",
-      upgradeVaultStorage: "อัปเกรดเพื่อจัดเก็บคลังข้อมูลเต็มรูปแบบ"
+      upgradeVaultStorage: "อัปเกรดเพื่อจัดเก็บคลังข้อมูลเต็มรูปแบบ",
+      addVoiceNote: "เพิ่มบันทึกเสียง",
+      addVideo: "เพิ่มวิดีโอ (ต้องการ Secure)",
+      voiceNotesAdded: "บันทึกเสียง",
+      videosAdded: "วิดีโอ",
+      upgradeToSecureVideo: "อัปเกรดเป็น Secure สำหรับหลักฐานวิดีโอ",
+      upgradeToSecureVideoDesc: "สมาชิก Secure สามารถอัปโหลดวิดีโอเพื่อสร้างหลักฐานที่แข็งแกร่งยิ่งขึ้น",
+      upgradeToSecure: "อัปเกรดเป็น Secure",
+      maxVoiceReached: "สูงสุด 3 บันทึกเสียง",
+      maxVideoReached: "สูงสุด 3 วิดีโอ",
+      fileTooLarge: "ไฟล์ใหญ่เกินไป",
+      voiceMaxSize: "บันทึกเสียงต้องน้อยกว่า 5MB",
+      videoMaxSize: "วิดีโอต้องน้อยกว่า 80MB"
     },
     zh: {
       back: "返回仪表板",
@@ -1226,12 +1357,78 @@ function EvidenceVaultContent() {
           />
         )}
 
+        {/* Upgrade Modal */}
+        <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+          <DialogContent
+            className="modal-enter"
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor,
+              maxWidth: '500px',
+              width: '95vw',
+              maxHeight: '90vh'
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3 text-lg" style={{ color: colors.textPrimary }}>
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: '#EF4444' }}
+                >
+                  <FileVideo className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  {strings.upgradeToSecureVideo}
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="mt-4">
+              <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
+                {strings.upgradeToSecureVideoDesc}
+              </p>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    haptic.light();
+                    setShowUpgradeModal(false);
+                  }}
+                  className="flex-1"
+                  style={{ minHeight: '44px' }}
+                >
+                  {strings.cancel}
+                </Button>
+                <Link
+                  to={createPageUrl("Account") + '?showPlans=true'}
+                  className="flex-1"
+                >
+                  <Button
+                    onClick={() => haptic.medium()}
+                    className="w-full"
+                    style={{
+                      backgroundColor: '#0C3B2E',
+                      color: '#FFFFFF',
+                      minHeight: '44px'
+                    }}
+                  >
+                    {strings.upgradeToSecure}
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Upload Bottom Sheet - REPLACING Dialog */}
         <BottomSheet
           open={showUploadDialog}
           onClose={() => {
             setShowUploadDialog(false);
             setUploadFiles([]);
+            setVoiceFiles([]);
+            setVideoFiles([]);
             setCompressionStats(null);
             setError(null);
             setUploadType('photo'); // Reset type to default
@@ -1311,6 +1508,146 @@ function EvidenceVaultContent() {
                   colors={colors}
                 />
 
+                {/* Voice/Video Upload Buttons */}
+                <div className="flex gap-2 flex-wrap">
+                  <input
+                    id="voice-evidence-input"
+                    type="file"
+                    accept="audio/*"
+                    multiple
+                    onChange={handleVoiceSelection}
+                    className="hidden"
+                  />
+                  <input
+                    id="video-evidence-input"
+                    type="file"
+                    accept="video/*"
+                    multiple
+                    onChange={handleVideoSelection}
+                    className="hidden"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleVoiceClick}
+                    className="btn-interaction"
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      border: `2px solid #8B5CF6`,
+                      backgroundColor: isDarkMode ? '#4C1D95' : '#F3E8FF',
+                      color: '#8B5CF6',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s',
+                      minHeight: '40px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#8B5CF6';
+                      e.currentTarget.style.color = '#FFFFFF';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = isDarkMode ? '#4C1D95' : '#F3E8FF';
+                      e.currentTarget.style.color = '#8B5CF6';
+                    }}
+                  >
+                    <Mic className="w-4 h-4" />
+                    {strings.addVoiceNote}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleVideoClick}
+                    disabled={!isSecureTier}
+                    className="btn-interaction"
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      border: `2px solid ${!isSecureTier ? colors.borderColor : '#EF4444'}`,
+                      backgroundColor: !isSecureTier ? colors.fieldBg : (isDarkMode ? '#7F1D1D' : '#FEE2E2'),
+                      color: !isSecureTier ? colors.textSecondary : '#EF4444',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      cursor: !isSecureTier ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      opacity: !isSecureTier ? 0.6 : 1,
+                      transition: 'all 0.2s',
+                      minHeight: '40px'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (isSecureTier) {
+                        e.currentTarget.style.backgroundColor = '#EF4444';
+                        e.currentTarget.style.color = '#FFFFFF';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (isSecureTier) {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? '#7F1D1D' : '#FEE2E2';
+                        e.currentTarget.style.color = '#EF4444';
+                      }
+                    }}
+                  >
+                    <FileVideo className="w-4 h-4" />
+                    {strings.addVideo}
+                  </button>
+                </div>
+
+                {/* Voice Notes Preview */}
+                {voiceFiles.length > 0 && (
+                  <div>
+                    <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                      {voiceFiles.length} {strings.voiceNotesAdded}
+                    </p>
+                    <div className="space-y-2">
+                      {voiceFiles.map((file, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: colors.inputBg, border: `1px solid ${colors.borderColor}` }}>
+                          <Mic className="w-4 h-4 text-purple-600" />
+                          <span className="text-xs flex-1 truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVoice(index)}
+                            className="text-red-600"
+                            style={{ minWidth: '24px', minHeight: '24px' }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Videos Preview */}
+                {videoFiles.length > 0 && (
+                  <div>
+                    <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                      {videoFiles.length} {strings.videosAdded}
+                    </p>
+                    <div className="space-y-2">
+                      {videoFiles.map((file, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: colors.inputBg, border: `1px solid ${colors.borderColor}` }}>
+                          <FileVideo className="w-4 h-4 text-red-600" />
+                          <span className="text-xs flex-1 truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVideo(index)}
+                            className="text-red-600"
+                            style={{ minWidth: '24px', minHeight: '24px' }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <input
                     type="file"
@@ -1388,7 +1725,7 @@ function EvidenceVaultContent() {
                   </Button>
                   <Button
                     onClick={handleUpload}
-                    disabled={uploading || uploadFiles.length === 0}
+                    disabled={uploading || (uploadFiles.length === 0 && voiceFiles.length === 0 && videoFiles.length === 0)}
                     className="flex-1 bg-ls-forest hover:bg-ls-forest/90"
                     style={{ minHeight: '48px' }}
                   >
