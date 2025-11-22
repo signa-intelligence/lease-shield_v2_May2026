@@ -12,6 +12,7 @@ export default function SwipeToDelete({
   onDelete, 
   onArchive, 
   onComplete,
+  deleteLabel = 'Delete',
   language = 'en',
   colors,
   disabled = false
