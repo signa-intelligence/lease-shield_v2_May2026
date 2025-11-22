@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1495,7 +1494,7 @@ export default function UploadScanPage() {
                       <input
                         type="file"
                         multiple
-                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg" // Added image/* explicit types
+                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg"
                         onChange={handleFileSelect}
                         className="hidden"
                         disabled={!scanStatus.allowed}
@@ -1517,6 +1516,7 @@ export default function UploadScanPage() {
                         type="file"
                         multiple
                         accept="image/*"
+                        capture="environment"
                         onChange={handleFileSelect}
                         className="hidden"
                         disabled={!scanStatus.allowed}
