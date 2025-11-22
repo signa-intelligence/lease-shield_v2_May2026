@@ -2271,12 +2271,15 @@ export default function Account() {
                         {strings.allActive}
                       </p>
                     </div>
-                    {/* This condition will be true for Lite, Protect, Secure */}
-                    {(isLitePlan || isProtectPlan || isSecurePlan) && (
+                    {/* LINE reminders feature - only show for Protect and Secure */}
+                    {(isProtectPlan || isSecurePlan) && (
                       <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
                         <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
                           <Bell className="w-3 h-3 text-ls-gold" />
-                          {strings.lineEnabled}
+                          {user?.line_messaging_token 
+                            ? (language === 'th' ? 'การแจ้งเตือน LINE เปิดใช้งาน' : language === 'zh' ? 'LINE提醒已启用' : language === 'ja' ? 'LINEリマインダーが有効' : language === 'ko' ? 'LINE 알림 활성화됨' : 'LINE reminders enabled')
+                            : (language === 'th' ? 'การแจ้งเตือน LINE พร้อมใช้งาน' : language === 'zh' ? 'LINE提醒可用' : language === 'ja' ? 'LINEリマインダー利用可能' : language === 'ko' ? 'LINE 알림 사용 가능' : 'LINE reminders available')
+                          }
                         </p>
                       </div>
                     )}
@@ -3877,6 +3880,29 @@ export default function Account() {
                           }}
                         >
                           {strings.currentPlanBadge}
+                        </Button>
+                      ) : isFreeplanLocal && !isFreePlan ? (
+                        <Button
+                          onClick={() => {
+                            haptic.medium();
+                            handleDowngradeOrCancel();
+                          }}
+                          className="w-full h-10 text-sm btn-interaction"
+                          style={{
+                            backgroundColor: 'transparent',
+                            color: '#EF4444',
+                            cursor: 'pointer',
+                            border: `2px solid #EF4444`,
+                            fontWeight: '600'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(239,68,68,0.1)' : '#FEE2E2';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          {strings.downgradeToFree}
                         </Button>
                       ) : isFreeplanLocal ? (
                         <Button
