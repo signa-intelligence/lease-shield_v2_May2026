@@ -4,12 +4,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, CheckCircle2, Clock, ExternalLink, Copy, Loader2 } from "lucide-react";
+import { MessageSquare, CheckCircle2, Clock, ExternalLink, Copy, Loader2, TrendingUp } from "lucide-react";
 
 export default function LineConnectionStatus({ user, colors }) {
   const [copiedLink, setCopiedLink] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const queryClient = useQueryClient();
+  
+  const userTier = user?.plan_tier || 'free';
+  const lineFeatureAvailable = ['protect', 'secure'].includes(userTier);
 
   const checkConnectionMutation = useMutation({
     mutationFn: async () => {
@@ -48,7 +51,11 @@ export default function LineConnectionStatus({ user, colors }) {
       scanQR: 'Scan this QR with LINE app',
       orUseLink: 'Or click the link above',
       checkConnection: 'Check Connection',
-      checking: 'Checking...'
+      checking: 'Checking...',
+      upgradeRequired: 'Upgrade to Protect or Secure',
+      lineUpsellText: 'LINE notifications (lease deadlines, deposit returns, rent reminders, maintenance updates) are available on Protect and Secure plans.',
+      upgradeToUnlock: 'Upgrade to unlock LINE reminders',
+      viewPlans: 'View plans'
     },
     th: {
       title: 'การแจ้งเตือน LINE',
@@ -71,7 +78,11 @@ export default function LineConnectionStatus({ user, colors }) {
       scanQR: 'สแกน QR ด้วยแอป LINE',
       orUseLink: 'หรือคลิกลิงก์ด้านบน',
       checkConnection: 'ตรวจสอบการเชื่อมต่อ',
-      checking: 'กำลังตรวจสอบ...'
+      checking: 'กำลังตรวจสอบ...',
+      upgradeRequired: 'อัปเกรดเป็น Protect หรือ Secure',
+      lineUpsellText: 'การแจ้งเตือน LINE (กำหนดสัญญาเช่า, การคืนเงินมัดจำ, การชำระค่าเช่า, อัปเดตการซ่อม) พร้อมใช้งานในแผน Protect และ Secure',
+      upgradeToUnlock: 'อัปเกรดเพื่อปลดล็อกการแจ้งเตือน LINE',
+      viewPlans: 'ดูแผน'
     },
     zh: {
       title: 'LINE通知',
@@ -94,7 +105,11 @@ export default function LineConnectionStatus({ user, colors }) {
       scanQR: '用LINE应用扫描此二维码',
       orUseLink: '或点击上面的链接',
       checkConnection: '检查连接',
-      checking: '检查中...'
+      checking: '检查中...',
+      upgradeRequired: '升级到Protect或Secure',
+      lineUpsellText: 'LINE通知（租约截止日期、押金退还、租金提醒、维护更新）在Protect和Secure计划中可用。',
+      upgradeToUnlock: '升级以解锁LINE提醒',
+      viewPlans: '查看计划'
     },
     ja: {
       title: 'LINE通知',
@@ -117,7 +132,11 @@ export default function LineConnectionStatus({ user, colors }) {
       scanQR: 'LINEアプリでこのQRをスキャン',
       orUseLink: 'または上のリンクをクリック',
       checkConnection: '接続を確認',
-      checking: '確認中...'
+      checking: '確認中...',
+      upgradeRequired: 'ProtectまたはSecureにアップグレード',
+      lineUpsellText: 'LINE通知（賃貸契約期限、敷金返還、家賃リマインダー、メンテナンス更新）は、ProtectおよびSecureプランで利用可能です。',
+      upgradeToUnlock: 'LINEリマインダーをアンロックするためにアップグレード',
+      viewPlans: 'プランを見る'
     },
     ko: {
       title: 'LINE 알림',
@@ -140,7 +159,11 @@ export default function LineConnectionStatus({ user, colors }) {
       scanQR: 'LINE 앱으로 이 QR 스캔',
       orUseLink: '또는 위의 링크를 클릭',
       checkConnection: '연결 확인',
-      checking: '확인 중...'
+      checking: '확인 중...',
+      upgradeRequired: 'Protect 또는 Secure로 업그레이드',
+      lineUpsellText: 'LINE 알림(임대 계약 마감일, 보증금 반환, 임대료 알림, 유지보수 업데이트)은 Protect 및 Secure 플랜에서 사용할 수 있습니다.',
+      upgradeToUnlock: 'LINE 알림을 잠금 해제하려면 업그레이드',
+      viewPlans: '플랜 보기'
     }
   };
 
@@ -185,7 +208,26 @@ export default function LineConnectionStatus({ user, colors }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        {!isConnected ? (
+        {!lineFeatureAvailable ? (
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg" style={{ 
+              backgroundColor: isDarkMode ? 'rgba(199,163,56,0.15)' : 'rgba(199,163,56,0.08)', 
+              border: '2px dashed rgba(199,163,56,0.3)' 
+            }}>
+              <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>{str.upgradeRequired}</h4>
+              <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
+                {str.lineUpsellText}
+              </p>
+            </div>
+
+            <a href={`${window.location.origin}${window.location.pathname}#plan-selector`}>
+              <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                {str.upgradeToUnlock}
+              </Button>
+            </a>
+          </div>
+        ) : !isConnected ? (
           <div className="space-y-4">
             <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF', border: '2px solid #3B82F6' }}>
               <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>{str.benefits}</h4>
