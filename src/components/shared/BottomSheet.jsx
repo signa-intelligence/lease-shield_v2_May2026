@@ -105,7 +105,7 @@ export default function BottomSheet({
           maxHeight: maxHeight,
           display: 'flex',
           flexDirection: 'column',
-          paddingBottom: 'max(env(safe-area-inset-bottom), 16px)'
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 80px)'
         }}
       >
         <style>
