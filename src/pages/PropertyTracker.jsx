@@ -311,6 +311,7 @@ function PropertyTrackerContent() {
   const [editingRent, setEditingRent] = useState(false);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
   const [editingMaintenance, setEditingMaintenance] = useState(null);
+  const [deletingMaintenance, setDeletingMaintenance] = useState(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [photoUploadStage, setPhotoUploadStage] = useState('');
   const [photoUploadProgress, setPhotoUploadProgress] = useState(0);
@@ -1459,14 +1460,20 @@ function PropertyTrackerContent() {
     }
   };
 
-  const handleDeleteMaintenance = async (request) => {
-    if (!confirm(strings.confirmDelete)) return;
+  const handleDeleteMaintenance = (request) => {
+    setDeletingMaintenance(request);
+  };
+
+  const confirmDeleteMaintenance = async () => {
+    if (!deletingMaintenance) return;
 
     try {
-      await deleteMaintenanceMutation.mutateAsync(request.id);
+      await deleteMaintenanceMutation.mutateAsync(deletingMaintenance.id);
+      setDeletingMaintenance(null);
     } catch (error) {
       console.error('❌ Failed to delete maintenance request:', error);
       toast.error(strings.processingError);
+      setDeletingMaintenance(null);
     }
   };
 
@@ -1559,6 +1566,9 @@ function PropertyTrackerContent() {
                 haptic.medium();
                 setEditingRent(true);
                 setExpandedSections(prev => ({ ...prev, rent: true }));
+                setTimeout(() => {
+                  document.getElementById('rent-schedule-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
               }}
               style={{ ...baseCtaStyle, width: '100%' }}
               className="md:w-auto"
@@ -1810,7 +1820,7 @@ function PropertyTrackerContent() {
             )}
           </Card>
 
-          <Card ref={rentRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.rentAccent}` }}>
+          <Card id="rent-schedule-section" ref={rentRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.rentAccent}` }}>
             <CardHeader
               className="cursor-pointer"
               onClick={() => toggleSection('rent')}
@@ -2647,6 +2657,65 @@ function PropertyTrackerContent() {
               </CardContent>
             )}
           </Card>
+
+          {/* Delete Maintenance Confirmation Dialog */}
+          <Dialog open={!!deletingMaintenance} onOpenChange={() => setDeletingMaintenance(null)}>
+            <DialogContent
+              className="modal-enter"
+              style={{
+                backgroundColor: colors.cardBg,
+                borderColor: colors.borderColor,
+                maxWidth: '420px',
+                width: '95vw'
+              }}
+            >
+              <DialogHeader>
+                <DialogTitle style={{ color: colors.textPrimary }}>
+                  {language === 'th' ? 'ลบคำขอซ่อมบำรุง?' : language === 'zh' ? '删除维护请求？' : language === 'ja' ? 'メンテナンスリクエストを削除？' : language === 'ko' ? '유지보수 요청 삭제?' : 'Delete maintenance request?'}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="mt-4">
+                <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
+                  {language === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบคำขอซ่อมบำรุงนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้' : language === 'zh' ? '您确定要删除此维护请求吗？此操作无法撤消。' : language === 'ja' ? 'このメンテナンスリクエストを削除してもよろしいですか？この操作は元に戻せません。' : language === 'ko' ? '이 유지보수 요청을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.' : "Are you sure you want to delete this maintenance request? This action can't be undone."}
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      haptic.light();
+                      setDeletingMaintenance(null);
+                    }}
+                    className="flex-1"
+                    style={{ minHeight: '44px' }}
+                  >
+                    {strings.cancel}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      haptic.heavy();
+                      confirmDeleteMaintenance();
+                    }}
+                    disabled={deleteMaintenanceMutation.isPending}
+                    className="flex-1"
+                    style={{
+                      backgroundColor: '#DC2626',
+                      color: '#FFFFFF',
+                      minHeight: '44px'
+                    }}
+                  >
+                    {deleteMaintenanceMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {language === 'th' ? 'กำลังลบ...' : language === 'zh' ? '删除中...' : language === 'ja' ? '削除中...' : language === 'ko' ? '삭제 중...' : 'Deleting...'}
+                      </>
+                    ) : (
+                      strings.delete
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Upgrade Modal */}
           <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
