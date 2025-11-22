@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
+import { ToastProvider, useToast } from "../components/shared/Toast";
 
 const PLAN_DETAILS = [
   {
@@ -204,9 +205,10 @@ const CREDIT_PACKAGES = [
   }
 ];
 
-export default function Account() {
+function AccountContent() {
   const location = useLocation();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState({});
   const [exporting, setExporting] = useState(false);
@@ -739,27 +741,36 @@ export default function Account() {
   };
 
   const handleShareLink = async (role) => {
-    const language = user?.language || 'en';
     const link = generateLineOALink(role);
-    const title = role === 'landlord' 
-      ? (language === 'th' ? 'เชื่อมต่อกับ Lease Shield' : 'Connect to Lease Shield')
-      : (language === 'th' ? 'เชื่อมต่อนิติบุคคลกับ Lease Shield' : 'Connect Juristic to Lease Shield');
+    const title = language === 'th' ? 'Lease Shield LINE' : 'Lease Shield LINE notifications';
+    const text = role === 'landlord'
+      ? (language === 'th' 
+          ? 'เชื่อมต่อกับ Lease Shield เพื่อรับการแจ้งเตือนอัตโนมัติ' 
+          : 'Connect to Lease Shield for automated notifications')
+      : (language === 'th'
+          ? 'เชื่อมต่อนิติบุคคลกับ Lease Shield'
+          : 'Connect juristic office to Lease Shield');
+    
+    haptic.light();
     
     if (navigator.share) {
       try {
         await navigator.share({
           title: title,
-          text: language === 'th' 
-            ? 'คลิกเพื่อเพิ่มเพื่อน Lease Shield LINE Official Account' 
-            : 'Click to add Lease Shield LINE Official Account',
+          text: text,
           url: link
         });
+        toast.success(language === 'th' ? 'แชร์แล้ว' : 'Shared successfully');
       } catch (err) {
-        console.error('Share failed:', err);
-        handleCopyLink(role);
+        if (err.name !== 'AbortError') {
+          console.error('Share failed:', err);
+          await handleCopyLink(role);
+          toast.info(language === 'th' ? 'คัดลอกลิงก์แล้ว – แปะใน LINE' : 'Link copied – paste into LINE chat');
+        }
       }
     } else {
-      handleCopyLink(role);
+      await handleCopyLink(role);
+      toast.info(language === 'th' ? 'คัดลอกลิงก์แล้ว – แปะใน LINE' : 'Link copied – paste into LINE chat');
     }
   };
 
@@ -4463,5 +4474,13 @@ export default function Account() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Account() {
+  return (
+    <ToastProvider>
+      <AccountContent />
+    </ToastProvider>
   );
 }
