@@ -258,6 +258,14 @@ function EvidenceVaultContent() {
   });
 
   const handleFileSelect = (e) => {
+    // If selecting video files and not Secure tier, show upsell
+    if (uploadType === 'video' && !isSecureTier) {
+      setUpgradeModalType('video');
+      setShowUpgradeModal(true);
+      e.target.value = null;
+      return;
+    }
+
     const files = Array.from(e.target.files);
     setUploadFiles(prev => [...prev, ...files]);
     e.target.value = null; // Clear input so same file can be selected again
@@ -984,7 +992,19 @@ function EvidenceVaultContent() {
       downloadFailed: "下载文件失败",
       noEvidenceTitle: "尚未上传任何证据",
       noEvidenceDescription: "立即上传照片、视频和文件，以便在以后发生争议时拥有带时间戳的记录。",
-      upgradeVaultStorage: "升级以获得完整的证据库存储"
+      upgradeVaultStorage: "升级以获得完整的证据库存储",
+      addVoiceNote: "添加语音备忘录",
+      addVideo: "添加视频（需要 Secure）",
+      voiceNotesAdded: "语音备忘录",
+      videosAdded: "视频",
+      upgradeToSecureVideo: "升级到 Secure 以添加视频证据",
+      upgradeToSecureVideoDesc: "Secure 会员可以上传视频以加强争议案件。",
+      upgradeToSecure: "升级到 Secure",
+      maxVoiceReached: "最多 3 个语音备忘录",
+      maxVideoReached: "最多 3 个视频",
+      fileTooLarge: "文件过大",
+      voiceMaxSize: "语音备忘录必须小于 5MB",
+      videoMaxSize: "视频必须小于 80MB"
     },
     ja: {
       back: "ダッシュボードに戻る",
@@ -1055,7 +1075,19 @@ function EvidenceVaultContent() {
       downloadFailed: "ファイルのダウンロードに失敗しました",
       noEvidenceTitle: "まだ証拠がアップロードされていません",
       noEvidenceDescription: "紛争が発生した場合にタイムスタンプ付きの記録を残すため、写真、ビデオ、ドキュメントを今すぐアップロードしてください。",
-      upgradeVaultStorage: "完全な保管庫ストレージにアップグレード"
+      upgradeVaultStorage: "完全な保管庫ストレージにアップグレード",
+      addVoiceNote: "音声メモを追加",
+      addVideo: "動画を追加（Secureが必要）",
+      voiceNotesAdded: "音声メモ",
+      videosAdded: "動画",
+      upgradeToSecureVideo: "動画証拠を追加するにはSecureにアップグレード",
+      upgradeToSecureVideoDesc: "Secure 会員は、より強力な争議ケースのために動画をアップロードできます。",
+      upgradeToSecure: "Secureにアップグレード",
+      maxVoiceReached: "最大3件の音声メモ",
+      maxVideoReached: "最大3件の動画",
+      fileTooLarge: "ファイルが大きすぎます",
+      voiceMaxSize: "音声メモは5MB未満である必要があります",
+      videoMaxSize: "動画は80MB未満である必要があります"
     },
     ko: {
       back: "대시보드로 돌아가기",
@@ -1126,7 +1158,19 @@ function EvidenceVaultContent() {
       downloadFailed: "파일 다운로드 실패",
       noEvidenceTitle: "아직 증거가 업로드되지 않았습니다.",
       noEvidenceDescription: "분쟁 발생 시 타임스탬프가 찍힌 기록을 가질 수 있도록 지금 사진, 동영상 및 문서를 업로드하세요.",
-      upgradeVaultStorage: "전체 볼트 저장 공간을 위해 업그레이드"
+      upgradeVaultStorage: "전체 볼트 저장 공간을 위해 업그레이드",
+      addVoiceNote: "음성 메모 추가",
+      addVideo: "동영상 추가（Secure 필요）",
+      voiceNotesAdded: "음성 메모",
+      videosAdded: "동영상",
+      upgradeToSecureVideo: "동영상 증거를 추가하려면 Secure로 업그레이드",
+      upgradeToSecureVideoDesc: "Secure 회원은 더 강력한 분쟁 사례를 위해 동영상을 업로드할 수 있습니다.",
+      upgradeToSecure: "Secure로 업그레이드",
+      maxVoiceReached: "최대 3개의 음성 메모",
+      maxVideoReached: "최대 3개의 동영상",
+      fileTooLarge: "파일이 너무 큼",
+      voiceMaxSize: "음성 메모는 5MB 미만이어야 합니다",
+      videoMaxSize: "동영상은 80MB 미만이어야 합니다"
     }
   }[language] || {
     back: "Back to Dashboard",
