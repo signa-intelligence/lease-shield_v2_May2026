@@ -402,11 +402,12 @@ Deno.serve(async (req) => {
               }
             ]
           });
-          console.log('[RESOLVE_WEBHOOK] ✅ Case AFTER update:', {
+          console.log('[RESOLVE_FLOW] Case after webhook update:', {
             id: updatedCase.id,
             status: updatedCase.status,
             user_email: updatedCase.user_email,
-            stripe_session_id: updatedCase.stripe_session_id
+            stripe_session_id: updatedCase.stripe_session_id,
+            dispute_amount: updatedCase.dispute_amount
           });
           caseRecord = updatedCase;
         } else {

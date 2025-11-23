@@ -94,7 +94,12 @@ function ResolveCaseContent() {
       return await base44.entities.Case.create(caseData);
     },
     onSuccess: async (newCase) => {
-      console.log('[RESOLVE_PAGE] Case created:', newCase.id, 'proceeding to payment');
+      console.log('[RESOLVE_FLOW] Case created:', {
+        id: newCase.id,
+        status: newCase.status,
+        user_email: newCase.user_email,
+        dispute_amount: newCase.dispute_amount
+      });
       
       // Get pricing for this user
       const pricing = {
@@ -198,7 +203,13 @@ function ResolveCaseContent() {
         ]
       };
 
-      console.log('[RESOLVE_PAGE] Submitting case with data:', caseData);
+      console.log('[RESOLVE_FLOW] Case created on form submit - creating in DB...');
+      console.log('[RESOLVE_FLOW] Case data:', {
+        user_email: caseData.user_email,
+        type: caseData.type,
+        status: caseData.status,
+        dispute_amount: caseData.dispute_amount
+      });
       createCaseMutation.mutate(caseData);
     } catch (error) {
       console.error('[RESOLVE_PAGE] Submit failed:', error);

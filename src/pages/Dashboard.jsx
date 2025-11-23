@@ -785,13 +785,16 @@ function DashboardContent() {
 
   const activeDeposits = deposits.filter(d => d.status === 'tracking' || d.status === 'dispute');
   
-  // Active cases include: intake, pending_review, under_review, ready_drafts, client_review, awaiting_landlord, in_progress, resolved
-  const ACTIVE_CASE_STATUSES = ['intake', 'pending_review', 'under_review', 'ready_drafts', 'client_review', 'awaiting_landlord', 'in_progress', 'resolved', 'awaiting_payment'];
-  const activeCases = cases.filter(c => ACTIVE_CASE_STATUSES.includes(c.status));
+  // Active cases - same filter as Cases page for consistency
+  const ACTIVE_CASE_STATUSES = ['awaiting_payment', 'intake', 'pending_review', 'under_review', 'ready_drafts', 
+                                'client_review', 'awaiting_landlord', 'in_progress', 'resolved'];
+  const activeCases = (cases || []).filter(c => ACTIVE_CASE_STATUSES.includes(c.status));
   
-  console.log('📈 [DASHBOARD] Total cases loaded:', cases.length);
-  console.log('📈 [DASHBOARD] Active cases (filtered):', activeCases.length);
-  console.log('📈 [DASHBOARD] Active case IDs:', activeCases.map(c => c.id));
+  console.log('[RESOLVE_FLOW] Dashboard cases result:', {
+    total: cases.length,
+    active: activeCases.length,
+    statuses: cases.map(c => ({ id: c.id.slice(0, 8), status: c.status }))
+  });
 
   const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
   const totalDepositValue = activeDeposits.reduce((sum, d) => sum + (d.deposit_amount || 0), 0);

@@ -96,7 +96,7 @@ function CasesContent() {
     }
   }, [refetchCases]);
 
-  // Safe URL param handling - runs after cases are loaded
+  // Safe URL param handling
   useEffect(() => {
     if (typeof window === 'undefined' || !user) return;
 
@@ -105,22 +105,10 @@ function CasesContent() {
     const resolveCancelled = urlParams.get('resolve_cancelled');
     const caseId = urlParams.get('caseId');
 
-    console.log('🔍 [CASES_PAGE] URL params:', { resolveSuccess, resolveCancelled, caseId });
-    console.log('🔍 [CASES_PAGE] User:', user?.email);
-    console.log('🔍 [CASES_PAGE] Loaded cases:', cases.length);
-
     if (resolveSuccess === 'true') {
       setShowResolveSuccessBanner(true);
       if (caseId) {
         setHighlightCaseId(caseId);
-        
-        // Check if case exists
-        const foundCase = cases.find(c => c.id === caseId);
-        if (foundCase) {
-          console.log('[CASES_PAGE] ✅ Case found:', foundCase.id, 'Status:', foundCase.status);
-        } else {
-          console.warn('[CASES_PAGE] ⚠️ Case not found in loaded cases:', caseId);
-        }
       }
       
       // Clean URL after 5 seconds
@@ -132,8 +120,6 @@ function CasesContent() {
     }
 
     if (resolveCancelled === 'true') {
-      console.log('[CASES_PAGE] ⚠️ Payment cancelled');
-      
       toast.error(
         language === 'th' ? 'การชำระเงินไม่สำเร็จ คดีของคุณยังไม่ได้ถูกส่ง' :
         language === 'ru' ? 'Оплата не завершена. Ваше дело не было отправлено' :
@@ -145,7 +131,7 @@ function CasesContent() {
         window.history.replaceState({}, '', window.location.pathname);
       }
     }
-  }, [user, cases, toast, language]);
+  }, [user, toast, language]);
   const theme = getFeatureCardStyles("cases", isDarkMode);
 
   // Debug logging
@@ -418,7 +404,13 @@ function CasesContent() {
                             'client_review', 'awaiting_landlord', 'in_progress', 'resolved', 'closed'];
   
   // Filter cases: only show visible statuses, then apply search & status filter
-  const visibleCases = cases.filter(c => VISIBLE_STATUSES.includes(c.status));
+  const visibleCases = (cases || []).filter(c => VISIBLE_STATUSES.includes(c.status));
+  
+  console.log('[RESOLVE_FLOW] Cases query result:', {
+    total: cases.length,
+    visible: visibleCases.length,
+    statuses: cases.map(c => ({ id: c.id.slice(0, 8), status: c.status }))
+  });
   
   const filteredCases = visibleCases.filter(caseItem => {
     const matchesSearch = searchQuery === '' ||
