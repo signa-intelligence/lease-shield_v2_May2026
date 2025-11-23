@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, AlertCircle, Loader2, CheckCircle2, Upload, X } from "lucide-react";
+import { Shield, AlertCircle, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { RESOLVE_PRICING, hasMemberPricing } from "../components/shared/resolvePricing";
 
 export default function ResolveCase() {
   const navigate = useNavigate();
@@ -205,7 +205,18 @@ export default function ResolveCase() {
       required: "Required",
       optional: "Optional",
       caseDetails: "Case Details",
-      autoFilledMsg: "Deposit data has been pre-filled. You can edit as needed."
+      autoFilledMsg: "Deposit data has been pre-filled. You can edit as needed.",
+      resolveService: "Resolve Your Dispute",
+      resolvePricing: "Service Pricing",
+      memberPrice: "Member Price",
+      publicPrice: "Public Price",
+      perCase: "per case",
+      savingsNote: "Save ฿{amount} vs public rate",
+      upgradeToMemberRate: "Members pay ฿{memberPrice} per case. Upgrade your plan to unlock the member rate.",
+      whatsIncluded: "What's Included:",
+      reviewDocs: "Professional review of your documents",
+      recommendActions: "Recommended action plan & strategy",
+      templateLetters: "Customized legal template letters"
     },
     th: {
       title: "เปิดคดี",
@@ -235,7 +246,18 @@ export default function ResolveCase() {
       required: "จำเป็น",
       optional: "ไม่บังคับ",
       caseDetails: "รายละเอียดคดี",
-      autoFilledMsg: "ข้อมูลเงินมัดจำได้ถูกกรอกให้อัตโนมัติ คุณสามารถแก้ไขได้"
+      autoFilledMsg: "ข้อมูลเงินมัดจำได้ถูกกรอกให้อัตโนมัติ คุณสามารถแก้ไขได้",
+      resolveService: "แก้ไขข้อพิพาทของคุณ",
+      resolvePricing: "ราคาบริการ",
+      memberPrice: "ราคาสมาชิก",
+      publicPrice: "ราคาทั่วไป",
+      perCase: "ต่อคดี",
+      savingsNote: "ประหยัด ฿{amount} เมื่อเทียบกับราคาทั่วไป",
+      upgradeToMemberRate: "สมาชิกจ่าย ฿{memberPrice} ต่อคดี อัปเกรดแผนของคุณเพื่อปลดล็อกราคาสมาชิก",
+      whatsIncluded: "รวมถึง:",
+      reviewDocs: "ตรวจสอบเอกสารโดยผู้เชี่ยวชาญ",
+      recommendActions: "แผนปฏิบัติการและกลยุทธ์ที่แนะนำ",
+      templateLetters: "จดหมายตัวอย่างกฎหมายที่ปรับแต่ง"
     },
     zh: {
       title: "开启案件",
@@ -377,6 +399,107 @@ export default function ResolveCase() {
             </div>
           )}
         </div>
+
+        {/* Resolve Service Pricing */}
+        <Card className="border-none shadow-xl mb-6" style={{ 
+          backgroundColor: colors.cardBg,
+          borderLeft: hasMemberPricing(user) ? '4px solid #10B981' : '4px solid #C7A338'
+        }}>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Shield className="w-6 h-6" style={{ color: hasMemberPricing(user) ? '#10B981' : '#C7A338' }} />
+              <CardTitle style={{ color: colors.textPrimary }}>{str.resolveService}</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h4 className="text-sm font-bold mb-3" style={{ color: colors.textSecondary }}>
+                {str.whatsIncluded}
+              </h4>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
+                  <span className="text-sm" style={{ color: colors.textPrimary }}>{str.reviewDocs}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
+                  <span className="text-sm" style={{ color: colors.textPrimary }}>{str.recommendActions}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
+                  <span className="text-sm" style={{ color: colors.textPrimary }}>{str.templateLetters}</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="border-t pt-4" style={{ borderColor: colors.borderColor }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                  {str.resolvePricing}
+                </span>
+                {hasMemberPricing(user) && (
+                  <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                    <Crown className="w-3 h-3 mr-1" />
+                    {str.memberPrice}
+                  </Badge>
+                )}
+              </div>
+
+              {hasMemberPricing(user) ? (
+                <>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-3xl font-bold" style={{ color: '#10B981' }}>
+                      ฿{RESOLVE_PRICING.MEMBER_RATE.toLocaleString()}
+                    </span>
+                    <span className="text-sm" style={{ color: colors.textSecondary }}>
+                      {str.perCase}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 rounded-lg" style={{ 
+                    backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5' 
+                  }}>
+                    <TrendingDown className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-semibold" style={{ color: '#10B981' }}>
+                      {str.savingsNote.replace('{amount}', RESOLVE_PRICING.SAVINGS.toLocaleString())}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
+                      ฿{RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()}
+                    </span>
+                    <span className="text-sm" style={{ color: colors.textSecondary }}>
+                      {str.perCase}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ 
+                    backgroundColor: isDarkMode ? '#3A2D1C' : '#FEF3C7',
+                    border: `1px solid ${isDarkMode ? '#F59E0B' : '#FCD34D'}`
+                  }}>
+                    <p className="text-xs" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
+                      {str.upgradeToMemberRate.replace('{memberPrice}', RESOLVE_PRICING.MEMBER_RATE.toLocaleString())}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 w-full"
+                      onClick={() => navigate(createPageUrl("Account") + '?showPlans=true')}
+                      style={{
+                        borderColor: '#C7A338',
+                        color: '#C7A338'
+                      }}
+                    >
+                      {language === 'th' ? 'ดูแผน' : language === 'zh' ? '查看计划' : language === 'ja' ? 'プランを見る' : language === 'ko' ? '플랜 보기' : language === 'ru' ? 'Посмотреть планы' : 'View Plans'}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <form onSubmit={handleSubmit}>
           <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
