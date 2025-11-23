@@ -25,7 +25,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
-import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility, getResolvePricingForUser } from "../components/shared/resolvePricing";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
@@ -473,7 +473,41 @@ function CasesContent() {
           <FloatingActionButton
             icon={Plus}
             label={strings.openNewCase}
-            onClick={() => navigate(createPageUrl("ResolveCase"))}
+            onClick={async () => {
+              haptic.medium();
+              
+              // Check if user has an awaiting intake case
+              const awaitingCase = cases.find(c => 
+                c.status === 'intake' && c.stripe_session_id
+              );
+              
+              if (awaitingCase) {
+                navigate(createPageUrl("ResolveCase") + `?caseId=${awaitingCase.id}`);
+                return;
+              }
+              
+              // Otherwise, initiate payment flow
+              try {
+                const pricing = getResolvePricingForUser(user);
+                toast.info(language === 'ru' ? 'Перенаправление на оплату...' : 'Redirecting to payment...');
+                
+                const response = await base44.functions.invoke('createResolveCheckout', {
+                  userId: user.id,
+                  userEmail: user.email,
+                  priceType: pricing.priceType,
+                  amount: pricing.effectivePrice
+                });
+                
+                if (response.data?.url) {
+                  window.location.href = response.data.url;
+                } else {
+                  throw new Error('No checkout URL returned');
+                }
+              } catch (error) {
+                console.error('Failed to create checkout:', error);
+                toast.error(language === 'ru' ? 'Не удалось начать процесс оплаты' : 'Failed to start payment process');
+              }
+            }}
             color="#C7A338"
           />
 
@@ -521,43 +555,69 @@ function CasesContent() {
             </CardContent>
           </Card>
 
-          {/* Check for existing awaiting_details case */}
+          {/* Continue Case Submission Banner - Shows if user has paid but incomplete case */}
           {(() => {
-            const awaitingCase = cases.find(c => c.status === 'awaiting_details');
+            const awaitingCase = cases.find(c => c.status === 'intake' && c.stripe_session_id);
             
             if (awaitingCase) {
               return (
                 <div 
-                  className="mb-6 p-4 rounded-xl border-2 cursor-pointer"
+                  className="mb-6 p-4 rounded-xl border-2 cursor-pointer card-interactive"
                   style={{
-                    backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5',
+                    backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5',
                     borderColor: '#10B981',
-                    boxShadow: '0 2px 8px rgba(16,185,129,0.2)'
+                    boxShadow: '0 2px 8px rgba(16,185,129,0.15)'
                   }}
                   onClick={() => {
                     haptic.medium();
-                    navigate(createPageUrl("ResolveCase") + `?case_id=${awaitingCase.id}`);
+                    navigate(createPageUrl("ResolveCase") + `?caseId=${awaitingCase.id}`);
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0" />
+                    <AlertCircle className="w-6 h-6 text-emerald-600 flex-shrink-0" />
                     <div className="flex-1">
-                      <h3 className="text-base font-bold mb-1" style={{ color: '#10B981' }}>
-                        {language === 'ru' ? 'Завершите подачу дела' : 'Continue case submission'}
+                      <h3 className="font-bold mb-1" style={{ color: isDarkMode ? '#6EE7B7' : '#065F46' }}>
+                        {language === 'th' ? 'ดำเนินการส่งคดีของคุณต่อ' :
+                         language === 'ru' ? 'Завершите подачу вашего дела' :
+                         'Complete Your Case Submission'}
                       </h3>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>
-                        {language === 'ru' ? 'У вас есть оплаченное дело, ожидающее заполнения. Нажмите для продолжения.' : 'You have a paid case waiting for details. Tap to continue.'}
+                      <p className="text-sm" style={{ color: isDarkMode ? '#A7F3D0' : '#047857' }}>
+                        {language === 'th' ? 'คุณมีคดีที่ชำระเงินแล้วและรอการกรอกรายละเอียด' :
+                         language === 'ru' ? 'У вас есть оплаченное дело, ожидающее заполнения деталей' :
+                         'You have a paid case awaiting details'}
                       </p>
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        haptic.medium();
+                        navigate(createPageUrl("ResolveCase") + `?caseId=${awaitingCase.id}`);
+                      }}
+                      className="btn-interaction flex-shrink-0"
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        backgroundColor: '#10B981',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {language === 'ru' ? 'Продолжить' : 'Continue'}
+                    </button>
                   </div>
                 </div>
               );
             }
-
-            // No awaiting case - show Start Resolve CTA
+            
+            // Resolve CTA for users without active paid case
             const eligibility = getMembershipEligibility(user);
             const showMemberRate = eligibility.isEligible;
             const displayPrice = showMemberRate ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE;
+            const rateLabel = showMemberRate ? 'member rate' : 'public rate';
             
             return (
               <div 
@@ -582,13 +642,13 @@ function CasesContent() {
                            language === 'zh' ? '会员价在会员30天后生效。案件提交期间的升级仅适用于未来的案件。' :
                            language === 'ja' ? '会員価格は会員登録後30日で適用されます。ケース提出中のアップグレードは今後のケースにのみ適用されます。' :
                            language === 'ko' ? '회원 요금은 회원 가입 30일 후 적용됩니다. 사례 제출 중 업그레이드는 향후 사례에만 적용됩니다.' :
-                           language === 'ru' ? 'Тарифы участника действуют после 30 дней членства. Обновления во время подачи дела применяются только к будущим делам.' :
+                           language === 'ru' ? 'Цены для членов действуют через 30 дней членства. Обновления во время подачи дела применяются только к будущим делам.' :
                            'Member rates apply after 30 days of active Lite, Protect or Secure membership. Upgrades during case submission apply to future cases only.')
                         : (language === 'th' ? 'ราคาสมาชิกใช้งานได้หลังสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน' :
                            language === 'zh' ? '会员价在Lite、Protect或Secure会员30天后生效' :
                            language === 'ja' ? '会員価格はLite、Protect、Secureの会員登録後30日で適用' :
                            language === 'ko' ? '회원 요금은 Lite, Protect 또는 Secure 회원 30일 후 적용' :
-                           language === 'ru' ? 'Тарифы участника действуют после 30 дней активного членства Lite, Protect или Secure' :
+                           language === 'ru' ? 'Цены для членов действуют через 30 дней активного членства Lite, Protect или Secure' :
                            'Member rates apply after 30 days of active Lite, Protect or Secure membership')
                       }
                     </p>
@@ -596,14 +656,37 @@ function CasesContent() {
                   <button
                     onClick={async () => {
                       haptic.medium();
+                      
+                      // Check if user has an awaiting intake case
+                      const awaitingCase = cases.find(c => 
+                        c.status === 'intake' && c.stripe_session_id
+                      );
+                      
+                      if (awaitingCase) {
+                        navigate(createPageUrl("ResolveCase") + `?caseId=${awaitingCase.id}`);
+                        return;
+                      }
+                      
+                      // Otherwise, initiate payment flow
                       try {
-                        const { data } = await base44.functions.invoke('createResolveCheckout');
-                        if (data.url) {
-                          window.location.href = data.url;
+                        const pricing = getResolvePricingForUser(user);
+                        toast.info(language === 'ru' ? 'Перенаправление на оплату...' : 'Redirecting to payment...');
+                        
+                        const response = await base44.functions.invoke('createResolveCheckout', {
+                          userId: user.id,
+                          userEmail: user.email,
+                          priceType: pricing.priceType,
+                          amount: pricing.effectivePrice
+                        });
+                        
+                        if (response.data?.url) {
+                          window.location.href = response.data.url;
+                        } else {
+                          throw new Error('No checkout URL returned');
                         }
                       } catch (error) {
                         console.error('Failed to create checkout:', error);
-                        toast.error(language === 'ru' ? 'Ошибка создания платежа' : 'Payment failed to start');
+                        toast.error(language === 'ru' ? 'Не удалось начать процесс оплаты' : 'Failed to start payment process');
                       }
                     }}
                     className="btn-interaction w-full sm:w-auto"
@@ -628,12 +711,12 @@ function CasesContent() {
                       e.target.style.color = '#EF4444';
                     }}
                   >
-                    {language === 'th' ? `เริ่ม Resolve – ฿${displayPrice.toLocaleString()}` :
-                     language === 'zh' ? `启动 Resolve – ฿${displayPrice.toLocaleString()}` :
-                     language === 'ja' ? `Resolve を開始 – ฿${displayPrice.toLocaleString()}` :
-                     language === 'ko' ? `Resolve 시작 – ฿${displayPrice.toLocaleString()}` :
-                     language === 'ru' ? `Начать Resolve – ฿${displayPrice.toLocaleString()}` :
-                     `Start Resolve – ฿${displayPrice.toLocaleString()}`}
+                    {language === 'th' ? `ส่งคดี – ฿${displayPrice.toLocaleString()} ราคา${showMemberRate ? 'สมาชิก' : 'ทั่วไป'}` :
+                     language === 'zh' ? `提交案件 – ฿${displayPrice.toLocaleString()} ${showMemberRate ? '会员' : '公开'}价格` :
+                     language === 'ja' ? `ケース提出 – ฿${displayPrice.toLocaleString()} ${showMemberRate ? '会員' : '公開'}価格` :
+                     language === 'ko' ? `사례 제출 – ฿${displayPrice.toLocaleString()} ${showMemberRate ? '회원' : '공개'} 요금` :
+                     language === 'ru' ? `Подать дело – ฿${displayPrice.toLocaleString()} ${showMemberRate ? 'для членов' : 'публичная цена'}` :
+                     `Submit Case – ฿${displayPrice.toLocaleString()} ${rateLabel}`}
                   </button>
                 </div>
               </div>
