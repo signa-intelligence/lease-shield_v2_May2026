@@ -1439,9 +1439,9 @@ function DashboardContent() {
                         </>
                       ) : (
                         <>
-                          <span style={{ color: '#FFFFFF' }}>Fair.</span>
-                          <span style={{ color: '#ECEFED' }}>Transparent.</span>
-                          <span style={{ color: '#C7A338' }}>Protected.</span>
+                          <span style={{ color: '#FFFFFF', fontSize: language === 'ru' ? '0.8rem' : 'inherit' }}>Fair.</span>
+                                <span style={{ color: '#ECEFED', fontSize: language === 'ru' ? '0.8rem' : 'inherit' }}>Transparent.</span>
+                                <span style={{ color: '#C7A338', fontSize: language === 'ru' ? '0.8rem' : 'inherit' }}>Protected.</span>
                         </>
                       )}
                     </div>
@@ -1896,10 +1896,12 @@ function DashboardContent() {
                       color: '#FFFFFF',
                       border: 'none',
                       fontWeight: '600',
-                      fontSize: '14px',
+                      fontSize: language === 'ru' ? '13px' : '14px',
                       cursor: 'pointer',
                       boxShadow: '0 4px 8px rgba(12,59,46,0.3)',
-                      whiteSpace: 'nowrap'
+                      whiteSpace: language === 'ru' ? 'normal' : 'nowrap',
+                      textAlign: 'center',
+                      lineHeight: '1.3'
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#C7A338';

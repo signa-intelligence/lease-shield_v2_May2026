@@ -622,16 +622,16 @@ export default function Layout({ children, currentPageName }) {
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '8px 10px',
+                  padding: language === 'ru' ? '6px 4px 8px 4px' : '8px 10px',
                   borderRadius: '12px',
                   transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)',
                   flex: 1,
-                  minWidth: '60px',
-                  maxWidth: '90px',
+                  minWidth: language === 'ru' ? '56px' : '60px',
+                  maxWidth: language === 'ru' ? '85px' : '90px',
                   backgroundColor: isActive ? '#0C3B2E' : 'transparent',
                   textDecoration: 'none',
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'visible'
                 }}
               >
                 <Icon 
@@ -643,12 +643,15 @@ export default function Layout({ children, currentPageName }) {
                   }} 
                 />
                 <span style={{ 
-                  fontSize: '11px', 
+                  fontSize: language === 'ru' ? '10px' : '11px', 
                   fontWeight: '600', 
-                  whiteWhiteSpace: 'nowrap',
+                  whiteSpace: 'normal',
+                  textAlign: 'center',
+                  lineHeight: '1.2',
                   color: isActive ? '#FFFFFF' : colors.textPrimary,
                   transition: 'all 0.2s ease',
-                  opacity: isActive ? 1 : 0.9
+                  opacity: isActive ? 1 : 0.9,
+                  wordBreak: 'break-word'
                 }}>
                   {tab.label}
                 </span>
