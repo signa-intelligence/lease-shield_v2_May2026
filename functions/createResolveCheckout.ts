@@ -16,7 +16,6 @@ Deno.serve(async (req) => {
     }
 
     const { userId, userEmail, caseId, priceType, amount } = await req.json();
-
     console.log('[CREATE_CHECKOUT] Request payload:', { userId, userEmail, caseId, priceType, amount });
 
     // Validate required fields
@@ -50,15 +49,15 @@ Deno.serve(async (req) => {
         userEmail: userEmail,
         priceType: priceType,
         amount: amount.toString(),
-        caseId: caseId
+        caseId: caseId,
       },
+      // 🔹 ONLY CHANGE IS HERE: go straight to the case detail page
       success_url: `${
-  Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'
-}/ResolveCase?paid=true&caseId=${caseId}`,
-
-cancel_url: `${
-  Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'
-}/ResolveCase?cancelled=true&caseId=${caseId}`,
+        Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'
+      }/cases/${caseId}?paid=true`,
+      cancel_url: `${
+        Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'
+      }/cases/${caseId}?cancelled=true`,
     });
 
     console.log('[CREATE_CHECKOUT] ✅ Stripe session created:', session.id);
@@ -68,11 +67,11 @@ cancel_url: `${
     return Response.json({ 
       url: session.url,
       sessionId: session.id,
-      caseId: caseId
+      caseId: caseId,
     });
-
   } catch (error) {
     console.error('❌ Error creating Resolve checkout:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    // @ts-ignore - error may not be typed
+    return Response.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 });
