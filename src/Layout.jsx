@@ -132,12 +132,18 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const language = user?.language || 'en';
-  const role = user?.role || user?.access_level || 'user';
-  
+
+  // Admin access: only admin, va, or super_admin roles
+  const userRole = user?.role?.toLowerCase();
+  const accessLevel = user?.access_level?.toLowerCase();
+
   const isAdmin = 
-    role === 'admin' || 
-    role === 'super_admin' || 
-    role === 'va';
+    userRole === 'admin' || 
+    userRole === 'super_admin' || 
+    userRole === 'va' ||
+    accessLevel === 'admin' || 
+    accessLevel === 'super_admin' || 
+    accessLevel === 'va';
 
   const isDarkMode = user?.theme === 'dark';
 
