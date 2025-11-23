@@ -73,7 +73,15 @@ export default function StatsCard({
               >
                 <Icon className="w-4 h-4" style={{ color: cardStyles.iconColor }} />
               </div>
-              <h3 className="text-sm font-semibold" style={{ color: cardStyles.titleColor }}>
+              <h3 
+                className="text-sm font-semibold" 
+                style={{ 
+                  color: cardStyles.titleColor,
+                  whiteSpace: 'normal',
+                  lineHeight: '1.3',
+                  wordBreak: 'break-word'
+                }}
+              >
                 {title}
               </h3>
             </div>
@@ -123,7 +131,11 @@ export default function StatsCard({
               fontSize: "0.875rem",
               fontWeight: "600",
               border: "none",
-              cursor: "pointer"
+              cursor: "pointer",
+              whiteSpace: "normal",
+              textAlign: "center",
+              lineHeight: "1.3",
+              minHeight: "36px"
             }}
           >
             {label}
