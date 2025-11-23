@@ -30,8 +30,6 @@ export default function ResolveCase() {
   const [uploading, setUploading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [autoFilledFromDeposit, setAutoFilledFromDeposit] = useState(false);
-  const [currentCase, setCurrentCase] = useState(null);
-  const [loadingCase, setLoadingCase] = useState(true);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -44,63 +42,74 @@ export default function ResolveCase() {
     enabled: !!user,
   });
 
-  const { data: cases = [] } = useQuery({
-    queryKey: ['cases'],
-    queryFn: () => base44.entities.Case.filter({ user_email: user?.email }, '-created_date'),
-    enabled: !!user,
-  });
+  // Load paid case if exists
+  React.useEffect(() => {
+    if (!user) return;
+
+    const loadCase = async () => {
+      try {
+        const urlParams = new URLSearchParams(location.search);
+        const caseIdFromUrl = urlParams.get('caseId');
+        const sessionId = urlParams.get('session_id');
+
+        console.log('🔍 Loading case - caseId:', caseIdFromUrl, 'sessionId:', sessionId);
+
+        // Try to find the most recent intake case for this user
+        const userCases = await base44.entities.Case.filter({ 
+          user_email: user.email 
+        }, '-created_date');
+
+        console.log('📦 Found cases for user:', userCases.length);
+
+        // Look for case with intake status and valid payment
+        let targetCase = null;
+        
+        if (caseIdFromUrl) {
+          targetCase = userCases.find(c => c.id === caseIdFromUrl && c.status === 'intake');
+        }
+        
+        if (!targetCase && sessionId) {
+          targetCase = userCases.find(c => c.stripe_session_id === sessionId && c.status === 'intake');
+        }
+        
+        if (!targetCase) {
+          targetCase = userCases.find(c => c.status === 'intake' && c.stripe_session_id);
+        }
+
+        if (targetCase) {
+          console.log('✅ Found paid case:', targetCase.id);
+          setCurrentCase(targetCase);
+          
+          // Pre-fill form if case has data
+          if (targetCase.summary || targetCase.dispute_amount) {
+            setFormData(prev => ({
+              ...prev,
+              type: targetCase.type || 'deposit',
+              summary: targetCase.summary || '',
+              dispute_amount: targetCase.dispute_amount || '',
+              landlord_name: targetCase.landlord_name || '',
+              landlord_email: targetCase.landlord_email || '',
+              landlord_phone: targetCase.landlord_phone || '',
+              property_address: targetCase.property_address || '',
+              cc_emails: targetCase.cc_emails || [],
+              evidence: targetCase.evidence || []
+            }));
+          }
+        } else {
+          console.log('⚠️ No paid intake case found');
+        }
+      } catch (error) {
+        console.error('❌ Error loading case:', error);
+      } finally {
+        setLoadingCase(false);
+      }
+    };
+
+    loadCase();
+  }, [user, location.search]);
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
-
-  // Load case from URL params or find awaiting_details case
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const caseIdFromUrl = urlParams.get('case_id');
-    const sessionId = urlParams.get('session_id');
-
-    if (user && cases.length >= 0) {
-      let targetCase = null;
-
-      // Priority 1: case_id from URL
-      if (caseIdFromUrl) {
-        targetCase = cases.find(c => c.id === caseIdFromUrl);
-      }
-
-      // Priority 2: Find awaiting_details case
-      if (!targetCase) {
-        targetCase = cases.find(c => c.status === 'awaiting_details');
-      }
-
-      if (targetCase) {
-        console.log('✅ Found case for submission:', targetCase.id);
-        setCurrentCase(targetCase);
-        
-        // Pre-fill form from case if available
-        if (targetCase.summary) {
-          setFormData(prev => ({
-            ...prev,
-            type: targetCase.type || 'deposit',
-            dispute_amount: targetCase.dispute_amount?.toString() || '',
-            summary: targetCase.summary || '',
-            landlord_name: targetCase.landlord_name || user?.landlord_name || '',
-            landlord_email: targetCase.landlord_email || user?.landlord_email || '',
-            property_address: targetCase.property_address || '',
-            evidence_files: targetCase.evidence || []
-          }));
-        }
-      } else {
-        console.log('⚠️ No paid case found');
-      }
-
-      setLoadingCase(false);
-
-      // Clean URL
-      if (sessionId || caseIdFromUrl) {
-        window.history.replaceState({}, '', createPageUrl('ResolveCase'));
-      }
-    }
-  }, [user, cases]);
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -151,14 +160,14 @@ export default function ResolveCase() {
     }
   }, [deposits, user, language]);
 
-  const updateCaseMutation = useMutation({
-    mutationFn: async ({ caseId, caseData }) => {
-      const updated = await base44.entities.Case.update(caseId, caseData);
-      return updated;
+  const createCaseMutation = useMutation({
+    mutationFn: async (caseData) => {
+      const newCase = await base44.entities.Case.create(caseData);
+      return newCase;
     },
-    onSuccess: (updatedCase) => {
+    onSuccess: (newCase) => {
       queryClient.invalidateQueries({ queryKey: ['cases'] });
-      navigate(createPageUrl('CaseDetails') + `?caseId=${updatedCase.id}`);
+      navigate(createPageUrl('CaseDetails') + `?caseId=${newCase.id}`);
     },
   });
 
@@ -200,11 +209,6 @@ export default function ResolveCase() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!currentCase) {
-      alert(language === 'ru' ? 'Дело не найдено. Вернитесь на главную для начала.' : 'No case found. Return to home to start.');
-      return;
-    }
-
     if (!formData.type || !formData.dispute_amount || !formData.summary) {
       alert(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : language === 'ru' ? 'Пожалуйста, заполните все обязательные поля' : 'Please fill in all required fields');
       return;
@@ -214,30 +218,28 @@ export default function ResolveCase() {
     
     try {
       const caseData = {
+        user_email: user.email,
         type: formData.type,
         status: 'intake',
         dispute_amount: parseFloat(formData.dispute_amount),
         summary: formData.summary,
         landlord_name: formData.landlord_name || user?.landlord_name || '',
         landlord_email: formData.landlord_email || user?.landlord_email || '',
-        property_address: formData.property_address || '',
         evidence: formData.evidence_files,
+        is_member_at_creation: hasMemberPricing(user),
+        case_price: getUserPricing(user),
         timeline: [
-          ...(currentCase.timeline || []),
           {
             timestamp: new Date().toISOString(),
-            event: 'Case details submitted',
+            event: 'Case created',
             actor: user.email
           }
         ]
       };
 
-      await updateCaseMutation.mutateAsync({ 
-        caseId: currentCase.id, 
-        caseData 
-      });
+      await createCaseMutation.mutateAsync(caseData);
     } catch (error) {
-      console.error('Failed to submit case:', error);
+      console.error('Failed to create case:', error);
       alert(language === 'th' ? 'ไม่สามารถสร้างคดีได้' : language === 'ru' ? 'Не удалось создать дело' : 'Failed to create case');
       setCreating(false);
     }
@@ -289,10 +291,7 @@ export default function ResolveCase() {
       memberPricingUnlocksIn: "Member pricing unlocks after 30 days of active membership. Your member rate will apply to cases submitted after",
       membersPayAfter30Days: "Members pay ฿2,490 per case after 30 days. You can join today for additional benefits.",
       newMembershipNote: "Your new membership will apply member rates to future cases. This case is billed at the public rate.",
-      memberRateExplanation: "Member rates apply after 30 days of active Lite, Protect or Secure membership. Upgrades during case submission apply to future cases only.",
-      noCaseFound: "No Active Case Found",
-      noCaseFoundDesc: "Start a new Resolve case from the Home or Cases page to proceed.",
-      backToHome: "Back to Home"
+      memberRateExplanation: "Member rates apply after 30 days of active Lite, Protect or Secure membership. Upgrades during case submission apply to future cases only."
     },
     th: {
       title: "เปิดคดี",
@@ -339,10 +338,7 @@ export default function ResolveCase() {
       memberPricingUnlocksIn: "ราคาสมาชิกจะปลดล็อกหลังจากสมาชิกครบ 30 วัน ราคาสมาชิกจะใช้กับคดีที่ส่งหลังวันที่",
       membersPayAfter30Days: "สมาชิกจ่าย ฿2,490 ต่อคดีหลังครบ 30 วัน คุณสามารถเข้าร่วมวันนี้เพื่อรับสิทธิพิเศษเพิ่มเติม",
       newMembershipNote: "การเป็นสมาชิกใหม่ของคุณจะใช้ราคาสมาชิกกับคดีในอนาคต คดีนี้จะคิดราคาทั่วไป",
-      memberRateExplanation: "ราคาสมาชิกใช้งานได้หลังสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน การอัปเกรดระหว่างส่งคดีจะมีผลกับคดีในอนาคตเท่านั้น",
-      noCaseFound: "ไม่พบคดี",
-      noCaseFoundDesc: "เริ่มคดี Resolve ใหม่จากหน้าหลักหรือหน้าคดี",
-      backToHome: "กลับหน้าหลัก"
+      memberRateExplanation: "ราคาสมาชิกใช้งานได้หลังสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน การอัปเกรดระหว่างส่งคดีจะมีผลกับคดีในอนาคตเท่านั้น"
     },
     zh: {
       title: "开启案件",
@@ -530,48 +526,81 @@ export default function ResolveCase() {
       memberPricingUnlocksIn: "Тариф участника активируется после 30 дней активного членства. Ваш тариф применится к делам, поданным после",
       membersPayAfter30Days: "Участники платят ฿2,490 за дело через 30 дней. Присоединяйтесь сегодня для дополнительных преимуществ.",
       newMembershipNote: "Ваше новое членство применит тарифы участника к будущим делам. Это дело оплачивается по публичному тарифу.",
-      memberRateExplanation: "Тарифы участника действуют через 30 дней активного членства Lite, Protect или Secure. Обновления во время подачи дела применяются только к будущим делам.",
-      noCaseFound: "Активное дело не найдено",
-      noCaseFoundDesc: "Начните новое дело Resolve с главной страницы или раздела Дела.",
-      backToHome: "Вернуться на главную"
+      memberRateExplanation: "Тарифы участника действуют через 30 дней активного членства Lite, Protect или Secure. Обновления во время подачи дела применяются только к будущим делам."
     }
   };
 
   const str = strings[language] || strings.en;
 
-  // No paid case found - show redirect message
-  if (!loadingCase && !currentCase) {
+  // Show loading state while checking for paid case
+  if (loadingCase) {
     return (
-      <div className="min-h-screen p-4 md:p-6 flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
-        <Card className="max-w-md border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardContent className="p-6 text-center">
-            <AlertCircle className="w-16 h-16 mx-auto mb-4" style={{ color: '#F59E0B' }} />
-            <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {str.noCaseFound}
-            </h2>
-            <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-              {str.noCaseFoundDesc}
-            </p>
-            <Button
-              onClick={() => navigate(createPageUrl("Dashboard"))}
-              className="w-full"
-              style={{
-                backgroundColor: '#0C3B2E',
-                color: '#FFFFFF'
-              }}
-            >
-              {str.backToHome}
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: '#EF4444' }} />
+          <p style={{ color: colors.textSecondary }}>
+            {language === 'th' ? 'กำลังโหลด...' : language === 'ru' ? 'Загрузка...' : 'Loading...'}
+          </p>
+        </div>
       </div>
     );
   }
 
-  if (loadingCase) {
+  // Show friendly message if no paid case exists
+  if (!currentCase) {
     return (
-      <div className="min-h-screen p-4 md:p-6 flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#C7A338' }} />
+      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center py-12">
+            <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{
+              backgroundColor: isDarkMode ? '#EF444430' : '#FEE2E2'
+            }}>
+              <Scale className="w-10 h-10" style={{ color: '#EF4444' }} />
+            </div>
+            <h2 className="text-2xl font-bold mb-3" style={{ color: colors.textPrimary }}>
+              {language === 'th' ? 'ไม่พบคดี Resolve ที่ใช้งานอยู่' : 
+               language === 'ru' ? 'Активное дело Resolve не найдено' :
+               'No Active Resolve Case Found'}
+            </h2>
+            <p className="text-base mb-6" style={{ color: colors.textSecondary }}>
+              {language === 'th' ? 'เริ่มคดี Resolve ใหม่จากหน้าหลักหรือหน้าคดีเพื่อดำเนินการต่อ' :
+               language === 'ru' ? 'Начните новое дело Resolve на главной странице или на странице дел, чтобы продолжить' :
+               'Start a new Resolve case from the Home or Cases page to proceed'}
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => navigate(createPageUrl("Dashboard"))}
+                className="btn-interaction"
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  backgroundColor: '#EF4444',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                {language === 'th' ? 'ไปที่หน้าหลัก' : language === 'ru' ? 'На главную' : 'Go to Home'}
+              </button>
+              <button
+                onClick={() => navigate(createPageUrl("Cases"))}
+                className="btn-interaction"
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  backgroundColor: 'transparent',
+                  color: '#EF4444',
+                  border: '2px solid #EF4444',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                {language === 'th' ? 'ไปที่หน้าคดี' : language === 'ru' ? 'К делам' : 'Go to Cases'}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
