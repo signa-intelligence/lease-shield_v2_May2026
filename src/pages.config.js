@@ -3,7 +3,6 @@ import DepositTracker from './pages/DepositTracker';
 import Documents from './pages/Documents';
 import Cases from './pages/Cases';
 import Profile from './pages/Profile';
-import Welcome from './pages/Welcome';
 import UploadScan from './pages/UploadScan';
 import ScanPreview from './pages/ScanPreview';
 import ReportFull from './pages/ReportFull';
@@ -36,7 +35,6 @@ export const PAGES = {
     "Documents": Documents,
     "Cases": Cases,
     "Profile": Profile,
-    "Welcome": Welcome,
     "UploadScan": UploadScan,
     "ScanPreview": ScanPreview,
     "ReportFull": ReportFull,
