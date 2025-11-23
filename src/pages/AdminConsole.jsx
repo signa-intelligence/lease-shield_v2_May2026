@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -41,6 +40,9 @@ export default function AdminConsole() {
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState(null);
   const [permissionsFormData, setPermissionsFormData] = useState({});
   const [showKanban, setShowKanban] = useState(false);
+  const [debugData, setDebugData] = useState(null);
+  const [loadingDebug, setLoadingDebug] = useState(false);
+  const [restoringUsers, setRestoringUsers] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -49,10 +51,19 @@ export default function AdminConsole() {
     queryFn: () => base44.auth.me(),
   });
 
+  // Updated query to work with both role and access_level
   const { data: users = [] } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list(),
-    enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
+    queryFn: async () => {
+      console.log('🔍 [ADMIN] Fetching users...');
+      const result = await base44.entities.User.list();
+      console.log('📊 [ADMIN] Fetched users:', result.length);
+      return result;
+    },
+    enabled: !!user && (
+      ['admin', 'super_admin', 'va'].includes(user.access_level) ||
+      ['admin', 'super_admin', 'va'].includes(user.role)
+    ),
   });
 
   const { data: leases = [] } = useQuery({
@@ -879,6 +890,63 @@ export default function AdminConsole() {
     }
   };
 
+  const handleDebugUsers = async () => {
+    setLoadingDebug(true);
+    try {
+      const response = await base44.functions.invoke('debugUsers');
+      console.log('🔍 Debug result:', response.data);
+      setDebugData(response.data);
+    } catch (error) {
+      console.error('Debug failed:', error);
+      alert('Debug failed: ' + error.message);
+    } finally {
+      setLoadingDebug(false);
+    }
+  };
+
+  const handleRestoreUsers = async () => {
+    if (!confirm('Restore all soft-deleted and disabled users? This will make them active and visible again.')) {
+      return;
+    }
+
+    setRestoringUsers(true);
+    try {
+      const response = await base44.functions.invoke('restoreUsers');
+      console.log('✅ Restore result:', response.data);
+      
+      if (response.data?.success) {
+        alert(`✅ RESTORED ${response.data.restored_count} users!\n\nCheck the table below.`);
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      } else {
+        alert('❌ Restore failed: ' + response.data?.error);
+      }
+    } catch (error) {
+      console.error('Restore failed:', error);
+      alert('Restore failed: ' + error.message);
+    } finally {
+      setRestoringUsers(false);
+    }
+  };
+
+  const handleExportBackup = async () => {
+    try {
+      const response = await base44.functions.invoke('exportUsersBackup');
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      alert('✅ User backup exported successfully!');
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Export failed: ' + error.message);
+    }
+  };
+
   const sortedUsers = [...users].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
@@ -970,6 +1038,86 @@ export default function AdminConsole() {
         )}
 
         <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
+
+        {/* DEBUG & RESTORE PANEL - Super Admin Only */}
+        {isSuperAdmin && (
+          <Card className="mb-6 border-none shadow-lg" style={{ 
+            backgroundColor: colors.cardBg,
+            borderLeft: '6px solid #EF4444'
+          }}>
+            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                User Debug & Recovery Panel
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  Use these tools to investigate and restore missing users.
+                </p>
+                
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    onClick={handleDebugUsers}
+                    disabled={loadingDebug}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {loadingDebug ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Database className="w-4 h-4 mr-2" />
+                        Debug User Database
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={handleRestoreUsers}
+                    disabled={restoringUsers}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    {restoringUsers ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Restoring...
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck className="w-4 h-4 mr-2" />
+                        Restore All Users
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={handleExportBackup}
+                    variant="outline"
+                    style={{ borderColor: colors.borderColor }}
+                  >
+                    <Database className="w-4 h-4 mr-2" />
+                    Export Backup
+                  </Button>
+                </div>
+
+                {debugData && (
+                  <div className="mt-4 p-4 rounded-lg overflow-auto max-h-96" style={{
+                    backgroundColor: isDarkMode ? '#1A1D1F' : '#F8FAFC',
+                    border: `1px solid ${colors.borderColor}`
+                  }}>
+                    <pre className="text-xs" style={{ color: colors.textPrimary }}>
+                      {JSON.stringify(debugData, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* NEW: Kanban Board Toggle */}
         <div className="mb-6">
