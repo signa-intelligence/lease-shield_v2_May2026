@@ -87,6 +87,36 @@ function DashboardContent() {
     enabled: !!user,
   });
 
+  const language = user?.language || 'en';
+  const accessLevel = user?.access_level || 'user';
+  const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
+  const isDarkMode = user?.theme === 'dark';
+  
+  const colors = isDarkMode ? {
+    bg: '#111827',
+    cardBg: '#2A2D30',
+    textPrimary: '#F9FAFB',
+    textSecondary: '#D1D5DB',
+    borderColor: 'rgba(255,255,255,0.1)',
+    inputBg: '#374151',
+    fieldBg: '#374151',
+    hoverBg: '#3A3D40',
+    filterBg: '#374151'
+  } : {
+    bg: '#F3F6F5',
+    cardBg: '#FFFFFF',
+    textPrimary: '#0F172A',
+    textSecondary: '#475569',
+    borderColor: 'rgba(12,59,46,0.08)',
+    inputBg: '#FFFFFF',
+    fieldBg: '#F8FAFC',
+    hoverBg: '#F1F5F9',
+    filterBg: '#F8FAFC'
+  };
+  
+  const isLitePlan = user?.plan_tier === 'lite';
+  const isFreeTier = !user?.plan_tier || user.plan_tier === 'free';
+
   const handleRefresh = async () => {
     haptic.light();
     await queryClient.invalidateQueries();
@@ -158,36 +188,6 @@ function DashboardContent() {
       }
     };
   }, [queryClient]);
-
-  const language = user?.language || 'en';
-  const accessLevel = user?.access_level || 'user';
-  const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
-  const isDarkMode = user?.theme === 'dark';
-  
-  const colors = isDarkMode ? {
-    bg: '#111827',
-    cardBg: '#2A2D30',
-    textPrimary: '#F9FAFB',
-    textSecondary: '#D1D5DB',
-    borderColor: 'rgba(255,255,255,0.1)',
-    inputBg: '#374151',
-    fieldBg: '#374151',
-    hoverBg: '#3A3D40',
-    filterBg: '#374151'
-  } : {
-    bg: '#F3F6F5',
-    cardBg: '#FFFFFF',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    borderColor: 'rgba(12,59,46,0.08)',
-    inputBg: '#FFFFFF',
-    fieldBg: '#F8FAFC',
-    hoverBg: '#F1F5F9',
-    filterBg: '#F8FAFC'
-  };
-  
-  const isLitePlan = user?.plan_tier === 'lite';
-  const isFreeTier = !user?.plan_tier || user.plan_tier === 'free';
 
   // Compute feature themes once
   const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
