@@ -67,6 +67,8 @@ function DashboardContent() {
     queryKey: ['cases'],
     queryFn: () => base44.entities.Case.filter({ user_email: user?.email }),
     enabled: !!user,
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   const { data: documents = [] } = useQuery({

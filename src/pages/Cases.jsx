@@ -77,6 +77,8 @@ function CasesContent() {
     enabled: !!user,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   useEffect(() => {
