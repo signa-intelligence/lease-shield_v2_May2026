@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 /**
  * Generate smart case numbers that encode:
@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      caseNumber: caseNumber,
+      case_number: caseNumber,
       breakdown: {
         memberStatus: isMember ? 'Member' : 'Public',
         processing: fastTrack ? 'Fast Track (12h)' : 'Standard (24-48h)',
