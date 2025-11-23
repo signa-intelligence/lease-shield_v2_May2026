@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, ChevronDown, ChevronUp, Zap, Loader2, AlertCircle, Mail, Calendar, BarChart3 } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, ChevronDown, ChevronUp, Zap, Loader2, AlertCircle, Mail, Calendar, BarChart3, Crown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, format } from "date-fns";
@@ -26,6 +26,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
+import { RESOLVE_PRICING, hasMemberPricing } from "../components/shared/resolvePricing";
 
 function DashboardContent() {
   const [expandedSections, setExpandedSections] = React.useState({
@@ -869,6 +870,15 @@ function DashboardContent() {
       upgradeToProtectForEnhancedTools: "Upgrade to Protect for enhanced tools",
       getMoreScansLineAlerts: "Get more scans, LINE alerts, and additional letter credits.",
       upgradeToProtect: "Upgrade to Protect",
+      // Resolve service strings
+      resolveDispute: "Resolve Your Dispute",
+      resolveDescription: "Professional case handling & legal support",
+      memberPrice: "Member Price",
+      publicPrice: "Public Price",
+      perCase: "per case",
+      submitCase: "Submit Case",
+      savingsVsPublic: "Save ฿1,500 vs public rate",
+      upgradeForMemberRate: "Upgrade to any paid plan for member pricing",
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -929,6 +939,15 @@ function DashboardContent() {
       upgradeToProtectForEnhancedTools: "อัปเกรดเป็น Protect สำหรับเครื่องมือขั้นสูง",
       getMoreScansLineAlerts: "รับการสแกนเพิ่มเติม การแจ้งเตือน LINE และเครดิตจดหมายเพิ่มเติม",
       upgradeToProtect: "อัปเกรดเป็น Protect",
+      // Resolve service strings
+      resolveDispute: "แก้ไขข้อพิพาทของคุณ",
+      resolveDescription: "การจัดการคดีอย่างมืออาชีพและการสนับสนุนทางกฎหมาย",
+      memberPrice: "ราคาสมาชิก",
+      publicPrice: "ราคาทั่วไป",
+      perCase: "ต่อคดี",
+      submitCase: "ส่งคดี",
+      savingsVsPublic: "ประหยัด ฿1,500 เมื่อเทียบกับราคาทั่วไป",
+      upgradeForMemberRate: "อัปเกรดเป็นแผนชำระเงินใดๆ เพื่อราคาสมาชิก",
     },
     zh: {
       welcome: "欢迎回来",
@@ -989,6 +1008,14 @@ function DashboardContent() {
       upgradeToProtectForEnhancedTools: "升级到Protect，获取增强工具",
       getMoreScansLineAlerts: "获取更多扫描、LINE提醒和额外信函额度。",
       upgradeToProtect: "升级到Protect",
+      resolveDispute: "解决您的纠纷",
+      resolveDescription: "专业案件处理和法律支持",
+      memberPrice: "会员价",
+      publicPrice: "公开价",
+      perCase: "每案",
+      submitCase: "提交案件",
+      savingsVsPublic: "比公开价节省 ฿1,500",
+      upgradeForMemberRate: "升级到任何付费计划以获得会员定价",
     },
     ja: {
       welcome: "おかえりなさい",
@@ -1049,6 +1076,14 @@ function DashboardContent() {
       upgradeToProtectForEnhancedTools: "強化されたツールにはProtectにアップグレード",
       getMoreScansLineAlerts: "より多くのスキャン、LINEアラート、追加の手紙クレジットを取得。",
       upgradeToProtect: "Protectにアップグレード",
+      resolveDispute: "紛争を解決する",
+      resolveDescription: "プロフェッショナルなケース処理と法的サポート",
+      memberPrice: "メンバー価格",
+      publicPrice: "公開価格",
+      perCase: "ケースごと",
+      submitCase: "ケースを送信",
+      savingsVsPublic: "公開価格より ฿1,500 お得",
+      upgradeForMemberRate: "有料プランにアップグレードしてメンバー価格を利用",
     },
     ru: {
       welcome: "Добро пожаловать",
@@ -1167,6 +1202,14 @@ function DashboardContent() {
       upgradeToProtectForEnhancedTools: "Обновитесь до Protect для расширенных инструментов",
       getMoreScansLineAlerts: "Получите больше сканирований, уведомления LINE и дополнительные кредиты писем",
       upgradeToProtect: "Обновить до Protect",
+      resolveDispute: "Разрешить ваш спор",
+      resolveDescription: "Профессиональное ведение дела и юридическая поддержка",
+      memberPrice: "Цена участника",
+      publicPrice: "Публичная цена",
+      perCase: "за дело",
+      submitCase: "Подать дело",
+      savingsVsPublic: "Экономия ฿1,500 от публичной цены",
+      upgradeForMemberRate: "Обновитесь до любого платного плана для цен участника",
     }
   };
 
@@ -1986,6 +2029,116 @@ function DashboardContent() {
               </div>
             </div>
           )}
+
+          {/* RESOLVE DISPUTE CTA CARD - Available to ALL users */}
+          <Card 
+            className="mb-6 border-none shadow-xl overflow-hidden cursor-pointer card-interactive"
+            style={{
+              background: isDarkMode 
+                ? 'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)'
+                : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+            }}
+            onClick={() => {
+              haptic.medium();
+              navigate(createPageUrl("ResolveCase"));
+            }}
+          >
+            <CardContent className="p-5 sm:p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <Scale className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xl font-bold text-white mb-1">
+                    {strings.resolveDispute}
+                  </h3>
+                  <p className="text-sm text-white/90 mb-3">
+                    {strings.resolveDescription}
+                  </p>
+                  
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                    {hasMemberPricing(user) ? (
+                      <>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-3xl font-bold text-white">
+                            ฿{RESOLVE_PRICING.MEMBER_RATE.toLocaleString()}
+                          </span>
+                          <span className="text-sm text-white/80">{strings.perCase}</span>
+                        </div>
+                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 font-bold">
+                          <Crown className="w-3 h-3 mr-1" />
+                          {strings.memberPrice}
+                        </Badge>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-3xl font-bold text-white">
+                            ฿{RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()}
+                          </span>
+                          <span className="text-sm text-white/80">{strings.perCase}</span>
+                        </div>
+                        <Badge className="bg-white/20 text-white border-white/30 font-semibold text-xs">
+                          {strings.publicPrice}
+                        </Badge>
+                      </>
+                    )}
+                  </div>
+
+                  {hasMemberPricing(user) ? (
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-white/10">
+                      <TrendingDown className="w-4 h-4 text-white" />
+                      <span className="text-xs font-semibold text-white">
+                        {strings.savingsVsPublic}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-white/80">
+                      💡 {strings.upgradeForMemberRate}
+                    </p>
+                  )}
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      haptic.medium();
+                      navigate(createPageUrl("ResolveCase"));
+                    }}
+                    className="w-full mt-4 btn-interaction"
+                    style={{
+                      padding: '12px 20px',
+                      borderRadius: '10px',
+                      backgroundColor: '#FFFFFF',
+                      color: '#DC2626',
+                      border: 'none',
+                      fontWeight: '700',
+                      fontSize: '16px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#FEE2E2';
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 6px 16px rgba(0,0,0,0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#FFFFFF';
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                    }}
+                  >
+                    <Shield className="w-5 h-5" />
+                    {strings.submitCase}
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Main Content - Stats and Features */}
           {!showOnboarding && (
