@@ -477,13 +477,14 @@ function CasesContent() {
               navigate(createPageUrl("resolvecase") + "?mode=new");
             }}
             color="#C7A338"
+            color="#C7A338"
           />
 
           <Button
             variant="ghost"
             onClick={() => {
               haptic.light();
-              navigate(createPageUrl("Dashboard"));
+              navigate(createPageUrl("dashboard"));
             }}
             className="mb-4"
             style={{ color: colors.textSecondary, minHeight: '44px' }}
@@ -567,8 +568,8 @@ function CasesContent() {
                   </div>
                   <button
                     onClick={() => {
-                      haptic.medium();
-                      navigate(createPageUrl("ResolveCase") + "?mode=new");
+                     haptic.medium();
+                     navigate(createPageUrl("resolvecase") + "?mode=new");
                     }}
                     className="btn-interaction w-full sm:w-auto"
                     style={{
@@ -659,7 +660,7 @@ function CasesContent() {
                   type="button"
                   onClick={() => {
                     haptic.medium();
-                    navigate(createPageUrl("ResolveCase"));
+                    navigate(createPageUrl("resolvecase"));
                   }}
                   className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
                   style={{ backgroundColor: "#0C3B2E", color: "#FFFFFF" }}
@@ -670,8 +671,8 @@ function CasesContent() {
                   <button
                     type="button"
                     onClick={() => {
-                      haptic.light();
-                      navigate(createPageUrl("Account") + '#plans');
+                     haptic.light();
+                     navigate(createPageUrl("account") + '#plans');
                     }}
                     className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
                     style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: "#FFFFFF" }}
@@ -715,7 +716,7 @@ function CasesContent() {
                       }}
                       onClick={() => {
                         haptic.light();
-                        navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`);
+                        navigate(createPageUrl("casedetails") + `?caseId=${caseItem.id}`);
                       }}
                     >
                       <CardHeader className="pb-3">
