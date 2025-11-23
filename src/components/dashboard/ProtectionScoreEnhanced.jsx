@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -138,7 +137,27 @@ const ProtectionScoreEnhanced = ({
       resetHiddenTips: '숨겨진 팁 재설정',
       allTipsHidden: '모든 팁이 숨겨졌습니다!',
       showTipsAgain: '팁 다시 표시',
-      topPercentile: '상위 {percentile} 백분위' // New string
+      topPercentile: '상위 {percentile} 백분위'
+    },
+    ru: {
+      protectionScore: 'Индекс защиты',
+      excellent: 'Отлично',
+      good: 'Хорошо',
+      fair: 'Удовлетворительно',
+      needsWork: 'Требуются действия',
+      top: 'Топ',
+      documentation: 'Документы',
+      protections: 'Меры защиты',
+      actions: 'Действия',
+      expert: 'Эксперт',
+      selfProtector: 'Самозащита',
+      documenter: 'Документалист',
+      actionTaker: 'Активист',
+      quickWins: 'Быстрые улучшения',
+      resetHiddenTips: 'Вернуть скрытые советы',
+      allTipsHidden: 'Все советы скрыты!',
+      showTipsAgain: 'Показать советы снова',
+      topPercentile: 'Топ {percentile}%'
     }
   };
 
@@ -158,7 +177,8 @@ const ProtectionScoreEnhanced = ({
       zh: '专家',
       ja: 'エキスパート',
       ko: '전문가',
-      color: isDarkMode ? '#FFD700' : '#C7A338', // Gold/Darker Gold
+      ru: 'Эксперт',
+      color: isDarkMode ? '#FFD700' : '#C7A338',
       bgColor: isDarkMode ? 'rgba(255,215,0,0.25)' : 'rgba(199,163,56,0.15)',
       borderColor: isDarkMode ? 'rgba(255,215,0,0.5)' : 'rgba(199,163,56,0.35)'
     },
@@ -168,7 +188,8 @@ const ProtectionScoreEnhanced = ({
       zh: '自我保护者',
       ja: 'セルフプロテクター',
       ko: '자기 보호자',
-      color: isDarkMode ? '#10B981' : '#047857', // Emerald Green
+      ru: 'Самозащита',
+      color: isDarkMode ? '#10B981' : '#047857',
       bgColor: isDarkMode ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.15)',
       borderColor: isDarkMode ? 'rgba(16,185,129,0.5)' : 'rgba(16,185,129,0.35)'
     },
@@ -178,7 +199,8 @@ const ProtectionScoreEnhanced = ({
       zh: '文档员',
       ja: 'ドキュメンター',
       ko: '문서 작성자',
-      color: isDarkMode ? '#3B82F6' : '#2563EB', // Blue
+      ru: 'Документалист',
+      color: isDarkMode ? '#3B82F6' : '#2563EB',
       bgColor: isDarkMode ? 'rgba(59,130,246,0.25)' : 'rgba(59,130,246,0.15)',
       borderColor: isDarkMode ? 'rgba(59,130,246,0.5)' : 'rgba(59,130,246,0.35)'
     }

@@ -512,6 +512,82 @@ export default function UploadScanPage() {
       stepTrack: "추적",
       upgradeHintText: "무제한 스캔 및 고급 임대 계약 분석을 잠금 해제하려면 업그레이드하십시오.",
       viewPlans: "플랜 보기",
+    },
+    ru: {
+      title: "Сканировать договор",
+      subtitle: "Загрузите договор аренды для автоматического анализа",
+      uploadArea: "Перетащите файлы договора сюда или нажмите, чтобы выбрать",
+      supportedFormats: "PDF, Word (DOC/DOCX), PNG, JPG (до 10 МБ каждый)",
+      selectFiles: "Выбрать файлы",
+      uploadAll: "Загрузить и проанализировать",
+      uploading: "Загрузка файлов...",
+      analyzingTitle: "Анализ вашего договора",
+      analyzingDesc: "Наш ИИ проверяет договор аренды. Это может занять до 30 секунд...",
+      analyzing: {
+        uploading: "Загрузка файлов...",
+        creating: "Создание записи договора...",
+        scanning: "ИИ анализирует документ...",
+        extracting: "Извлечение деталей договора...",
+        finalizing: "Завершение анализа..."
+      },
+      recentScans: "Последние сканирования",
+      viewAll: "Посмотреть все договоры",
+      noScans: "Сканирований пока нет",
+      scanDate: "Отсканировано",
+      confirmNoticeTitle: "Настроить напоминание о периоде уведомления",
+      confirmNoticeDesc: "Мы обнаружили, что ваш договор заканчивается",
+      noticePeriodLabel: "Период уведомления (дней)",
+      noticePeriodHelp: "За сколько дней до окончания договора уведомить арендодателя",
+      skipReminder: "Пропустить",
+      setReminder: "Установить напоминание",
+      riskLevels: {
+        low: "Низкий риск",
+        medium: "Средний риск",
+        high: "Высокий риск",
+        critical: "Критический риск"
+      },
+      leaseDetails: "Детали договора",
+      basicInfo: "Основная информация",
+      propertyAddress: "Адрес недвижимости",
+      monthlyRent: "Ежемесячная аренда",
+      securityDeposit: "Залоговый депозит",
+      leasePeriod: "Период аренды",
+      leaseStart: "Начало аренды",
+      leaseEnd: "Окончание аренды",
+      to: "до",
+      noticeSettings: "Настройки уведомлений",
+      noticeAlertsEnabled: "Уведомления включены",
+      noticePeriod: "Период уведомления (дней)",
+      noticeDeadline: "Крайний срок уведомления",
+      edit: "Редактировать",
+      save: "Сохранить",
+      cancel: "Отмена",
+      days: "дней",
+      riskAnalysis: "Анализ рисков",
+      riskScore: "Оценка риска",
+      viewFullReport: "Посмотреть полный отчёт",
+      viewScanResults: "Посмотреть результаты сканирования",
+      viewLease: "Посмотреть документ договора",
+      closeDetails: "Закрыть детали",
+      enableAlertsHelp: "Получайте напоминания за 30, 7 и 3 дня до крайнего срока уведомления",
+      deadlineCalculated: "Рассчитывается на основе даты окончания договора и периода уведомления",
+      allLeases: "Все договоры",
+      scanLimitReached: "Лимит сканирований достигнут",
+      scanLimitMsg: "Вы использовали {used} из {limit} сканирований{periodText}",
+      upgradeForMore: "Обновитесь для большего количества сканирований",
+      scansRemaining: "Осталось {remaining} сканирований{periodText}",
+      unlimitedScans: "Неограниченные сканирования",
+      browseDocuments: "Выбрать файлы",
+      takePhotos: "Сделать фото",
+      batchUpload: "Пакетная загрузка",
+      singleUpload: "Одиночная загрузка",
+      filesWillBeSeparate: "Каждый файл будет загружен как отдельный договор",
+      stepUpload: "Загрузка",
+      stepAnalyze: "Анализ",
+      stepResults: "Результаты",
+      stepTrack: "Отслеживание",
+      upgradeHintText: "Обновитесь для неограниченного сканирования и расширенного анализа договоров.",
+      viewPlans: "Посмотреть планы",
     }
   };
 
@@ -519,10 +595,10 @@ export default function UploadScanPage() {
 
   // NEW: Define breadcrumb steps
   const breadcrumbSteps = [
-    { label: strings.stepUpload, sublabel: language === 'th' ? 'เลือกไฟล์' : language === 'zh' ? '选择文件' : language === 'ja' ? 'ファイルを選択' : language === 'ko' ? '파일 선택' : 'Select files' },
-    { label: strings.stepAnalyze, sublabel: language === 'th' ? 'AI สแกน' : language === 'zh' ? 'AI扫描' : language === 'ja' ? 'AIスキャン' : language === 'ko' ? 'AI 스캔' : 'AI scan' },
-    { label: strings.stepResults, sublabel: language === 'th' ? 'ดูผล' : language === 'zh' ? '查看结果' : language === 'ja' ? '結果を見る' : language === 'ko' ? '결과 보기' : 'View results' },
-    { label: strings.stepTrack, sublabel: language === 'th' ? 'ติดตามมัดจำ' : language === 'zh' ? '追踪押金' : language === 'ja' ? '敷金を追跡' : language === 'ko' ? '보증금 추적' : 'Track deposit' }
+    { label: strings.stepUpload, sublabel: language === 'th' ? 'เลือกไฟล์' : language === 'zh' ? '选择文件' : language === 'ja' ? 'ファイルを選択' : language === 'ko' ? '파일 선택' : language === 'ru' ? 'Выберите файлы' : 'Select files' },
+    { label: strings.stepAnalyze, sublabel: language === 'th' ? 'AI สแกน' : language === 'zh' ? 'AI扫描' : language === 'ja' ? 'AIスキャン' : language === 'ko' ? 'AI 스캔' : language === 'ru' ? 'ИИ сканирование' : 'AI scan' },
+    { label: strings.stepResults, sublabel: language === 'th' ? 'ดูผล' : language === 'zh' ? '查看结果' : language === 'ja' ? '結果を見る' : language === 'ko' ? '결과 보기' : language === 'ru' ? 'Просмотр результатов' : 'View results' },
+    { label: strings.stepTrack, sublabel: language === 'th' ? 'ติดตามมัดจำ' : language === 'zh' ? '追踪押金' : language === 'ja' ? '敷金を追跡' : language === 'ko' ? '보증금 추적' : language === 'ru' ? 'Отслеживать депозит' : 'Track deposit' }
   ];
 
   // Update step based on upload/analysis state
@@ -991,9 +1067,9 @@ export default function UploadScanPage() {
 
   const getPeriodText = (period) => {
     if (period === 'year') {
-      return language === 'th' ? 'ปีนี้' : 'this year';
+      return language === 'th' ? 'ปีนี้' : language === 'ru' ? 'в этом году' : 'this year';
     } else if (period === 'lifetime') {
-      return language === 'th' ? 'ตลอดชีพ' : 'lifetime';
+      return language === 'th' ? 'ตลอดชีพ' : language === 'ru' ? 'за всё время' : 'lifetime';
     }
     return '';
   };
@@ -1398,7 +1474,7 @@ export default function UploadScanPage() {
                     className="w-full justify-start text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    {language === 'th' ? 'ลบ' : 'Delete'}
+                    {language === 'th' ? 'ลบ' : language === 'ru' ? 'Удалить' : 'Delete'}
                   </Button>
                 </div>
               </div>
@@ -1539,7 +1615,7 @@ export default function UploadScanPage() {
                 {selectedFiles.length > 0 && (
                   <div className="mt-6">
                     <h4 className="font-semibold mb-3" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? 'ไฟล์ที่เลือก' : 'Selected Files'} ({selectedFiles.length})
+                      {language === 'th' ? 'ไฟล์ที่เลือก' : language === 'ru' ? 'Выбранные файлы' : 'Selected Files'} ({selectedFiles.length})
                     </h4>
                     <div className="space-y-2">
                       {selectedFiles.map((file, index) => (
@@ -1618,7 +1694,7 @@ export default function UploadScanPage() {
                               overflowWrap: 'break-word',
                               wordBreak: 'break-word'
                             }}>
-                              {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : 'Lease Agreement')}
+                              {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : language === 'ru' ? 'Договор аренды' : 'Lease Agreement')}
                             </h3>
                           </div>
                           <p className="text-sm" style={{ color: colors.textSecondary }}>
@@ -1629,13 +1705,13 @@ export default function UploadScanPage() {
                           {lease.status === 'scanned' && (
                             <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
                               <CheckCircle2 className="w-3 h-3 mr-1" />
-                              {language === 'th' ? 'วิเคราะห์แล้ว' : 'Analyzed'}
+                              {language === 'th' ? 'วิเคราะห์แล้ว' : language === 'ru' ? 'Проанализировано' : 'Analyzed'}
                             </Badge>
                           )}
                           {lease.status === 'uploaded' && (
                             <Badge className="bg-amber-100 text-amber-700 border-amber-200">
                               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              {language === 'th' ? 'รอการวิเคราะห์' : 'Awaiting Analysis'}
+                              {language === 'th' ? 'รอการวิเคราะห์' : language === 'ru' ? 'Ожидание анализа' : 'Awaiting Analysis'}
                             </Badge>
                           )}
                         </div>

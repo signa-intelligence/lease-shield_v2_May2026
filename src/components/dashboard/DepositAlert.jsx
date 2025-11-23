@@ -90,6 +90,17 @@ export default function DepositAlert({ deposits, language = 'en' }) {
       viewDetails: "세부 정보 보기",
       openCase: "🛡️ 지금 사례 열기",
       depositShield: "보증금 실드 준비 완료"
+    },
+    ru: {
+      title: "Уведомления о депозитах",
+      noDue: "Все депозиты в порядке",
+      dueIn: "Осталось",
+      overdue: "Просрочено на",
+      days: "дней",
+      amount: "Сумма",
+      viewDetails: "Подробнее",
+      openCase: "🛡️ Открыть дело сейчас",
+      depositShield: "Защита депозита готова"
     }
   };
 
@@ -151,7 +162,7 @@ export default function DepositAlert({ deposits, language = 'en' }) {
                   <div className="flex items-center gap-2 mb-2">
                     <Home className="w-4 h-4 flex-shrink-0" style={{ color: isOverdue ? '#DC2626' : '#047857' }} />
                     <p className="font-semibold text-sm truncate" style={{ color: isOverdue ? '#DC2626' : '#047857' }}>
-                      {deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : language === 'zh' ? '未指定' : language === 'ja' ? '未指定' : language === 'ko' ? '미지정' : 'N/A')}
+                      {deposit.property_address || (language === 'th' ? 'ไม่ระบุ' : language === 'zh' ? '未指定' : language === 'ja' ? '未指定' : language === 'ko' ? '미지정' : language === 'ru' ? 'Не указано' : 'N/A')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
