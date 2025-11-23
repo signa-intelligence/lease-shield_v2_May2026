@@ -10,6 +10,7 @@ export default function StatsCard({
   trend,
   label,
   route,
+  onClick,
   className,
   haptic,
   colors,
@@ -43,26 +44,29 @@ export default function StatsCard({
     buttonText: '#FFFFFF',
   };
 
-  return (
-    <Link to={route}>
-      <div
-        onClick={() => {
+  const content = (
+    <div
+      onClick={() => {
+        if (onClick) {
+          onClick();
+        } else {
           haptic?.light();
-          const iconElement = document.querySelector(`#stat-icon-${title.replace(/\s/g, '-')}`);
-          if (iconElement) {
-            iconElement.classList.add('icon-shimmer');
-            setTimeout(() => {
-              iconElement.classList.remove('icon-shimmer');
-            }, 200);
-          }
-        }}
-        className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm transition-all duration-200 ${className || ''}`}
-        style={{
-          backgroundColor: cardStyles.backgroundColor,
-          borderLeft: `4px solid ${cardStyles.borderColor}`,
-          cursor: 'pointer'
-        }}
-      >
+        }
+        const iconElement = document.querySelector(`#stat-icon-${title.replace(/\s/g, '-')}`);
+        if (iconElement) {
+          iconElement.classList.add('icon-shimmer');
+          setTimeout(() => {
+            iconElement.classList.remove('icon-shimmer');
+          }, 200);
+        }
+      }}
+      className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm transition-all duration-200 ${className || ''}`}
+      style={{
+        backgroundColor: cardStyles.backgroundColor,
+        borderLeft: `4px solid ${cardStyles.borderColor}`,
+        cursor: 'pointer'
+      }}
+    >
         <div className="flex items-start justify-between mb-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -142,6 +146,7 @@ export default function StatsCard({
           </button>
         )}
       </div>
-    </Link>
   );
+
+  return route && !onClick ? <Link to={route}>{content}</Link> : content;
 }
