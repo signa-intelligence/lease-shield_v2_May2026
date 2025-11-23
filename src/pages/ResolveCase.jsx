@@ -183,12 +183,21 @@ function ResolveCaseContent() {
     
     try {
       // Generate case number first
-      const caseNumberResponse = await base44.functions.invoke('generateCaseNumber');
+      const isMember = hasMemberPricing(user);
+      const planTier = user?.plan_tier?.toLowerCase() || 'free';
+      const tierLevel = planTier === 'lite' ? 'L' : planTier === 'protect' ? 'P' : planTier === 'secure' ? 'S' : 'F';
+      
+      const caseNumberResponse = await base44.functions.invoke('generateCaseNumber', {
+        isMember: isMember,
+        fastTrack: false,
+        tierLevel: tierLevel
+      });
+      
       const caseNumber = caseNumberResponse.data?.case_number;
       
       console.log('[RESOLVE_FLOW] Generated case number:', caseNumber);
 
-      // Create case with all details
+      // Create case with all details including case_number
       const caseData = {
         case_number: caseNumber,
         user_email: user.email,
@@ -200,7 +209,7 @@ function ResolveCaseContent() {
         property_address: formData.property_address || '',
         evidence: formData.evidence_files,
         status: 'awaiting_payment',
-        is_member_at_creation: hasMemberPricing(user),
+        is_member_at_creation: isMember,
         timeline: [
           {
             timestamp: new Date().toISOString(),
@@ -210,7 +219,7 @@ function ResolveCaseContent() {
         ]
       };
 
-      console.log('[RESOLVE_FLOW] Case created on form submit - creating in DB...');
+      console.log('[RESOLVE_FLOW] Creating case in DB with case_number:', caseNumber);
       console.log('[RESOLVE_FLOW] Case data:', {
         case_number: caseData.case_number,
         user_email: caseData.user_email,
@@ -220,7 +229,7 @@ function ResolveCaseContent() {
       });
       createCaseMutation.mutate(caseData);
     } catch (error) {
-      console.error('[RESOLVE_PAGE] Submit failed:', error);
+      console.error('[RESOLVE_FLOW] Submit failed:', error);
       toast.error(language === 'th' ? 'ไม่สามารถส่งคดีได้' : language === 'ru' ? 'Не удалось отправить дело' : 'Failed to submit case');
       setSubmitting(false);
     }
