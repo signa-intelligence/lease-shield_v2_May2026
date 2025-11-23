@@ -1109,8 +1109,8 @@ function DashboardContent() {
       upgradeToProtectForEnhancedTools: "고급 도구를 위해 Protect로 업그레이드하세요.",
       getMoreScansLineAlerts: "더 많은 스캔, LINE 알림 및 추가 편지 크레딧을 받으세요.",
       upgradeToProtect: "Protect로 업그레이드",
-      },
-      ru: {
+    },
+    ru: {
       welcome: "Добро пожаловать",
       subtitle: "Предотвращайте проблемы с арендой до их возникновения",
       activeLeases: "Активные договоры",
@@ -1168,8 +1168,7 @@ function DashboardContent() {
       upgradeToProtectForEnhancedTools: "Обновитесь до Protect для расширенных инструментов",
       getMoreScansLineAlerts: "Получите больше сканирований, уведомления LINE и дополнительные кредиты писем",
       upgradeToProtect: "Обновить до Protect",
-      }
-      };
+    }
   };
 
   const strings = t[language] || t.en;
@@ -1426,6 +1425,12 @@ function DashboardContent() {
                           <span style={{ color: '#FFFFFF' }}>공정。</span>
                           <span style={{ color: '#ECEFED' }}>투명。</span>
                           <span style={{ color: '#C7A338' }}>보호。</span>
+                        </>
+                      ) : language === 'ru' ? (
+                        <>
+                          <span style={{ color: '#FFFFFF' }}>Справедливо.</span>
+                          <span style={{ color: '#ECEFED' }}>Прозрачно.</span>
+                          <span style={{ color: '#C7A338' }}>Защищено.</span>
                         </>
                       ) : language === 'th' ? (
                         <>
@@ -2051,7 +2056,7 @@ function DashboardContent() {
                         gradient: 'from-amber-500 to-amber-700',
                         scoreColor: FEATURE_COLORS.rent.accent,
                         miniStats: [
-                          { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
+                          { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'ru' ? 'Уведомления' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
                         ],
                         route: createPageUrl("PropertyTracker") + "#rent",
                         label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'ru' ? 'Управление' : 'จัดการ') : strings.setupRent,
