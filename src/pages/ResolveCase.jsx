@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, AlertCircle, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { RESOLVE_PRICING, hasMemberPricing } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipAgeDays, getMemberPricingUnlockDate } from "../components/shared/resolvePricing";
 
 export default function ResolveCase() {
   const navigate = useNavigate();
@@ -216,7 +216,11 @@ export default function ResolveCase() {
       whatsIncluded: "What's Included:",
       reviewDocs: "Professional review of your documents",
       recommendActions: "Recommended action plan & strategy",
-      templateLetters: "Customized legal template letters"
+      templateLetters: "Customized legal template letters",
+      memberSince: "Member since {date} – member pricing unlocked",
+      memberUnlocksIn: "Member pricing unlocks after 30 days of membership. Unlocks on {date}.",
+      upgradeAppliesToFuture: "Your new membership will apply member rates to future cases. This case is billed at the public rate.",
+      memberPricingRule: "Member rates apply after 30 days of active Lite, Protect or Secure membership."
     },
     th: {
       title: "เปิดคดี",
@@ -257,7 +261,11 @@ export default function ResolveCase() {
       whatsIncluded: "รวมถึง:",
       reviewDocs: "ตรวจสอบเอกสารโดยผู้เชี่ยวชาญ",
       recommendActions: "แผนปฏิบัติการและกลยุทธ์ที่แนะนำ",
-      templateLetters: "จดหมายตัวอย่างกฎหมายที่ปรับแต่ง"
+      templateLetters: "จดหมายตัวอย่างกฎหมายที่ปรับแต่ง",
+      memberSince: "เป็นสมาชิกตั้งแต่ {date} – ปลดล็อกราคาสมาชิกแล้ว",
+      memberUnlocksIn: "ราคาสมาชิกจะปลดล็อกหลังจากเป็นสมาชิกครบ 30 วัน ปลดล็อกเมื่อ {date}",
+      upgradeAppliesToFuture: "การเป็นสมาชิกใหม่ของคุณจะใช้ราคาสมาชิกกับคดีในอนาคต คดีนี้จะเรียกเก็บในราคาทั่วไป",
+      memberPricingRule: "ราคาสมาชิกใช้ได้หลังจากเป็นสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน"
     },
     zh: {
       title: "开启案件",
@@ -455,7 +463,7 @@ export default function ResolveCase() {
                       {str.perCase}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 p-2 rounded-lg" style={{ 
+                  <div className="flex items-center gap-2 p-2 rounded-lg mb-2" style={{ 
                     backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5' 
                   }}>
                     <TrendingDown className="w-4 h-4 text-emerald-600" />
@@ -463,6 +471,36 @@ export default function ResolveCase() {
                       {str.savingsNote.replace('{amount}', RESOLVE_PRICING.SAVINGS.toLocaleString())}
                     </span>
                   </div>
+                  {user?.subscription_started_at && (
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>
+                      {str.memberSince.replace('{date}', new Date(user.subscription_started_at).toLocaleDateString())}
+                    </p>
+                  )}
+                </>
+              ) : user?.plan_tier && user.plan_tier !== 'free' && getMembershipAgeDays(user) < RESOLVE_PRICING.MINIMUM_MEMBERSHIP_DAYS ? (
+                <>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
+                      ฿{RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()}
+                    </span>
+                    <span className="text-sm" style={{ color: colors.textSecondary }}>
+                      {str.perCase}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-lg mb-2" style={{ 
+                    backgroundColor: isDarkMode ? '#3A2D1C' : '#FEF3C7',
+                    border: `1px solid ${isDarkMode ? '#F59E0B' : '#FCD34D'}`
+                  }}>
+                    <p className="text-xs mb-2" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
+                      {str.memberUnlocksIn.replace('{date}', getMemberPricingUnlockDate(user)?.toLocaleDateString() || 'N/A')}
+                    </p>
+                    <p className="text-xs font-semibold" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
+                      {str.upgradeAppliesToFuture}
+                    </p>
+                  </div>
+                  <p className="text-xs" style={{ color: colors.textSecondary }}>
+                    {str.memberPricingRule}
+                  </p>
                 </>
               ) : (
                 <>

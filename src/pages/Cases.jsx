@@ -25,7 +25,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
-import { RESOLVE_PRICING, hasMemberPricing } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipAgeDays } from "../components/shared/resolvePricing";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
@@ -368,6 +368,9 @@ function CasesContent() {
       needMoreHelp: "Need more help with a dispute?",
       openResolveDesc: "Open a Resolve case for professional support at member or public rates.",
       openResolveCase: "Open a Resolve Case",
+      submitCaseMemberRate: "Submit Case – ฿{price} member rate",
+      submitCasePublicRate: "Submit Case – ฿{price} public rate",
+      memberPricingRule: "Member rates apply after 30 days of active membership.",
     }
   };
 
@@ -530,44 +533,52 @@ function CasesContent() {
               boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(239,68,68,0.08)'
             }}
           >
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex-1">
-                <h3 className="text-base font-bold mb-1" style={{ color: colors.textPrimary }}>
-                  {strings.needMoreHelp}
-                </h3>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>
-                  {strings.openResolveDesc}
-                </p>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex-1">
+                  <h3 className="text-base font-bold mb-1" style={{ color: colors.textPrimary }}>
+                    {strings.needMoreHelp}
+                  </h3>
+                  <p className="text-sm mb-1" style={{ color: colors.textSecondary }}>
+                    {strings.openResolveDesc}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    haptic.medium();
+                    navigate(createPageUrl("ResolveCase"));
+                  }}
+                  className="btn-interaction w-full sm:w-auto"
+                  style={{
+                    padding: '10px 18px',
+                    borderRadius: '8px',
+                    backgroundColor: 'transparent',
+                    color: '#EF4444',
+                    border: '2px solid #EF4444',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#EF4444';
+                    e.target.style.color = '#FFFFFF';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.color = '#EF4444';
+                  }}
+                >
+                  {hasMemberPricing(user) 
+                    ? strings.submitCaseMemberRate.replace('{price}', RESOLVE_PRICING.MEMBER_RATE.toLocaleString())
+                    : strings.submitCasePublicRate.replace('{price}', RESOLVE_PRICING.PUBLIC_RATE.toLocaleString())
+                  }
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  haptic.medium();
-                  navigate(createPageUrl("ResolveCase"));
-                }}
-                className="btn-interaction w-full sm:w-auto"
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: '8px',
-                  backgroundColor: 'transparent',
-                  color: '#EF4444',
-                  border: '2px solid #EF4444',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#EF4444';
-                  e.target.style.color = '#FFFFFF';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = '#EF4444';
-                }}
-              >
-                {strings.openResolveCase}
-              </button>
+              <p className="text-xs" style={{ color: colors.textSecondary, opacity: 0.8 }}>
+                {strings.memberPricingRule}
+              </p>
             </div>
           </div>
 
