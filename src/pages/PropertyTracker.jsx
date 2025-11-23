@@ -378,7 +378,7 @@ function PropertyTrackerContent() {
 
   const createDepositMutation = useMutation({
     mutationFn: (data) => base44.entities.DepositTracker.create(data),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
       setEditingDeposit(false);
       setDepositForm({
@@ -389,6 +389,15 @@ function PropertyTrackerContent() {
         notes: ''
       });
       toast.success(language === 'th' ? 'บันทึกสำเร็จ' : 'Saved successfully');
+      
+      // Mark first deposit/property added
+      if (!user.first_deposit_added || !user.first_property_created) {
+        await base44.auth.updateMe({
+          first_deposit_added: true,
+          first_property_created: true
+        });
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      }
     },
   });
 
@@ -421,7 +430,7 @@ function PropertyTrackerContent() {
       optimistic.optimisticCreate(optimisticItem);
       return { optimisticItem };
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       setShowAddMaintenance(false);
       setPhotoFiles([]);
@@ -451,6 +460,12 @@ function PropertyTrackerContent() {
       }).catch(notifError => {
         console.error('❌ Failed to send notifications:', notifError);
       });
+
+      // Mark first property created (via maintenance)
+      if (!user.first_property_created) {
+        await base44.auth.updateMe({ first_property_created: true });
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      }
     },
     onError: (error, variables, context) => {
       console.error('❌ createMaintenanceMutation error:', error);
