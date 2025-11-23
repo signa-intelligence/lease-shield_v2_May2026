@@ -52,36 +52,57 @@ function ResolveCaseContent() {
 
     const loadCase = async () => {
       try {
-        const urlParams = new URLSearchParams(location.search);
+        const urlParams = new URLSearchParams(window.location.search);
         const caseIdFromUrl = urlParams.get('caseId');
         const sessionId = urlParams.get('session_id');
 
         console.log('🔍 Loading case - caseId:', caseIdFromUrl, 'sessionId:', sessionId);
 
-        // Try to find the most recent intake case for this user
-        const userCases = await base44.entities.Case.filter({ 
-          user_email: user.email 
-        }, '-created_date');
-
-        console.log('📦 Found cases for user:', userCases.length);
-
-        // Look for case with intake status and valid payment
+        // Polling strategy: if session_id is present, poll for the case
+        let attempts = 0;
+        const maxAttempts = 5;
         let targetCase = null;
-        
-        if (caseIdFromUrl) {
-          targetCase = userCases.find(c => c.id === caseIdFromUrl && c.status === 'intake');
-        }
-        
-        if (!targetCase && sessionId) {
-          targetCase = userCases.find(c => c.stripe_session_id === sessionId && c.status === 'intake');
-        }
-        
-        if (!targetCase) {
-          targetCase = userCases.find(c => c.status === 'intake' && c.stripe_session_id);
+
+        while (attempts < maxAttempts && !targetCase) {
+          attempts++;
+          console.log(`🔄 Attempt ${attempts}/${maxAttempts} to find case...`);
+
+          // Fetch fresh cases
+          const userCases = await base44.entities.Case.filter({ 
+            user_email: user.email 
+          }, '-created_date');
+
+          console.log('📦 Found cases for user:', userCases.length);
+
+          // Priority 1: Direct caseId match
+          if (caseIdFromUrl) {
+            targetCase = userCases.find(c => c.id === caseIdFromUrl && c.status === 'intake');
+            if (targetCase) console.log('✅ Found by caseId:', targetCase.id);
+          }
+          
+          // Priority 2: Session ID match (from Stripe redirect)
+          if (!targetCase && sessionId) {
+            targetCase = userCases.find(c => c.stripe_session_id === sessionId && c.status === 'intake');
+            if (targetCase) console.log('✅ Found by session_id:', targetCase.id);
+          }
+          
+          // Priority 3: Most recent intake case with payment
+          if (!targetCase) {
+            targetCase = userCases.find(c => c.status === 'intake' && c.stripe_session_id);
+            if (targetCase) console.log('✅ Found latest paid intake case:', targetCase.id);
+          }
+
+          // If we have session_id but no case yet, wait and retry
+          if (!targetCase && sessionId && attempts < maxAttempts) {
+            console.log('⏳ Case not found yet, waiting 1.5s before retry...');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+          } else {
+            break; // Exit loop if we found the case or no session_id to wait for
+          }
         }
 
         if (targetCase) {
-          console.log('✅ Found paid case:', targetCase.id);
+          console.log('✅ Final case loaded:', targetCase.id, 'status:', targetCase.status);
           setCurrentCase(targetCase);
           
           // Pre-fill form if case has data
@@ -100,7 +121,7 @@ function ResolveCaseContent() {
             }));
           }
         } else {
-          console.log('⚠️ No paid intake case found');
+          console.log('⚠️ No paid intake case found after', attempts, 'attempts');
         }
       } catch (error) {
         console.error('❌ Error loading case:', error);
@@ -110,7 +131,7 @@ function ResolveCaseContent() {
     };
 
     loadCase();
-  }, [user, location.search]);
+  }, [user]);
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
