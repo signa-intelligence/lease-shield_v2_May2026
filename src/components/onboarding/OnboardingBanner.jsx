@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { haptic } from "../shared/HapticFeedback";
 
-export default function OnboardingBanner({ user, colors, language, onStartSetup }) {
+export default function OnboardingBanner({ user, isDarkMode = false, language, onStartSetup }) {
   const queryClient = useQueryClient();
 
   const dismissBannerMutation = useMutation({

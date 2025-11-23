@@ -25,7 +25,7 @@ export default function PageHeader({
   backRoute,
   backLabel = "Back",
   actions,
-  colors
+  isDarkMode = false
 }) {
   const navigate = useNavigate();
 
@@ -39,12 +39,11 @@ export default function PageHeader({
       {showBack && (
         <button
           onClick={handleBack}
-          className="mb-4 flex items-center gap-2 px-3 py-2 rounded-lg transition-all hover:bg-opacity-80"
+          className="mb-4 flex items-center gap-2 px-3 py-2 rounded-lg transition-all hover:bg-opacity-80 text-gray-600 dark:text-gray-400"
           style={{
             backgroundColor: 'transparent',
             border: 'none',
-            cursor: 'pointer',
-            color: colors.textSecondary
+            cursor: 'pointer'
           }}
         >
           <ArrowLeft className="w-4 h-4" />
@@ -62,19 +61,10 @@ export default function PageHeader({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h1 
-            className="text-2xl sm:text-3xl font-bold mb-1"
-            style={{ color: colors.textPrimary }}
-          >
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-gray-900 dark:text-gray-50">
             {title}
           </h1>
-          <p 
-            className="text-sm sm:text-base"
-            style={{ 
-              color: colors.textSecondary,
-              lineHeight: '1.5'
-            }}
-          >
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400" style={{ lineHeight: '1.5' }}>
             {subtitle}
           </p>
         </div>

@@ -13,18 +13,13 @@ export default function StatsCard({
   onClick,
   className,
   haptic,
-  colors,
+  isDarkMode = false,
   gradient,
   scoreColor
 }) {
-  const cardColors = colors || {
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB'
-  };
-
-  const isDarkMode = cardColors.cardBg === '#2A2D30';
+  const cardBg = isDarkMode ? '#2A2D30' : '#FFFFFF';
+  const textPrimary = isDarkMode ? '#F9FAFB' : '#1A1D1F';
+  const textSecondary = isDarkMode ? '#D1D5DB' : '#64748b';
 
   // Extract color from gradient if provided (e.g., "from-blue-500 to-blue-700" -> "#3B82F6")
   const extractedColor = scoreColor || '#0C3B2E';
@@ -34,12 +29,12 @@ export default function StatsCard({
   const iconBgDark = `${extractedColor}30`;
 
   const cardStyles = {
-    backgroundColor: cardColors.cardBg,
+    backgroundColor: cardBg,
     borderColor: extractedColor,
     iconBg: isDarkMode ? iconBgDark : iconBgLight,
     iconColor: extractedColor,
     titleColor: extractedColor,
-    metricColor: cardColors.textPrimary,
+    metricColor: textPrimary,
     buttonBg: extractedColor,
     buttonText: '#FFFFFF',
   };

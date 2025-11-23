@@ -20,8 +20,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getFeatureCardStyles } from "@/components/shared/featureTheme";
 
-const OnboardingChecklist = ({ user, leases, deposits, documents, cases, maintenanceRequests = [], colors, language = 'en' }) => {
-  const isDarkMode = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+const OnboardingChecklist = ({ user, leases, deposits, documents, cases, maintenanceRequests = [], isDarkMode = false, language = 'en' }) => {
+
 
   const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
   const depositsTheme = getFeatureCardStyles("deposits", isDarkMode);
@@ -286,8 +286,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
 
   return (
     <Card 
-      className="border-none shadow-xl overflow-hidden"
-      style={{ backgroundColor: colors.cardBg }}
+      className="border-none shadow-xl overflow-hidden bg-white dark:bg-gray-800"
     >
       <CardHeader
         className="pb-4"
@@ -295,7 +294,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
           background: isAllComplete
             ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
             : 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-          borderBottom: `1px solid ${colors.borderColor}`
+          borderBottom: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(12,59,46,0.08)'
         }}
       >
         <div className="flex items-center justify-between">
@@ -345,8 +344,8 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
                 style={{
                   backgroundColor: task.completed 
                     ? (isDarkMode ? `${theme.iconBg}40` : `${theme.iconBg}80`)
-                    : colors.filterBg,
-                  border: `2px solid ${task.completed ? theme.borderColor : colors.borderColor}`
+                    : (isDarkMode ? '#374151' : '#F8FAFC'),
+                  border: `2px solid ${task.completed ? theme.borderColor : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)')}`
                 }}
               >
                 <div
@@ -366,10 +365,10 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div>
-                      <h4 className="font-bold text-sm" style={{ color: colors.textPrimary }}>
+                      <h4 className="font-bold text-sm text-gray-900 dark:text-gray-50">
                         {task.label}
                       </h4>
-                      <p className="text-xs" style={{ color: colors.textSecondary }}>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         {task.description}
                       </p>
                     </div>

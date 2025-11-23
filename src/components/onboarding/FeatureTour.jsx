@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { haptic } from "../shared/HapticFeedback";
 
-export default function FeatureTour({ user, onComplete, language = 'en' }) {
+export default function FeatureTour({ user, isDarkMode = false, onComplete, language = 'en' }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const queryClient = useQueryClient();
@@ -229,12 +229,12 @@ export default function FeatureTour({ user, onComplete, language = 'en' }) {
           }}
           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
         >
-          <X className="w-4 h-4" style={{ color: colors.textSecondary }} />
+          <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
         </button>
 
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
               {strings.stepOf.replace('{current}', currentStep + 1).replace('{total}', steps.length)}
             </span>
           </div>
@@ -247,10 +247,10 @@ export default function FeatureTour({ user, onComplete, language = 'en' }) {
         </div>
 
         <div className="mb-6">
-          <h3 className="text-2xl font-bold mb-3" style={{ color: colors.textPrimary }}>
+          <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-gray-50">
             {steps[currentStep].title}
           </h3>
-          <p className="text-base leading-relaxed" style={{ color: colors.textSecondary }}>
+          <p className="text-base leading-relaxed text-gray-600 dark:text-gray-400">
             {steps[currentStep].description}
           </p>
         </div>
@@ -264,11 +264,7 @@ export default function FeatureTour({ user, onComplete, language = 'en' }) {
               }
             }}
             disabled={currentStep === 0}
-            className="px-4 py-2 rounded-lg font-semibold text-sm transition-all disabled:opacity-40"
-            style={{
-              color: colors.textSecondary,
-              border: `2px solid ${colors.borderColor}`
-            }}
+            className="px-4 py-2 rounded-lg font-semibold text-sm transition-all disabled:opacity-40 text-gray-600 dark:text-gray-400 border-2 border-gray-300 dark:border-gray-600"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -280,8 +276,7 @@ export default function FeatureTour({ user, onComplete, language = 'en' }) {
                 completeTourMutation.mutate();
                 setIsVisible(false);
               }}
-              className="px-4 py-2 text-sm font-medium"
-              style={{ color: colors.textSecondary }}
+              className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400"
             >
               {strings.skipTour}
             </button>

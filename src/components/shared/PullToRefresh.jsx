@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { RefreshCw } from 'lucide-react';
 
-const PullToRefresh = ({ onRefresh, children, colors }) => {
+const PullToRefresh = ({ onRefresh, children, isDarkMode }) => {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const startY = useRef(0);
@@ -73,7 +73,7 @@ const PullToRefresh = ({ onRefresh, children, colors }) => {
         <div
           className="w-10 h-10 rounded-full flex items-center justify-center"
           style={{
-            backgroundColor: colors.cardBg,
+            backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
           }}
         >

@@ -18,7 +18,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
+const OnboardingWizard = ({ open, onClose, user, isDarkMode = false, language = 'en' }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
 
@@ -243,9 +243,8 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-2xl w-[95vw] max-h-[90vh] flex flex-col p-0"
+        className="max-w-2xl w-[95vw] max-h-[90vh] flex flex-col p-0 bg-white dark:bg-gray-800"
         style={{ 
-          backgroundColor: colors.cardBg,
           border: 'none',
           overflow: 'hidden'
         }}
@@ -299,9 +298,9 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
                     backgroundColor: isActive 
                       ? `${step.color}15`
                       : isPast
-                        ? colors.filterBg
+                        ? (isDarkMode ? '#374151' : '#F8FAFC')
                         : 'transparent',
-                    border: `2px solid ${isActive ? step.color : isPast ? '#10B981' : colors.borderColor}`,
+                    border: `2px solid ${isActive ? step.color : isPast ? '#10B981' : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)')}`,
                     opacity: isActive ? 1 : 0.7
                   }}
                   onClick={() => setCurrentStep(idx)}
@@ -317,11 +316,11 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
                         <StepIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                       )}
                     </div>
-                    <span className="font-semibold text-xs sm:text-sm" style={{ color: colors.textPrimary }}>
+                    <span className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-gray-50">
                       {language === 'th' ? `ขั้นที่ ${idx + 1}` : language === 'zh' ? `第 ${idx + 1} 步` : language === 'ja' ? `ステップ ${idx + 1}` : language === 'ko' ? `${idx + 1}단계` : language === 'ru' ? `Шаг ${idx + 1}` : `Step ${idx + 1}`}
                     </span>
                   </div>
-                  <p className="text-xs font-medium line-clamp-2" style={{ color: colors.textSecondary }}>
+                  <p className="text-xs font-medium line-clamp-2 text-gray-600 dark:text-gray-400">
                     {step.title}
                   </p>
                 </div>
@@ -347,10 +346,10 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
                   <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-sm sm:text-base md:text-lg mb-1" style={{ color: colors.textPrimary }}>
+                  <p className="font-bold text-sm sm:text-base md:text-lg mb-1 text-gray-900 dark:text-gray-50">
                     {currentStepData.action}
                   </p>
-                  <p className="text-xs sm:text-sm" style={{ color: colors.textSecondary }}>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     {language === 'th' ? 'คลิกเพื่อเริ่ม' : language === 'zh' ? '点击开始' : language === 'ja' ? 'クリックして開始' : language === 'ko' ? '시작하려면 클릭' : language === 'ru' ? 'Нажмите, чтобы начать' : 'Click to start'}
                   </p>
                 </div>
@@ -366,10 +365,9 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
               onClick={handleBack}
               disabled={currentStep === 0}
               size="sm"
-              className="text-xs sm:text-sm"
+              className="text-xs sm:text-sm text-gray-900 dark:text-gray-50"
               style={{ 
-                opacity: currentStep === 0 ? 0.5 : 1,
-                color: colors.textPrimary
+                opacity: currentStep === 0 ? 0.5 : 1
               }}
             >
               <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -381,11 +379,7 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
                 variant="outline"
                 onClick={onClose}
                 size="sm"
-                className="text-xs sm:text-sm"
-                style={{ 
-                  borderColor: colors.borderColor,
-                  color: colors.textSecondary
-                }}
+                className="text-xs sm:text-sm border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400"
               >
                 {strings.skip}
               </Button>
