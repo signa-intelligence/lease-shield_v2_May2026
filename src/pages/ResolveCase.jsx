@@ -289,7 +289,10 @@ export default function ResolveCase() {
       memberPricingUnlocksIn: "Member pricing unlocks after 30 days of active membership. Your member rate will apply to cases submitted after",
       membersPayAfter30Days: "Members pay ฿2,490 per case after 30 days. You can join today for additional benefits.",
       newMembershipNote: "Your new membership will apply member rates to future cases. This case is billed at the public rate.",
-      memberRateExplanation: "Member rates apply after 30 days of active Lite, Protect or Secure membership. Upgrades during case submission apply to future cases only."
+      memberRateExplanation: "Member rates apply after 30 days of active Lite, Protect or Secure membership. Upgrades during case submission apply to future cases only.",
+      noCaseFound: "No Active Case Found",
+      noCaseFoundDesc: "Start a new Resolve case from the Home or Cases page to proceed.",
+      backToHome: "Back to Home"
     },
     th: {
       title: "เปิดคดี",
@@ -336,7 +339,10 @@ export default function ResolveCase() {
       memberPricingUnlocksIn: "ราคาสมาชิกจะปลดล็อกหลังจากสมาชิกครบ 30 วัน ราคาสมาชิกจะใช้กับคดีที่ส่งหลังวันที่",
       membersPayAfter30Days: "สมาชิกจ่าย ฿2,490 ต่อคดีหลังครบ 30 วัน คุณสามารถเข้าร่วมวันนี้เพื่อรับสิทธิพิเศษเพิ่มเติม",
       newMembershipNote: "การเป็นสมาชิกใหม่ของคุณจะใช้ราคาสมาชิกกับคดีในอนาคต คดีนี้จะคิดราคาทั่วไป",
-      memberRateExplanation: "ราคาสมาชิกใช้งานได้หลังสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน การอัปเกรดระหว่างส่งคดีจะมีผลกับคดีในอนาคตเท่านั้น"
+      memberRateExplanation: "ราคาสมาชิกใช้งานได้หลังสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน การอัปเกรดระหว่างส่งคดีจะมีผลกับคดีในอนาคตเท่านั้น",
+      noCaseFound: "ไม่พบคดี",
+      noCaseFoundDesc: "เริ่มคดี Resolve ใหม่จากหน้าหลักหรือหน้าคดี",
+      backToHome: "กลับหน้าหลัก"
     },
     zh: {
       title: "开启案件",
@@ -524,7 +530,10 @@ export default function ResolveCase() {
       memberPricingUnlocksIn: "Тариф участника активируется после 30 дней активного членства. Ваш тариф применится к делам, поданным после",
       membersPayAfter30Days: "Участники платят ฿2,490 за дело через 30 дней. Присоединяйтесь сегодня для дополнительных преимуществ.",
       newMembershipNote: "Ваше новое членство применит тарифы участника к будущим делам. Это дело оплачивается по публичному тарифу.",
-      memberRateExplanation: "Тарифы участника действуют через 30 дней активного членства Lite, Protect или Secure. Обновления во время подачи дела применяются только к будущим делам."
+      memberRateExplanation: "Тарифы участника действуют через 30 дней активного членства Lite, Protect или Secure. Обновления во время подачи дела применяются только к будущим делам.",
+      noCaseFound: "Активное дело не найдено",
+      noCaseFoundDesc: "Начните новое дело Resolve с главной страницы или раздела Дела.",
+      backToHome: "Вернуться на главную"
     }
   };
 
@@ -538,12 +547,10 @@ export default function ResolveCase() {
           <CardContent className="p-6 text-center">
             <AlertCircle className="w-16 h-16 mx-auto mb-4" style={{ color: '#F59E0B' }} />
             <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {language === 'ru' ? 'Активное дело не найдено' : 'No Active Case Found'}
+              {str.noCaseFound}
             </h2>
             <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-              {language === 'ru' 
-                ? 'Начните новое дело Resolve с главной страницы или раздела "Дела".' 
-                : 'Start a new Resolve case from the Home or Cases page to proceed.'}
+              {str.noCaseFoundDesc}
             </p>
             <Button
               onClick={() => navigate(createPageUrl("Dashboard"))}
@@ -553,7 +560,7 @@ export default function ResolveCase() {
                 color: '#FFFFFF'
               }}
             >
-              {language === 'ru' ? 'Вернуться на главную' : 'Back to Home'}
+              {str.backToHome}
             </Button>
           </CardContent>
         </Card>
