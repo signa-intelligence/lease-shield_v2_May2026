@@ -164,6 +164,33 @@ export default function LineConnectionStatus({ user, colors }) {
       lineUpsellText: 'LINE 알림(임대 계약 마감일, 보증금 반환, 임대료 알림, 유지보수 업데이트)은 Protect 및 Secure 플랜에서 사용할 수 있습니다.',
       upgradeToUnlock: 'LINE 알림을 잠금 해제하려면 업그레이드',
       viewPlans: '플랜 보기'
+    },
+    ru: {
+      title: 'Уведомления LINE',
+      connected: 'Подключено',
+      notConnected: 'Не подключено',
+      pending: 'Ожидание подключения',
+      connectBtn: 'Подключить LINE',
+      openLine: 'Открыть в LINE',
+      copyLink: 'Скопировать ссылку',
+      linkCopied: 'Ссылка скопирована!',
+      step1: 'Шаг 1: Нажмите Подключить LINE',
+      step2: 'Шаг 2: Добавьте LeaseShield в друзья',
+      step3: 'Шаг 3: Готово! Вы будете получать уведомления',
+      benefits: 'Получайте мгновенные уведомления:',
+      benefit1: '📅 Сроки договора',
+      benefit2: '💰 Возврат депозита',
+      benefit3: '🏠 Напоминания об аренде',
+      benefit4: '🔧 Обновления по обслуживанию',
+      pendingMsg: 'Ожидание добавления LeaseShield LINE OA в друзья',
+      scanQR: 'Отсканируйте этот QR в приложении LINE',
+      orUseLink: 'Или нажмите на ссылку выше',
+      checkConnection: 'Проверить подключение',
+      checking: 'Проверка...',
+      upgradeRequired: 'Обновите до Protect или Secure',
+      lineUpsellText: 'Уведомления LINE (сроки договора, возврат депозита, напоминания об аренде, обновления по обслуживанию) доступны в планах Protect и Secure.',
+      upgradeToUnlock: 'Обновитесь, чтобы разблокировать напоминания LINE',
+      viewPlans: 'Посмотреть планы'
     }
   };
 

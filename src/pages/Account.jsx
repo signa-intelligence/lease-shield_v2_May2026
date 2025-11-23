@@ -4137,7 +4137,7 @@ function AccountContent() {
                     fontWeight: 500,
                   }}
                 >
-                  {language === 'th' ? 'จัดการหรือยกเลิกการสมัครสมาชิก' : language === 'zh' ? '管理或取消订阅' : language === 'ja' ? 'サブスクリプションを管理またはキャンセル' : language === 'ko' ? '구독 관리 또는 취소' : 'Manage or cancel subscription'}
+                  {language === 'th' ? 'จัดการหรือยกเลิกการสมัครสมาชิก' : language === 'zh' ? '管理或取消订阅' : language === 'ja' ? 'サブスクリプションを管理またはキャンセル' : language === 'ko' ? '구독 관리 또는 취소' : language === 'ru' ? 'Управление или отмена подписки' : 'Manage or cancel subscription'}
                 </button>
               </p>
             </div>
@@ -4157,7 +4157,7 @@ function AccountContent() {
           >
             <DialogHeader>
               <DialogTitle className="text-xl sm:text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'กำลังคิดจะลดระดับ?' : language === 'zh' ? '考虑降级？' : language === 'ja' ? 'ダウングレードを検討中？' : language === 'ko' ? '다운그레이드를 고려 중이신가요?' : 'Thinking about downgrading?'}
+                {language === 'th' ? 'กำลังคิดจะลดระดับ?' : language === 'zh' ? '考虑降级？' : language === 'ja' ? 'ダウングレードを検討中？' : language === 'ko' ? '다운그레이드를 고려 중이신가요?' : language === 'ru' ? 'Думаете о понижении плана?' : 'Thinking about downgrading?'}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -4169,32 +4169,34 @@ function AccountContent() {
                     : language === 'ja' 
                       ? 'ダウングレードすると、重要な保護ツールが削除され、リスクが高まります。' 
                       : language === 'ko' 
-                        ? '다운그레이드하면 주요 보호 도구가 제거되고 위험이 증가합니다.' 
-                        : 'Downgrading removes key protection tools and increases your risk.'}
+                        ? '다운그레이드하면 주요 보호 도구가 제거되고 위험이 증가합니다.'
+                        : language === 'ru'
+                          ? 'Понижение плана удалит ключевые инструменты защиты и увеличит ваши риски.'
+                          : 'Downgrading removes key protection tools and increases your risk.'}
               </p>
               <div className="p-4 rounded-lg" style={{
                 backgroundColor: isDarkMode ? '#2A1F1F' : '#FEE2E2',
                 border: `2px solid ${isDarkMode ? '#EF4444' : '#FECACA'}`
               }}>
                 <p className="text-sm font-semibold mb-3" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
-                  {language === 'th' ? 'คุณจะสูญเสีย:' : language === 'zh' ? '您将失去：' : language === 'ja' ? '失うもの：' : language === 'ko' ? '잃게 될 것:' : 'You will lose:'}
+                  {language === 'th' ? 'คุณจะสูญเสีย:' : language === 'zh' ? '您将失去：' : language === 'ja' ? '失うもの：' : language === 'ko' ? '잃게 될 것:' : language === 'ru' ? 'Вы потеряете:' : 'You will lose:'}
                 </p>
                 <ul className="space-y-2 text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
                   <li className="flex items-start gap-2">
                     <span>•</span>
-                    <span>{language === 'th' ? 'การแจ้งเตือนกำหนดเวลาขั้นสูง' : language === 'zh' ? '高级截止日期提醒' : language === 'ja' ? '高度な期限リマインダー' : language === 'ko' ? '고급 마감일 알림' : 'Advanced deadline reminders'}</span>
+                    <span>{language === 'th' ? 'การแจ้งเตือนกำหนดเวลาขั้นสูง' : language === 'zh' ? '高级截止日期提醒' : language === 'ja' ? '高度な期限リマインダー' : language === 'ko' ? '고급 마감일 알림' : language === 'ru' ? 'Расширенные напоминания о сроках' : 'Advanced deadline reminders'}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span>•</span>
-                    <span>{language === 'th' ? 'การติดตามเงินมัดจำและการซ่อมบำรุงแบบเต็มรูปแบบ' : language === 'zh' ? '完整押金和维护追踪' : language === 'ja' ? '完全な敷金とメンテナンス追跡' : language === 'ko' ? '완전한 보증금 및 유지보수 추적' : 'Full deposit & maintenance tracking'}</span>
+                    <span>{language === 'th' ? 'การติดตามเงินมัดจำและการซ่อมบำรุงแบบเต็มรูปแบบ' : language === 'zh' ? '完整押金和维护追踪' : language === 'ja' ? '完全な敷金とメンテナンス追跡' : language === 'ko' ? '완전한 보증금 및 유지보수 추적' : language === 'ru' ? 'Полное отслеживание депозитов и обслуживания' : 'Full deposit & maintenance tracking'}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span>•</span>
-                    <span>{language === 'th' ? 'การสนับสนุนคดีลำดับความสำคัญ' : language === 'zh' ? '优先案件支持' : language === 'ja' ? '優先ケースサポート' : language === 'ko' ? '우선 사례 지원' : 'Priority case support'}</span>
+                    <span>{language === 'th' ? 'การสนับสนุนคดีลำดับความสำคัญ' : language === 'zh' ? '优先案件支持' : language === 'ja' ? '優先ケースサポート' : language === 'ko' ? '우선 사례 지원' : language === 'ru' ? 'Приоритетная поддержка дел' : 'Priority case support'}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span>•</span>
-                    <span>{language === 'th' ? 'การสแกนสัญญาเพิ่มเติม' : language === 'zh' ? '额外租约扫描' : language === 'ja' ? '追加リーススキャン' : language === 'ko' ? '추가 임대 스캔' : 'Additional lease scans'}</span>
+                    <span>{language === 'th' ? 'การสแกนสัญญาเพิ่มเติม' : language === 'zh' ? '额外租约扫描' : language === 'ja' ? '追加リーススキャン' : language === 'ko' ? '추가 임대 스캔' : language === 'ru' ? 'Дополнительные сканирования договоров' : 'Additional lease scans'}</span>
                   </li>
                 </ul>
               </div>
@@ -4206,8 +4208,10 @@ function AccountContent() {
                     : language === 'ja' 
                       ? 'これにより保護が弱まります。現在のプランを維持して、権利を完全に守りましょう。' 
                       : language === 'ko' 
-                        ? '이는 보호를 약화시킵니다. 현재 플랜을 유지하여 권리를 완전히 보호하세요.' 
-                        : 'This weakens your protection. Stay on your current plan to keep your rights fully defended.'}
+                        ? '이는 보호를 약화시킵니다. 현재 플랜을 유지하여 권리를 완전히 보호하세요.'
+                        : language === 'ru'
+                          ? 'Это ослабляет вашу защиту. Оставайтесь на текущем плане, чтобы полностью защитить свои права.'
+                          : 'This weakens your protection. Stay on your current plan to keep your rights fully defended.'}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}`, paddingTop: '16px' }}>
@@ -4239,7 +4243,7 @@ function AccountContent() {
                   e.target.style.transform = 'translateY(0)';
                 }}
               >
-                {language === 'th' ? 'รักษาการป้องกันของฉัน' : language === 'zh' ? '保持我的保护' : language === 'ja' ? '私の保護を維持' : language === 'ko' ? '내 보호 유지' : 'Keep My Protection'}
+                {language === 'th' ? 'รักษาการป้องกันของฉัน' : language === 'zh' ? '保持我的保护' : language === 'ja' ? '私の保護を維持' : language === 'ko' ? '내 보호 유지' : language === 'ru' ? 'Сохранить мою защиту' : 'Keep My Protection'}
               </button>
               <button
                 onClick={() => {
@@ -4265,7 +4269,7 @@ function AccountContent() {
                   e.target.style.backgroundColor = 'transparent';
                 }}
               >
-                {language === 'th' ? 'ลดระดับต่อไป' : language === 'zh' ? '继续降级' : language === 'ja' ? 'ダウングレードを続行' : language === 'ko' ? '다운그레이드 계속' : 'Downgrade Anyway'}
+                {language === 'th' ? 'ลดระดับต่อไป' : language === 'zh' ? '继续降级' : language === 'ja' ? 'ダウングレードを続行' : language === 'ko' ? '다운그레이드 계속' : language === 'ru' ? 'Всё равно понизить' : 'Downgrade Anyway'}
               </button>
             </div>
           </DialogContent>
@@ -4311,7 +4315,7 @@ function AccountContent() {
                     </p>
                     <p className="text-sm" style={{ color: colors.textSecondary, whiteSpace: 'normal' }}>
                       {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
-                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceMonthly}/${language === 'th' ? 'เดือน' : language === 'zh' ? '月' : language === 'ja' ? '月' : language === 'ko' ? '월' : 'month'}` 
+                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceMonthly}/${language === 'th' ? 'เดือน' : language === 'zh' ? '月' : language === 'ja' ? '月' : language === 'ko' ? '월' : language === 'ru' ? 'месяц' : 'month'}` 
                         : '—'}
                     </p>
                   </div>
@@ -4343,19 +4347,19 @@ function AccountContent() {
                   <div className="flex-1 pr-2">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <p className="font-bold text-base" style={{ color: colors.textPrimary, whiteSpace: 'normal' }}>
-                        {language === 'th' ? 'ชำระรายปี - ประหยัด 17%' : language === 'zh' ? '年付 - 节省17%' : language === 'ja' ? '年払い - 17%節約' : language === 'ko' ? '연간 결제 - 17% 절약' : 'Pay Annually – Save 17%'}
+                        {language === 'th' ? 'ชำระรายปี - ประหยัด 17%' : language === 'zh' ? '年付 - 节省17%' : language === 'ja' ? '年払い - 17%節約' : language === 'ko' ? '연간 결제 - 17% 절약' : language === 'ru' ? 'Годовая оплата – Экономия 17%' : 'Pay Annually – Save 17%'}
                       </p>
                       <Badge className="bg-emerald-600 text-white text-xs font-bold px-2 py-1">
-                        {language === 'th' ? 'คุ้มที่สุด' : language === 'zh' ? '最划算' : language === 'ja' ? 'ベストバリュー' : language === 'ko' ? '최고 가치' : 'Best Value'}
+                        {language === 'th' ? 'คุ้มที่สุด' : language === 'zh' ? '最划算' : language === 'ja' ? 'ベストバリュー' : language === 'ko' ? '최고 가치' : language === 'ru' ? 'Лучшее предложение' : 'Best Value'}
                       </Badge>
                     </div>
                     <p className="text-sm mb-1" style={{ color: colors.textSecondary, whiteSpace: 'normal' }}>
                       {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
-                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceAnnual}/${language === 'th' ? 'ปี' : language === 'zh' ? '年' : language === 'ja' ? '年' : language === 'ko' ? '년' : 'year'}` 
+                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceAnnual}/${language === 'th' ? 'ปี' : language === 'zh' ? '年' : language === 'ja' ? '年' : language === 'ko' ? '년' : language === 'ru' ? 'год' : 'year'}` 
                         : '—'}
                     </p>
                     <p className="text-xs font-medium" style={{ color: '#10B981', whiteSpace: 'normal' }}>
-                      {language === 'th' ? '12 เดือนของการป้องกันเต็มรูปแบบในราคา 10 เดือน' : language === 'zh' ? '12个月的全面保护，只需支付10个月的价格' : language === 'ja' ? '10ヶ月分の価格で12ヶ月の完全な保護' : language === 'ko' ? '10개월 가격으로 12개월 완전 보호' : '12 months of full protection for the price of 10'}
+                      {language === 'th' ? '12 เดือนของการป้องกันเต็มรูปแบบในราคา 10 เดือน' : language === 'zh' ? '12个月的全面保护，只需支付10个月的价格' : language === 'ja' ? '10ヶ月分の価格で12ヶ月の完全な保護' : language === 'ko' ? '10개월 가격으로 12개월 완전 보호' : language === 'ru' ? '12 месяцев полной защиты по цене 10' : '12 months of full protection for the price of 10'}
                     </p>
                   </div>
                   {selectedInterval === 'annual' && (
@@ -4373,8 +4377,10 @@ function AccountContent() {
                       : language === 'ja' 
                         ? 'よりスマートにアップグレード。17%節約。年間請求で1年間の保護をロックし、月次管理を削減。' 
                         : language === 'ko' 
-                          ? '더 스마트하게 업그레이드하세요. 17% 절약. 연간 청구로 1년간 보호를 확보하고 월별 관리를 줄입니다.' 
-                          : 'Upgrade Smarter. Save 17%. Annual billing locks in your protection for the year and reduces monthly admin.'}
+                          ? '더 스마트하게 업그레이드하세요. 17% 절약. 연간 청구로 1년간 보호를 확보하고 월별 관리를 줄입니다.'
+                          : language === 'ru'
+                            ? 'Обновляйтесь умнее. Экономьте 17%. Годовая оплата фиксирует вашу защиту на год и сокращает ежемесячные операции.'
+                            : 'Upgrade Smarter. Save 17%. Annual billing locks in your protection for the year and reduces monthly admin.'}
                 </p>
               </div>
 
@@ -4598,7 +4604,7 @@ function AccountContent() {
                           }
                         }}
                       >
-                        {buyingCredits[pkg.id] ? (language === 'th' ? 'กำลังดำเนินการ...' : 'Processing...') : strings.buyNow}
+                        {buyingCredits[pkg.id] ? (language === 'th' ? 'กำลังดำเนินการ...' : language === 'ru' ? 'Обработка...' : 'Processing...') : strings.buyNow}
                       </button>
                     </div>
                   </div>
