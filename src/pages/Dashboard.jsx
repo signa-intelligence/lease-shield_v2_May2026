@@ -1329,9 +1329,9 @@ function DashboardContent() {
                 width: '100%',
                 padding: '12px 18px',
                 backgroundColor: 'transparent',
-                color: colors.textPrimary,
+                color: isDarkMode ? '#F9FAFB' : '#0F172A',
                 borderRadius: '10px',
-                border: `2px solid ${colors.borderColor}`,
+                border: isDarkMode ? '2px solid rgba(255,255,255,0.1)' : '2px solid rgba(12,59,46,0.08)',
                 fontWeight: '500',
                 fontSize: '14px',
                 cursor: 'pointer',
@@ -1428,7 +1428,7 @@ function DashboardContent() {
   }
 
   return (
-    <PullToRefresh onRefresh={handleRefresh} colors={colors}>
+    <PullToRefresh onRefresh={handleRefresh} colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF' }}>
       <div className="min-h-screen page-transition bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
           <FloatingActionButton
@@ -1446,7 +1446,7 @@ function DashboardContent() {
             open={showOnboarding}
             onClose={handleOnboardingComplete}
             user={user}
-            colors={colors}
+            colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A', textSecondary: isDarkMode ? '#D1D5DB' : '#475569', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)' }}
             language={language}
           />
 
@@ -1454,7 +1454,7 @@ function DashboardContent() {
             <PageHeader
               title={`${strings.welcome}, ${user?.full_name?.split(' ')[0] || 'User'}`}
               subtitle={strings.subtitle}
-              colors={colors}
+              colors={{ textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A', textSecondary: isDarkMode ? '#D1D5DB' : '#475569' }}
               actions={
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
@@ -1789,7 +1789,7 @@ function DashboardContent() {
                   {!user?.onboarding_completed && !user?.onboarding_banner_dismissed && (
                   <OnboardingBanner
                   user={user}
-                  colors={colors}
+                  colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A', textSecondary: isDarkMode ? '#D1D5DB' : '#475569', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)' }}
                   language={language}
                   onStartSetup={() => setShowOnboarding(true)}
                   />
@@ -1801,7 +1801,7 @@ function DashboardContent() {
                   leases={leases}
                   deposits={deposits}
                   documents={documents}
-                  colors={colors}
+                  colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A', textSecondary: isDarkMode ? '#D1D5DB' : '#475569', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)' }}
                   language={language}
                   />
 
@@ -1809,7 +1809,7 @@ function DashboardContent() {
                   {user && !user.has_seen_tour && user.onboarding_completed && (
                   <FeatureTour
                   user={user}
-                  colors={colors}
+                  colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A', textSecondary: isDarkMode ? '#D1D5DB' : '#475569', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)' }}
                   language={language}
                   onComplete={() => setShowTour(false)}
                   />
@@ -1951,7 +1951,7 @@ function DashboardContent() {
                 documents={documents}
                 cases={cases}
                 maintenanceRequests={maintenanceRequests}
-                colors={colors}
+                colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A', textSecondary: isDarkMode ? '#D1D5DB' : '#475569', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)' }}
                 language={language}
               />
             </div>
@@ -2171,12 +2171,12 @@ function DashboardContent() {
 
               {isLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  <SkeletonLoader variant="stat" colors={colors} />
-                  <SkeletonLoader variant="stat" colors={colors} />
-                  <SkeletonLoader variant="stat" colors={colors} />
-                  <SkeletonLoader variant="stat" colors={colors} />
-                  <SkeletonLoader variant="stat" colors={colors} />
-                  <SkeletonLoader variant="stat" colors={colors} />
+                  <SkeletonLoader variant="stat" colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A' }} />
+                  <SkeletonLoader variant="stat" colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A' }} />
+                  <SkeletonLoader variant="stat" colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A' }} />
+                  <SkeletonLoader variant="stat" colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A' }} />
+                  <SkeletonLoader variant="stat" colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A' }} />
+                  <SkeletonLoader variant="stat" colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A' }} />
                 </div>
               ) : (
                 <>
@@ -2186,7 +2186,7 @@ function DashboardContent() {
                       breakdown={breakdown}
                       recommendations={recommendations}
                       language={language}
-                      colors={colors}
+                      colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A', textSecondary: isDarkMode ? '#D1D5DB' : '#475569', borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)' }}
                       user={user}
                     />
                   </div>
@@ -2269,7 +2269,7 @@ function DashboardContent() {
                         <StatsCard
                           {...card}
                           compact={false}
-                          colors={colors}
+                          colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A', textSecondary: isDarkMode ? '#D1D5DB' : '#475569' }}
                           className="card-interactive h-full"
                         />
                       </div>
@@ -2282,7 +2282,7 @@ function DashboardContent() {
 
           <div className="space-y-4 sm:space-y-6 mb-8">
             {isLoading ? (
-              <SkeletonLoader variant="card" count={3} colors={colors} />
+              <SkeletonLoader variant="card" count={3} colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A' }} />
             ) : (
               <>
                 {/* Recent Leases Section */}
@@ -2364,7 +2364,7 @@ function DashboardContent() {
                   </div>
                   {expandedSections.notifications && (
                     <div className="p-4">
-                      <NotificationSummary language={language} colors={colors} />
+                      <NotificationSummary language={language} colors={{ cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF', textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A', textSecondary: isDarkMode ? '#D1D5DB' : '#475569' }} />
                     </div>
                   )}
                 </Card>
