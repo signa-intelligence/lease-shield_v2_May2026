@@ -131,6 +131,7 @@ Deno.serve(async (req) => {
         console.log('  User ID:', user.id);
         console.log('  Email:', user.email);
         console.log('  Current plan_tier:', user.plan_tier);
+        console.log('  Current member_since:', user.member_since || 'not set');
 
         // 2) Extract plan details from metadata
         const planTier = (metadata.plan || 'lite').toLowerCase();
@@ -139,6 +140,10 @@ Deno.serve(async (req) => {
         console.log('📋 PLAN DETAILS FROM METADATA:');
         console.log('  plan_tier:', planTier);
         console.log('  billing_interval:', billingInterval);
+        
+        // Determine if this is first paid membership or a plan change
+        const isFirstPaidMembership = !user.member_since && (!user.plan_tier || user.plan_tier === 'free');
+        console.log('🎯 Is first paid membership:', isFirstPaidMembership);
 
         if (!metadata.plan) {
           console.warn('⚠️ metadata.plan missing - defaulting to "lite"');
@@ -210,6 +215,7 @@ Deno.serve(async (req) => {
         console.log('plan_renews_at:', planRenewsAt);
         console.log('subscription_status: active');
         console.log('letter_credits:', newCreditBalance);
+        console.log('member_since:', memberSince, isFirstPaidMembership ? '(SET NOW - FIRST MEMBERSHIP)' : '(PRESERVED - EXISTING MEMBERSHIP)');
 
         // 6) Create payment record
         try {

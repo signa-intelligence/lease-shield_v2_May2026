@@ -11,22 +11,30 @@ export const RESOLVE_PRICING = {
 };
 
 /**
- * Calculate days since membership started
+ * Calculate days since FIRST paid membership started
+ * Uses member_since field which NEVER resets on plan changes (upgrades/downgrades)
+ * Returns 0 if no valid membership start date
  */
 const getMembershipDays = (user) => {
-  if (!user || !user.subscription_started_at) return 0;
+  if (!user) return 0;
   
-  const startDate = new Date(user.subscription_started_at);
+  // Use member_since (stable across plan changes) or fallback to subscription_started_at
+  const memberSinceDate = user.member_since || user.subscription_started_at;
+  
+  if (!memberSinceDate) return 0;
+  
+  const startDate = new Date(memberSinceDate);
   const now = new Date();
-  const diffTime = Math.abs(now - startDate);
+  const diffTime = now - startDate;
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   
-  return diffDays;
+  return diffDays >= 0 ? diffDays : 0;
 };
 
 /**
  * Check if user qualifies for member pricing (30-day rule)
- * User must be on paid tier AND have been a member for ≥30 days
+ * User must have ACTIVE paid tier AND ≥30 days continuous paid membership
+ * Plan changes between paid tiers do NOT reset the clock
  */
 export const hasMemberPricing = (user) => {
   if (!user) return false;
@@ -36,6 +44,11 @@ export const hasMemberPricing = (user) => {
   
   if (!isPaidTier) return false;
   
+  // Check subscription is active (not cancelled/expired)
+  const subscriptionStatus = user.subscription_status;
+  if (subscriptionStatus && subscriptionStatus !== 'active') return false;
+  
+  // Check 30-day minimum using continuous paid membership (not reset by plan changes)
   const membershipDays = getMembershipDays(user);
   return membershipDays >= RESOLVE_PRICING.MEMBERSHIP_DAYS_REQUIRED;
 };
