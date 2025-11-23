@@ -1808,6 +1808,7 @@ function DashboardContent() {
                   {user && !user.has_seen_tour && user.onboarding_completed && (
                   <FeatureTour
                   user={user}
+                  colors={colors}
                   language={language}
                   onComplete={() => setShowTour(false)}
                   />
