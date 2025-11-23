@@ -62,16 +62,37 @@ function CasesContent() {
 
   useEffect(() => {
     if (user) {
-      console.log('🔍 Current user email:', user.email);
+      console.log('🔍 [CASES_PAGE] Current user email:', user.email);
+      console.log('🔍 [CASES_PAGE] Current user id:', user.id);
     }
   }, [user]);
+
+  useEffect(() => {
+    console.log('📦 [CASES_PAGE] Cases state updated:', {
+      total: cases.length,
+      caseIds: cases.map(c => c.id),
+      statuses: cases.map(c => c.status),
+      userEmails: cases.map(c => c.user_email)
+    });
+  }, [cases]);
 
   const { data: cases = [], refetch: refetchCases, isLoading, error } = useQuery({
     queryKey: ['cases', user?.email],
     queryFn: async () => {
-      console.log('📊 Fetching cases for user:', user?.email);
+      console.log('🔍 [CASES_PAGE] Fetching cases for user:', user?.email);
+      console.log('🔍 [CASES_PAGE] User object:', { id: user?.id, email: user?.email, role: user?.role });
+      
       const result = await base44.entities.Case.filter({ user_email: user?.email }, '-created_date');
-      console.log('📊 Cases found:', result.length, result);
+      
+      console.log('📊 [CASES_PAGE] Query returned:', result.length, 'cases');
+      console.log('📊 [CASES_PAGE] Raw result:', JSON.stringify(result.map(c => ({
+        id: c.id,
+        user_email: c.user_email,
+        status: c.status,
+        type: c.type,
+        created_date: c.created_date
+      })), null, 2));
+      
       return result;
     },
     enabled: !!user,
@@ -81,9 +102,7 @@ function CasesContent() {
     cacheTime: 0,
   });
 
-  useEffect(() => {
-    console.log('📦 Cases data updated:', cases.length, 'cases');
-  }, [cases]);
+
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -91,22 +110,54 @@ function CasesContent() {
     const resolveCancelled = urlParams.get('resolve_cancelled');
     const caseId = urlParams.get('caseId');
 
+    console.log('🔍 [CASES_PAGE] URL params:', { resolveSuccess, resolveCancelled, caseId });
+    console.log('🔍 [CASES_PAGE] User:', user?.email);
+
     if (resolveSuccess === 'true' && user) {
       console.log('[CASES_PAGE] ✅ Resolve payment success detected for case:', caseId);
+      console.log('[CASES_PAGE] Current cases in state:', cases.length);
       
       setShowResolveSuccessBanner(true);
       if (caseId) {
         setHighlightCaseId(caseId);
       }
       
-      // Force refetch cases to ensure we have the latest data after payment
-      console.log('[CASES_PAGE] Refetching cases after payment success...');
+      // Force multiple refetches to ensure we get fresh data
+      console.log('[CASES_PAGE] Force-refetching cases (attempt 1)...');
+      queryClient.invalidateQueries({ queryKey: ['cases', user?.email] });
       refetchCases();
+      
+      // Aggressive retry pattern - keep refetching until we see the case
+      let attemptCount = 0;
+      const maxAttempts = 10;
+      
+      const pollForCase = setInterval(() => {
+        attemptCount++;
+        console.log(`[CASES_PAGE] Polling for case (attempt ${attemptCount}/${maxAttempts})...`);
+        
+        queryClient.invalidateQueries({ queryKey: ['cases', user?.email] });
+        refetchCases();
+        
+        // Check if we found the case
+        const foundCase = cases.find(c => c.id === caseId);
+        if (foundCase) {
+          console.log('[CASES_PAGE] ✅ Case found in state:', foundCase.id);
+          clearInterval(pollForCase);
+        }
+        
+        if (attemptCount >= maxAttempts) {
+          console.error('[CASES_PAGE] ⚠️ Failed to find case after', maxAttempts, 'attempts');
+          clearInterval(pollForCase);
+        }
+      }, 1000);
+      
+      // Clean up interval after 15 seconds
+      setTimeout(() => clearInterval(pollForCase), 15000);
       
       // Clean URL after showing banner
       setTimeout(() => {
         window.history.replaceState({}, '', location.pathname);
-      }, 3000);
+      }, 5000);
     }
 
     if (resolveCancelled === 'true' && user) {
@@ -121,18 +172,28 @@ function CasesContent() {
       // Clean URL
       window.history.replaceState({}, '', location.pathname);
     }
-  }, [location.search, user, toast, refetchCases]);
+  }, [location.search, user, toast, refetchCases, queryClient, cases]);
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const theme = getFeatureCardStyles("cases", isDarkMode);
 
   if (isLoading) {
-    console.log('⏳ Cases loading...');
+    console.log('⏳ [CASES_PAGE] Cases loading...');
   }
   if (error) {
-    console.error('❌ Cases error:', error);
+    console.error('❌ [CASES_PAGE] Cases query error:', error);
   }
+  
+  // Log whenever cases array changes
+  React.useEffect(() => {
+    console.log('🔄 [CASES_PAGE] Cases array changed:', {
+      length: cases.length,
+      isEmpty: cases.length === 0,
+      firstThreeIds: cases.slice(0, 3).map(c => c.id),
+      firstThreeStatuses: cases.slice(0, 3).map(c => c.status)
+    });
+  }, [cases]);
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',

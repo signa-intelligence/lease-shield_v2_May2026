@@ -65,10 +65,26 @@ function DashboardContent() {
 
   const { data: cases = [] } = useQuery({
     queryKey: ['cases'],
-    queryFn: () => base44.entities.Case.filter({ user_email: user?.email }),
+    queryFn: async () => {
+      console.log('🔍 [DASHBOARD] Fetching cases for user:', user?.email);
+      console.log('🔍 [DASHBOARD] User object:', { id: user?.id, email: user?.email, role: user?.role });
+      
+      const result = await base44.entities.Case.filter({ user_email: user?.email });
+      
+      console.log('📊 [DASHBOARD] Query returned:', result.length, 'cases');
+      console.log('📊 [DASHBOARD] Raw result:', JSON.stringify(result.map(c => ({
+        id: c.id,
+        user_email: c.user_email,
+        status: c.status,
+        type: c.type
+      })), null, 2));
+      
+      return result;
+    },
     enabled: !!user,
     staleTime: 0,
     cacheTime: 0,
+    refetchOnMount: 'always',
   });
 
   const { data: documents = [] } = useQuery({
@@ -768,7 +784,14 @@ function DashboardContent() {
   const { score: protectionScore, breakdown, recommendations } = protectionData;
 
   const activeDeposits = deposits.filter(d => d.status === 'tracking' || d.status === 'dispute');
-  const activeCases = cases.filter(c => !['closed'].includes(c.status));
+  
+  // Active cases include: intake, pending_review, under_review, ready_drafts, client_review, awaiting_landlord, in_progress, resolved
+  const ACTIVE_CASE_STATUSES = ['intake', 'pending_review', 'under_review', 'ready_drafts', 'client_review', 'awaiting_landlord', 'in_progress', 'resolved', 'awaiting_payment'];
+  const activeCases = cases.filter(c => ACTIVE_CASE_STATUSES.includes(c.status));
+  
+  console.log('📈 [DASHBOARD] Total cases loaded:', cases.length);
+  console.log('📈 [DASHBOARD] Active cases (filtered):', activeCases.length);
+  console.log('📈 [DASHBOARD] Active case IDs:', activeCases.map(c => c.id));
 
   const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
   const totalDepositValue = activeDeposits.reduce((sum, d) => sum + (d.deposit_amount || 0), 0);
@@ -1272,7 +1295,7 @@ function DashboardContent() {
                     </div>
                   </div>
 
-                <Link to={createPageUrl("Analytics")}>
+                <Link to={createPageUrl("analytics")}>
                   <button
                     onClick={() => haptic.light()}
                     className="btn-interaction"
@@ -1642,7 +1665,7 @@ function DashboardContent() {
 
                           <div className="flex flex-wrap gap-2">
                             <button
-                              onClick={() => navigate(createPageUrl("Templates"))}
+                              onClick={() => navigate(createPageUrl("templates"))}
                               style={{
                                 padding: '8px 16px',
                                 borderRadius: '8px',
@@ -1668,7 +1691,7 @@ function DashboardContent() {
                               {strings.viewTemplates}
                             </button>
                             <button
-                              onClick={() => navigate(createPageUrl("UploadScan") + `?leaseId=${lease.id}`)}
+                              onClick={() => navigate(createPageUrl("uploadscan") + `?leaseId=${lease.id}`)}
                               style={{
                                 padding: '8px 16px',
                                 borderRadius: '8px',
@@ -1722,7 +1745,7 @@ function DashboardContent() {
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <button
-                        onClick={() => navigate(createPageUrl("UploadScan"))}
+                        onClick={() => navigate(createPageUrl("uploadscan"))}
                         className="btn-interaction"
                         style={{
                           padding: '8px 14px',
@@ -1742,7 +1765,7 @@ function DashboardContent() {
                         {strings.uploadLease}
                       </button>
                       <button
-                        onClick={() => navigate(createPageUrl("PropertyTracker") + "#deposit")}
+                        onClick={() => navigate(createPageUrl("propertytracker") + "#deposit")}
                         className="btn-interaction"
                         style={{
                           padding: '8px 14px',
@@ -1762,7 +1785,7 @@ function DashboardContent() {
                         {strings.trackDeposit}
                       </button>
                       <button
-                        onClick={() => navigate(createPageUrl("PropertyTracker") + '#maintenance')}
+                        onClick={() => navigate(createPageUrl("propertytracker") + '#maintenance')}
                         className="btn-interaction"
                         style={{
                           padding: '8px 14px',
@@ -2087,7 +2110,7 @@ function DashboardContent() {
                         gradient: 'from-blue-500 to-blue-700',
                         scoreColor: FEATURE_COLORS.leases.accent,
                         miniStats: [],
-                        route: createPageUrl("UploadScan"),
+                        route: createPageUrl("uploadscan"),
                         label: strings.scanNewLease,
                       },
                       {
@@ -2099,7 +2122,7 @@ function DashboardContent() {
                         miniStats: [
                           { label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }
                         ],
-                        route: createPageUrl("PropertyTracker") + "#deposit",
+                        route: createPageUrl("propertytracker") + "#deposit",
                         label: strings.trackDeposit,
                       },
                       {
@@ -2109,11 +2132,11 @@ function DashboardContent() {
                         gradient: 'from-red-500 to-red-700',
                         scoreColor: FEATURE_COLORS.cases.accent,
                         miniStats: [],
-                        route: createPageUrl("Cases"),
+                        route: createPageUrl("cases"),
                         label: strings.openCase,
                         onClick: () => {
                           haptic.light();
-                          navigate(createPageUrl("Cases"));
+                          navigate(createPageUrl("cases"));
                         }
                       },
                       {
@@ -2125,7 +2148,7 @@ function DashboardContent() {
                         miniStats: [
                           { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'ru' ? 'Уведомления' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
                         ],
-                        route: createPageUrl("PropertyTracker") + "#rent",
+                        route: createPageUrl("propertytracker") + "#rent",
                         label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'ru' ? 'Управление' : 'จัดการ') : strings.setupRent,
                       },
                       {
@@ -2135,7 +2158,7 @@ function DashboardContent() {
                         gradient: 'from-purple-500 to-purple-700',
                         scoreColor: FEATURE_COLORS.notifications.accent,
                         miniStats: [],
-                        route: createPageUrl("Timeline"),
+                        route: createPageUrl("timeline"),
                         label: strings.viewTimeline,
                       },
                       {
@@ -2147,7 +2170,7 @@ function DashboardContent() {
                         miniStats: [
                           { label: strings.totalFiles, value: documents.length }
                         ],
-                        route: createPageUrl("EvidenceVault"),
+                        route: createPageUrl("evidencevault"),
                         label: strings.manageEvidence,
                       }
                     ].map((card, index) => (
@@ -2352,7 +2375,7 @@ function DashboardContent() {
                     {strings.uploadCta}
                   </p>
                 </div>
-                <Link to={createPageUrl("UploadScan")} className="w-full">
+                <Link to={createPageUrl("uploadscan")} className="w-full">
                   <button
                     onClick={() => haptic.medium()}
                     style={{
