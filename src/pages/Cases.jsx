@@ -127,7 +127,7 @@ function CasesContent() {
       queryClient.invalidateQueries({ queryKey: ['cases', user?.email] });
       refetchCases();
       
-      // Aggressive retry pattern - keep refetching until we see the case
+      // Aggressive retry pattern - keep refetching
       let attemptCount = 0;
       const maxAttempts = 10;
       
@@ -138,15 +138,8 @@ function CasesContent() {
         queryClient.invalidateQueries({ queryKey: ['cases', user?.email] });
         refetchCases();
         
-        // Check if we found the case
-        const foundCase = cases.find(c => c.id === caseId);
-        if (foundCase) {
-          console.log('[CASES_PAGE] ✅ Case found in state:', foundCase.id);
-          clearInterval(pollForCase);
-        }
-        
         if (attemptCount >= maxAttempts) {
-          console.error('[CASES_PAGE] ⚠️ Failed to find case after', maxAttempts, 'attempts');
+          console.log('[CASES_PAGE] ℹ️ Stopped polling after', maxAttempts, 'attempts');
           clearInterval(pollForCase);
         }
       }, 1000);
@@ -172,7 +165,7 @@ function CasesContent() {
       // Clean URL
       window.history.replaceState({}, '', location.pathname);
     }
-  }, [location.search, user, toast, refetchCases, queryClient, cases]);
+  }, [location.search, user, toast, refetchCases, queryClient]);
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
