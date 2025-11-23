@@ -356,7 +356,7 @@ const ProtectionScoreEnhanced = ({
       </CardHeader>
 
       <CardContent className="p-4">
-        <div className="flex flex-col items-center mb-4">
+        <div className="flex flex-col items-center mb-4" style={{ minHeight: language === 'ru' ? '240px' : '220px' }}>
           <div className="relative w-32 h-32 mb-3">
             <svg className="w-full h-full transform -rotate-90">
               <circle
@@ -382,7 +382,7 @@ const ProtectionScoreEnhanced = ({
                 }}
               />
             </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ padding: '0 4px' }}>
               <div
                 className="text-3xl font-bold"
                 style={{
@@ -393,8 +393,16 @@ const ProtectionScoreEnhanced = ({
                 {score}%
               </div>
               <div
-                className="text-xs font-semibold mt-1"
-                style={{ color: colors.textSecondary }}
+                style={{ 
+                  fontSize: language === 'ru' ? '10px' : '12px',
+                  fontWeight: '600',
+                  marginTop: '4px',
+                  color: colors.textSecondary,
+                  textAlign: 'center',
+                  lineHeight: '1.2',
+                  whiteSpace: 'normal',
+                  maxWidth: '90px'
+                }}
               >
                 {label}
               </div>
@@ -406,12 +414,18 @@ const ProtectionScoreEnhanced = ({
             style={{
               backgroundColor: `${scoreColor}10`,
               border: `1px solid ${scoreColor}30`,
+              marginTop: language === 'ru' ? '8px' : '4px',
+              minHeight: '24px'
             }}
           >
             <TrendingUp className="w-3 h-3" style={{ color: scoreColor }} />
             <span
-              className="text-xs font-semibold"
-              style={{ color: scoreColor }}
+              style={{ 
+                fontSize: language === 'ru' ? '11px' : '12px',
+                fontWeight: '600',
+                color: scoreColor,
+                whiteSpace: 'nowrap'
+              }}
             >
               {strings.top} {percentile}%
             </span>
