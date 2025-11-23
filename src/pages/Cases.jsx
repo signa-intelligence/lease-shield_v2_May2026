@@ -52,6 +52,8 @@ function CasesContent() {
   const [previewLetter, setPreviewLetter] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showResolveSuccessBanner, setShowResolveSuccessBanner] = useState(false);
+  const [highlightCaseId, setHighlightCaseId] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -87,17 +89,18 @@ function CasesContent() {
     const resolveCancelled = urlParams.get('resolve_cancelled');
     const caseId = urlParams.get('caseId');
 
-    if (resolveSuccess === 'true' && caseId && user) {
-      console.log('[CASES_PAGE] ✅ Resolve payment success - redirecting to case:', caseId);
+    if (resolveSuccess === 'true' && user) {
+      console.log('[CASES_PAGE] ✅ Resolve payment success detected for case:', caseId);
       
-      toast.success(
-        language === 'th' ? '✅ ส่งคดีสำเร็จ! ทีมของเราจะตรวจสอบเอกสารและติดต่อกลับ' :
-        language === 'ru' ? '✅ Дело отправлено! Наша команда рассмотрит документы и свяжется с вами' :
-        '✅ Case submitted! Our team will review your documents and follow up'
-      );
+      setShowResolveSuccessBanner(true);
+      if (caseId) {
+        setHighlightCaseId(caseId);
+      }
       
-      // Redirect to case details
-      navigate(createPageUrl("casedetails") + `?caseId=${caseId}`, { replace: true });
+      // Clean URL after showing banner
+      setTimeout(() => {
+        window.history.replaceState({}, '', location.pathname);
+      }, 500);
     }
 
     if (resolveCancelled === 'true' && user) {
@@ -112,7 +115,7 @@ function CasesContent() {
       // Clean URL
       window.history.replaceState({}, '', location.pathname);
     }
-  }, [location.search, user, navigate, language, toast]);
+  }, [location.search, user, toast]);
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
@@ -493,6 +496,51 @@ function CasesContent() {
             {strings.back}
           </Button>
 
+          {/* Resolve Success Banner */}
+          {showResolveSuccessBanner && (
+            <div 
+              className="mb-6 p-4 rounded-xl border-2 animate-pulse"
+              style={{
+                backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5',
+                borderColor: '#10B981'
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-bold text-base mb-1" style={{ color: '#10B981' }}>
+                    {language === 'th' ? '✅ ส่งคดีสำเร็จ!' :
+                     language === 'ru' ? '✅ Дело отправлено!' :
+                     language === 'zh' ? '✅ 案件已提交！' :
+                     language === 'ja' ? '✅ ケースが送信されました！' :
+                     language === 'ko' ? '✅ 사례가 제출되었습니다!' :
+                     '✅ Case Submitted Successfully!'}
+                  </h3>
+                  <p className="text-sm" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? 'ทีมของเราจะตรวจสอบเอกสารและติดต่อกลับภายใน 12-24 ชั่วโมง' :
+                     language === 'ru' ? 'Наша команда рассмотрит документы и свяжется с вами в течение 12-24 часов' :
+                     language === 'zh' ? '我们的团队将在12-24小时内审核您的文件并跟进' :
+                     language === 'ja' ? '当チームは12〜24時間以内に書類を確認し、フォローアップします' :
+                     language === 'ko' ? '저희 팀이 12-24시간 이내에 문서를 검토하고 연락드리겠습니다' :
+                     'Our team will review your documents and follow up within 12-24 hours'}
+                  </p>
+                  <button
+                    onClick={() => setShowResolveSuccessBanner(false)}
+                    className="mt-2 text-xs font-semibold underline"
+                    style={{ color: '#10B981' }}
+                  >
+                    {language === 'th' ? 'ปิด' :
+                     language === 'ru' ? 'Закрыть' :
+                     language === 'zh' ? '关闭' :
+                     language === 'ja' ? '閉じる' :
+                     language === 'ko' ? '닫기' :
+                     'Dismiss'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
               <Scale className="w-7 h-7 md:w-8 md:h-8" style={{ color: FEATURE_COLORS.cases.accent }} />
@@ -702,6 +750,8 @@ function CasesContent() {
                 const isExpanded = expandedCase === caseItem.id;
                 const hasEvidence = caseItem.evidence && caseItem.evidence.length > 0;
 
+                const isHighlighted = highlightCaseId === caseItem.id;
+                
                 return (
                   <SwipeToDelete
                     key={caseItem.id}
@@ -711,8 +761,9 @@ function CasesContent() {
                     <Card
                       className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
                       style={{ 
-                        background: theme.background,
-                        borderLeft: `4px solid ${FEATURE_COLORS.cases.accent}`
+                        background: isHighlighted ? (isDarkMode ? '#1E4435' : '#F0FDF4') : theme.background,
+                        borderLeft: `4px solid ${isHighlighted ? '#10B981' : FEATURE_COLORS.cases.accent}`,
+                        animation: isHighlighted ? 'pulse 2s ease-in-out 3' : 'none'
                       }}
                       onClick={() => {
                         haptic.light();
