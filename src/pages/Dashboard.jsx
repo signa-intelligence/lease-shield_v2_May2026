@@ -1050,9 +1050,9 @@ function DashboardContent() {
       getMoreScansLineAlerts: "より多くのスキャン、LINEアラート、追加の手紙クレジットを取得。",
       upgradeToProtect: "Protectにアップグレード",
     },
-    ko: {
-      welcome: "다시 오신 것을 환영합니다",
-      subtitle: "임대 문제가 발생하기 전에 예방하세요",
+    ru: {
+      welcome: "Добро пожаловать",
+      subtitle: "Предотвращайте проблемы с арендой до их возникновения",
       activeLeases: "활성 임대 계약",
       depositsTracked: "추적 중인 보증금",
       activeCases: "진행 중인 사례",
