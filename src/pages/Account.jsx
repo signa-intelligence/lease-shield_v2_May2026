@@ -1799,7 +1799,7 @@ function AccountContent() {
                       <div className="flex-1">
                         <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.language}</p>
                         <p className="font-bold" style={{ color: colors.textPrimary }}>
-                          {user?.language === 'th' ? 'ไทย (Thai)' : user?.language === 'zh' ? '中文 (Chinese)' : user?.language === 'ja' ? '日本語 (Japanese)' : user?.language === 'ko' ? '한국어 (Korean)' : 'English'}
+                          {user?.language === 'th' ? 'ไทย (Thai)' : user?.language === 'zh' ? '中文 (Chinese)' : user?.language === 'ja' ? '日本語 (Japanese)' : user?.language === 'ko' ? '한국어 (Korean)' : user?.language === 'ru' ? 'Русский (Russian)' : 'English'}
                         </p>
                       </div>
                     </div>
@@ -2091,6 +2091,7 @@ function AccountContent() {
                         <SelectItem value="zh">中文 (Chinese)</SelectItem>
                         <SelectItem value="ja">日本語 (Japanese)</SelectItem>
                         <SelectItem value="ko">한국어 (Korean)</SelectItem>
+                        <SelectItem value="ru">Русский (Russian)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

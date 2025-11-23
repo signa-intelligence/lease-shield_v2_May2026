@@ -178,6 +178,18 @@ export default function Layout({ children, currentPageName }) {
       upgrade: "升级",
       tagline: "公平 • 透明 • 保护"
     },
+    ru: {
+      appName: "ЛИС ЩИТ",
+      home: "Главная",
+      scan: "Сканировать",
+      property: "Недвижимость",
+      evidence: "Доказательства",
+      admin: "Админ",
+      search: "Поиск",
+      timeline: "Хронология",
+      upgrade: "Обновить",
+      tagline: "Справедливо • Прозрачно • Защищено"
+    },
     ja: {
       appName: "リースシールド",
       home: "ホーム",
