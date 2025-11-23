@@ -51,14 +51,21 @@ export default function AdminConsole() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Updated query to work with both role and access_level
+  // Fetch all users using service role to bypass RLS
   const { data: users = [] } = useQuery({
     queryKey: ['allUsers'],
     queryFn: async () => {
-      console.log('🔍 [ADMIN] Fetching users...');
-      const result = await base44.entities.User.list();
-      console.log('📊 [ADMIN] Fetched users:', result.length);
-      return result;
+      console.log('🔍 [ADMIN] Fetching all users via getAllUsers function...');
+      try {
+        const response = await base44.functions.invoke('getAllUsers');
+        console.log('📊 [ADMIN] Function response:', response.data);
+        const userList = response.data?.users || response.data || [];
+        console.log('📊 [ADMIN] Fetched users count:', userList.length);
+        return userList;
+      } catch (error) {
+        console.error('❌ [ADMIN] Failed to fetch users:', error);
+        return [];
+      }
     },
     enabled: !!user && (
       ['admin', 'super_admin', 'va'].includes(user.access_level) ||

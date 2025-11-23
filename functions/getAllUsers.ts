@@ -1,37 +1,58 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 /**
- * Helper function to get all users for the reminder system
- * Returns basic user data including notification preferences
+ * Get all users for Admin Console
+ * Uses service role to bypass RLS restrictions
+ * CRITICAL: This function MUST return ALL users regardless of RLS
  */
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Use service role to get all users
-    // Note: User entity might not support filter/list in some setups
-    // If that fails, we'll need to handle it differently
+    // CRITICAL: Verify the requesting user is actually an admin
+    const currentUser = await base44.auth.me();
     
-    let users = [];
-    
-    try {
-      // Try to get users via a special approach since User entity might not support standard operations
-      const response = await base44.asServiceRole.functions.invoke('fetchAllAppUsers');
-      users = response.data || [];
-    } catch (err) {
-      console.log('ℹ️ fetchAllAppUsers not available, returning empty array');
-      // Return empty array - the main function will fall back to per-deposit user fetching
-      users = [];
+    if (!currentUser) {
+      console.error('❌ No authenticated user');
+      return Response.json({ 
+        error: 'Unauthorized',
+        users: [] 
+      }, { status: 401 });
     }
     
-    console.log(`📊 Found ${users.length} users`);
+    const isAdmin = 
+      ['admin', 'super_admin', 'va'].includes(currentUser.access_level) ||
+      ['admin', 'super_admin', 'va'].includes(currentUser.role);
     
-    return Response.json(users);
+    if (!isAdmin) {
+      console.error('❌ User is not admin:', currentUser.email);
+      return Response.json({ 
+        error: 'Forbidden - Admin access required',
+        users: [] 
+      }, { status: 403 });
+    }
+    
+    console.log('✅ Admin verified:', currentUser.email, 'access_level:', currentUser.access_level);
+    
+    // Use asServiceRole to bypass RLS and get ALL users
+    console.log('🔍 Fetching all users via service role...');
+    const users = await base44.asServiceRole.entities.User.list('-created_date');
+    
+    console.log(`✅ Successfully fetched ${users.length} users`);
+    
+    // Return users array directly
+    return Response.json({ 
+      success: true,
+      users: users,
+      count: users.length 
+    });
     
   } catch (error) {
-    console.error('❌ Error getting users:', error);
+    console.error('❌ Error in getAllUsers:', error);
+    console.error('Stack:', error.stack);
     return Response.json({ 
+      success: false,
       error: error.message,
       users: [] 
     }, { status: 500 });
