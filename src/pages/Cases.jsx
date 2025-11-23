@@ -60,22 +60,6 @@ function CasesContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  useEffect(() => {
-    if (user) {
-      console.log('🔍 [CASES_PAGE] Current user email:', user.email);
-      console.log('🔍 [CASES_PAGE] Current user id:', user.id);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    console.log('📦 [CASES_PAGE] Cases state updated:', {
-      total: cases.length,
-      caseIds: cases.map(c => c.id),
-      statuses: cases.map(c => c.status),
-      userEmails: cases.map(c => c.user_email)
-    });
-  }, [cases]);
-
   const { data: cases = [], refetch: refetchCases, isLoading, error } = useQuery({
     queryKey: ['cases', user?.email],
     queryFn: async () => {
@@ -102,59 +86,50 @@ function CasesContent() {
     cacheTime: 0,
   });
 
-
-
+  // Always refetch on mount to avoid stale data after redirects
   useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
+    if (refetchCases) {
+      refetchCases();
+    }
+  }, [refetchCases]);
+
+  // Safe URL param handling - runs after cases are loaded
+  useEffect(() => {
+    if (typeof window === 'undefined' || !user) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
     const resolveSuccess = urlParams.get('resolve_success');
     const resolveCancelled = urlParams.get('resolve_cancelled');
     const caseId = urlParams.get('caseId');
 
     console.log('🔍 [CASES_PAGE] URL params:', { resolveSuccess, resolveCancelled, caseId });
     console.log('🔍 [CASES_PAGE] User:', user?.email);
+    console.log('🔍 [CASES_PAGE] Loaded cases:', cases.length);
 
-    if (resolveSuccess === 'true' && user) {
-      console.log('[CASES_PAGE] ✅ Resolve payment success detected for case:', caseId);
-      console.log('[CASES_PAGE] Current cases in state:', cases.length);
-      
+    if (resolveSuccess === 'true') {
       setShowResolveSuccessBanner(true);
       if (caseId) {
         setHighlightCaseId(caseId);
+        
+        // Check if case exists
+        const foundCase = cases.find(c => c.id === caseId);
+        if (foundCase) {
+          console.log('[CASES_PAGE] ✅ Case found:', foundCase.id, 'Status:', foundCase.status);
+        } else {
+          console.warn('[CASES_PAGE] ⚠️ Case not found in loaded cases:', caseId);
+        }
       }
       
-      // Force multiple refetches to ensure we get fresh data
-      console.log('[CASES_PAGE] Force-refetching cases (attempt 1)...');
-      queryClient.invalidateQueries({ queryKey: ['cases', user?.email] });
-      refetchCases();
-      
-      // Aggressive retry pattern - keep refetching
-      let attemptCount = 0;
-      const maxAttempts = 10;
-      
-      const pollForCase = setInterval(() => {
-        attemptCount++;
-        console.log(`[CASES_PAGE] Polling for case (attempt ${attemptCount}/${maxAttempts})...`);
-        
-        queryClient.invalidateQueries({ queryKey: ['cases', user?.email] });
-        refetchCases();
-        
-        if (attemptCount >= maxAttempts) {
-          console.log('[CASES_PAGE] ℹ️ Stopped polling after', maxAttempts, 'attempts');
-          clearInterval(pollForCase);
-        }
-      }, 1000);
-      
-      // Clean up interval after 15 seconds
-      setTimeout(() => clearInterval(pollForCase), 15000);
-      
-      // Clean URL after showing banner
+      // Clean URL after 5 seconds
       setTimeout(() => {
-        window.history.replaceState({}, '', location.pathname);
+        if (typeof window !== 'undefined') {
+          window.history.replaceState({}, '', window.location.pathname);
+        }
       }, 5000);
     }
 
-    if (resolveCancelled === 'true' && user) {
-      console.log('[CASES_PAGE] ⚠️ Resolve payment cancelled for case:', caseId);
+    if (resolveCancelled === 'true') {
+      console.log('[CASES_PAGE] ⚠️ Payment cancelled');
       
       toast.error(
         language === 'th' ? 'การชำระเงินไม่สำเร็จ คดีของคุณยังไม่ได้ถูกส่ง' :
@@ -162,31 +137,28 @@ function CasesContent() {
         'Payment not completed. Your case has not been submitted yet'
       );
       
-      // Clean URL
-      window.history.replaceState({}, '', location.pathname);
+      // Clean URL immediately
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
     }
-  }, [location.search, user, toast, refetchCases, queryClient]);
+  }, [user, cases, toast, language]);
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const theme = getFeatureCardStyles("cases", isDarkMode);
 
-  if (isLoading) {
-    console.log('⏳ [CASES_PAGE] Cases loading...');
-  }
-  if (error) {
-    console.error('❌ [CASES_PAGE] Cases query error:', error);
-  }
-  
-  // Log whenever cases array changes
-  React.useEffect(() => {
-    console.log('🔄 [CASES_PAGE] Cases array changed:', {
-      length: cases.length,
-      isEmpty: cases.length === 0,
-      firstThreeIds: cases.slice(0, 3).map(c => c.id),
-      firstThreeStatuses: cases.slice(0, 3).map(c => c.status)
+  // Debug logging
+  useEffect(() => {
+    console.log('🔄 [CASES_PAGE] Cases updated:', {
+      isLoading,
+      hasError: !!error,
+      count: cases.length,
+      user: user?.email,
+      caseIds: cases.map(c => c.id),
+      statuses: cases.map(c => c.status)
     });
-  }, [cases]);
+  }, [cases, isLoading, error, user]);
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -441,8 +413,14 @@ function CasesContent() {
     toast.success(strings.refreshed);
   };
 
-  // Filter cases based on search and status
-  const filteredCases = cases.filter(caseItem => {
+  // Visible statuses - cases to show to users
+  const VISIBLE_STATUSES = ['awaiting_payment', 'intake', 'pending_review', 'under_review', 'ready_drafts', 
+                            'client_review', 'awaiting_landlord', 'in_progress', 'resolved', 'closed'];
+  
+  // Filter cases: only show visible statuses, then apply search & status filter
+  const visibleCases = cases.filter(c => VISIBLE_STATUSES.includes(c.status));
+  
+  const filteredCases = visibleCases.filter(caseItem => {
     const matchesSearch = searchQuery === '' ||
       caseItem.case_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       caseItem.summary?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -714,7 +692,7 @@ function CasesContent() {
           })()}
 
           {/* Search & Filter Controls */}
-          {cases.length > 0 && (
+          {visibleCases.length > 0 && (
             <div className="mb-6 space-y-3">
               <DebouncedSearch
                 onSearch={setSearchQuery}
@@ -757,7 +735,7 @@ function CasesContent() {
 
           {isLoading ? (
             <SkeletonLoader variant="card" count={3} colors={colors} />
-          ) : cases.length === 0 ? (
+          ) : visibleCases.length === 0 ? (
             <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#FCA5A5", backgroundColor: "#FEF2F2" }}>
               <h3 className="font-semibold text-sm sm:text-base mb-1">{strings.noCasesCreatedYet}</h3>
               <p className="text-xs sm:text-sm text-gray-700 mb-3">
