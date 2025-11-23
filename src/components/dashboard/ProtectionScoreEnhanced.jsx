@@ -13,10 +13,9 @@ const ProtectionScoreEnhanced = ({
   breakdown,
   recommendations,
   language = 'en',
-  colors,
   compact = false,
   user,
-  isDarkMode = false // Added isDarkMode prop
+  isDarkMode = false
 }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
@@ -319,14 +318,13 @@ const ProtectionScoreEnhanced = ({
 
   return (
     <Card
-      className="border-none shadow-xl overflow-hidden h-full"
-      style={{ backgroundColor: colors.cardBg }}
+      className="border-none shadow-xl overflow-hidden h-full bg-white dark:bg-gray-800"
     >
       <CardHeader
         className="pb-3"
         style={{
           background: `linear-gradient(135deg, ${scoreColor}20 0%, ${scoreColor}40 100%)`,
-          borderBottom: `1px solid ${colors.borderColor}`,
+          borderBottom: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(12,59,46,0.08)',
           padding: "12px",
         }}
       >
@@ -334,8 +332,7 @@ const ProtectionScoreEnhanced = ({
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5" style={{ color: scoreColor }} />
             <span
-              className="text-sm font-bold"
-              style={{ color: colors.textPrimary }}
+              className="text-sm font-bold text-gray-900 dark:text-gray-50"
             >
               {strings.protectionScore}
             </span>
@@ -363,7 +360,7 @@ const ProtectionScoreEnhanced = ({
                 cx="64"
                 cy="64"
                 r="56"
-                stroke={colors.borderColor}
+                stroke={isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)'}
                 strokeWidth="8"
                 fill="none"
               />
@@ -393,11 +390,11 @@ const ProtectionScoreEnhanced = ({
                 {score}%
               </div>
               <div
+                className="text-gray-600 dark:text-gray-400"
                 style={{ 
                   fontSize: language === 'ru' ? '10px' : '12px',
                   fontWeight: '600',
                   marginTop: '4px',
-                  color: colors.textSecondary,
                   textAlign: 'center',
                   lineHeight: '1.2',
                   whiteSpace: 'normal',
@@ -544,8 +541,7 @@ const ProtectionScoreEnhanced = ({
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
               <span
-                className="text-xs font-bold"
-                style={{ color: colors.textPrimary }}
+                className="text-xs font-bold text-gray-900 dark:text-gray-50"
               >
                 {strings.quickWins}
               </span>
@@ -561,12 +557,12 @@ const ProtectionScoreEnhanced = ({
                       border: "none",
                       backgroundColor:
                         currentSlide === 0
-                          ? colors.borderColor
-                          : colors.textPrimary,
+                          ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)')
+                          : (isDarkMode ? '#F9FAFB' : '#0F172A'),
                       color:
                         currentSlide === 0
-                          ? colors.textSecondary
-                          : colors.cardBg,
+                          ? (isDarkMode ? '#D1D5DB' : '#475569')
+                          : (isDarkMode ? '#2A2D30' : '#FFFFFF'),
                       cursor:
                         currentSlide === 0 ? "not-allowed" : "pointer",
                       opacity: currentSlide === 0 ? 0.5 : 1,
@@ -576,8 +572,7 @@ const ProtectionScoreEnhanced = ({
                     <ChevronLeft className="w-3 h-3" />
                   </button>
                   <span
-                    className="text-[10px]"
-                    style={{ color: colors.textSecondary }}
+                    className="text-[10px] text-gray-600 dark:text-gray-400"
                   >
                     {currentSlide + 1}/{activeRecommendations.length}
                   </span>
@@ -592,12 +587,12 @@ const ProtectionScoreEnhanced = ({
                       border: "none",
                       backgroundColor:
                         currentSlide === activeRecommendations.length - 1
-                          ? colors.borderColor
-                          : colors.textPrimary,
+                          ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)')
+                          : (isDarkMode ? '#F9FAFB' : '#0F172A'),
                       color:
                         currentSlide === activeRecommendations.length - 1
-                          ? colors.textSecondary
-                          : colors.cardBg,
+                          ? (isDarkMode ? '#D1D5DB' : '#475569')
+                          : (isDarkMode ? '#2A2D30' : '#FFFFFF'),
                       cursor:
                         currentSlide === activeRecommendations.length - 1
                           ? "not-allowed"
@@ -643,8 +638,7 @@ const ProtectionScoreEnhanced = ({
                           >
                             <div className="flex items-center justify-between mb-2">
                               <span
-                                className="text-xs font-bold pr-6"
-                                style={{ color: colors.textPrimary }}
+                                className="text-xs font-bold pr-6 text-gray-900 dark:text-gray-50"
                               >
                                 {rec.action}
                               </span>
@@ -714,7 +708,7 @@ const ProtectionScoreEnhanced = ({
                       backgroundColor:
                         idx === currentSlide
                           ? scoreColor
-                          : colors.borderColor,
+                          : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)'),
                       cursor: "pointer",
                       transition: "all 0.2s",
                       padding: 0,
@@ -739,16 +733,16 @@ const ProtectionScoreEnhanced = ({
                   marginTop: "8px",
                   padding: "6px 12px",
                   borderRadius: "6px",
-                  border: `1px solid ${colors.borderColor}`,
+                  border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(12,59,46,0.08)',
                   backgroundColor: "transparent",
-                  color: colors.textSecondary,
+                  color: isDarkMode ? '#D1D5DB' : '#475569',
                   fontSize: "10px",
                   cursor: "pointer",
                   transition: "all 0.2s",
                   width: "100%",
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = colors.borderColor;
+                  e.target.style.backgroundColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)';
                 }}
                 onMouseLeave={(e) => {
                   e.target.style.backgroundColor = "transparent";
@@ -774,8 +768,7 @@ const ProtectionScoreEnhanced = ({
                 style={{ color: scoreColor }}
               />
               <p
-                className="text-xs font-semibold mb-2"
-                style={{ color: colors.textPrimary }}
+                className="text-xs font-semibold mb-2 text-gray-900 dark:text-gray-50"
               >
                 {strings.allTipsHidden}
               </p>

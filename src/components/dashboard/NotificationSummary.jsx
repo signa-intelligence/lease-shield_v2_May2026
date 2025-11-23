@@ -6,27 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Bell, MessageCircle, Mail, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { differenceInHours } from 'date-fns';
 
-export default function NotificationSummary({ language = 'en', colors }) {
+export default function NotificationSummary({ language = 'en', isDarkMode = false }) {
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-  });
-
-  const isDarkMode = user?.theme === 'dark';
-
-  // Fallback colors if not provided
-  const safeColors = colors || (isDarkMode ? {
-    bg: '#111827',
-    cardBg: '#2A2D30',
-    textPrimary: '#F9FAFB',
-    textSecondary: '#D1D5DB',
-    borderColor: 'rgba(255,255,255,0.1)'
-  } : {
-    bg: '#F3F6F5',
-    cardBg: '#FFFFFF',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    borderColor: 'rgba(12,59,46,0.08)'
   });
 
   const { data: myLogs = [] } = useQuery({
@@ -177,9 +160,9 @@ export default function NotificationSummary({ language = 'en', colors }) {
   const recentLogs = myLogs.slice(0, 5);
 
   return (
-    <Card className="border-none shadow-xl" style={{ backgroundColor: safeColors.cardBg }}>
-      <CardHeader style={{ borderBottom: `1px solid ${safeColors.borderColor}` }}>
-        <CardTitle className="flex items-center gap-2" style={{ color: safeColors.textPrimary }}>
+    <Card className="border-none shadow-xl bg-white dark:bg-gray-800">
+      <CardHeader className="border-b border-gray-200 dark:border-gray-700">
+        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
           <Bell className="w-5 h-5 text-blue-600" />
           {str.title}
         </CardTitle>
@@ -188,10 +171,10 @@ export default function NotificationSummary({ language = 'en', colors }) {
         {recentLogs.length === 0 ? (
           <div className="text-center py-8">
             <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-600" />
-            <p className="font-semibold" style={{ color: safeColors.textPrimary }}>
+            <p className="font-semibold text-gray-900 dark:text-gray-50">
               {str.allCaughtUp}
             </p>
-            <p className="text-sm mt-1" style={{ color: safeColors.textSecondary }}>
+            <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
               {str.noNotifications}
             </p>
           </div>
@@ -200,11 +183,7 @@ export default function NotificationSummary({ language = 'en', colors }) {
             {recentLogs.map((log) => (
               <div
                 key={log.id}
-                className="p-3 rounded-lg border"
-                style={{
-                  backgroundColor: safeColors.bg,
-                  borderColor: safeColors.borderColor
-                }}
+                className="p-3 rounded-lg border bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -221,7 +200,7 @@ export default function NotificationSummary({ language = 'en', colors }) {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm" style={{ color: safeColors.textPrimary }}>
+                      <p className="font-semibold text-sm text-gray-900 dark:text-gray-50">
                         {str.types[log.notification_type] || log.notification_type}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
@@ -233,7 +212,7 @@ export default function NotificationSummary({ language = 'en', colors }) {
                           )}
                           {str.via} {log.channel}
                         </Badge>
-                        <span className="text-xs flex items-center gap-1" style={{ color: safeColors.textSecondary }}>
+                        <span className="text-xs flex items-center gap-1 text-gray-600 dark:text-gray-400">
                           <Clock className="w-3 h-3" />
                           {getTimeAgo(log.created_date)}
                         </span>
