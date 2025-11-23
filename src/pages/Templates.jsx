@@ -382,6 +382,41 @@ export default function Templates() {
       fillAllFields: "모든 필드를 입력하고 파일을 선택하세요",
       uploadSuccess: "템플릿이 성공적으로 업로드되었습니다！",
       uploadFailed: "업로드 실패. 다시 시도하세요."
+    },
+    ru: {
+      title: "Шаблоны писем",
+      subtitle: "Профессиональная двуязычная лестница эскалации – все шаблоны доступны",
+      creditBalance: "Баланс кредитов",
+      credits: "Кредиты",
+      allLetters: "Все письма (11 шаблонов)",
+      insufficientCredits: "Недостаточно кредитов",
+      upgradeForCredits: "Обновитесь для получения дополнительных кредитов",
+      preSigningSection: "⭐ Переговоры до подписания",
+      friendlyApproach: "Дружественный подход (3 письма)",
+      professionalEscalation: "Профессиональная эскалация (4 письма)",
+      finalMeasures: "Финальные меры (3 письма)",
+      oneLetterPerCredit: "1 письмо = 1 кредит",
+      accessTemplateLibrary: "Доступ к библиотеке шаблонов",
+      bilingual: "Двуязычные шаблоны",
+      creditsNeverExpire: "Кредиты не истекают",
+      purchaseCredits: "Купить кредиты",
+      uploadTemplate: "Загрузить шаблон",
+      uploadTemplateTitle: "Загрузить новый шаблон письма",
+      category: "Категория",
+      titleEnglish: "Название (английский)",
+      titleThai: "Название (тайский)",
+      descriptionEnglish: "Описание (английский)",
+      descriptionThai: "Описание (тайский)",
+      creditCost: "Стоимость в кредитах",
+      selectFile: "Выберите файл шаблона",
+      uploading: "Загрузка...",
+      cancel: "Отмена",
+      upload: "Загрузить",
+      adminOnly: "Только для админа",
+      back: "Назад",
+      fillAllFields: "Пожалуйста, заполните все поля и выберите файл",
+      uploadSuccess: "Шаблон успешно загружен!",
+      uploadFailed: "Загрузка не удалась. Попробуйте снова."
     }
   };
 
@@ -417,6 +452,12 @@ export default function Templates() {
       friendly: '우호적 접근',
       professional: '전문적 확대',
       final: '최종 조치'
+    },
+    ru: {
+      pre_signing: 'Переговоры до подписания',
+      friendly: 'Дружественный подход',
+      professional: 'Профессиональная эскалация',
+      final: 'Финальные меры'
     }
   };
 
