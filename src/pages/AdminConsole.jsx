@@ -69,25 +69,37 @@ export default function AdminConsole() {
   const { data: leases = [] } = useQuery({
     queryKey: ['allLeases'],
     queryFn: () => base44.entities.Lease.list('-created_date'),
-    enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
+    enabled: !!user && (
+      ['admin', 'super_admin', 'va'].includes(user.access_level) ||
+      ['admin', 'super_admin', 'va'].includes(user.role)
+    ),
   });
 
   const { data: allCases = [] } = useQuery({
     queryKey: ['allCases'],
     queryFn: () => base44.entities.Case.list('-created_date'),
-    enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
+    enabled: !!user && (
+      ['admin', 'super_admin', 'va'].includes(user.access_level) ||
+      ['admin', 'super_admin', 'va'].includes(user.role)
+    ),
   });
 
   const { data: allDeposits = [] } = useQuery({
     queryKey: ['allDeposits'],
     queryFn: () => base44.entities.DepositTracker.list('-created_date'),
-    enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
+    enabled: !!user && (
+      ['admin', 'super_admin', 'va'].includes(user.access_level) ||
+      ['admin', 'super_admin', 'va'].includes(user.role)
+    ),
   });
 
   const { data: documents = [] } = useQuery({
     queryKey: ['allDocuments'],
     queryFn: () => base44.entities.Document.list(),
-    enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
+    enabled: !!user && (
+      ['admin', 'super_admin', 'va'].includes(user.access_level) ||
+      ['admin', 'super_admin', 'va'].includes(user.role)
+    ),
   });
 
   // ✅ COMPUTE SUPER ADMIN COUNT
@@ -737,7 +749,13 @@ export default function AdminConsole() {
 
   const strings = t[language] || t.en;
 
-  if (!user || !['admin', 'super_admin'].includes(user.access_level)) {
+  // Check admin access using both role and access_level
+  const isAuthorized = user && (
+    ['admin', 'super_admin', 'va'].includes(user.access_level) ||
+    ['admin', 'super_admin', 'va'].includes(user.role)
+  );
+
+  if (!isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
         <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
