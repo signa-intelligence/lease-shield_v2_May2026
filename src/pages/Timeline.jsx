@@ -254,6 +254,39 @@ export default function Timeline() {
       caseCreated: "사례 개설",
       maintenanceReported: "유지보수 보고됨",
       eventsOn: "이벤트 일자"
+    },
+    ru: {
+      title: "Хронология",
+      subtitle: "Вся история аренды в одном месте",
+      back: "Назад",
+      today: "Сегодня",
+      calendar: "Календарь",
+      list: "Список",
+      upcoming: "Ближайшие",
+      filters: "Фильтры",
+      allTypes: "Все типы",
+      leaseEvents: "События по договору",
+      depositEvents: "Возврат депозита",
+      caseEvents: "Спорные дела",
+      maintenanceEvents: "Обслуживание",
+      noEvents: "События не найдены",
+      noEventsDesc: "Попробуйте изменить фильтры или диапазон дат",
+      upcomingDeadlines: "Ближайшие сроки",
+      noUpcoming: "Ближайших сроков нет",
+      pastEvents: "Прошлые события",
+      viewDetails: "Подробнее",
+      dueIn: "Осталось",
+      days: "дней",
+      overdue: "Просрочено",
+      day: "день",
+      leaseStart: "Начало договора",
+      leaseEnd: "Окончание договора",
+      noticeDeadline: "Крайний срок уведомления",
+      depositReturn: "Возврат депозита",
+      caseCreated: "Дело открыто",
+      maintenanceReported: "Сообщено об обслуживании",
+      eventsOn: "События",
+      next30Days: "Следующие 30 дней"
     }
   };
 
@@ -479,7 +512,8 @@ export default function Timeline() {
       th: ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'],
       zh: ['日', '一', '二', '三', '四', '五', '六'],
       ja: ['日', '月', '火', '水', '木', '金', '土'],
-      ko: ['일', '월', '화', '수', '목', '금', '토']
+      ko: ['일', '월', '화', '수', '목', '금', '토'],
+      ru: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
     };
     return weekdays[language]?.[idx] || weekdays['en'][idx];
   };
@@ -577,7 +611,7 @@ export default function Timeline() {
                 <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <TrendingUp className="w-5 h-5" style={{ color: FEATURE_COLORS.leases.accent }} />
                   {strings.upcomingDeadlines}
-                  <Badge className="bg-blue-100 text-blue-800">{strings.next30Days}</Badge>
+                  <Badge className="bg-blue-100 text-blue-800">{strings.next30Days || (language === 'th' ? '30 วันข้างหน้า' : language === 'ru' ? 'Следующие 30 дней' : 'Next 30 Days')}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
