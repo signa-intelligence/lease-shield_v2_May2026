@@ -30,6 +30,8 @@ export default function ResolveCase() {
   const [uploading, setUploading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [autoFilledFromDeposit, setAutoFilledFromDeposit] = useState(false);
+  const [currentCase, setCurrentCase] = useState(null);
+  const [loadingCase, setLoadingCase] = useState(true);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -42,8 +44,63 @@ export default function ResolveCase() {
     enabled: !!user,
   });
 
+  const { data: cases = [] } = useQuery({
+    queryKey: ['cases'],
+    queryFn: () => base44.entities.Case.filter({ user_email: user?.email }, '-created_date'),
+    enabled: !!user,
+  });
+
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+
+  // Load case from URL params or find awaiting_details case
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const caseIdFromUrl = urlParams.get('case_id');
+    const sessionId = urlParams.get('session_id');
+
+    if (user && cases.length >= 0) {
+      let targetCase = null;
+
+      // Priority 1: case_id from URL
+      if (caseIdFromUrl) {
+        targetCase = cases.find(c => c.id === caseIdFromUrl);
+      }
+
+      // Priority 2: Find awaiting_details case
+      if (!targetCase) {
+        targetCase = cases.find(c => c.status === 'awaiting_details');
+      }
+
+      if (targetCase) {
+        console.log('✅ Found case for submission:', targetCase.id);
+        setCurrentCase(targetCase);
+        
+        // Pre-fill form from case if available
+        if (targetCase.summary) {
+          setFormData(prev => ({
+            ...prev,
+            type: targetCase.type || 'deposit',
+            dispute_amount: targetCase.dispute_amount?.toString() || '',
+            summary: targetCase.summary || '',
+            landlord_name: targetCase.landlord_name || user?.landlord_name || '',
+            landlord_email: targetCase.landlord_email || user?.landlord_email || '',
+            property_address: targetCase.property_address || '',
+            evidence_files: targetCase.evidence || []
+          }));
+        }
+      } else {
+        console.log('⚠️ No paid case found');
+      }
+
+      setLoadingCase(false);
+
+      // Clean URL
+      if (sessionId || caseIdFromUrl) {
+        window.history.replaceState({}, '', createPageUrl('ResolveCase'));
+      }
+    }
+  }, [user, cases]);
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -94,14 +151,14 @@ export default function ResolveCase() {
     }
   }, [deposits, user, language]);
 
-  const createCaseMutation = useMutation({
-    mutationFn: async (caseData) => {
-      const newCase = await base44.entities.Case.create(caseData);
-      return newCase;
+  const updateCaseMutation = useMutation({
+    mutationFn: async ({ caseId, caseData }) => {
+      const updated = await base44.entities.Case.update(caseId, caseData);
+      return updated;
     },
-    onSuccess: (newCase) => {
+    onSuccess: (updatedCase) => {
       queryClient.invalidateQueries({ queryKey: ['cases'] });
-      navigate(createPageUrl('CaseDetails') + `?caseId=${newCase.id}`);
+      navigate(createPageUrl('CaseDetails') + `?caseId=${updatedCase.id}`);
     },
   });
 
@@ -143,6 +200,11 @@ export default function ResolveCase() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!currentCase) {
+      alert(language === 'ru' ? 'Дело не найдено. Вернитесь на главную для начала.' : 'No case found. Return to home to start.');
+      return;
+    }
+
     if (!formData.type || !formData.dispute_amount || !formData.summary) {
       alert(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : language === 'ru' ? 'Пожалуйста, заполните все обязательные поля' : 'Please fill in all required fields');
       return;
@@ -152,28 +214,30 @@ export default function ResolveCase() {
     
     try {
       const caseData = {
-        user_email: user.email,
         type: formData.type,
         status: 'intake',
         dispute_amount: parseFloat(formData.dispute_amount),
         summary: formData.summary,
         landlord_name: formData.landlord_name || user?.landlord_name || '',
         landlord_email: formData.landlord_email || user?.landlord_email || '',
+        property_address: formData.property_address || '',
         evidence: formData.evidence_files,
-        is_member_at_creation: hasMemberPricing(user),
-        case_price: getUserPricing(user),
         timeline: [
+          ...(currentCase.timeline || []),
           {
             timestamp: new Date().toISOString(),
-            event: 'Case created',
+            event: 'Case details submitted',
             actor: user.email
           }
         ]
       };
 
-      await createCaseMutation.mutateAsync(caseData);
+      await updateCaseMutation.mutateAsync({ 
+        caseId: currentCase.id, 
+        caseData 
+      });
     } catch (error) {
-      console.error('Failed to create case:', error);
+      console.error('Failed to submit case:', error);
       alert(language === 'th' ? 'ไม่สามารถสร้างคดีได้' : language === 'ru' ? 'Не удалось создать дело' : 'Failed to create case');
       setCreating(false);
     }
@@ -465,6 +529,45 @@ export default function ResolveCase() {
   };
 
   const str = strings[language] || strings.en;
+
+  // No paid case found - show redirect message
+  if (!loadingCase && !currentCase) {
+    return (
+      <div className="min-h-screen p-4 md:p-6 flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
+        <Card className="max-w-md border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="w-16 h-16 mx-auto mb-4" style={{ color: '#F59E0B' }} />
+            <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {language === 'ru' ? 'Активное дело не найдено' : 'No Active Case Found'}
+            </h2>
+            <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+              {language === 'ru' 
+                ? 'Начните новое дело Resolve с главной страницы или раздела "Дела".' 
+                : 'Start a new Resolve case from the Home or Cases page to proceed.'}
+            </p>
+            <Button
+              onClick={() => navigate(createPageUrl("Dashboard"))}
+              className="w-full"
+              style={{
+                backgroundColor: '#0C3B2E',
+                color: '#FFFFFF'
+              }}
+            >
+              {language === 'ru' ? 'Вернуться на главную' : 'Back to Home'}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loadingCase) {
+    return (
+      <div className="min-h-screen p-4 md:p-6 flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#C7A338' }} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>

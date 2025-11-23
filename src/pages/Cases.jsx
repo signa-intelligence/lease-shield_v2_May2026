@@ -521,12 +521,43 @@ function CasesContent() {
             </CardContent>
           </Card>
 
-          {/* Resolve CTA Section - Available to ALL users */}
+          {/* Check for existing awaiting_details case */}
           {(() => {
+            const awaitingCase = cases.find(c => c.status === 'awaiting_details');
+            
+            if (awaitingCase) {
+              return (
+                <div 
+                  className="mb-6 p-4 rounded-xl border-2 cursor-pointer"
+                  style={{
+                    backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5',
+                    borderColor: '#10B981',
+                    boxShadow: '0 2px 8px rgba(16,185,129,0.2)'
+                  }}
+                  onClick={() => {
+                    haptic.medium();
+                    navigate(createPageUrl("ResolveCase") + `?case_id=${awaitingCase.id}`);
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="text-base font-bold mb-1" style={{ color: '#10B981' }}>
+                        {language === 'ru' ? 'Завершите подачу дела' : 'Continue case submission'}
+                      </h3>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                        {language === 'ru' ? 'У вас есть оплаченное дело, ожидающее заполнения. Нажмите для продолжения.' : 'You have a paid case waiting for details. Tap to continue.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // No awaiting case - show Start Resolve CTA
             const eligibility = getMembershipEligibility(user);
             const showMemberRate = eligibility.isEligible;
             const displayPrice = showMemberRate ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE;
-            const rateLabel = showMemberRate ? 'member rate' : 'public rate';
             
             return (
               <div 
@@ -551,21 +582,29 @@ function CasesContent() {
                            language === 'zh' ? '会员价在会员30天后生效。案件提交期间的升级仅适用于未来的案件。' :
                            language === 'ja' ? '会員価格は会員登録後30日で適用されます。ケース提出中のアップグレードは今後のケースにのみ適用されます。' :
                            language === 'ko' ? '회원 요금은 회원 가입 30일 후 적용됩니다. 사례 제출 중 업그레이드는 향후 사례에만 적용됩니다.' :
-                           language === 'ru' ? 'Цены для членов действуют через 30 дней членства. Обновления во время подачи дела применяются только к будущим делам.' :
+                           language === 'ru' ? 'Тарифы участника действуют после 30 дней членства. Обновления во время подачи дела применяются только к будущим делам.' :
                            'Member rates apply after 30 days of active Lite, Protect or Secure membership. Upgrades during case submission apply to future cases only.')
                         : (language === 'th' ? 'ราคาสมาชิกใช้งานได้หลังสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน' :
                            language === 'zh' ? '会员价在Lite、Protect或Secure会员30天后生效' :
                            language === 'ja' ? '会員価格はLite、Protect、Secureの会員登録後30日で適用' :
                            language === 'ko' ? '회원 요금은 Lite, Protect 또는 Secure 회원 30일 후 적용' :
-                           language === 'ru' ? 'Цены для членов действуют через 30 дней активного членства Lite, Protect или Secure' :
+                           language === 'ru' ? 'Тарифы участника действуют после 30 дней активного членства Lite, Protect или Secure' :
                            'Member rates apply after 30 days of active Lite, Protect or Secure membership')
                       }
                     </p>
                   </div>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       haptic.medium();
-                      navigate(createPageUrl("ResolveCase"));
+                      try {
+                        const { data } = await base44.functions.invoke('createResolveCheckout');
+                        if (data.url) {
+                          window.location.href = data.url;
+                        }
+                      } catch (error) {
+                        console.error('Failed to create checkout:', error);
+                        toast.error(language === 'ru' ? 'Ошибка создания платежа' : 'Payment failed to start');
+                      }
                     }}
                     className="btn-interaction w-full sm:w-auto"
                     style={{
@@ -589,12 +628,12 @@ function CasesContent() {
                       e.target.style.color = '#EF4444';
                     }}
                   >
-                    {language === 'th' ? `ส่งคดี – ฿${displayPrice.toLocaleString()} ราคา${showMemberRate ? 'สมาชิก' : 'ทั่วไป'}` :
-                     language === 'zh' ? `提交案件 – ฿${displayPrice.toLocaleString()} ${showMemberRate ? '会员' : '公开'}价格` :
-                     language === 'ja' ? `ケース提出 – ฿${displayPrice.toLocaleString()} ${showMemberRate ? '会員' : '公開'}価格` :
-                     language === 'ko' ? `사례 제출 – ฿${displayPrice.toLocaleString()} ${showMemberRate ? '회원' : '공개'} 요금` :
-                     language === 'ru' ? `Подать дело – ฿${displayPrice.toLocaleString()} ${showMemberRate ? 'для членов' : 'публичная цена'}` :
-                     `Submit Case – ฿${displayPrice.toLocaleString()} ${rateLabel}`}
+                    {language === 'th' ? `เริ่ม Resolve – ฿${displayPrice.toLocaleString()}` :
+                     language === 'zh' ? `启动 Resolve – ฿${displayPrice.toLocaleString()}` :
+                     language === 'ja' ? `Resolve を開始 – ฿${displayPrice.toLocaleString()}` :
+                     language === 'ko' ? `Resolve 시작 – ฿${displayPrice.toLocaleString()}` :
+                     language === 'ru' ? `Начать Resolve – ฿${displayPrice.toLocaleString()}` :
+                     `Start Resolve – ฿${displayPrice.toLocaleString()}`}
                   </button>
                 </div>
               </div>
