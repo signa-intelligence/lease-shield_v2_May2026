@@ -932,6 +932,83 @@ function PropertyTrackerContent() {
       fileTooLarge: "파일이 너무 큼",
       voiceMaxSize: "음성 메모는 5MB 미만이어야 합니다",
       videoMaxSize: "동영상은 80MB 미만이어야 합니다"
+    },
+    ru: {
+      title: "Управление недвижимостью",
+      subtitle: "Управляйте арендуемой недвижимостью в одном месте",
+      depositSection: "Депозит и возврат",
+      rentSection: "График аренды",
+      maintenanceSection: "Запросы на обслуживание",
+      depositAmount: "Сумма депозита (฿)",
+      paidDate: "Дата оплаты",
+      expectedReturn: "Ожидаемая дата возврата",
+      propertyAddress: "Адрес объекта",
+      rentAmount: "Ежемесячная арендная плата (฿)",
+      rentDueDay: "День оплаты аренды (1-31)",
+      alertDaysBefore: "Напомнить за (дней)",
+      rentAlertsEnabled: "Включить напоминания об аренде",
+      notes: "Заметки",
+      save: "Сохранить",
+      cancel: "Отмена",
+      edit: "Редактировать",
+      delete: "Удалить",
+      close: "Закрыть",
+      addDeposit: "Добавить депозит",
+      addRent: "Добавить график аренды",
+      noDeposit: "Депозит еще не отслеживается",
+      addDepositDesc: "Начните отслеживать залог",
+      noRent: "График аренды не задан",
+      addRentDesc: "Настройте ежемесячные напоминания об аренде",
+      daysRemaining: "дней осталось",
+      overdue: "ПРОСРОЧЕНО",
+      addMaintenance: "Новый запрос",
+      issueTitle: "Название проблемы",
+      description: "Описание",
+      category: "Категория",
+      priority: "Приоритет",
+      reportedDate: "Дата сообщения",
+      noMaintenance: "Запросов на обслуживание нет",
+      status: "Статус",
+      back: "Назад",
+      addPhotos: "Добавить фото",
+      takePhoto: "Сделать фото",
+      chooseFiles: "Выбрать файлы",
+      uploadingPhotos: "Загрузка фото...",
+      photosAdded: "фото добавлено",
+      removePhoto: "Удалить",
+      communicationLog: "История общения",
+      confirmDelete: "Вы уверены, что хотите удалить этот запрос?",
+      confirmClose: "Отметить этот запрос как выполненный и закрыть его?",
+      archived: "В архиве",
+      active: "Активные",
+      imagesOptimized: "Изображения оптимизированы",
+      imagesOptimizedDesc: "изображений • Сэкономлено",
+      processingError: "Произошла ошибка обработки",
+      searchMaintenance: "Поиск по названию или описанию...",
+      filterByStatus: "Фильтр по статусу",
+      allStatuses: "Все статусы",
+      noResultsFound: "Запросы не найдены",
+      tryDifferentSearch: "Попробуйте другой поисковый запрос",
+      uploadDepositTracker: "Загрузить депозит",
+      uploadRentSchedule: "Загрузить график аренды",
+      newMaintenanceRequest: "Новый запрос на обслуживание",
+      addVoiceNote: "Добавить голосовую заметку",
+      addVideo: "Добавить видео",
+      voiceNotesAdded: "голосовых заметок",
+      videosAdded: "видео",
+      protectRequired: "Требуется Protect",
+      secureRequired: "Требуется Secure",
+      upgradeToProtectVoice: "Обновитесь до Protect, чтобы добавить голосовые заметки",
+      upgradeToProtectVoiceDesc: "Участники тарифа Protect могут прикреплять голосовые записи к запросам на обслуживание.",
+      upgradeToSecureVideo: "Обновитесь до Secure, чтобы добавить видеодоказательства",
+      upgradeToSecureVideoDesc: "Участники тарифа Secure могут загружать видео для более быстрого разрешения споров.",
+      upgradeToProtect: "Обновить до Protect",
+      upgradeToSecure: "Обновить до Secure",
+      maxVoiceReached: "Максимум 3 голосовые заметки на запрос",
+      maxVideoReached: "Максимум 3 видео на запрос",
+      fileTooLarge: "Файл слишком большой",
+      voiceMaxSize: "Голосовые заметки должны быть менее 5 МБ",
+      videoMaxSize: "Видео должны быть менее 80 МБ"
     }
   };
 
@@ -1707,9 +1784,11 @@ function PropertyTrackerContent() {
               <CardContent className="p-6">
                 {(!deposit || deposit.deposit_amount === 0) && !editingDeposit ? (
                   <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: colors.borderColor, backgroundColor: colors.fieldBg }}>
-                    <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>No properties added yet</h3>
+                    <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? 'ยังไม่มีทรัพย์สิน' : language === 'zh' ? '尚未添加物业' : language === 'ja' ? 'まだ物件が追加されていません' : language === 'ko' ? '아직 부동산이 추가되지 않음' : language === 'ru' ? 'Объектов пока нет' : 'No properties added yet'}
+                    </h3>
                     <p className="text-xs sm:text-sm mb-3" style={{ color: colors.textSecondary }}>
-                      Add your first property to start tracking deposits, rent schedules and maintenance in one place.
+                      {language === 'th' ? 'เพิ่มทรัพย์สินแรกของคุณเพื่อเริ่มติดตามเงินมัดจำ กำหนดการชำระค่าเช่า และการซ่อมบำรุงในที่เดียว' : language === 'zh' ? '添加您的第一个物业，开始在一个地方追踪押金、租金时间表和维护。' : language === 'ja' ? '最初の物件を追加して、敷金、家賃スケジュール、メンテナンスを一箇所で追跡し始めましょう。' : language === 'ko' ? '첫 번째 부동산을 추가하여 한 곳에서 보증금, 임대료 일정 및 유지보수 추적을 시작하세요.' : language === 'ru' ? 'Добавьте первый объект, чтобы начать отслеживать депозиты, график аренды и обслуживание в одном месте.' : 'Add your first property to start tracking deposits, rent schedules and maintenance in one place.'}
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <button
@@ -1721,7 +1800,7 @@ function PropertyTrackerContent() {
                         className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
                         style={{ backgroundColor: "#0C3B2E", color: "#FFFFFF" }}
                       >
-                        Add property
+                        {language === 'th' ? 'เพิ่มทรัพย์สิน' : language === 'zh' ? '添加物业' : language === 'ja' ? '物件を追加' : language === 'ko' ? '부동산 추가' : language === 'ru' ? 'Добавить объект' : 'Add property'}
                       </button>
                       {isFreeTier && (
                         <button
@@ -1733,7 +1812,7 @@ function PropertyTrackerContent() {
                           className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
                           style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: colors.cardBg }}
                         >
-                          Upgrade for advanced tracking
+                          {language === 'th' ? 'อัปเกรดสำหรับการติดตามขั้นสูง' : language === 'zh' ? '升级以获取高级追踪' : language === 'ja' ? '高度な追跡のためにアップグレード' : language === 'ko' ? '고급 추적을 위해 업그레이드' : language === 'ru' ? 'Обновите для расширенного отслеживания' : 'Upgrade for advanced tracking'}
                         </button>
                       )}
                     </div>
@@ -2536,9 +2615,11 @@ function PropertyTrackerContent() {
 
                 {maintenanceRequests.length === 0 && !showAddMaintenance && (
                   <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: colors.borderColor, backgroundColor: colors.fieldBg }}>
-                    <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>No maintenance requests yet</h3>
+                    <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? 'ยังไม่มีคำขอซ่อมบำรุง' : language === 'zh' ? '尚无维护请求' : language === 'ja' ? 'まだメンテナンスリクエストがありません' : language === 'ko' ? '아직 유지보수 요청 없음' : language === 'ru' ? 'Запросов на обслуживание пока нет' : 'No maintenance requests yet'}
+                    </h3>
                     <p className="text-xs sm:text-sm mb-3" style={{ color: colors.textSecondary }}>
-                      Log your first maintenance issue so you have a clear record with timestamps, photos and notifications.
+                      {language === 'th' ? 'บันทึกปัญหาซ่อมบำรุงแรกของคุณเพื่อให้มีบันทึกที่ชัดเจนพร้อมเวลา รูปภาพ และการแจ้งเตือน' : language === 'zh' ? '记录您的第一个维护问题，以便有清晰的记录，包括时间戳、照片和通知。' : language === 'ja' ? '最初のメンテナンス問題を記録して、タイムスタンプ、写真、通知付きの明確な記録を作成しましょう。' : language === 'ko' ? '첫 번째 유지보수 문제를 기록하여 타임스탬프, 사진 및 알림이 포함된 명확한 기록을 보관하세요.' : language === 'ru' ? 'Зарегистрируйте первую проблему с обслуживанием, чтобы иметь четкую запись с отметками времени, фотографиями и уведомлениями.' : 'Log your first maintenance issue so you have a clear record with timestamps, photos and notifications.'}
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <button
@@ -2550,7 +2631,7 @@ function PropertyTrackerContent() {
                         className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
                         style={{ backgroundColor: "#0C3B2E", color: "#FFFFFF" }}
                       >
-                        New maintenance request
+                        {language === 'th' ? 'คำขอซ่อมบำรุงใหม่' : language === 'zh' ? '新维护请求' : language === 'ja' ? '新しいメンテナンスリクエスト' : language === 'ko' ? '새 유지보수 요청' : language === 'ru' ? 'Новый запрос на обслуживание' : 'New maintenance request'}
                       </button>
                       {isFreeTier && (
                         <button
@@ -2562,7 +2643,7 @@ function PropertyTrackerContent() {
                           className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
                           style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: colors.cardBg }}
                         >
-                          Upgrade for full maintenance history
+                          {language === 'th' ? 'อัปเกรดสำหรับประวัติซ่อมบำรุงเต็มรูปแบบ' : language === 'zh' ? '升级以获取完整维护历史' : language === 'ja' ? '完全なメンテナンス履歴のためにアップグレード' : language === 'ko' ? '전체 유지보수 기록을 위해 업그레이드' : language === 'ru' ? 'Обновите для полной истории обслуживания' : 'Upgrade for full maintenance history'}
                         </button>
                       )}
                     </div>
@@ -2685,12 +2766,12 @@ function PropertyTrackerContent() {
             >
               <DialogHeader>
                 <DialogTitle style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? 'ลบคำขอซ่อมบำรุง?' : language === 'zh' ? '删除维护请求？' : language === 'ja' ? 'メンテナンスリクエストを削除？' : language === 'ko' ? '유지보수 요청 삭제?' : 'Delete maintenance request?'}
+                  {language === 'th' ? 'ลบคำขอซ่อมบำรุง?' : language === 'zh' ? '删除维护请求？' : language === 'ja' ? 'メンテナンスリクエストを削除？' : language === 'ko' ? '유지보수 요청 삭제?' : language === 'ru' ? 'Удалить запрос на обслуживание?' : 'Delete maintenance request?'}
                 </DialogTitle>
               </DialogHeader>
               <div className="mt-4">
                 <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
-                  {language === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบคำขอซ่อมบำรุงนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้' : language === 'zh' ? '您确定要删除此维护请求吗？此操作无法撤消。' : language === 'ja' ? 'このメンテナンスリクエストを削除してもよろしいですか？この操作は元に戻せません。' : language === 'ko' ? '이 유지보수 요청을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.' : "Are you sure you want to delete this maintenance request? This action can't be undone."}
+                  {language === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบคำขอซ่อมบำรุงนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้' : language === 'zh' ? '您确定要删除此维护请求吗？此操作无法撤消。' : language === 'ja' ? 'このメンテナンスリクエストを削除してもよろしいですか？この操作は元に戻せません。' : language === 'ko' ? '이 유지보수 요청을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.' : language === 'ru' ? 'Вы уверены, что хотите удалить этот запрос на обслуживание? Это действие нельзя отменить.' : "Are you sure you want to delete this maintenance request? This action can't be undone."}
                 </p>
                 <div className="flex gap-3">
                   <Button
@@ -2720,7 +2801,7 @@ function PropertyTrackerContent() {
                     {deleteMaintenanceMutation.isPending ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {language === 'th' ? 'กำลังลบ...' : language === 'zh' ? '删除中...' : language === 'ja' ? '削除中...' : language === 'ko' ? '삭제 중...' : 'Deleting...'}
+                        {language === 'th' ? 'กำลังลบ...' : language === 'zh' ? '删除中...' : language === 'ja' ? '削除中...' : language === 'ko' ? '삭제 중...' : language === 'ru' ? 'Удаление...' : 'Deleting...'}
                       </>
                     ) : (
                       strings.delete
