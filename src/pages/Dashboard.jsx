@@ -2054,7 +2054,7 @@ function DashboardContent() {
                           { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
                         ],
                         route: createPageUrl("PropertyTracker") + "#rent",
-                        label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : 'จัดการ') : strings.setupRent,
+                        label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'ru' ? 'Управление' : 'จัดการ') : strings.setupRent,
                       },
                       {
                         title: strings.notifications,
@@ -2123,10 +2123,10 @@ function DashboardContent() {
                       </div>
                       <div>
                         <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'สัญญาเช่าล่าสุด' : language === 'zh' ? '最近的租约' : language === 'ja' ? '最近の賃貸契約' : language === 'ko' ? '최근 임대 계약' : 'Recent Leases'}
+                          {language === 'th' ? 'สัญญาเช่าล่าสุด' : language === 'zh' ? '最近的租约' : language === 'ja' ? '最近の賃貸契約' : language === 'ko' ? '최근 임대 계약' : language === 'ru' ? 'Последние договоры' : 'Recent Leases'}
                         </h3>
                         <p className="text-xs" style={{ color: colors.textSecondary }}>
-                          {leases.length} {language === 'th' ? 'รายการ' : language === 'zh' ? '项' : language === 'ja' ? '件' : language === 'ko' ? '항목' : 'items'}
+                          {leases.length} {language === 'th' ? 'รายการ' : language === 'zh' ? '项' : language === 'ja' ? '件' : language === 'ko' ? '항목' : language === 'ru' ? 'элементов' : 'items'}
                         </p>
                       </div>
                     </div>
@@ -2167,10 +2167,10 @@ function DashboardContent() {
                       </div>
                       <div>
                         <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'การแจ้งเตือนของฉัน' : language === 'zh' ? '我的通知' : language === 'ja' ? 'マイ通知' : language === 'ko' ? '내 알림' : 'My Notifications'}
+                          {language === 'th' ? 'การแจ้งเตือนของฉัน' : language === 'zh' ? '我的通知' : language === 'ja' ? 'マイ通知' : language === 'ko' ? '내 알림' : language === 'ru' ? 'Мои уведомления' : 'My Notifications'}
                         </h3>
                         <p className="text-xs" style={{ color: colors.textSecondary }}>
-                          {unreadNotifications} {language === 'th' ? 'การแจ้งเตือน' : language === 'zh' ? '通知' : language === 'ja' ? '通知' : language === 'ko' ? '알림' : 'notifications'}
+                          {unreadNotifications} {language === 'th' ? 'การแจ้งเตือน' : language === 'zh' ? '通知' : language === 'ja' ? '通知' : language === 'ko' ? '알림' : language === 'ru' ? 'уведомлений' : 'notifications'}
                         </p>
                       </div>
                     </div>
@@ -2211,12 +2211,12 @@ function DashboardContent() {
                       </div>
                       <div>
                         <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? 'การแจ้งเตือนเงินมัดจำ' : language === 'zh' ? '押金提醒' : language === 'ja' ? '敷金アラート' : language === 'ko' ? '보증금 알림' : 'Deposit Alerts'}
+                          {language === 'th' ? 'การแจ้งเตือนเงินมัดจำ' : language === 'zh' ? '押金提醒' : language === 'ja' ? '敷金アラート' : language === 'ko' ? '보증금 알림' : language === 'ru' ? 'Уведомления о депозитах' : 'Deposit Alerts'}
                         </h3>
                         <p className="text-xs" style={{ color: colors.textSecondary }}>
                           {urgentDeposits > 0 
-                            ? `${urgentDeposits} ${language === 'th' ? 'การแจ้งเตือน' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : 'alerts'}`
-                            : (language === 'th' ? 'ทุกอย่างเรียบร้อย' : language === 'zh' ? '一切正常' : language === 'ja' ? 'すべて正常' : language === 'ko' ? '모두 정상' : 'All deposits on track')
+                            ? `${urgentDeposits} ${language === 'th' ? 'การแจ้งเตือน' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'ru' ? 'уведомлений' : 'alerts'}`
+                            : (language === 'th' ? 'ทุกอย่างเรียบร้อย' : language === 'zh' ? '一切正常' : language === 'ja' ? 'すべて正常' : language === 'ko' ? '모두 정상' : language === 'ru' ? 'Все депозиты в порядке' : 'All deposits on track')
                           }
                         </p>
                       </div>
