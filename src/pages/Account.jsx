@@ -2916,7 +2916,7 @@ function AccountContent() {
                   id="juristic_name"
                   value={juristicData.juristic_name}
                   onChange={(e) => setJuristicData({...juristicData, juristic_name: e.target.value})}
-                  placeholder={language === 'th' ? 'ชื่อผู้ติดต่อ' : 'Contact name'}
+                  placeholder={language === 'th' ? 'ชื่อผู้ติดต่อ' : language === 'ru' ? 'Имя контактного лица' : 'Contact name'}
                   className="mt-2"
                   style={{
                     backgroundColor: colors.inputBg,
@@ -3333,25 +3333,27 @@ function AccountContent() {
                         </div>
                         <div className="flex-1">
                           <h3 className="font-bold text-lg mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                            Lite {language === 'th' ? '- แผนที่เหมาะสมที่สุด' : '- Best fit for most'}
+                            Lite {language === 'th' ? '- แผนที่เหมาะสมที่สุด' : language === 'ru' ? '- Подходит для большинства' : '- Best fit for most'}
                           </h3>
                           <p className="text-sm mb-3" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
                             {language === 'th' 
                               ? 'เพียง ฿390/เดือน - รักษาการป้องกันหลักและประหยัด 43% จากแผนปัจจุบัน'
-                              : 'Only ฿390/month - keep core protections and save 43% from current plan'}
+                              : language === 'ru'
+                                ? 'Всего ฿390/месяц - сохраните основную защиту и экономьте 43% от текущего плана'
+                                : 'Only ฿390/month - keep core protections and save 43% from current plan'}
                           </p>
                           <ul className="space-y-1 text-xs sm:text-sm mb-4" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
                             <li className="flex items-center gap-2">
                               <CheckCircle2 className="w-4 h-4" />
-                              {language === 'th' ? '6 การสแกนสัญญาต่อปี' : '6 Lease Scans/year'}
+                              {language === 'th' ? '6 การสแกนสัญญาต่อปี' : language === 'ru' ? '6 сканирований договоров/год' : '6 Lease Scans/year'}
                             </li>
                             <li className="flex items-center gap-2">
                               <CheckCircle2 className="w-4 h-4" />
-                              {language === 'th' ? 'การแจ้งเตือนทางอีเมล' : 'Email Notifications'}
+                              {language === 'th' ? 'การแจ้งเตือนทางอีเมล' : language === 'ru' ? 'Email уведомления' : 'Email Notifications'}
                             </li>
                             <li className="flex items-center gap-2">
                               <CheckCircle2 className="w-4 h-4" />
-                              {language === 'th' ? 'ติดตามเงินมัดจำและการซ่อมบำรุง' : 'Deposit & Maintenance Tracking'}
+                              {language === 'th' ? 'ติดตามเงินมัดจำและการซ่อมบำรุง' : language === 'ru' ? 'Отслеживание депозита и обслуживания' : 'Deposit & Maintenance Tracking'}
                             </li>
                           </ul>
                         </div>
@@ -4119,7 +4121,7 @@ function AccountContent() {
           {!isFreePlan && (
             <div style={{ marginTop: "16px", textAlign: "center" }}>
               <p style={{ fontSize: "12px", color: colors.textSecondary }}>
-                {language === 'th' ? 'ต้องการยกเลิกการสมัครสมาชิก?' : language === 'zh' ? '需要取消订阅吗？' : language === 'ja' ? 'サブスクリプションをキャンセルする必要がありますか？' : language === 'ko' ? '구독을 취소해야 합니까？' : 'Need to cancel your subscription?'}{" "}
+                {language === 'th' ? 'ต้องการยกเลิกการสมัครสมาชิก?' : language === 'zh' ? '需要取消订阅吗？' : language === 'ja' ? 'サブスクリプションをキャンセルする必要がありますか？' : language === 'ko' ? '구독을 취소해야 합니까？' : language === 'ru' ? 'Нужно отменить подписку?' : 'Need to cancel your subscription?'}{" "}
                 <button
                   type="button"
                   onClick={() => setShowCancelDialog(true)}
