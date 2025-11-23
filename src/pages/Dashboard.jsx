@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, Bell, Wrench, ArrowRight, ChevronDown, ChevronUp, Zap, Loader2, AlertCircle, Mail, Calendar, BarChart3, Crown } from "lucide-react";
+import { Shield, FileText, Wallet, Scale, AlertTriangle, TrendingUp, TrendingDown, Bell, Wrench, ArrowRight, ChevronDown, ChevronUp, Zap, Loader2, AlertCircle, Mail, Calendar, BarChart3, Crown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, format } from "date-fns";
