@@ -56,7 +56,10 @@ function ResolveCaseContent() {
         const caseIdFromUrl = urlParams.get('caseId');
         const sessionId = urlParams.get('session_id');
 
-        console.log('🔍 Loading case - caseId:', caseIdFromUrl, 'sessionId:', sessionId);
+        console.log('[RESOLVE_PAGE] ========== LOADING CASE ==========');
+        console.log('[RESOLVE_PAGE] sessionId from URL:', sessionId);
+        console.log('[RESOLVE_PAGE] caseId from URL:', caseIdFromUrl);
+        console.log('[RESOLVE_PAGE] current user:', user?.id, user?.email);
 
         // Polling strategy: if session_id is present, poll for the case
         let attempts = 0;
@@ -72,25 +75,37 @@ function ResolveCaseContent() {
             user_email: user.email 
           }, '-created_date');
 
-          console.log('📦 Found cases for user:', userCases.length);
+          console.log(`[RESOLVE_PAGE] Attempt ${attempts}: fetched ${userCases.length} cases for user`);
+          console.log('[RESOLVE_PAGE] All cases:', userCases.map(c => ({
+            id: c.id.substring(0, 8),
+            status: c.status,
+            stripe_session_id: c.stripe_session_id ? c.stripe_session_id.substring(0, 20) + '...' : 'NONE',
+            user_email: c.user_email
+          })));
 
           // Priority 1: Direct caseId match
           if (caseIdFromUrl) {
             targetCase = userCases.find(c => c.id === caseIdFromUrl && c.status === 'intake');
-            if (targetCase) console.log('✅ Found by caseId:', targetCase.id);
+            console.log('[RESOLVE_PAGE] Priority 1 - caseId match:', targetCase ? `✅ ${targetCase.id}` : '❌ not found');
           }
           
           // Priority 2: Session ID match (from Stripe redirect)
           if (!targetCase && sessionId) {
-            targetCase = userCases.find(c => c.stripe_session_id === sessionId && c.status === 'intake');
-            if (targetCase) console.log('✅ Found by session_id:', targetCase.id);
+            console.log('[RESOLVE_PAGE] Priority 2 - searching for session_id:', sessionId);
+            targetCase = userCases.find(c => {
+              console.log('[RESOLVE_PAGE] Comparing case', c.id.substring(0, 8), 'stripe_session_id:', c.stripe_session_id, '=== sessionId?', c.stripe_session_id === sessionId);
+              return c.stripe_session_id === sessionId && c.status === 'intake';
+            });
+            console.log('[RESOLVE_PAGE] Priority 2 result:', targetCase ? `✅ ${targetCase.id}` : '❌ not found');
           }
           
           // Priority 3: Most recent intake case with payment
           if (!targetCase) {
             targetCase = userCases.find(c => c.status === 'intake' && c.stripe_session_id);
-            if (targetCase) console.log('✅ Found latest paid intake case:', targetCase.id);
+            console.log('[RESOLVE_PAGE] Priority 3 - latest intake case:', targetCase ? `✅ ${targetCase.id}` : '❌ not found');
           }
+          
+          console.log('[RESOLVE_PAGE] Final case selected:', targetCase ? targetCase.id : 'NONE');
 
           // If we have session_id but no case yet, wait and retry
           if (!targetCase && sessionId && attempts < maxAttempts) {

@@ -18,6 +18,7 @@ const PRICE_CREDIT_MAP = {
 Deno.serve(async (req) => {
   console.log('\n\n=== STRIPE WEBHOOK RECEIVED ===');
   console.log('Timestamp:', new Date().toISOString());
+  console.log('[WEBHOOK_ENTRY] Request received');
   
   try {
     const rawBody = await req.text();
@@ -49,7 +50,9 @@ Deno.serve(async (req) => {
     }
 
     console.log('\n📋 FULL EVENT DATA:');
-    console.log(JSON.stringify(event.data.object, null, 2));
+    console.log('[WEBHOOK_EVENT] Type:', event.type);
+    console.log('[WEBHOOK_EVENT] Mode:', event.data.object.mode);
+    console.log('[WEBHOOK_EVENT] Metadata:', JSON.stringify(event.data.object.metadata, null, 2));
 
     const base44 = createClientFromRequest(req);
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
@@ -341,6 +344,11 @@ Deno.serve(async (req) => {
       // ========================================
       if (metadata.type === 'resolve_case') {
         console.log('\n⚖️ RESOLVE CASE CHECKOUT - STARTING PROCESSING');
+        console.log('[RESOLVE_WEBHOOK] event.type:', event.type);
+        console.log('[RESOLVE_WEBHOOK] session.id:', session.id);
+        console.log('[RESOLVE_WEBHOOK] session.metadata:', JSON.stringify(metadata, null, 2));
+        console.log('[RESOLVE_WEBHOOK] session.customer:', session.customer);
+        console.log('[RESOLVE_WEBHOOK] session.mode:', session.mode);
 
         const userId = metadata.userId;
         const userEmail = metadata.userEmail;
@@ -348,7 +356,7 @@ Deno.serve(async (req) => {
         const amount = parseFloat(metadata.amount);
         const caseId = metadata.caseId;
 
-        console.log('🔍 Resolve Case Details:');
+        console.log('[RESOLVE_WEBHOOK] Parsed metadata:');
         console.log('  userId:', userId);
         console.log('  userEmail:', userEmail);
         console.log('  priceType:', priceType);
@@ -356,20 +364,29 @@ Deno.serve(async (req) => {
         console.log('  caseId:', caseId);
 
         // Find the provisional case
+        console.log('[RESOLVE_WEBHOOK] Looking up case with caseId:', caseId);
         let caseRecord = null;
         if (caseId) {
           try {
             const allCases = await base44.asServiceRole.entities.Case.filter({ id: caseId });
             caseRecord = allCases[0];
-            console.log('✅ Found provisional case:', caseId);
+            console.log('[RESOLVE_WEBHOOK] Case found BEFORE update:', caseRecord ? {
+              id: caseRecord.id,
+              status: caseRecord.status,
+              user_email: caseRecord.user_email,
+              stripe_session_id: caseRecord.stripe_session_id
+            } : 'NULL');
           } catch (err) {
-            console.error('⚠️ Failed to find case:', err.message);
+            console.error('[RESOLVE_WEBHOOK] ⚠️ Failed to find case:', err.message);
           }
+        } else {
+          console.log('[RESOLVE_WEBHOOK] ⚠️ No caseId in metadata');
         }
 
         // Update or create case record
         if (caseRecord) {
-          await base44.asServiceRole.entities.Case.update(caseId, {
+          console.log('[RESOLVE_WEBHOOK] Updating existing case:', caseId);
+          const updatedCase = await base44.asServiceRole.entities.Case.update(caseId, {
             status: 'intake',
             stripe_session_id: session.id,
             stripe_payment_intent_id: session.payment_intent,
@@ -377,9 +394,16 @@ Deno.serve(async (req) => {
             resolve_amount: amount,
             is_member_at_creation: priceType === 'member'
           });
-          console.log('✅ Case updated to intake status');
+          console.log('[RESOLVE_WEBHOOK] Case AFTER update:', {
+            id: updatedCase.id,
+            status: updatedCase.status,
+            user_email: updatedCase.user_email,
+            stripe_session_id: updatedCase.stripe_session_id
+          });
+          caseRecord = updatedCase;
         } else {
           // Create new case if provisional not found
+          console.log('[RESOLVE_WEBHOOK] Creating new case (provisional not found)');
           caseRecord = await base44.asServiceRole.entities.Case.create({
             user_email: userEmail,
             status: 'intake',
@@ -391,7 +415,12 @@ Deno.serve(async (req) => {
             type: 'deposit',
             is_member_at_creation: priceType === 'member'
           });
-          console.log('✅ New case created:', caseRecord.id);
+          console.log('[RESOLVE_WEBHOOK] Case AFTER create:', {
+            id: caseRecord.id,
+            status: caseRecord.status,
+            user_email: caseRecord.user_email,
+            stripe_session_id: caseRecord.stripe_session_id
+          });
         }
 
         // Create payment record
