@@ -118,6 +118,26 @@ export default function NotificationSummary({ language = 'en', colors }) {
         '0d_notice': '오늘 통지',
         'rent_reminder': '임대료 곧 만료'
       }
+    },
+    ru: {
+      title: 'Мои уведомления',
+      recent: 'Последние уведомления',
+      allCaughtUp: 'Всё просмотрено!',
+      noNotifications: 'Уведомлений пока нет',
+      via: 'через',
+      hoursAgo: 'ч. назад',
+      justNow: 'только что',
+      types: {
+        '30d_deposit': 'Депозит через 30 дней',
+        '7d_deposit': 'Депозит через 7 дней',
+        '3d_deposit': 'Депозит через 3 дня',
+        'overdue_deposit': 'Депозит просрочен',
+        '30d_notice': 'Уведомление через 30 дней',
+        '7d_notice': 'Уведомление через 7 дней',
+        '3d_notice': 'Уведомление через 3 дня',
+        '0d_notice': 'Уведомление сегодня',
+        'rent_reminder': 'Срок аренды скоро'
+      }
     }
   };
 

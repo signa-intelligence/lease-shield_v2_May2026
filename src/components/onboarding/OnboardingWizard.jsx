@@ -137,6 +137,29 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
       reportMaintenance: "문제 보고",
       uploadDocs: "증거 추가",
       stepOf: "{total}단계 중 {current}단계"
+    },
+    ru: {
+      welcome: "Добро пожаловать в Lease Shield!",
+      welcomeSubtitle: "Защитим вас за 4 простых шага",
+      step1Title: "Загрузите договор",
+      step1Desc: "Получите мгновенный AI-анализ договора аренды для выявления рисков и несправедливых условий до того, как они станут проблемой.",
+      step2Title: "Отслеживайте депозит",
+      step2Desc: "Никогда не теряйте контроль над залоговым депозитом. Настройте автоматические напоминания, чтобы знать, когда его вернут.",
+      step3Title: "Сообщайте о проблемах",
+      step3Desc: "Документируйте и отслеживайте все проблемы с обслуживанием с временными метками и фото. Держите арендодателей под контролем.",
+      step4Title: "Храните доказательства",
+      step4Desc: "Создайте надёжную базу документов. Загружайте фото, квитанции и документы, чтобы защитить себя при возникновении споров.",
+      finalTitle: "Всё готово!",
+      finalDesc: "Lease Shield теперь защищает ваши права арендатора. Начните с первого действия ниже.",
+      next: "Далее",
+      back: "Назад",
+      skip: "Пропустить",
+      getStarted: "Начать",
+      uploadLease: "Загрузить договор",
+      addDeposit: "Отслеживать депозит",
+      reportMaintenance: "Сообщить о проблеме",
+      uploadDocs: "Добавить доказательства",
+      stepOf: "Шаг {current} из {total}"
     }
   };
 
@@ -278,7 +301,7 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
                       )}
                     </div>
                     <span className="font-semibold text-xs sm:text-sm" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? `ขั้นที่ ${idx + 1}` : language === 'zh' ? `第 ${idx + 1} 步` : language === 'ja' ? `ステップ ${idx + 1}` : language === 'ko' ? `${idx + 1}단계` : `Step ${idx + 1}`}
+                      {language === 'th' ? `ขั้นที่ ${idx + 1}` : language === 'zh' ? `第 ${idx + 1} 步` : language === 'ja' ? `ステップ ${idx + 1}` : language === 'ko' ? `${idx + 1}단계` : language === 'ru' ? `Шаг ${idx + 1}` : `Step ${idx + 1}`}
                     </span>
                   </div>
                   <p className="text-xs font-medium line-clamp-2" style={{ color: colors.textSecondary }}>
@@ -311,7 +334,7 @@ const OnboardingWizard = ({ open, onClose, user, colors, language = 'en' }) => {
                     {currentStepData.action}
                   </p>
                   <p className="text-xs sm:text-sm" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'คลิกเพื่อเริ่ม' : language === 'zh' ? '点击开始' : language === 'ja' ? 'クリックして開始' : language === 'ko' ? '시작하려면 클릭' : 'Click to start'}
+                    {language === 'th' ? 'คลิกเพื่อเริ่ม' : language === 'zh' ? '点击开始' : language === 'ja' ? 'クリックして開始' : language === 'ko' ? '시작하려면 클릭' : language === 'ru' ? 'Нажмите, чтобы начать' : 'Click to start'}
                   </p>
                 </div>
               </div>

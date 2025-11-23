@@ -327,6 +327,43 @@ function CasesContent() {
       allStatuses: "모든 상태",
       noResultsFound: "사례를 찾을 수 없음",
       tryDifferentSearch: "다른 검색 또는 필터를 시도하세요",
+    },
+    ru: {
+      title: "Мои дела",
+      subtitle: "Отслеживайте ваши споры",
+      openNewCase: "Открыть новое дело",
+      premiumBenefits: "Преимущества Премиум",
+      memberRate: "Цены для участников на все услуги",
+      priorityHandling: "Приоритетная обработка дел",
+      noCases: "Дел пока нет",
+      noCasesDesc: "Откройте дело для получения профессиональной помощи по возврату депозита или спорам по аренде",
+      noCasesCreatedYet: "Дела ещё не созданы",
+      noCasesCreatedYetDesc: "При возникновении спора зафиксируйте дело здесь, чтобы хранить все сообщения, доказательства и события в одном защищённом месте.",
+      upgradeForDisputeTools: "Обновитесь для инструментов поддержки споров",
+      caseNumber: "Дело",
+      opened: "Открыто",
+      disputeAmount: "Сумма спора",
+      features: "Функции",
+      fastTrack: "Ускоренная обработка",
+      letterPack: "Пакет писем",
+      memberRateBadge: "Цена участника",
+      viewDetails: "Подробнее",
+      generatedLetters: "Письма",
+      showLetters: "Показать письма",
+      hideLetters: "Скрыть письма",
+      preview: "Предпросмотр",
+      download: "Скачать",
+      delete: "Удалить",
+      back: "Назад",
+      refreshed: "Обновлено успешно",
+      downloadSuccess: "Скачивание началось",
+      downloadFailed: "Ошибка скачивания",
+      previewError: "Файл для этого письма не найден",
+      searchCases: "Поиск по номеру дела или описанию...",
+      filterByStatus: "Фильтр по статусу",
+      allStatuses: "Все статусы",
+      noResultsFound: "Дела не найдены",
+      tryDifferentSearch: "Попробуйте другой поиск или фильтр",
     }
   };
 
@@ -657,7 +694,7 @@ function CasesContent() {
                         {hasEvidence && (
                           <div className="mt-3">
                             <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
-                              {language === 'th' ? 'หลักฐาน' : 'Evidence'} ({caseItem.evidence.length})
+                              {language === 'th' ? 'หลักฐาน' : language === 'ru' ? 'Доказательства' : 'Evidence'} ({caseItem.evidence.length})
                             </p>
                             <div className="grid grid-cols-4 gap-2">
                               {caseItem.evidence.slice(0, 4).map((evidence, idx) => (

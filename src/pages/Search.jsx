@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -204,6 +203,34 @@ export default function Search() {
       reported: "보고됨",
       completed: "완료",
       back: "뒤로"
+    },
+    ru: {
+      title: "Поиск",
+      subtitle: "Найдите договоры, депозиты, дела и документы",
+      searchPlaceholder: "Поиск по недвижимости, сумме, статусу...",
+      filterAll: "Всё",
+      filterLeases: "Договоры",
+      filterDeposits: "Депозиты",
+      filterCases: "Дела",
+      filterDocuments: "Документы",
+      filterMaintenance: "Обслуживание",
+      noResults: "Результатов не найдено",
+      tryDifferent: "Попробуйте другой поиск или фильтр",
+      results: "результатов",
+      lease: "Договор",
+      deposit: "Депозит",
+      case: "Дело",
+      document: "Документ",
+      maintenance: "Обслуживание",
+      scanned: "Отсканировано",
+      uploaded: "Загружено",
+      tracking: "Отслеживание",
+      returned: "Возвращено",
+      open: "Открыто",
+      closed: "Закрыто",
+      reported: "Сообщено",
+      completed: "Завершено",
+      back: "Назад"
     }
   };
 

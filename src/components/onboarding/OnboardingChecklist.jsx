@@ -187,6 +187,36 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       allDone: "모두 완료!",
       allDoneDesc: "필수 사항을 완료했습니다. 보호 점수를 높이려면 더 추가하세요!",
       earnedBadge: "배지를 획득했습니다!"
+    },
+    ru: {
+      title: "Начало работы",
+      subtitle: "Выполните эти шаги для максимальной защиты",
+      progress: "Прогресс",
+      completed: "Завершено!",
+      tasks: {
+        uploadLease: "Загрузите ваш первый договор",
+        uploadLeaseDesc: "Получите AI-анализ рисков",
+        trackDeposit: "Отслеживайте залог",
+        trackDepositDesc: "Не потеряйте свои деньги",
+        reportMaintenance: "Сообщите о проблеме",
+        reportMaintenanceDesc: "Отслеживайте ремонт и привлекайте арендодателей к ответственности",
+        uploadDoc: "Загрузите доказательства",
+        uploadDocDesc: "Создайте базу документов",
+        setupProfile: "Заполните профиль",
+        setupProfileDesc: "Добавьте контакты",
+        enableNotifications: "Включите уведомления",
+        enableNotificationsDesc: "Будьте в курсе",
+        openCase: "Откройте первое дело",
+        openCaseDesc: "Получите помощь экспертов"
+      },
+      actions: {
+        start: "Начать",
+        continue: "Продолжить",
+        done: "Готово"
+      },
+      allDone: "Всё готово!",
+      allDoneDesc: "Вы выполнили основные шаги. Продолжайте добавлять данные для повышения уровня защиты!",
+      earnedBadge: "Вы получили значок!"
     }
   };
 

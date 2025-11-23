@@ -67,6 +67,14 @@ export default function RecentLeases({ leases, language }) {
       scanFirst: "첫 번째 임대 계약을 업로드하여 시작하세요",
       scanned: "스캔됨",
       rent: "임대료"
+    },
+    ru: {
+      recentLeases: "Последние договоры",
+      viewAll: "Посмотреть все",
+      noLeases: "Договоров пока нет",
+      scanFirst: "Загрузите ваш первый договор, чтобы начать",
+      scanned: "Отсканировано",
+      rent: "Аренда"
     }
   };
 
