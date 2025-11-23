@@ -64,24 +64,28 @@ function DashboardContent() {
   });
 
   const { data: cases = [] } = useQuery({
-    queryKey: ['cases'],
+    queryKey: ['cases', user?.email],
     queryFn: async () => {
-      console.log('🔍 [DASHBOARD] Fetching cases for user:', user?.email);
-      console.log('🔍 [DASHBOARD] User object:', { id: user?.id, email: user?.email, role: user?.role });
+      if (!user?.email) {
+        console.error('🔍 [DASHBOARD] No user email - cannot fetch cases');
+        return [];
+      }
       
-      const result = await base44.entities.Case.filter({ user_email: user?.email });
+      console.log('🔍 [DASHBOARD] Fetching cases for user:', user.email);
+      
+      // RLS will automatically filter by user_email matching current user
+      const result = await base44.entities.Case.list();
       
       console.log('📊 [DASHBOARD] Query returned:', result.length, 'cases');
-      console.log('📊 [DASHBOARD] Raw result:', JSON.stringify(result.map(c => ({
-        id: c.id,
-        user_email: c.user_email,
+      console.log('📊 [DASHBOARD] All cases:', result.map(c => ({
+        id: c.id.slice(0, 8),
         status: c.status,
-        type: c.type
-      })), null, 2));
+        dispute_amount: c.dispute_amount
+      })));
       
       return result;
     },
-    enabled: !!user,
+    enabled: !!user?.email,
     staleTime: 0,
     cacheTime: 0,
     refetchOnMount: 'always',

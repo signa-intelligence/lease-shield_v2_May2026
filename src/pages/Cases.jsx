@@ -66,23 +66,27 @@ function CasesContent() {
   const { data: cases = [], refetch: refetchCases, isLoading, error } = useQuery({
     queryKey: ['cases', user?.email],
     queryFn: async () => {
-      console.log('🔍 [CASES_PAGE] Fetching cases for user:', user?.email);
-      console.log('🔍 [CASES_PAGE] User object:', { id: user?.id, email: user?.email, role: user?.role });
+      if (!user?.email) {
+        console.error('🔍 [CASES_PAGE] No user email - cannot fetch cases');
+        return [];
+      }
       
-      const result = await base44.entities.Case.filter({ user_email: user?.email }, '-created_date');
+      console.log('🔍 [CASES_PAGE] Fetching cases for user:', user.email);
+      
+      // RLS will automatically filter by user_email matching current user
+      const result = await base44.entities.Case.list('-created_date');
       
       console.log('📊 [CASES_PAGE] Query returned:', result.length, 'cases');
-      console.log('📊 [CASES_PAGE] Raw result:', JSON.stringify(result.map(c => ({
-        id: c.id,
+      console.log('📊 [CASES_PAGE] All cases:', result.map(c => ({
+        id: c.id.slice(0, 8),
         user_email: c.user_email,
         status: c.status,
-        type: c.type,
-        created_date: c.created_date
-      })), null, 2));
+        dispute_amount: c.dispute_amount
+      })));
       
       return result;
     },
-    enabled: !!user,
+    enabled: !!user?.email,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     staleTime: 0,
