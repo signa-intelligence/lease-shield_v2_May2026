@@ -26,6 +26,7 @@ import Timeline from './pages/Timeline';
 import EvidenceVault from './pages/EvidenceVault';
 import RevenueAnalytics from './pages/RevenueAnalytics';
 import AdminTemplates from './pages/AdminTemplates';
+import RecycleBin from './pages/RecycleBin';
 import __Layout from './Layout.jsx';
 
 
@@ -58,6 +59,7 @@ export const PAGES = {
     "EvidenceVault": EvidenceVault,
     "RevenueAnalytics": RevenueAnalytics,
     "AdminTemplates": AdminTemplates,
+    "RecycleBin": RecycleBin,
 }
 
 export const pagesConfig = {
