@@ -97,10 +97,14 @@ function CasesContent() {
         setHighlightCaseId(caseId);
       }
       
+      // Force refetch cases to ensure we have the latest data after payment
+      console.log('[CASES_PAGE] Refetching cases after payment success...');
+      refetchCases();
+      
       // Clean URL after showing banner
       setTimeout(() => {
         window.history.replaceState({}, '', location.pathname);
-      }, 500);
+      }, 3000);
     }
 
     if (resolveCancelled === 'true' && user) {
@@ -115,7 +119,7 @@ function CasesContent() {
       // Clean URL
       window.history.replaceState({}, '', location.pathname);
     }
-  }, [location.search, user, toast]);
+  }, [location.search, user, toast, refetchCases]);
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
