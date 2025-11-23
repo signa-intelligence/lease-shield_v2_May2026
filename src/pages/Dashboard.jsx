@@ -2082,12 +2082,16 @@ function DashboardContent() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
-                        Resolve your dispute
+                        {language === 'ru' ? 'Разрешите ваш спор' : 'Resolve your dispute'}
                       </h4>
                       <p className="text-xs" style={{ color: isDarkMode ? '#F87171' : '#B91C1C' }}>
                         {showMemberRate 
-                          ? `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} per case · Member rate · Save ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} vs public`
-                          : `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} per case · Public rate · Members save ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} after 30 days`
+                          ? (language === 'ru' 
+                              ? `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} за дело · Цена участника · Экономия ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} от публичной`
+                              : `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} per case · Member rate · Save ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} vs public`)
+                          : (language === 'ru'
+                              ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} за дело · Публичная цена · Участники экономят ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} через 30 дней`
+                              : `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} per case · Public rate · Members save ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} after 30 days`)
                         }
                       </p>
                     </div>
@@ -2121,7 +2125,7 @@ function DashboardContent() {
                       e.target.style.boxShadow = '0 2px 6px rgba(239,68,68,0.3)';
                     }}
                   >
-                    Start Resolve
+                    {language === 'ru' ? 'Начать Resolve' : 'Start Resolve'}
                   </button>
                 </div>
               </div>
