@@ -376,8 +376,6 @@ function CasesContent() {
 
   const strings = t[language] || t.en;
 
-  const strings = t[language] || t.en;
-
   const handleRefresh = async () => {
     haptic.light();
     await queryClient.invalidateQueries({ queryKey: ['cases'] });

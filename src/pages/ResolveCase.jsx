@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, AlertCircle, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown, Scale } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility, getResolvePricingForUser } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing } from "../components/shared/resolvePricing";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 
 function ResolveCaseContent() {
