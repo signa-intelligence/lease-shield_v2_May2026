@@ -51,27 +51,31 @@ Deno.serve(async (req) => {
         amount: amount.toString(),
         caseId: caseId,
       },
-      // 🔹 ONLY CHANGE IS HERE: go straight to the case detail page
+      // ✅ Back to the REAL route your app actually has
       success_url: `${
         Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'
-      }/cases/${caseId}?paid=true`,
+      }/Cases?resolve_success=true&caseId=${caseId}`,
       cancel_url: `${
         Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'
-      }/cases/${caseId}?cancelled=true`,
+      }/Cases?resolve_cancelled=true&caseId=${caseId}`,
     });
 
     console.log('[CREATE_CHECKOUT] ✅ Stripe session created:', session.id);
     console.log('[CREATE_CHECKOUT] Success URL:', session.success_url);
     console.log('[CREATE_CHECKOUT] Metadata:', session.metadata);
 
-    return Response.json({ 
+    return Response.json({
       url: session.url,
       sessionId: session.id,
       caseId: caseId,
     });
   } catch (error) {
     console.error('❌ Error creating Resolve checkout:', error);
-    // @ts-ignore - error may not be typed
-    return Response.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    const message =
+      (error && typeof error === 'object' && 'message' in error
+        ? // @ts-ignore
+          error.message
+        : 'Internal Server Error');
+    return Response.json({ error: message }, { status: 500 });
   }
 });
