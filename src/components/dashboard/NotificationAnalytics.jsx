@@ -1,4 +1,3 @@
-
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -97,6 +96,18 @@ export default function NotificationAnalytics({ language = 'en', colors }) {
       mostCommon: '가장 일반적',
       recentActivity: '최근 활동',
       noData: '데이터가 충분하지 않음'
+    },
+    ru: {
+      title: 'Статистика уведомлений',
+      last30Days: 'Последние 30 дней',
+      totalSent: 'Всего отправлено',
+      successRate: 'Уровень успеха',
+      byChannel: 'По каналам',
+      byType: 'По типам',
+      trend: 'Тенденция',
+      mostCommon: 'Наиболее частые',
+      recentActivity: 'Недавняя активность',
+      noData: 'Данных пока недостаточно'
     }
   };
 
