@@ -2030,115 +2030,79 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* RESOLVE DISPUTE CTA CARD - Available to ALL users */}
-          <Card 
-            className="mb-6 border-none shadow-xl overflow-hidden cursor-pointer card-interactive"
+          {/* RESOLVE DISPUTE COMPACT BANNER - Available to ALL users */}
+          <div 
+            className="mb-6 cursor-pointer card-interactive"
             style={{
-              background: isDarkMode 
-                ? 'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)'
-                : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+              background: isDarkMode ? '#2A1F1F' : '#FFE8E8',
+              borderRadius: '18px',
+              padding: '14px 16px',
+              boxShadow: isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(239,68,68,0.12)',
+              border: `1px solid ${isDarkMode ? '#EF444440' : '#FECACA'}`,
+              transition: 'all 0.2s'
             }}
             onClick={() => {
               haptic.medium();
               navigate(createPageUrl("ResolveCase"));
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = isDarkMode ? '0 6px 16px rgba(0,0,0,0.4)' : '0 6px 16px rgba(239,68,68,0.18)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(239,68,68,0.12)';
+            }}
           >
-            <CardContent className="p-5 sm:p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <Scale className="w-7 h-7 text-white" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{
+                  backgroundColor: isDarkMode ? '#EF444430' : '#FEE2E2'
+                }}>
+                  <Scale className="w-5 h-5" style={{ color: '#EF4444' }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-bold text-white mb-1">
-                    {strings.resolveDispute}
-                  </h3>
-                  <p className="text-sm text-white/90 mb-3">
-                    {strings.resolveDescription}
+                  <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                    Resolve your dispute
+                  </h4>
+                  <p className="text-xs" style={{ color: isDarkMode ? '#F87171' : '#B91C1C' }}>
+                    Get professional help with your rental dispute. Member ฿{RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} • Public ฿{RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} per case.
                   </p>
-                  
-                  <div className="flex flex-wrap items-center gap-3 mb-4">
-                    {hasMemberPricing(user) ? (
-                      <>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-bold text-white">
-                            ฿{RESOLVE_PRICING.MEMBER_RATE.toLocaleString()}
-                          </span>
-                          <span className="text-sm text-white/80">{strings.perCase}</span>
-                        </div>
-                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 font-bold">
-                          <Crown className="w-3 h-3 mr-1" />
-                          {strings.memberPrice}
-                        </Badge>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-bold text-white">
-                            ฿{RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()}
-                          </span>
-                          <span className="text-sm text-white/80">{strings.perCase}</span>
-                        </div>
-                        <Badge className="bg-white/20 text-white border-white/30 font-semibold text-xs">
-                          {strings.publicPrice}
-                        </Badge>
-                      </>
-                    )}
-                  </div>
-
-                  {hasMemberPricing(user) ? (
-                    <div className="flex items-center gap-2 p-2 rounded-lg bg-white/10">
-                      <TrendingDown className="w-4 h-4 text-white" />
-                      <span className="text-xs font-semibold text-white">
-                        {strings.savingsVsPublic}
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-white/80">
-                      💡 {strings.upgradeForMemberRate}
-                    </p>
-                  )}
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      haptic.medium();
-                      navigate(createPageUrl("ResolveCase"));
-                    }}
-                    className="w-full mt-4 btn-interaction"
-                    style={{
-                      padding: '12px 20px',
-                      borderRadius: '10px',
-                      backgroundColor: '#FFFFFF',
-                      color: '#DC2626',
-                      border: 'none',
-                      fontWeight: '700',
-                      fontSize: '16px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#FEE2E2';
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = '0 6px 16px rgba(0,0,0,0.3)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#FFFFFF';
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-                    }}
-                  >
-                    <Shield className="w-5 h-5" />
-                    {strings.submitCase}
-                  </button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  haptic.medium();
+                  navigate(createPageUrl("ResolveCase"));
+                }}
+                className="btn-interaction flex-shrink-0 w-full sm:w-auto"
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: '#EF4444',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 6px rgba(239,68,68,0.3)',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#DC2626';
+                  e.target.style.boxShadow = '0 4px 8px rgba(239,68,68,0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#EF4444';
+                  e.target.style.boxShadow = '0 2px 6px rgba(239,68,68,0.3)';
+                }}
+              >
+                Start Resolve
+              </button>
+            </div>
+          </div>
 
           {/* Main Content - Stats and Features */}
           {!showOnboarding && (
@@ -2214,6 +2178,10 @@ function DashboardContent() {
                         miniStats: [],
                         route: createPageUrl("Cases"),
                         label: strings.openCase,
+                        onClick: () => {
+                          haptic.light();
+                          navigate(createPageUrl("Cases"));
+                        }
                       },
                       {
                         title: strings.rentTracked,

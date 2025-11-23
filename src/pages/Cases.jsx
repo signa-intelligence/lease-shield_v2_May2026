@@ -25,6 +25,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
+import { RESOLVE_PRICING, hasMemberPricing } from "../components/shared/resolvePricing";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
@@ -364,6 +365,9 @@ function CasesContent() {
       allStatuses: "Все статусы",
       noResultsFound: "Дела не найдены",
       tryDifferentSearch: "Попробуйте другой поиск или фильтр",
+      needMoreHelp: "Need more help with a dispute?",
+      openResolveDesc: "Open a Resolve case for professional support at member or public rates.",
+      openResolveCase: "Open a Resolve Case",
     }
   };
 
@@ -516,6 +520,56 @@ function CasesContent() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Resolve CTA Section - Available to ALL users */}
+          <div 
+            className="mb-6 p-4 rounded-xl border-2"
+            style={{
+              backgroundColor: isDarkMode ? '#2A1F1F' : '#FFFBEB',
+              borderColor: isDarkMode ? '#EF444450' : '#FDE047',
+              boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(239,68,68,0.08)'
+            }}
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex-1">
+                <h3 className="text-base font-bold mb-1" style={{ color: colors.textPrimary }}>
+                  {strings.needMoreHelp}
+                </h3>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  {strings.openResolveDesc}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  haptic.medium();
+                  navigate(createPageUrl("ResolveCase"));
+                }}
+                className="btn-interaction w-full sm:w-auto"
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '8px',
+                  backgroundColor: 'transparent',
+                  color: '#EF4444',
+                  border: '2px solid #EF4444',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#EF4444';
+                  e.target.style.color = '#FFFFFF';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = '#EF4444';
+                }}
+              >
+                {strings.openResolveCase}
+              </button>
+            </div>
+          </div>
 
           {/* Search & Filter Controls */}
           {cases.length > 0 && (
