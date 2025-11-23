@@ -145,6 +145,9 @@ Deno.serve(async (req) => {
         const isFirstPaidMembership = !user.member_since && (!user.plan_tier || user.plan_tier === 'free');
         console.log('🎯 Is first paid membership:', isFirstPaidMembership);
 
+        // Set member_since if this is first paid membership
+        const memberSince = isFirstPaidMembership ? new Date().toISOString() : user.member_since;
+
         if (!metadata.plan) {
           console.warn('⚠️ metadata.plan missing - defaulting to "lite"');
         }
@@ -200,7 +203,8 @@ Deno.serve(async (req) => {
           stripe_subscription_id: subscriptionId,
           stripe_customer_id: customerId,
           subscription_status: 'active',
-          letter_credits: newCreditBalance
+          letter_credits: newCreditBalance,
+          member_since: memberSince
         };
 
         console.log('Update payload:', JSON.stringify(updateData, null, 2));
@@ -329,6 +333,89 @@ Deno.serve(async (req) => {
           user: user.email,
           plan_tier: planTier,
           billing_interval: billingInterval
+        }, { status: 200 });
+      }
+
+      // ========================================
+      // RESOLVE CASE PATH
+      // ========================================
+      if (metadata.type === 'resolve_case') {
+        console.log('\n⚖️ RESOLVE CASE CHECKOUT - STARTING PROCESSING');
+
+        const userId = metadata.userId;
+        const userEmail = metadata.userEmail;
+        const priceType = metadata.priceType;
+        const amount = parseFloat(metadata.amount);
+        const caseId = metadata.caseId;
+
+        console.log('🔍 Resolve Case Details:');
+        console.log('  userId:', userId);
+        console.log('  userEmail:', userEmail);
+        console.log('  priceType:', priceType);
+        console.log('  amount:', amount);
+        console.log('  caseId:', caseId);
+
+        // Find the provisional case
+        let caseRecord = null;
+        if (caseId) {
+          try {
+            const allCases = await base44.asServiceRole.entities.Case.filter({ id: caseId });
+            caseRecord = allCases[0];
+            console.log('✅ Found provisional case:', caseId);
+          } catch (err) {
+            console.error('⚠️ Failed to find case:', err.message);
+          }
+        }
+
+        // Update or create case record
+        if (caseRecord) {
+          await base44.asServiceRole.entities.Case.update(caseId, {
+            status: 'intake',
+            stripe_session_id: session.id,
+            stripe_payment_intent_id: session.payment_intent,
+            pricing_type: priceType,
+            resolve_amount: amount,
+            is_member_at_creation: priceType === 'member'
+          });
+          console.log('✅ Case updated to intake status');
+        } else {
+          // Create new case if provisional not found
+          caseRecord = await base44.asServiceRole.entities.Case.create({
+            user_email: userEmail,
+            status: 'intake',
+            stripe_session_id: session.id,
+            stripe_payment_intent_id: session.payment_intent,
+            pricing_type: priceType,
+            resolve_amount: amount,
+            dispute_amount: 0,
+            type: 'deposit',
+            is_member_at_creation: priceType === 'member'
+          });
+          console.log('✅ New case created:', caseRecord.id);
+        }
+
+        // Create payment record
+        await base44.asServiceRole.entities.Payment.create({
+          type: 'case',
+          amount: parseFloat((session.amount_total / 100).toFixed(2)),
+          currency: 'THB',
+          provider: 'stripe',
+          status: 'paid',
+          external_id: session.id,
+          created_by: userEmail
+        });
+
+        console.log('✅✅✅ RESOLVE CASE PAYMENT PROCESSED ✅✅✅');
+        console.log('Case ID:', caseRecord.id);
+        console.log('User:', userEmail);
+        console.log('Amount:', amount);
+        console.log('Price Type:', priceType);
+
+        return Response.json({ 
+          received: true, 
+          processed: 'resolve_case',
+          caseId: caseRecord.id,
+          priceType: priceType
         }, { status: 200 });
       }
 

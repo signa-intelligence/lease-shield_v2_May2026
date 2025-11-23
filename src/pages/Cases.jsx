@@ -368,8 +368,13 @@ function CasesContent() {
       needMoreHelp: "Нужна помощь со спором?",
       openResolveDesc: "Откройте дело Resolve для профессиональной поддержки по тарифам участника или публичным.",
       openResolveCase: "Открыть дело Resolve",
+      continueSubmission: "Завершите подачу вашего дела",
+      paidCaseAwaiting: "У вас есть оплаченное дело, ожидающее заполнения деталей",
+      continue: "Продолжить"
     }
   };
+
+  const strings = t[language] || t.en;
 
   const strings = t[language] || t.en;
 

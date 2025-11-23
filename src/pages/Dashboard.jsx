@@ -29,7 +29,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
-import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility, getResolvePricingForUser } from "../components/shared/resolvePricing";
 
 function DashboardContent() {
   const [expandedSections, setExpandedSections] = React.useState({
@@ -1937,6 +1937,45 @@ function DashboardContent() {
             const eligibility = getMembershipEligibility(user);
             const showMemberRate = eligibility.isEligible;
             
+            // Check if user has an awaiting_details case already paid for
+            const awaitingCase = cases.find(c => 
+              c.status === 'intake' && c.stripe_session_id
+            );
+            
+            const handleStartResolve = async (e) => {
+              e.stopPropagation();
+              haptic.medium();
+              
+              // If user has an awaiting case, go directly to ResolveCase page
+              if (awaitingCase) {
+                navigate(createPageUrl("ResolveCase") + `?caseId=${awaitingCase.id}`);
+                return;
+              }
+              
+              // Otherwise, initiate payment flow
+              try {
+                const pricing = getResolvePricingForUser(user);
+                toast.info(language === 'ru' ? 'Перенаправление на оплату...' : 'Redirecting to payment...');
+                
+                // Call backend to create Stripe checkout session
+                const response = await base44.functions.invoke('createResolveCheckout', {
+                  userId: user.id,
+                  userEmail: user.email,
+                  priceType: pricing.priceType,
+                  amount: pricing.effectivePrice
+                });
+                
+                if (response.data?.url) {
+                  window.location.href = response.data.url;
+                } else {
+                  throw new Error('No checkout URL returned');
+                }
+              } catch (error) {
+                console.error('Failed to create checkout:', error);
+                toast.error(language === 'ru' ? 'Не удалось начать процесс оплаты' : 'Failed to start payment process');
+              }
+            };
+            
             return (
               <div 
                 className="mb-6 cursor-pointer card-interactive"
@@ -1948,10 +1987,7 @@ function DashboardContent() {
                   border: `1px solid ${isDarkMode ? '#EF444440' : '#FECACA'}`,
                   transition: 'all 0.2s'
                 }}
-                onClick={() => {
-                  haptic.medium();
-                  navigate(createPageUrl("ResolveCase"));
-                }}
+                onClick={handleStartResolve}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-1px)';
                   e.currentTarget.style.boxShadow = isDarkMode ? '0 6px 16px rgba(0,0,0,0.4)' : '0 6px 16px rgba(239,68,68,0.18)';
@@ -1970,43 +2006,28 @@ function DashboardContent() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
-                        {language === 'ru' ? 'Разрешите ваш спор' : 'Resolve your dispute'}
+                        {awaitingCase 
+                          ? (language === 'ru' ? 'Продолжить дело' : 'Continue Your Case')
+                          : strings.resolveDispute
+                        }
                       </h4>
                       <p className="text-xs" style={{ color: isDarkMode ? '#F87171' : '#B91C1C' }}>
-                        {showMemberRate 
-                          ? (language === 'ru' 
-                              ? `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} за дело · Цена участника · Экономия ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} от публичной`
-                              : `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} per case · Member rate · Save ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} vs public`)
-                          : (language === 'ru'
-                              ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} за дело · Публичная цена · Участники экономят ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} через 30 дней`
-                              : `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} per case · Public rate · Members save ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} after 30 days`)
+                        {awaitingCase
+                          ? (language === 'ru' ? 'Завершите ваше дело' : 'Complete your case submission')
+                          : (showMemberRate 
+                              ? (language === 'ru' 
+                                  ? `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} за дело · ${strings.memberPrice} · ${strings.savingsVsPublic}`
+                                  : `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} per case · ${strings.memberPrice} · ${strings.savingsVsPublic}`)
+                              : (language === 'ru'
+                                  ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} за дело · ${strings.publicPrice} · ${strings.upgradeForMemberRate}`
+                                  : `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} per case · ${strings.publicPrice} · ${strings.upgradeForMemberRate}`)
+                            )
                         }
                       </p>
                     </div>
                   </div>
                   <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      haptic.medium();
-                      
-                      // Check for existing awaiting_details case
-                      const existingCase = cases.find(c => c.status === 'awaiting_details');
-                      if (existingCase) {
-                        navigate(createPageUrl("ResolveCase") + `?case_id=${existingCase.id}`);
-                        return;
-                      }
-                      
-                      // Start payment flow
-                      try {
-                        const { data } = await base44.functions.invoke('createResolveCheckout');
-                        if (data.url) {
-                          window.location.href = data.url;
-                        }
-                      } catch (error) {
-                        console.error('Failed to create checkout:', error);
-                        toast.error(language === 'ru' ? 'Ошибка создания платежа' : 'Payment failed to start');
-                      }
-                    }}
+                    onClick={handleStartResolve}
                     className="btn-interaction flex-shrink-0 w-full sm:w-auto"
                     style={{
                       padding: '8px 16px',
@@ -2030,7 +2051,10 @@ function DashboardContent() {
                       e.target.style.boxShadow = '0 2px 6px rgba(239,68,68,0.3)';
                     }}
                   >
-                    {language === 'ru' ? 'Начать Resolve' : 'Start Resolve'}
+                    {awaitingCase 
+                      ? (language === 'ru' ? 'Продолжить' : 'Continue')
+                      : (language === 'ru' ? 'Начать Resolve' : 'Start Resolve')
+                    }
                   </button>
                 </div>
               </div>
