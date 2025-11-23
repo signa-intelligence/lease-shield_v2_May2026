@@ -28,6 +28,7 @@ import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featu
 import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility, getResolvePricingForUser } from "../components/shared/resolvePricing";
 
 const STATUS_CONFIG = {
+  awaiting_payment: { label: 'Awaiting Payment', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
   pending_review: { label: 'Pending Review', color: 'bg-amber-100 text-amber-800', icon: Clock },
   under_review: { label: 'Under Review', color: 'bg-blue-100 text-blue-800', icon: Scale },
@@ -632,6 +633,7 @@ function CasesContent() {
                   </SelectTrigger>
                   <SelectContent style={{ backgroundColor: colors.cardBg }}>
                     <SelectItem value="all">{strings.allStatuses}</SelectItem>
+                    <SelectItem value="awaiting_payment">Awaiting Payment</SelectItem>
                     <SelectItem value="intake">Intake</SelectItem>
                     <SelectItem value="pending_review">Pending Review</SelectItem>
                     <SelectItem value="under_review">Under Review</SelectItem>

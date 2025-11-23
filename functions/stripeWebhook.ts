@@ -383,11 +383,11 @@ Deno.serve(async (req) => {
           console.log('[RESOLVE_WEBHOOK] ⚠️ No caseId in metadata');
         }
 
-        // Update existing case to submitted/intake status
+        // Update existing case to intake status (ready for review)
         if (caseRecord) {
-          console.log('[RESOLVE_WEBHOOK] Updating existing case:', caseId, 'to status: submitted');
+          console.log('[RESOLVE_WEBHOOK] Updating existing case:', caseId, 'to status: intake');
           const updatedCase = await base44.asServiceRole.entities.Case.update(caseId, {
-            status: 'submitted',
+            status: 'intake',
             stripe_session_id: session.id,
             stripe_payment_intent_id: session.payment_intent,
             pricing_type: priceType,

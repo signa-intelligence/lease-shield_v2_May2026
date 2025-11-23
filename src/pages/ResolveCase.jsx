@@ -30,7 +30,6 @@ function ResolveCaseContent() {
     evidence_files: []
   });
   const [uploading, setUploading] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [autoFilledFromDeposit, setAutoFilledFromDeposit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -44,6 +43,9 @@ function ResolveCaseContent() {
     queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }),
     enabled: !!user,
   });
+
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
 
   // Auto-fill from deposit if coming from deposit tracker
   React.useEffect(() => {
@@ -70,9 +72,6 @@ function ResolveCaseContent() {
       }
     }
   }, [deposits, user, language]);
-
-  const language = user?.language || 'en';
-  const isDarkMode = user?.theme === 'dark';
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
