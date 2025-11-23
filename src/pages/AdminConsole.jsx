@@ -102,8 +102,12 @@ export default function AdminConsole() {
     ),
   });
 
-  // ✅ COMPUTE SUPER ADMIN COUNT
-  const superAdmins = users.filter(u => u.access_level === 'super_admin' && u.is_active !== false && !u.deleted_at);
+  // ✅ COMPUTE SUPER ADMIN COUNT - check both role and access_level
+  const superAdmins = users.filter(u => 
+    (u.access_level === 'super_admin' || u.role === 'super_admin') && 
+    u.is_active !== false && 
+    !u.deleted_at
+  );
   const superAdminCount = superAdmins.length;
 
   const updateUserMutation = useMutation({
@@ -177,7 +181,11 @@ export default function AdminConsole() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
-  const isSuperAdmin = user?.access_level === 'super_admin';
+  
+  // Check both role and access_level fields for super_admin status
+  const isSuperAdmin = 
+    user?.access_level === 'super_admin' || 
+    user?.role === 'super_admin';
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -853,7 +861,10 @@ export default function AdminConsole() {
       return;
     }
 
-    const isTargetUserSuperAdmin = targetUser.access_level === 'super_admin';
+    // Check both role and access_level for super_admin
+    const isTargetUserSuperAdmin = 
+      targetUser.access_level === 'super_admin' || 
+      targetUser.role === 'super_admin';
     if (isTargetUserSuperAdmin && superAdminCount <= 1) {
       alert(strings.superAdminWarning);
       return;
@@ -892,7 +903,10 @@ export default function AdminConsole() {
       return;
     }
 
-    const isTargetUserSuperAdmin = targetUser.access_level === 'super_admin';
+    // Check both role and access_level for super_admin
+    const isTargetUserSuperAdmin = 
+      targetUser.access_level === 'super_admin' || 
+      targetUser.role === 'super_admin';
     if (isTargetUserSuperAdmin && superAdminCount <= 1) {
       alert(strings.superAdminWarning);
       return;
@@ -1484,8 +1498,18 @@ export default function AdminConsole() {
                     const lastUpdate = new Date(u.updated_date || u.created_date);
                     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
                     const isOnline = lastUpdate > fiveMinutesAgo;
-                    const isCurrentUserSuperAdmin = user?.access_level === 'super_admin';
-                    const isTargetUserSuperAdmin = u.access_level === 'super_admin';
+                    
+                    // Check both role and access_level for super_admin
+                    const isCurrentUserSuperAdmin = 
+                      user?.access_level === 'super_admin' || 
+                      user?.role === 'super_admin';
+                    const isTargetUserSuperAdmin = 
+                      u.access_level === 'super_admin' || 
+                      u.role === 'super_admin';
+                    
+                    // Get the current role from whichever field has it
+                    const currentRole = u.access_level || u.role || 'user';
+                    
                     const canChangeRole = !(isTargetUserSuperAdmin && superAdminCount <= 1 && isCurrentUserSuperAdmin);
                     const isDisabled = u.is_active === false;
                     const isDeleted = !!u.deleted_at;
@@ -1509,12 +1533,12 @@ export default function AdminConsole() {
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-2">
                             <Badge className={
-                              u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-                              u.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
-                              u.access_level === 'va' ? 'bg-amber-100 text-amber-800' :
+                              currentRole === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+                              currentRole === 'admin' ? 'bg-blue-100 text-blue-800' :
+                              currentRole === 'va' ? 'bg-amber-100 text-amber-800' :
                               'bg-slate-100 text-slate-800'
                             }>
-                              {u.access_level || 'user'}
+                              {currentRole === 'super_admin' ? 'super admin' : currentRole}
                             </Badge>
                             {(isDisabled || isDeleted) && (
                               <Badge className="bg-red-100 text-red-800">
@@ -1568,12 +1592,18 @@ export default function AdminConsole() {
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-2">
                             <Select
-                              value={u.access_level || 'user'}
-                              onValueChange={(val) => updateUserMutation.mutate({
-                                userId: u.id,
-                                data: { access_level: val }
-                              })}
-                              disabled={!canChangeRole}
+                              value={currentRole}
+                              onValueChange={(val) => {
+                                // Update both role and access_level to ensure consistency
+                                updateUserMutation.mutate({
+                                  userId: u.id,
+                                  data: { 
+                                    access_level: val,
+                                    role: val
+                                  }
+                                });
+                              }}
+                              disabled={!canChangeRole || (isTargetUserSuperAdmin && !isCurrentUserSuperAdmin)}
                             >
                               <SelectTrigger className="w-32 h-8 text-xs">
                                 <SelectValue />
@@ -1582,7 +1612,7 @@ export default function AdminConsole() {
                                 <SelectItem value="user">User</SelectItem>
                                 <SelectItem value="va">VA</SelectItem>
                                 <SelectItem value="admin">Admin</SelectItem>
-                                {isSuperAdmin && (
+                                {isCurrentUserSuperAdmin && (
                                   <SelectItem value="super_admin">Super Admin</SelectItem>
                                 )}
                               </SelectContent>
