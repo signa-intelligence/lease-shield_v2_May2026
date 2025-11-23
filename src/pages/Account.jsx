@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins, TrendingUp, ChevronUp, ChevronDown, BarChart3 } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins, TrendingUp, ChevronUp, ChevronDown, BarChart3, Database, Trash2, ArrowRight } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationPreferences from "../components/settings/NotificationPreferences";
 import NotificationAnalytics from "../components/dashboard/NotificationAnalytics";
@@ -3184,6 +3184,62 @@ function AccountContent() {
                 </p>
               </a>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <Database className="w-5 h-5 text-ls-forest" />
+              {language === 'th' ? 'ข้อมูลและพื้นที่จัดเก็บ' : language === 'ru' ? 'Данные и хранилище' : 'Data & Storage'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <Link to={createPageUrl("RecycleBin")}>
+              <div
+                style={{
+                  padding: '16px',
+                  backgroundColor: colors.fieldBg,
+                  borderRadius: '12px',
+                  borderLeft: '4px solid #6B7280',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
+                  e.currentTarget.style.borderLeftColor = '#C7A338';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = colors.fieldBg;
+                  e.currentTarget.style.borderLeftColor = '#6B7280';
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: isDarkMode ? '#4B5563' : '#E5E7EB',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Trash2 className="w-5 h-5" style={{ color: '#6B7280' }} />
+                    </div>
+                    <div>
+                      <p className="font-semibold" style={{ color: colors.textPrimary }}>
+                        {language === 'th' ? 'ถังขยะ' : language === 'ru' ? 'Корзина' : 'Recycle Bin'}
+                      </p>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                        {language === 'th' ? 'จัดการรายการที่ลบ' : language === 'ru' ? 'Управление удалёнными элементами' : 'Manage deleted items'}
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                </div>
+              </div>
+            </Link>
           </CardContent>
         </Card>
 
