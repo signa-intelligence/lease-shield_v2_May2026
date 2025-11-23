@@ -428,27 +428,6 @@ const ProtectionScoreEnhanced = ({
             </span>
           </div>
 
-          {/* Percentile Badge */}
-          {percentile >= 75 && (
-            <div style={{
-              marginTop: 12,
-              padding: '6px 14px',
-              borderRadius: 9999,
-              backgroundColor: isDarkMode ? 'rgba(16,185,129,0.25)' : '#D1FAE5',
-              border: isDarkMode ? '2px solid rgba(16,185,129,0.5)' : '2px solid #6EE7B7',
-              textAlign: 'center',
-            }}>
-              <p style={{
-                fontSize: '0.75rem',
-                fontWeight: 'bold',
-                color: isDarkMode ? '#6EE7B7' : '#047857',
-                letterSpacing: '0.02em'
-              }}>
-                {strings.topPercentile.replace('{percentile}', percentile)}
-              </p>
-            </div>
-          )}
-
           {/* Achievement Badges */}
           <div style={{
             display: 'flex',
