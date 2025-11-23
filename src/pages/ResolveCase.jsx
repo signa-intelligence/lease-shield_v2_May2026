@@ -182,8 +182,15 @@ function ResolveCaseContent() {
     setSubmitting(true);
     
     try {
+      // Generate case number first
+      const caseNumberResponse = await base44.functions.invoke('generateCaseNumber');
+      const caseNumber = caseNumberResponse.data?.case_number;
+      
+      console.log('[RESOLVE_FLOW] Generated case number:', caseNumber);
+
       // Create case with all details
       const caseData = {
+        case_number: caseNumber,
         user_email: user.email,
         type: formData.type,
         dispute_amount: parseFloat(formData.dispute_amount),
@@ -197,7 +204,7 @@ function ResolveCaseContent() {
         timeline: [
           {
             timestamp: new Date().toISOString(),
-            event: 'Case details submitted - awaiting payment',
+            event: `Case ${caseNumber} submitted - awaiting payment`,
             actor: user.email
           }
         ]
@@ -205,6 +212,7 @@ function ResolveCaseContent() {
 
       console.log('[RESOLVE_FLOW] Case created on form submit - creating in DB...');
       console.log('[RESOLVE_FLOW] Case data:', {
+        case_number: caseData.case_number,
         user_email: caseData.user_email,
         type: caseData.type,
         status: caseData.status,
