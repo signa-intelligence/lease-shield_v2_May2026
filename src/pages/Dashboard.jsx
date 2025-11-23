@@ -1945,35 +1945,9 @@ function DashboardContent() {
             const handleStartResolve = async (e) => {
               e.stopPropagation();
               haptic.medium();
-              
-              // If user has an awaiting case, go directly to ResolveCase page
-              if (awaitingCase) {
-                navigate(createPageUrl("ResolveCase") + `?caseId=${awaitingCase.id}`);
-                return;
-              }
-              
-              // Otherwise, initiate payment flow
-              try {
-                const pricing = getResolvePricingForUser(user);
-                toast.info(language === 'ru' ? 'Перенаправление на оплату...' : 'Redirecting to payment...');
-                
-                // Call backend to create Stripe checkout session
-                const response = await base44.functions.invoke('createResolveCheckout', {
-                  userId: user.id,
-                  userEmail: user.email,
-                  priceType: pricing.priceType,
-                  amount: pricing.effectivePrice
-                });
-                
-                if (response.data?.url) {
-                  window.location.href = response.data.url;
-                } else {
-                  throw new Error('No checkout URL returned');
-                }
-              } catch (error) {
-                console.error('Failed to create checkout:', error);
-                toast.error(language === 'ru' ? 'Не удалось начать процесс оплаты' : 'Failed to start payment process');
-              }
+
+              // Navigate directly to ResolveCase intake form
+              navigate(createPageUrl("ResolveCase") + "?mode=new");
             };
             
             return (

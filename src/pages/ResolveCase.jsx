@@ -32,8 +32,7 @@ function ResolveCaseContent() {
   const [uploading, setUploading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [autoFilledFromDeposit, setAutoFilledFromDeposit] = useState(false);
-  const [currentCase, setCurrentCase] = useState(null);
-  const [loadingCase, setLoadingCase] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -46,107 +45,31 @@ function ResolveCaseContent() {
     enabled: !!user,
   });
 
-  // Load paid case if exists
+  // Auto-fill from deposit if coming from deposit tracker
   React.useEffect(() => {
-    if (!user) return;
-
-    const loadCase = async () => {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const caseIdFromUrl = urlParams.get('caseId');
-        const sessionId = urlParams.get('session_id');
-
-        console.log('[RESOLVE_PAGE] ========== LOADING CASE ==========');
-        console.log('[RESOLVE_PAGE] sessionId from URL:', sessionId);
-        console.log('[RESOLVE_PAGE] caseId from URL:', caseIdFromUrl);
-        console.log('[RESOLVE_PAGE] current user:', user?.id, user?.email);
-
-        // Polling strategy: if session_id is present, poll for the case
-        let attempts = 0;
-        const maxAttempts = 5;
-        let targetCase = null;
-
-        while (attempts < maxAttempts && !targetCase) {
-          attempts++;
-          console.log(`🔄 Attempt ${attempts}/${maxAttempts} to find case...`);
-
-          // Fetch fresh cases
-          const userCases = await base44.entities.Case.filter({ 
-            user_email: user.email 
-          }, '-created_date');
-
-          console.log(`[RESOLVE_PAGE] Attempt ${attempts}: fetched ${userCases.length} cases for user`);
-          console.log('[RESOLVE_PAGE] All cases:', userCases.map(c => ({
-            id: c.id.substring(0, 8),
-            status: c.status,
-            stripe_session_id: c.stripe_session_id ? c.stripe_session_id.substring(0, 20) + '...' : 'NONE',
-            user_email: c.user_email
-          })));
-
-          // Priority 1: Direct caseId match
-          if (caseIdFromUrl) {
-            targetCase = userCases.find(c => c.id === caseIdFromUrl && c.status === 'intake');
-            console.log('[RESOLVE_PAGE] Priority 1 - caseId match:', targetCase ? `✅ ${targetCase.id}` : '❌ not found');
-          }
-          
-          // Priority 2: Session ID match (from Stripe redirect)
-          if (!targetCase && sessionId) {
-            console.log('[RESOLVE_PAGE] Priority 2 - searching for session_id:', sessionId);
-            targetCase = userCases.find(c => {
-              console.log('[RESOLVE_PAGE] Comparing case', c.id.substring(0, 8), 'stripe_session_id:', c.stripe_session_id, '=== sessionId?', c.stripe_session_id === sessionId);
-              return c.stripe_session_id === sessionId && c.status === 'intake';
-            });
-            console.log('[RESOLVE_PAGE] Priority 2 result:', targetCase ? `✅ ${targetCase.id}` : '❌ not found');
-          }
-          
-          // Priority 3: Most recent intake case with payment
-          if (!targetCase) {
-            targetCase = userCases.find(c => c.status === 'intake' && c.stripe_session_id);
-            console.log('[RESOLVE_PAGE] Priority 3 - latest intake case:', targetCase ? `✅ ${targetCase.id}` : '❌ not found');
-          }
-          
-          console.log('[RESOLVE_PAGE] Final case selected:', targetCase ? targetCase.id : 'NONE');
-
-          // If we have session_id but no case yet, wait and retry
-          if (!targetCase && sessionId && attempts < maxAttempts) {
-            console.log('⏳ Case not found yet, waiting 1.5s before retry...');
-            await new Promise(resolve => setTimeout(resolve, 1500));
-          } else {
-            break; // Exit loop if we found the case or no session_id to wait for
-          }
-        }
-
-        if (targetCase) {
-          console.log('✅ Final case loaded:', targetCase.id, 'status:', targetCase.status);
-          setCurrentCase(targetCase);
-          
-          // Pre-fill form if case has data
-          if (targetCase.summary || targetCase.dispute_amount) {
-            setFormData(prev => ({
-              ...prev,
-              type: targetCase.type || 'deposit',
-              summary: targetCase.summary || '',
-              dispute_amount: targetCase.dispute_amount || '',
-              landlord_name: targetCase.landlord_name || '',
-              landlord_email: targetCase.landlord_email || '',
-              landlord_phone: targetCase.landlord_phone || '',
-              property_address: targetCase.property_address || '',
-              cc_emails: targetCase.cc_emails || [],
-              evidence: targetCase.evidence || []
-            }));
-          }
-        } else {
-          console.log('⚠️ No paid intake case found after', attempts, 'attempts');
-        }
-      } catch (error) {
-        console.error('❌ Error loading case:', error);
-      } finally {
-        setLoadingCase(false);
+    const urlParams = new URLSearchParams(window.location.search);
+    const depositIdParam = urlParams.get('depositId');
+    
+    if (depositIdParam && deposits.length > 0) {
+      const deposit = deposits.find(d => d.id === depositIdParam);
+      if (deposit) {
+        setFormData(prev => ({
+          ...prev,
+          type: 'deposit',
+          dispute_amount: deposit.deposit_amount?.toString() || '',
+          property_address: deposit.property_address || '',
+          summary: language === 'th'
+            ? `เงินมัดจำ ฿${deposit.deposit_amount?.toLocaleString()} ยังไม่ได้รับคืน`
+            : language === 'ru'
+            ? `Депозит ฿${deposit.deposit_amount?.toLocaleString()} не возвращён`
+            : `Security deposit of ฿${deposit.deposit_amount?.toLocaleString()} not returned`,
+          landlord_name: user?.landlord_name || '',
+          landlord_email: user?.landlord_email || ''
+        }));
+        setAutoFilledFromDeposit(true);
       }
-    };
-
-    loadCase();
-  }, [user]);
+    }
+  }, [deposits, user, language]);
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
@@ -167,47 +90,45 @@ function ResolveCaseContent() {
     inputBg: '#FFFFFF'
   };
 
-  // 🛡️ DEPOSIT SHIELD AUTOMATION - Auto-fill from URL params
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const depositId = urlParams.get('depositId');
-    const autoMode = urlParams.get('auto') === 'true';
-
-    if (depositId && autoMode && deposits.length > 0) {
-      const deposit = deposits.find(d => d.id === depositId);
-      
-      if (deposit) {
-        setFormData(prev => ({
-          ...prev,
-          type: 'deposit',
-          dispute_amount: deposit.deposit_amount?.toString() || '',
-          deposit_amount: deposit.deposit_amount?.toString() || '',
-          property_address: deposit.property_address || '',
-          summary: language === 'th'
-            ? `เงินมัดจำ ฿${deposit.deposit_amount?.toLocaleString()} ยังไม่ได้รับคืน\n\nทรัพย์สิน: ${deposit.property_address || 'ไม่ระบุ'}\nกำหนดคืน: ${deposit.expected_return_date ? new Date(deposit.expected_return_date).toLocaleDateString('th-TH') : 'ไม่ระบุ'}\n\nขอความช่วยเหลือในการติดตามเงินมัดจำคืน`
-            : language === 'ru'
-            ? `Депозит ฿${deposit.deposit_amount?.toLocaleString()} не возвращён\n\nНедвижимость: ${deposit.property_address || 'Не указано'}\nСрок возврата: ${deposit.expected_return_date ? new Date(deposit.expected_return_date).toLocaleDateString('ru-RU') : 'Не указано'}\n\nПрошу помощи в возврате депозита`
-            : `Security deposit of ฿${deposit.deposit_amount?.toLocaleString()} not returned\n\nProperty: ${deposit.property_address || 'N/A'}\nDue date: ${deposit.expected_return_date ? new Date(deposit.expected_return_date).toLocaleDateString('en-US') : 'N/A'}\n\nSeeking assistance to recover my deposit`,
-          landlord_name: user?.landlord_name || '',
-          landlord_email: user?.landlord_email || ''
-        }));
-        
-        setAutoFilledFromDeposit(true);
-        
-        // Clear URL params
-        window.history.replaceState({}, '', createPageUrl('ResolveCase'));
-      }
-    }
-  }, [deposits, user, language]);
-
-  const updateCaseMutation = useMutation({
-    mutationFn: async ({ caseId, caseData }) => {
-      return await base44.entities.Case.update(caseId, caseData);
+  const createCaseMutation = useMutation({
+    mutationFn: async (caseData) => {
+      return await base44.entities.Case.create(caseData);
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['cases'] });
-      toast.success(language === 'th' ? 'ส่งคดีสำเร็จ!' : language === 'ru' ? 'Дело успешно отправлено!' : 'Case submitted successfully!');
-      navigate(createPageUrl("CaseDetails") + `?caseId=${data.id}`);
+    onSuccess: async (newCase) => {
+      console.log('[RESOLVE_PAGE] Case created:', newCase.id, 'proceeding to payment');
+      
+      // Get pricing for this user
+      const pricing = {
+        effectivePrice: newCase.is_member_at_creation ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE,
+        priceType: newCase.is_member_at_creation ? 'member' : 'public'
+      };
+      
+      // Create Stripe checkout session
+      try {
+        const response = await base44.functions.invoke('createResolveCheckout', {
+          userId: user.id,
+          userEmail: user.email,
+          caseId: newCase.id,
+          priceType: pricing.priceType,
+          amount: pricing.effectivePrice
+        });
+        
+        if (response.data?.url) {
+          console.log('[RESOLVE_PAGE] Redirecting to Stripe checkout');
+          window.location.href = response.data.url;
+        } else {
+          throw new Error('No checkout URL returned');
+        }
+      } catch (error) {
+        console.error('[RESOLVE_PAGE] Failed to create checkout:', error);
+        toast.error(language === 'th' ? 'ไม่สามารถเริ่มการชำระเงินได้' : language === 'ru' ? 'Ошибка инициализации оплаты' : 'Failed to initiate payment');
+        setSubmitting(false);
+      }
+    },
+    onError: (error) => {
+      console.error('[RESOLVE_PAGE] Case creation failed:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถสร้างคดีได้' : language === 'ru' ? 'Ошибка создания дела' : 'Failed to create case');
+      setSubmitting(false);
     }
   });
 
@@ -254,15 +175,12 @@ function ResolveCaseContent() {
       return;
     }
 
-    if (!currentCase) {
-      toast.error(language === 'th' ? 'ไม่พบคดีที่ชำระเงินแล้ว' : language === 'ru' ? 'Платное дело не найдено' : 'No paid case found');
-      return;
-    }
-
-    setCreating(true);
+    setSubmitting(true);
     
     try {
+      // Create case with all details
       const caseData = {
+        user_email: user.email,
         type: formData.type,
         dispute_amount: parseFloat(formData.dispute_amount),
         summary: formData.summary,
@@ -270,22 +188,23 @@ function ResolveCaseContent() {
         landlord_email: formData.landlord_email || user?.landlord_email || '',
         property_address: formData.property_address || '',
         evidence: formData.evidence_files,
-        status: 'pending_review',
+        status: 'awaiting_payment',
+        is_member_at_creation: hasMemberPricing(user),
         timeline: [
-          ...(currentCase.timeline || []),
           {
             timestamp: new Date().toISOString(),
-            event: 'Case details submitted',
+            event: 'Case details submitted - awaiting payment',
             actor: user.email
           }
         ]
       };
 
-      updateCaseMutation.mutate({ caseId: currentCase.id, caseData });
+      console.log('[RESOLVE_PAGE] Submitting case with data:', caseData);
+      createCaseMutation.mutate(caseData);
     } catch (error) {
-      console.error('Failed to submit case:', error);
+      console.error('[RESOLVE_PAGE] Submit failed:', error);
       toast.error(language === 'th' ? 'ไม่สามารถส่งคดีได้' : language === 'ru' ? 'Не удалось отправить дело' : 'Failed to submit case');
-      setCreating(false);
+      setSubmitting(false);
     }
   };
 
@@ -315,6 +234,7 @@ function ResolveCaseContent() {
       removeFile: "Remove",
       submit: "Submit Case",
       creating: "Creating case...",
+      submitting: "Submitting & proceeding to payment...",
       required: "Required",
       optional: "Optional",
       caseDetails: "Case Details",
@@ -362,6 +282,7 @@ function ResolveCaseContent() {
       removeFile: "ลบ",
       submit: "ส่งคดี",
       creating: "กำลังสร้างคดี...",
+      submitting: "กำลังส่งและไปชำระเงิน...",
       required: "จำเป็น",
       optional: "ไม่บังคับ",
       caseDetails: "รายละเอียดคดี",
@@ -409,6 +330,7 @@ function ResolveCaseContent() {
       removeFile: "移除",
       submit: "提交案件",
       creating: "创建案件中...",
+      submitting: "提交并进入支付...",
       required: "必填",
       optional: "可选",
       caseDetails: "案件详情",
@@ -456,6 +378,7 @@ function ResolveCaseContent() {
       removeFile: "削除",
       submit: "ケースを送信",
       creating: "ケース作成中...",
+      submitting: "提出して支払いへ...",
       required: "必須",
       optional: "オプション",
       caseDetails: "ケース詳細",
@@ -503,6 +426,7 @@ function ResolveCaseContent() {
       removeFile: "제거",
       submit: "사례 제출",
       creating: "사례 생성 중...",
+      submitting: "제출 및 결제 진행 중...",
       required: "필수",
       optional: "선택사항",
       caseDetails: "사례 상세정보",
@@ -550,6 +474,7 @@ function ResolveCaseContent() {
       removeFile: "Удалить",
       submit: "Отправить дело",
       creating: "Создание дела...",
+      submitting: "Отправка и переход к оплате...",
       required: "Обязательно",
       optional: "Необязательно",
       caseDetails: "Информация по делу",
@@ -575,79 +500,6 @@ function ResolveCaseContent() {
   };
 
   const str = strings[language] || strings.en;
-
-  // Show loading state while checking for paid case
-  if (loadingCase) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: '#EF4444' }} />
-          <p style={{ color: colors.textSecondary }}>
-            {language === 'th' ? 'กำลังโหลด...' : language === 'ru' ? 'Загрузка...' : 'Loading...'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show friendly message if no paid case exists
-  if (!currentCase) {
-    return (
-      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center py-12">
-            <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{
-              backgroundColor: isDarkMode ? '#EF444430' : '#FEE2E2'
-            }}>
-              <Scale className="w-10 h-10" style={{ color: '#EF4444' }} />
-            </div>
-            <h2 className="text-2xl font-bold mb-3" style={{ color: colors.textPrimary }}>
-              {language === 'th' ? 'ไม่พบคดี Resolve ที่ใช้งานอยู่' : 
-               language === 'ru' ? 'Активное дело Resolve не найдено' :
-               'No Active Resolve Case Found'}
-            </h2>
-            <p className="text-base mb-6" style={{ color: colors.textSecondary }}>
-              {language === 'th' ? 'เริ่มคดี Resolve ใหม่จากหน้าหลักหรือหน้าคดีเพื่อดำเนินการต่อ' :
-               language === 'ru' ? 'Начните новое дело Resolve на главной странице или на странице дел, чтобы продолжить' :
-               'Start a new Resolve case from the Home or Cases page to proceed'}
-            </p>
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => navigate(createPageUrl("Dashboard"))}
-                className="btn-interaction"
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  backgroundColor: '#EF4444',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
-              >
-                {language === 'th' ? 'ไปที่หน้าหลัก' : language === 'ru' ? 'На главную' : 'Go to Home'}
-              </button>
-              <button
-                onClick={() => navigate(createPageUrl("Cases"))}
-                className="btn-interaction"
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  backgroundColor: 'transparent',
-                  color: '#EF4444',
-                  border: '2px solid #EF4444',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
-              >
-                {language === 'th' ? 'ไปที่หน้าคดี' : language === 'ru' ? 'К делам' : 'Go to Cases'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
@@ -949,13 +801,13 @@ function ResolveCaseContent() {
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={creating || uploading}
+            disabled={submitting || uploading}
             className="w-full bg-red-600 hover:bg-red-700 py-6 text-lg font-bold"
           >
-            {creating ? (
+            {submitting ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                {str.creating}
+                {str.submitting}
               </>
             ) : (
               <>

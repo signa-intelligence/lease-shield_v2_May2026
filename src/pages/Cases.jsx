@@ -82,41 +82,39 @@ function CasesContent() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const paymentStatus = urlParams.get('payment');
+    const resolveSuccess = urlParams.get('resolve_success');
+    const resolveCancelled = urlParams.get('resolve_cancelled');
+    const caseId = urlParams.get('caseId');
 
-    if (paymentStatus === 'success' && user) {
-      console.log('💰 Payment success detected - refetching cases');
-      console.log('👤 User email:', user.email);
-
-      refetchCases().then((result) => {
-        console.log('🔄 Immediate refetch result:', result.data?.length || 0, 'cases');
-      });
-
-      setTimeout(() => {
-        console.log('⏱️ Refetch after 2s');
-        refetchCases().then((result) => {
-          console.log('🔄 2s refetch result:', result.data?.length || 0, 'cases');
-        });
-      }, 2000);
-
-      setTimeout(() => {
-        console.log('⏱️ Refetch after 5s');
-        refetchCases().then((result) => {
-          console.log('🔄 5s refetch result:', result.data?.length || 0, 'cases');
-        });
-      }, 5000);
-
-      setTimeout(() => {
-        console.log('⏱️ Final refetch after 10s');
-        refetchCases().then((result) => {
-          console.log('🔄 10s refetch result:', result.data?.length || 0, 'cases');
-        });
-      }, 10000);
-
-      const newUrl = location.pathname;
-      window.history.replaceState({}, '', newUrl);
+    if (resolveSuccess === 'true' && user) {
+      console.log('[CASES_PAGE] ✅ Resolve payment success detected for case:', caseId);
+      
+      // Refetch cases to show the updated case
+      refetchCases();
+      
+      toast.success(
+        language === 'th' ? '✅ ส่งคดีสำเร็จ! ทีมของเราจะตรวจสอบเอกสารและติดต่อกลับ' :
+        language === 'ru' ? '✅ Дело отправлено! Наша команда рассмотрит документы и свяжется с вами' :
+        '✅ Case submitted! Our team will review your documents and follow up'
+      );
+      
+      // Clean URL
+      window.history.replaceState({}, '', location.pathname);
     }
-  }, [location.search, user, refetchCases, location.pathname]);
+
+    if (resolveCancelled === 'true' && user) {
+      console.log('[CASES_PAGE] ⚠️ Resolve payment cancelled for case:', caseId);
+      
+      toast.error(
+        language === 'th' ? 'การชำระเงินไม่สำเร็จ คดีของคุณยังไม่ได้ถูกส่ง' :
+        language === 'ru' ? 'Оплата не завершена. Ваше дело не было отправлено' :
+        'Payment not completed. Your case has not been submitted yet'
+      );
+      
+      // Clean URL
+      window.history.replaceState({}, '', location.pathname);
+    }
+  }, [location.search, user, refetchCases, language, toast]);
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
@@ -329,11 +327,8 @@ function CasesContent() {
       noResultsFound: "Дела не найдены",
       tryDifferentSearch: "Попробуйте другой фильтр",
       needMoreHelp: "Нужна помощь со спором?",
-      openResolveDesc: "Откройте дело Resolve для профессиональной поддержки по тарифам участника или публичным.",
-      openResolveCase: "Открыть дело Resolve",
-      continueSubmission: "Завершите подачу вашего дела",
-      paidCaseAwaiting: "У вас есть оплаченное дело, ожидающее заполнения деталей",
-      continue: "Продолжить"
+      openResolveDesc: "Откройте дело Resolve для профессиональной поддержки.",
+      openResolveCase: "Открыть дело Resolve"
     },
     en: {
       title: "My Cases",
@@ -479,40 +474,9 @@ function CasesContent() {
           <FloatingActionButton
             icon={Plus}
             label={strings.openNewCase}
-            onClick={async () => {
+            onClick={() => {
               haptic.medium();
-              
-              // Check if user has an awaiting intake case
-              const awaitingCase = cases.find(c => 
-                c.status === 'intake' && c.stripe_session_id
-              );
-              
-              if (awaitingCase) {
-                navigate(createPageUrl("ResolveCase") + `?caseId=${awaitingCase.id}`);
-                return;
-              }
-              
-              // Otherwise, initiate payment flow
-              try {
-                const pricing = getResolvePricingForUser(user);
-                toast.info(language === 'ru' ? 'Перенаправление на оплату...' : 'Redirecting to payment...');
-                
-                const response = await base44.functions.invoke('createResolveCheckout', {
-                  userId: user.id,
-                  userEmail: user.email,
-                  priceType: pricing.priceType,
-                  amount: pricing.effectivePrice
-                });
-                
-                if (response.data?.url) {
-                  window.location.href = response.data.url;
-                } else {
-                  throw new Error('No checkout URL returned');
-                }
-              } catch (error) {
-                console.error('Failed to create checkout:', error);
-                toast.error(language === 'ru' ? 'Не удалось начать процесс оплаты' : 'Failed to start payment process');
-              }
+              navigate(createPageUrl("ResolveCase") + "?mode=new");
             }}
             color="#C7A338"
           />
@@ -561,65 +525,9 @@ function CasesContent() {
             </CardContent>
           </Card>
 
-          {/* Continue Case Submission Banner - Shows if user has paid but incomplete case */}
+          {/* Resolve CTA Banner */}
           {(() => {
-            const awaitingCase = cases.find(c => c.status === 'intake' && c.stripe_session_id);
-            
-            if (awaitingCase) {
-              return (
-                <div 
-                  className="mb-6 p-4 rounded-xl border-2 cursor-pointer card-interactive"
-                  style={{
-                    backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5',
-                    borderColor: '#10B981',
-                    boxShadow: '0 2px 8px rgba(16,185,129,0.15)'
-                  }}
-                  onClick={() => {
-                    haptic.medium();
-                    navigate(createPageUrl("ResolveCase") + `?caseId=${awaitingCase.id}`);
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="w-6 h-6 text-emerald-600 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h3 className="font-bold mb-1" style={{ color: isDarkMode ? '#6EE7B7' : '#065F46' }}>
-                        {language === 'th' ? 'ดำเนินการส่งคดีของคุณต่อ' :
-                         language === 'ru' ? 'Завершите подачу вашего дела' :
-                         'Complete Your Case Submission'}
-                      </h3>
-                      <p className="text-sm" style={{ color: isDarkMode ? '#A7F3D0' : '#047857' }}>
-                        {language === 'th' ? 'คุณมีคดีที่ชำระเงินแล้วและรอการกรอกรายละเอียด' :
-                         language === 'ru' ? 'У вас есть оплаченное дело, ожидающее заполнения деталей' :
-                         'You have a paid case awaiting details'}
-                      </p>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        haptic.medium();
-                        navigate(createPageUrl("ResolveCase") + `?caseId=${awaitingCase.id}`);
-                      }}
-                      className="btn-interaction flex-shrink-0"
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        backgroundColor: '#10B981',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        fontWeight: '600',
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {language === 'ru' ? 'Продолжить' : 'Continue'}
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-            
-            // Resolve CTA for users without active paid case
+            // Resolve CTA for all users
             const eligibility = getMembershipEligibility(user);
             const showMemberRate = eligibility.isEligible;
             const displayPrice = showMemberRate ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE;
@@ -660,40 +568,9 @@ function CasesContent() {
                     </p>
                   </div>
                   <button
-                    onClick={async () => {
+                    onClick={() => {
                       haptic.medium();
-                      
-                      // Check if user has an awaiting intake case
-                      const awaitingCase = cases.find(c => 
-                        c.status === 'intake' && c.stripe_session_id
-                      );
-                      
-                      if (awaitingCase) {
-                        navigate(createPageUrl("ResolveCase") + `?caseId=${awaitingCase.id}`);
-                        return;
-                      }
-                      
-                      // Otherwise, initiate payment flow
-                      try {
-                        const pricing = getResolvePricingForUser(user);
-                        toast.info(language === 'ru' ? 'Перенаправление на оплату...' : 'Redirecting to payment...');
-                        
-                        const response = await base44.functions.invoke('createResolveCheckout', {
-                          userId: user.id,
-                          userEmail: user.email,
-                          priceType: pricing.priceType,
-                          amount: pricing.effectivePrice
-                        });
-                        
-                        if (response.data?.url) {
-                          window.location.href = response.data.url;
-                        } else {
-                          throw new Error('No checkout URL returned');
-                        }
-                      } catch (error) {
-                        console.error('Failed to create checkout:', error);
-                        toast.error(language === 'ru' ? 'Не удалось начать процесс оплаты' : 'Failed to start payment process');
-                      }
+                      navigate(createPageUrl("ResolveCase") + "?mode=new");
                     }}
                     className="btn-interaction w-full sm:w-auto"
                     style={{

@@ -383,18 +383,26 @@ Deno.serve(async (req) => {
           console.log('[RESOLVE_WEBHOOK] ⚠️ No caseId in metadata');
         }
 
-        // Update or create case record
+        // Update existing case to submitted/intake status
         if (caseRecord) {
-          console.log('[RESOLVE_WEBHOOK] Updating existing case:', caseId);
+          console.log('[RESOLVE_WEBHOOK] Updating existing case:', caseId, 'to status: submitted');
           const updatedCase = await base44.asServiceRole.entities.Case.update(caseId, {
-            status: 'intake',
+            status: 'submitted',
             stripe_session_id: session.id,
             stripe_payment_intent_id: session.payment_intent,
             pricing_type: priceType,
             resolve_amount: amount,
-            is_member_at_creation: priceType === 'member'
+            is_member_at_creation: priceType === 'member',
+            timeline: [
+              ...(caseRecord.timeline || []),
+              {
+                timestamp: new Date().toISOString(),
+                event: 'Payment completed - case submitted for review',
+                actor: userEmail
+              }
+            ]
           });
-          console.log('[RESOLVE_WEBHOOK] Case AFTER update:', {
+          console.log('[RESOLVE_WEBHOOK] ✅ Case AFTER update:', {
             id: updatedCase.id,
             status: updatedCase.status,
             user_email: updatedCase.user_email,
@@ -402,25 +410,12 @@ Deno.serve(async (req) => {
           });
           caseRecord = updatedCase;
         } else {
-          // Create new case if provisional not found
-          console.log('[RESOLVE_WEBHOOK] Creating new case (provisional not found)');
-          caseRecord = await base44.asServiceRole.entities.Case.create({
-            user_email: userEmail,
-            status: 'intake',
-            stripe_session_id: session.id,
-            stripe_payment_intent_id: session.payment_intent,
-            pricing_type: priceType,
-            resolve_amount: amount,
-            dispute_amount: 0,
-            type: 'deposit',
-            is_member_at_creation: priceType === 'member'
-          });
-          console.log('[RESOLVE_WEBHOOK] Case AFTER create:', {
-            id: caseRecord.id,
-            status: caseRecord.status,
-            user_email: caseRecord.user_email,
-            stripe_session_id: caseRecord.stripe_session_id
-          });
+          console.error('[RESOLVE_WEBHOOK] ❌ Case not found - cannot process payment without case');
+          return Response.json({ 
+            received: true, 
+            error: 'case_not_found',
+            caseId: caseId
+          }, { status: 200 });
         }
 
         // Create payment record

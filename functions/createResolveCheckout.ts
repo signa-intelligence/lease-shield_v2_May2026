@@ -15,22 +15,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { userId, userEmail, priceType, amount } = await req.json();
+    const { userId, userEmail, caseId, priceType, amount } = await req.json();
+
+    console.log('[CREATE_CHECKOUT] Request payload:', { userId, userEmail, caseId, priceType, amount });
 
     // Validate required fields
-    if (!userId || !userEmail || !priceType || !amount) {
+    if (!userId || !userEmail || !caseId || !priceType || !amount) {
+      console.error('[CREATE_CHECKOUT] Missing required fields');
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Create a provisional case record
-    const provisionalCase = await base44.entities.Case.create({
-      user_email: userEmail,
-      status: 'awaiting_payment',
-      dispute_amount: 0,
-      type: 'deposit'
-    });
-
-    console.log('✅ Provisional case created:', provisionalCase.id);
+    console.log('[CREATE_CHECKOUT] Creating Stripe session for case:', caseId);
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -44,7 +39,7 @@ Deno.serve(async (req) => {
               name: `Resolve Case Service - ${priceType === 'member' ? 'Member Rate' : 'Public Rate'}`,
               description: 'Professional case handling and legal support',
             },
-            unit_amount: amount * 100, // Convert to smallest currency unit
+            unit_amount: amount * 100,
           },
           quantity: 1,
         },
@@ -54,19 +49,21 @@ Deno.serve(async (req) => {
         userId: userId,
         userEmail: userEmail,
         priceType: priceType,
-        amount: amount,
-        caseId: provisionalCase.id
+        amount: amount.toString(),
+        caseId: caseId
       },
-      success_url: `${Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'}/ResolveCase?session_id={CHECKOUT_SESSION_ID}&caseId=${provisionalCase.id}`,
-      cancel_url: `${Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'}/Cases`,
+      success_url: `${Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'}/Cases?resolve_success=true&caseId=${caseId}`,
+      cancel_url: `${Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'}/Cases?resolve_cancelled=true&caseId=${caseId}`,
     });
 
-    console.log('✅ Stripe checkout session created:', session.id);
+    console.log('[CREATE_CHECKOUT] ✅ Stripe session created:', session.id);
+    console.log('[CREATE_CHECKOUT] Success URL:', session.success_url);
+    console.log('[CREATE_CHECKOUT] Metadata:', session.metadata);
 
     return Response.json({ 
       url: session.url,
       sessionId: session.id,
-      caseId: provisionalCase.id
+      caseId: caseId
     });
 
   } catch (error) {
