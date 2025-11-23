@@ -79,6 +79,8 @@ export default function ResolveCase() {
           property_address: deposit.property_address || '',
           summary: language === 'th'
             ? `เงินมัดจำ ฿${deposit.deposit_amount?.toLocaleString()} ยังไม่ได้รับคืน\n\nทรัพย์สิน: ${deposit.property_address || 'ไม่ระบุ'}\nกำหนดคืน: ${deposit.expected_return_date ? new Date(deposit.expected_return_date).toLocaleDateString('th-TH') : 'ไม่ระบุ'}\n\nขอความช่วยเหลือในการติดตามเงินมัดจำคืน`
+            : language === 'ru'
+            ? `Депозит ฿${deposit.deposit_amount?.toLocaleString()} не возвращён\n\nНедвижимость: ${deposit.property_address || 'Не указано'}\nСрок возврата: ${deposit.expected_return_date ? new Date(deposit.expected_return_date).toLocaleDateString('ru-RU') : 'Не указано'}\n\nПрошу помощи в возврате депозита`
             : `Security deposit of ฿${deposit.deposit_amount?.toLocaleString()} not returned\n\nProperty: ${deposit.property_address || 'N/A'}\nDue date: ${deposit.expected_return_date ? new Date(deposit.expected_return_date).toLocaleDateString('en-US') : 'N/A'}\n\nSeeking assistance to recover my deposit`,
           landlord_name: user?.landlord_name || '',
           landlord_email: user?.landlord_email || ''
@@ -125,7 +127,7 @@ export default function ResolveCase() {
       }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert(language === 'th' ? 'ไม่สามารถอัปโหลดไฟล์ได้' : 'Failed to upload files');
+      alert(language === 'th' ? 'ไม่สามารถอัปโหลดไฟล์ได้' : language === 'ru' ? 'Ошибка загрузки файлов' : 'Failed to upload files');
     } finally {
       setUploading(false);
     }
@@ -142,7 +144,7 @@ export default function ResolveCase() {
     e.preventDefault();
     
     if (!formData.type || !formData.dispute_amount || !formData.summary) {
-      alert(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : 'Please fill in all required fields');
+      alert(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : language === 'ru' ? 'Пожалуйста, заполните все обязательные поля' : 'Please fill in all required fields');
       return;
     }
 
@@ -172,7 +174,7 @@ export default function ResolveCase() {
       await createCaseMutation.mutateAsync(caseData);
     } catch (error) {
       console.error('Failed to create case:', error);
-      alert(language === 'th' ? 'ไม่สามารถสร้างคดีได้' : 'Failed to create case');
+      alert(language === 'th' ? 'ไม่สามารถสร้างคดีได้' : language === 'ru' ? 'Не удалось создать дело' : 'Failed to create case');
       setCreating(false);
     }
   };
@@ -412,6 +414,53 @@ export default function ResolveCase() {
       membersPayAfter30Days: "회원은 30일 후 사례당 ฿2,490를 지불합니다. 오늘 가입하여 추가 혜택을 받으세요.",
       newMembershipNote: "새 회원 자격은 향후 사례에 회원 가격을 적용합니다. 이 사례는 공개 가격으로 청구됩니다.",
       memberRateExplanation: "회원 요금은 Lite, Protect 또는 Secure 회원 가입 30일 후 적용됩니다. 사례 제출 중 업그레이드는 향후 사례에만 적용됩니다."
+    },
+    ru: {
+      title: "Открыть дело",
+      subtitle: "Получите помощь в решении спора по аренде",
+      autoFilled: "Заполнено автоматически из просроченного депозита",
+      caseType: "Тип дела",
+      depositCase: "Депозит не возвращён",
+      earlyTermCase: "Досрочное расторжение",
+      damagesCase: "Спор о повреждениях",
+      otherCase: "Другая проблема",
+      disputeAmount: "Сумма спора",
+      disputePlaceholder: "10000",
+      propertAddress: "Адрес недвижимости",
+      addressPlaceholder: "123 Main St, Bangkok",
+      summary: "Описание дела",
+      summaryPlaceholder: "Подробно опишите вашу ситуацию...",
+      landlordInfo: "Данные владельца",
+      landlordName: "Имя владельца",
+      landlordEmail: "Email владельца",
+      evidence: "Подтверждающие материалы",
+      evidenceDesc: "Загрузите фотографии, квитанции или документы",
+      uploadFiles: "Загрузить файлы",
+      uploading: "Загрузка...",
+      removeFile: "Удалить",
+      submit: "Отправить дело",
+      creating: "Создание дела...",
+      required: "Обязательно",
+      optional: "Необязательно",
+      caseDetails: "Информация по делу",
+      autoFilledMsg: "Данные депозита были предварительно заполнены. Вы можете их отредактировать.",
+      resolveService: "Решите свой спор",
+      resolvePricing: "Стоимость услуги",
+      memberPrice: "Тариф участника",
+      publicPrice: "Публичный тариф",
+      perCase: "за одно дело",
+      savingsNote: "Экономия ฿{amount} от публичного тарифа",
+      upgradeToMemberRate: "Участники сервиса платят ฿{memberPrice} за одно дело. Обновите тариф, чтобы получить льготную цену.",
+      whatsIncluded: "Что входит в услугу:",
+      reviewDocs: "Профессиональный анализ ваших документов",
+      recommendActions: "Рекомендованный план действий и стратегия",
+      templateLetters: "Индивидуально подготовленные шаблоны юридических писем",
+      memberSince: "Участник с",
+      memberPricingUnlocked: "Тариф участника активирован",
+      memberPricingUnlocksIn: "Тариф участника активируется после 30 дней активного членства. Ваш тариф применится к делам, поданным после",
+      membersPayAfter30Days: "Участники платят ฿2,490 за дело через 30 дней. Присоединяйтесь сегодня для дополнительных преимуществ.",
+      newMembershipNote: "Ваше новое членство применит тарифы участника к будущим делам. Это дело оплачивается по публичному тарифу.",
+      memberRateExplanation: "Тарифы участника действуют через 30 дней активного членства Lite, Protect или Secure. Обновления во время подачи дела применяются только к будущим делам."
     }
   };
 
@@ -556,7 +605,7 @@ export default function ResolveCase() {
                         color: '#C7A338'
                       }}
                     >
-                      {language === 'th' ? 'ดูแผน' : language === 'zh' ? '查看计划' : language === 'ja' ? 'プランを見る' : language === 'ko' ? '플랜 보기' : language === 'ru' ? 'Посмотреть планы' : 'View Plans'}
+                      {language === 'th' ? 'ดูแผน' : language === 'zh' ? '查看计划' : language === 'ja' ? 'プランを見る' : language === 'ko' ? '플랜 보기' : language === 'ru' ? 'Посмотреть тарифы' : 'View Plans'}
                     </Button>
                   </div>
                 </>
