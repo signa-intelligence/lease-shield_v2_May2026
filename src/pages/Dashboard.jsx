@@ -1947,7 +1947,7 @@ function DashboardContent() {
               haptic.medium();
 
               // Navigate directly to ResolveCase intake form
-              navigate(createPageUrl("ResolveCase") + "?mode=new");
+              navigate(createPageUrl("resolvecase") + "?mode=new");
             };
             
             return (

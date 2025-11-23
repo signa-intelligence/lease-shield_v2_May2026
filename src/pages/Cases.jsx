@@ -97,7 +97,7 @@ function CasesContent() {
       );
       
       // Redirect to case details
-      navigate(createPageUrl("CaseDetails") + `?caseId=${caseId}`, { replace: true });
+      navigate(createPageUrl("casedetails") + `?caseId=${caseId}`, { replace: true });
     }
 
     if (resolveCancelled === 'true' && user) {
@@ -474,7 +474,7 @@ function CasesContent() {
             label={strings.openNewCase}
             onClick={() => {
               haptic.medium();
-              navigate(createPageUrl("ResolveCase") + "?mode=new");
+              navigate(createPageUrl("resolvecase") + "?mode=new");
             }}
             color="#C7A338"
           />
@@ -895,7 +895,7 @@ function CasesContent() {
                           className="w-full mt-2"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`);
+                            navigate(createPageUrl("casedetails") + `?caseId=${caseItem.id}`);
                           }}
                         >
                           {strings.viewDetails}

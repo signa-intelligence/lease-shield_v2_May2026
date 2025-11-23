@@ -633,7 +633,7 @@ function ResolveCaseContent() {
                       variant="outline"
                       size="sm"
                       className="mt-2 w-full"
-                      onClick={() => navigate(createPageUrl("Account") + '?showPlans=true')}
+                      onClick={() => navigate(createPageUrl("account") + '?showPlans=true')}
                       style={{
                         borderColor: '#C7A338',
                         color: '#C7A338'
