@@ -188,9 +188,6 @@ Deno.serve(async (req) => {
         // 5) Update user record
         console.log('\n🔄 UPDATING USER RECORD...');
         
-        // Set subscription_started_at only if this is a NEW subscription (not already set)
-        const subscriptionStartedAt = user.subscription_started_at || new Date().toISOString();
-        
         const updateData = {
           plan_tier: planTier,
           billing_interval: billingInterval,
@@ -198,8 +195,7 @@ Deno.serve(async (req) => {
           stripe_subscription_id: subscriptionId,
           stripe_customer_id: customerId,
           subscription_status: 'active',
-          letter_credits: newCreditBalance,
-          subscription_started_at: subscriptionStartedAt
+          letter_credits: newCreditBalance
         };
 
         console.log('Update payload:', JSON.stringify(updateData, null, 2));

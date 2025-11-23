@@ -67,8 +67,10 @@ export const getMembershipEligibility = (user) => {
   const isEligible = isPaidTier && membershipDays >= RESOLVE_PRICING.MEMBERSHIP_DAYS_REQUIRED;
   
   let unlockDate = null;
-  if (isPaidTier && !isEligible && user.subscription_started_at) {
-    const startDate = new Date(user.subscription_started_at);
+  const memberSinceDate = user.member_since || user.subscription_started_at;
+  
+  if (isPaidTier && !isEligible && memberSinceDate) {
+    const startDate = new Date(memberSinceDate);
     unlockDate = new Date(startDate);
     unlockDate.setDate(unlockDate.getDate() + RESOLVE_PRICING.MEMBERSHIP_DAYS_REQUIRED);
   }
@@ -79,6 +81,6 @@ export const getMembershipEligibility = (user) => {
     daysRemaining: Math.max(0, RESOLVE_PRICING.MEMBERSHIP_DAYS_REQUIRED - membershipDays),
     isPaidTier,
     unlockDate,
-    memberSince: user.subscription_started_at ? new Date(user.subscription_started_at) : null
+    memberSince: memberSinceDate ? new Date(memberSinceDate) : null
   };
 };
