@@ -10,19 +10,17 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
 
   const t = {
     en: {
-      title: "Your first session:",
-      protections: "protections set up",
-      leaseScan: "Lease scanned",
-      propertyAdded: "Property added",
-      depositTracked: "Deposit tracked",
-      evidenceUploaded: "Evidence uploaded"
+      title: "Your first session: {done} / {total} protections set up",
+      leaseScan: "Scan a lease",
+      propertyAdded: "Add your property",
+      depositTracked: "Add your deposit",
+      evidenceUploaded: "Upload evidence"
     },
     th: {
-      title: "เซสชันแรกของคุณ:",
-      protections: "การป้องกันที่ตั้งค่า",
+      title: "เซสชันแรกของคุณ: {done} / {total} การป้องกันที่ตั้งค่า",
       leaseScan: "สแกนสัญญาเช่า",
-      propertyAdded: "เพิ่มทรัพย์สิน",
-      depositTracked: "ติดตามเงินมัดจำ",
+      propertyAdded: "เพิ่มทรัพย์สินของคุณ",
+      depositTracked: "เพิ่มเงินมัดจำของคุณ",
       evidenceUploaded: "อัปโหลดหลักฐาน"
     },
     zh: {
@@ -50,12 +48,11 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
       evidenceUploaded: "증거 업로드됨"
     },
     ru: {
-      title: "Ваша первая сессия:",
-      protections: "настроено защит",
-      leaseScan: "Договор отсканирован",
-      propertyAdded: "Добавлена недвижимость",
-      depositTracked: "Депозит отслеживается",
-      evidenceUploaded: "Доказательства загружены"
+      title: "Ваша первая сессия: {done} / {total} защит установлено",
+      leaseScan: "Отсканировать договор",
+      propertyAdded: "Добавить вашу недвижимость",
+      depositTracked: "Добавить ваш депозит",
+      evidenceUploaded: "Загрузить доказательства"
     }
   };
 
@@ -95,19 +92,8 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
       }}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-sm" style={{ color: colors.textPrimary }}>
-            {strings.title}
-          </span>
-          <span className="px-2 py-1 rounded-full text-xs font-bold" style={{
-            backgroundColor: '#C7A338',
-            color: '#FFFFFF'
-          }}>
-            {completedCount} / {totalCount}
-          </span>
-        </div>
-        <span className="text-xs" style={{ color: colors.textSecondary }}>
-          {strings.protections}
+        <span className="font-bold text-sm" style={{ color: colors.textPrimary }}>
+          {strings.title.replace('{done}', completedCount).replace('{total}', totalCount)}
         </span>
       </div>
 

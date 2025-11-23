@@ -25,14 +25,14 @@ export default function OnboardingBanner({ user, colors, language, onStartSetup 
     en: {
       welcome: "Welcome to Lease Shield",
       subtitle: "Let's get your rental fully protected in a few minutes.",
-      startSetup: "Start Setup",
+      startSetup: "Start setup",
       skipForNow: "Skip for now"
     },
     th: {
       welcome: "ยินดีต้อนรับสู่ Lease Shield",
-      subtitle: "มาเริ่มปกป้องการเช่าของคุณอย่างครบถ้วนในไม่กี่นาที",
+      subtitle: "มาปกป้องสัญญาเช่าของคุณให้ครบถ้วนภายในไม่กี่นาที",
       startSetup: "เริ่มตั้งค่า",
-      skipForNow: "ข้ามไปก่อน"
+      skipForNow: "ข้ามตอนนี้"
     },
     zh: {
       welcome: "欢迎来到租约盾",
@@ -54,9 +54,9 @@ export default function OnboardingBanner({ user, colors, language, onStartSetup 
     },
     ru: {
       welcome: "Добро пожаловать в Lease Shield",
-      subtitle: "Защитим вашу аренду за несколько минут.",
+      subtitle: "Давайте полностью защитим ваш договор аренды за несколько минут.",
       startSetup: "Начать настройку",
-      skipForNow: "Пропустить"
+      skipForNow: "Пропустить пока"
     }
   };
 

@@ -34,24 +34,24 @@ export default function FeatureTour({ user, onComplete, language = 'en' }) {
       stepOf: "Step {current} of {total}",
       steps: [
         {
-          title: "Scan Your Lease",
-          description: "Start here – upload your lease to see risks and key dates."
+          title: "Scan your lease",
+          description: "Start here – upload your lease to see risks and important dates."
         },
         {
-          title: "Track Your Deposit",
-          description: "Track your security deposit and see when it should be returned."
+          title: "Track your deposit",
+          description: "Track your deposit and see when it should be returned."
         },
         {
-          title: "Set Rent Reminders",
-          description: "Set automatic rent reminders so you never miss a payment."
+          title: "Set rent reminders",
+          description: "Set monthly rent reminders so you never pay late."
         },
         {
-          title: "Store Evidence",
-          description: "Store photos, videos and documents so you have proof if there's a dispute later."
+          title: "Store evidence",
+          description: "Store photos, videos and documents so you have proof if there's a dispute."
         },
         {
-          title: "Resolve Your Dispute",
-          description: "When things go wrong, submit a case here for professional help at member or public rates."
+          title: "Get help when needed",
+          description: "When things go wrong, submit a case here for professional help."
         }
       ]
     },
@@ -63,24 +63,24 @@ export default function FeatureTour({ user, onComplete, language = 'en' }) {
       stepOf: "ขั้นที่ {current} จาก {total}",
       steps: [
         {
-          title: "สแกนสัญญาเช่า",
-          description: "เริ่มที่นี่ – อัปโหลดสัญญาเช่าเพื่อดูความเสี่ยงและวันสำคัญ"
+          title: "สแกนสัญญาเช่าของคุณ",
+          description: "เริ่มที่นี่ – อัปโหลดสัญญาเช่าเพื่อดูความเสี่ยงและวันที่สำคัญ"
         },
         {
-          title: "ติดตามเงินมัดจำ",
-          description: "ติดตามเงินมัดจำและดูว่าเมื่อไหร่จะได้คืน"
+          title: "ติดตามเงินมัดจำของคุณ",
+          description: "ติดตามเงินมัดจำและดูว่าควรจะได้คืนเมื่อไหร่"
         },
         {
-          title: "ตั้งการแจ้งเตือนค่าเช่า",
-          description: "ตั้งการแจ้งเตือนค่าเช่าอัตโนมัติเพื่อไม่พลาดการชำระ"
+          title: "ตั้งค่าการแจ้งเตือนค่าเช่า",
+          description: "ตั้งการแจ้งเตือนค่าเช่ารายเดือนเพื่อไม่ให้จ่ายสาย"
         },
         {
           title: "เก็บหลักฐาน",
-          description: "เก็บรูปภาพ วิดีโอ และเอกสารเพื่อมีหลักฐานหากเกิดข้อพิพาท"
+          description: "เก็บรูปภาพ วิดีโอ และเอกสารเพื่อให้คุณมีหลักฐานหากเกิดข้อพิพาท"
         },
         {
-          title: "แก้ไขข้อพิพาท",
-          description: "เมื่อเกิดปัญหา ส่งคดีที่นี่เพื่อรับความช่วยเหลือจากผู้เชี่ยวชาญในราคาสมาชิกหรือทั่วไป"
+          title: "รับความช่วยเหลือเมื่อจำเป็น",
+          description: "เมื่อเกิดปัญหา ส่งคดีที่นี่เพื่อรับความช่วยเหลือจากผู้เชี่ยวชาญ"
         }
       ]
     },
@@ -179,24 +179,24 @@ export default function FeatureTour({ user, onComplete, language = 'en' }) {
       stepOf: "Шаг {current} из {total}",
       steps: [
         {
-          title: "Сканируйте договор",
-          description: "Начните здесь – загрузите договор для проверки рисков и ключевых дат."
+          title: "Сканируйте ваш договор аренды",
+          description: "Начните здесь – загрузите договор, чтобы увидеть риски и важные даты."
         },
         {
-          title: "Отслеживайте депозит",
-          description: "Отслеживайте залог и узнайте, когда его должны вернуть."
+          title: "Отслеживайте ваш депозит",
+          description: "Отслеживайте депозит и узнайте, когда его должны вернуть."
         },
         {
-          title: "Напоминания об аренде",
-          description: "Настройте автоматические напоминания об оплате, чтобы не пропустить платёж."
+          title: "Установите напоминания об аренде",
+          description: "Установите ежемесячные напоминания об аренде, чтобы не платить с опозданием."
         },
         {
           title: "Храните доказательства",
-          description: "Сохраняйте фото, видео и документы, чтобы иметь доказательства в случае спора."
+          description: "Храните фото, видео и документы, чтобы иметь доказательства в случае спора."
         },
         {
-          title: "Решайте споры",
-          description: "Если возникнут проблемы, подайте дело здесь для профессиональной помощи по цене участника или публичной."
+          title: "Получите помощь при необходимости",
+          description: "Если что-то пойдет не так, подайте дело здесь для профессиональной помощи."
         }
       ]
     }
