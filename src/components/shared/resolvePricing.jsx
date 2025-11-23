@@ -1,99 +1,104 @@
 /**
- * Resolve Case Service Pricing Configuration
- * Centralized pricing constants for case submission
+ * ⚡ Resolve Pricing - Single Source of Truth
+ * 
+ * Defines pricing and eligibility logic for the Resolve case service.
+ * Used across Dashboard, Cases, ResolveCase pages and Stripe webhooks.
  */
 
 export const RESOLVE_PRICING = {
-  MEMBER_RATE: 2490,
-  PUBLIC_RATE: 3990,
-  SAVINGS: 1500,
-  MEMBERSHIP_DAYS_REQUIRED: 30
+  PUBLIC_RATE: 3990,  // THB - Public price
+  MEMBER_RATE: 2490,  // THB - Member price
+  SAVINGS: 1500       // THB - Amount saved as member vs public
 };
 
 /**
- * Calculate days since FIRST paid membership started
- * Uses member_since field which NEVER resets on plan changes (upgrades/downgrades)
- * Returns 0 if no valid membership start date
+ * Determines if user qualifies for member pricing
+ * 
+ * Member pricing applies if:
+ * - User has an active paid plan (Lite/Protect/Secure), OR
+ * - User has been a paying member for at least 30 days total
+ * 
+ * @param {Object} user - User object with plan_tier and member_since
+ * @returns {Object} Eligibility details
  */
-const getMembershipDays = (user) => {
-  if (!user) return 0;
-  
-  // Use member_since (stable across plan changes) or fallback to subscription_started_at
-  const memberSinceDate = user.member_since || user.subscription_started_at;
-  
-  if (!memberSinceDate) return 0;
-  
-  const startDate = new Date(memberSinceDate);
-  const now = new Date();
-  const diffTime = now - startDate;
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  
-  return diffDays >= 0 ? diffDays : 0;
-};
-
-/**
- * Check if user qualifies for member pricing (30-day rule)
- * User must have ACTIVE paid tier AND ≥30 days continuous paid membership
- * Plan changes between paid tiers do NOT reset the clock
- */
-export const hasMemberPricing = (user) => {
-  if (!user) return false;
-  
-  const planTier = user.plan_tier;
-  const isPaidTier = planTier && planTier !== 'free';
-  
-  if (!isPaidTier) return false;
-  
-  // Check subscription is active (not cancelled/expired)
-  const subscriptionStatus = user.subscription_status;
-  if (subscriptionStatus && subscriptionStatus !== 'active') return false;
-  
-  // Check 30-day minimum using continuous paid membership (not reset by plan changes)
-  const membershipDays = getMembershipDays(user);
-  return membershipDays >= RESOLVE_PRICING.MEMBERSHIP_DAYS_REQUIRED;
-};
-
-/**
- * Get pricing for user with detailed info
- */
-export const getUserPricing = (user) => {
-  return hasMemberPricing(user) ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE;
-};
-
-/**
- * Get membership eligibility details for UI display
- */
-export const getMembershipEligibility = (user) => {
+export function getMembershipEligibility(user) {
   if (!user) {
     return {
       isEligible: false,
-      membershipDays: 0,
-      daysRemaining: RESOLVE_PRICING.MEMBERSHIP_DAYS_REQUIRED,
-      isPaidTier: false,
-      unlockDate: null
+      reason: 'no_user',
+      daysAsMember: 0
     };
   }
-  
-  const planTier = user.plan_tier;
-  const isPaidTier = planTier && planTier !== 'free';
-  const membershipDays = getMembershipDays(user);
-  const isEligible = isPaidTier && membershipDays >= RESOLVE_PRICING.MEMBERSHIP_DAYS_REQUIRED;
-  
-  let unlockDate = null;
-  const memberSinceDate = user.member_since || user.subscription_started_at;
-  
-  if (isPaidTier && !isEligible && memberSinceDate) {
-    const startDate = new Date(memberSinceDate);
-    unlockDate = new Date(startDate);
-    unlockDate.setDate(unlockDate.getDate() + RESOLVE_PRICING.MEMBERSHIP_DAYS_REQUIRED);
+
+  // Check 1: Active paid plan
+  const hasActivePaidPlan = user.plan_tier && 
+    ['lite', 'protect', 'secure'].includes(user.plan_tier.toLowerCase());
+
+  if (hasActivePaidPlan) {
+    return {
+      isEligible: true,
+      reason: 'active_paid_plan',
+      plan: user.plan_tier,
+      daysAsMember: user.member_since ? 
+        Math.floor((Date.now() - new Date(user.member_since).getTime()) / (1000 * 60 * 60 * 24)) : 
+        0
+    };
   }
+
+  // Check 2: 30+ days of paid membership history
+  if (user.member_since) {
+    const memberSinceDate = new Date(user.member_since);
+    const daysSinceMember = Math.floor(
+      (Date.now() - memberSinceDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (daysSinceMember >= 30) {
+      return {
+        isEligible: true,
+        reason: '30_day_member',
+        daysAsMember: daysSinceMember
+      };
+    }
+
+    return {
+      isEligible: false,
+      reason: 'insufficient_membership_duration',
+      daysAsMember: daysSinceMember,
+      daysRemaining: 30 - daysSinceMember
+    };
+  }
+
+  return {
+    isEligible: false,
+    reason: 'never_been_member',
+    daysAsMember: 0
+  };
+}
+
+/**
+ * Get pricing details for a specific user
+ * 
+ * @param {Object} user - User object
+ * @returns {Object} Pricing details
+ */
+export function getResolvePricingForUser(user) {
+  const eligibility = getMembershipEligibility(user);
   
   return {
-    isEligible,
-    membershipDays,
-    daysRemaining: Math.max(0, RESOLVE_PRICING.MEMBERSHIP_DAYS_REQUIRED - membershipDays),
-    isPaidTier,
-    unlockDate,
-    memberSince: memberSinceDate ? new Date(memberSinceDate) : null
+    publicPrice: RESOLVE_PRICING.PUBLIC_RATE,
+    memberPrice: RESOLVE_PRICING.MEMBER_RATE,
+    savings: RESOLVE_PRICING.SAVINGS,
+    isMember: eligibility.isEligible,
+    effectivePrice: eligibility.isEligible ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE,
+    priceType: eligibility.isEligible ? 'member' : 'public',
+    eligibility: eligibility
   };
-};
+}
+
+/**
+ * Legacy helper - kept for backward compatibility
+ * @deprecated Use getMembershipEligibility instead
+ */
+export function hasMemberPricing(user) {
+  return getMembershipEligibility(user).isEligible;
+}
