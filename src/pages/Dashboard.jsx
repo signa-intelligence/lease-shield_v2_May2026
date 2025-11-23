@@ -1254,7 +1254,11 @@ function DashboardContent() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                whiteSpace: 'normal',
+                textAlign: 'center',
+                lineHeight: '1.3',
+                minHeight: '48px'
               }}
               onMouseEnter={(e) => {
                 e.target.style.backgroundColor = '#C7A338';
@@ -1285,7 +1289,11 @@ function DashboardContent() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                whiteSpace: 'normal',
+                textAlign: 'center',
+                lineHeight: '1.3',
+                minHeight: '44px'
               }}
               onMouseEnter={(e) => {
                 e.target.style.borderColor = '#F59E0B';
@@ -1316,7 +1324,11 @@ function DashboardContent() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                whiteSpace: 'normal',
+                textAlign: 'center',
+                lineHeight: '1.3',
+                minHeight: '44px'
               }}
               onMouseEnter={(e) => {
                 e.target.style.borderColor = '#8B5CF6';

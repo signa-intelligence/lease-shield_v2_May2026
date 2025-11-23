@@ -203,6 +203,10 @@ const EmptyState = ({
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               boxShadow: '0 4px 6px rgba(12, 59, 46, 0.2)',
+              whiteSpace: 'normal',
+              textAlign: 'center',
+              lineHeight: '1.3',
+              minHeight: '48px'
             }}
             onMouseEnter={(e) => {
               e.target.style.transform = 'translateY(-2px)';
@@ -236,6 +240,10 @@ const EmptyState = ({
                 border: '2px solid #0C3B2E',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
+                whiteSpace: 'normal',
+                textAlign: 'center',
+                lineHeight: '1.3',
+                minHeight: '48px'
               }}
               onMouseEnter={(e) => {
                 e.target.style.backgroundColor = '#F8FAFC';
