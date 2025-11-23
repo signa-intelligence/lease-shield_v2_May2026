@@ -60,6 +60,9 @@ function CasesContent() {
     queryFn: () => base44.auth.me(),
   });
 
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
   const { data: cases = [], refetch: refetchCases, isLoading, error } = useQuery({
     queryKey: ['cases', user?.email],
     queryFn: async () => {
@@ -143,9 +146,6 @@ function CasesContent() {
       }
     }
   }, [user, cases, toast, language]);
-
-  const language = user?.language || 'en';
-  const isDarkMode = user?.theme === 'dark';
   const theme = getFeatureCardStyles("cases", isDarkMode);
 
   // Debug logging
