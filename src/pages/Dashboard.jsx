@@ -163,9 +163,7 @@ function DashboardContent() {
   const accessLevel = user?.access_level || 'user';
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
-  const isLitePlan = user?.plan_tier === 'lite';
-  const isFreeTier = !user?.plan_tier || user.plan_tier === 'free';
-
+  
   const colors = isDarkMode ? {
     bg: '#111827',
     cardBg: '#2A2D30',
@@ -187,6 +185,9 @@ function DashboardContent() {
     hoverBg: '#F1F5F9',
     filterBg: '#F8FAFC'
   };
+  
+  const isLitePlan = user?.plan_tier === 'lite';
+  const isFreeTier = !user?.plan_tier || user.plan_tier === 'free';
 
   // Compute feature themes once
   const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
