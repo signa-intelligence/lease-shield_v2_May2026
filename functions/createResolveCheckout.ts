@@ -8,101 +8,69 @@ const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    
+    // Verify user authentication
     const user = await base44.auth.me();
-
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('🛡️ Creating Resolve checkout for user:', user.email);
+    const { userId, userEmail, priceType, amount } = await req.json();
 
-    // Determine pricing (member vs public)
-    const planTier = user.plan_tier;
-    const isPaidTier = planTier && planTier !== 'free';
-    const memberSinceDate = user.member_since || user.subscription_started_at;
-    
-    let membershipDays = 0;
-    if (memberSinceDate) {
-      const diffTime = new Date() - new Date(memberSinceDate);
-      membershipDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    }
-    
-    const isMemberPricing = isPaidTier && 
-                            membershipDays >= 30 && 
-                            (!user.subscription_status || user.subscription_status === 'active');
-    
-    const price = isMemberPricing ? 2490 : 3990;
-    const priceType = isMemberPricing ? 'member' : 'public';
-
-    console.log('💰 Pricing:', { price, priceType, isPaidTier, membershipDays });
-
-    // Get or create Stripe customer
-    let customerId = user.stripe_customer_id;
-    
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: user.email,
-        name: user.full_name,
-        metadata: { user_id: user.id }
-      });
-      customerId = customer.id;
-      await base44.auth.updateMe({ stripe_customer_id: customerId });
-      console.log('✅ Created customer:', customerId);
+    // Validate required fields
+    if (!userId || !userEmail || !priceType || !amount) {
+      return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Create a provisional case record to link payment
-    const provisionalCase = await base44.asServiceRole.entities.Case.create({
-      user_email: user.email,
+    // Create a provisional case record
+    const provisionalCase = await base44.entities.Case.create({
+      user_email: userEmail,
       status: 'awaiting_payment',
-      case_price: price,
-      pricing_type: priceType,
-      is_member_at_creation: isMemberPricing,
-      timeline: [{
-        timestamp: new Date().toISOString(),
-        event: 'Payment initiated',
-        actor: 'system'
-      }]
+      dispute_amount: 0,
+      type: 'deposit'
     });
 
-    console.log('📋 Created provisional case:', provisionalCase.id);
+    console.log('✅ Provisional case created:', provisionalCase.id);
 
-    // Create Stripe Checkout Session
+    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      client_reference_id: user.id,
       mode: 'payment',
-      payment_method_types: ['card', 'promptpay'],
-      line_items: [{
-        price_data: {
-          currency: 'thb',
-          unit_amount: price * 100,
-          product_data: {
-            name: 'Resolve Case Service',
-            description: `Professional dispute resolution - ${priceType} rate`,
+      customer_email: userEmail,
+      line_items: [
+        {
+          price_data: {
+            currency: 'thb',
+            product_data: {
+              name: `Resolve Case Service - ${priceType === 'member' ? 'Member Rate' : 'Public Rate'}`,
+              description: 'Professional case handling and legal support',
+            },
+            unit_amount: amount * 100, // Convert to smallest currency unit
           },
+          quantity: 1,
         },
-        quantity: 1,
-      }],
-      success_url: `https://app.leaseshield.asia/ResolveCase?session_id={CHECKOUT_SESSION_ID}&case_id=${provisionalCase.id}`,
-      cancel_url: 'https://app.leaseshield.asia/Dashboard',
+      ],
       metadata: {
         type: 'resolve_case',
-        user_id: user.id,
-        user_email: user.email,
-        case_id: provisionalCase.id,
-        price_type: priceType,
-        amount: price
-      }
+        userId: userId,
+        userEmail: userEmail,
+        priceType: priceType,
+        amount: amount,
+        caseId: provisionalCase.id
+      },
+      success_url: `${Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'}/ResolveCase?session_id={CHECKOUT_SESSION_ID}&caseId=${provisionalCase.id}`,
+      cancel_url: `${Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'}/Cases`,
     });
 
-    console.log('✅ Checkout session created:', session.id);
-    return Response.json({ url: session.url, caseId: provisionalCase.id });
+    console.log('✅ Stripe checkout session created:', session.id);
+
+    return Response.json({ 
+      url: session.url,
+      sessionId: session.id,
+      caseId: provisionalCase.id
+    });
 
   } catch (error) {
     console.error('❌ Error creating Resolve checkout:', error);
-    return Response.json({ 
-      error: error.message,
-      details: error.raw?.message || error.message
-    }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
