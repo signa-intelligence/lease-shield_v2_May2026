@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import {
   Scale, Plus, Crown, Calendar, Zap, FileText, Loader2,
-  CheckCircle2, Eye, Download, ChevronDown, ChevronUp, ArrowLeft, Clock, AlertCircle
+  CheckCircle2, Eye, Download, ChevronDown, ChevronUp, ArrowLeft, Clock, AlertCircle, Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { useFeatureAccess } from "@/components/shared/FeatureGate";
@@ -54,6 +54,7 @@ function CasesContent() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showResolveSuccessBanner, setShowResolveSuccessBanner] = useState(false);
   const [highlightCaseId, setHighlightCaseId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -74,7 +75,10 @@ function CasesContent() {
       console.log('🔍 [CASES_PAGE] Fetching cases for user:', user.email);
       
       // RLS will automatically filter by user_email matching current user
-      const result = await base44.entities.Case.list('-created_date');
+      // Exclude soft-deleted cases
+      const result = await base44.entities.Case.filter({ 
+        is_deleted: { $ne: true }
+      }, '-created_date');
       
       console.log('📊 [CASES_PAGE] Query returned:', result.length, 'cases');
       console.log('📊 [CASES_PAGE] All cases:', result.map(c => ({
@@ -191,8 +195,13 @@ function CasesContent() {
       preview: "ดูตัวอย่าง",
       download: "ดาวน์โหลด",
       delete: "ลบ",
+      deleteConfirmTitle: "ลบคดีนี้หรือไม่?",
+      deleteConfirmMessage: "คดีนี้จะถูกย้ายไปยังถังขยะและสามารถกู้คืนได้ในภายหลัง",
+      confirmDelete: "ลบ",
       back: "ย้อนกลับ",
       refreshed: "รีเฟรชสำเร็จ",
+      deleteSuccess: "ย้ายคดีไปยังถังขยะแล้ว",
+      deleteFailed: "ลบคดีไม่สำเร็จ",
       downloadSuccess: "เริ่มดาวน์โหลดแล้ว",
       downloadFailed: "ดาวน์โหลดไม่สำเร็จ",
       previewError: "ไม่พบไฟล์สำหรับจดหมายนี้",
@@ -228,8 +237,13 @@ function CasesContent() {
       preview: "预览",
       download: "下载",
       delete: "删除",
+      deleteConfirmTitle: "删除此案件？",
+      deleteConfirmMessage: "此案件将移至回收站，稍后可以恢复。",
+      confirmDelete: "删除",
       back: "返回",
       refreshed: "刷新成功",
+      deleteSuccess: "案件已移至回收站",
+      deleteFailed: "删除案件失败",
       downloadSuccess: "下载已开始",
       downloadFailed: "下载失败",
       previewError: "未找到此信件的文件",
@@ -265,8 +279,13 @@ function CasesContent() {
       preview: "プレビュー",
       download: "ダウンロード",
       delete: "削除",
+      deleteConfirmTitle: "このケースを削除しますか？",
+      deleteConfirmMessage: "このケースはゴミ箱に移動され、後で復元できます。",
+      confirmDelete: "削除",
       back: "戻る",
       refreshed: "更新成功",
+      deleteSuccess: "ケースをゴミ箱に移動しました",
+      deleteFailed: "ケースの削除に失敗しました",
       downloadSuccess: "ダウンロード開始",
       downloadFailed: "ダウンロード失敗",
       previewError: "このレターのファイルが見つかりません",
@@ -302,8 +321,13 @@ function CasesContent() {
       preview: "미리보기",
       download: "다운로드",
       delete: "삭제",
+      deleteConfirmTitle: "이 사례를 삭제하시겠습니까?",
+      deleteConfirmMessage: "이 사례는 휴지통으로 이동되며 나중에 복원할 수 있습니다.",
+      confirmDelete: "삭제",
       back: "뒤로",
       refreshed: "새로고침 성공",
+      deleteSuccess: "사례가 휴지통으로 이동되었습니다",
+      deleteFailed: "사례 삭제에 실패했습니다",
       downloadSuccess: "다운로드 시작됨",
       downloadFailed: "다운로드 실패",
       previewError: "이 레터의 파일을 찾을 수 없습니다",
@@ -339,8 +363,14 @@ function CasesContent() {
       preview: "Просмотр",
       download: "Скачать",
       delete: "Удалить",
+      deleteConfirmTitle: "Удалить это дело?",
+      deleteConfirmMessage: "Дело будет перемещено в корзину и может быть восстановлено позже.",
+      confirmDelete: "Удалить",
+      cancel: "Отмена",
       back: "Назад",
       refreshed: "Обновлено",
+      deleteSuccess: "Дело перемещено в корзину",
+      deleteFailed: "Не удалось удалить дело",
       downloadSuccess: "Скачивание началось",
       downloadFailed: "Ошибка скачивания",
       previewError: "Файл письма не найден",
@@ -379,8 +409,13 @@ function CasesContent() {
       preview: "Preview",
       download: "Download",
       delete: "Delete",
+      deleteConfirmTitle: "Delete this case?",
+      deleteConfirmMessage: "This case will be moved to your Recycle Bin and can be restored later.",
+      confirmDelete: "Delete",
       back: "Back",
       refreshed: "Refreshed successfully",
+      deleteSuccess: "Case moved to Recycle Bin",
+      deleteFailed: "Failed to delete case",
       downloadSuccess: "Download started",
       downloadFailed: "Download failed",
       previewError: "No file found for this letter",
@@ -391,7 +426,13 @@ function CasesContent() {
       tryDifferentSearch: "Try a different search or filter",
       needMoreHelp: "Need more help?",
       openResolveDesc: "Open a Resolve case for professional support at member or public rates.",
-      openResolveCase: "Open Resolve Case"
+      openResolveCase: "Open Resolve Case",
+      deleteConfirmTitle: "Delete this case?",
+      deleteConfirmMessage: "This case will be moved to your Recycle Bin and can be restored later.",
+      confirmDelete: "Delete",
+      cancel: "Cancel",
+      deleteSuccess: "Case moved to Recycle Bin",
+      deleteFailed: "Failed to delete case"
     }
   };
 
@@ -401,6 +442,45 @@ function CasesContent() {
     haptic.light();
     await queryClient.invalidateQueries({ queryKey: ['cases'] });
     toast.success(strings.refreshed);
+  };
+
+  const softDeleteMutation = useMutation({
+    mutationFn: async (caseItem) => {
+      // Create RecycleBin entry
+      await base44.entities.RecycleBin.create({
+        user_email: user.email,
+        item_type: 'case',
+        original_id: caseItem.id,
+        item_snapshot: caseItem,
+        item_label: caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`,
+        deleted_date: new Date().toISOString(),
+        size_bytes: JSON.stringify(caseItem).length
+      });
+
+      // Soft delete the original case
+      await base44.entities.Case.update(caseItem.id, {
+        is_deleted: true,
+        deleted_at: new Date().toISOString()
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cases'] });
+      queryClient.invalidateQueries({ queryKey: ['recycleBin'] });
+      toast.success(strings.deleteSuccess);
+      haptic.success();
+      setConfirmDelete(null);
+    },
+    onError: (error) => {
+      console.error('Delete failed:', error);
+      toast.error(strings.deleteFailed);
+      haptic.error();
+      setConfirmDelete(null);
+    }
+  });
+
+  const handleDeleteCase = (caseItem) => {
+    haptic.medium();
+    setConfirmDelete(caseItem);
   };
 
   // Visible statuses - cases to show to users
@@ -790,6 +870,7 @@ function CasesContent() {
                   <SwipeToDelete
                     key={caseItem.id}
                     deleteLabel={strings.delete}
+                    onDelete={() => handleDeleteCase(caseItem)}
                     colors={colors}
                   >
                     <Card
@@ -991,6 +1072,60 @@ function CasesContent() {
                   </SwipeToDelete>
                 );
               })}
+            </div>
+          )}
+
+          {/* Delete Confirmation Dialog */}
+          {confirmDelete && (
+            <div
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={() => setConfirmDelete(null)}
+            >
+              <div
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6 modal-enter"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+                    {strings.deleteConfirmTitle}
+                  </h3>
+                </div>
+                <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
+                  {strings.deleteConfirmMessage}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      haptic.light();
+                      setConfirmDelete(null);
+                    }}
+                    className="flex-1 px-4 py-2 rounded-lg font-medium"
+                    style={{
+                      backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                      color: colors.textPrimary
+                    }}
+                  >
+                    {strings.cancel || 'Cancel'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      haptic.heavy();
+                      softDeleteMutation.mutate(confirmDelete);
+                    }}
+                    disabled={softDeleteMutation.isPending}
+                    className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {softDeleteMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                    ) : (
+                      strings.confirmDelete
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

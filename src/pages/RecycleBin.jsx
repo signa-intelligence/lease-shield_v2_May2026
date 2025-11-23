@@ -97,10 +97,10 @@ function RecycleBinContent() {
       
       const entityName = entityMap[item.item_type];
       
-      // Update original record to undelete
+      // Update original record to undelete (only update soft-delete flags)
       await base44.entities[entityName].update(item.original_id, {
-        ...item.item_snapshot,
-        is_deleted: false
+        is_deleted: false,
+        deleted_at: null
       });
       
       // Remove from recycle bin

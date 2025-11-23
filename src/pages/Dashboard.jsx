@@ -70,19 +70,22 @@ function DashboardContent() {
         console.error('🔍 [DASHBOARD] No user email - cannot fetch cases');
         return [];
       }
-      
+
       console.log('🔍 [DASHBOARD] Fetching cases for user:', user.email);
-      
+
       // RLS will automatically filter by user_email matching current user
-      const result = await base44.entities.Case.list();
-      
+      // Exclude soft-deleted cases
+      const result = await base44.entities.Case.filter({ 
+        is_deleted: { $ne: true }
+      });
+
       console.log('📊 [DASHBOARD] Query returned:', result.length, 'cases');
       console.log('📊 [DASHBOARD] All cases:', result.map(c => ({
         id: c.id.slice(0, 8),
         status: c.status,
         dispute_amount: c.dispute_amount
       })));
-      
+
       return result;
     },
     enabled: !!user?.email,
