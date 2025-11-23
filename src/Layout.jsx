@@ -485,7 +485,7 @@ export default function Layout({ children, currentPageName }) {
             )}
             {isAdmin && (
               <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
-                {role === 'super_admin' ? 'SUPER ADMIN' : role === 'admin' ? 'ADMIN' : 'VA'}
+                {userRole === 'super_admin' || accessLevel === 'super_admin' ? 'SUPER ADMIN' : userRole === 'admin' || accessLevel === 'admin' ? 'ADMIN' : 'VA'}
               </span>
             )}
           </div>
