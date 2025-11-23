@@ -2035,7 +2035,7 @@ function AccountContent() {
                             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                           </svg>
-                          {language === 'th' ? 'สว่าง' : strings.lightMode}
+                          {language === 'th' ? 'สว่าง' : language === 'ru' ? 'Светлая' : strings.lightMode}
                         </button>
                         <button
                           onClick={() => handleThemeToggle('dark')}
@@ -2057,7 +2057,7 @@ function AccountContent() {
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                           </svg>
-                          {language === 'th' ? 'มืด' : strings.darkMode}
+                          {language === 'th' ? 'มืด' : language === 'ru' ? 'Тёмная' : strings.darkMode}
                         </button>
                       </div>
                     </div>
@@ -2074,7 +2074,7 @@ function AccountContent() {
                       id="full_name"
                       value={formData.full_name}
                       onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                      placeholder={language === 'th' ? 'ชื่อ-นามสกุลของคุณ' : 'Your full name'}
+                      placeholder={language === 'th' ? 'ชื่อ-นามสกุลของคุณ' : language === 'ru' ? 'Ваше полное имя' : 'Your full name'}
                       style={{
                         border: `2px solid ${colors.borderColor}`,
                         backgroundColor: colors.inputBg,
@@ -2448,8 +2448,8 @@ function AccountContent() {
                         <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
                           <Bell className="w-3 h-3 text-ls-gold" />
                           {user?.line_messaging_token 
-                            ? (language === 'th' ? 'การแจ้งเตือน LINE เปิดใช้งาน' : language === 'zh' ? 'LINE提醒已启用' : language === 'ja' ? 'LINEリマインダーが有効' : language === 'ko' ? 'LINE 알림 활성화됨' : 'LINE reminders enabled')
-                            : (language === 'th' ? 'การแจ้งเตือน LINE พร้อมใช้งาน' : language === 'zh' ? 'LINE提醒可用' : language === 'ja' ? 'LINEリマインダー利用可能' : language === 'ko' ? 'LINE 알림 사용 가능' : 'LINE reminders available')
+                            ? (language === 'th' ? 'การแจ้งเตือน LINE เปิดใช้งาน' : language === 'zh' ? 'LINE提醒已启用' : language === 'ja' ? 'LINEリマインダーが有効' : language === 'ko' ? 'LINE 알림 활성화됨' : language === 'ru' ? 'Напоминания LINE включены' : 'LINE reminders enabled')
+                            : (language === 'th' ? 'การแจ้งเตือน LINE พร้อมใช้งาน' : language === 'zh' ? 'LINE提醒可用' : language === 'ja' ? 'LINEリマインダー利用可能' : language === 'ko' ? 'LINE 알림 사용 가능' : language === 'ru' ? 'Напоминания LINE доступны' : 'LINE reminders available')
                           }
                         </p>
                       </div>
@@ -2486,7 +2486,7 @@ function AccountContent() {
                       onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                     >
                       <Settings className="w-4 h-4" />
-                      {language === 'th' ? 'จัดการแผน' : 'Manage Plan'}
+                      {language === 'th' ? 'จัดการแผน' : language === 'ru' ? 'Управление планом' : 'Manage Plan'}
                     </button>
                   </div>
                 )}
@@ -2512,7 +2512,7 @@ function AccountContent() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <Bell className="w-5 h-5 text-ls-forest" />
-                  {language === 'th' ? 'การตั้งค่าการแจ้งเตือน' : 'Notification Preferences'}
+                  {language === 'th' ? 'การตั้งค่าการแจ้งเตือน' : language === 'ru' ? 'Настройки уведомлений' : 'Notification Preferences'}
                 </CardTitle>
                 {expandedNotifPrefs ? <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} /> : <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />}
               </div>
@@ -2542,7 +2542,7 @@ function AccountContent() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <BarChart3 className="w-5 h-5 text-ls-gold" />
-                  {language === 'th' ? 'สถิติการแจ้งเตือน' : 'Notification Insights'}
+                  {language === 'th' ? 'สถิติการแจ้งเตือน' : language === 'ru' ? 'Статистика уведомлений' : 'Notification Insights'}
                 </CardTitle>
                 {expandedNotifAnalytics ? <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} /> : <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />}
               </div>
@@ -2675,7 +2675,7 @@ function AccountContent() {
                   id="landlord_name"
                   value={landlordData.landlord_name}
                   onChange={(e) => setLandlordData({...landlordData, landlord_name: e.target.value})}
-                  placeholder={language === 'th' ? 'ชื่อเจ้าของบ้าน' : 'Landlord name'}
+                  placeholder={language === 'th' ? 'ชื่อเจ้าของบ้าน' : language === 'ru' ? 'Имя арендодателя' : 'Landlord name'}
                   className="mt-2"
                   style={{
                     backgroundColor: colors.inputBg,
@@ -2736,7 +2736,7 @@ function AccountContent() {
                   id="landlord_address"
                   value={landlordData.landlord_address}
                   onChange={(e) => setLandlordData({...landlordData, landlord_address: e.target.value})}
-                  placeholder={language === 'th' ? 'ที่อยู่เจ้าของบ้าน' : 'Landlord address'}
+                  placeholder={language === 'th' ? 'ที่อยู่เจ้าของบ้าน' : language === 'ru' ? 'Адрес арендодателя' : 'Landlord address'}
                   className="mt-2"
                   rows={2}
                   style={{
@@ -2786,7 +2786,7 @@ function AccountContent() {
                 {updateProfileMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
+                    {language === 'th' ? 'กำลังบันทึก...' : language === 'ru' ? 'Сохранение...' : 'Saving...'}
                   </>
                 ) : (
                   <>
@@ -3013,7 +3013,7 @@ function AccountContent() {
                 {updateProfileMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
+                    {language === 'th' ? 'กำลังบันทึก...' : language === 'ru' ? 'Сохранение...' : 'Saving...'}
                   </>
                 ) : (
                   <>
