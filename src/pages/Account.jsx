@@ -38,8 +38,10 @@ const PLAN_DETAILS = [
     intervalAnnual: '',
     tagline: 'Try Before You Commit',
     taglineTh: 'ทดลองก่อนตัดสินใจ',
+    taglineRu: 'Попробуйте перед тем, как принять решение',
     description: 'Experience our automated lease analysis',
     descriptionTh: 'สัมผัสการวิเคราะห์สัญญาเช่าอัตโนมัติ',
+    descriptionRu: 'Оцените наш автоматический анализ договора аренды',
     benefits: [
       '1 Lease Scan (lifetime)',
       'Basic Risk Score Preview',
@@ -53,6 +55,13 @@ const PLAN_DETAILS = [
       '3 ไฟล์ (พื้นที่ 100MB)',
       'ติดตามเงินมัดจำแบบอ่านอย่างเดียว',
       'ติดตามการซ่อมบำรุงเบื้องต้น'
+    ],
+    benefitsRu: [
+      '1 сканирование договора (навсегда)',
+      'Базовый просмотр рисков',
+      '3 файла (100MB хранилище)',
+      'Отслеживание депозита (только чтение)',
+      'Базовое отслеживание обслуживания'
     ],
     bgColor: '#64748b',
     icon: Gift
@@ -69,8 +78,10 @@ const PLAN_DETAILS = [
     intervalAnnual: '/year',
     tagline: 'Essential Protection',
     taglineTh: 'การป้องกันที่จำเป็น',
+    taglineRu: 'Базовая защита',
     description: 'Core prevention tools for individuals',
     descriptionTh: 'เครื่องมือป้องกันหลักสำหรับบุคคล',
+    descriptionRu: 'Основные инструменты профилактики для частных арендаторов',
     benefits: [
       'Everything in Free',
       '6 Lease Scans per annum',
@@ -91,6 +102,16 @@ const PLAN_DETAILS = [
       'ติดตามการซ่อมบำรุง',
       'ติดตามเงินมัดจำ'
     ],
+    benefitsRu: [
+      'Все из тарифа Free',
+      '6 сканирований договора в год',
+      '5 выявленных рисков',
+      'Уведомления по электронной почте',
+      '3 кредита на письма',
+      '1 ГБ хранилища документов',
+      'Отслеживание обслуживания',
+      'Отслеживание депозита'
+    ],
     bgColor: '#0C3B2E',
     icon: Zap
   },
@@ -106,8 +127,10 @@ const PLAN_DETAILS = [
     intervalAnnual: '/year',
     tagline: 'Complete Prevention Suite',
     taglineTh: 'ชุดป้องกันครบครัน',
+    taglineRu: 'Полный комплекс профилактической защиты',
     description: 'Everything you need for full protection',
     descriptionTh: 'ทุกสิ่งที่คุณต้องการสำหรับการป้องกันแบบเต็มรูปแบบ',
+    descriptionRu: 'Все, что нужно для полной защиты',
     benefits: [
       'Everything in Lite',
       '12 Lease Scans per annum',
@@ -130,6 +153,17 @@ const PLAN_DETAILS = [
       'การแจ้งเตือนอัตโนมัติ',
       'ระบบอัตโนมัติป้องกันเงินมัดจำ'
     ],
+    benefitsRu: [
+      'Все из тарифа Lite',
+      '12 сканирований договора в год',
+      'Полные отчёты о рисках',
+      'Уведомления в LINE',
+      '5 кредитов на письма',
+      '5 ГБ хранилища документов',
+      'Напоминания об оплате аренды',
+      'Автоматические напоминания',
+      'Автоматизация защиты депозита'
+    ],
     bgColor: '#C7A338',
     icon: Shield,
     popular: true
@@ -146,8 +180,10 @@ const PLAN_DETAILS = [
     intervalAnnual: '/year',
     tagline: 'Premium Protection',
     taglineTh: 'การป้องกันระดับพรีเมียม',
+    taglineRu: 'Премиальная защита',
     description: 'Maximum prevention with priority support',
     descriptionTh: 'การป้องกันสูงสุดพร้อมการสนับสนุนลำดับความสำคัญ',
+    descriptionRu: 'Максимальная профилактика с приоритетной поддержкой',
     benefits: [
       'Everything in Protect',
       'Unlimited Lease Scans',
@@ -169,6 +205,17 @@ const PLAN_DETAILS = [
       'คิวคดีลำดับความสำคัญ',
       'สแกนลำดับความสำคัญ',
       'การสนับสนุนพรีเมียม'
+    ],
+    benefitsRu: [
+      'Все из тарифа Protect',
+      'Неограниченное количество сканирований договора',
+      'Расширенные напоминания',
+      '10 кредитов на письма',
+      '20 ГБ хранилища документов',
+      'Отслеживание депозита',
+      'Приоритетная очередь по делам',
+      'Приоритетное сканирование',
+      'Премиальная поддержка'
     ],
     bgColor: '#1A1D1F',
     icon: Crown
@@ -3452,7 +3499,7 @@ function AccountContent() {
                       }}>
                         <p className="font-semibold text-red-900 mb-2 text-sm">{strings.whatYoullLose}:</p>
                         <ul className="space-y-1 text-xs sm:text-sm text-red-800">
-                          {(language === 'th' ? currentPlan.benefitsTh : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน')).slice(0, 4).map((benefit, idx) => (
+                          {(language === 'th' ? currentPlan.benefitsTh : language === 'ru' ? currentPlan.benefitsRu : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน') && !b.startsWith('Все из')).slice(0, 4).map((benefit, idx) => (
                             <li key={idx} className="flex items-start gap-2">
                               <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
                               <span>{benefit}</span>
@@ -3641,7 +3688,7 @@ function AccountContent() {
                   }}>
                     <p className="font-semibold text-red-900 mb-2 text-sm">{strings.whatYoullLose}:</p>
                     <ul className="space-y-1 text-xs sm:text-sm text-red-800">
-                      {(language === 'th' ? currentPlan.benefitsTh : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน')).map((benefit, idx) => (
+                      {(language === 'th' ? currentPlan.benefitsTh : language === 'ru' ? currentPlan.benefitsRu : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน') && !b.startsWith('Все из')).map((benefit, idx) => (
                         <li key={idx} className="flex items-start gap-2">
                           <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
                           <span>{benefit}</span>
@@ -3990,10 +4037,10 @@ function AccountContent() {
                         </h3>
                       </div>
                       <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                        {language === 'th' ? plan.taglineTh : plan.tagline}
+                        {language === 'th' ? plan.taglineTh : language === 'ru' ? plan.taglineRu : plan.tagline}
                       </p>
                       <p className="text-xs line-clamp-2" style={{ color: colors.textSecondary }}>
-                        {language === 'th' ? plan.descriptionTh : plan.description}
+                        {language === 'th' ? plan.descriptionTh : language === 'ru' ? plan.descriptionRu : plan.description}
                       </p>
                     </div>
 
@@ -4028,8 +4075,8 @@ function AccountContent() {
 
                     <div style={{ flex: 1, marginBottom: '12px' }}>
                       <ul className="space-y-2">
-                        {(language === 'th' ? plan.benefitsTh : plan.benefits).map((benefit, idx) => {
-                          const isBold = benefit.startsWith('Everything in') || benefit.startsWith('ทุกอย่างใน');
+                        {(language === 'th' ? plan.benefitsTh : language === 'ru' ? plan.benefitsRu : plan.benefits).map((benefit, idx) => {
+                          const isBold = benefit.startsWith('Everything in') || benefit.startsWith('ทุกอย่างใน') || benefit.startsWith('Все из');
                           return (
                             <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
                               <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: (isSecureTierLocal || isLiteTierLocal) ? '#0C3B2E' : '#0C3B2E' }} />
