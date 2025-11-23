@@ -1272,16 +1272,16 @@ function DashboardContent() {
 
   if (!isLoading && !hasAnyData && !showOnboarding && !shouldShowOnboardingChecklist) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="max-w-xl mx-auto p-6">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4" style={{ backgroundColor: '#0C3B2E' }}>
               <Shield className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-3xl font-bold mb-3" style={{ color: colors.textPrimary }}>
+            <h1 className="text-3xl font-bold mb-3 text-gray-900 dark:text-gray-50">
               Welcome to LeaseShield
             </h1>
-            <p className="text-base mb-6" style={{ color: colors.textSecondary }}>
+            <p className="text-base mb-6 text-gray-600 dark:text-gray-400">
               Start by uploading your first lease and tracking the deposit so we can protect you from day one.
             </p>
           </div>
@@ -1350,8 +1350,8 @@ function DashboardContent() {
                 e.target.style.color = '#F59E0B';
               }}
               onMouseLeave={(e) => {
-                e.target.style.borderColor = colors.borderColor;
-                e.target.style.color = colors.textPrimary;
+                e.target.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)';
+                e.target.style.color = isDarkMode ? '#F9FAFB' : '#0F172A';
               }}
             >
               <Wrench className="w-4 h-4" />
@@ -1364,9 +1364,9 @@ function DashboardContent() {
                 width: '100%',
                 padding: '12px 18px',
                 backgroundColor: 'transparent',
-                color: colors.textPrimary,
+                color: isDarkMode ? '#F9FAFB' : '#0F172A',
                 borderRadius: '10px',
-                border: `2px solid ${colors.borderColor}`,
+                border: isDarkMode ? '2px solid rgba(255,255,255,0.1)' : '2px solid rgba(12,59,46,0.08)',
                 fontWeight: '500',
                 fontSize: '14px',
                 cursor: 'pointer',
@@ -1385,8 +1385,8 @@ function DashboardContent() {
                 e.target.style.color = '#8B5CF6';
               }}
               onMouseLeave={(e) => {
-                e.target.style.borderColor = colors.borderColor;
-                e.target.style.color = colors.textPrimary;
+                e.target.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)';
+                e.target.style.color = isDarkMode ? '#F9FAFB' : '#0F172A';
               }}
             >
               <Bell className="w-4 h-4" />
@@ -1400,7 +1400,7 @@ function DashboardContent() {
                   width: '100%',
                   padding: '10px 16px',
                   backgroundColor: 'transparent',
-                  color: colors.textSecondary,
+                  color: isDarkMode ? '#D1D5DB' : '#475569',
                   borderRadius: '8px',
                   border: 'none',
                   fontWeight: '500',
@@ -1410,11 +1410,11 @@ function DashboardContent() {
                   textAlign: 'center'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.color = colors.textPrimary;
+                  e.target.style.color = isDarkMode ? '#F9FAFB' : '#0F172A';
                   e.target.style.textDecoration = 'underline';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.color = colors.textSecondary;
+                  e.target.style.color = isDarkMode ? '#D1D5DB' : '#475569';
                   e.target.style.textDecoration = 'none';
                 }}
               >
@@ -1429,7 +1429,7 @@ function DashboardContent() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
-      <div className="min-h-screen page-transition" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen page-transition bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
           <FloatingActionButton
             icon={Shield}
@@ -1515,9 +1515,9 @@ function DashboardContent() {
                     className="btn-interaction"
                     style={{
                       padding: '8px 16px',
-                      backgroundColor: colors.fieldBg,
-                      color: colors.textPrimary,
-                      border: `2px solid ${colors.borderColor}`,
+                      backgroundColor: isDarkMode ? '#374151' : '#F8FAFC',
+                      color: isDarkMode ? '#F9FAFB' : '#0F172A',
+                      border: isDarkMode ? '2px solid rgba(255,255,255,0.1)' : '2px solid rgba(12,59,46,0.08)',
                       borderRadius: '12px',
                       fontSize: '14px',
                       fontWeight: '700',
@@ -1535,9 +1535,9 @@ function DashboardContent() {
                       e.target.style.boxShadow = '0 4px 12px rgba(12,59,46,0.3)';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = colors.fieldBg;
-                      e.target.style.borderColor = colors.borderColor;
-                      e.target.style.color = colors.textPrimary;
+                      e.target.style.backgroundColor = isDarkMode ? '#374151' : '#F8FAFC';
+                      e.target.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)';
+                      e.target.style.color = isDarkMode ? '#F9FAFB' : '#0F172A';
                       e.target.style.boxShadow = isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.08)';
                     }}
                   >
@@ -1969,11 +1969,11 @@ function DashboardContent() {
               }}
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <h3 className="text-base sm:text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
-                    {strings.unlockFullProtection}
-                  </h3>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+              <div className="flex-1">
+                <h3 className="text-base sm:text-lg font-bold mb-1 text-gray-900 dark:text-gray-50">
+                  {strings.unlockFullProtection}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                     {strings.upgradeToLiteProtectSecure}
                   </p>
                 </div>
@@ -2026,10 +2026,10 @@ function DashboardContent() {
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
+                  <h3 className="text-lg font-bold mb-1 text-gray-900 dark:text-gray-50">
                     {strings.upgradeToProtectForEnhancedTools}
                   </h3>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {strings.getMoreScansLineAlerts}
                   </p>
                 </div>
@@ -2287,12 +2287,10 @@ function DashboardContent() {
               <>
                 {/* Recent Leases Section */}
                 <Card 
-                  className="border-none shadow-xl overflow-hidden"
-                  style={{ backgroundColor: colors.cardBg }}
+                  className="border-none shadow-xl overflow-hidden bg-white dark:bg-gray-800"
                 >
                   <div 
-                    className="cursor-pointer p-4 flex items-center justify-between border-b"
-                    style={{ borderBottomColor: colors.borderColor }}
+                    className="cursor-pointer p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700"
                     onClick={() => toggleSection('recentLeases')}
                   >
                     <div className="flex items-center gap-3">
@@ -2308,18 +2306,18 @@ function DashboardContent() {
                         <FileText className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                        <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
                           {language === 'th' ? 'สัญญาเช่าล่าสุด' : language === 'zh' ? '最近的租约' : language === 'ja' ? '最近の賃貸契約' : language === 'ko' ? '최근 임대 계약' : language === 'ru' ? 'Последние договоры' : 'Recent Leases'}
                         </h3>
-                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
                           {leases.length} {language === 'th' ? 'รายการ' : language === 'zh' ? '项' : language === 'ja' ? '件' : language === 'ko' ? '항목' : language === 'ru' ? 'элементов' : 'items'}
                         </p>
                       </div>
                     </div>
                     {expandedSections.recentLeases ? (
-                      <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     ) : (
-                      <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     )}
                   </div>
                   {expandedSections.recentLeases && (
@@ -2331,12 +2329,10 @@ function DashboardContent() {
 
                 {/* Notifications Section */}
                 <Card 
-                  className="border-none shadow-xl overflow-hidden"
-                  style={{ backgroundColor: colors.cardBg }}
+                  className="border-none shadow-xl overflow-hidden bg-white dark:bg-gray-800"
                 >
                   <div 
-                    className="cursor-pointer p-4 flex items-center justify-between border-b"
-                    style={{ borderBottomColor: colors.borderColor }}
+                    className="cursor-pointer p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700"
                     onClick={() => toggleSection('notifications')}
                   >
                     <div className="flex items-center gap-3">
@@ -2352,18 +2348,18 @@ function DashboardContent() {
                         <Bell className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                        <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
                           {language === 'th' ? 'การแจ้งเตือนของฉัน' : language === 'zh' ? '我的通知' : language === 'ja' ? 'マイ通知' : language === 'ko' ? '내 알림' : language === 'ru' ? 'Мои уведомления' : 'My Notifications'}
                         </h3>
-                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
                           {unreadNotifications} {language === 'th' ? 'การแจ้งเตือน' : language === 'zh' ? '通知' : language === 'ja' ? '通知' : language === 'ko' ? '알림' : language === 'ru' ? 'уведомлений' : 'notifications'}
                         </p>
                       </div>
                     </div>
                     {expandedSections.notifications ? (
-                      <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     ) : (
-                      <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     )}
                   </div>
                   {expandedSections.notifications && (
@@ -2375,12 +2371,10 @@ function DashboardContent() {
 
                 {/* Deposit Alerts Section */}
                 <Card 
-                  className="border-none shadow-xl overflow-hidden"
-                  style={{ backgroundColor: colors.cardBg }}
+                  className="border-none shadow-xl overflow-hidden bg-white dark:bg-gray-800"
                 >
                   <div 
-                    className="cursor-pointer p-4 flex items-center justify-between border-b"
-                    style={{ borderBottomColor: colors.borderColor }}
+                    className="cursor-pointer p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700"
                     onClick={() => toggleSection('depositAlerts')}
                   >
                     <div className="flex items-center gap-3">
@@ -2396,10 +2390,10 @@ function DashboardContent() {
                         <Wallet className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                        <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
                           {language === 'th' ? 'การแจ้งเตือนเงินมัดจำ' : language === 'zh' ? '押金提醒' : language === 'ja' ? '敷金アラート' : language === 'ko' ? '보증금 알림' : language === 'ru' ? 'Уведомления о депозитах' : 'Deposit Alerts'}
                         </h3>
-                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
                           {urgentDeposits > 0 
                             ? `${urgentDeposits} ${language === 'th' ? 'การแจ้งเตือน' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'ru' ? 'уведомлений' : 'alerts'}`
                             : (language === 'th' ? 'ทุกอย่างเรียบร้อย' : language === 'zh' ? '一切正常' : language === 'ja' ? 'すべて正常' : language === 'ko' ? '모두 정상' : language === 'ru' ? 'Все депозиты в порядке' : 'All deposits on track')
@@ -2408,9 +2402,9 @@ function DashboardContent() {
                       </div>
                     </div>
                     {expandedSections.depositAlerts ? (
-                      <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     ) : (
-                      <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     )}
                   </div>
                   {expandedSections.depositAlerts && (
