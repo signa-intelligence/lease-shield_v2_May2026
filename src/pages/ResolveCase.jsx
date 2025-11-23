@@ -9,13 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, AlertCircle, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown } from "lucide-react";
+import { Shield, AlertCircle, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown, Scale } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility, getUserPricing } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility, getResolvePricingForUser } from "../components/shared/resolvePricing";
+import { ToastProvider, useToast } from "../components/shared/Toast";
 
-export default function ResolveCase() {
+function ResolveCaseContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
   
   const [formData, setFormData] = useState({
     type: 'deposit',
@@ -30,6 +32,8 @@ export default function ResolveCase() {
   const [uploading, setUploading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [autoFilledFromDeposit, setAutoFilledFromDeposit] = useState(false);
+  const [currentCase, setCurrentCase] = useState(null);
+  const [loadingCase, setLoadingCase] = useState(true);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -160,15 +164,15 @@ export default function ResolveCase() {
     }
   }, [deposits, user, language]);
 
-  const createCaseMutation = useMutation({
-    mutationFn: async (caseData) => {
-      const newCase = await base44.entities.Case.create(caseData);
-      return newCase;
+  const updateCaseMutation = useMutation({
+    mutationFn: async ({ caseId, caseData }) => {
+      return await base44.entities.Case.update(caseId, caseData);
     },
-    onSuccess: (newCase) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['cases'] });
-      navigate(createPageUrl('CaseDetails') + `?caseId=${newCase.id}`);
-    },
+      toast.success(language === 'th' ? 'ส่งคดีสำเร็จ!' : language === 'ru' ? 'Дело успешно отправлено!' : 'Case submitted successfully!');
+      navigate(createPageUrl("CaseDetails") + `?caseId=${data.id}`);
+    }
   });
 
   const handleFileUpload = async (files) => {
@@ -210,7 +214,12 @@ export default function ResolveCase() {
     e.preventDefault();
     
     if (!formData.type || !formData.dispute_amount || !formData.summary) {
-      alert(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : language === 'ru' ? 'Пожалуйста, заполните все обязательные поля' : 'Please fill in all required fields');
+      toast.error(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : language === 'ru' ? 'Пожалуйста, заполните все обязательные поля' : 'Please fill in all required fields');
+      return;
+    }
+
+    if (!currentCase) {
+      toast.error(language === 'th' ? 'ไม่พบคดีที่ชำระเงินแล้ว' : language === 'ru' ? 'Платное дело не найдено' : 'No paid case found');
       return;
     }
 
@@ -218,29 +227,28 @@ export default function ResolveCase() {
     
     try {
       const caseData = {
-        user_email: user.email,
         type: formData.type,
-        status: 'intake',
         dispute_amount: parseFloat(formData.dispute_amount),
         summary: formData.summary,
         landlord_name: formData.landlord_name || user?.landlord_name || '',
         landlord_email: formData.landlord_email || user?.landlord_email || '',
+        property_address: formData.property_address || '',
         evidence: formData.evidence_files,
-        is_member_at_creation: hasMemberPricing(user),
-        case_price: getUserPricing(user),
+        status: 'pending_review',
         timeline: [
+          ...(currentCase.timeline || []),
           {
             timestamp: new Date().toISOString(),
-            event: 'Case created',
+            event: 'Case details submitted',
             actor: user.email
           }
         ]
       };
 
-      await createCaseMutation.mutateAsync(caseData);
+      updateCaseMutation.mutate({ caseId: currentCase.id, caseData });
     } catch (error) {
-      console.error('Failed to create case:', error);
-      alert(language === 'th' ? 'ไม่สามารถสร้างคดีได้' : language === 'ru' ? 'Не удалось создать дело' : 'Failed to create case');
+      console.error('Failed to submit case:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถส่งคดีได้' : language === 'ru' ? 'Не удалось отправить дело' : 'Failed to submit case');
       setCreating(false);
     }
   };
@@ -923,5 +931,13 @@ export default function ResolveCase() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ResolveCase() {
+  return (
+    <ToastProvider>
+      <ResolveCaseContent />
+    </ToastProvider>
   );
 }
