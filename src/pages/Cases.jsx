@@ -87,11 +87,8 @@ function CasesContent() {
     const resolveCancelled = urlParams.get('resolve_cancelled');
     const caseId = urlParams.get('caseId');
 
-    if (resolveSuccess === 'true' && user) {
-      console.log('[CASES_PAGE] ✅ Resolve payment success detected for case:', caseId);
-      
-      // Refetch cases to show the updated case
-      refetchCases();
+    if (resolveSuccess === 'true' && caseId && user) {
+      console.log('[CASES_PAGE] ✅ Resolve payment success - redirecting to case:', caseId);
       
       toast.success(
         language === 'th' ? '✅ ส่งคดีสำเร็จ! ทีมของเราจะตรวจสอบเอกสารและติดต่อกลับ' :
@@ -99,8 +96,8 @@ function CasesContent() {
         '✅ Case submitted! Our team will review your documents and follow up'
       );
       
-      // Clean URL
-      window.history.replaceState({}, '', location.pathname);
+      // Redirect to case details
+      navigate(createPageUrl("CaseDetails") + `?caseId=${caseId}`, { replace: true });
     }
 
     if (resolveCancelled === 'true' && user) {
@@ -115,7 +112,7 @@ function CasesContent() {
       // Clean URL
       window.history.replaceState({}, '', location.pathname);
     }
-  }, [location.search, user, refetchCases, language, toast]);
+  }, [location.search, user, navigate, language, toast]);
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
