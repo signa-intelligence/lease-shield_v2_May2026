@@ -52,8 +52,13 @@ Deno.serve(async (req) => {
         amount: amount.toString(),
         caseId: caseId
       },
-      success_url: `${Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'}/cases?resolve_success=true&caseId=${caseId}`,
-      cancel_url: `${Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'}/cases?resolve_cancelled=true&caseId=${caseId}`,
+      success_url: `${
+  Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'
+}/ResolveCase?paid=true&caseId=${caseId}`,
+
+cancel_url: `${
+  Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'
+}/ResolveCase?cancelled=true&caseId=${caseId}`,
     });
 
     console.log('[CREATE_CHECKOUT] ✅ Stripe session created:', session.id);
