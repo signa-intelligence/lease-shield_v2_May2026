@@ -43,6 +43,7 @@ const DOC_TYPE_CONFIG = {
     label_zh: '租约',
     label_ja: '賃貸契約',
     label_ko: '임대 계약',
+    label_ru: 'Договор аренды',
     icon: FileText,
     color: 'bg-blue-100 text-blue-800',
     bgColor: '#3B82F6'
@@ -53,6 +54,7 @@ const DOC_TYPE_CONFIG = {
     label_zh: '收据',
     label_ja: '領収書',
     label_ko: '영수증',
+    label_ru: 'Квитанция',
     icon: FileText,
     color: 'bg-emerald-100 text-emerald-800',
     bgColor: '#10B981'
@@ -63,6 +65,7 @@ const DOC_TYPE_CONFIG = {
     label_zh: '照片',
     label_ja: '写真',
     label_ko: '사진',
+    label_ru: 'Фото',
     icon: Camera,
     color: 'bg-purple-100 text-purple-800',
     bgColor: '#A855F7'
@@ -73,6 +76,7 @@ const DOC_TYPE_CONFIG = {
     label_zh: '视频',
     label_ja: '動画',
     label_ko: '비디오',
+    label_ru: 'Видео',
     icon: FileVideo,
     color: 'bg-amber-100 text-amber-800',
     bgColor: '#F59E0B'
@@ -83,6 +87,7 @@ const DOC_TYPE_CONFIG = {
     label_zh: '信件',
     label_ja: 'レター',
     label_ko: '편지',
+    label_ru: 'Письмо',
     icon: Mail,
     color: 'bg-indigo-100 text-indigo-800',
     bgColor: '#6366F1'
@@ -93,6 +98,7 @@ const DOC_TYPE_CONFIG = {
     label_zh: '其他',
     label_ja: 'その他',
     label_ko: '기타',
+    label_ru: 'Прочее',
     icon: HelpCircle,
     color: 'bg-slate-100 text-slate-800',
     bgColor: '#64748B'
@@ -624,6 +630,7 @@ function EvidenceVaultContent() {
       language === 'ja' ? config.label_ja :
       language === 'ko' ? config.label_ko :
       language === 'th' ? config.label_th :
+      language === 'ru' ? config.label_ru :
       config.label_en
     );
 
@@ -1171,6 +1178,89 @@ function EvidenceVaultContent() {
       fileTooLarge: "파일이 너무 큼",
       voiceMaxSize: "음성 메모는 5MB 미만이어야 합니다",
       videoMaxSize: "동영상은 80MB 미만이어야 합니다"
+    },
+    ru: {
+      back: "Назад к панели",
+      title: "Хранилище доказательств",
+      subtitle: "Безопасное хранение всей арендной документации",
+      uploadFiles: "Загрузить файлы",
+      uploadDocument: "Загрузить документ",
+      uploadEvidence: "Загрузить доказательства",
+      documentType: "Тип документа",
+      customLabel: "Произвольная метка",
+      customLabelPlaceholder: "напр., Фото при въезде",
+      selectFiles: "Перетащите файлы сюда или нажмите для выбора",
+      supportedFormats: "PDF, Изображения (JPG, PNG), Видео (MP4, MOV, AVI)",
+      selectedFiles: "Выбранные файлы",
+      uploadButton: "Загрузить",
+      uploading: "Загрузка...",
+      recentUploads: "Недавние загрузки",
+      viewTemplates: "Посмотреть шаблоны",
+      viewTemplatesDesc: "Профессиональные шаблоны писем для типичных арендных ситуаций.",
+      noDocuments: "Документов пока нет",
+      noDocumentsDesc: "Начните создавать хранилище доказательств для лучшей защиты. Все загруженные документы безопасно хранятся здесь.",
+      uploadFirst: "Загрузить первый документ",
+      deleteConfirm: "Вы уверены?",
+      confirmDelete: "Вы уверены, что хотите удалить этот файл?",
+      confirmBulkDelete: "Вы уверены, что хотите удалить файлов: {count}?",
+      view: "Посмотреть",
+      download: "Скачать",
+      sendEmail: "Отправить по почте",
+      delete: "Удалить",
+      selectAll: "Выбрать все",
+      deleteSelected: "Удалить выбранные",
+      deleting: "Удаление...",
+      selected: "выбрано",
+      storageUsed: "Хранилище: ~{used}МБ / {limit}МБ",
+      filesUsed: "{count} / {limit} файлов",
+      editDocument: "Редактировать документ",
+      save: "Сохранить",
+      cancel: "Отмена",
+      saving: "Сохранение...",
+      loadingDocuments: "Загрузка документов...",
+      exportZip: "Экспорт в ZIP",
+      exportReport: "Экспортировать полный отчёт",
+      exporting: "Экспорт...",
+      bulkActions: "Массовые действия",
+      annotate: "Аннотировать",
+      selectFile: "Пожалуйста, выберите файлы для загрузки.",
+      uploadFailed: "Загрузка не удалась. Попробуйте снова.",
+      error: "Ошибка",
+      fileSelected: "файл выбран",
+      filesSelected: "файлов выбрано",
+      preparing: "Подготовка загрузки...",
+      compressing: "Сжатие изображений...",
+      uploadingFiles: "Загрузка файлов...",
+      savingDocuments: "Сохранение документов...",
+      uploadTypeLabel: "Тип документа",
+      customLabelLabel: "Произвольная метка (необязательно)",
+      refreshed: "Обновлено успешно",
+      deleteSuccess: "Документ удалён",
+      uploadSuccess: "Загрузка успешна",
+      annotationSaved: "Аннотация сохранена",
+      annotationFailed: "Не удалось сохранить аннотацию",
+      exportSuccess: "Экспорт начат",
+      exportFailed: "Экспорт не удался",
+      editSuccess: "Документ успешно обновлён",
+      editFailed: "Не удалось обновить документ",
+      deleteFailed: "Не удалось удалить документ",
+      pleaseSelectDocuments: "Пожалуйста, выберите документы",
+      downloadFailed: "Не удалось скачать файл",
+      noEvidenceTitle: "Доказательства еще не загружены",
+      noEvidenceDescription: "Загрузите фотографии, видео и документы сейчас, чтобы иметь запись с отметками времени в случае спора позже.",
+      upgradeVaultStorage: "Обновите для полного хранилища",
+      addVoiceNote: "Добавить голосовую заметку",
+      addVideo: "Добавить видео (требуется Secure)",
+      voiceNotesAdded: "голосовых заметок",
+      videosAdded: "видео",
+      upgradeToSecureVideo: "Обновитесь до Secure для видеодоказательств",
+      upgradeToSecureVideoDesc: "Участники тарифа Secure могут загружать видео для усиления своих дел.",
+      upgradeToSecure: "Обновить до Secure",
+      maxVoiceReached: "Максимум 3 голосовые заметки",
+      maxVideoReached: "Максимум 3 видео",
+      fileTooLarge: "Файл слишком большой",
+      voiceMaxSize: "Голосовые заметки должны быть менее 5 МБ",
+      videoMaxSize: "Видео должны быть менее 80 МБ"
     }
   }[language] || {
     back: "Back to Dashboard",
@@ -1280,7 +1370,7 @@ function EvidenceVaultContent() {
                   <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
                     {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
                       <SelectItem key={key} value={key}>
-                        {language === 'zh' ? config.label_zh : language === 'ja' ? config.label_ja : language === 'ko' ? config.label_ko : language === 'th' ? config.label_th : config.label_en}
+                        {language === 'zh' ? config.label_zh : language === 'ja' ? config.label_ja : language === 'ko' ? config.label_ko : language === 'th' ? config.label_th : language === 'ru' ? config.label_ru : config.label_en}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1336,6 +1426,7 @@ function EvidenceVaultContent() {
                   language === 'ja' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_ja :
                   language === 'ko' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_ko :
                   language === 'th' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_th :
+                  language === 'ru' ? DOC_TYPE_CONFIG[viewingDoc?.type]?.label_ru :
                   DOC_TYPE_CONFIG[viewingDoc?.type]?.label_en
                 )}
               </DialogTitle>
@@ -2089,6 +2180,7 @@ function EvidenceVaultContent() {
                               language === 'ja' ? config.label_ja :
                               language === 'ko' ? config.label_ko :
                               language === 'th' ? config.label_th :
+                              language === 'ru' ? config.label_ru :
                               config.label_en
                             )}
                           </span>
@@ -2116,7 +2208,7 @@ function EvidenceVaultContent() {
                               backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
                               color: colors.textPrimary
                             }}>
-                              {language === 'zh' ? config.label_zh : language === 'ja' ? config.label_ja : language === 'ko' ? config.label_ko : language === 'th' ? config.label_th : config.label_en}
+                              {language === 'zh' ? config.label_zh : language === 'ja' ? config.label_ja : language === 'ko' ? config.label_ko : language === 'th' ? config.label_th : language === 'ru' ? config.label_ru : config.label_en}
                             </Badge>
                             <h3 className="font-bold text-sm truncate" style={{ color: colors.textPrimary }}>
                               {doc.label || (
@@ -2124,6 +2216,7 @@ function EvidenceVaultContent() {
                                 language === 'ja' ? config.label_ja :
                                 language === 'ko' ? config.label_ko :
                                 language === 'th' ? config.label_th :
+                                language === 'ru' ? config.label_ru :
                                 config.label_en
                               )}
                             </h3>
