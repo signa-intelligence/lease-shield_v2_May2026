@@ -1188,163 +1188,6 @@ function DashboardContent() {
 
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
 
-  if (!isLoading && !hasAnyData && !showOnboarding && !shouldShowOnboardingChecklist) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-xl mx-auto p-6">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4" style={{ backgroundColor: '#0C3B2E' }}>
-              <Shield className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold mb-3 text-gray-900 dark:text-gray-50">
-              Welcome to LeaseShield
-            </h1>
-            <p className="text-base mb-6 text-gray-600 dark:text-gray-400">
-              Start by uploading your first lease and tracking the deposit so we can protect you from day one.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <button
-              onClick={() => navigate(createPageUrl("UploadScan"))}
-              style={{
-                width: '100%',
-                padding: '14px 20px',
-                backgroundColor: '#0C3B2E',
-                color: '#FFFFFF',
-                borderRadius: '12px',
-                border: 'none',
-                fontWeight: '600',
-                fontSize: '16px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 8px rgba(12,59,46,0.3)',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                whiteSpace: 'normal',
-                textAlign: 'center',
-                lineHeight: '1.3',
-                minHeight: '48px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#C7A338';
-                e.target.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#0C3B2E';
-                e.target.style.transform = 'translateY(0)';
-              }}
-            >
-              <Shield className="w-5 h-5" />
-              {strings.uploadLease}
-            </button>
-
-            <button
-              onClick={() => navigate(createPageUrl("PropertyTracker") + '#maintenance')}
-              style={{
-                width: '100%',
-                padding: '12px 18px',
-                backgroundColor: 'transparent',
-                color: isDarkMode ? '#F9FAFB' : '#0F172A',
-                borderRadius: '10px',
-                border: isDarkMode ? '2px solid rgba(255,255,255,0.1)' : '2px solid rgba(12,59,46,0.08)',
-                fontWeight: '500',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                whiteSpace: 'normal',
-                textAlign: 'center',
-                lineHeight: '1.3',
-                minHeight: '44px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.borderColor = '#F59E0B';
-                e.target.style.color = '#F59E0B';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)';
-                e.target.style.color = isDarkMode ? '#F9FAFB' : '#0F172A';
-              }}
-            >
-              <Wrench className="w-4 h-4" />
-              {strings.reportMaintenance}
-            </button>
-
-            <button
-              onClick={() => navigate(createPageUrl("Account") + '#notification-analytics')}
-              style={{
-                width: '100%',
-                padding: '12px 18px',
-                backgroundColor: 'transparent',
-                color: isDarkMode ? '#F9FAFB' : '#0F172A',
-                borderRadius: '10px',
-                border: isDarkMode ? '2px solid rgba(255,255,255,0.1)' : '2px solid rgba(12,59,46,0.08)',
-                fontWeight: '500',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                whiteSpace: 'normal',
-                textAlign: 'center',
-                lineHeight: '1.3',
-                minHeight: '44px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.borderColor = '#8B5CF6';
-                e.target.style.color = '#8B5CF6';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)';
-                e.target.style.color = isDarkMode ? '#F9FAFB' : '#0F172A';
-              }}
-            >
-              <Bell className="w-4 h-4" />
-              {strings.enableNotifications}
-            </button>
-
-            {isFreeTier && (
-              <button
-                onClick={() => navigate(createPageUrl("Account") + '?highlight=plans')}
-                style={{
-                  width: '100%',
-                  padding: '10px 16px',
-                  backgroundColor: 'transparent',
-                  color: isDarkMode ? '#D1D5DB' : '#475569',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  textAlign: 'center'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.color = isDarkMode ? '#F9FAFB' : '#0F172A';
-                  e.target.style.textDecoration = 'underline';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.color = isDarkMode ? '#D1D5DB' : '#475569';
-                  e.target.style.textDecoration = 'none';
-                }}
-              >
-                See plans
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <PullToRefresh onRefresh={handleRefresh} isDarkMode={isDarkMode}>
       <div className="min-h-screen page-transition bg-gray-50 dark:bg-gray-900">
@@ -1858,6 +1701,110 @@ function DashboardContent() {
                 );
               })}
             </div>
+          )}
+
+          {/* Quick Start Card - Shows for users with no activity yet */}
+          {!isLoading && !hasAnyData && !showOnboarding && (
+            <Card className="mb-6 border-none shadow-lg bg-white dark:bg-gray-800">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#0C3B2E' }}>
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg mb-1 text-gray-900 dark:text-gray-50">
+                      {language === 'th' ? 'เริ่มต้นกับ Lease Shield' : language === 'ru' ? 'Начните с Lease Shield' : 'Get started with Lease Shield'}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      {strings.getStartedDesc}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => navigate(createPageUrl("UploadScan"))}
+                        className="btn-interaction"
+                        style={{
+                          padding: '8px 14px',
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF',
+                          borderRadius: '8px',
+                          border: 'none',
+                          fontWeight: '600',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Shield className="w-4 h-4" />
+                        {strings.uploadLease}
+                      </button>
+                      <button
+                        onClick={() => navigate(createPageUrl("PropertyTracker") + "#deposit")}
+                        className="btn-interaction"
+                        style={{
+                          padding: '8px 14px',
+                          backgroundColor: 'transparent',
+                          color: isDarkMode ? '#F9FAFB' : '#0F172A',
+                          borderRadius: '8px',
+                          border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(12,59,46,0.08)',
+                          fontWeight: '600',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Wallet className="w-4 h-4" />
+                        {strings.trackDeposit}
+                      </button>
+                      <button
+                        onClick={() => navigate(createPageUrl("PropertyTracker") + '#maintenance')}
+                        className="btn-interaction"
+                        style={{
+                          padding: '8px 14px',
+                          backgroundColor: 'transparent',
+                          color: isDarkMode ? '#F9FAFB' : '#0F172A',
+                          borderRadius: '8px',
+                          border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(12,59,46,0.08)',
+                          fontWeight: '600',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Wrench className="w-4 h-4" />
+                        {strings.reportMaintenance}
+                      </button>
+                      {isFreeTier && (
+                        <button
+                          onClick={() => navigate(createPageUrl("Account") + '?showPlans=true')}
+                          className="btn-interaction"
+                          style={{
+                            padding: '8px 14px',
+                            backgroundColor: 'transparent',
+                            color: '#C7A338',
+                            borderRadius: '8px',
+                            border: '1px solid #C7A338',
+                            fontWeight: '600',
+                            fontSize: '13px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          {strings.viewPlans}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {shouldShowOnboardingChecklist && !showOnboarding && (
