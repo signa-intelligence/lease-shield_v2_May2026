@@ -25,7 +25,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
-import { RESOLVE_PRICING, hasMemberPricing, getMembershipAgeDays } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility } from "../components/shared/resolvePricing";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
@@ -368,9 +368,6 @@ function CasesContent() {
       needMoreHelp: "Need more help with a dispute?",
       openResolveDesc: "Open a Resolve case for professional support at member or public rates.",
       openResolveCase: "Open a Resolve Case",
-      submitCaseMemberRate: "Submit Case – ฿{price} member rate",
-      submitCasePublicRate: "Submit Case – ฿{price} public rate",
-      memberPricingRule: "Member rates apply after 30 days of active membership.",
     }
   };
 
@@ -525,62 +522,84 @@ function CasesContent() {
           </Card>
 
           {/* Resolve CTA Section - Available to ALL users */}
-          <div 
-            className="mb-6 p-4 rounded-xl border-2"
-            style={{
-              backgroundColor: isDarkMode ? '#2A1F1F' : '#FFFBEB',
-              borderColor: isDarkMode ? '#EF444450' : '#FDE047',
-              boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(239,68,68,0.08)'
-            }}
-          >
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex-1">
-                  <h3 className="text-base font-bold mb-1" style={{ color: colors.textPrimary }}>
-                    {strings.needMoreHelp}
-                  </h3>
-                  <p className="text-sm mb-1" style={{ color: colors.textSecondary }}>
-                    {strings.openResolveDesc}
-                  </p>
+          {(() => {
+            const eligibility = getMembershipEligibility(user);
+            const showMemberRate = eligibility.isEligible;
+            const displayPrice = showMemberRate ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE;
+            const rateLabel = showMemberRate ? 'member rate' : 'public rate';
+            
+            return (
+              <div 
+                className="mb-6 p-4 rounded-xl border-2"
+                style={{
+                  backgroundColor: isDarkMode ? '#2A1F1F' : '#FFFBEB',
+                  borderColor: isDarkMode ? '#EF444450' : '#FDE047',
+                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(239,68,68,0.08)'
+                }}
+              >
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex-1">
+                    <h3 className="text-base font-bold mb-1" style={{ color: colors.textPrimary }}>
+                      {strings.needMoreHelp}
+                    </h3>
+                    <p className="text-sm mb-2" style={{ color: colors.textSecondary }}>
+                      {strings.openResolveDesc}
+                    </p>
+                    <p className="text-xs" style={{ color: colors.textSecondary, opacity: 0.9 }}>
+                      {showMemberRate 
+                        ? (language === 'th' ? 'ราคาสมาชิกใช้งานได้หลังสมาชิก 30 วัน การอัปเกรดระหว่างส่งคดีจะมีผลกับคดีในอนาคตเท่านั้น' : 
+                           language === 'zh' ? '会员价在会员30天后生效。案件提交期间的升级仅适用于未来的案件。' :
+                           language === 'ja' ? '会員価格は会員登録後30日で適用されます。ケース提出中のアップグレードは今後のケースにのみ適用されます。' :
+                           language === 'ko' ? '회원 요금은 회원 가입 30일 후 적용됩니다. 사례 제출 중 업그레이드는 향후 사례에만 적용됩니다.' :
+                           language === 'ru' ? 'Цены для членов действуют через 30 дней членства. Обновления во время подачи дела применяются только к будущим делам.' :
+                           'Member rates apply after 30 days of active Lite, Protect or Secure membership. Upgrades during case submission apply to future cases only.')
+                        : (language === 'th' ? 'ราคาสมาชิกใช้งานได้หลังสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน' :
+                           language === 'zh' ? '会员价在Lite、Protect或Secure会员30天后生效' :
+                           language === 'ja' ? '会員価格はLite、Protect、Secureの会員登録後30日で適用' :
+                           language === 'ko' ? '회원 요금은 Lite, Protect 또는 Secure 회원 30일 후 적용' :
+                           language === 'ru' ? 'Цены для членов действуют через 30 дней активного членства Lite, Protect или Secure' :
+                           'Member rates apply after 30 days of active Lite, Protect or Secure membership')
+                      }
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      haptic.medium();
+                      navigate(createPageUrl("ResolveCase"));
+                    }}
+                    className="btn-interaction w-full sm:w-auto"
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: '8px',
+                      backgroundColor: 'transparent',
+                      color: '#EF4444',
+                      border: '2px solid #EF4444',
+                      fontWeight: '600',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#EF4444';
+                      e.target.style.color = '#FFFFFF';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = 'transparent';
+                      e.target.style.color = '#EF4444';
+                    }}
+                  >
+                    {language === 'th' ? `ส่งคดี – ฿${displayPrice.toLocaleString()} ราคา${showMemberRate ? 'สมาชิก' : 'ทั่วไป'}` :
+                     language === 'zh' ? `提交案件 – ฿${displayPrice.toLocaleString()} ${showMemberRate ? '会员' : '公开'}价格` :
+                     language === 'ja' ? `ケース提出 – ฿${displayPrice.toLocaleString()} ${showMemberRate ? '会員' : '公開'}価格` :
+                     language === 'ko' ? `사례 제출 – ฿${displayPrice.toLocaleString()} ${showMemberRate ? '회원' : '공개'} 요금` :
+                     language === 'ru' ? `Подать дело – ฿${displayPrice.toLocaleString()} ${showMemberRate ? 'для членов' : 'публичная цена'}` :
+                     `Submit Case – ฿${displayPrice.toLocaleString()} ${rateLabel}`}
+                  </button>
                 </div>
-                <button
-                  onClick={() => {
-                    haptic.medium();
-                    navigate(createPageUrl("ResolveCase"));
-                  }}
-                  className="btn-interaction w-full sm:w-auto"
-                  style={{
-                    padding: '10px 18px',
-                    borderRadius: '8px',
-                    backgroundColor: 'transparent',
-                    color: '#EF4444',
-                    border: '2px solid #EF4444',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#EF4444';
-                    e.target.style.color = '#FFFFFF';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.color = '#EF4444';
-                  }}
-                >
-                  {hasMemberPricing(user) 
-                    ? strings.submitCaseMemberRate.replace('{price}', RESOLVE_PRICING.MEMBER_RATE.toLocaleString())
-                    : strings.submitCasePublicRate.replace('{price}', RESOLVE_PRICING.PUBLIC_RATE.toLocaleString())
-                  }
-                </button>
               </div>
-              <p className="text-xs" style={{ color: colors.textSecondary, opacity: 0.8 }}>
-                {strings.memberPricingRule}
-              </p>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Search & Filter Controls */}
           {cases.length > 0 && (

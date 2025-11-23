@@ -26,7 +26,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
-import { RESOLVE_PRICING, hasMemberPricing, getMembershipAgeDays, getMemberPricingUnlockDate } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility } from "../components/shared/resolvePricing";
 
 function DashboardContent() {
   const [expandedSections, setExpandedSections] = React.useState({
@@ -879,10 +879,6 @@ function DashboardContent() {
       submitCase: "Submit Case",
       savingsVsPublic: "Save ฿1,500 vs public rate",
       upgradeForMemberRate: "Upgrade to any paid plan for member pricing",
-      memberRateNote: "Member rate · Save ฿1,500 vs public price",
-      publicRateNote: "Public price · Members save ฿1,500 after 30 days",
-      memberPricingRule: "Member rates apply after 30 days of active Lite, Protect or Secure membership. Upgrades during case submission apply to future cases only.",
-      unlocksIn: "Member pricing unlocks in {days} days",
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -952,10 +948,6 @@ function DashboardContent() {
       submitCase: "ส่งคดี",
       savingsVsPublic: "ประหยัด ฿1,500 เมื่อเทียบกับราคาทั่วไป",
       upgradeForMemberRate: "อัปเกรดเป็นแผนชำระเงินใดๆ เพื่อราคาสมาชิก",
-      memberRateNote: "ราคาสมาชิก · ประหยัด ฿1,500 จากราคาทั่วไป",
-      publicRateNote: "ราคาทั่วไป · สมาชิกประหยัด ฿1,500 หลัง 30 วัน",
-      memberPricingRule: "ราคาสมาชิกใช้ได้หลังจากเป็นสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน การอัปเกรดระหว่างการส่งคดีจะมีผลกับคดีในอนาคตเท่านั้น",
-      unlocksIn: "ราคาสมาชิกจะปลดล็อกใน {days} วัน",
     },
     zh: {
       welcome: "欢迎回来",
@@ -1024,10 +1016,6 @@ function DashboardContent() {
       submitCase: "提交案件",
       savingsVsPublic: "比公开价节省 ฿1,500",
       upgradeForMemberRate: "升级到任何付费计划以获得会员定价",
-      memberRateNote: "会员价 · 比公开价节省 ฿1,500",
-      publicRateNote: "公开价 · 会员30天后节省 ฿1,500",
-      memberPricingRule: "会员价适用于激活Lite、Protect或Secure会员资格30天后。提交案件期间的升级仅适用于未来案件。",
-      unlocksIn: "会员定价将在 {days} 天后解锁",
     },
     ja: {
       welcome: "おかえりなさい",
@@ -1096,10 +1084,6 @@ function DashboardContent() {
       submitCase: "ケースを送信",
       savingsVsPublic: "公開価格より ฿1,500 お得",
       upgradeForMemberRate: "有料プランにアップグレードしてメンバー価格を利用",
-      memberRateNote: "メンバー価格 · 公開価格より ฿1,500 お得",
-      publicRateNote: "公開価格 · メンバーは30日後に ฿1,500 節約",
-      memberPricingRule: "メンバー価格は、Lite、Protect、またはSecureメンバーシップの30日間有効後に適用されます。ケース提出中のアップグレードは将来のケースにのみ適用されます。",
-      unlocksIn: "メンバー価格は {days} 日後にロック解除されます",
     },
     ru: {
       welcome: "Добро пожаловать",
@@ -1226,10 +1210,6 @@ function DashboardContent() {
       submitCase: "Подать дело",
       savingsVsPublic: "Экономия ฿1,500 от публичной цены",
       upgradeForMemberRate: "Обновитесь до любого платного плана для цен участника",
-      memberRateNote: "Цена участника · Экономия ฿1,500 от публичной цены",
-      publicRateNote: "Публичная цена · Участники экономят ฿1,500 через 30 дней",
-      memberPricingRule: "Цены участников применяются через 30 дней активного членства Lite, Protect или Secure. Обновления во время подачи дела применяются только к будущим делам.",
-      unlocksIn: "Цена участника разблокируется через {days} дней",
     }
   };
 
@@ -2051,95 +2031,88 @@ function DashboardContent() {
           )}
 
           {/* RESOLVE DISPUTE COMPACT BANNER - Available to ALL users */}
-          <div 
-            className="mb-6 cursor-pointer card-interactive"
-            style={{
-              background: isDarkMode ? '#2A1F1F' : '#FFE8E8',
-              borderRadius: '18px',
-              padding: '14px 16px',
-              boxShadow: isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(239,68,68,0.12)',
-              border: `1px solid ${isDarkMode ? '#EF444440' : '#FECACA'}`,
-              transition: 'all 0.2s'
-            }}
-            onClick={() => {
-              haptic.medium();
-              navigate(createPageUrl("ResolveCase"));
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = isDarkMode ? '0 6px 16px rgba(0,0,0,0.4)' : '0 6px 16px rgba(239,68,68,0.18)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(239,68,68,0.12)';
-            }}
-          >
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{
-                    backgroundColor: isDarkMode ? '#EF444430' : '#FEE2E2'
-                  }}>
-                    <Scale className="w-5 h-5" style={{ color: '#EF4444' }} />
+          {(() => {
+            const eligibility = getMembershipEligibility(user);
+            const showMemberRate = eligibility.isEligible;
+            
+            return (
+              <div 
+                className="mb-6 cursor-pointer card-interactive"
+                style={{
+                  background: isDarkMode ? '#2A1F1F' : '#FFE8E8',
+                  borderRadius: '18px',
+                  padding: '14px 16px',
+                  boxShadow: isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(239,68,68,0.12)',
+                  border: `1px solid ${isDarkMode ? '#EF444440' : '#FECACA'}`,
+                  transition: 'all 0.2s'
+                }}
+                onClick={() => {
+                  haptic.medium();
+                  navigate(createPageUrl("ResolveCase"));
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = isDarkMode ? '0 6px 16px rgba(0,0,0,0.4)' : '0 6px 16px rgba(239,68,68,0.18)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(239,68,68,0.12)';
+                }}
+              >
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{
+                      backgroundColor: isDarkMode ? '#EF444430' : '#FEE2E2'
+                    }}>
+                      <Scale className="w-5 h-5" style={{ color: '#EF4444' }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                        Resolve your dispute
+                      </h4>
+                      <p className="text-xs" style={{ color: isDarkMode ? '#F87171' : '#B91C1C' }}>
+                        {showMemberRate 
+                          ? `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} per case · Member rate · Save ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} vs public`
+                          : `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} per case · Public rate · Members save ฿${RESOLVE_PRICING.SAVINGS.toLocaleString()} after 30 days`
+                        }
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
-                      Resolve your dispute
-                    </h4>
-                    <p className="text-xs" style={{ color: isDarkMode ? '#F87171' : '#B91C1C' }}>
-                      {hasMemberPricing(user) ? (
-                        <span>
-                          <strong>฿{RESOLVE_PRICING.MEMBER_RATE.toLocaleString()}</strong> {strings.perCase} · {strings.memberRateNote}
-                        </span>
-                      ) : (
-                        <span>
-                          <strong>฿{RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()}</strong> {strings.perCase} · {strings.publicRateNote}
-                        </span>
-                      )}
-                    </p>
-                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      haptic.medium();
+                      navigate(createPageUrl("ResolveCase"));
+                    }}
+                    className="btn-interaction flex-shrink-0 w-full sm:w-auto"
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      backgroundColor: '#EF4444',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      fontWeight: '600',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      boxShadow: '0 2px 6px rgba(239,68,68,0.3)',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#DC2626';
+                      e.target.style.boxShadow = '0 4px 8px rgba(239,68,68,0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#EF4444';
+                      e.target.style.boxShadow = '0 2px 6px rgba(239,68,68,0.3)';
+                    }}
+                  >
+                    Start Resolve
+                  </button>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    haptic.medium();
-                    navigate(createPageUrl("ResolveCase"));
-                  }}
-                  className="btn-interaction flex-shrink-0 w-full sm:w-auto"
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    backgroundColor: '#EF4444',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 2px 6px rgba(239,68,68,0.3)',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#DC2626';
-                    e.target.style.boxShadow = '0 4px 8px rgba(239,68,68,0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#EF4444';
-                    e.target.style.boxShadow = '0 2px 6px rgba(239,68,68,0.3)';
-                  }}
-                >
-                  Start Resolve
-                </button>
               </div>
-              <p className="text-xs" style={{ 
-                color: isDarkMode ? '#F87171' : '#B91C1C',
-                opacity: 0.8,
-                lineHeight: '1.4'
-              }}>
-                {strings.memberPricingRule}
-              </p>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Main Content - Stats and Features */}
           {!showOnboarding && (

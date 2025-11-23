@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, AlertCircle, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { RESOLVE_PRICING, hasMemberPricing, getMembershipAgeDays, getMemberPricingUnlockDate } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility, getUserPricing } from "../components/shared/resolvePricing";
 
 export default function ResolveCase() {
   const navigate = useNavigate();
@@ -158,7 +158,8 @@ export default function ResolveCase() {
         landlord_name: formData.landlord_name || user?.landlord_name || '',
         landlord_email: formData.landlord_email || user?.landlord_email || '',
         evidence: formData.evidence_files,
-        is_member_at_creation: user?.plan_tier && user.plan_tier !== 'free',
+        is_member_at_creation: hasMemberPricing(user),
+        case_price: getUserPricing(user),
         timeline: [
           {
             timestamp: new Date().toISOString(),
@@ -217,10 +218,12 @@ export default function ResolveCase() {
       reviewDocs: "Professional review of your documents",
       recommendActions: "Recommended action plan & strategy",
       templateLetters: "Customized legal template letters",
-      memberSince: "Member since {date} – member pricing unlocked",
-      memberUnlocksIn: "Member pricing unlocks after 30 days of membership. Unlocks on {date}.",
-      upgradeAppliesToFuture: "Your new membership will apply member rates to future cases. This case is billed at the public rate.",
-      memberPricingRule: "Member rates apply after 30 days of active Lite, Protect or Secure membership."
+      memberSince: "Member since",
+      memberPricingUnlocked: "member pricing unlocked",
+      memberPricingUnlocksIn: "Member pricing unlocks after 30 days of active membership. Your member rate will apply to cases submitted after",
+      membersPayAfter30Days: "Members pay ฿2,490 per case after 30 days. You can join today for additional benefits.",
+      newMembershipNote: "Your new membership will apply member rates to future cases. This case is billed at the public rate.",
+      memberRateExplanation: "Member rates apply after 30 days of active Lite, Protect or Secure membership. Upgrades during case submission apply to future cases only."
     },
     th: {
       title: "เปิดคดี",
@@ -262,10 +265,12 @@ export default function ResolveCase() {
       reviewDocs: "ตรวจสอบเอกสารโดยผู้เชี่ยวชาญ",
       recommendActions: "แผนปฏิบัติการและกลยุทธ์ที่แนะนำ",
       templateLetters: "จดหมายตัวอย่างกฎหมายที่ปรับแต่ง",
-      memberSince: "เป็นสมาชิกตั้งแต่ {date} – ปลดล็อกราคาสมาชิกแล้ว",
-      memberUnlocksIn: "ราคาสมาชิกจะปลดล็อกหลังจากเป็นสมาชิกครบ 30 วัน ปลดล็อกเมื่อ {date}",
-      upgradeAppliesToFuture: "การเป็นสมาชิกใหม่ของคุณจะใช้ราคาสมาชิกกับคดีในอนาคต คดีนี้จะเรียกเก็บในราคาทั่วไป",
-      memberPricingRule: "ราคาสมาชิกใช้ได้หลังจากเป็นสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน"
+      memberSince: "สมาชิกตั้งแต่",
+      memberPricingUnlocked: "ปลดล็อกราคาสมาชิกแล้ว",
+      memberPricingUnlocksIn: "ราคาสมาชิกจะปลดล็อกหลังจากสมาชิกครบ 30 วัน ราคาสมาชิกจะใช้กับคดีที่ส่งหลังวันที่",
+      membersPayAfter30Days: "สมาชิกจ่าย ฿2,490 ต่อคดีหลังครบ 30 วัน คุณสามารถเข้าร่วมวันนี้เพื่อรับสิทธิพิเศษเพิ่มเติม",
+      newMembershipNote: "การเป็นสมาชิกใหม่ของคุณจะใช้ราคาสมาชิกกับคดีในอนาคต คดีนี้จะคิดราคาทั่วไป",
+      memberRateExplanation: "ราคาสมาชิกใช้งานได้หลังสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน การอัปเกรดระหว่างส่งคดีจะมีผลกับคดีในอนาคตเท่านั้น"
     },
     zh: {
       title: "开启案件",
@@ -295,7 +300,24 @@ export default function ResolveCase() {
       required: "必填",
       optional: "可选",
       caseDetails: "案件详情",
-      autoFilledMsg: "押金数据已预填。您可以根据需要进行编辑。"
+      autoFilledMsg: "押金数据已预填。您可以根据需要进行编辑。",
+      resolveService: "解决您的纠纷",
+      resolvePricing: "服务定价",
+      memberPrice: "会员价格",
+      publicPrice: "公开价格",
+      perCase: "每案",
+      savingsNote: "比公开价节省฿{amount}",
+      upgradeToMemberRate: "会员每案支付฿{memberPrice}。升级您的计划以解锁会员价格。",
+      whatsIncluded: "包含内容：",
+      reviewDocs: "专业文档审查",
+      recommendActions: "推荐行动计划和策略",
+      templateLetters: "定制法律模板信函",
+      memberSince: "会员始于",
+      memberPricingUnlocked: "会员定价已解锁",
+      memberPricingUnlocksIn: "会员定价在活跃会员30天后解锁。您的会员价格将适用于之后提交的案件",
+      membersPayAfter30Days: "会员30天后每案支付฿2,490。您可以今天加入以获得更多福利。",
+      newMembershipNote: "您的新会员资格将对未来案件适用会员价格。此案件按公开价格计费。",
+      memberRateExplanation: "会员价格在Lite、Protect或Secure会员30天后生效。案件提交期间的升级仅适用于未来的案件。"
     },
     ja: {
       title: "ケースを開く",
@@ -325,7 +347,24 @@ export default function ResolveCase() {
       required: "必須",
       optional: "オプション",
       caseDetails: "ケース詳細",
-      autoFilledMsg: "敷金データが事前入力されました。必要に応じて編集できます。"
+      autoFilledMsg: "敷金データが事前入力されました。必要に応じて編集できます。",
+      resolveService: "紛争を解決する",
+      resolvePricing: "サービス価格",
+      memberPrice: "会員価格",
+      publicPrice: "公開価格",
+      perCase: "ケースごと",
+      savingsNote: "公開価格より฿{amount}お得",
+      upgradeToMemberRate: "会員はケースごとに฿{memberPrice}を支払います。プランをアップグレードして会員価格を解除してください。",
+      whatsIncluded: "含まれるもの：",
+      reviewDocs: "プロフェッショナルな書類審査",
+      recommendActions: "推奨される行動計画と戦略",
+      templateLetters: "カスタマイズされた法的テンプレートレター",
+      memberSince: "会員登録日",
+      memberPricingUnlocked: "会員価格が解除されました",
+      memberPricingUnlocksIn: "会員価格は30日のアクティブな会員資格後に解除されます。会員価格は次の日以降に提出されたケースに適用されます",
+      membersPayAfter30Days: "会員は30日後にケースごとに฿2,490を支払います。今日参加して追加の特典を受け取りましょう。",
+      newMembershipNote: "新しい会員資格は今後のケースに会員価格を適用します。このケースは公開価格で請求されます。",
+      memberRateExplanation: "会員価格はLite、Protect、Secureの会員登録後30日で適用されます。ケース提出中のアップグレードは今後のケースにのみ適用されます。"
     },
     ko: {
       title: "사례 열기",
@@ -355,7 +394,24 @@ export default function ResolveCase() {
       required: "필수",
       optional: "선택사항",
       caseDetails: "사례 상세정보",
-      autoFilledMsg: "보증금 데이터가 미리 채워졌습니다. 필요에 따라 편집할 수 있습니다."
+      autoFilledMsg: "보증금 데이터가 미리 채워졌습니다. 필요에 따라 편집할 수 있습니다.",
+      resolveService: "분쟁 해결",
+      resolvePricing: "서비스 가격",
+      memberPrice: "회원 가격",
+      publicPrice: "공개 가격",
+      perCase: "사례당",
+      savingsNote: "공개 가격보다 ฿{amount} 절약",
+      upgradeToMemberRate: "회원은 사례당 ฿{memberPrice}를 지불합니다. 회원 가격을 잠금 해제하려면 플랜을 업그레이드하세요.",
+      whatsIncluded: "포함 내용:",
+      reviewDocs: "전문 문서 검토",
+      recommendActions: "권장 실행 계획 및 전략",
+      templateLetters: "맞춤형 법적 템플릿 레터",
+      memberSince: "회원 가입일",
+      memberPricingUnlocked: "회원 가격이 잠금 해제됨",
+      memberPricingUnlocksIn: "회원 가격은 30일의 활성 회원 자격 후에 잠금 해제됩니다. 회원 가격은 다음 날짜 이후에 제출된 사례에 적용됩니다",
+      membersPayAfter30Days: "회원은 30일 후 사례당 ฿2,490를 지불합니다. 오늘 가입하여 추가 혜택을 받으세요.",
+      newMembershipNote: "새 회원 자격은 향후 사례에 회원 가격을 적용합니다. 이 사례는 공개 가격으로 청구됩니다.",
+      memberRateExplanation: "회원 요금은 Lite, Protect 또는 Secure 회원 가입 30일 후 적용됩니다. 사례 제출 중 업그레이드는 향후 사례에만 적용됩니다."
     }
   };
 
@@ -463,7 +519,7 @@ export default function ResolveCase() {
                       {str.perCase}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 p-2 rounded-lg mb-2" style={{ 
+                  <div className="flex items-center gap-2 p-2 rounded-lg" style={{ 
                     backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5' 
                   }}>
                     <TrendingDown className="w-4 h-4 text-emerald-600" />
@@ -471,36 +527,6 @@ export default function ResolveCase() {
                       {str.savingsNote.replace('{amount}', RESOLVE_PRICING.SAVINGS.toLocaleString())}
                     </span>
                   </div>
-                  {user?.subscription_started_at && (
-                    <p className="text-xs" style={{ color: colors.textSecondary }}>
-                      {str.memberSince.replace('{date}', new Date(user.subscription_started_at).toLocaleDateString())}
-                    </p>
-                  )}
-                </>
-              ) : user?.plan_tier && user.plan_tier !== 'free' && getMembershipAgeDays(user) < RESOLVE_PRICING.MINIMUM_MEMBERSHIP_DAYS ? (
-                <>
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                      ฿{RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()}
-                    </span>
-                    <span className="text-sm" style={{ color: colors.textSecondary }}>
-                      {str.perCase}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-lg mb-2" style={{ 
-                    backgroundColor: isDarkMode ? '#3A2D1C' : '#FEF3C7',
-                    border: `1px solid ${isDarkMode ? '#F59E0B' : '#FCD34D'}`
-                  }}>
-                    <p className="text-xs mb-2" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
-                      {str.memberUnlocksIn.replace('{date}', getMemberPricingUnlockDate(user)?.toLocaleDateString() || 'N/A')}
-                    </p>
-                    <p className="text-xs font-semibold" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
-                      {str.upgradeAppliesToFuture}
-                    </p>
-                  </div>
-                  <p className="text-xs" style={{ color: colors.textSecondary }}>
-                    {str.memberPricingRule}
-                  </p>
                 </>
               ) : (
                 <>
