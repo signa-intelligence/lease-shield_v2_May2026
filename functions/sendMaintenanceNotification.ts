@@ -1,9 +1,34 @@
-// LeaseShield TEMP: Translation disabled for MVP.
-// Emails send the original description only.
-// Do not reintroduce AI translation here without explicit product approval.
+// LeaseShield: Multi-language maintenance notifications
+// Uses language rules from languageRules helper
+// NO CREDITS USED - maintenance notifications are always free
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { createMaintenanceRequestFlex } from './lineFlexTemplates.js';
+
+// Import language helper (will be created as shared utility)
+// For now, inline the buildNotificationLanguage function
+function buildNotificationLanguage(context) {
+  const SUPPORTED = ['en', 'th', 'ja', 'zh', 'ko', 'ru'];
+  const clean = (lang, fallback = 'en') => {
+    if (!lang || typeof lang !== 'string') return fallback;
+    const cleaned = lang.toLowerCase().trim();
+    return SUPPORTED.includes(cleaned) ? cleaned : fallback;
+  };
+
+  const { recipientType, tenantLanguage, landlordLanguage } = context;
+
+  if (recipientType === 'juristic') {
+    return { primary: 'th', includeBilingual: true, secondary: 'en' };
+  }
+
+  if (recipientType === 'landlord') {
+    const landlordLang = clean(landlordLanguage, 'th');
+    return { primary: landlordLang, includeBilingual: true, secondary: 'en' };
+  }
+
+  const tenantLang = clean(tenantLanguage, 'en');
+  return { primary: tenantLang, includeBilingual: tenantLang !== 'en', secondary: 'en' };
+}
 
 Deno.serve(async (req) => {
   try {
@@ -35,10 +60,13 @@ Deno.serve(async (req) => {
     }
     
     const user = users[0];
-    const language = user.language || 'en';
+    const tenantLanguage = user.language || 'en';
+    const landlordLanguage = user.landlord_language || 'th';
     const notifications = [];
 
     console.log('👤 Full user data loaded');
+    console.log('🌐 Tenant language:', tenantLanguage);
+    console.log('🌐 Landlord language:', landlordLanguage);
     console.log('📧 Landlord email:', user.landlord_email || 'NOT SET');
     console.log('📧 Juristic email:', user.juristic_email || 'NOT SET');
 
@@ -109,12 +137,19 @@ Deno.serve(async (req) => {
       user.tenant_zip
     ].filter(Boolean).join(', ') || (language === 'th' ? 'ไม่ได้ระบุ' : 'Not provided');
 
-    // Prepare landlord notification
-    const landlordSubject = language === 'th'
+    // Prepare landlord notification using landlord's language
+    const landlordLang = buildNotificationLanguage({
+      recipientType: 'landlord',
+      tenantLanguage,
+      landlordLanguage
+    });
+
+    const landlordSubject = landlordLang.primary === 'th'
       ? `🔧 แจ้งซ่อม: ${maintenanceRequest.issue_title}`
       : `🔧 Maintenance Request: ${maintenanceRequest.issue_title}`;
 
-    const landlordHtmlBody = language === 'th'
+    // Build bilingual HTML body (landlord language + English)
+    const landlordHtmlBody = landlordLang.primary === 'th'
       ? `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
@@ -180,11 +215,16 @@ Deno.serve(async (req) => {
       </div>
       `;
 
-    // Prepare juristic notification
-    const juristicSubject = language === 'th'
-      ? `🔧 แจ้งซ่อม: ${maintenanceRequest.issue_title}`
-      : `🔧 Maintenance Request: ${maintenanceRequest.issue_title}`;
+    // Prepare juristic notification (ALWAYS Thai + English)
+    const juristicLang = buildNotificationLanguage({
+      recipientType: 'juristic',
+      tenantLanguage,
+      landlordLanguage
+    });
 
+    const juristicSubject = `🔧 แจ้งซ่อม / Maintenance Request: ${maintenanceRequest.issue_title}`;
+
+    // Juristic is ALWAYS Thai with English section
     const juristicHtmlBody = language === 'th'
       ? `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -251,10 +291,16 @@ Deno.serve(async (req) => {
       </div>
       `;
 
-    // Tenant confirmation
-    const tenantSubject = language === 'th' ? '✅ สำเนาคำขอซ่อม' : '✅ Maintenance Request Copy';
+    // Tenant confirmation in tenant's language
+    const tenantLang = buildNotificationLanguage({
+      recipientType: 'tenant',
+      tenantLanguage,
+      landlordLanguage
+    });
 
-    const tenantHtmlBody = language === 'th'
+    const tenantSubject = tenantLang.primary === 'th' ? '✅ สำเนาคำขอซ่อม' : '✅ Maintenance Request Copy';
+
+    const tenantHtmlBody = tenantLang.primary === 'th'
       ? `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
@@ -355,7 +401,7 @@ Deno.serve(async (req) => {
         const tenantFlexMessage = createMaintenanceRequestFlex({
           ...flexData,
           role: 'tenant'
-        }, language);
+        }, tenantLang.primary);
         
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
           userId: user.line_messaging_token,
@@ -413,7 +459,7 @@ Deno.serve(async (req) => {
         const landlordFlexMessage = createMaintenanceRequestFlex({
           ...flexData,
           role: 'landlord'
-        }, language);
+        }, landlordLang.primary);
         
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
           userId: user.landlord_line.trim(),
@@ -471,7 +517,7 @@ Deno.serve(async (req) => {
         const juristicFlexMessage = createMaintenanceRequestFlex({
           ...flexData,
           role: 'juristic'
-        }, language);
+        }, juristicLang.primary);
         
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
           userId: user.juristic_line.trim(),
