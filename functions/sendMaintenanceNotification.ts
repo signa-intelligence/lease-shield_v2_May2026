@@ -1,33 +1,52 @@
-// LeaseShield: Multi-language maintenance notifications
-// Uses language rules from languageRules helper
-// NO CREDITS USED - maintenance notifications are always free
+/**
+ * LeaseShield Multi-Language Maintenance Notifications
+ * Sends notifications in recipient's preferred language + English
+ * NO CREDITS USED - notifications are always free
+ */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { createMaintenanceRequestFlex } from './lineFlexTemplates.js';
 
-// Import language helper (will be created as shared utility)
-// For now, inline the buildNotificationLanguage function
+/**
+ * Build notification language for recipient
+ */
 function buildNotificationLanguage(context) {
   const SUPPORTED = ['en', 'th', 'ja', 'zh', 'ko', 'ru'];
-  const clean = (lang, fallback = 'en') => {
-    if (!lang || typeof lang !== 'string') return fallback;
+  
+  const clean = (lang, fallback) => {
+    if (!lang) return fallback;
     const cleaned = lang.toLowerCase().trim();
     return SUPPORTED.includes(cleaned) ? cleaned : fallback;
   };
 
   const { recipientType, tenantLanguage, landlordLanguage } = context;
 
+  // Juristic: Thai with English section
   if (recipientType === 'juristic') {
-    return { primary: 'th', includeBilingual: true, secondary: 'en' };
+    return {
+      primary: 'th',
+      includeBilingual: true,
+      secondary: 'en'
+    };
   }
 
+  // Landlord: Landlord language with English section
   if (recipientType === 'landlord') {
     const landlordLang = clean(landlordLanguage, 'th');
-    return { primary: landlordLang, includeBilingual: true, secondary: 'en' };
+    return {
+      primary: landlordLang,
+      includeBilingual: true,
+      secondary: 'en'
+    };
   }
 
+  // Tenant: Tenant language with optional English
   const tenantLang = clean(tenantLanguage, 'en');
-  return { primary: tenantLang, includeBilingual: tenantLang !== 'en', secondary: 'en' };
+  return {
+    primary: tenantLang,
+    includeBilingual: tenantLang !== 'en',
+    secondary: 'en'
+  };
 }
 
 Deno.serve(async (req) => {
@@ -65,8 +84,8 @@ Deno.serve(async (req) => {
     const notifications = [];
 
     console.log('👤 Full user data loaded');
-    console.log('🌐 Tenant language:', tenantLanguage);
-    console.log('🌐 Landlord language:', landlordLanguage);
+    console.log('🌍 Tenant language:', tenantLanguage);
+    console.log('🌍 Landlord language:', landlordLanguage);
     console.log('📧 Landlord email:', user.landlord_email || 'NOT SET');
     console.log('📧 Juristic email:', user.juristic_email || 'NOT SET');
 
@@ -137,18 +156,42 @@ Deno.serve(async (req) => {
       user.tenant_zip
     ].filter(Boolean).join(', ') || (language === 'th' ? 'ไม่ได้ระบุ' : 'Not provided');
 
-    // Prepare landlord notification using landlord's language
+    // Build language configs for each recipient
+    const tenantLang = buildNotificationLanguage({
+      recipientType: 'tenant',
+      tenantLanguage,
+      landlordLanguage
+    });
+
     const landlordLang = buildNotificationLanguage({
       recipientType: 'landlord',
       tenantLanguage,
       landlordLanguage
     });
 
+    const juristicLang = buildNotificationLanguage({
+      recipientType: 'juristic',
+      tenantLanguage,
+      landlordLanguage
+    });
+
+    console.log('🌍 Landlord notification language:', landlordLang);
+    console.log('🌍 Juristic notification language:', juristicLang);
+    console.log('🌍 Tenant notification language:', tenantLang);
+
+    // Prepare landlord notification (using landlord's language + English)
     const landlordSubject = landlordLang.primary === 'th'
       ? `🔧 แจ้งซ่อม: ${maintenanceRequest.issue_title}`
+      : landlordLang.primary === 'ja'
+      ? `🔧 メンテナンス依頼: ${maintenanceRequest.issue_title}`
+      : landlordLang.primary === 'zh'
+      ? `🔧 维护请求: ${maintenanceRequest.issue_title}`
+      : landlordLang.primary === 'ko'
+      ? `🔧 유지보수 요청: ${maintenanceRequest.issue_title}`
+      : landlordLang.primary === 'ru'
+      ? `🔧 Запрос на обслуживание: ${maintenanceRequest.issue_title}`
       : `🔧 Maintenance Request: ${maintenanceRequest.issue_title}`;
 
-    // Build bilingual HTML body (landlord language + English)
     const landlordHtmlBody = landlordLang.primary === 'th'
       ? `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -213,19 +256,181 @@ Deno.serve(async (req) => {
           <p style="font-size: 10px; color: #999; text-align: center;">Sent from Lease Shield - www.leaseshield.asia</p>
         </div>
       </div>
+      `
+      : landlordLang.primary === 'ja'
+      ? `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+          <h2 style="color: white; margin: 0;">🔧 メンテナンス依頼 / Maintenance Request</h2>
+        </div>
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+          <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
+          <p>${description.replace(/\n/g, '<br />')}</p>
+          <p><strong>カテゴリ / Category:</strong> ${maintenanceRequest.category}</p>
+          <p><strong>優先度 / Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
+          ${maintenanceRequest.property_address ? `<p><strong>物件住所 / Property:</strong> ${maintenanceRequest.property_address}</p>` : ''}
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="font-size: 14px; color: #666;"><strong>賃借人 / Tenant:</strong> ${user.full_name || 'Unknown'}</p>
+          <p style="font-size: 14px; color: #666;"><strong>連絡先 / Contact:</strong> ${user.email}</p>
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${landlordAcknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ✓ 確認してステータスを更新 / Acknowledge & Update
+            </a>
+          </div>
+          <p style="font-size: 10px; color: #999; text-align: center;">Lease Shield - www.leaseshield.asia</p>
+        </div>
+      </div>
+      `
+      : landlordLang.primary === 'zh'
+      ? `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+          <h2 style="color: white; margin: 0;">🔧 维护请求 / Maintenance Request</h2>
+        </div>
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+          <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
+          <p>${description.replace(/\n/g, '<br />')}</p>
+          <p><strong>类别 / Category:</strong> ${maintenanceRequest.category}</p>
+          <p><strong>优先级 / Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
+          ${maintenanceRequest.property_address ? `<p><strong>物业地址 / Property:</strong> ${maintenanceRequest.property_address}</p>` : ''}
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="font-size: 14px; color: #666;"><strong>租户 / Tenant:</strong> ${user.full_name || 'Unknown'}</p>
+          <p style="font-size: 14px; color: #666;"><strong>联系方式 / Contact:</strong> ${user.email}</p>
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${landlordAcknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ✓ 确认并更新状态 / Acknowledge & Update
+            </a>
+          </div>
+          <p style="font-size: 10px; color: #999; text-align: center;">Lease Shield - www.leaseshield.asia</p>
+        </div>
+      </div>
+      `
+      : landlordLang.primary === 'ko'
+      ? `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+          <h2 style="color: white; margin: 0;">🔧 유지보수 요청 / Maintenance Request</h2>
+        </div>
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+          <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
+          <p>${description.replace(/\n/g, '<br />')}</p>
+          <p><strong>카테고리 / Category:</strong> ${maintenanceRequest.category}</p>
+          <p><strong>우선순위 / Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
+          ${maintenanceRequest.property_address ? `<p><strong>부동산 주소 / Property:</strong> ${maintenanceRequest.property_address}</p>` : ''}
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="font-size: 14px; color: #666;"><strong>임차인 / Tenant:</strong> ${user.full_name || 'Unknown'}</p>
+          <p style="font-size: 14px; color: #666;"><strong>연락처 / Contact:</strong> ${user.email}</p>
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${landlordAcknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ✓ 확인 및 상태 업데이트 / Acknowledge & Update
+            </a>
+          </div>
+          <p style="font-size: 10px; color: #999; text-align: center;">Lease Shield - www.leaseshield.asia</p>
+        </div>
+      </div>
+      `
+      : landlordLang.primary === 'ru'
+      ? `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+          <h2 style="color: white; margin: 0;">🔧 Запрос на обслуживание / Maintenance Request</h2>
+        </div>
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+          <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
+          <p>${description.replace(/\n/g, '<br />')}</p>
+          <p><strong>Категория / Category:</strong> ${maintenanceRequest.category}</p>
+          <p><strong>Приоритет / Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
+          ${maintenanceRequest.property_address ? `<p><strong>Адрес / Property:</strong> ${maintenanceRequest.property_address}</p>` : ''}
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="font-size: 14px; color: #666;"><strong>Арендатор / Tenant:</strong> ${user.full_name || 'Unknown'}</p>
+          <p style="font-size: 14px; color: #666;"><strong>Контакт / Contact:</strong> ${user.email}</p>
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${landlordAcknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ✓ Подтвердить и обновить статус / Acknowledge & Update
+            </a>
+          </div>
+          <p style="font-size: 10px; color: #999; text-align: center;">Lease Shield - www.leaseshield.asia</p>
+        </div>
+      </div>
+      `
+      : `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+          <h2 style="color: white; margin: 0;">🔧 New Maintenance Request</h2>
+        </div>
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+          <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
+          <p>${description.replace(/\n/g, '<br />')}</p>
+          <p><strong>Category:</strong> ${maintenanceRequest.category}</p>
+          <p><strong>Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
+          ${maintenanceRequest.property_address ? `<p><strong>Property Address:</strong> ${maintenanceRequest.property_address}</p>` : ''}
+          <p><strong>Reported:</strong> ${new Date(maintenanceRequest.reported_date).toLocaleDateString('en-US')}</p>
+          
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>Tenant:</strong> ${user.full_name || 'Unknown'}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>Email:</strong> ${user.email}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>Phone:</strong> ${user.phone || 'Not provided'}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>Tenant Address:</strong> ${tenantAddress}</p>
+          
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${landlordAcknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ✓ Acknowledge & Update Status
+            </a>
+            <p style="margin-top: 10px; font-size: 12px; color: #666;">Click to confirm you've received this request and update its status</p>
+          </div>
+
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="font-size: 10px; color: #999; text-align: center;">Sent from Lease Shield - www.leaseshield.asia</p>
+        </div>
+      </div>
       `;
 
-    // Prepare juristic notification (ALWAYS Thai + English)
-    const juristicLang = buildNotificationLanguage({
-      recipientType: 'juristic',
-      tenantLanguage,
-      landlordLanguage
-    });
-
+    // Prepare juristic notification (always Thai + English)
     const juristicSubject = `🔧 แจ้งซ่อม / Maintenance Request: ${maintenanceRequest.issue_title}`;
 
-    // Juristic is ALWAYS Thai with English section
-    const juristicHtmlBody = language === 'th'
+    const juristicHtmlBody = `
+      ? `🔧 แจ้งซ่อม: ${maintenanceRequest.issue_title}`
+      : `🔧 Maintenance Request: ${maintenanceRequest.issue_title}`;
+
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+          <h2 style="color: white; margin: 0;">🔧 แจ้งซ่อม / Maintenance Request</h2>
+        </div>
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+          <h3 style="color: #0C3B2E;">${maintenanceRequest.issue_title}</h3>
+          <p>${description.replace(/\n/g, '<br />')}</p>
+          <p><strong>หมวดหมู่ / Category:</strong> ${maintenanceRequest.category}</p>
+          <p><strong>ระดับความสำคัญ / Priority:</strong> <span style="color: ${maintenanceRequest.priority === 'urgent' ? '#EF4444' : maintenanceRequest.priority === 'high' ? '#F59E0B' : '#3B82F6'};">${maintenanceRequest.priority}</span></p>
+          ${maintenanceRequest.property_address ? `<p><strong>ที่อยู่ทรัพย์สิน / Property:</strong> ${maintenanceRequest.property_address}</p>` : ''}
+          <p><strong>วันที่แจ้ง / Reported:</strong> ${new Date(maintenanceRequest.reported_date).toLocaleDateString('th-TH')} / ${new Date(maintenanceRequest.reported_date).toLocaleDateString('en-US')}</p>
+          
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>ผู้เช่า / Tenant:</strong> ${user.full_name || 'Unknown'}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>อีเมล / Email:</strong> ${user.email}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>เบอร์โทร / Phone:</strong> ${user.phone || 'Not provided'}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0;"><strong>ที่อยู่ผู้เช่า / Address:</strong> ${tenantAddress}</p>
+          
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${juristicAcknowledgmentLink}" style="display: inline-block; background-color: #0C3B2E; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ✓ รับทราบและอัปเดตสถานะ / Acknowledge & Update
+            </a>
+            <p style="margin-top: 10px; font-size: 12px; color: #666;">คลิกเพื่อยืนยันว่าคุณได้รับทราบคำขอซ่อมนี้แล้ว / Click to confirm receipt and update status</p>
+          </div>
+
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="font-size: 10px; color: #999; text-align: center;">ส่งจาก Lease Shield / Sent from Lease Shield - www.leaseshield.asia</p>
+        </div>
+      </div>
+      `;
+
+    // REMOVED: Old Thai-only and English-only juristic templates
+
+    // Prepare tenant notification (using tenant's language + English if needed)
+    const tenantSubject = tenantLang.primary === 'th' ? '✅ สำเนาคำขอซ่อม' : tenantLang.primary === 'ja' ? '✅ メンテナンス依頼のコピー' : tenantLang.primary === 'zh' ? '✅ 维护请求副本' : tenantLang.primary === 'ko' ? '✅ 유지보수 요청 사본' : tenantLang.primary === 'ru' ? '✅ Копия запроса на обслуживание' : '✅ Maintenance Request Copy';
+
+    const tenantHtmlBody = tenantLang.primary === 'th'
       ? `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
@@ -291,16 +496,10 @@ Deno.serve(async (req) => {
       </div>
       `;
 
-    // Tenant confirmation in tenant's language
-    const tenantLang = buildNotificationLanguage({
-      recipientType: 'tenant',
-      tenantLanguage,
-      landlordLanguage
-    });
+    // Tenant confirmation
+    const tenantSubject = language === 'th' ? '✅ สำเนาคำขอซ่อม' : '✅ Maintenance Request Copy';
 
-    const tenantSubject = tenantLang.primary === 'th' ? '✅ สำเนาคำขอซ่อม' : '✅ Maintenance Request Copy';
-
-    const tenantHtmlBody = tenantLang.primary === 'th'
+    const tenantHtmlBody = language === 'th'
       ? `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
@@ -401,7 +600,7 @@ Deno.serve(async (req) => {
         const tenantFlexMessage = createMaintenanceRequestFlex({
           ...flexData,
           role: 'tenant'
-        }, tenantLang.primary);
+        }, language);
         
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
           userId: user.line_messaging_token,
@@ -535,6 +734,11 @@ Deno.serve(async (req) => {
     }
 
     console.log('📊 Final notification summary:', JSON.stringify(notifications, null, 2));
+    console.log('🌍 Language configs used:', {
+      tenant: tenantLang,
+      landlord: landlordLang,
+      juristic: juristicLang
+    });
 
     return Response.json({
       success: true,
@@ -542,6 +746,11 @@ Deno.serve(async (req) => {
       acknowledgmentLinks: {
         landlord: landlordAcknowledgmentLink,
         juristic: juristicAcknowledgmentLink
+      },
+      languageConfigs: {
+        tenant: tenantLang,
+        landlord: landlordLang,
+        juristic: juristicLang
       },
       debug: {
         userEmail: user.email,
