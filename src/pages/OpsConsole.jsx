@@ -67,7 +67,35 @@ function OpsConsoleContent() {
 
   const { data: cases = [] } = useQuery({
     queryKey: ['allCases'],
-    queryFn: () => base44.entities.Case.list('-created_date'),
+    queryFn: async () => {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔍 [OPS_CONSOLE] RAW QUERY STARTING');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('👤 Admin user:', user?.email);
+      console.log('🔑 Access level:', user?.access_level);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      // 🔥 RAW QUERY - NO FILTERS
+      const rawResult = await base44.entities.Case.list('-created_date', 100);
+      
+      console.log('📊 [OPS_CONSOLE] RAW QUERY RESULT:', rawResult.length, 'cases returned');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      // Log every case
+      rawResult.forEach((c, idx) => {
+        console.log(`📄 CASE ${idx + 1}:`, {
+          id: c.id.slice(0, 8),
+          case_number: c.case_number,
+          user_email: c.user_email,
+          status: c.status,
+          is_deleted: c.is_deleted
+        });
+      });
+      
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      return rawResult;
+    },
     enabled: hasOpsAccess,
   });
 
