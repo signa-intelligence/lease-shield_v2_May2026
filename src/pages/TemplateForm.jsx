@@ -1195,12 +1195,6 @@ export default function TemplateForm() {
                 </CardContent>
               </Card>
 
-              {/* Letter Type Selection */}
-              <div>
-                <Label htmlFor="letter_subject" style={{ color: colors.textPrimary }}>
-                  {strings.letterType} <span className="text-red-500">*</span>
-                </Label>
-
               <div className="flex gap-3 pt-4">
                 <Button
                   type="button"
