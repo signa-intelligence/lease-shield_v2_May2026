@@ -1437,6 +1437,7 @@ export default function AdminConsole() {
           </Card>
         )}
 
+        {/* 3. USER MANAGEMENT */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle style={{ color: colors.textPrimary }}>{strings.userManagement}</CardTitle>
@@ -1649,6 +1650,7 @@ export default function AdminConsole() {
           </CardContent>
         </Card>
 
+        {/* 4. RECENT LEASES */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle style={{ color: colors.textPrimary }}>{strings.recentLeases}</CardTitle>
