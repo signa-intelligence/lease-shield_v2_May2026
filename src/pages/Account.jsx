@@ -701,8 +701,6 @@ function AccountContent() {
         }
       });
       
-      console.log('✅ Checkout response:', response.data);
-      
       if (response.data?.url) {
         window.location.href = response.data.url;
       } else {
@@ -739,8 +737,6 @@ function AccountContent() {
         }
       });
       
-      console.log('✅ Checkout response:', response.data);
-      
       if (response.data?.url) {
         window.location.href = response.data.url;
       }
@@ -757,11 +753,7 @@ function AccountContent() {
     haptic.medium();
     setExporting(true);
     try {
-      console.log('📥 Requesting PDF export...');
       const response = await base44.functions.invoke('exportUserData');
-      
-      console.log('📦 Response received, creating PDF download...');
-      
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -771,8 +763,6 @@ function AccountContent() {
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
-      
-      console.log('✅ PDF downloaded successfully');
       haptic.success();
     } catch (error) {
       console.error('❌ Export failed:', error);
