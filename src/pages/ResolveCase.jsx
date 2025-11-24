@@ -732,66 +732,137 @@ function ResolveCaseContent() {
                 <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
                   {str.resolvePricing}
                 </span>
-                {hasMemberPricing(user) && (
-                  <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-                    <Crown className="w-3 h-3 mr-1" />
-                    {str.memberPrice}
-                  </Badge>
-                )}
+                {(() => {
+                  const eligibility = getMembershipEligibility(user);
+                  const isPaidPlan = ['lite', 'protect', 'secure'].includes(user?.plan_tier);
+                  const daysRemaining = isPaidPlan && !eligibility.isEligible && eligibility.membershipDays < 30 
+                    ? 30 - eligibility.membershipDays 
+                    : 0;
+                  
+                  if (eligibility.isEligible) {
+                    return (
+                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                        <Crown className="w-3 h-3 mr-1" />
+                        {str.memberPrice}
+                      </Badge>
+                    );
+                  } else if (daysRemaining > 0) {
+                    return (
+                      <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                        {language === 'th' ? `อีก ${daysRemaining} วัน` 
+                        : language === 'zh' ? `${daysRemaining}天`
+                        : language === 'ja' ? `あと${daysRemaining}日`
+                        : language === 'ko' ? `${daysRemaining}일`
+                        : language === 'ru' ? `${daysRemaining} дн.`
+                        : `${daysRemaining} days`}
+                      </Badge>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
-              {hasMemberPricing(user) ? (
-                <>
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-3xl font-bold" style={{ color: '#10B981' }}>
-                      ฿{RESOLVE_PRICING.MEMBER_RATE.toLocaleString()}
-                    </span>
-                    <span className="text-sm" style={{ color: colors.textSecondary }}>
-                      {str.perCase}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 rounded-lg" style={{ 
-                    backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5' 
-                  }}>
-                    <TrendingDown className="w-4 h-4 text-emerald-600" />
-                    <span className="text-xs font-semibold" style={{ color: '#10B981' }}>
-                      {str.savingsNote.replace('{amount}', RESOLVE_PRICING.SAVINGS.toLocaleString())}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                      ฿{RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()}
-                    </span>
-                    <span className="text-sm" style={{ color: colors.textSecondary }}>
-                      {str.perCase}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-lg" style={{ 
-                    backgroundColor: isDarkMode ? '#3A2D1C' : '#FEF3C7',
-                    border: `1px solid ${isDarkMode ? '#F59E0B' : '#FCD34D'}`
-                  }}>
-                    <p className="text-xs" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
-                      {str.upgradeToMemberRate.replace('{memberPrice}', RESOLVE_PRICING.MEMBER_RATE.toLocaleString())}
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-2 w-full"
-                      onClick={() => navigate(createPageUrl("account") + '?showPlans=true')}
-                      style={{
-                        borderColor: '#C7A338',
-                        color: '#C7A338'
-                      }}
-                    >
-                      {language === 'th' ? 'ดูแผน' : language === 'zh' ? '查看计划' : language === 'ja' ? 'プランを見る' : language === 'ko' ? '플랜 보기' : language === 'ru' ? 'Посмотреть тарифы' : 'View Plans'}
-                    </Button>
-                  </div>
-                </>
-              )}
+              {(() => {
+                const eligibility = getMembershipEligibility(user);
+                const isPaidPlan = ['lite', 'protect', 'secure'].includes(user?.plan_tier);
+                const daysRemaining = isPaidPlan && !eligibility.isEligible && eligibility.membershipDays < 30 
+                  ? 30 - eligibility.membershipDays 
+                  : 0;
+                
+                if (eligibility.isEligible) {
+                  // Qualified for member rate
+                  return (
+                    <>
+                      <div className="flex items-baseline gap-2 mb-2">
+                        <span className="text-3xl font-bold" style={{ color: '#10B981' }}>
+                          ฿{RESOLVE_PRICING.MEMBER_RATE.toLocaleString()}
+                        </span>
+                        <span className="text-sm" style={{ color: colors.textSecondary }}>
+                          {str.perCase}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 rounded-lg" style={{ 
+                        backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5' 
+                      }}>
+                        <TrendingDown className="w-4 h-4 text-emerald-600" />
+                        <span className="text-xs font-semibold" style={{ color: '#10B981' }}>
+                          {str.savingsNote.replace('{amount}', RESOLVE_PRICING.SAVINGS.toLocaleString())}
+                        </span>
+                      </div>
+                    </>
+                  );
+                } else if (isPaidPlan && daysRemaining > 0) {
+                  // BUG FIX #2: Paid plan but under 30 days - show public rate with countdown
+                  return (
+                    <>
+                      <div className="flex items-baseline gap-2 mb-2">
+                        <span className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
+                          ฿{RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()}
+                        </span>
+                        <span className="text-sm" style={{ color: colors.textSecondary }}>
+                          {str.perCase}
+                        </span>
+                      </div>
+                      <div className="p-3 rounded-lg space-y-2" style={{ 
+                        backgroundColor: isDarkMode ? '#3A2D1C' : '#FEF3C7',
+                        border: `1px solid ${isDarkMode ? '#F59E0B' : '#FCD34D'}`
+                      }}>
+                        <p className="text-xs font-semibold" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
+                          {language === 'th' ? `🕐 อยู่ในช่วง 30 วันแรกของการเป็นสมาชิก`
+                          : language === 'zh' ? `🕐 在会员资格的前30天内`
+                          : language === 'ja' ? `🕐 会員資格の最初の30日以内`
+                          : language === 'ko' ? `🕐 회원 자격의 첫 30일 이내`
+                          : language === 'ru' ? `🕐 В первых 30 днях членства`
+                          : `🕐 Within first 30 days of membership`}
+                        </p>
+                        <p className="text-xs" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
+                          {language === 'th' ? `ราคาสมาชิก ฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} จะใช้ได้ในอีก ${daysRemaining} วัน`
+                          : language === 'zh' ? `会员价格 ฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} 将在 ${daysRemaining} 天后生效`
+                          : language === 'ja' ? `会員価格 ฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} はあと ${daysRemaining} 日で有効`
+                          : language === 'ko' ? `회원 가격 ฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} 은 ${daysRemaining}일 후 활성화`
+                          : language === 'ru' ? `Тариф участника ฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} через ${daysRemaining} дн.`
+                          : `Member rate ฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} unlocks in ${daysRemaining} days`}
+                        </p>
+                      </div>
+                    </>
+                  );
+                } else {
+                  // Free plan or no membership
+                  return (
+                    <>
+                      <div className="flex items-baseline gap-2 mb-2">
+                        <span className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
+                          ฿{RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()}
+                        </span>
+                        <span className="text-sm" style={{ color: colors.textSecondary }}>
+                          {str.perCase}
+                        </span>
+                      </div>
+                      <div className="p-3 rounded-lg" style={{ 
+                        backgroundColor: isDarkMode ? '#3A2D1C' : '#FEF3C7',
+                        border: `1px solid ${isDarkMode ? '#F59E0B' : '#FCD34D'}`
+                      }}>
+                        <p className="text-xs" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
+                          {str.upgradeToMemberRate.replace('{memberPrice}', RESOLVE_PRICING.MEMBER_RATE.toLocaleString())}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 w-full"
+                          onClick={() => navigate(createPageUrl("account") + '?showPlans=true')}
+                          style={{
+                            borderColor: '#C7A338',
+                            color: '#C7A338'
+                          }}
+                        >
+                          {language === 'th' ? 'ดูแผน' : language === 'zh' ? '查看计划' : language === 'ja' ? 'プランを見る' : language === 'ko' ? '플랜 보기' : language === 'ru' ? 'Посмотреть тарифы' : 'View Plans'}
+                        </Button>
+                      </div>
+                    </>
+                  );
+                }
+              })()}
             </div>
           </CardContent>
         </Card>

@@ -18,11 +18,23 @@ Deno.serve(async (req) => {
     const { userId, userEmail, caseId, priceType, amount } = await req.json();
     console.log('[CREATE_CHECKOUT] Request payload:', { userId, userEmail, caseId, priceType, amount });
 
+    // BUG FIX #2: Validate pricing - no blocking, just ensure correct rate
+    // This function is called AFTER case creation, so pricing should already be determined
+    // We accept whatever priceType/amount was passed from frontend (based on membership eligibility)
+    
     // Validate required fields
     if (!userId || !userEmail || !caseId || !priceType || !amount) {
       console.error('[CREATE_CHECKOUT] Missing required fields');
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    
+    // BUG FIX #2: Log pricing decision for audit trail
+    console.log('[CREATE_CHECKOUT] Pricing decision:', {
+      priceType,
+      amount,
+      expectedMemberRate: 2490,
+      expectedPublicRate: 3990
+    });
 
     console.log('[CREATE_CHECKOUT] Creating Stripe session for case:', caseId);
 

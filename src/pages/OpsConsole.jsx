@@ -52,7 +52,7 @@ function OpsConsoleContent() {
   const initialTab = urlParams.get('tab') || 'all';
   const [selectedCase, setSelectedCase] = useState(null);
   const [actionMode, setActionMode] = useState(null);
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState(initialTab); // BUG FIX #1: Initialize from URL
   const [searchQuery, setSearchQuery] = useState('');
   const [generatingLetters, setGeneratingLetters] = useState(null);
   const [viewMode, setViewMode] = useState('kanban');
@@ -579,7 +579,14 @@ function OpsConsoleContent() {
                   <Filter className="w-4 h-4 inline mr-2" />
                   {strings.filterByStatus}
                 </Label>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <Select value={filterStatus} onValueChange={(val) => {
+                  setFilterStatus(val);
+                  // BUG FIX #1: Update URL when filter changes (preserves tab on refresh)
+                  const newUrl = val === 'all' 
+                    ? window.location.pathname 
+                    : `${window.location.pathname}?tab=${val}`;
+                  window.history.replaceState({}, '', newUrl);
+                }}>
                   <SelectTrigger style={{
                     backgroundColor: colors.inputBg,
                     borderColor: colors.inputBorder,
@@ -768,7 +775,7 @@ function OpsConsoleContent() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}&from=ops&tab=${activeTab}`)}
+                        onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}&from=ops&tab=${filterStatus}`)}
                       >
                         {strings.viewDetails}
                       </Button>
