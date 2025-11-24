@@ -17,7 +17,9 @@ import {
   Edit2,
   Search,
   Filter,
-  X
+  X,
+  Crown,
+  Zap
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -113,6 +115,15 @@ export default function CaseKanban({ cases = [], onStatusChange, colors, languag
   };
 
   const getPriorityIndicator = (caseItem) => {
+    // UNIFIED SYSTEM: Show priority badge for member benefit cases
+    if (caseItem.flags?.priority) {
+      return (
+        <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 flex items-center gap-1">
+          <Crown className="w-3 h-3" />
+          {language === 'th' ? 'สมาชิก' : language === 'zh' ? '会员' : language === 'ja' ? 'メンバー' : language === 'ko' ? '회원' : 'Member'}
+        </Badge>
+      );
+    }
     if (caseItem.flags?.urgent) return '🔥';
     if (caseItem.flags?.high_risk) return '⚠️';
     return null;
@@ -262,13 +273,23 @@ export default function CaseKanban({ cases = [], onStatusChange, colors, languag
                                         </div>
 
                                         {/* Case Number & Priority */}
-                                        <div className="flex items-center justify-between mb-3">
-                                          <span className="font-bold text-sm" style={{ color: colors.textPrimary }}>
-                                            {caseItem.case_number}
-                                          </span>
-                                          {getPriorityIndicator(caseItem) && (
-                                            <span className="text-lg">{getPriorityIndicator(caseItem)}</span>
-                                          )}
+                                        <div className="flex flex-col gap-2 mb-3">
+                                         <div className="flex items-center justify-between">
+                                           <span className="font-bold text-sm" style={{ color: colors.textPrimary }}>
+                                             {caseItem.case_number}
+                                           </span>
+                                           {(caseItem.flags?.urgent || caseItem.flags?.high_risk) && (
+                                             <span className="text-lg">
+                                               {caseItem.flags?.urgent ? '🔥' : '⚠️'}
+                                             </span>
+                                           )}
+                                         </div>
+                                         {caseItem.flags?.priority && (
+                                           <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 flex items-center gap-1 w-fit">
+                                             <Crown className="w-3 h-3" />
+                                             {language === 'th' ? 'สมาชิก' : language === 'zh' ? '会员' : language === 'ja' ? 'メンバー' : language === 'ko' ? '회원' : 'Member'}
+                                           </Badge>
+                                         )}
                                         </div>
 
                                         {/* Type Badge */}
