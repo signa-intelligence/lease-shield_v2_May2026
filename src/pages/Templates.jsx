@@ -552,7 +552,6 @@ export default function Templates() {
       uploadFailed: "Загрузка не удалась. Попробуйте снова."
     }
   };
-  };
 
   const strings = t[language] || t.en;
 
