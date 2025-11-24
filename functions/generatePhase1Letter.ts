@@ -1,9 +1,90 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 /**
- * Lease Shield – LLM-powered Letters (STEP 1: Generate & Deduct Credits)
- * This function generates the letter content AND deducts credits immediately
- * User will review/edit before final save
+ * Build language pack for letter generation
+ */
+function buildLanguagePack(context) {
+  const SUPPORTED = ['en', 'th', 'ja', 'zh', 'ko', 'ru'];
+  
+  const clean = (lang, fallback) => {
+    if (!lang) return fallback;
+    const cleaned = lang.toLowerCase().trim();
+    return SUPPORTED.includes(cleaned) ? cleaned : fallback;
+  };
+
+  const {
+    recipientType,
+    tenantLanguage,
+    landlordLanguage,
+    includeTenantCopy,
+    includeThaiCopy,
+    includeLandlordCopy
+  } = context;
+
+  // Juristic: Always TH + EN
+  if (recipientType === 'juristic') {
+    return {
+      primary: 'th',
+      allLanguages: ['th', 'en']
+    };
+  }
+
+  // Landlord letters
+  if (recipientType === 'landlord') {
+    const landlordLang = clean(landlordLanguage, 'th');
+    const tenantLang = clean(tenantLanguage, 'en');
+    
+    const langs = new Set();
+    langs.add(landlordLang);
+    langs.add('en');
+
+    if (includeTenantCopy) langs.add(tenantLang);
+    if (includeThaiCopy && landlordLang !== 'th') langs.add('th');
+
+    return {
+      primary: landlordLang,
+      allLanguages: Array.from(langs)
+    };
+  }
+
+  // Tenant letters
+  const tenantLang = clean(tenantLanguage, 'en');
+  const landlordLang = clean(landlordLanguage, 'th');
+  
+  const langs = new Set();
+  langs.add(tenantLang);
+  langs.add('en');
+
+  if (includeLandlordCopy && landlordLanguage) langs.add(landlordLang);
+  if (includeThaiCopy && tenantLang !== 'th') langs.add('th');
+
+  return {
+    primary: tenantLang,
+    allLanguages: Array.from(langs)
+  };
+}
+
+/**
+ * Get LLM prompt for specific language
+ */
+function getPromptForLanguage(langCode, letterConfig, contextData) {
+  const prompts = {
+    en: letterConfig.prompt_en,
+    th: letterConfig.prompt_th,
+    ja: `Draft a professional formal letter in Japanese for a tenant disputing deposit or rental issues. Use polite business Japanese (keigo). ${letterConfig.prompt_en}`,
+    zh: `Draft a professional formal letter in Simplified Chinese for a tenant disputing deposit or rental issues. Use formal business Chinese. ${letterConfig.prompt_en}`,
+    ko: `Draft a professional formal letter in Korean for a tenant disputing deposit or rental issues. Use formal business Korean with proper honorifics. ${letterConfig.prompt_en}`,
+    ru: `Draft a professional formal letter in Russian for a tenant disputing deposit or rental issues. Use formal business Russian. ${letterConfig.prompt_en}`
+  };
+
+  const basePrompt = prompts[langCode] || prompts['en'];
+  return `${basePrompt}\n\nContext:\n${contextData}\n\nGenerate a complete, professional letter in ${langCode.toUpperCase()} only.`;
+}
+
+/**
+ * Lease Shield – Multi-Language Letter Generator (STEP 1: Generate & Deduct Credits)
+ * Generates letters in multiple languages based on recipient type
+ * ONE credit = ONE pack (all languages included)
  */
 
 Deno.serve(async (req) => {
@@ -40,8 +121,18 @@ Deno.serve(async (req) => {
       breach_summary,
       settlement_amount,
       settlement_date,
-      concerns_list
+      concerns_list,
+      // Multi-language params
+      recipientType = 'tenant',
+      includeTenantCopy = false,
+      includeThaiCopy = false,
+      includeLandlordCopy = false
     } = args;
+
+    console.log('🌍 Multi-language generation started');
+    console.log('📋 Recipient type:', recipientType);
+    console.log('🔤 Tenant language:', user.language || 'en');
+    console.log('🔤 Landlord language:', user.landlord_language || 'th');
 
     const SUBJECT_TEMPLATES = {
       lease_negotiation: {
@@ -118,6 +209,18 @@ Deno.serve(async (req) => {
 
     const letterConfig = SUBJECT_TEMPLATES[subject];
 
+    // Build language pack based on recipient type
+    const languagePack = buildLanguagePack({
+      recipientType,
+      tenantLanguage: user.language || 'en',
+      landlordLanguage: user.landlord_language || 'th',
+      includeTenantCopy,
+      includeThaiCopy,
+      includeLandlordCopy
+    });
+
+    console.log('🌍 Language pack:', languagePack);
+
     let contextData = `Tenant: ${tenant_name || 'N/A'}\nLandlord: ${landlord_name || 'N/A'}`;
     if (property_address) contextData += `\nProperty: ${property_address}`;
     if (contract_ref) contextData += `\nContract: ${contract_ref}`;
@@ -130,45 +233,82 @@ Deno.serve(async (req) => {
     if (settlement_amount) contextData += `\nSettlement Amount: ฿${settlement_amount}`;
     if (settlement_date) contextData += `\nSettlement Date: ${settlement_date}`;
 
-    const prompt = `${letterConfig.prompt_en}\n\n${letterConfig.prompt_th}\n\n${contextData}`;
+    // Generate letters for all required languages
+    const generatedLetters = {};
+    
+    for (const langCode of languagePack.allLanguages) {
+      console.log(`📝 Generating letter in: ${langCode}`);
+      
+      const promptForLang = getPromptForLanguage(langCode, letterConfig, contextData);
+      
+      try {
+        const response = await base44.integrations.Core.InvokeLLM({
+          prompt: promptForLang,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              letter: { type: "string", description: `Full letter in ${langCode}` }
+            },
+            required: ["letter"]
+          }
+        });
 
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt: prompt,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          letter_en: { type: "string", description: "Full English letter" },
-          letter_th: { type: "string", description: "Full Thai letter" }
-        },
-        required: ["letter_en", "letter_th"]
+        generatedLetters[langCode] = response.letter;
+        console.log(`✅ Generated ${langCode} letter (${response.letter.length} chars)`);
+      } catch (err) {
+        console.error(`❌ Failed to generate ${langCode} letter:`, err.message);
+        
+        // Fallback to English if not English
+        if (langCode !== 'en' && generatedLetters['en']) {
+          console.warn(`⚠️ Using English as fallback for ${langCode}`);
+          generatedLetters[langCode] = generatedLetters['en'];
+        } else {
+          throw new Error(`Failed to generate ${langCode} letter: ${err.message}`);
+        }
       }
-    });
-
-    if (!response || !response.letter_en || !response.letter_th) {
-      throw new Error('Failed to generate letter content from LLM. Please try again.');
     }
 
-    // DEDUCT CREDIT IMMEDIATELY after successful generation
+    // Validate we have at least English and primary
+    if (!generatedLetters['en'] || !generatedLetters[languagePack.primary]) {
+      throw new Error('Failed to generate required letter languages. Please try again.');
+    }
+
+    // DEDUCT 1 CREDIT for the entire pack (not per language)
     await base44.auth.updateMe({
       letter_credits: Math.max(0, userCredits - 1)
     });
 
-    console.log(`✅ Letter generated successfully. Credit deducted. Credits remaining: ${userCredits - 1}`);
+    console.log(`✅ Multi-language letter pack generated successfully`);
+    console.log(`💳 1 credit deducted for ${languagePack.allLanguages.length} languages`);
+    console.log(`📊 Credits remaining: ${userCredits - 1}`);
+
+    // Log usage
+    try {
+      await base44.entities.LetterUsage.create({
+        user_email: user.email,
+        template_key: subject,
+        recipient_type: recipientType,
+        languages_generated: languagePack.allLanguages,
+        credits_used: 1,
+        generated_at: new Date().toISOString()
+      });
+    } catch (logErr) {
+      console.error('⚠️ Failed to log letter usage:', logErr.message);
+    }
 
     // Return the generated content for user review
     return Response.json({
       ok: true,
-      letter_content: {
-        letter_en: response.letter_en,
-        letter_th: response.letter_th
-      },
+      letter_content: generatedLetters,
+      language_pack: languagePack,
       subject: subject,
+      recipientType: recipientType,
       letterConfig: {
         name_en: letterConfig.name_en,
         name_th: letterConfig.name_th
       },
       credits_remaining: userCredits - 1,
-      message: 'Letter generated and credit deducted. Review and save to complete.'
+      message: `Letter pack generated in ${languagePack.allLanguages.length} languages. 1 credit deducted.`
     });
 
   } catch (error) {
