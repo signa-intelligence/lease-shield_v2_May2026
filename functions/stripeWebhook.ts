@@ -583,6 +583,7 @@ Deno.serve(async (req) => {
           console.log('Credits Added:', creditsToAdd);
           console.log('New Balance:', newBalance);
 
+          // ✅ PAYMENT RECORD
           await base44.asServiceRole.entities.Payment.create({
             type: 'addon',
             amount: parseFloat((session.amount_total / 100).toFixed(2)),
@@ -593,12 +594,58 @@ Deno.serve(async (req) => {
             created_by: user.email
           });
 
+          // ✅ LINE NOTIFICATION
+          console.log('[LETTER_CREDIT_WEBHOOK] User:', {
+            email: user.email,
+            userId: user.id,
+            lineLinked: !!user.line_messaging_token,
+            lineUserId: user.line_messaging_token || null,
+            lineNotificationsEnabled: user.line_notifications || false,
+            creditsPurchased: creditsToAdd,
+            newBalance: newBalance
+          });
+
+          if (user.line_messaging_token && user.line_notifications) {
+            try {
+              console.log('[LETTER_CREDIT_WEBHOOK] Sending LINE notification...');
+
+              const lineMessage = `🎉 Letter Credits Purchased!\n\n` +
+                `✅ Credits purchased: ${creditsToAdd}\n` +
+                `💳 New balance: ${newBalance}\n\n` +
+                `You can now generate legal letters to your landlord and juristic office from the Templates page.`;
+
+              await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                userId: user.line_messaging_token,
+                message: lineMessage
+              });
+
+              console.log('[LETTER_CREDIT_WEBHOOK] LINE notification sent', {
+                email: user.email,
+                lineUserId: user.line_messaging_token
+              });
+            } catch (lineError) {
+              console.error('[LETTER_CREDIT_WEBHOOK] LINE send failed:', {
+                email: user.email,
+                error: lineError.message,
+                stack: lineError.stack
+              });
+              // Don't fail webhook on LINE error
+            }
+          } else {
+            console.log('[LETTER_CREDIT_WEBHOOK] LINE not sent – no linked LINE account or notifications disabled', {
+              email: user.email,
+              lineLinked: !!user.line_messaging_token,
+              lineNotificationsEnabled: user.line_notifications || false
+            });
+          }
+
           console.log('\n✅ CREDITS PATH COMPLETE');
           return Response.json({ 
             received: true, 
             processed: 'credits',
             user: user.email,
-            credits: creditsToAdd
+            credits: creditsToAdd,
+            lineNotificationSent: !!(user.line_messaging_token && user.line_notifications)
           }, { status: 200 });
         }
       }
