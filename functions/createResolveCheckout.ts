@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 import { getMembershipInfo, getResolvePricingForUser } from './getMembershipInfo.js';
 
-const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), {
   apiVersion: '2024-06-20',
 });
 

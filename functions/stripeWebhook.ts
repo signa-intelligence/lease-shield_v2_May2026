@@ -1,18 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
-const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
-const webhookSecret = Deno.env.get('webhook_stripe');
+const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
 
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2024-06-20',
 });
 
 const PRICE_CREDIT_MAP = {
-  'price_1SR2b5QwoI6NhlUxbwA8JfsS': 1,
-  'price_1SR2dLQwoI6NhlUxv0TkEsiZ': 3,
-  'price_1SR2gVQwoI6NhlUxbkNkf6r4': 5,
-  'price_1SR2hXQwoI6NhlUxwahfstoL': 10,
+  'PRICE_LIVE_LETTER_CREDIT_1': 1,
+  'PRICE_LIVE_LETTER_CREDIT_3': 3,
+  'PRICE_LIVE_LETTER_CREDIT_5': 5,
+  'PRICE_LIVE_LETTER_CREDIT_10': 10,
 };
 
 Deno.serve(async (req) => {

@@ -98,8 +98,8 @@ const PLAN_DETAILS = [
     label: 'Lite',
     priceMonthly: 390,
     priceAnnual: 3900,
-    priceIdMonthly: 'price_1SM6qtQwoI6NhlUxgDDy2LuJ',
-    priceIdAnnual: 'price_1SNqjfQwoI6NhlUxk9LwivBm',
+    priceIdMonthly: 'PRICE_LIVE_LITE_MONTHLY',
+    priceIdAnnual: 'PRICE_LIVE_LITE_ANNUAL',
     savingsAnnual: 780,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
@@ -183,8 +183,8 @@ const PLAN_DETAILS = [
     label: 'Protect',
     priceMonthly: 690,
     priceAnnual: 6900,
-    priceIdMonthly: 'price_1SM6rhQwoI6NhlUxZIN3WekE',
-    priceIdAnnual: 'price_1SNqkMQwoI6NhlUxHb2VADjs',
+    priceIdMonthly: 'PRICE_LIVE_PROTECT_MONTHLY',
+    priceIdAnnual: 'PRICE_LIVE_PROTECT_ANNUAL',
     savingsAnnual: 1380,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
@@ -275,8 +275,8 @@ const PLAN_DETAILS = [
     label: 'Secure',
     priceMonthly: 1290,
     priceAnnual: 12900,
-    priceIdMonthly: 'price_1SM6t9QwoI6NhlUxy5Pl7Rrq',
-    priceIdAnnual: 'price_1SNqkxQwoI6NhlUx09mj0Lur',
+    priceIdMonthly: 'PRICE_LIVE_SECURE_MONTHLY',
+    priceIdAnnual: 'PRICE_LIVE_SECURE_ANNUAL',
     savingsAnnual: 2580,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
@@ -733,7 +733,19 @@ function AccountContent() {
     haptic.medium();
     setBuyingCredits(prev => ({ ...prev, [pkg.id]: true }));
     try {
-      console.log('💰 Buying credits:', { packageId: pkg.id, credits: pkg.credits, price: pkg.price, userId: user.id });
+      const livePriceId = pkg.id === 'credits_1' ? 'PRICE_LIVE_LETTER_CREDIT_1'
+        : pkg.id === 'credits_3' ? 'PRICE_LIVE_LETTER_CREDIT_3'
+        : pkg.id === 'credits_5' ? 'PRICE_LIVE_LETTER_CREDIT_5'
+        : pkg.id === 'credits_10' ? 'PRICE_LIVE_LETTER_CREDIT_10'
+        : null;
+
+      console.log('🔥 LIVE CHECKOUT - LETTER CREDITS:', {
+        priceId: livePriceId,
+        user: user.email,
+        credits: pkg.credits,
+        price: pkg.price,
+        packageId: pkg.id
+      });
       
       const response = await base44.functions.invoke('createCheckout', {
         mode: 'payment',

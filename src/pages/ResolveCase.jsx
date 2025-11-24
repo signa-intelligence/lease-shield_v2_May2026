@@ -228,6 +228,17 @@ function ResolveCaseContent() {
         priceType: pricing.priceType,
         amount: pricing.amount
       });
+
+      const livePriceId = pricing.priceType === 'member' ? 'PRICE_LIVE_RESOLVE_MEMBER' : 'PRICE_LIVE_RESOLVE_PUBLIC';
+      
+      console.log('🔥 LIVE CHECKOUT - RESOLVE CASE:', {
+        priceId: livePriceId,
+        user: userEmail,
+        tier: pricing.membershipInfo.plan,
+        priceType: pricing.priceType,
+        amount: pricing.amount,
+        caseId: createdCase.id
+      });
       
       // Create Stripe checkout session (server will re-validate pricing)
       const response = await base44.functions.invoke('createResolveCheckout', {
