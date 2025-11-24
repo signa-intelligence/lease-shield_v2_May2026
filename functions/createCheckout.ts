@@ -6,27 +6,52 @@ const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
 });
 
 Deno.serve(async (req) => {
+  console.log('\n\n═══════════════════════════════════════');
+  console.log('🔥 CHECKOUT FUNCTION ENTRY - DIAGNOSTICS ENABLED');
+  console.log('═══════════════════════════════════════');
+  
   const key = Deno.env.get('SK_TEST_secret_key');
-  console.log('🔑 Using Stripe key:', key?.substring(0, 15));
-  console.log('🔑 Key type:', key?.startsWith('sk_live_') ? 'LIVE ✅' : 'TEST ❌');
-  console.log('🔥 CHECKOUT DIAGNOSTIC:', {
-    mode: "LIVE_MIGRATION",
-    timestamp: Date.now(),
-    keyPresent: !!key,
-    keyType: key?.startsWith('sk_live_') ? 'LIVE' : key?.startsWith('sk_test_') ? 'TEST' : 'UNKNOWN'
+  
+  console.log('🔐 STRIPE_KEY_DIAGNOSTIC:', {
+    exists: !!key,
+    prefix: key?.slice(0, 7),
+    isLive: key?.startsWith('sk_live_'),
+    isTest: key?.startsWith('sk_test_'),
+    length: key?.length || 0
   });
+  
+  if (!key) {
+    console.error('❌ CRITICAL: SK_TEST_secret_key is NULL or UNDEFINED');
+    return Response.json({ 
+      error: 'Stripe secret key not configured',
+      diagnostic: 'SK_TEST_secret_key environment variable is missing'
+    }, { status: 500 });
+  }
+  
+  console.log('🔑 Key type:', key.startsWith('sk_live_') ? 'LIVE ✅' : key.startsWith('sk_test_') ? 'TEST ⚠️' : 'UNKNOWN ❌');
   
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
     if (!user) {
+      console.error('❌ Authentication failed - no user');
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('✅ User authenticated:', user.email);
+
     const { priceId, mode, amount, currency, description, successUrl, cancelUrl, metadata } = await req.json();
 
-    console.log('🔍 RAW PAYLOAD:', { priceId, mode, amount, currency, successUrl, cancelUrl, metadata });
+    console.log('📦 CHECKOUT_INPUT:', { 
+      priceId, 
+      mode, 
+      amount, 
+      currency, 
+      user: user.email,
+      metadata,
+      timestamp: Date.now()
+    });
 
     let customerId = user.stripe_customer_id;
     
@@ -172,27 +197,48 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing priceId or amount' }, { status: 400 });
     }
 
-    console.log('📤 Creating session with config:', JSON.stringify(sessionConfig, null, 2));
+    console.log('📤 Creating Stripe session...');
+    console.log('SessionConfig:', JSON.stringify(sessionConfig, null, 2));
 
-    const session = await stripe.checkout.sessions.create(sessionConfig);
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create(sessionConfig);
+      console.log('✅ Stripe session created successfully:', session.id);
+      console.log('✅ Checkout URL:', session.url);
+    } catch (stripeError) {
+      console.error('❌ STRIPE API ERROR:', {
+        type: stripeError.type,
+        code: stripeError.code,
+        message: stripeError.message,
+        param: stripeError.param,
+        statusCode: stripeError.statusCode,
+        raw: stripeError.raw
+      });
+      throw stripeError;
+    }
 
-    console.log('✅ Checkout session created:', session.id);
-    console.log('✅ URL:', session.url);
+    console.log('═══════════════════════════════════════');
+    console.log('✅ CHECKOUT COMPLETED SUCCESSFULLY');
+    console.log('═══════════════════════════════════════\n\n');
 
     return Response.json({ url: session.url });
   } catch (error) {
-    console.error('❌ Checkout creation error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      type: error.type,
-      code: error.code,
-      param: error.param
-    });
+    console.error('\n\n❌❌❌ CHECKOUT FUNCTION FAILED ❌❌❌');
+    console.error('Error Type:', error.type || 'unknown');
+    console.error('Error Code:', error.code || 'unknown');
+    console.error('Error Message:', error.message);
+    console.error('Error Param:', error.param || 'none');
+    console.error('Full Error Object:', JSON.stringify(error, null, 2));
+    console.error('Stack Trace:', error.stack);
+    console.error('═══════════════════════════════════════\n\n');
+    
     return Response.json({ 
-      error: error.message,
+      error: error.message || 'Checkout creation failed',
       details: error.raw?.message || error.message,
       type: error.type || 'unknown',
-      code: error.code || 'unknown'
+      code: error.code || 'unknown',
+      param: error.param || 'none',
+      diagnostic: 'Check function logs for full details'
     }, { status: 500 });
   }
 });

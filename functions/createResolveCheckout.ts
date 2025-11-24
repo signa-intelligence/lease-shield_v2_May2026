@@ -7,17 +7,39 @@ const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
 });
 
 Deno.serve(async (req) => {
+  console.log('\n\n═══════════════════════════════════════');
+  console.log('🔥 RESOLVE CHECKOUT FUNCTION ENTRY');
+  console.log('═══════════════════════════════════════');
+  
+  const key = Deno.env.get('SK_TEST_secret_key');
+  console.log('🔐 STRIPE_KEY_DIAGNOSTIC:', {
+    exists: !!key,
+    prefix: key?.slice(0, 7),
+    isLive: key?.startsWith('sk_live_'),
+    isTest: key?.startsWith('sk_test_')
+  });
+  
   try {
     const base44 = createClientFromRequest(req);
     
     // Verify user authentication
     const user = await base44.auth.me();
     if (!user) {
+      console.error('❌ Authentication failed');
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('✅ User authenticated:', user.email);
+
     const { userId, userEmail, caseId, priceType, amount } = await req.json();
-    console.log('[CREATE_CHECKOUT] Request payload:', { userId, userEmail, caseId, priceType, amount });
+    console.log('📦 RESOLVE_CHECKOUT_INPUT:', { 
+      userId, 
+      userEmail, 
+      caseId, 
+      priceType, 
+      amount,
+      timestamp: Date.now()
+    });
 
     // Validate required fields
     if (!userId || !userEmail || !caseId) {
@@ -54,9 +76,12 @@ Deno.serve(async (req) => {
     }
 
     console.log('[CREATE_CHECKOUT] Creating Stripe session for case:', caseId);
+    console.log('[CREATE_CHECKOUT] Final pricing:', { priceType: finalPriceType, amount: finalAmount });
 
     // Create Stripe checkout session with SERVER-VALIDATED pricing
-    const session = await stripe.checkout.sessions.create({
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: userEmail,
       line_items: [
@@ -94,9 +119,23 @@ Deno.serve(async (req) => {
       cancel_url: `${
         Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'
       }/Cases?resolve_cancelled=true&caseId=${caseId}`,
-    });
+      });
+      
+      console.log('[CREATE_CHECKOUT] ✅ Stripe session created:', session.id);
+    } catch (stripeError) {
+      console.error('❌ STRIPE API ERROR IN RESOLVE CHECKOUT:', {
+        type: stripeError.type,
+        code: stripeError.code,
+        message: stripeError.message,
+        param: stripeError.param,
+        statusCode: stripeError.statusCode
+      });
+      throw stripeError;
+    }
 
-    console.log('[CREATE_CHECKOUT] ✅ Stripe session created:', session.id);
+    console.log('═══════════════════════════════════════');
+    console.log('✅ RESOLVE CHECKOUT COMPLETED');
+    console.log('═══════════════════════════════════════\n\n');
     console.log('[CREATE_CHECKOUT] Success URL:', session.success_url);
     console.log('[CREATE_CHECKOUT] Metadata:', session.metadata);
 
@@ -106,12 +145,23 @@ Deno.serve(async (req) => {
       caseId: caseId,
     });
   } catch (error) {
-    console.error('❌ Error creating Resolve checkout:', error);
+    console.error('\n\n❌❌❌ RESOLVE CHECKOUT FAILED ❌❌❌');
+    console.error('Error Type:', error.type || 'unknown');
+    console.error('Error Code:', error.code || 'unknown');
+    console.error('Error Message:', error.message);
+    console.error('Error Param:', error.param || 'none');
+    console.error('Stack:', error.stack);
+    console.error('═══════════════════════════════════════\n\n');
+    
     const message =
       (error && typeof error === 'object' && 'message' in error
-        ? // @ts-ignore
-          error.message
+        ? error.message
         : 'Internal Server Error');
-    return Response.json({ error: message }, { status: 500 });
+    return Response.json({ 
+      error: message,
+      type: error.type || 'unknown',
+      code: error.code || 'unknown',
+      diagnostic: 'Check resolve checkout logs for full details'
+    }, { status: 500 });
   }
 });
