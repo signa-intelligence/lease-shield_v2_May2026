@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 
 function ResolveCaseContent() {
@@ -730,23 +730,20 @@ function ResolveCaseContent() {
             <div className="border-t pt-4" style={{ borderColor: colors.borderColor }}>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
-                  {str.resolvePricing}
+                 {str.resolvePricing}
                 </span>
                 {(() => {
-                  const eligibility = getMembershipEligibility(user);
-                  const isPaidPlan = ['lite', 'protect', 'secure'].includes(user?.plan_tier);
-                  const daysRemaining = isPaidPlan && !eligibility.isEligible && eligibility.membershipDays < 30 
-                    ? 30 - eligibility.membershipDays 
-                    : 0;
-                  
-                  if (eligibility.isEligible) {
+                 const membership = getMembershipInfo(user);
+                 const daysRemaining = membership.daysUntilMemberBenefits;
+
+                 if (membership.qualifiesForMemberBenefits) {
                     return (
                       <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
                         <Crown className="w-3 h-3 mr-1" />
                         {str.memberPrice}
                       </Badge>
                     );
-                  } else if (daysRemaining > 0) {
+                  } else if (membership.isPaidPlan && daysRemaining > 0) {
                     return (
                       <Badge className="bg-amber-100 text-amber-700 border-amber-200">
                         {language === 'th' ? `อีก ${daysRemaining} วัน` 
@@ -763,13 +760,10 @@ function ResolveCaseContent() {
               </div>
 
               {(() => {
-                const eligibility = getMembershipEligibility(user);
-                const isPaidPlan = ['lite', 'protect', 'secure'].includes(user?.plan_tier);
-                const daysRemaining = isPaidPlan && !eligibility.isEligible && eligibility.membershipDays < 30 
-                  ? 30 - eligibility.membershipDays 
-                  : 0;
+                const membership = getMembershipInfo(user);
+                const daysRemaining = membership.daysUntilMemberBenefits;
                 
-                if (eligibility.isEligible) {
+                if (membership.qualifiesForMemberBenefits) {
                   // Qualified for member rate
                   return (
                     <>
@@ -791,8 +785,8 @@ function ResolveCaseContent() {
                       </div>
                     </>
                   );
-                } else if (isPaidPlan && daysRemaining > 0) {
-                  // BUG FIX #2: Paid plan but under 30 days - show public rate with countdown
+                } else if (membership.isPaidPlan && daysRemaining > 0) {
+                  // Paid plan but under 30 days - show public rate with countdown
                   return (
                     <>
                       <div className="flex items-baseline gap-2 mb-2">

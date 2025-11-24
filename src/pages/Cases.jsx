@@ -25,7 +25,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
-import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility, getResolvePricingForUser } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
 
 const STATUS_CONFIG = {
   awaiting_payment: { label: 'Awaiting Payment', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
@@ -596,7 +596,7 @@ function CasesContent() {
     );
   };
 
-  // Visible statuses - cases to show to users
+  // Visible statuses - include awaiting_payment so users can see unpaid cases
   const VISIBLE_STATUSES = ['awaiting_payment', 'intake', 'pending_review', 'under_review', 'ready_drafts', 
                             'client_review', 'awaiting_landlord', 'in_progress', 'resolved', 'closed'];
   
@@ -822,8 +822,8 @@ function CasesContent() {
           {/* Resolve CTA Banner */}
           {(() => {
             // Resolve CTA for all users
-            const eligibility = getMembershipEligibility(user);
-            const showMemberRate = eligibility.isEligible;
+            const membership = getMembershipInfo(user);
+            const showMemberRate = membership.qualifiesForMemberBenefits;
             const displayPrice = showMemberRate ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE;
             const rateLabel = showMemberRate ? 'member rate' : 'public rate';
             
@@ -1099,11 +1099,22 @@ function CasesContent() {
                             {statusConfig.label}
                           </Badge>
                         </div>
-                        <p className="text-xs md:text-sm mt-2" style={{ color: colors.textSecondary }}>
-                          {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
-                        </p>
+                        <div className="mt-2 space-y-1">
+                          <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>
+                            {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
+                          </p>
+                          {caseItem.type && (
+                            <Badge className="bg-blue-100 text-blue-800 text-xs">
+                              {caseItem.type === 'deposit' ? (language === 'th' ? 'เงินมัดจำ' : 'Deposit') :
+                               caseItem.type === 'early_termination' ? (language === 'th' ? 'ยกเลิกก่อนกำหนด' : 'Early Termination') :
+                               caseItem.type === 'damages' ? (language === 'th' ? 'ความเสียหาย' : 'Damages') :
+                               (language === 'th' ? 'อื่นๆ' : 'Other')}
+                            </Badge>
+                          )}
+                        </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
+                        {/* Dispute Amount */}
                         <div>
                           <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
                             {strings.disputeAmount}
@@ -1112,6 +1123,45 @@ function CasesContent() {
                             ฿{caseItem.dispute_amount?.toLocaleString() || '0'}
                           </p>
                         </div>
+
+                        {/* Property Address */}
+                        {caseItem.property_address && (
+                          <div>
+                            <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                              {language === 'th' ? 'ที่อยู่ทรัพย์สิน' : 
+                               language === 'ru' ? 'Адрес' : 
+                               language === 'zh' ? '地址' :
+                               language === 'ja' ? '住所' :
+                               language === 'ko' ? '주소' :
+                               'Property Address'}
+                            </p>
+                            <p className="text-sm" style={{ color: colors.textPrimary }}>
+                              {caseItem.property_address}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Landlord Info */}
+                        {caseItem.landlord_name && (
+                          <div>
+                            <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                              {language === 'th' ? 'เจ้าของบ้าน' : 
+                               language === 'ru' ? 'Владелец' : 
+                               language === 'zh' ? '房东' :
+                               language === 'ja' ? '家主' :
+                               language === 'ko' ? '집주인' :
+                               'Landlord'}
+                            </p>
+                            <p className="text-sm" style={{ color: colors.textPrimary }}>
+                              {caseItem.landlord_name}
+                              {caseItem.landlord_email && (
+                                <span className="text-xs ml-2" style={{ color: colors.textSecondary }}>
+                                  ({caseItem.landlord_email})
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        )}
 
                         {(caseItem.fast_track || caseItem.letter_pack || caseItem.is_member_at_creation) && (
                           <div>

@@ -383,31 +383,56 @@ Deno.serve(async (req) => {
           console.log('[RESOLVE_WEBHOOK] ⚠️ No caseId in metadata');
         }
 
-        // Update existing case to intake status (ready for review)
+        // CRITICAL FIX: Update case with payment completion
         if (caseRecord) {
-          console.log('[RESOLVE_WEBHOOK] Updating existing case:', caseId, 'to status: intake');
+          console.log('[RESOLVE_WEBHOOK] Updating case:', caseId, 'from status:', caseRecord.status, 'to: intake');
+          console.log('[RESOLVE_WEBHOOK] Case data BEFORE update:', {
+            id: caseRecord.id,
+            case_number: caseRecord.case_number,
+            user_email: caseRecord.user_email,
+            type: caseRecord.type,
+            dispute_amount: caseRecord.dispute_amount,
+            summary: caseRecord.summary,
+            property_address: caseRecord.property_address,
+            landlord_name: caseRecord.landlord_name,
+            evidence_count: caseRecord.evidence?.length || 0
+          });
+          
           const updatedCase = await base44.asServiceRole.entities.Case.update(caseId, {
-            status: 'intake',
+            status: 'intake', // Move from awaiting_payment to intake
             stripe_session_id: session.id,
             stripe_payment_intent_id: session.payment_intent,
             pricing_type: priceType,
             resolve_amount: amount,
-            is_member_at_creation: priceType === 'member',
+            paid_at: new Date().toISOString(),
             timeline: [
               ...(caseRecord.timeline || []),
               {
                 timestamp: new Date().toISOString(),
                 event: 'Payment completed - case submitted for review',
-                actor: userEmail
+                actor: userEmail,
+                meta: {
+                  stripe_session_id: session.id,
+                  amount: amount,
+                  price_type: priceType
+                }
               }
             ]
           });
-          console.log('[RESOLVE_FLOW] Case after webhook update:', {
+          console.log('[RESOLVE_WEBHOOK] ✅ Case AFTER update:', {
             id: updatedCase.id,
+            case_number: updatedCase.case_number,
             status: updatedCase.status,
             user_email: updatedCase.user_email,
+            type: updatedCase.type,
+            dispute_amount: updatedCase.dispute_amount,
+            summary: updatedCase.summary?.substring(0, 50),
+            property_address: updatedCase.property_address,
+            landlord_name: updatedCase.landlord_name,
+            landlord_email: updatedCase.landlord_email,
+            evidence_count: updatedCase.evidence?.length || 0,
             stripe_session_id: updatedCase.stripe_session_id,
-            dispute_amount: updatedCase.dispute_amount
+            paid_at: updatedCase.paid_at
           });
           caseRecord = updatedCase;
         } else {
