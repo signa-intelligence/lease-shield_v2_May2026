@@ -1,14 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), {
+const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2024-06-20',
 });
 
 Deno.serve(async (req) => {
-  const key = Deno.env.get('STRIPE_SECRET_KEY');
+  const key = Deno.env.get('SK_TEST_secret_key');
   console.log('🔑 Using Stripe key:', key?.substring(0, 15));
   console.log('🔑 Key type:', key?.startsWith('sk_live_') ? 'LIVE ✅' : 'TEST ❌');
+  console.log('🔥 CHECKOUT DIAGNOSTIC:', {
+    mode: "LIVE_MIGRATION",
+    timestamp: Date.now(),
+    keyPresent: !!key,
+    keyType: key?.startsWith('sk_live_') ? 'LIVE' : key?.startsWith('sk_test_') ? 'TEST' : 'UNKNOWN'
+  });
   
   try {
     const base44 = createClientFromRequest(req);
