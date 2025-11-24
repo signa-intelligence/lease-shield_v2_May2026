@@ -12,10 +12,12 @@ Deno.serve(async (req) => {
   console.log('═══════════════════════════════════════');
   
   const key = Deno.env.get('SK_TEST_secret_key');
+  const isLiveMode = key?.startsWith('sk_live_');
+  
   console.log('🔐 STRIPE_KEY_DIAGNOSTIC:', {
     exists: !!key,
     prefix: key?.slice(0, 7),
-    isLive: key?.startsWith('sk_live_'),
+    isLive: isLiveMode,
     isTest: key?.startsWith('sk_test_')
   });
   
@@ -77,6 +79,10 @@ Deno.serve(async (req) => {
 
     console.log('[CREATE_CHECKOUT] Creating Stripe session for case:', caseId);
     console.log('[CREATE_CHECKOUT] Final pricing:', { priceType: finalPriceType, amount: finalAmount });
+
+    // ✅ TEST-TO-LIVE MIGRATION: Use customer_email instead of customer ID to avoid test/live mismatch
+    // This forces Stripe to create or use the correct customer in the current mode
+    console.log('[CREATE_CHECKOUT] Using customer_email (bypassing saved customer ID for test-to-live safety):', userEmail);
 
     // Create Stripe checkout session with SERVER-VALIDATED pricing
     let session;
