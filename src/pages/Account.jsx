@@ -39,9 +39,15 @@ const PLAN_DETAILS = [
     tagline: 'Try Before You Commit',
     taglineTh: 'ทดลองก่อนตัดสินใจ',
     taglineRu: 'Попробуйте перед тем, как принять решение',
+    taglineZh: '先试用再决定',
+    taglineJa: '試してから決める',
+    taglineKo: '먼저 시도한 후 결정',
     description: 'Experience our automated lease analysis',
     descriptionTh: 'สัมผัสการวิเคราะห์สัญญาเช่าอัตโนมัติ',
     descriptionRu: 'Оцените наш автоматический анализ договора аренды',
+    descriptionZh: '体验我们的自动租约分析',
+    descriptionJa: '自動リース分析を体験',
+    descriptionKo: '자동 임대 계약 분석 체험',
     benefits: [
       '1 Lease Scan (lifetime)',
       'Basic Risk Score Preview',
@@ -63,6 +69,27 @@ const PLAN_DETAILS = [
       'Отслеживание депозита (только чтение)',
       'Базовое отслеживание обслуживания'
     ],
+    benefitsZh: [
+      '1次租约扫描（终身）',
+      '基本风险评分预览',
+      '3个文件（100MB存储）',
+      '只读押金追踪',
+      '基本维护追踪'
+    ],
+    benefitsJa: [
+      '1回のリーススキャン（生涯）',
+      '基本リスクスコアプレビュー',
+      '3ファイル（100MBストレージ）',
+      '読み取り専用敷金トラッカー',
+      '基本メンテナンストラッカー'
+    ],
+    benefitsKo: [
+      '1회 임대 계약 스캔（평생）',
+      '기본 위험 점수 미리보기',
+      '3개 파일（100MB 저장소）',
+      '읽기 전용 보증금 추적기',
+      '기본 유지보수 추적기'
+    ],
     bgColor: '#64748b',
     icon: Gift
   },
@@ -79,9 +106,15 @@ const PLAN_DETAILS = [
     tagline: 'Essential Protection',
     taglineTh: 'การป้องกันที่จำเป็น',
     taglineRu: 'Базовая защита',
+    taglineZh: '基本保护',
+    taglineJa: '必須保護',
+    taglineKo: '필수 보호',
     description: 'Core prevention tools for individuals',
     descriptionTh: 'เครื่องมือป้องกันหลักสำหรับบุคคล',
     descriptionRu: 'Основные инструменты профилактики для частных арендаторов',
+    descriptionZh: '个人核心预防工具',
+    descriptionJa: '個人向けコア予防ツール',
+    descriptionKo: '개인을 위한 핵심 예방 도구',
     benefits: [
       'Everything in Free',
       '6 Lease Scans per annum',
@@ -112,6 +145,36 @@ const PLAN_DETAILS = [
       'Отслеживание обслуживания',
       'Отслеживание депозита'
     ],
+    benefitsZh: [
+      '包含免费计划所有内容',
+      '每年6次租约扫描',
+      '报告5个风险',
+      '电子邮件通知',
+      '3个信件积分',
+      '1GB文档存储',
+      '维护追踪器',
+      '押金追踪器'
+    ],
+    benefitsJa: [
+      'Freeの全て',
+      '年6回のリーススキャン',
+      '5つのリスク報告',
+      'メール通知',
+      '3つのレタークレジット',
+      '1GBドキュメントストレージ',
+      'メンテナンストラッカー',
+      '敷金トラッカー'
+    ],
+    benefitsKo: [
+      'Free 플랜의 모든 내용',
+      '연간 6회 임대 계약 스캔',
+      '5개 위험 보고',
+      '이메일 알림',
+      '3개 레터 크레딧',
+      '1GB 문서 저장소',
+      '유지보수 추적기',
+      '보증금 추적기'
+    ],
     bgColor: '#0C3B2E',
     icon: Zap
   },
@@ -128,9 +191,15 @@ const PLAN_DETAILS = [
     tagline: 'Complete Prevention Suite',
     taglineTh: 'ชุดป้องกันครบครัน',
     taglineRu: 'Полный комплекс профилактической защиты',
+    taglineZh: '完整预防套件',
+    taglineJa: '完全な予防スイート',
+    taglineKo: '완전한 예방 제품군',
     description: 'Everything you need for full protection',
     descriptionTh: 'ทุกสิ่งที่คุณต้องการสำหรับการป้องกันแบบเต็มรูปแบบ',
     descriptionRu: 'Все, что нужно для полной защиты',
+    descriptionZh: '全面保护所需的一切',
+    descriptionJa: '完全な保護に必要なすべて',
+    descriptionKo: '완전한 보호에 필요한 모든 것',
     benefits: [
       'Everything in Lite',
       '12 Lease Scans per annum',
@@ -164,6 +233,39 @@ const PLAN_DETAILS = [
       'Автоматические напоминания',
       'Автоматизация защиты депозита'
     ],
+    benefitsZh: [
+      '包含Lite计划所有内容',
+      '每年12次租约扫描',
+      '完整风险报告',
+      'LINE通知',
+      '5个信件积分',
+      '5GB文档存储',
+      '租金支付提醒',
+      '自动提醒',
+      '押金保护自动化'
+    ],
+    benefitsJa: [
+      'Liteの全て',
+      '年12回のリーススキャン',
+      '完全なリスクレポート',
+      'LINE通知',
+      '5つのレタークレジット',
+      '5GBドキュメントストレージ',
+      '家賃支払いアラート',
+      '自動リマインダー',
+      '敷金保護自動化'
+    ],
+    benefitsKo: [
+      'Lite 플랜의 모든 내용',
+      '연간 12회 임대 계약 스캔',
+      '전체 위험 보고서',
+      'LINE 알림',
+      '5개 레터 크레딧',
+      '5GB 문서 저장소',
+      '임대료 납부 알림',
+      '자동 알림',
+      '보증금 보호 자동화'
+    ],
     bgColor: '#C7A338',
     icon: Shield,
     popular: true
@@ -181,9 +283,15 @@ const PLAN_DETAILS = [
     tagline: 'Premium Protection',
     taglineTh: 'การป้องกันระดับพรีเมียม',
     taglineRu: 'Премиальная защита',
+    taglineZh: '高级保护',
+    taglineJa: 'プレミアム保護',
+    taglineKo: '프리미엄 보호',
     description: 'Maximum prevention with priority support',
     descriptionTh: 'การป้องกันสูงสุดพร้อมการสนับสนุนลำดับความสำคัญ',
     descriptionRu: 'Максимальная профилактика с приоритетной поддержкой',
+    descriptionZh: '最大程度预防与优先支持',
+    descriptionJa: '優先サポート付き最大予防',
+    descriptionKo: '우선 지원이 포함된 최대 예방',
     benefits: [
       'Everything in Protect',
       'Unlimited Lease Scans',
@@ -216,6 +324,39 @@ const PLAN_DETAILS = [
       'Приоритетная очередь по делам',
       'Приоритетное сканирование',
       'Премиальная поддержка'
+    ],
+    benefitsZh: [
+      '包含Protect计划所有内容',
+      '无限次租约扫描',
+      '高级提醒',
+      '10个信件积分',
+      '20GB文档存储',
+      '押金追踪器',
+      '优先案件队列',
+      '优先扫描',
+      '高级支持'
+    ],
+    benefitsJa: [
+      'Protectの全て',
+      '無制限のリーススキャン',
+      '高度なリマインダー',
+      '10のレタークレジット',
+      '20GBドキュメントストレージ',
+      '敷金トラッカー',
+      '優先ケースキュー',
+      '優先スキャン',
+      'プレミアムサポート'
+    ],
+    benefitsKo: [
+      'Protect 플랜의 모든 내용',
+      '무제한 임대 계약 스캔',
+      '고급 알림',
+      '10개 레터 크레딧',
+      '20GB 문서 저장소',
+      '보증금 추적기',
+      '우선 사례 대기열',
+      '우선 스캔',
+      '프리미엄 지원'
     ],
     bgColor: '#1A1D1F',
     icon: Crown
@@ -864,6 +1005,8 @@ function AccountContent() {
       fullName: "Full Name",
       email: "Email",
       cannotChange: "Cannot be changed",
+      notificationPreferences: "Notification Preferences",
+      notificationInsights: "Notification Insights",
       phone: "Phone Number",
       phonePlaceholder: "+66 XX XXX XXXX",
       country: "Country",
@@ -1023,6 +1166,8 @@ function AccountContent() {
       fullName: "ชื่อ-นามสกุล",
       email: "อีเมล",
       cannotChange: "ไม่สามารถเปลี่ยนแปลงได้",
+      notificationPreferences: "การตั้งค่าการแจ้งเตือน",
+      notificationInsights: "สถิติการแจ้งเตือน",
       phone: "เบอร์โทรศัพท์",
       phonePlaceholder: "+66 XX XXX XXXX",
       country: "ประเทศ",
@@ -1336,7 +1481,9 @@ function AccountContent() {
       recycleBin: "回收站",
       manageDeletedItems: "管理已删除项目",
       landlordLanguage: "房东语言",
-      selectLandlordLanguage: "选择房东的首选语言"
+      selectLandlordLanguage: "选择房东的首选语言",
+      notificationPreferences: "通知偏好",
+      notificationInsights: "通知统计"
     },
     ja: {
       pageTitle: "マイアカウント",
@@ -1500,7 +1647,9 @@ function AccountContent() {
       recycleBin: "ゴミ箱",
       manageDeletedItems: "削除されたアイテムを管理",
       landlordLanguage: "家主の言語",
-      selectLandlordLanguage: "家主の好みの言語を選択"
+      selectLandlordLanguage: "家主の好みの言語を選択",
+      notificationPreferences: "通知設定",
+      notificationInsights: "通知インサイト"
     },
     ko: {
       pageTitle: "내 계정",
@@ -1664,7 +1813,9 @@ function AccountContent() {
       recycleBin: "휴지통",
       manageDeletedItems: "삭제된 항목 관리",
       landlordLanguage: "집주인 언어",
-      selectLandlordLanguage: "집주인의 선호 언어 선택"
+      selectLandlordLanguage: "집주인의 선호 언어 선택",
+      notificationPreferences: "알림 설정",
+      notificationInsights: "알림 통계"
     },
     ru: {
       pageTitle: "Мой аккаунт",
@@ -1828,7 +1979,9 @@ function AccountContent() {
       recycleBin: "Корзина",
       manageDeletedItems: "Управление удалёнными элементами",
       landlordLanguage: "Язык арендодателя",
-      selectLandlordLanguage: "Выберите предпочтительный язык арендодателя"
+      selectLandlordLanguage: "Выберите предпочтительный язык арендодателя",
+      notificationPreferences: "Настройки уведомлений",
+      notificationInsights: "Статистика уведомлений"
     }
   };
 
@@ -2579,7 +2732,7 @@ function AccountContent() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <Bell className="w-5 h-5 text-ls-forest" />
-                  {language === 'th' ? 'การตั้งค่าการแจ้งเตือน' : language === 'ru' ? 'Настройки уведомлений' : 'Notification Preferences'}
+                  {strings.notificationPreferences}
                 </CardTitle>
                 {expandedNotifPrefs ? <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} /> : <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />}
               </div>
@@ -2609,7 +2762,7 @@ function AccountContent() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <BarChart3 className="w-5 h-5 text-ls-gold" />
-                  {language === 'th' ? 'สถิติการแจ้งเตือน' : language === 'ru' ? 'Статистика уведомлений' : 'Notification Insights'}
+                  {strings.notificationInsights}
                 </CardTitle>
                 {expandedNotifAnalytics ? <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} /> : <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />}
               </div>
@@ -3575,7 +3728,7 @@ function AccountContent() {
                       }}>
                         <p className="font-semibold text-red-900 mb-2 text-sm">{strings.whatYoullLose}:</p>
                         <ul className="space-y-1 text-xs sm:text-sm text-red-800">
-                          {(language === 'th' ? currentPlan.benefitsTh : language === 'ru' ? currentPlan.benefitsRu : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน') && !b.startsWith('Все из')).slice(0, 4).map((benefit, idx) => (
+                          {(language === 'th' ? currentPlan.benefitsTh : language === 'zh' ? currentPlan.benefitsZh : language === 'ja' ? currentPlan.benefitsJa : language === 'ko' ? currentPlan.benefitsKo : language === 'ru' ? currentPlan.benefitsRu : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน') && !b.startsWith('Все из') && !b.startsWith('包含') && !b.startsWith('の全て') && !b.startsWith('플랜의 모든')).slice(0, 4).map((benefit, idx) => (
                             <li key={idx} className="flex items-start gap-2">
                               <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
                               <span>{benefit}</span>
@@ -3764,7 +3917,7 @@ function AccountContent() {
                   }}>
                     <p className="font-semibold text-red-900 mb-2 text-sm">{strings.whatYoullLose}:</p>
                     <ul className="space-y-1 text-xs sm:text-sm text-red-800">
-                      {(language === 'th' ? currentPlan.benefitsTh : language === 'ru' ? currentPlan.benefitsRu : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน') && !b.startsWith('Все из')).map((benefit, idx) => (
+                      {(language === 'th' ? currentPlan.benefitsTh : language === 'zh' ? currentPlan.benefitsZh : language === 'ja' ? currentPlan.benefitsJa : language === 'ko' ? currentPlan.benefitsKo : language === 'ru' ? currentPlan.benefitsRu : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน') && !b.startsWith('Все из') && !b.startsWith('包含') && !b.startsWith('の全て') && !b.startsWith('플랜의 모든')).map((benefit, idx) => (
                         <li key={idx} className="flex items-start gap-2">
                           <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
                           <span>{benefit}</span>
@@ -4080,17 +4233,17 @@ function AccountContent() {
                     <div style={{ height: '24px', marginBottom: '12px' }}>
                       {plan.popular && (
                         <Badge className="bg-amber-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          ⭐ {language === 'th' ? 'ได้รับความนิยมมากที่สุด' : strings.mostPopular}
+                          ⭐ {strings.mostPopular}
                         </Badge>
                       )}
                       {billingInterval === 'annual' && !isFreeplanLocal && !plan.popular && !isSecureTierLocal && (
                         <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          🏷️ {language === 'th' ? 'ฟรี 2 เดือน' : strings.monthsFree}
+                          🏷️ {strings.monthsFree}
                         </Badge>
                       )}
                       {isSecureTierLocal && (
                         <Badge className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
-                          👑 {language === 'th' ? 'พรีเมียม' : 'PREMIUM'}
+                          👑 {language === 'th' ? 'พรีเมียม' : language === 'zh' ? '高级版' : language === 'ja' ? 'プレミアム' : language === 'ko' ? '프리미엄' : language === 'ru' ? 'ПРЕМИУМ' : 'PREMIUM'}
                         </Badge>
                       )}
                     </div>
@@ -4113,10 +4266,10 @@ function AccountContent() {
                         </h3>
                       </div>
                       <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                        {language === 'th' ? plan.taglineTh : language === 'ru' ? plan.taglineRu : plan.tagline}
+                        {language === 'th' ? plan.taglineTh : language === 'zh' ? plan.taglineZh : language === 'ja' ? plan.taglineJa : language === 'ko' ? plan.taglineKo : language === 'ru' ? plan.taglineRu : plan.tagline}
                       </p>
                       <p className="text-xs line-clamp-2" style={{ color: colors.textSecondary }}>
-                        {language === 'th' ? plan.descriptionTh : language === 'ru' ? plan.descriptionRu : plan.description}
+                        {language === 'th' ? plan.descriptionTh : language === 'zh' ? plan.descriptionZh : language === 'ja' ? plan.descriptionJa : language === 'ko' ? plan.descriptionKo : language === 'ru' ? plan.descriptionRu : plan.description}
                       </p>
                     </div>
 
@@ -4151,8 +4304,8 @@ function AccountContent() {
 
                     <div style={{ flex: 1, marginBottom: '12px' }}>
                       <ul className="space-y-2">
-                        {(language === 'th' ? plan.benefitsTh : language === 'ru' ? plan.benefitsRu : plan.benefits).map((benefit, idx) => {
-                          const isBold = benefit.startsWith('Everything in') || benefit.startsWith('ทุกอย่างใน') || benefit.startsWith('Все из');
+                        {(language === 'th' ? plan.benefitsTh : language === 'zh' ? plan.benefitsZh : language === 'ja' ? plan.benefitsJa : language === 'ko' ? plan.benefitsKo : language === 'ru' ? plan.benefitsRu : plan.benefits).map((benefit, idx) => {
+                          const isBold = benefit.startsWith('Everything in') || benefit.startsWith('ทุกอย่างใน') || benefit.startsWith('Все из') || benefit.startsWith('包含') || benefit.startsWith('の全て') || benefit.startsWith('플랜의 모든');
                           return (
                             <li key={idx} className="flex items-start gap-2 text-xs" style={{ color: colors.textPrimary }}>
                               <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: (isSecureTierLocal || isLiteTierLocal) ? '#0C3B2E' : '#0C3B2E' }} />
