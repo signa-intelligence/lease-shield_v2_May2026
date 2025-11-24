@@ -1005,8 +1005,6 @@ function AccountContent() {
       fullName: "Full Name",
       email: "Email",
       cannotChange: "Cannot be changed",
-      notificationPreferences: "Notification Preferences",
-      notificationInsights: "Notification Insights",
       phone: "Phone Number",
       phonePlaceholder: "+66 XX XXX XXXX",
       country: "Country",
@@ -1061,6 +1059,8 @@ function AccountContent() {
       monthly: "Monthly",
       annual: "Annual",
       save17: "Save 17%",
+      notificationPreferences: "Notification Preferences",
+      notificationInsights: "Notification Insights",
       choosePlan: "Choose Your Protection Level",
       planDesc: "All plans focus on prevention and maintaining clear records",
       mostPopular: "MOST POPULAR",
@@ -1166,8 +1166,6 @@ function AccountContent() {
       fullName: "ชื่อ-นามสกุล",
       email: "อีเมล",
       cannotChange: "ไม่สามารถเปลี่ยนแปลงได้",
-      notificationPreferences: "การตั้งค่าการแจ้งเตือน",
-      notificationInsights: "สถิติการแจ้งเตือน",
       phone: "เบอร์โทรศัพท์",
       phonePlaceholder: "+66 XX XXX XXXX",
       country: "ประเทศ",
@@ -1222,6 +1220,8 @@ function AccountContent() {
       monthly: "รายเดือน",
       annual: "รายปี",
       save17: "ประหยัด 17%",
+      notificationPreferences: "การตั้งค่าการแจ้งเตือน",
+      notificationInsights: "สถิติการแจ้งเตือน",
       choosePlan: "เลือกระดับการป้องกันของคุณ",
       planDesc: "แผนทั้งหมดมุ่งเน้นการป้องกันและรักษาบันทึกที่ชัดเจน",
       mostPopular: "ได้รับความนิยมมากที่สุด",
@@ -1381,6 +1381,8 @@ function AccountContent() {
       monthly: "按月",
       annual: "按年",
       save17: "节省17%",
+      notificationPreferences: "通知偏好",
+      notificationInsights: "通知统计",
       choosePlan: "选择您的保护级别",
       planDesc: "所有计划都专注于预防和维护清晰的记录",
       mostPopular: "最受欢迎",
@@ -1547,6 +1549,8 @@ function AccountContent() {
       monthly: "月額",
       annual: "年額",
       save17: "17%節約",
+      notificationPreferences: "通知設定",
+      notificationInsights: "通知インサイト",
       choosePlan: "保護レベルを選択",
       planDesc: "すべてのプランは予防と明確な記録の維持に焦点を当てています",
       mostPopular: "最も人気",
@@ -1713,6 +1717,8 @@ function AccountContent() {
       monthly: "월간",
       annual: "연간",
       save17: "17% 절약",
+      notificationPreferences: "알림 설정",
+      notificationInsights: "알림 통계",
       choosePlan: "보호 수준 선택",
       planDesc: "모든 플랜은 예방과 명확한 기록 유지에 중점을 둡니다",
       mostPopular: "가장 인기",
@@ -1879,6 +1885,8 @@ function AccountContent() {
       monthly: "Ежемесячно",
       annual: "Ежегодно",
       save17: "Экономия 17%",
+      notificationPreferences: "Настройки уведомлений",
+      notificationInsights: "Статистика уведомлений",
       choosePlan: "Выберите уровень защиты",
       planDesc: "Все планы ориентированы на профилактику и ведение четких записей",
       mostPopular: "САМЫЙ ПОПУЛЯРНЫЙ",
@@ -3609,11 +3617,17 @@ function AccountContent() {
                         </div>
                         <div className="flex-1">
                           <h3 className="font-bold text-lg mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                            Lite {language === 'th' ? '- แผนที่เหมาะสมที่สุด' : language === 'ru' ? '- Подходит для большинства' : '- Best fit for most'}
+                            Lite {language === 'th' ? '- แผนที่เหมาะสมที่สุด' : language === 'zh' ? '- 最适合大多数人' : language === 'ja' ? '- ほとんどの人に最適' : language === 'ko' ? '- 대부분에게 가장 적합' : language === 'ru' ? '- Подходит для большинства' : '- Best fit for most'}
                           </h3>
                           <p className="text-sm mb-3" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
                             {language === 'th' 
                               ? 'เพียง ฿390/เดือน - รักษาการป้องกันหลักและประหยัด 43% จากแผนปัจจุบัน'
+                              : language === 'zh'
+                              ? '仅฿390/月 - 保持核心保护并比当前计划节省43%'
+                              : language === 'ja'
+                              ? 'わずか฿390/月 - コア保護を維持し、現在のプランから43%節約'
+                              : language === 'ko'
+                              ? '월 ฿390만 - 핵심 보호 유지 및 현재 플랜에서 43% 절약'
                               : language === 'ru'
                                 ? 'Всего ฿390/месяц - сохраните основную защиту и экономьте 43% от текущего плана'
                                 : 'Only ฿390/month - keep core protections and save 43% from current plan'}
@@ -3621,15 +3635,15 @@ function AccountContent() {
                           <ul className="space-y-1 text-xs sm:text-sm mb-4" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
                             <li className="flex items-center gap-2">
                               <CheckCircle2 className="w-4 h-4" />
-                              {language === 'th' ? '6 การสแกนสัญญาต่อปี' : language === 'ru' ? '6 сканирований договоров/год' : '6 Lease Scans/year'}
+                              {language === 'th' ? '6 การสแกนสัญญาต่อปี' : language === 'zh' ? '每年6次租约扫描' : language === 'ja' ? '年6回のリーススキャン' : language === 'ko' ? '연간 6회 임대 계약 스캔' : language === 'ru' ? '6 сканирований договоров/год' : '6 Lease Scans/year'}
                             </li>
                             <li className="flex items-center gap-2">
                               <CheckCircle2 className="w-4 h-4" />
-                              {language === 'th' ? 'การแจ้งเตือนทางอีเมล' : language === 'ru' ? 'Email уведомления' : 'Email Notifications'}
+                              {language === 'th' ? 'การแจ้งเตือนทางอีเมล' : language === 'zh' ? '电子邮件通知' : language === 'ja' ? 'メール通知' : language === 'ko' ? '이메일 알림' : language === 'ru' ? 'Email уведомления' : 'Email Notifications'}
                             </li>
                             <li className="flex items-center gap-2">
                               <CheckCircle2 className="w-4 h-4" />
-                              {language === 'th' ? 'ติดตามเงินมัดจำและการซ่อมบำรุง' : language === 'ru' ? 'Отслеживание депозита и обслуживания' : 'Deposit & Maintenance Tracking'}
+                              {language === 'th' ? 'ติดตามเงินมัดจำและการซ่อมบำรุง' : language === 'zh' ? '押金和维护追踪' : language === 'ja' ? '敷金とメンテナンス追跡' : language === 'ko' ? '보증금 및 유지보수 추적' : language === 'ru' ? 'Отслеживание депозита и обслуживания' : 'Deposit & Maintenance Tracking'}
                             </li>
                           </ul>
                         </div>
