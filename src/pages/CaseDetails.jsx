@@ -42,6 +42,7 @@ export default function CaseDetails() {
   const urlParams = new URLSearchParams(window.location.search);
   const caseId = urlParams.get('caseId');
   const fromOps = urlParams.get('from') === 'ops'; // WORKFLOW FIX: Track navigation source
+  const previousTab = urlParams.get('tab') || 'all'; // BUG FIX #1: Preserve tab filter
   const queryClient = useQueryClient();
 
   const [compilingPack, setCompilingPack] = useState(false);
@@ -454,7 +455,7 @@ export default function CaseDetails() {
         <div className="max-w-5xl mx-auto">
           <Button 
             variant="outline" 
-            onClick={() => navigate(fromOps ? createPageUrl("OpsConsole") : createPageUrl("Cases"))} 
+            onClick={() => navigate(fromOps ? `${createPageUrl("OpsConsole")}?tab=${previousTab}` : createPageUrl("Cases"))} 
             className="mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -504,7 +505,7 @@ export default function CaseDetails() {
 
         <Button
           variant="outline"
-          onClick={() => navigate(fromOps ? createPageUrl("OpsConsole") : createPageUrl("Cases"))}
+          onClick={() => navigate(fromOps ? `${createPageUrl("OpsConsole")}?tab=${previousTab}` : createPageUrl("Cases"))}
           className="mb-4 md:mb-6"
           size="sm"
         >

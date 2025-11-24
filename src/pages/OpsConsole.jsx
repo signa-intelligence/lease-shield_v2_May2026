@@ -46,6 +46,10 @@ function OpsConsoleContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
+  
+  // BUG FIX #1: Restore tab from URL params on page load
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialTab = urlParams.get('tab') || 'all';
   const [selectedCase, setSelectedCase] = useState(null);
   const [actionMode, setActionMode] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
@@ -764,7 +768,7 @@ function OpsConsoleContent() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}&from=ops`)}
+                        onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}&from=ops&tab=${activeTab}`)}
                       >
                         {strings.viewDetails}
                       </Button>

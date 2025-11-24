@@ -2056,20 +2056,53 @@ function DashboardContent() {
           {(() => {
             const eligibility = getMembershipEligibility(user);
             const showMemberRate = eligibility.isEligible;
-            
+            const isPaidPlan = ['lite', 'protect', 'secure'].includes(user?.plan_tier);
+            const daysRemaining = isPaidPlan && !showMemberRate && eligibility.membershipDays < 30 
+              ? 30 - eligibility.membershipDays 
+              : 0;
+
             // Check if user has an awaiting_details case already paid for
             const awaitingCase = cases.find(c => 
               c.status === 'intake' && c.stripe_session_id
             );
-            
+
             const handleStartResolve = async (e) => {
               e.stopPropagation();
               haptic.medium();
 
-              // Navigate directly to ResolveCase intake form
+              // BUG FIX #2: Always allow navigation - pricing handled in checkout
               navigate(createPageUrl("resolvecase") + "?mode=new");
             };
-            
+
+            // BUG FIX #2: Determine pricing message
+            let pricingMessage = '';
+            if (awaitingCase) {
+              pricingMessage = language === 'ru' ? 'Завершите ваше дело' : 'Complete your case submission';
+            } else if (showMemberRate) {
+              // Qualified for member rate
+              pricingMessage = language === 'ru' 
+                ? `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} за дело · ${strings.memberPrice} · ${strings.savingsVsPublic}`
+                : `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} per case · ${strings.memberPrice} · ${strings.savingsVsPublic}`;
+            } else if (isPaidPlan && daysRemaining > 0) {
+              // Paid plan but under 30 days - public rate applies
+              pricingMessage = language === 'th'
+                ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} (อีก ${daysRemaining} วันสำหรับราคาสมาชิก)`
+                : language === 'zh'
+                  ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} (${daysRemaining}天后享会员价)`
+                  : language === 'ja'
+                    ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} (メンバー価格まであと${daysRemaining}日)`
+                    : language === 'ko'
+                      ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} (회원 가격까지 ${daysRemaining}일)`
+                      : language === 'ru'
+                        ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} (до тарифа участника ${daysRemaining} дн.)`
+                        : `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} (member rate in ${daysRemaining} days)`;
+            } else {
+              // Free plan or default
+              pricingMessage = language === 'ru'
+                ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} за дело · ${strings.publicPrice} · ${strings.upgradeForMemberRate}`
+                : `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} per case · ${strings.publicPrice} · ${strings.upgradeForMemberRate}`;
+            }
+
             return (
               <div 
                 className="mb-6 cursor-pointer card-interactive"
@@ -2106,17 +2139,7 @@ function DashboardContent() {
                         }
                       </h4>
                       <p className="text-xs" style={{ color: isDarkMode ? '#F87171' : '#B91C1C' }}>
-                        {awaitingCase
-                          ? (language === 'ru' ? 'Завершите ваше дело' : 'Complete your case submission')
-                          : (showMemberRate 
-                              ? (language === 'ru' 
-                                  ? `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} за дело · ${strings.memberPrice} · ${strings.savingsVsPublic}`
-                                  : `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} per case · ${strings.memberPrice} · ${strings.savingsVsPublic}`)
-                              : (language === 'ru'
-                                  ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} за дело · ${strings.publicPrice} · ${strings.upgradeForMemberRate}`
-                                  : `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} per case · ${strings.publicPrice} · ${strings.upgradeForMemberRate}`)
-                            )
-                        }
+                        {pricingMessage}
                       </p>
                     </div>
                   </div>
