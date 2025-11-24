@@ -1142,8 +1142,7 @@ export default function AdminConsole() {
 
         <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
 
-        {/* DEBUG & RESTORE PANEL - Super Admin Only */}
-        {isSuperAdmin && (
+        {/* 3. USER MANAGEMENT */}
           <Card className="mb-6 border-none shadow-lg" style={{ 
             backgroundColor: colors.cardBg,
             borderLeft: '6px solid #EF4444'
@@ -1222,114 +1221,7 @@ export default function AdminConsole() {
           </Card>
         )}
 
-        {/* NEW: Kanban Board Toggle */}
-        <div className="mb-6">
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <Shield className="w-5 h-5 text-ls-forest" />
-                  {strings.caseManagement}
-                </CardTitle>
-                <Button
-                  onClick={() => setShowKanban(!showKanban)}
-                  variant={showKanban ? "default" : "outline"}
-                  className={showKanban ? "bg-ls-forest hover:bg-ls-forest/90 text-white" : ""}
-                >
-                  {showKanban 
-                    ? strings.hideKanban
-                    : strings.showKanban}
-                </Button>
-              </div>
-            </CardHeader>
-            {showKanban && (
-              <CardContent className="p-6">
-                <CaseKanban
-                  cases={allCases}
-                  onStatusChange={handleCaseStatusChange}
-                  colors={colors}
-                  language={language}
-                />
-              </CardContent>
-            )}
-          </Card>
-        </div>
 
-        {/* NEW: User Impersonation Section */}
-        <div className="mb-6">
-          <UserImpersonation colors={colors} language={language} />
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          <TrendChart
-            title={strings.leaseTrends}
-            data={leaseTrend}
-            dataKey="value"
-            chartType="bar"
-            color="#8B5CF6"
-            colors={colors}
-            language={language}
-          />
-          <TrendChart
-            title={strings.depositTrends}
-            data={depositTrend}
-            dataKey="value"
-            chartType="line"
-            color="#C7A338"
-            colors={colors}
-            language={language}
-          />
-        </div>
-
-        <div className="grid lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-3 xl:col-span-2">
-            <CaseBreakdown cases={allCases} colors={colors} language={language} />
-          </div>
-          <div className="lg:col-span-3 xl:col-span-1">
-            <ActivityTimeline activities={recentActivities} colors={colors} language={language} />
-          </div>
-        </div>
-
-        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <TestTube className="w-5 h-5 text-blue-600" />
-              {strings.demoDataSeeder}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <p className="mb-4" style={{ color: colors.textSecondary }}>{strings.demoDataDesc}</p>
-            <Button
-              onClick={handleSeedDemo}
-              disabled={seedingDemo}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {seedingDemo ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {strings.seeding}
-                </>
-              ) : (
-                <>
-                  <Database className="w-4 h-4 mr-2" />
-                  {strings.seedDemo}
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="mb-6">
-          <NotificationHistory language={language} colors={colors} />
-        </div>
-
-        <div className="mb-6">
-          <ReminderControl language={language} colors={colors} />
-        </div>
-
-        <div className="mb-6">
-          <TestNotifications users={users} language={language} colors={colors} />
-        </div>
 
         <Dialog open={permissionsDialog} onOpenChange={setPermissionsDialog}>
           <DialogContent className="max-w-2xl" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
