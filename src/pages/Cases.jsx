@@ -71,47 +71,48 @@ function CasesContent() {
     queryKey: ['cases', user?.email],
     queryFn: async () => {
       if (!user?.email) {
-        console.error('🔍 [CASES_PAGE] No user email - cannot fetch cases');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('❌ [MY_CASES] No user email - cannot fetch');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         return [];
       }
       
-      console.log('🔍 [CASES_PAGE] Fetching cases for authenticated user:', user.email);
-      console.log('🔍 [CASES_PAGE] User ID:', user.id);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔍 [MY_CASES] RAW QUERY STARTING');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('👤 Logged in as:', user.email);
+      console.log('🆔 User ID:', user.id);
+      console.log('📋 User role:', user.role);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
-      // CRITICAL: RLS filters by user_email = {{user.email}}
-      // We query for non-deleted cases, RLS handles user filtering automatically
-      const result = await base44.entities.Case.filter({ 
-        is_deleted: { $ne: true }
-      }, '-created_date');
+      // 🔥 STEP 1: RAW QUERY - NO FILTERS AT ALL
+      // This will test if RLS is working correctly
+      const rawResult = await base44.entities.Case.list('-created_date', 100);
       
-      console.log('📊 [CASES_PAGE] RLS-filtered result:', result.length, 'cases');
-      console.log('📊 [CASES_PAGE] Detailed case binding check:');
-      result.forEach(c => {
-        console.log({
-          id: c.id.slice(0, 8),
+      console.log('📊 [MY_CASES] RAW QUERY RESULT (RLS-filtered):', rawResult.length, 'cases returned');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      // Log every single case returned
+      rawResult.forEach((c, idx) => {
+        console.log(`📄 CASE ${idx + 1}:`, {
+          id: c.id,
           case_number: c.case_number,
           user_email: c.user_email,
           created_by: c.created_by,
-          matches_current_user: c.user_email === user.email,
+          created_by_id: c.created_by_id,
           status: c.status,
-          dispute_amount: c.dispute_amount
+          is_deleted: c.is_deleted,
+          dispute_amount: c.dispute_amount,
+          '✅ MATCHES_USER': c.user_email === user.email
         });
       });
       
-      // DEFENSIVE: If RLS fails, manually filter as backup
-      const userCases = result.filter(c => 
-        c.user_email === user.email || c.created_by === user.email
-      );
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🎯 [MY_CASES] Cases matching current user:', rawResult.filter(c => c.user_email === user.email).length);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
-      if (userCases.length !== result.length) {
-        console.warn('⚠️ [CASES_PAGE] RLS mismatch detected:', {
-          rls_returned: result.length,
-          user_filtered: userCases.length,
-          mismatch_cases: result.filter(c => c.user_email !== user.email && c.created_by !== user.email)
-        });
-      }
-      
-      return result;
+      // Return raw result - RLS should handle filtering
+      return rawResult;
     },
     enabled: !!user?.email,
     refetchOnMount: 'always',
