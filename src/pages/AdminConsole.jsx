@@ -1219,9 +1219,6 @@ export default function AdminConsole() {
               </div>
             </CardContent>
           </Card>
-        )}
-
-
 
         <Dialog open={permissionsDialog} onOpenChange={setPermissionsDialog}>
           <DialogContent className="max-w-2xl" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>

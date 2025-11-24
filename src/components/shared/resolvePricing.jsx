@@ -1,104 +1,148 @@
 /**
- * ⚡ Resolve Pricing - Single Source of Truth
+ * UNIFIED MEMBERSHIP SYSTEM - Single source of truth for ALL member benefits
  * 
- * Defines pricing and eligibility logic for the Resolve case service.
- * Used across Dashboard, Cases, ResolveCase pages and Stripe webhooks.
+ * CRITICAL BUSINESS RULES:
+ * - Secure: Immediate member benefits (no 30-day wait)
+ * - Lite/Protect: Member benefits after 30 days of active membership
+ * - Free: No member benefits, ever
+ * 
+ * Applies to: Resolve pricing, Letter pricing, Priority features
  */
 
 export const RESOLVE_PRICING = {
-  PUBLIC_RATE: 3990,  // THB - Public price
-  MEMBER_RATE: 2490,  // THB - Member price
-  SAVINGS: 1500       // THB - Amount saved as member vs public
+  PUBLIC_RATE: 3990,
+  MEMBER_RATE: 2490,
+  SAVINGS: 1500
+};
+
+export const LETTER_PRICING = {
+  PUBLIC_RATE: 300,  // per letter
+  MEMBER_RATE: 200,  // per letter
+  PACK_PUBLIC_RATE: 900,  // 3-pack
+  PACK_MEMBER_RATE: 600   // 3-pack
 };
 
 /**
- * Determines if user qualifies for member pricing
+ * UNIFIED MEMBERSHIP ELIGIBILITY FUNCTION
+ * Returns comprehensive membership information for a user
  * 
- * Member pricing applies if:
- * - User has an active paid plan (Lite/Protect/Secure), OR
- * - User has been a paying member for at least 30 days total
- * 
- * @param {Object} user - User object with plan_tier and member_since
- * @returns {Object} Eligibility details
+ * @param {Object} user - User object with plan_tier and plan_started_at
+ * @param {Date} now - Current date (optional, defaults to new Date())
+ * @returns {Object} Membership eligibility details
  */
-export function getMembershipEligibility(user) {
+export function getMembershipInfo(user, now = new Date()) {
   if (!user) {
     return {
-      isEligible: false,
-      reason: 'no_user',
-      daysAsMember: 0
+      plan: 'free',
+      membershipDays: 0,
+      isPaidPlan: false,
+      qualifiesForMemberBenefits: false,
+      reason: 'not_logged_in',
+      daysUntilMemberBenefits: null
     };
   }
 
-  // Check 1: Active paid plan
-  const hasActivePaidPlan = user.plan_tier && 
-    ['lite', 'protect', 'secure'].includes(user.plan_tier.toLowerCase());
+  const plan = user.plan_tier || 'free';
+  const isPaidPlan = ['lite', 'protect', 'secure'].includes(plan);
 
-  if (hasActivePaidPlan) {
-    return {
-      isEligible: true,
-      reason: 'active_paid_plan',
-      plan: user.plan_tier,
-      daysAsMember: user.member_since ? 
-        Math.floor((Date.now() - new Date(user.member_since).getTime()) / (1000 * 60 * 60 * 24)) : 
-        0
-    };
+  // Calculate membership duration
+  let membershipDays = 0;
+  if (user.plan_started_at) {
+    const planStartDate = new Date(user.plan_started_at);
+    membershipDays = Math.floor((now - planStartDate) / (1000 * 60 * 60 * 24));
   }
 
-  // Check 2: 30+ days of paid membership history
-  if (user.member_since) {
-    const memberSinceDate = new Date(user.member_since);
-    const daysSinceMember = Math.floor(
-      (Date.now() - memberSinceDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
+  // CRITICAL BUSINESS LOGIC: Determine eligibility
+  let qualifiesForMemberBenefits = false;
+  let reason = '';
+  let daysUntilMemberBenefits = null;
 
-    if (daysSinceMember >= 30) {
-      return {
-        isEligible: true,
-        reason: '30_day_member',
-        daysAsMember: daysSinceMember
-      };
+  if (plan === 'secure') {
+    // SECURE: Immediate member benefits (no wait)
+    qualifiesForMemberBenefits = true;
+    reason = 'secure_immediate';
+  } else if (plan === 'lite' || plan === 'protect') {
+    // LITE/PROTECT: Member benefits after 30 days
+    if (membershipDays >= 30) {
+      qualifiesForMemberBenefits = true;
+      reason = 'qualified_30_days';
+    } else {
+      qualifiesForMemberBenefits = false;
+      reason = 'insufficient_membership_duration';
+      daysUntilMemberBenefits = 30 - membershipDays;
     }
-
-    return {
-      isEligible: false,
-      reason: 'insufficient_membership_duration',
-      daysAsMember: daysSinceMember,
-      daysRemaining: 30 - daysSinceMember
-    };
+  } else {
+    // FREE: Never qualifies
+    qualifiesForMemberBenefits = false;
+    reason = 'not_on_paid_plan';
   }
 
   return {
-    isEligible: false,
-    reason: 'never_been_member',
-    daysAsMember: 0
+    plan,
+    membershipDays,
+    isPaidPlan,
+    qualifiesForMemberBenefits,
+    reason,
+    daysUntilMemberBenefits
   };
 }
 
 /**
- * Get pricing details for a specific user
- * 
- * @param {Object} user - User object
- * @returns {Object} Pricing details
+ * LEGACY: Wrapper for backward compatibility
+ * @deprecated Use getMembershipInfo(user).qualifiesForMemberBenefits instead
+ */
+export function getMembershipEligibility(user) {
+  const info = getMembershipInfo(user);
+  return {
+    isEligible: info.qualifiesForMemberBenefits,
+    reason: info.reason,
+    membershipDays: info.membershipDays
+  };
+}
+
+/**
+ * Get Resolve pricing for a specific user
+ * Uses unified membership rules
  */
 export function getResolvePricingForUser(user) {
-  const eligibility = getMembershipEligibility(user);
+  const membership = getMembershipInfo(user);
   
   return {
-    publicPrice: RESOLVE_PRICING.PUBLIC_RATE,
-    memberPrice: RESOLVE_PRICING.MEMBER_RATE,
-    savings: RESOLVE_PRICING.SAVINGS,
-    isMember: eligibility.isEligible,
-    effectivePrice: eligibility.isEligible ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE,
-    priceType: eligibility.isEligible ? 'member' : 'public',
-    eligibility: eligibility
+    priceType: membership.qualifiesForMemberBenefits ? 'member' : 'public',
+    amount: membership.qualifiesForMemberBenefits ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE,
+    membershipInfo: membership
   };
 }
 
 /**
- * Legacy helper - kept for backward compatibility
- * @deprecated Use getMembershipEligibility instead
+ * Get Letter pricing for a specific user
+ * Uses unified membership rules
+ */
+export function getLetterPricingForUser(user) {
+  const membership = getMembershipInfo(user);
+  
+  return {
+    priceType: membership.qualifiesForMemberBenefits ? 'member' : 'public',
+    perLetterRate: membership.qualifiesForMemberBenefits ? LETTER_PRICING.MEMBER_RATE : LETTER_PRICING.PUBLIC_RATE,
+    packRate: membership.qualifiesForMemberBenefits ? LETTER_PRICING.PACK_MEMBER_RATE : LETTER_PRICING.PACK_PUBLIC_RATE,
+    membershipInfo: membership
+  };
+}
+
+/**
+ * Check if user has priority status
+ * Uses unified membership rules
+ */
+export function hasPriorityAccess(user) {
+  const membership = getMembershipInfo(user);
+  return membership.qualifiesForMemberBenefits;
+}
+
+/**
+ * LEGACY: Backward compatibility wrapper
+ * @deprecated Use getMembershipInfo(user).qualifiesForMemberBenefits instead
  */
 export function hasMemberPricing(user) {
-  return getMembershipEligibility(user).isEligible;
+  const membership = getMembershipInfo(user);
+  return membership.qualifiesForMemberBenefits;
 }
