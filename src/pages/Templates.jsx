@@ -342,7 +342,7 @@ export default function Templates() {
   const t = {
     en: {
       title: "Letter Templates",
-      subtitle: "Professional bilingual escalation ladder - all templates available",
+      subtitle: "Professional multi-language escalation ladder - all templates available",
       creditBalance: "Credit Balance",
       credits: "Credits",
       allLetters: "All Letters (11 Templates)",
@@ -527,6 +527,7 @@ export default function Templates() {
       friendlyApproach: "Дружественный подход (3 письма)",
       professionalEscalation: "Профессиональная эскалация (4 письма)",
       finalMeasures: "Финальные меры (3 письма)",
+      general_concerns: "Общие проблемы",
       oneLetterPerCredit: "1 письмо = 1 кредит",
       accessTemplateLibrary: "Доступ к библиотеке шаблонов",
       bilingual: "Многоязычные шаблоны",

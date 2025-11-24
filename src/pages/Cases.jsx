@@ -460,6 +460,7 @@ function CasesContent() {
       deleteConfirmTitle: "Delete this case?",
       deleteConfirmMessage: "This case will be moved to your Recycle Bin and can be restored later.",
       confirmDelete: "Delete",
+      cancel: "Cancel",
       back: "Back",
       refreshed: "Refreshed successfully",
       deleteSuccess: "Case moved to Recycle Bin",
@@ -483,13 +484,7 @@ function CasesContent() {
       tryDifferentSearch: "Try a different search or filter",
       needMoreHelp: "Need more help?",
       openResolveDesc: "Open a Resolve case for professional support at member or public rates.",
-      openResolveCase: "Open Resolve Case",
-      deleteConfirmTitle: "Delete this case?",
-      deleteConfirmMessage: "This case will be moved to your Recycle Bin and can be restored later.",
-      confirmDelete: "Delete",
-      cancel: "Cancel",
-      deleteSuccess: "Case moved to Recycle Bin",
-      deleteFailed: "Failed to delete case"
+      openResolveCase: "Open Resolve Case"
     }
   };
 
@@ -711,7 +706,6 @@ function CasesContent() {
               haptic.medium();
               navigate(createPageUrl("resolvecase") + "?mode=new");
             }}
-            color="#C7A338"
             color="#C7A338"
           />
 

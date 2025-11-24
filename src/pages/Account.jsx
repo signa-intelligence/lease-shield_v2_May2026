@@ -1331,7 +1331,12 @@ function AccountContent() {
       confirmDowngradeWarning: "您将失去无限次租约扫描、高级提醒、额外信件积分和其他高级保护。",
       reasonForDowngrade: "降级原因",
       goBack: "返回",
-      confirmDowngradeBtn: "确认降级到免费"
+      confirmDowngradeBtn: "确认降级到免费",
+      dataAndStorage: "数据与存储",
+      recycleBin: "回收站",
+      manageDeletedItems: "管理已删除项目",
+      landlordLanguage: "房东语言",
+      selectLandlordLanguage: "选择房东的首选语言"
     },
     ja: {
       pageTitle: "マイアカウント",
@@ -1490,7 +1495,12 @@ function AccountContent() {
       confirmDowngradeWarning: "無制限のリーススキャン、高度なリマインダー、追加のレタークレジット、その他のプレミアム保護が失われます。",
       reasonForDowngrade: "ダウングレードの理由",
       goBack: "戻る",
-      confirmDowngradeBtn: "無料プランへのダウングレードを確認"
+      confirmDowngradeBtn: "無料プランへのダウングレードを確認",
+      dataAndStorage: "データとストレージ",
+      recycleBin: "ゴミ箱",
+      manageDeletedItems: "削除されたアイテムを管理",
+      landlordLanguage: "家主の言語",
+      selectLandlordLanguage: "家主の好みの言語を選択"
     },
     ko: {
       pageTitle: "내 계정",
@@ -1649,7 +1659,12 @@ function AccountContent() {
       confirmDowngradeWarning: "무제한 임대 스캔, 고급 알림, 추가 레터 크레딧 및 기타 프리미엄 보호 기능을 잃게 됩니다.",
       reasonForDowngrade: "다운그레이드 이유",
       goBack: "돌아가기",
-      confirmDowngradeBtn: "무료 요금제 다운그레이드 확인"
+      confirmDowngradeBtn: "무료 요금제 다운그레이드 확인",
+      dataAndStorage: "데이터 및 저장소",
+      recycleBin: "휴지통",
+      manageDeletedItems: "삭제된 항목 관리",
+      landlordLanguage: "집주인 언어",
+      selectLandlordLanguage: "집주인의 선호 언어 선택"
     },
     ru: {
       pageTitle: "Мой аккаунт",
@@ -1808,7 +1823,12 @@ function AccountContent() {
       confirmDowngradeWarning: "Вы потеряете неограниченные сканирования договоров, расширенные напоминания, дополнительные кредиты писем и другие премиум функции.",
       reasonForDowngrade: "Причина понижения",
       goBack: "Назад",
-      confirmDowngradeBtn: "Подтвердить понижение до бесплатного"
+      confirmDowngradeBtn: "Подтвердить понижение до бесплатного",
+      dataAndStorage: "Данные и хранилище",
+      recycleBin: "Корзина",
+      manageDeletedItems: "Управление удалёнными элементами",
+      landlordLanguage: "Язык арендодателя",
+      selectLandlordLanguage: "Выберите предпочтительный язык арендодателя"
     }
   };
 
@@ -3191,7 +3211,7 @@ function AccountContent() {
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
               <Database className="w-5 h-5 text-ls-forest" />
-              {language === 'th' ? 'ข้อมูลและพื้นที่จัดเก็บ' : language === 'ru' ? 'Данные и хранилище' : 'Data & Storage'}
+              {strings.dataAndStorage || (language === 'th' ? 'ข้อมูลและพื้นที่จัดเก็บ' : language === 'zh' ? '数据与存储' : language === 'ja' ? 'データとストレージ' : language === 'ko' ? '데이터 및 저장소' : language === 'ru' ? 'Данные и хранилище' : 'Data & Storage')}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -3229,10 +3249,10 @@ function AccountContent() {
                     </div>
                     <div>
                       <p className="font-semibold" style={{ color: colors.textPrimary }}>
-                        {language === 'th' ? 'ถังขยะ' : language === 'ru' ? 'Корзина' : 'Recycle Bin'}
+                        {strings.recycleBin || (language === 'th' ? 'ถังขยะ' : language === 'zh' ? '回收站' : language === 'ja' ? 'ゴミ箱' : language === 'ko' ? '휴지통' : language === 'ru' ? 'Корзина' : 'Recycle Bin')}
                       </p>
                       <p className="text-sm" style={{ color: colors.textSecondary }}>
-                        {language === 'th' ? 'จัดการรายการที่ลบ' : language === 'ru' ? 'Управление удалёнными элементами' : 'Manage deleted items'}
+                        {strings.manageDeletedItems || (language === 'th' ? 'จัดการรายการที่ลบ' : language === 'zh' ? '管理已删除项目' : language === 'ja' ? '削除されたアイテムを管理' : language === 'ko' ? '삭제된 항목 관리' : language === 'ru' ? 'Управление удалёнными элементами' : 'Manage deleted items')}
                       </p>
                     </div>
                   </div>
