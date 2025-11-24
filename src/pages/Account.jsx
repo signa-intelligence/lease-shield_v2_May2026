@@ -693,6 +693,14 @@ function AccountContent() {
       email: user.email
     });
 
+    console.log('🔥 LIVE CHECKOUT - SUBSCRIPTION:', {
+      priceId: selectedInterval === 'annual' ? plan.priceIdAnnual : plan.priceIdMonthly,
+      user: user.email,
+      tier: selectedPlan,
+      interval: billingInterval,
+      amount: amount
+    });
+
     setSubscribing(prev => ({ ...prev, [selectedPlan]: true }));
     try {
       const response = await base44.functions.invoke('createCheckout', {
