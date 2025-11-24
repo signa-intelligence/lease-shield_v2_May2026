@@ -1,4 +1,3 @@
-
 /**
  * LINE Flex Message Templates for LeaseShield
  * Beautiful, interactive notification cards with proper branding
@@ -661,7 +660,7 @@ export const createMaintenanceRequestFlex = (data, language = 'en') => {
   
   const strings = {
     en: {
-      title: role === 'landlord' ? '🔧 Maintenance Request' : '🔧 Maintenance Request', // Titles are currently the same for landlord/tenant, but allows for future differentiation
+      title: role === 'landlord' ? '🔧 Maintenance Request' : '🔧 Maintenance Request',
       subtitle: role === 'landlord' ? `From your tenant` : 'New request submitted',
       issue: 'Issue',
       category: 'Category',
@@ -674,7 +673,7 @@ export const createMaintenanceRequestFlex = (data, language = 'en') => {
       tip: priority === 'urgent' ? 'Urgent - Please respond ASAP' : priority === 'high' ? 'High priority - respond soon' : 'Please review and respond'
     },
     th: {
-      title: role === 'landlord' ? '🔧 แจ้งซ่อม' : '🔧 แจ้งซ่อม', // Titles are currently the same for landlord/tenant, but allows for future differentiation
+      title: role === 'landlord' ? '🔧 แจ้งซ่อม' : '🔧 แจ้งซ่อม',
       subtitle: role === 'landlord' ? `จากผู้เช่าของคุณ` : 'ส่งคำขอใหม่แล้ว',
       issue: 'ปัญหา',
       category: 'ประเภท',
@@ -685,6 +684,58 @@ export const createMaintenanceRequestFlex = (data, language = 'en') => {
       photos: 'มีรูปภาพ',
       action: role === 'landlord' ? 'ดูและตอบกลับ' : 'ดูคำขอ',
       tip: priority === 'urgent' ? 'เร่งด่วน - กรุณาตอบกลับด่วน' : priority === 'high' ? 'ความสำคัญสูง - ตอบกลับเร็วๆ นี้' : 'กรุณาตรวจสอบและตอบกลับ'
+    },
+    ja: {
+      title: role === 'landlord' ? '🔧 メンテナンス依頼' : '🔧 メンテナンス依頼',
+      subtitle: role === 'landlord' ? `賃借人からの依頼` : '新しい依頼が送信されました',
+      issue: '問題',
+      category: 'カテゴリ',
+      priority: '優先度',
+      property: '物件',
+      reported: '報告日',
+      tenant: '賃借人',
+      photos: '添付写真',
+      action: role === 'landlord' ? '確認して返信' : '依頼を確認',
+      tip: priority === 'urgent' ? '緊急 - 至急対応してください' : priority === 'high' ? '優先度高 - 早めに対応してください' : 'ご確認の上ご返信ください'
+    },
+    zh: {
+      title: role === 'landlord' ? '🔧 维护请求' : '🔧 维护请求',
+      subtitle: role === 'landlord' ? `来自您的租户` : '已提交新请求',
+      issue: '问题',
+      category: '类别',
+      priority: '优先级',
+      property: '物业',
+      reported: '报告日期',
+      tenant: '租户',
+      photos: '附加照片',
+      action: role === 'landlord' ? '查看并回复' : '查看请求',
+      tip: priority === 'urgent' ? '紧急 - 请尽快回复' : priority === 'high' ? '高优先级 - 尽快回复' : '请审阅并回复'
+    },
+    ko: {
+      title: role === 'landlord' ? '🔧 유지보수 요청' : '🔧 유지보수 요청',
+      subtitle: role === 'landlord' ? `임차인으로부터의 요청` : '새 요청이 제출되었습니다',
+      issue: '문제',
+      category: '카테고리',
+      priority: '우선순위',
+      property: '부동산',
+      reported: '보고 날짜',
+      tenant: '임차인',
+      photos: '첨부 사진',
+      action: role === 'landlord' ? '확인 및 응답' : '요청 보기',
+      tip: priority === 'urgent' ? '긴급 - 즉시 응답하세요' : priority === 'high' ? '높은 우선순위 - 빠른 응답 필요' : '검토 후 응답해주세요'
+    },
+    ru: {
+      title: role === 'landlord' ? '🔧 Запрос на обслуживание' : '🔧 Запрос на обслуживание',
+      subtitle: role === 'landlord' ? `От вашего арендатора` : 'Новый запрос отправлен',
+      issue: 'Проблема',
+      category: 'Категория',
+      priority: 'Приоритет',
+      property: 'Недвижимость',
+      reported: 'Дата сообщения',
+      tenant: 'Арендатор',
+      photos: 'Прикрепленные фото',
+      action: role === 'landlord' ? 'Просмотреть и ответить' : 'Просмотреть запрос',
+      tip: priority === 'urgent' ? 'Срочно - ответьте как можно скорее' : priority === 'high' ? 'Высокий приоритет - ответьте в ближайшее время' : 'Пожалуйста, просмотрите и ответьте'
     }
   };
   
