@@ -383,34 +383,39 @@ Deno.serve(async (req) => {
           console.log('[RESOLVE_WEBHOOK] ⚠️ No caseId in metadata');
         }
 
-        // CRITICAL FIX: Update case with payment completion
+        // CRITICAL FIX: Update case PRESERVING user_email for RLS visibility
         if (caseRecord) {
-          console.log('[RESOLVE_WEBHOOK] Updating case:', caseId, 'from status:', caseRecord.status, 'to: intake');
-          console.log('[RESOLVE_WEBHOOK] Case data BEFORE update:', {
+          console.log('[RESOLVE_WEBHOOK] Updating case:', caseId);
+          console.log('[RESOLVE_WEBHOOK] BEFORE update - verifying user binding:', {
             id: caseRecord.id,
             case_number: caseRecord.case_number,
             user_email: caseRecord.user_email,
+            created_by: caseRecord.created_by,
+            status: caseRecord.status,
             type: caseRecord.type,
             dispute_amount: caseRecord.dispute_amount,
-            summary: caseRecord.summary,
+            summary: caseRecord.summary?.substring(0, 50),
             property_address: caseRecord.property_address,
             landlord_name: caseRecord.landlord_name,
+            landlord_email: caseRecord.landlord_email,
             evidence_count: caseRecord.evidence?.length || 0
           });
           
+          // CRITICAL: Preserve user_email - do NOT overwrite, it's already correct from creation
           const updatedCase = await base44.asServiceRole.entities.Case.update(caseId, {
-            status: 'intake', // Move from awaiting_payment to intake
+            status: 'intake', // Upgrade from awaiting_payment to intake
             stripe_session_id: session.id,
             stripe_payment_intent_id: session.payment_intent,
             pricing_type: priceType,
             resolve_amount: amount,
             paid_at: new Date().toISOString(),
+            // DO NOT touch user_email or created_by - already set correctly
             timeline: [
               ...(caseRecord.timeline || []),
               {
                 timestamp: new Date().toISOString(),
                 event: 'Payment completed - case submitted for review',
-                actor: userEmail,
+                actor: caseRecord.user_email, // Use existing user_email
                 meta: {
                   stripe_session_id: session.id,
                   amount: amount,
@@ -419,11 +424,12 @@ Deno.serve(async (req) => {
               }
             ]
           });
-          console.log('[RESOLVE_WEBHOOK] ✅ Case AFTER update:', {
+          console.log('[RESOLVE_WEBHOOK] ✅ Case AFTER payment update:', {
             id: updatedCase.id,
             case_number: updatedCase.case_number,
             status: updatedCase.status,
             user_email: updatedCase.user_email,
+            created_by: updatedCase.created_by,
             type: updatedCase.type,
             dispute_amount: updatedCase.dispute_amount,
             summary: updatedCase.summary?.substring(0, 50),
@@ -434,6 +440,23 @@ Deno.serve(async (req) => {
             stripe_session_id: updatedCase.stripe_session_id,
             paid_at: updatedCase.paid_at
           });
+          
+          // CRITICAL VERIFICATION: Confirm user_email is set for RLS
+          if (!updatedCase.user_email) {
+            console.error('[RESOLVE_WEBHOOK] 🚨 CRITICAL: Case has NO user_email - will be invisible to user!');
+            console.error('[RESOLVE_WEBHOOK] Attempting emergency fix...');
+            
+            // Emergency fix: Set user_email from metadata
+            if (userEmail) {
+              await base44.asServiceRole.entities.Case.update(caseId, {
+                user_email: userEmail
+              });
+              console.log('[RESOLVE_WEBHOOK] ✅ Emergency fix applied - user_email set to:', userEmail);
+            }
+          } else {
+            console.log('[RESOLVE_WEBHOOK] ✅ User binding verified - user_email:', updatedCase.user_email);
+          }
+          
           caseRecord = updatedCase;
         } else {
           console.error('[RESOLVE_WEBHOOK] ❌ Case not found - cannot process payment without case');

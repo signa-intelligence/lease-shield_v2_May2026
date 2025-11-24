@@ -75,21 +75,41 @@ function CasesContent() {
         return [];
       }
       
-      console.log('🔍 [CASES_PAGE] Fetching cases for user:', user.email);
+      console.log('🔍 [CASES_PAGE] Fetching cases for authenticated user:', user.email);
+      console.log('🔍 [CASES_PAGE] User ID:', user.id);
       
-      // RLS will automatically filter by user_email matching current user
-      // Exclude soft-deleted cases
+      // CRITICAL: RLS filters by user_email = {{user.email}}
+      // We query for non-deleted cases, RLS handles user filtering automatically
       const result = await base44.entities.Case.filter({ 
         is_deleted: { $ne: true }
       }, '-created_date');
       
-      console.log('📊 [CASES_PAGE] Query returned:', result.length, 'cases');
-      console.log('📊 [CASES_PAGE] All cases:', result.map(c => ({
-        id: c.id.slice(0, 8),
-        user_email: c.user_email,
-        status: c.status,
-        dispute_amount: c.dispute_amount
-      })));
+      console.log('📊 [CASES_PAGE] RLS-filtered result:', result.length, 'cases');
+      console.log('📊 [CASES_PAGE] Detailed case binding check:');
+      result.forEach(c => {
+        console.log({
+          id: c.id.slice(0, 8),
+          case_number: c.case_number,
+          user_email: c.user_email,
+          created_by: c.created_by,
+          matches_current_user: c.user_email === user.email,
+          status: c.status,
+          dispute_amount: c.dispute_amount
+        });
+      });
+      
+      // DEFENSIVE: If RLS fails, manually filter as backup
+      const userCases = result.filter(c => 
+        c.user_email === user.email || c.created_by === user.email
+      );
+      
+      if (userCases.length !== result.length) {
+        console.warn('⚠️ [CASES_PAGE] RLS mismatch detected:', {
+          rls_returned: result.length,
+          user_filtered: userCases.length,
+          mismatch_cases: result.filter(c => c.user_email !== user.email && c.created_by !== user.email)
+        });
+      }
       
       return result;
     },

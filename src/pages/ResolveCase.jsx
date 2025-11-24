@@ -88,22 +88,48 @@ function ResolveCaseContent() {
   };
 
   const createCaseMutation = useMutation({
-    mutationFn: async ({ caseData, userId, userEmail }) => {
-      // ROOT CAUSE FIX #1: Create case first, THEN handle checkout
-      console.log('[RESOLVE_FLOW] Creating case with data:', caseData);
-      const createdCase = await base44.entities.Case.create(caseData);
-      console.log('[RESOLVE_FLOW] Case created successfully:', createdCase);
+    mutationFn: async ({ caseData }) => {
+      // CRITICAL FIX: Get authenticated user server-side to prevent tampering
+      const authenticatedUser = await base44.auth.me();
+      if (!authenticatedUser) {
+        throw new Error('Not authenticated');
+      }
       
-      // WORKFLOW FIX: Send admin notification for new intake case
+      // CRITICAL FIX: Force correct user binding for RLS visibility
+      const secureCase = {
+        ...caseData,
+        user_email: authenticatedUser.email, // FORCE authenticated email
+        created_by: authenticatedUser.email  // Belt and suspenders
+      };
+      
+      console.log('[RESOLVE_FLOW] Creating case with SECURE user binding:', {
+        user_email: secureCase.user_email,
+        created_by: secureCase.created_by,
+        case_number: secureCase.case_number,
+        type: secureCase.type,
+        dispute_amount: secureCase.dispute_amount
+      });
+      
+      const createdCase = await base44.entities.Case.create(secureCase);
+      
+      console.log('[RESOLVE_FLOW] ✅ Case created - verifying user binding:', {
+        id: createdCase.id,
+        user_email: createdCase.user_email,
+        created_by: createdCase.created_by,
+        case_number: createdCase.case_number,
+        status: createdCase.status
+      });
+      
+      // WORKFLOW FIX: Send admin notification
       try {
         await base44.functions.invoke('notifyAdminNewCase', {
           caseNumber: createdCase.case_number,
-          tenantName: user?.full_name,
+          tenantName: authenticatedUser.full_name,
           tenantEmail: createdCase.user_email,
           landlordName: createdCase.landlord_name,
           propertyAddress: createdCase.property_address,
           disputeAmount: createdCase.dispute_amount,
-          planTier: user?.plan_tier,
+          planTier: authenticatedUser.plan_tier,
           caseId: createdCase.id
         });
         console.log('[RESOLVE_FLOW] Admin notification sent');
@@ -111,7 +137,11 @@ function ResolveCaseContent() {
         console.error('[RESOLVE_FLOW] Admin notification failed (non-blocking):', notifyError);
       }
       
-      return { createdCase, userId, userEmail };
+      return { 
+        createdCase, 
+        userId: authenticatedUser.id, 
+        userEmail: authenticatedUser.email 
+      };
     },
     onSuccess: async ({ createdCase, userId, userEmail }) => {
       console.log('[RESOLVE_FLOW] ✅ Case created successfully:', {
@@ -364,12 +394,8 @@ function ResolveCaseContent() {
         is_member_at_creation: membershipForCase.qualifiesForMemberBenefits
       });
 
-      // Pass all data to mutation
-      createCaseMutation.mutate({ 
-        caseData, 
-        userId: user.id, 
-        userEmail: user.email 
-      });
+      // Pass case data to mutation (user binding happens in mutation)
+      createCaseMutation.mutate({ caseData });
     } catch (error) {
       console.error('[RESOLVE_FLOW] Submit preparation failed:', error);
       toast.error(

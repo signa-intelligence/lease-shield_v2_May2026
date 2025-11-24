@@ -73,18 +73,23 @@ function DashboardContent() {
 
       console.log('🔍 [DASHBOARD] Fetching cases for user:', user.email);
 
-      // RLS will automatically filter by user_email matching current user
-      // Exclude soft-deleted cases
+      // CRITICAL: RLS filters by user_email = {{user.email}}
       const result = await base44.entities.Case.filter({ 
         is_deleted: { $ne: true }
       });
 
-      console.log('📊 [DASHBOARD] Query returned:', result.length, 'cases');
-      console.log('📊 [DASHBOARD] All cases:', result.map(c => ({
-        id: c.id.slice(0, 8),
-        status: c.status,
-        dispute_amount: c.dispute_amount
-      })));
+      console.log('📊 [DASHBOARD] RLS-filtered cases:', result.length);
+      console.log('📊 [DASHBOARD] Case user binding verification:');
+      result.forEach(c => {
+        console.log({
+          id: c.id.slice(0, 8),
+          case_number: c.case_number,
+          user_email: c.user_email,
+          created_by: c.created_by,
+          matches_user: c.user_email === user.email,
+          status: c.status
+        });
+      });
 
       return result;
     },
