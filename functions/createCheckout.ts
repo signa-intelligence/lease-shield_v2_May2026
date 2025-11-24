@@ -54,6 +54,23 @@ Deno.serve(async (req) => {
     });
 
     let customerId = user.stripe_customer_id;
+    const isLiveMode = key?.startsWith('sk_live_');
+    
+    // ✅ TEST-TO-LIVE MIGRATION FIX: Check if customer exists in current mode
+    if (customerId && isLiveMode) {
+      console.log('🔍 Validating customer ID:', customerId.substring(0, 15) + '...');
+      try {
+        await stripe.customers.retrieve(customerId);
+        console.log('✅ Customer exists in LIVE mode');
+      } catch (customerError) {
+        if (customerError.code === 'resource_missing' && customerError.message?.includes('test mode')) {
+          console.warn('⚠️ TEST CUSTOMER DETECTED - Recreating in LIVE mode');
+          customerId = null; // Force recreation
+        } else {
+          throw customerError;
+        }
+      }
+    }
     
     if (!customerId) {
       console.log('Creating new Stripe customer for:', user.email);
@@ -63,7 +80,7 @@ Deno.serve(async (req) => {
         metadata: { user_id: user.id }
       });
       customerId = customer.id;
-      console.log('Created customer:', customerId);
+      console.log('✅ Created customer in', isLiveMode ? 'LIVE' : 'TEST', 'mode:', customerId);
       await base44.auth.updateMe({ stripe_customer_id: customerId });
     }
 
