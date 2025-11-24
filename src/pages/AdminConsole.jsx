@@ -171,10 +171,20 @@ export default function AdminConsole() {
             console.log('✅ LINE notification sent to user:', targetUser.email);
           }
         } catch (error) {
-          console.error('Failed to send LINE notification:', error);
+          console.error('❌ [ROLE_UPDATE] LINE notification failed (non-critical):', error);
         }
       }
     },
+    onError: (error, variables) => {
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('❌ [ROLE_UPDATE] MUTATION FAILED:', {
+        error: error.message,
+        stack: error.stack,
+        variables,
+        timestamp: new Date().toISOString()
+      });
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    }
   });
 
   const deleteUserMutation = useMutation({
@@ -1706,18 +1716,27 @@ export default function AdminConsole() {
                                <SelectValue />
                              </SelectTrigger>
                              <SelectContent>
-                               <SelectItem value="user">User</SelectItem>
-                               <SelectItem value="va" disabled={u.access_level !== 'va' && vaCount >= MAXIMUM_VAS}>
-                                 VA {u.access_level !== 'va' && vaCount >= MAXIMUM_VAS && '(Full)'}
+                               <SelectItem value="user">
+                                 User
                                </SelectItem>
-                               <SelectItem value="admin" disabled={u.access_level !== 'admin' && adminCount >= MAXIMUM_ADMINS}>
-                                 Admin {u.access_level !== 'admin' && adminCount >= MAXIMUM_ADMINS && '(Full)'}
+                               <SelectItem 
+                                 value="va" 
+                                 disabled={u.access_level !== 'va' && vaCount >= MAXIMUM_VAS}
+                               >
+                                 VA {u.access_level !== 'va' && vaCount >= MAXIMUM_VAS ? '(Full)' : ''}
                                </SelectItem>
-                               {isSuperAdmin && (
-                                 <SelectItem value="super_admin" disabled={u.access_level !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS}>
-                                   Super Admin {u.access_level !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS && '(Full)'}
-                                 </SelectItem>
-                               )}
+                               <SelectItem 
+                                 value="admin" 
+                                 disabled={u.access_level !== 'admin' && adminCount >= MAXIMUM_ADMINS}
+                               >
+                                 Admin {u.access_level !== 'admin' && adminCount >= MAXIMUM_ADMINS ? '(Full)' : ''}
+                               </SelectItem>
+                               <SelectItem 
+                                 value="super_admin" 
+                                 disabled={u.access_level !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS}
+                               >
+                                 Super Admin {u.access_level !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS ? '(Full)' : ''}
+                               </SelectItem>
                              </SelectContent>
                            </Select>
                            {!canChangeRole && (
