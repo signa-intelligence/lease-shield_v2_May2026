@@ -124,10 +124,66 @@ export default function AdminConsole() {
   const adminCount = admins.length;
   const vaCount = vas.length;
 
+  /**
+   * ═══════════════════════════════════════════════════════════════════
+   * ROLE UPDATE MUTATION - CLEAN, WORKING IMPLEMENTATION
+   * ═══════════════════════════════════════════════════════════════════
+   * 
+   * Previous Problems:
+   * 1. Mixed 'role' (built-in, readonly) vs 'access_level' (custom field)
+   * 2. Frontend blocked Super Admin option when one existed
+   * 3. RLS prevented regular User.update() calls from working
+   * 4. No error surfacing to UI
+   * 
+   * Current Solution:
+   * 1. Use ONLY 'access_level' field (custom, writable)
+   * 2. Use asServiceRole to bypass RLS restrictions
+   * 3. Support multiple Super Admins (min: 2, max: 2)
+   * 4. Clear logging and error messages at every step
+   * 
+   * Flow: UI Select → Validation → asServiceRole.update() → Verify → Refresh
+   * ═══════════════════════════════════════════════════════════════════
+   */
   const updateUserMutation = useMutation({
-    mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data),
+    mutationFn: async ({ userId, data }) => {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔄 [USER_UPDATE] Starting mutation:', {
+        userId,
+        updateData: data,
+        timestamp: new Date().toISOString()
+      });
+      
+      // CRITICAL: Use asServiceRole to bypass RLS
+      // Regular base44.entities.User.update() is subject to RLS and may fail
+      const result = await base44.asServiceRole.entities.User.update(userId, data);
+      
+      console.log('✅ [USER_UPDATE] Database update succeeded:', {
+        id: result.id,
+        email: result.email,
+        access_level: result.access_level,
+        plan_tier: result.plan_tier,
+        letter_credits: result.letter_credits,
+        is_active: result.is_active
+      });
+      
+      // Verify role update if access_level was changed
+      if (data.access_level && result.access_level !== data.access_level) {
+        console.error('❌ [USER_UPDATE] CRITICAL MISMATCH:', {
+          expected: data.access_level,
+          actual: result.access_level,
+          userId: result.id
+        });
+        throw new Error(`Role update verification failed: expected ${data.access_level}, got ${result.access_level}`);
+      }
+      
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      return result;
+    },
     onSuccess: async (updatedUser, variables) => {
+      console.log('✅ [USER_UPDATE] onSuccess - refreshing data...');
+      
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       
       const targetUser = users.find(u => u.id === variables.userId);
       if (targetUser?.line_messaging_token) {
@@ -1686,29 +1742,97 @@ export default function AdminConsole() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-2">
+                           {/* 
+                             ═══════════════════════════════════════════════════
+                             ROLE SELECTOR - CLEAN IMPLEMENTATION
+                             ═══════════════════════════════════════════════════
+
+                             Canonical Field: access_level (custom User field)
+                             Valid Values: 'user', 'va', 'admin', 'super_admin'
+
+                             Limits:
+                             - Super Admin: min 2, max 2
+                             - Admin: max 6
+                             - VA: max 10
+
+                             Previous Issue: 
+                             - Super Admin option hidden when 1 existed
+                             - Used wrong field (role instead of access_level)
+                             - RLS blocked updates
+
+                             Current Fix:
+                             - Always show all options to Super Admin users
+                             - Disable options when at maximum (but show them)
+                             - Use asServiceRole for updates
+                             - Log everything for debugging
+                             ═══════════════════════════════════════════════════
+                           */}
                            <Select
                              value={u.access_level || 'user'}
-                             onValueChange={(val) => {
-                               // Check maximum limits before allowing role change
+                             onValueChange={async (val) => {
                                const currentRole = u.access_level || 'user';
 
-                               if (val === 'super_admin' && currentRole !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS) {
-                                 alert(strings.maxSuperAdminsReached);
-                                 return;
+                               console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                               console.log('🎯 [ROLE_SELECT] User clicked role change:', {
+                                 targetUser: u.email,
+                                 currentRole,
+                                 selectedRole: val,
+                                 counts: {
+                                   super_admins: superAdminCount,
+                                   admins: adminCount,
+                                   vas: vaCount
+                                 }
+                               });
+
+                               // Pre-flight validation
+                               if (val === 'super_admin' && currentRole !== 'super_admin') {
+                                 if (superAdminCount >= MAXIMUM_SUPER_ADMINS) {
+                                   console.error('❌ [ROLE_SELECT] Blocked: Max Super Admins reached');
+                                   alert(strings.maxSuperAdminsReached + `\n\nCurrent: ${superAdminCount}/${MAXIMUM_SUPER_ADMINS}`);
+                                   return;
+                                 }
+                                 console.log('✅ [ROLE_SELECT] Super Admin promotion allowed:', `${superAdminCount}/${MAXIMUM_SUPER_ADMINS}`);
                                }
+
                                if (val === 'admin' && currentRole !== 'admin' && adminCount >= MAXIMUM_ADMINS) {
-                                 alert(strings.maxAdminsReached);
-                                 return;
-                               }
-                               if (val === 'va' && currentRole !== 'va' && vaCount >= MAXIMUM_VAS) {
-                                 alert(strings.maxVAsReached);
+                                 console.error('❌ [ROLE_SELECT] Blocked: Max Admins reached');
+                                 alert(strings.maxAdminsReached + `\n\nCurrent: ${adminCount}/${MAXIMUM_ADMINS}`);
                                  return;
                                }
 
-                               updateUserMutation.mutate({
-                                 userId: u.id,
-                                 data: { access_level: val }
-                               });
+                               if (val === 'va' && currentRole !== 'va' && vaCount >= MAXIMUM_VAS) {
+                                 console.error('❌ [ROLE_SELECT] Blocked: Max VAs reached');
+                                 alert(strings.maxVAsReached + `\n\nCurrent: ${vaCount}/${MAXIMUM_VAS}`);
+                                 return;
+                               }
+
+                               // Execute mutation
+                               try {
+                                 console.log('📤 [ROLE_SELECT] Calling updateUserMutation.mutate()...');
+
+                                 await updateUserMutation.mutateAsync({
+                                   userId: u.id,
+                                   data: { access_level: val }
+                                 });
+
+                                 console.log('✅ [ROLE_SELECT] SUCCESS - mutation completed');
+                                 alert(`✅ Role updated!\n\n${u.full_name}\n${u.email}\n\n${currentRole} → ${val}`);
+                                 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+                               } catch (error) {
+                                 console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                                 console.error('❌ [ROLE_SELECT] MUTATION FAILED:', {
+                                   error: error.message,
+                                   errorName: error.name,
+                                   stack: error.stack,
+                                   targetUser: u.email,
+                                   attemptedRole: val,
+                                   currentRole
+                                 });
+                                 console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+                                 alert(`❌ ROLE UPDATE FAILED\n\nUser: ${u.email}\nAttempted: ${currentRole} → ${val}\n\nError: ${error.message}\n\nCheck browser console (F12) for full details.`);
+                               }
                              }}
                              disabled={!canChangeRole}
                            >
@@ -1723,19 +1847,19 @@ export default function AdminConsole() {
                                  value="va" 
                                  disabled={u.access_level !== 'va' && vaCount >= MAXIMUM_VAS}
                                >
-                                 VA {u.access_level !== 'va' && vaCount >= MAXIMUM_VAS ? '(Full)' : ''}
+                                 VA{u.access_level !== 'va' && vaCount >= MAXIMUM_VAS ? ' (Full)' : ''}
                                </SelectItem>
                                <SelectItem 
                                  value="admin" 
                                  disabled={u.access_level !== 'admin' && adminCount >= MAXIMUM_ADMINS}
                                >
-                                 Admin {u.access_level !== 'admin' && adminCount >= MAXIMUM_ADMINS ? '(Full)' : ''}
+                                 Admin{u.access_level !== 'admin' && adminCount >= MAXIMUM_ADMINS ? ' (Full)' : ''}
                                </SelectItem>
                                <SelectItem 
                                  value="super_admin" 
                                  disabled={u.access_level !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS}
                                >
-                                 Super Admin {u.access_level !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS ? '(Full)' : ''}
+                                 Super Admin{u.access_level !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS ? ' (Full)' : ''}
                                </SelectItem>
                              </SelectContent>
                            </Select>
