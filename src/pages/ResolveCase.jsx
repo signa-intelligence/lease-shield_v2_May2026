@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, AlertCircle, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown, Scale } from "lucide-react";
+import { Shield, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { RESOLVE_PRICING, hasMemberPricing } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility } from "../components/shared/resolvePricing";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 
 function ResolveCaseContent() {
@@ -26,12 +26,10 @@ function ResolveCaseContent() {
     landlord_name: '',
     landlord_email: '',
     property_address: '',
-    deposit_amount: '',
     evidence_files: []
   });
   const [uploading, setUploading] = useState(false);
   const [autoFilledFromDeposit, setAutoFilledFromDeposit] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -90,91 +88,144 @@ function ResolveCaseContent() {
   };
 
   const createCaseMutation = useMutation({
-    mutationFn: async (caseData) => {
+    mutationFn: async ({ caseData, userId, userEmail }) => {
+      // ROOT CAUSE FIX #1: Create case first, THEN handle checkout
       console.log('[RESOLVE_FLOW] Creating case with data:', caseData);
       const createdCase = await base44.entities.Case.create(caseData);
       console.log('[RESOLVE_FLOW] Case created successfully:', createdCase);
-      return createdCase;
+      return { createdCase, userId, userEmail };
     },
-    onSuccess: async (newCase) => {
+    onSuccess: async ({ createdCase, userId, userEmail }) => {
       console.log('[RESOLVE_FLOW] Case created:', {
-        id: newCase.id,
-        case_number: newCase.case_number,
-        status: newCase.status,
-        user_email: newCase.user_email,
-        dispute_amount: newCase.dispute_amount
+        id: createdCase.id,
+        case_number: createdCase.case_number,
+        status: createdCase.status,
+        user_email: createdCase.user_email,
+        dispute_amount: createdCase.dispute_amount
       });
       
-      // Invalidate cases query so it appears in /Cases immediately
-      queryClient.invalidateQueries({ queryKey: ['cases'] });
+      // ROOT CAUSE FIX #2: Invalidate queries BEFORE checkout redirect
+      await queryClient.invalidateQueries({ queryKey: ['cases'] });
       
       // Get pricing for this user
       const pricing = {
-        effectivePrice: newCase.is_member_at_creation ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE,
-        priceType: newCase.is_member_at_creation ? 'member' : 'public'
+        effectivePrice: createdCase.is_member_at_creation ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE,
+        priceType: createdCase.is_member_at_creation ? 'member' : 'public'
       };
       
       // Create Stripe checkout session
-      try {
-        const response = await base44.functions.invoke('createResolveCheckout', {
-          userId: user.id,
-          userEmail: user.email,
-          caseId: newCase.id,
-          priceType: pricing.priceType,
-          amount: pricing.effectivePrice
-        });
-        
-        if (response.data?.url) {
-          console.log('[RESOLVE_PAGE] Redirecting to Stripe checkout');
-          window.location.href = response.data.url;
-        } else {
-          throw new Error('No checkout URL returned');
-        }
-      } catch (error) {
-        console.error('[RESOLVE_PAGE] Failed to create checkout:', error);
-        toast.error(language === 'th' ? 'ไม่สามารถเริ่มการชำระเงินได้' : language === 'zh' ? '无法启动付款' : language === 'ja' ? '支払い開始に失敗' : language === 'ko' ? '결제 시작 실패' : language === 'ru' ? 'Ошибка инициализации оплаты' : 'Failed to initiate payment');
-        setSubmitting(false);
+      const response = await base44.functions.invoke('createResolveCheckout', {
+        userId: userId,
+        userEmail: userEmail,
+        caseId: createdCase.id,
+        priceType: pricing.priceType,
+        amount: pricing.effectivePrice
+      });
+      
+      if (response.data?.url) {
+        console.log('[RESOLVE_FLOW] Redirecting to Stripe checkout');
+        window.location.href = response.data.url;
+      } else {
+        throw new Error('No checkout URL returned');
       }
     },
     onError: (error) => {
-      console.error('[RESOLVE_PAGE] Case creation failed:', error);
-      toast.error(language === 'th' ? 'ไม่สามารถสร้างคดีได้' : language === 'zh' ? '无法创建案件' : language === 'ja' ? 'ケース作成に失敗' : language === 'ko' ? '사례 생성 실패' : language === 'ru' ? 'Ошибка создания дела' : 'Failed to create case');
-      setSubmitting(false);
+      console.error('[RESOLVE_FLOW] Case creation or checkout failed:', error);
+      const errorMessage = error?.message || 'Unknown error';
+      toast.error(
+        language === 'th' ? 'ไม่สามารถส่งคดีได้: ' + errorMessage
+        : language === 'zh' ? '提交案件失败: ' + errorMessage
+        : language === 'ja' ? 'ケース送信失敗: ' + errorMessage
+        : language === 'ko' ? '사례 제출 실패: ' + errorMessage
+        : language === 'ru' ? 'Ошибка отправки дела: ' + errorMessage
+        : 'Failed to submit case: ' + errorMessage
+      );
     }
   });
 
+  // ROOT CAUSE FIX #8: Properly handle file uploads with error handling
   const handleFileUpload = async (files) => {
     if (!files || files.length === 0) return;
     
     setUploading(true);
+    console.log('[RESOLVE_FLOW] Starting file upload, count:', files.length);
+    
     try {
-      console.log('[RESOLVE_FLOW] Starting file upload, count:', files.length);
+      const uploadResults = [];
       
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const result = await base44.integrations.Core.UploadFile({ file });
-        return result;
+      // Upload files sequentially to avoid overwhelming the system
+      for (const file of Array.from(files)) {
+        try {
+          const result = await base44.integrations.Core.UploadFile({ file });
+          uploadResults.push({
+            success: true,
+            file_url: result.file_url,
+            fileName: file.name
+          });
+        } catch (uploadError) {
+          console.error('[RESOLVE_FLOW] Individual file upload failed:', uploadError);
+          uploadResults.push({
+            success: false,
+            fileName: file.name,
+            error: uploadError.message
+          });
+        }
+      }
+      
+      // Check if any uploads succeeded
+      const successfulUploads = uploadResults.filter(r => r.success);
+      const failedUploads = uploadResults.filter(r => !r.success);
+      
+      console.log('[RESOLVE_FLOW] Upload complete:', {
+        total: files.length,
+        successful: successfulUploads.length,
+        failed: failedUploads.length
       });
       
-      const results = await Promise.all(uploadPromises);
-      console.log('[RESOLVE_FLOW] Upload complete, results:', results);
+      if (successfulUploads.length > 0) {
+        const newFiles = successfulUploads.map((result, idx) => ({
+          id: `file-${Date.now()}-${idx}`,
+          url: result.file_url,
+          type: 'photo',
+          label: result.fileName,
+          uploaded_date: new Date().toISOString()
+        }));
+        
+        setFormData(prev => ({
+          ...prev,
+          evidence_files: [...prev.evidence_files, ...newFiles]
+        }));
+        
+        toast.success(
+          language === 'th' ? `อัปโหลดสำเร็จ ${successfulUploads.length} ไฟล์`
+          : language === 'zh' ? `成功上传 ${successfulUploads.length} 个文件`
+          : language === 'ja' ? `${successfulUploads.length}ファイルのアップロード成功`
+          : language === 'ko' ? `${successfulUploads.length}개 파일 업로드 성공`
+          : language === 'ru' ? `Успешно загружено ${successfulUploads.length} файлов`
+          : `${successfulUploads.length} file(s) uploaded successfully`
+        );
+      }
       
-      const newFiles = results.map((result, idx) => ({
-        id: `file-${Date.now()}-${idx}`,
-        url: result.file_url,
-        type: 'photo',
-        label: files[idx].name,
-        uploaded_date: new Date().toISOString()
-      }));
-      
-      setFormData(prev => ({
-        ...prev,
-        evidence_files: [...prev.evidence_files, ...newFiles]
-      }));
-      
-      toast.success(language === 'th' ? 'อัปโหลดสำเร็จ' : language === 'zh' ? '上传成功' : language === 'ja' ? 'アップロード成功' : language === 'ko' ? '업로드 성공' : language === 'ru' ? 'Загрузка успешна' : 'Upload successful');
+      if (failedUploads.length > 0) {
+        toast.error(
+          language === 'th' ? `ไม่สามารถอัปโหลด ${failedUploads.length} ไฟล์`
+          : language === 'zh' ? `${failedUploads.length} 个文件上传失败`
+          : language === 'ja' ? `${failedUploads.length}ファイルのアップロード失敗`
+          : language === 'ko' ? `${failedUploads.length}개 파일 업로드 실패`
+          : language === 'ru' ? `Не удалось загрузить ${failedUploads.length} файлов`
+          : `Failed to upload ${failedUploads.length} file(s)`
+        );
+      }
     } catch (error) {
-      console.error('[RESOLVE_FLOW] Upload failed:', error);
-      toast.error(language === 'th' ? 'ไม่สามารถอัปโหลดไฟล์ได้' : language === 'zh' ? '上传文件失败' : language === 'ja' ? 'ファイルのアップロードに失敗' : language === 'ko' ? '파일 업로드 실패' : language === 'ru' ? 'Ошибка загрузки файлов' : 'Failed to upload files');
+      console.error('[RESOLVE_FLOW] File upload process failed:', error);
+      toast.error(
+        language === 'th' ? 'เกิดข้อผิดพลาดในการอัปโหลด'
+        : language === 'zh' ? '上传出错'
+        : language === 'ja' ? 'アップロードエラー'
+        : language === 'ko' ? '업로드 오류'
+        : language === 'ru' ? 'Ошибка загрузки'
+        : 'Upload error'
+      );
     } finally {
       setUploading(false);
     }
@@ -856,10 +907,10 @@ function ResolveCaseContent() {
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={submitting || uploading}
+            disabled={createCaseMutation.isPending || uploading}
             className="w-full bg-red-600 hover:bg-red-700 py-6 text-lg font-bold"
           >
-            {submitting ? (
+            {createCaseMutation.isPending ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 {str.submitting}
