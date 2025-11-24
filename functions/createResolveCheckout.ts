@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
+import { getMembershipInfo, getResolvePricingForUser } from './getMembershipInfo.js';
 
 const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
   apiVersion: '2024-06-20',
@@ -18,27 +19,43 @@ Deno.serve(async (req) => {
     const { userId, userEmail, caseId, priceType, amount } = await req.json();
     console.log('[CREATE_CHECKOUT] Request payload:', { userId, userEmail, caseId, priceType, amount });
 
-    // BUG FIX #2: Validate pricing - no blocking, just ensure correct rate
-    // This function is called AFTER case creation, so pricing should already be determined
-    // We accept whatever priceType/amount was passed from frontend (based on membership eligibility)
-    
     // Validate required fields
-    if (!userId || !userEmail || !caseId || !priceType || !amount) {
+    if (!userId || !userEmail || !caseId) {
       console.error('[CREATE_CHECKOUT] Missing required fields');
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
-    // BUG FIX #2: Log pricing decision for audit trail
-    console.log('[CREATE_CHECKOUT] Pricing decision:', {
-      priceType,
-      amount,
-      expectedMemberRate: 2490,
-      expectedPublicRate: 3990
+    // BUG FIX #2: SERVER-SIDE PRICING VALIDATION using unified membership system
+    // Re-calculate pricing on server to prevent tampering
+    const membership = getMembershipInfo(user);
+    const pricing = getResolvePricingForUser(user);
+    
+    console.log('[CREATE_CHECKOUT] Unified membership check:', {
+      plan: membership.plan,
+      membershipDays: membership.membershipDays,
+      qualifiesForMemberBenefits: membership.qualifiesForMemberBenefits,
+      reason: membership.reason,
+      calculatedPriceType: pricing.priceType,
+      calculatedAmount: pricing.amount,
+      clientSentPriceType: priceType,
+      clientSentAmount: amount
     });
+    
+    // Use SERVER-CALCULATED pricing (don't trust client)
+    const finalPriceType = pricing.priceType;
+    const finalAmount = pricing.amount;
+    
+    // Audit trail
+    if (finalPriceType !== priceType || finalAmount !== amount) {
+      console.warn('[CREATE_CHECKOUT] ⚠️ Client/server pricing mismatch - using server pricing:', {
+        client: { priceType, amount },
+        server: { finalPriceType, finalAmount }
+      });
+    }
 
     console.log('[CREATE_CHECKOUT] Creating Stripe session for case:', caseId);
 
-    // Create Stripe checkout session
+    // Create Stripe checkout session with SERVER-VALIDATED pricing
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: userEmail,
@@ -47,10 +64,14 @@ Deno.serve(async (req) => {
           price_data: {
             currency: 'thb',
             product_data: {
-              name: `Resolve Case Service - ${priceType === 'member' ? 'Member Rate' : 'Public Rate'}`,
-              description: 'Professional case handling and legal support',
+              name: `Resolve Case Service - ${finalPriceType === 'member' ? 'Member Rate' : 'Public Rate'}`,
+              description: membership.plan === 'secure' 
+                ? 'Professional case handling & legal support (Secure - immediate member rate)'
+                : membership.qualifiesForMemberBenefits
+                  ? `Professional case handling & legal support (${membership.plan.toUpperCase()} - member rate after 30 days)`
+                  : 'Professional case handling & legal support (public rate)',
             },
-            unit_amount: amount * 100,
+            unit_amount: finalAmount * 100,
           },
           quantity: 1,
         },
@@ -59,9 +80,12 @@ Deno.serve(async (req) => {
         type: 'resolve_case',
         userId: userId,
         userEmail: userEmail,
-        priceType: priceType,
-        amount: amount.toString(),
+        priceType: finalPriceType,
+        amount: finalAmount.toString(),
         caseId: caseId,
+        membershipPlan: membership.plan,
+        membershipDays: membership.membershipDays.toString(),
+        membershipReason: membership.reason
       },
       // ✅ Back to the REAL route your app actually has
       success_url: `${

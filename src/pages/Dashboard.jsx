@@ -29,7 +29,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
-import { RESOLVE_PRICING, hasMemberPricing, getMembershipEligibility, getResolvePricingForUser } from "../components/shared/resolvePricing";
+import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
 
 function DashboardContent() {
   const [expandedSections, setExpandedSections] = React.useState({
@@ -2054,12 +2054,9 @@ function DashboardContent() {
 
           {/* RESOLVE DISPUTE COMPACT BANNER - Available to ALL users */}
           {(() => {
-            const eligibility = getMembershipEligibility(user);
-            const showMemberRate = eligibility.isEligible;
-            const isPaidPlan = ['lite', 'protect', 'secure'].includes(user?.plan_tier);
-            const daysRemaining = isPaidPlan && !showMemberRate && eligibility.membershipDays < 30 
-              ? 30 - eligibility.membershipDays 
-              : 0;
+            const membership = getMembershipInfo(user);
+            const qualifies = membership.qualifiesForMemberBenefits;
+            const daysRemaining = membership.daysUntilMemberBenefits;
 
             // Check if user has an awaiting_details case already paid for
             const awaitingCase = cases.find(c => 
@@ -2069,22 +2066,23 @@ function DashboardContent() {
             const handleStartResolve = async (e) => {
               e.stopPropagation();
               haptic.medium();
-
-              // BUG FIX #2: Always allow navigation - pricing handled in checkout
               navigate(createPageUrl("resolvecase") + "?mode=new");
             };
 
-            // BUG FIX #2: Determine pricing message
+            // BUG FIX #2: Unified pricing message
             let pricingMessage = '';
             if (awaitingCase) {
               pricingMessage = language === 'ru' ? 'Завершите ваше дело' : 'Complete your case submission';
-            } else if (showMemberRate) {
-              // Qualified for member rate
+            } else if (qualifies) {
+              // Qualified for member rate (Secure immediate, or Lite/Protect after 30 days)
+              const badge = membership.plan === 'secure' 
+                ? (language === 'th' ? '⚡ Secure' : '⚡ Secure')
+                : (language === 'th' ? '✓ สมาชิก' : '✓ Member');
               pricingMessage = language === 'ru' 
                 ? `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} за дело · ${strings.memberPrice} · ${strings.savingsVsPublic}`
                 : `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} per case · ${strings.memberPrice} · ${strings.savingsVsPublic}`;
-            } else if (isPaidPlan && daysRemaining > 0) {
-              // Paid plan but under 30 days - public rate applies
+            } else if (daysRemaining > 0) {
+              // Lite/Protect under 30 days - public rate with countdown
               pricingMessage = language === 'th'
                 ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} (อีก ${daysRemaining} วันสำหรับราคาสมาชิก)`
                 : language === 'zh'
@@ -2097,7 +2095,7 @@ function DashboardContent() {
                         ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} (до тарифа участника ${daysRemaining} дн.)`
                         : `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} (member rate in ${daysRemaining} days)`;
             } else {
-              // Free plan or default
+              // Free plan
               pricingMessage = language === 'ru'
                 ? `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} за дело · ${strings.publicPrice} · ${strings.upgradeForMemberRate}`
                 : `฿${RESOLVE_PRICING.PUBLIC_RATE.toLocaleString()} per case · ${strings.publicPrice} · ${strings.upgradeForMemberRate}`;
