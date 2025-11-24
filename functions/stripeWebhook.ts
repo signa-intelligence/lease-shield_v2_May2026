@@ -535,42 +535,69 @@ Deno.serve(async (req) => {
       // ========================================
       if (isCreditsCheckout && !isSubscriptionCheckout) {
         console.log('\n💰 CREDITS CHECKOUT - STARTING PROCESSING');
+        console.log('[CREDITS_WEBHOOK] Session:', {
+          id: session.id,
+          mode: session.mode,
+          amount_total: session.amount_total,
+          currency: session.currency,
+          payment_status: session.payment_status,
+          metadata: JSON.stringify(metadata, null, 2),
+          customer: session.customer,
+          customer_details: session.customer_details
+        });
 
         const userId = metadata.userId;
         const customerId = session.customer;
-        const email = session.customer_details?.email;
+        const email = session.customer_details?.email || metadata.email;
+        
+        console.log('[CREDITS_WEBHOOK] User lookup fields:', { userId, customerId, email });
         
         const allUsers = await base44.asServiceRole.entities.User.list();
         let user = null;
 
+        // Priority 1: metadata.userId
         if (userId) {
           user = allUsers.find(u => u.id === userId);
           console.log('🔍 Lookup by metadata.userId:', userId, '→', user ? `✅ ${user.email}` : '❌');
         }
 
+        // Priority 2: stripe_customer_id
         if (!user && customerId) {
           user = allUsers.find(u => u.stripe_customer_id === customerId);
           console.log('🔍 Lookup by stripe_customer_id:', customerId, '→', user ? `✅ ${user.email}` : '❌');
         }
 
+        // Priority 3: email fallback
         if (!user && email) {
           user = allUsers.find(u => u.email === email);
           console.log('🔍 Lookup by email:', email, '→', user ? `✅ ${user.email}` : '❌');
         }
 
         if (!user) {
-          console.error('❌ User not found for credits');
-          return Response.json({ received: true, error: 'user_not_found' }, { status: 200 });
+          console.error('[CREDITS_WEBHOOK] ❌ User not found - all methods failed');
+          console.error('[CREDITS_WEBHOOK] Attempted:', { userId, customerId, email });
+          return Response.json({ 
+            received: true, 
+            error: 'user_not_found',
+            attempted: { userId, customerId, email }
+          }, { status: 200 });
         }
 
-        console.log('✅ USER RESOLVED:', user.email);
+        console.log('[CREDITS_WEBHOOK] ✅ USER RESOLVED:', {
+          id: user.id,
+          email: user.email,
+          currentCredits: user.letter_credits || 0
+        });
 
         let creditsToAdd = 0;
 
+        // CRITICAL: Always try metadata.credits first (set by createCheckout)
         if (metadata.credits) {
           creditsToAdd = parseInt(metadata.credits);
-          console.log('💰 Credits from metadata:', creditsToAdd);
+          console.log('[CREDITS_WEBHOOK] 💰 Credits from metadata.credits:', creditsToAdd);
         } else {
+          console.log('[CREDITS_WEBHOOK] ⚠️ metadata.credits not found - attempting price ID mapping');
+          
           try {
             const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
               expand: ['line_items.data.price'],
@@ -579,24 +606,38 @@ Deno.serve(async (req) => {
             const items = fullSession.line_items?.data || [];
             let totalCredits = 0;
             
+            console.log('[CREDITS_WEBHOOK] Line items found:', items.length);
+            
             for (const item of items) {
               const priceId = item.price?.id;
               const qty = item.quantity || 1;
               const perCredits = PRICE_CREDIT_MAP[priceId] || 0;
               
+              console.log(`[CREDITS_WEBHOOK]   Item: price=${priceId}, qty=${qty}, mapped_credits=${perCredits}`);
+              
               if (perCredits > 0) {
                 totalCredits += perCredits * qty;
-                console.log(`  Price ${priceId}: ${perCredits} × ${qty} = ${perCredits * qty}`);
+                console.log(`[CREDITS_WEBHOOK]   ✅ Matched: ${perCredits} × ${qty} = ${perCredits * qty}`);
+              } else {
+                console.warn(`[CREDITS_WEBHOOK]   ⚠️ Price ID ${priceId} not in PRICE_CREDIT_MAP`);
               }
             }
 
             if (totalCredits > 0) {
               creditsToAdd = totalCredits;
-              console.log('💰 Credits from price IDs:', creditsToAdd);
+              console.log('[CREDITS_WEBHOOK] 💰 Credits from price IDs:', creditsToAdd);
+            } else {
+              console.error('[CREDITS_WEBHOOK] ❌ No credits detected from price IDs');
             }
           } catch (err) {
-            console.error('⚠️ Failed to retrieve line items:', err.message);
+            console.error('[CREDITS_WEBHOOK] ⚠️ Failed to retrieve line items:', err.message);
           }
+        }
+        
+        // CRITICAL: If still no credits detected, default to 1 for any ฿99 THB payment
+        if (creditsToAdd === 0 && session.amount_total === 9900 && session.currency === 'thb') {
+          console.warn('[CREDITS_WEBHOOK] ⚠️ No credits in metadata/price map - defaulting to 1 credit for ฿99 THB payment');
+          creditsToAdd = 1;
         }
 
         if (creditsToAdd > 0) {
@@ -605,23 +646,27 @@ Deno.serve(async (req) => {
           const newBalance = currentCredits + creditsToAdd;
           const newTotalPurchased = totalPurchased + creditsToAdd;
 
-          console.log('🔄 UPDATING CREDITS');
-          console.log('  Current:', currentCredits);
-          console.log('  Adding:', creditsToAdd);
-          console.log('  New balance:', newBalance);
+          console.log('[CREDITS_WEBHOOK] 🔄 UPDATING USER CREDITS');
+          console.log('[CREDITS_WEBHOOK]   User ID:', user.id);
+          console.log('[CREDITS_WEBHOOK]   Email:', user.email);
+          console.log('[CREDITS_WEBHOOK]   Current balance:', currentCredits);
+          console.log('[CREDITS_WEBHOOK]   Adding:', creditsToAdd);
+          console.log('[CREDITS_WEBHOOK]   New balance:', newBalance);
+          console.log('[CREDITS_WEBHOOK]   Total purchased (lifetime):', newTotalPurchased);
 
           await base44.asServiceRole.entities.User.update(user.id, {
             letter_credits: newBalance,
             total_credits_purchased: newTotalPurchased
           });
 
-          console.log('\n✅✅✅ CREDITS UPDATED ✅✅✅');
-          console.log('User ID:', user.id);
-          console.log('Email:', user.email);
-          console.log('Credits Added:', creditsToAdd);
-          console.log('New Balance:', newBalance);
+          console.log('[CREDITS_WEBHOOK] ✅✅✅ USER CREDITS UPDATED IN DB ✅✅✅');
+          console.log('[CREDITS_WEBHOOK]   Session ID:', session.id);
+          console.log('[CREDITS_WEBHOOK]   User:', user.email);
+          console.log('[CREDITS_WEBHOOK]   Credits added:', creditsToAdd);
+          console.log('[CREDITS_WEBHOOK]   Final balance:', newBalance);
 
           // ✅ PAYMENT RECORD
+          console.log('[CREDITS_WEBHOOK] Creating Payment audit record...');
           await base44.asServiceRole.entities.Payment.create({
             type: 'addon',
             amount: parseFloat((session.amount_total / 100).toFixed(2)),
@@ -631,6 +676,7 @@ Deno.serve(async (req) => {
             external_id: session.id,
             created_by: user.email
           });
+          console.log('[CREDITS_WEBHOOK] ✅ Payment record created');
 
           // ✅ BILLING NOTIFICATIONS (LINE + EMAIL)
           console.log('[LETTER_CREDIT_WEBHOOK] User billing notification check:', {
@@ -749,13 +795,45 @@ Deno.serve(async (req) => {
             });
           }
 
-          console.log('\n✅ CREDITS PATH COMPLETE');
+          console.log('[CREDITS_WEBHOOK] ✅ CREDITS PATH COMPLETE');
+          console.log('[CREDITS_WEBHOOK] Summary:', {
+            sessionId: session.id,
+            user: user.email,
+            creditsAdded: creditsToAdd,
+            finalBalance: newBalance,
+            lineNotificationSent: !!(user.line_messaging_token && user.line_notifications && billingEnabled),
+            emailNotificationSent: !!(user.email_notifications && billingEnabled && RESEND_API_KEY)
+          });
+          
           return Response.json({ 
             received: true, 
             processed: 'credits',
             user: user.email,
-            credits: creditsToAdd,
-            lineNotificationSent: !!(user.line_messaging_token && user.line_notifications)
+            userId: user.id,
+            creditsAdded: creditsToAdd,
+            newBalance: newBalance,
+            sessionId: session.id,
+            lineNotificationSent: !!(user.line_messaging_token && user.line_notifications && billingEnabled),
+            emailNotificationSent: !!(user.email_notifications && billingEnabled && RESEND_API_KEY)
+          }, { status: 200 });
+        } else {
+          console.error('[CREDITS_WEBHOOK] ❌ CRITICAL: No credits to add - creditsToAdd is 0');
+          console.error('[CREDITS_WEBHOOK] Debug info:', {
+            sessionId: session.id,
+            metadata: metadata,
+            amount_total: session.amount_total,
+            currency: session.currency,
+            user: user?.email
+          });
+          
+          return Response.json({
+            received: true,
+            error: 'no_credits_detected',
+            debug: {
+              metadata_credits: metadata.credits,
+              amount: session.amount_total,
+              currency: session.currency
+            }
           }, { status: 200 });
         }
       }
