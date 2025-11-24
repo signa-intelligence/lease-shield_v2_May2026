@@ -124,6 +124,7 @@ function ResolveCaseContent() {
       
       if (response.data?.url) {
         console.log('[RESOLVE_FLOW] Redirecting to Stripe checkout');
+        // ROOT CAUSE FIX #9: Stripe will redirect back to /Cases on success
         window.location.href = response.data.url;
       } else {
         throw new Error('No checkout URL returned');

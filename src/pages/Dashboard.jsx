@@ -835,7 +835,8 @@ function DashboardContent() {
       subtitle: "Prevent rental problems before they happen.",
       activeLeases: "Active Leases",
       depositsTracked: "Deposits Tracked",
-      activeCases: "Active Cases", // Used for the card title
+      activeCases: "Active Cases",
+      cases: "Cases",
       protectionScore: "Protection Score",
       protectRights: "Protect Your Rights",
       uploadCta: "Upload your lease for instant automated analysis and risk assessment",
@@ -907,6 +908,7 @@ function DashboardContent() {
       activeLeases: "สัญญาเช่าที่ใช้งาน",
       depositsTracked: "เงินมัดจำที่ติดตาม",
       activeCases: "คดีที่ดำเนินการ",
+      cases: "คดี",
       protectionScore: "คะแนนการป้องกัน",
       protectRights: "ปกป้องสิทธิ์ของคุณ",
       uploadCta: "อัปโหลดสัญญาเช่าเพื่อรับการวิเคราะห์และประเมินความเสี่ยงอัตโนมัติทันที",
@@ -978,6 +980,7 @@ function DashboardContent() {
       activeLeases: "活跃租约",
       depositsTracked: "追踪的押金",
       activeCases: "进行中的案件",
+      cases: "案件",
       protectionScore: "保护分数",
       protectRights: "保护您的权利",
       uploadCta: "上传您的租约，立即获得自动分析和风险评估",
@@ -1048,6 +1051,7 @@ function DashboardContent() {
       activeLeases: "アクティブな賃貸契約",
       depositsTracked: "追跡中の敷金",
       activeCases: "進行中のケース",
+      cases: "ケース",
       protectionScore: "保護スコア",
       protectRights: "あなたの権利を守る",
       uploadCta: "賃貸契約をアップロードして、即座に自動分析とリスク評価を受けましょう",
@@ -1118,6 +1122,7 @@ function DashboardContent() {
       activeLeases: "Активные договоры",
       depositsTracked: "Отслеживаемые депозиты",
       activeCases: "Активные дела",
+      cases: "Дела",
       protectionScore: "Уровень защиты",
       protectRights: "Защитите свои права",
       uploadCta: "Загрузите договор для мгновенного автоматического анализа и оценки рисков",
@@ -1187,6 +1192,7 @@ function DashboardContent() {
       activeLeases: "활성 임대 계약",
       depositsTracked: "추적된 보증금",
       activeCases: "진행 중인 사례",
+      cases: "사례",
       protectionScore: "보호 점수",
       protectRights: "귀하의 권리를 보호하세요",
       uploadCta: "즉시 자동 분석 및 위험 평가를 위해 임대 계약을 업로드하세요",
@@ -2218,13 +2224,13 @@ function DashboardContent() {
                         gradient: 'from-red-500 to-red-700',
                         scoreColor: FEATURE_COLORS.cases.accent,
                         miniStats: [],
-                        route: createPageUrl("resolvecase") + "?mode=new",
-                        label: strings.openCase,
+                        route: createPageUrl("cases"),
+                        label: strings.cases,
                         onClick: () => {
                           haptic.light();
-                          navigate(createPageUrl("resolvecase") + "?mode=new");
+                          navigate(createPageUrl("cases"));
                         }
-                        },
+                      },
                       {
                         title: strings.rentTracked,
                         value: rentTrackedCount,
