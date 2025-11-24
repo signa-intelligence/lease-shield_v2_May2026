@@ -1105,13 +1105,13 @@ export default function TemplateForm() {
                     </div>
                   )}
 
-                  {formData.recipientType === 'landlord' && (
+                  {formData.recipientType === 'landlord' && user && (
                     <>
                       <div className="text-xs space-y-2" style={{ color: colors.textSecondary }}>
                         <p>
                           <strong style={{ color: colors.textPrimary }}>
                             {language === 'th' ? 'ภาษาหลัก:' : language === 'zh' ? '主要语言:' : language === 'ja' ? '主要言語:' : language === 'ko' ? '주 언어:' : language === 'ru' ? 'Основной язык:' : 'Primary language:'}
-                          </strong> {getLanguageLabel(user.landlord_language || 'th', language)}
+                          </strong> {getLanguageLabel(user?.landlord_language || 'th', language)}
                         </p>
                         <p>
                           ✓ {language === 'th' ? 'อังกฤษจะถูกเพิ่มโดยอัตโนมัติ' : language === 'zh' ? '英语将自动包含' : language === 'ja' ? '英語は自動的に含まれます' : language === 'ko' ? '영어가 자동으로 포함됩니다' : language === 'ru' ? 'Английский будет включен автоматически' : 'English will be included automatically'}
@@ -1127,10 +1127,10 @@ export default function TemplateForm() {
                             className="w-4 h-4"
                           />
                           <span className="text-sm" style={{ color: colors.textPrimary }}>
-                            {language === 'th' ? 'รวมสำเนาภาษาผู้เช่า' : language === 'zh' ? '包含租户语言副本' : language === 'ja' ? '借主言語のコピーを含める' : language === 'ko' ? '임차인 언어 사본 포함' : language === 'ru' ? 'Включить копию на языке арендатора' : 'Include tenant language copy'} ({getLanguageLabel(user.language || 'en', language)})
+                            {language === 'th' ? 'รวมสำเนาภาษาผู้เช่า' : language === 'zh' ? '包含租户语言副本' : language === 'ja' ? '借主言語のコピーを含める' : language === 'ko' ? '임차인 언어 사본 포함' : language === 'ru' ? 'Включить копию на языке арендатора' : 'Include tenant language copy'} ({getLanguageLabel(user?.language || 'en', language)})
                           </span>
                         </label>
-                        {(user.landlord_language || 'th') !== 'th' && (
+                        {(user?.landlord_language || 'th') !== 'th' && (
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
@@ -1148,20 +1148,20 @@ export default function TemplateForm() {
                     </>
                   )}
 
-                  {formData.recipientType === 'tenant' && (
+                  {formData.recipientType === 'tenant' && user && (
                     <>
                       <div className="text-xs space-y-2" style={{ color: colors.textSecondary }}>
                         <p>
                           <strong style={{ color: colors.textPrimary }}>
                             {language === 'th' ? 'ภาษาของคุณ:' : language === 'zh' ? '您的语言:' : language === 'ja' ? 'あなたの言語:' : language === 'ko' ? '귀하의 언어:' : language === 'ru' ? 'Ваш язык:' : 'Your language:'}
-                          </strong> {getLanguageLabel(user.language || 'en', language)}
+                          </strong> {getLanguageLabel(user?.language || 'en', language)}
                         </p>
                         <p>
                           ✓ {language === 'th' ? 'อังกฤษจะถูกเพิ่มโดยอัตโนมัติ' : language === 'zh' ? '英语将自动包含' : language === 'ja' ? '英語は自動的に含まれます' : language === 'ko' ? '영어가 자동으로 포함됩니다' : language === 'ru' ? 'Английский будет включен автоматически' : 'English will be included automatically'}
                         </p>
                       </div>
                       <div className="space-y-2 pt-2">
-                        {user.landlord_language && (
+                        {user?.landlord_language && (
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
@@ -1171,11 +1171,11 @@ export default function TemplateForm() {
                               className="w-4 h-4"
                             />
                             <span className="text-sm" style={{ color: colors.textPrimary }}>
-                              {language === 'th' ? 'รวมภาษาเจ้าของบ้าน' : language === 'zh' ? '包含房东语言' : language === 'ja' ? '家主の言語を含める' : language === 'ko' ? '집주인 언어 포함' : language === 'ru' ? 'Включить язык арендодателя' : 'Include landlord language'} ({getLanguageLabel(user.landlord_language || 'th', language)})
+                              {language === 'th' ? 'รวมภาษาเจ้าของบ้าน' : language === 'zh' ? '包含房东语言' : language === 'ja' ? '家主の言語を含める' : language === 'ko' ? '집주인 언어 포함' : language === 'ru' ? 'Включить язык арендодателя' : 'Include landlord language'} ({getLanguageLabel(user?.landlord_language || 'th', language)})
                             </span>
                           </label>
                         )}
-                        {(user.language || 'en') !== 'th' && (
+                        {(user?.language || 'en') !== 'th' && (
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
