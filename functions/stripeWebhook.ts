@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
   console.log('\n\n=== STRIPE WEBHOOK RECEIVED ===');
   console.log('Timestamp:', new Date().toISOString());
   console.log('[WEBHOOK_ENTRY] Request received');
+  console.log('[WEBHOOK_ENTRY] Stripe Key Mode:', stripeSecretKey?.startsWith('sk_live_') ? '🟢 LIVE' : stripeSecretKey?.startsWith('sk_test_') ? '🟡 TEST' : '❌ INVALID');
   
   try {
     const rawBody = await req.text();
@@ -26,6 +27,7 @@ Deno.serve(async (req) => {
 
     console.log('📨 Webhook signature present:', !!signature);
     console.log('🔐 Webhook secret configured:', !!webhookSecret);
+    console.log('🔑 Stripe API key mode:', stripeSecretKey?.startsWith('sk_live_') ? 'LIVE' : 'TEST');
 
     if (!signature) {
       console.error('❌ No stripe-signature header found');
@@ -44,13 +46,17 @@ Deno.serve(async (req) => {
       console.log('Event ID:', event.id);
       console.log('Event Type:', event.type);
       console.log('Event Created:', new Date(event.created * 1000).toISOString());
+      console.log('Event Livemode:', event.livemode ? '🟢 LIVE EVENT' : '🟡 TEST EVENT');
     } catch (err) {
       console.error('❌ SIGNATURE VERIFICATION FAILED:', err.message);
+      console.error('❌ This likely means the webhook signing secret does not match the event mode');
+      console.error('❌ Check: Are you using LIVE signing secret for LIVE events, and TEST signing secret for TEST events?');
       return Response.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
     console.log('\n📋 FULL EVENT DATA:');
     console.log('[WEBHOOK_EVENT] Type:', event.type);
+    console.log('[WEBHOOK_EVENT] Livemode:', event.livemode);
     console.log('[WEBHOOK_EVENT] Mode:', event.data.object.mode);
     console.log('[WEBHOOK_EVENT] Metadata:', JSON.stringify(event.data.object.metadata, null, 2));
 
