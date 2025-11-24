@@ -114,35 +114,46 @@ function ResolveCaseContent() {
       return { createdCase, userId, userEmail };
     },
     onSuccess: async ({ createdCase, userId, userEmail }) => {
-      console.log('[RESOLVE_FLOW] Case created:', {
+      console.log('[RESOLVE_FLOW] ✅ Case created successfully:', {
         id: createdCase.id,
         case_number: createdCase.case_number,
         status: createdCase.status,
         user_email: createdCase.user_email,
-        dispute_amount: createdCase.dispute_amount
+        type: createdCase.type,
+        dispute_amount: createdCase.dispute_amount,
+        property_address: createdCase.property_address,
+        landlord_name: createdCase.landlord_name,
+        landlord_email: createdCase.landlord_email,
+        summary: createdCase.summary?.substring(0, 50),
+        evidence_count: createdCase.evidence?.length || 0
       });
       
-      // ROOT CAUSE FIX #2: Invalidate queries BEFORE checkout redirect
+      // Invalidate queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ['cases'] });
       
-      // Get pricing for this user
-      const pricing = {
-        effectivePrice: createdCase.is_member_at_creation ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE,
-        priceType: createdCase.is_member_at_creation ? 'member' : 'public'
-      };
+      // CRITICAL FIX: Use unified pricing system
+      const pricing = getResolvePricingForUser(user);
       
-      // Create Stripe checkout session
+      console.log('[RESOLVE_FLOW] Unified pricing calculation:', {
+        plan: pricing.membershipInfo.plan,
+        membershipDays: pricing.membershipInfo.membershipDays,
+        qualifies: pricing.membershipInfo.qualifiesForMemberBenefits,
+        reason: pricing.membershipInfo.reason,
+        priceType: pricing.priceType,
+        amount: pricing.amount
+      });
+      
+      // Create Stripe checkout session (server will re-validate pricing)
       const response = await base44.functions.invoke('createResolveCheckout', {
         userId: userId,
         userEmail: userEmail,
         caseId: createdCase.id,
         priceType: pricing.priceType,
-        amount: pricing.effectivePrice
+        amount: pricing.amount
       });
       
       if (response.data?.url) {
         console.log('[RESOLVE_FLOW] Redirecting to Stripe checkout');
-        // ROOT CAUSE FIX #9: Stripe will redirect back to /Cases on success
         window.location.href = response.data.url;
       } else {
         throw new Error('No checkout URL returned');
@@ -274,13 +285,18 @@ function ResolveCaseContent() {
     }
 
     try {
-      // ROOT CAUSE FIX #4: Generate case number (synchronous step)
-      const eligibility = getMembershipEligibility(user);
-      const isMember = eligibility.isEligible;
+      // CRITICAL FIX: Use unified membership system
+      const membershipForCase = getMembershipInfo(user);
+      const isMember = membershipForCase.qualifiesForMemberBenefits;
       const planTier = user?.plan_tier?.toLowerCase() || 'free';
       const tierLevel = planTier === 'lite' ? 'L' : planTier === 'protect' ? 'P' : planTier === 'secure' ? 'S' : 'F';
       
-      console.log('[RESOLVE_FLOW] Generating case number for user:', user.email);
+      console.log('[RESOLVE_FLOW] Membership check:', {
+        plan: membershipForCase.plan,
+        membershipDays: membershipForCase.membershipDays,
+        qualifies: membershipForCase.qualifiesForMemberBenefits,
+        reason: membershipForCase.reason
+      });
       
       const caseNumberResponse = await base44.functions.invoke('generateCaseNumber', {
         isMember: isMember,
@@ -295,7 +311,7 @@ function ResolveCaseContent() {
       const caseNumber = caseNumberResponse.data.case_number;
       console.log('[RESOLVE_FLOW] Generated case number:', caseNumber);
 
-      // ROOT CAUSE FIX #5: Map evidence to clean array (no file objects)
+      // Map evidence to clean array (no file objects)
       const evidenceData = formData.evidence_files.map(file => ({
         id: file.id,
         url: file.url,
@@ -304,7 +320,7 @@ function ResolveCaseContent() {
         uploaded_date: file.uploaded_date
       }));
 
-      // ROOT CAUSE FIX #6: Build complete case payload
+      // CRITICAL FIX: Build complete case with all fields
       const caseData = {
         case_number: caseNumber,
         user_email: user.email,
@@ -315,26 +331,40 @@ function ResolveCaseContent() {
         landlord_email: formData.landlord_email || user?.landlord_email || '',
         property_address: formData.property_address || '',
         evidence: evidenceData,
-        status: 'intake',
-        is_member_at_creation: isMember,
+        status: 'awaiting_payment', // Start as awaiting_payment, webhook changes to intake
+        is_member_at_creation: membershipForCase.qualifiesForMemberBenefits,
+        flags: {
+          priority: membershipForCase.qualifiesForMemberBenefits
+        },
         timeline: [
           {
             timestamp: new Date().toISOString(),
-            event: `Case ${caseNumber} submitted - awaiting payment`,
-            actor: user.email
+            event: `Case ${caseNumber} created - awaiting payment (${membershipForCase.plan.toUpperCase()}, ${membershipForCase.qualifiesForMemberBenefits ? 'member' : 'public'} rate)`,
+            actor: user.email,
+            meta: {
+              plan: membershipForCase.plan,
+              membershipDays: membershipForCase.membershipDays,
+              reason: membershipForCase.reason
+            }
           }
         ]
       };
 
-      console.log('[RESOLVE_FLOW] Submitting case:', {
+      console.log('[RESOLVE_FLOW] Creating case with full data:', {
         case_number: caseNumber,
         user_email: user.email,
         type: formData.type,
-        status: 'intake',
-        evidence_count: evidenceData.length
+        dispute_amount: parseFloat(formData.dispute_amount),
+        property_address: formData.property_address,
+        landlord_name: formData.landlord_name,
+        landlord_email: formData.landlord_email,
+        summary: formData.summary?.substring(0, 50) + '...',
+        status: 'awaiting_payment',
+        evidence_count: evidenceData.length,
+        is_member_at_creation: membershipForCase.qualifiesForMemberBenefits
       });
 
-      // ROOT CAUSE FIX #7: Pass all data needed for checkout in mutation context
+      // Pass all data to mutation
       createCaseMutation.mutate({ 
         caseData, 
         userId: user.id, 
