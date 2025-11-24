@@ -594,48 +594,120 @@ Deno.serve(async (req) => {
             created_by: user.email
           });
 
-          // ✅ LINE NOTIFICATION
-          console.log('[LETTER_CREDIT_WEBHOOK] User:', {
+          // ✅ BILLING NOTIFICATIONS (LINE + EMAIL)
+          console.log('[LETTER_CREDIT_WEBHOOK] User billing notification check:', {
             email: user.email,
             userId: user.id,
             lineLinked: !!user.line_messaging_token,
             lineUserId: user.line_messaging_token || null,
             lineNotificationsEnabled: user.line_notifications || false,
+            billingPaymentsEnabled: user.notifications?.billing_payments ?? true,
             creditsPurchased: creditsToAdd,
             newBalance: newBalance
           });
 
-          if (user.line_messaging_token && user.line_notifications) {
+          const billingEnabled = user.notifications?.billing_payments ?? true;
+
+          // LINE notification
+          if (user.line_messaging_token && user.line_notifications && billingEnabled) {
             try {
               console.log('[LETTER_CREDIT_WEBHOOK] Sending LINE notification...');
 
-              const lineMessage = `🎉 Letter Credits Purchased!\n\n` +
-                `✅ Credits purchased: ${creditsToAdd}\n` +
-                `💳 New balance: ${newBalance}\n\n` +
-                `You can now generate legal letters to your landlord and juristic office from the Templates page.`;
+              const lineMessage = `🎫 Lease Shield – Letter credits purchased!\n\n` +
+                `✅ Credits purchased: +${creditsToAdd}\n` +
+                `💳 New balance: ${newBalance} credits\n\n` +
+                `You can now generate legal letters from the Templates page.`;
 
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
                 userId: user.line_messaging_token,
                 message: lineMessage
               });
 
-              console.log('[LETTER_CREDIT_WEBHOOK] LINE notification sent', {
+              console.log('[LETTER_CREDIT_WEBHOOK] ✅ LINE notification sent', {
                 email: user.email,
                 lineUserId: user.line_messaging_token
               });
             } catch (lineError) {
-              console.error('[LETTER_CREDIT_WEBHOOK] LINE send failed:', {
+              console.error('[LETTER_CREDIT_WEBHOOK] ❌ LINE send failed:', {
                 email: user.email,
                 error: lineError.message,
                 stack: lineError.stack
               });
-              // Don't fail webhook on LINE error
             }
           } else {
-            console.log('[LETTER_CREDIT_WEBHOOK] LINE not sent – no linked LINE account or notifications disabled', {
+            console.log('[LETTER_CREDIT_WEBHOOK] ⏭️ LINE not sent:', {
               email: user.email,
               lineLinked: !!user.line_messaging_token,
-              lineNotificationsEnabled: user.line_notifications || false
+              lineNotificationsEnabled: user.line_notifications || false,
+              billingPaymentsEnabled: billingEnabled,
+              reason: !user.line_messaging_token ? 'no_line_connection' 
+                : !user.line_notifications ? 'line_disabled'
+                : !billingEnabled ? 'billing_notifications_disabled'
+                : 'unknown'
+            });
+          }
+
+          // Email notification
+          if (user.email_notifications && billingEnabled && RESEND_API_KEY) {
+            try {
+              console.log('[LETTER_CREDIT_WEBHOOK] Sending email notification...');
+
+              const emailSubject = '🎫 Letter Credits Purchased - Lease Shield';
+              const emailBody = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+                    <h2 style="color: white; margin: 0;">🎫 Letter Credits Purchased</h2>
+                  </div>
+                  <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+                    <p>Hi <strong>${user.full_name || 'there'}</strong>,</p>
+                    <p>Your letter credits have been successfully added to your account!</p>
+                    <div style="background: #F0FDF4; padding: 16px; border-radius: 8px; border-left: 4px solid #10B981; margin: 20px 0;">
+                      <p style="margin: 8px 0;"><strong>Credits purchased:</strong> +${creditsToAdd}</p>
+                      <p style="margin: 8px 0;"><strong>New balance:</strong> ${newBalance} credits</p>
+                    </div>
+                    <p>You can now generate legal letters to your landlord and juristic office from the Templates page.</p>
+                    <p><a href="https://app.leaseshield.asia/templates" style="color: #0C3B2E; font-weight: bold;">Go to Templates →</a></p>
+                    <p style="margin-top: 24px; color: #666; font-size: 12px;">— The Lease Shield Team</p>
+                  </div>
+                </div>
+              `;
+
+              const emailResponse = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${RESEND_API_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'Lease Shield <no-reply@leaseshield.asia>',
+                  to: [user.email],
+                  subject: emailSubject,
+                  html: emailBody,
+                }),
+              });
+
+              if (emailResponse.ok) {
+                console.log('[LETTER_CREDIT_WEBHOOK] ✅ Email notification sent');
+              } else {
+                const errorData = await emailResponse.json();
+                console.error('[LETTER_CREDIT_WEBHOOK] ❌ Email send failed:', errorData);
+              }
+            } catch (emailError) {
+              console.error('[LETTER_CREDIT_WEBHOOK] ❌ Email send failed:', {
+                email: user.email,
+                error: emailError.message
+              });
+            }
+          } else {
+            console.log('[LETTER_CREDIT_WEBHOOK] ⏭️ Email not sent:', {
+              email: user.email,
+              emailNotificationsEnabled: user.email_notifications || false,
+              billingPaymentsEnabled: billingEnabled,
+              resendConfigured: !!RESEND_API_KEY,
+              reason: !user.email_notifications ? 'email_disabled'
+                : !billingEnabled ? 'billing_notifications_disabled'
+                : !RESEND_API_KEY ? 'resend_not_configured'
+                : 'unknown'
             });
           }
 
