@@ -2,77 +2,80 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
 /**
- * STRIPE CHECKOUT CREATOR
+ * STRIPE CHECKOUT CREATOR - Standalone, no external dependencies
  * 
  * Required Secrets:
  * - SK_TEST_secret_key: Stripe API key (sk_live_... for production)
+ * 
+ * CRITICAL: This function must NOT depend on any other functions or deployments
+ * to avoid "deploymentNotFound" errors.
  */
 
-const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), { // ⚠️ Name is misleading - should contain LIVE key for production
+const stripeKey = Deno.env.get('SK_TEST_secret_key');
+
+if (!stripeKey) {
+  console.error('❌ CRITICAL: SK_TEST_secret_key not configured at startup');
+}
+
+const stripe = new Stripe(stripeKey, {
   apiVersion: '2024-06-20',
 });
 
 Deno.serve(async (req) => {
   console.log('\n\n═══════════════════════════════════════');
-  console.log('🔥 CHECKOUT FUNCTION ENTRY - DIAGNOSTICS ENABLED');
+  console.log('🔥 CREATE_CHECKOUT - Entry');
   console.log('═══════════════════════════════════════');
+  console.log('[CREATE_CHECKOUT] Timestamp:', new Date().toISOString());
+  console.log('[CREATE_CHECKOUT] Stripe mode:', stripeKey?.startsWith('sk_live_') ? '🟢 LIVE' : stripeKey?.startsWith('sk_test_') ? '🟡 TEST' : '❌ INVALID');
   
-  const key = Deno.env.get('SK_TEST_secret_key');
-  
-  console.log('🔐 STRIPE_KEY_DIAGNOSTIC:', {
-    exists: !!key,
-    prefix: key?.slice(0, 7),
-    isLive: key?.startsWith('sk_live_'),
-    isTest: key?.startsWith('sk_test_'),
-    length: key?.length || 0
-  });
-  
-  if (!key) {
-    console.error('❌ CRITICAL: SK_TEST_secret_key is NULL or UNDEFINED');
+  if (!stripeKey) {
+    console.error('[CREATE_CHECKOUT] ❌ Stripe key missing');
     return Response.json({ 
-      error: 'Stripe secret key not configured',
-      diagnostic: 'SK_TEST_secret_key environment variable is missing'
+      error: 'Stripe not configured',
+      code: 'stripe_key_missing'
     }, { status: 500 });
   }
-  
-  console.log('🔑 Key type:', key.startsWith('sk_live_') ? 'LIVE ✅' : key.startsWith('sk_test_') ? 'TEST ⚠️' : 'UNKNOWN ❌');
   
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
     if (!user) {
-      console.error('❌ Authentication failed - no user');
+      console.error('[CREATE_CHECKOUT] ❌ No authenticated user');
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('✅ User authenticated:', user.email);
+    console.log('[CREATE_CHECKOUT] ✅ User:', user.email, '| ID:', user.id);
 
     const { priceId, mode, amount, currency, description, successUrl, cancelUrl, metadata } = await req.json();
 
-    console.log('📦 CHECKOUT_INPUT:', { 
+    console.log('[CREATE_CHECKOUT] 📦 Request payload:', JSON.stringify({ 
       priceId, 
       mode, 
       amount, 
       currency, 
-      user: user.email,
-      metadata,
-      timestamp: Date.now()
-    });
+      description,
+      metadata
+    }, null, 2));
 
+    // Get or create Stripe customer
     let customerId = user.stripe_customer_id;
-    const isLiveMode = key?.startsWith('sk_live_');
+    const isLiveMode = stripeKey?.startsWith('sk_live_');
     
-    // ✅ TEST-TO-LIVE MIGRATION FIX: Check if customer exists in current mode
+    console.log('[CREATE_CHECKOUT] Customer resolution:', {
+      savedCustomerId: customerId?.substring(0, 20) || 'none',
+      mode: isLiveMode ? 'LIVE' : 'TEST'
+    });
+    
+    // Validate customer exists in current mode
     if (customerId && isLiveMode) {
-      console.log('🔍 Validating customer ID:', customerId.substring(0, 15) + '...');
       try {
         await stripe.customers.retrieve(customerId);
-        console.log('✅ Customer exists in LIVE mode');
+        console.log('[CREATE_CHECKOUT] ✅ Customer validated:', customerId.substring(0, 20));
       } catch (customerError) {
-        if (customerError.code === 'resource_missing' && customerError.message?.includes('test mode')) {
-          console.warn('⚠️ TEST CUSTOMER DETECTED - Recreating in LIVE mode');
-          customerId = null; // Force recreation
+        if (customerError.code === 'resource_missing') {
+          console.warn('[CREATE_CHECKOUT] ⚠️ Customer not found in LIVE - creating new');
+          customerId = null;
         } else {
           throw customerError;
         }
@@ -80,18 +83,18 @@ Deno.serve(async (req) => {
     }
     
     if (!customerId) {
-      console.log('Creating new Stripe customer for:', user.email);
+      console.log('[CREATE_CHECKOUT] Creating new Stripe customer...');
       const customer = await stripe.customers.create({
         email: user.email,
         name: user.full_name,
         metadata: { user_id: user.id }
       });
       customerId = customer.id;
-      console.log('✅ Created customer in', isLiveMode ? 'LIVE' : 'TEST', 'mode:', customerId);
+      console.log('[CREATE_CHECKOUT] ✅ Customer created:', customerId);
       await base44.auth.updateMe({ stripe_customer_id: customerId });
     }
 
-    // ✅ IMPROVED: Redirect logic based on mode
+    // Success/Cancel URLs
     const finalSuccessUrl = successUrl || (
       mode === 'subscription' 
         ? `https://app.leaseshield.asia/account?subscription=success`
@@ -103,7 +106,10 @@ Deno.serve(async (req) => {
         : `https://app.leaseshield.asia/templates?payment=cancelled`
     );
     
-    console.log('✅ Using URLs:', { finalSuccessUrl, finalCancelUrl });
+    console.log('[CREATE_CHECKOUT] URLs configured:', {
+      success: finalSuccessUrl,
+      cancel: finalCancelUrl
+    });
 
     const sessionConfig = {
       customer: customerId,
@@ -115,17 +121,21 @@ Deno.serve(async (req) => {
     };
 
     // ========================================
-    // CREDITS: One-time payment with PromptPay
+    // CREDITS: One-time payment
     // ========================================
     if (mode === 'payment' && amount) {
       const finalAmount = Math.round(amount * 100);
-      console.log('✅ CREDITS - Creating one-time payment:', finalAmount, 'satang');
+      const creditsCount = metadata?.credits || 1;
+      
+      console.log('[CREATE_CHECKOUT] 💰 CREDITS MODE:');
+      console.log(`  Amount: ${amount} THB → ${finalAmount} satang`);
+      console.log(`  Credits: ${creditsCount}`);
       
       sessionConfig.metadata = {
         type: 'credits',
         userId: user.id,
         email: user.email,
-        credits: metadata?.credits || 1,
+        credits: creditsCount.toString(),
       };
 
       sessionConfig.line_items = [{
@@ -133,18 +143,16 @@ Deno.serve(async (req) => {
           currency: currency || 'thb',
           unit_amount: finalAmount,
           product_data: {
-            name: description || 'Letter Credits',
-            description: description || 'Lease Shield Letter Credits',
+            name: description || `${creditsCount} Letter Credit${creditsCount > 1 ? 's' : ''}`,
+            description: 'Lease Shield Letter Credits',
           },
         },
         quantity: 1,
       }];
 
-      // ✅ ENABLE CARD + PROMPTPAY FOR ONE-TIME PAYMENTS
       sessionConfig.payment_method_types = ['card', 'promptpay'];
 
-      console.log('💰 Credits checkout metadata:', sessionConfig.metadata);
-      console.log('💳 Payment methods: card, promptpay');
+      console.log('[CREATE_CHECKOUT] Session metadata:', JSON.stringify(sessionConfig.metadata, null, 2));
     } 
     // ========================================
     // SUBSCRIPTIONS: Card only (PromptPay not supported)
@@ -221,48 +229,45 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing priceId or amount' }, { status: 400 });
     }
 
-    console.log('📤 Creating Stripe session...');
-    console.log('SessionConfig:', JSON.stringify(sessionConfig, null, 2));
+    console.log('[CREATE_CHECKOUT] 🚀 Creating Stripe Checkout Session...');
+    console.log('[CREATE_CHECKOUT] Full config:', JSON.stringify(sessionConfig, null, 2));
 
     let session;
     try {
       session = await stripe.checkout.sessions.create(sessionConfig);
-      console.log('✅ Stripe session created successfully:', session.id);
-      console.log('✅ Checkout URL:', session.url);
+      console.log('[CREATE_CHECKOUT] ✅✅✅ SUCCESS ✅✅✅');
+      console.log('[CREATE_CHECKOUT] Session ID:', session.id);
+      console.log('[CREATE_CHECKOUT] Checkout URL:', session.url);
+      console.log('[CREATE_CHECKOUT] Mode:', session.mode);
+      console.log('[CREATE_CHECKOUT] Metadata:', JSON.stringify(session.metadata, null, 2));
     } catch (stripeError) {
-      console.error('❌ STRIPE API ERROR:', {
-        type: stripeError.type,
-        code: stripeError.code,
-        message: stripeError.message,
-        param: stripeError.param,
-        statusCode: stripeError.statusCode,
-        raw: stripeError.raw
-      });
+      console.error('[CREATE_CHECKOUT] ❌❌❌ STRIPE ERROR ❌❌❌');
+      console.error('[CREATE_CHECKOUT] Type:', stripeError.type);
+      console.error('[CREATE_CHECKOUT] Code:', stripeError.code);
+      console.error('[CREATE_CHECKOUT] Message:', stripeError.message);
+      console.error('[CREATE_CHECKOUT] Param:', stripeError.param);
+      console.error('[CREATE_CHECKOUT] Full error:', JSON.stringify(stripeError, null, 2));
       throw stripeError;
     }
 
-    console.log('═══════════════════════════════════════');
-    console.log('✅ CHECKOUT COMPLETED SUCCESSFULLY');
-    console.log('═══════════════════════════════════════\n\n');
+    console.log('[CREATE_CHECKOUT] ═══════════════════════════════════════\n');
 
     return Response.json({ url: session.url });
   } catch (error) {
-    console.error('\n\n❌❌❌ CHECKOUT FUNCTION FAILED ❌❌❌');
-    console.error('Error Type:', error.type || 'unknown');
-    console.error('Error Code:', error.code || 'unknown');
-    console.error('Error Message:', error.message);
-    console.error('Error Param:', error.param || 'none');
-    console.error('Full Error Object:', JSON.stringify(error, null, 2));
-    console.error('Stack Trace:', error.stack);
-    console.error('═══════════════════════════════════════\n\n');
+    console.error('\n[CREATE_CHECKOUT] ❌❌❌ FATAL ERROR ❌❌❌');
+    console.error('[CREATE_CHECKOUT] Type:', error.type || typeof error);
+    console.error('[CREATE_CHECKOUT] Code:', error.code || 'none');
+    console.error('[CREATE_CHECKOUT] Message:', error.message);
+    console.error('[CREATE_CHECKOUT] Stack:', error.stack);
+    console.error('[CREATE_CHECKOUT] Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+    console.error('[CREATE_CHECKOUT] ═══════════════════════════════════════\n');
     
     return Response.json({ 
       error: error.message || 'Checkout creation failed',
+      code: error.code || 'unknown_error',
+      type: error.type || 'internal_error',
       details: error.raw?.message || error.message,
-      type: error.type || 'unknown',
-      code: error.code || 'unknown',
-      param: error.param || 'none',
-      diagnostic: 'Check function logs for full details'
+      diagnostic: 'See createCheckout logs for full error trace'
     }, { status: 500 });
   }
 });
