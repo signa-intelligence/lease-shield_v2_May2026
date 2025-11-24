@@ -898,6 +898,8 @@ function DashboardContent() {
       submitCase: "Submit Case",
       savingsVsPublic: "Save ฿1,500 vs public rate",
       upgradeForMemberRate: "Upgrade to any paid plan for member pricing",
+      startResolve: "Start Resolve",
+      continueCase: "Continue",
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -967,6 +969,8 @@ function DashboardContent() {
       submitCase: "ส่งคดี",
       savingsVsPublic: "ประหยัด ฿1,500 เมื่อเทียบกับราคาทั่วไป",
       upgradeForMemberRate: "อัปเกรดเป็นแผนชำระเงินใดๆ เพื่อราคาสมาชิก",
+      startResolve: "เริ่ม Resolve",
+      continueCase: "ดำเนินการต่อ",
     },
     zh: {
       welcome: "欢迎回来",
@@ -1035,6 +1039,8 @@ function DashboardContent() {
       submitCase: "提交案件",
       savingsVsPublic: "比公开价节省 ฿1,500",
       upgradeForMemberRate: "升级到任何付费计划以获得会员定价",
+      startResolve: "开始 Resolve",
+      continueCase: "继续",
     },
     ja: {
       welcome: "おかえりなさい",
@@ -1103,6 +1109,8 @@ function DashboardContent() {
       submitCase: "ケースを送信",
       savingsVsPublic: "公開価格より ฿1,500 お得",
       upgradeForMemberRate: "有料プランにアップグレードしてメンバー価格を利用",
+      startResolve: "Resolveを開始",
+      continueCase: "続ける",
     },
     ru: {
       welcome: "Добро пожаловать",
@@ -1170,6 +1178,8 @@ function DashboardContent() {
       submitCase: "Подать дело",
       savingsVsPublic: "Экономия ฿1,500 от публичного тарифа",
       upgradeForMemberRate: "Обновитесь до любого платного плана для тарифов участника",
+      startResolve: "Начать Resolve",
+      continueCase: "Продолжить",
     },
     ko: {
       welcome: "환영합니다",
@@ -1237,6 +1247,8 @@ function DashboardContent() {
       submitCase: "사례 제출",
       savingsVsPublic: "공개 가격보다 ฿1,500 절약",
       upgradeForMemberRate: "회원 가격을 위해 유료 플랜으로 업그레이드",
+      startResolve: "Resolve 시작",
+      continueCase: "계속",
     }
   };
 
@@ -2127,10 +2139,7 @@ function DashboardContent() {
                       e.target.style.boxShadow = '0 2px 6px rgba(239,68,68,0.3)';
                     }}
                   >
-                    {awaitingCase 
-                      ? (language === 'ru' ? 'Продолжить' : 'Continue')
-                      : (language === 'ru' ? 'Начать Resolve' : 'Start Resolve')
-                    }
+                    {awaitingCase ? strings.continueCase : strings.startResolve}
                   </button>
                 </div>
               </div>
@@ -2209,13 +2218,13 @@ function DashboardContent() {
                         gradient: 'from-red-500 to-red-700',
                         scoreColor: FEATURE_COLORS.cases.accent,
                         miniStats: [],
-                        route: createPageUrl("cases"),
+                        route: createPageUrl("resolvecase") + "?mode=new",
                         label: strings.openCase,
                         onClick: () => {
                           haptic.light();
-                          navigate(createPageUrl("cases"));
+                          navigate(createPageUrl("resolvecase") + "?mode=new");
                         }
-                      },
+                        },
                       {
                         title: strings.rentTracked,
                         value: rentTrackedCount,

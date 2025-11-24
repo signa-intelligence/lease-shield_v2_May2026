@@ -277,6 +277,8 @@ function EvidenceVaultContent() {
     e.target.value = null; // Clear input so same file can be selected again
   };
 
+  const [showVideoActionSheet, setShowVideoActionSheet] = useState(false);
+
   const handleVideoClick = () => {
     if (!isSecureTier) {
       setUpgradeModalType('video');
@@ -289,7 +291,49 @@ function EvidenceVaultContent() {
       return;
     }
 
+    setShowVideoActionSheet(true);
+  };
+
+  const handleVideoUpload = () => {
+    setShowVideoActionSheet(false);
     document.getElementById('video-evidence-input').click();
+  };
+
+  const handleVideoRecord = async () => {
+    setShowVideoActionSheet(false);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      
+      const mediaRecorder = new MediaRecorder(stream);
+      const chunks = [];
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/mp4' });
+        const file = new File([blob], `recorded_${Date.now()}.mp4`, { type: 'video/mp4' });
+        setVideoFiles(prev => [...prev, file]);
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      
+      setTimeout(() => {
+        if (mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+        }
+      }, 60000);
+      
+      toast.info(language === 'th' ? 'กำลังบันทึก... จะหยุดอัตโนมัติใน 60 วินาที' : language === 'zh' ? '正在录制... 将在60秒后自动停止' : language === 'ja' ? '録画中... 60秒後に自動停止します' : language === 'ko' ? '녹화 중... 60초 후 자동 정지' : language === 'ru' ? 'Идёт запись... Автостоп через 60 сек' : 'Recording... Will auto-stop in 60 seconds');
+      
+    } catch (err) {
+      console.error('Camera access error:', err);
+      toast.error(language === 'th' ? 'ไม่สามารถเข้าถึงกล้องได้' : language === 'zh' ? '无法访问相机' : language === 'ja' ? 'カメラにアクセスできません' : language === 'ko' ? '카메라 액세스 불가' : language === 'ru' ? 'Нет доступа к камере' : 'Cannot access camera');
+    }
   };
 
   const handleVoiceClick = () => {
@@ -845,7 +889,9 @@ function EvidenceVaultContent() {
       maxVideoReached: "Maximum 3 videos",
       fileTooLarge: "File too large",
       voiceMaxSize: "Voice notes must be under 5MB",
-      videoMaxSize: "Videos must be under 80MB"
+      videoMaxSize: "Videos must be under 80MB",
+      uploadVideo: "Upload Video",
+      recordVideo: "Record Video"
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -928,7 +974,9 @@ function EvidenceVaultContent() {
       maxVideoReached: "สูงสุด 3 วิดีโอ",
       fileTooLarge: "ไฟล์ใหญ่เกินไป",
       voiceMaxSize: "บันทึกเสียงต้องน้อยกว่า 5MB",
-      videoMaxSize: "วิดีโอต้องน้อยกว่า 80MB"
+      videoMaxSize: "วิดีโอต้องน้อยกว่า 80MB",
+      uploadVideo: "อัปโหลดวิดีโอ",
+      recordVideo: "บันทึกวิดีโอ"
     },
     zh: {
       back: "返回仪表板",
@@ -1011,7 +1059,9 @@ function EvidenceVaultContent() {
       maxVideoReached: "最多 3 个视频",
       fileTooLarge: "文件过大",
       voiceMaxSize: "语音备忘录必须小于 5MB",
-      videoMaxSize: "视频必须小于 80MB"
+      videoMaxSize: "视频必须小于 80MB",
+      uploadVideo: "上传视频",
+      recordVideo: "录制视频"
     },
     ja: {
       back: "ダッシュボードに戻る",
@@ -1094,7 +1144,9 @@ function EvidenceVaultContent() {
       maxVideoReached: "最大3件の動画",
       fileTooLarge: "ファイルが大きすぎます",
       voiceMaxSize: "音声メモは5MB未満である必要があります",
-      videoMaxSize: "動画は80MB未満である必要があります"
+      videoMaxSize: "動画は80MB未満である必要があります",
+      uploadVideo: "動画をアップロード",
+      recordVideo: "動画を録画"
     },
     ko: {
       back: "대시보드로 돌아가기",
@@ -1177,7 +1229,9 @@ function EvidenceVaultContent() {
       maxVideoReached: "최대 3개의 동영상",
       fileTooLarge: "파일이 너무 큼",
       voiceMaxSize: "음성 메모는 5MB 미만이어야 합니다",
-      videoMaxSize: "동영상은 80MB 미만이어야 합니다"
+      videoMaxSize: "동영상은 80MB 미만이어야 합니다",
+      uploadVideo: "동영상 업로드",
+      recordVideo: "동영상 녹화"
     },
     ru: {
       back: "Назад к панели",
@@ -1260,7 +1314,9 @@ function EvidenceVaultContent() {
       maxVideoReached: "Максимум 3 видео",
       fileTooLarge: "Файл слишком большой",
       voiceMaxSize: "Голосовые заметки должны быть менее 5 МБ",
-      videoMaxSize: "Видео должны быть менее 80 МБ"
+      videoMaxSize: "Видео должны быть менее 80 МБ",
+      uploadVideo: "Загрузить видео",
+      recordVideo: "Записать видео"
     }
   }[language] || {
     back: "Back to Dashboard",
@@ -1331,7 +1387,9 @@ function EvidenceVaultContent() {
     downloadFailed: "Failed to download file",
     noEvidenceTitle: "No evidence uploaded yet",
     noEvidenceDescription: "Upload photos, videos and documents now so you have a time-stamped record if there's a dispute later.",
-    upgradeVaultStorage: "Upgrade for full vault storage"
+    upgradeVaultStorage: "Upgrade for full vault storage",
+    uploadVideo: "Upload Video",
+    recordVideo: "Record Video"
   };
 
   return (
@@ -1555,6 +1613,60 @@ function EvidenceVaultContent() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Video Action Sheet */}
+        <BottomSheet
+          open={showVideoActionSheet}
+          onClose={() => setShowVideoActionSheet(false)}
+          title={strings.addVideo}
+          colors={colors}
+        >
+          <div className="space-y-3 p-4">
+            <button
+              onClick={handleVideoUpload}
+              className="w-full p-4 rounded-xl border-2 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                backgroundColor: colors.cardBg,
+                borderColor: colors.borderColor,
+                color: colors.textPrimary
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-red-500 flex items-center justify-center">
+                  <Upload className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-sm">{strings.uploadVideo}</p>
+                  <p className="text-xs" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'เลือกจากอุปกรณ์' : language === 'zh' ? '从设备选择' : language === 'ja' ? 'デバイスから選択' : language === 'ko' ? '기기에서 선택' : language === 'ru' ? 'Выбрать с устройства' : 'Select from device'}
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={handleVideoRecord}
+              className="w-full p-4 rounded-xl border-2 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                backgroundColor: colors.cardBg,
+                borderColor: colors.borderColor,
+                color: colors.textPrimary
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-red-600 flex items-center justify-center">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-sm">{strings.recordVideo}</p>
+                  <p className="text-xs" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'ใช้กล้องเพื่อบันทึก' : language === 'zh' ? '使用相机录制' : language === 'ja' ? 'カメラで録画' : language === 'ko' ? '카메라로 녹화' : language === 'ru' ? 'Записать камерой' : 'Use camera to record'}
+                  </p>
+                </div>
+              </div>
+            </button>
+          </div>
+        </BottomSheet>
 
         {/* Upload Bottom Sheet - REPLACING Dialog */}
         <BottomSheet
