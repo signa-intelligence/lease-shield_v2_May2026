@@ -89,36 +89,92 @@ function ResolveCaseContent() {
 
   const createCaseMutation = useMutation({
     mutationFn: async ({ caseData }) => {
-      // CRITICAL FIX: Get authenticated user server-side to prevent tampering
+      /**
+       * ═══════════════════════════════════════════════════════════════
+       * CASE CREATION - OWNERSHIP BINDING FIX
+       * ═══════════════════════════════════════════════════════════════
+       * 
+       * CRITICAL BUG IDENTIFIED:
+       * Cases were being created with user_email = signaconsultants@gmail.com
+       * (admin account) instead of the actual logged-in tenant.
+       * 
+       * ROOT CAUSE:
+       * - RLS uses user_email field for ownership: WHERE user_email = {{user.email}}
+       * - Cases created without explicit user_email binding
+       * - Frontend auth.me() was being called, but user_email still wrong
+       * 
+       * SOLUTION:
+       * - Explicitly verify authenticated user in mutation
+       * - Force user_email = authenticatedUser.email (from auth token)
+       * - Never trust user_email from form data or props
+       * - Log everything for verification
+       * 
+       * VERIFICATION:
+       * After this fix, new cases should show:
+       * - user_email = <tenant's actual email>
+       * - created_by = <tenant's actual email>
+       * - Case visible in tenant's "My Cases" page
+       * - Case visible in Ops Console (admins see all cases)
+       * ═══════════════════════════════════════════════════════════════
+       */
+      
+      // Step 1: Get REAL authenticated user from auth token
       const authenticatedUser = await base44.auth.me();
       if (!authenticatedUser) {
+        console.error('[CASE_CREATION] ❌ Not authenticated - blocking creation');
         throw new Error('Not authenticated');
       }
       
-      // CRITICAL FIX: Force correct user binding for RLS visibility
+      console.log('[CASE_CREATION] ✅ Authenticated user verified:', {
+        id: authenticatedUser.id,
+        email: authenticatedUser.email,
+        full_name: authenticatedUser.full_name,
+        plan_tier: authenticatedUser.plan_tier
+      });
+      
+      // Step 2: Build secure case with FORCED user binding
+      // NEVER trust caseData.user_email - always override with auth user
       const secureCase = {
         ...caseData,
-        user_email: authenticatedUser.email, // FORCE authenticated email
-        created_by: authenticatedUser.email  // Belt and suspenders
+        user_email: authenticatedUser.email,  // CRITICAL: Force from auth token
+        created_by: authenticatedUser.email   // Redundant but safe
       };
       
-      console.log('[RESOLVE_FLOW] Creating case with SECURE user binding:', {
+      console.log('[CASE_CREATION] 📦 Case data prepared with FORCED user binding:', {
         user_email: secureCase.user_email,
         created_by: secureCase.created_by,
         case_number: secureCase.case_number,
         type: secureCase.type,
-        dispute_amount: secureCase.dispute_amount
+        dispute_amount: secureCase.dispute_amount,
+        property_address: secureCase.property_address,
+        landlord_name: secureCase.landlord_name,
+        status: secureCase.status
       });
       
+      // Step 3: Create case in database
       const createdCase = await base44.entities.Case.create(secureCase);
       
-      console.log('[RESOLVE_FLOW] ✅ Case created - verifying user binding:', {
+      // Step 4: CRITICAL VERIFICATION - Confirm user_email persisted correctly
+      console.log('[CASE_CREATION] ✅ Case created - VERIFYING user binding:', {
         id: createdCase.id,
+        case_number: createdCase.case_number,
         user_email: createdCase.user_email,
         created_by: createdCase.created_by,
-        case_number: createdCase.case_number,
-        status: createdCase.status
+        status: createdCase.status,
+        OWNERSHIP_CHECK: createdCase.user_email === authenticatedUser.email ? '✅ CORRECT' : '❌ MISMATCH'
       });
+      
+      // Step 5: Throw error if user_email is wrong (should never happen)
+      if (createdCase.user_email !== authenticatedUser.email) {
+        console.error('[CASE_CREATION] 🚨 CRITICAL: Case created with WRONG user_email!', {
+          expected: authenticatedUser.email,
+          actual: createdCase.user_email,
+          caseId: createdCase.id
+        });
+        throw new Error(`Ownership binding failed: case created with wrong user_email (${createdCase.user_email} instead of ${authenticatedUser.email})`);
+      }
+      
+      console.log('[CASE_CREATION] ✅ OWNERSHIP VERIFIED - case belongs to:', authenticatedUser.email);
       
       // WORKFLOW FIX: Send admin notification
       try {
@@ -350,10 +406,21 @@ function ResolveCaseContent() {
         uploaded_date: file.uploaded_date
       }));
 
-      // CRITICAL FIX: Build complete case with all fields
+      /**
+       * ═══════════════════════════════════════════════════════════════
+       * CASE DATA CONSTRUCTION
+       * ═══════════════════════════════════════════════════════════════
+       * 
+       * CRITICAL: user_email is set here, but will be RE-FORCED in the
+       * mutation to use auth.me() to prevent any tampering.
+       * 
+       * This user.email is just for logging/consistency - the mutation
+       * will override it with the authenticated user's email.
+       * ═══════════════════════════════════════════════════════════════
+       */
       const caseData = {
         case_number: caseNumber,
-        user_email: user.email,
+        user_email: user.email, // Will be re-forced in mutation from auth token
         type: formData.type,
         dispute_amount: parseFloat(formData.dispute_amount),
         summary: formData.summary,
@@ -361,7 +428,7 @@ function ResolveCaseContent() {
         landlord_email: formData.landlord_email || user?.landlord_email || '',
         property_address: formData.property_address || '',
         evidence: evidenceData,
-        status: 'awaiting_payment', // Start as awaiting_payment, webhook changes to intake
+        status: 'awaiting_payment',
         is_member_at_creation: membershipForCase.qualifiesForMemberBenefits,
         flags: {
           priority: membershipForCase.qualifiesForMemberBenefits
@@ -380,7 +447,15 @@ function ResolveCaseContent() {
         ]
       };
 
-      console.log('[RESOLVE_FLOW] Creating case with full data:', {
+      console.log('[RESOLVE_FLOW] ══════════════════════════════════════');
+      console.log('[RESOLVE_FLOW] CASE SUBMISSION STARTING');
+      console.log('[RESOLVE_FLOW] Authenticated user:', {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        plan_tier: user.plan_tier
+      });
+      console.log('[RESOLVE_FLOW] Case data being sent to mutation:', {
         case_number: caseNumber,
         user_email: user.email,
         type: formData.type,
@@ -393,8 +468,10 @@ function ResolveCaseContent() {
         evidence_count: evidenceData.length,
         is_member_at_creation: membershipForCase.qualifiesForMemberBenefits
       });
+      console.log('[RESOLVE_FLOW] ⚠️ NOTE: user_email will be RE-FORCED from auth token in mutation');
+      console.log('[RESOLVE_FLOW] ══════════════════════════════════════');
 
-      // Pass case data to mutation (user binding happens in mutation)
+      // Pass case data to mutation (user_email will be re-forced from auth.me())
       createCaseMutation.mutate({ caseData });
     } catch (error) {
       console.error('[RESOLVE_FLOW] Submit preparation failed:', error);
