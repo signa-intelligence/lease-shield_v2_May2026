@@ -2,380 +2,196 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
 /**
- * STRIPE WEBHOOK HANDLER
+ * STRIPE WEBHOOK HANDLER - Clean minimal implementation
  * 
  * Required Secrets:
- * - SK_TEST_secret_key: Stripe API key (sk_live_... for production)
- * - webhook_stripe: Stripe webhook signing secret (whsec_... from Stripe Dashboard)
+ * - SK_TEST_secret_key: Stripe API key (contains LIVE sk_live_... key)
+ * - webhook_stripe: Stripe webhook signing secret (whsec_...)
+ * - RESEND_API_KEY: Email service (optional for notifications)
  */
 
-const stripeSecretKey = Deno.env.get('SK_TEST_secret_key'); // ⚠️ Name is misleading - should contain LIVE key for production
-const webhookSecret = Deno.env.get('webhook_stripe'); // Webhook signing secret for signature verification
-
-console.log('[WEBHOOK_CONFIG] Stripe API Key Mode:', stripeSecretKey?.startsWith('sk_live_') ? '🟢 LIVE' : stripeSecretKey?.startsWith('sk_test_') ? '🟡 TEST' : '❌ UNKNOWN');
-console.log('[WEBHOOK_CONFIG] Using webhook signing secret from env var: webhook_stripe');
-console.log('[WEBHOOK_CONFIG] Webhook secret exists:', !!webhookSecret);
-console.log('[WEBHOOK_CONFIG] Webhook secret format valid:', webhookSecret?.startsWith('whsec_') ? '✅' : '❌ INVALID');
+const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
+const webhookSecret = Deno.env.get('webhook_stripe');
 
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2024-06-20',
 });
 
-const PRICE_CREDIT_MAP = {
-  'PRICE_LIVE_LETTER_CREDIT_1': 1,
-  'PRICE_LIVE_LETTER_CREDIT_3': 3,
-  'PRICE_LIVE_LETTER_CREDIT_5': 5,
-  'PRICE_LIVE_LETTER_CREDIT_10': 10,
-};
-
 Deno.serve(async (req) => {
-  console.log('\n\n=== STRIPE WEBHOOK RECEIVED ===');
-  console.log('Timestamp:', new Date().toISOString());
-  console.log('[WEBHOOK_ENTRY] Request received');
-  console.log('[WEBHOOK_ENTRY] Stripe Key Mode:', stripeSecretKey?.startsWith('sk_live_') ? '🟢 LIVE' : stripeSecretKey?.startsWith('sk_test_') ? '🟡 TEST' : '❌ INVALID');
-  
+  console.log('\n[WEBHOOK_ENTRY] Stripe webhook received');
+  console.log('[WEBHOOK_ENTRY] Timestamp:', new Date().toISOString());
+
   try {
+    // Read raw body and signature
     const rawBody = await req.text();
     const signature = req.headers.get('stripe-signature');
 
-    console.log('📨 Webhook signature present:', !!signature);
-    console.log('🔐 Webhook secret configured:', !!webhookSecret);
-    console.log('🔑 Stripe API key mode:', stripeSecretKey?.startsWith('sk_live_') ? 'LIVE' : 'TEST');
-
     if (!signature) {
-      console.error('❌ No stripe-signature header found');
+      console.error('[WEBHOOK_ERROR] No stripe-signature header');
       return Response.json({ error: 'No signature provided' }, { status: 400 });
     }
 
     if (!webhookSecret) {
-      console.error('❌ webhook_stripe secret not configured');
+      console.error('[WEBHOOK_ERROR] webhook_stripe secret not configured');
       return Response.json({ error: 'Webhook secret not configured' }, { status: 500 });
     }
 
+    // Verify webhook signature
     let event;
     try {
       event = await stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
-      console.log('✅ WEBHOOK SIGNATURE VERIFIED');
-      console.log('Event ID:', event.id);
-      console.log('Event Type:', event.type);
-      console.log('Event Created:', new Date(event.created * 1000).toISOString());
-      console.log('Event Livemode:', event.livemode ? '🟢 LIVE EVENT' : '🟡 TEST EVENT');
+      console.log('[WEBHOOK_ENTRY] ✅ Signature verified');
+      console.log('[WEBHOOK_ENTRY] Event type:', event.type);
+      console.log('[WEBHOOK_ENTRY] Event ID:', event.id);
     } catch (err) {
-      console.error('\n❌❌❌ SIGNATURE VERIFICATION FAILED ❌❌❌');
-      console.error('[WEBHOOK_ERROR] Error message:', err.message);
-      console.error('[WEBHOOK_ERROR] Error type:', err.type);
-      console.error('[WEBHOOK_ERROR] This means the webhook signing secret in env var "webhook_stripe" does NOT match the Stripe webhook signing secret');
-      console.error('[WEBHOOK_ERROR] Action required:');
-      console.error('  1. Go to Stripe Dashboard → Developers → Webhooks → LIVE mode');
-      console.error('  2. Find webhook for: https://68fd84b6c148652a5512a0a0.base44.com/functions/stripeWebhook');
-      console.error('  3. Click "Reveal signing secret" and copy the whsec_... value');
-      console.error('  4. Go to Base44 → Settings → Secrets → webhook_stripe');
-      console.error('  5. Paste the LIVE signing secret and save');
-      console.error('❌❌❌ RETURNING 400 TO STRIPE ❌❌❌\n');
+      console.error('[WEBHOOK_ERROR] Signature verification failed:', err.message);
       return Response.json({ 
         error: 'Webhook signature verification failed',
         details: err.message 
       }, { status: 400 });
     }
 
-    console.log('\n📋 FULL EVENT DATA:');
-    console.log('[WEBHOOK_EVENT] Type:', event.type);
-    console.log('[WEBHOOK_EVENT] Livemode:', event.livemode);
-    console.log('[WEBHOOK_EVENT] Mode:', event.data.object.mode);
-    console.log('[WEBHOOK_EVENT] Metadata:', JSON.stringify(event.data.object.metadata, null, 2));
-
     const base44 = createClientFromRequest(req);
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
     // ========================================
-    // CHECKOUT SESSION COMPLETED
+    // HANDLE: checkout.session.completed
     // ========================================
     if (event.type === 'checkout.session.completed') {
-      console.log('\n💳 PROCESSING: checkout.session.completed');
-      
       const session = event.data.object;
       const metadata = session.metadata || {};
-      
-      console.log('Session ID:', session.id);
-      console.log('Mode:', session.mode);
-      console.log('Metadata:', JSON.stringify(metadata, null, 2));
-      console.log('Customer:', session.customer);
-      console.log('Client Reference ID:', session.client_reference_id);
 
-      // Determine checkout type
-      const isCreditsCheckout = 
-        metadata.type === 'credits' || 
-        metadata.credits || 
-        session.mode === 'payment';
-      
-      const isSubscriptionCheckout = 
-        metadata.type === 'subscription' || 
-        session.mode === 'subscription';
-
-      console.log('\n🎯 CHECKOUT TYPE:');
-      console.log('Is Credits:', isCreditsCheckout);
-      console.log('Is Subscription:', isSubscriptionCheckout);
+      console.log('[WEBHOOK] checkout.session.completed');
+      console.log('[WEBHOOK] Session ID:', session.id);
+      console.log('[WEBHOOK] Metadata type:', metadata.type);
 
       // ========================================
-      // SUBSCRIPTION PATH
+      // CREDITS PURCHASE FLOW
       // ========================================
-      if (isSubscriptionCheckout) {
-        console.log('\n💎 SUBSCRIPTION CHECKOUT - STARTING PROCESSING');
+      if (metadata.type === 'credits') {
+        console.log('[CREDITS_WEBHOOK] 💰 Credit purchase detected');
 
-        // 1) Resolve user by metadata.userId first
         const userId = metadata.userId;
-        const customerId = session.customer;
-        
-        console.log('🔍 Resolving user with:');
-        console.log('  metadata.userId:', userId);
-        console.log('  stripe_customer_id:', customerId);
+        const email = metadata.email;
+        const creditsToAdd = Number(metadata.credits || '0');
 
-        const allUsers = await base44.asServiceRole.entities.User.list();
-        let user = null;
+        console.log('[CREDITS_WEBHOOK] User:', email, `(${userId})`);
+        console.log('[CREDITS_WEBHOOK] creditsToAdd =', creditsToAdd);
 
-        // Priority 1: metadata.userId
-        if (userId) {
-          user = allUsers.find(u => u.id === userId);
-          if (user) {
-            console.log('✅ User found by metadata.userId:', user.email);
+        // Defensive checks
+        if (!userId) {
+          console.error('[CREDITS_WEBHOOK] ❌ Missing userId in metadata');
+          return Response.json({ received: true, error: 'missing_user_id' }, { status: 200 });
+        }
+
+        if (creditsToAdd <= 0) {
+          console.error('[CREDITS_WEBHOOK] ❌ Invalid credits amount:', creditsToAdd);
+          return Response.json({ received: true, error: 'invalid_credits' }, { status: 200 });
+        }
+
+        // Fetch user
+        let user;
+        try {
+          const allUsers = await base44.asServiceRole.entities.User.list();
+          user = allUsers.find(u => u.id === userId || u.email === email);
+
+          if (!user) {
+            console.error('[CREDITS_WEBHOOK] ❌ User not found:', userId);
+            return Response.json({ received: true, error: 'user_not_found' }, { status: 200 });
           }
+
+          console.log('[CREDITS_WEBHOOK] User found:', user.email);
+          console.log('[CREDITS_WEBHOOK] Current credits:', user.letter_credits || 0);
+        } catch (fetchError) {
+          console.error('[CREDITS_WEBHOOK] ❌ Failed to fetch user:', fetchError.message);
+          return Response.json({ received: true, error: 'user_fetch_failed' }, { status: 200 });
         }
 
-        // Priority 2: stripe_customer_id fallback
-        if (!user && customerId) {
-          user = allUsers.find(u => u.stripe_customer_id === customerId);
-          if (user) {
-            console.log('✅ User found by stripe_customer_id:', user.email);
-          }
-        }
-
-        if (!user) {
-          console.error('❌ SUBSCRIPTION FAILED - No matching user found');
-          console.error('Tried userId:', userId, '| customerId:', customerId);
-          return Response.json({ 
-            received: true, 
-            warning: 'user_not_found_for_subscription',
-            userId,
-            customerId
-          }, { status: 200 });
-        }
-
-        console.log('✅ USER RESOLVED');
-        console.log('  User ID:', user.id);
-        console.log('  Email:', user.email);
-        console.log('  Current plan_tier:', user.plan_tier);
-        console.log('  Current member_since:', user.member_since || 'not set');
-
-        // 2) Extract plan details from metadata
-        const planTier = (metadata.plan || 'lite').toLowerCase();
-        const billingInterval = (metadata.interval || 'monthly').toLowerCase();
-        
-        console.log('📋 PLAN DETAILS FROM METADATA:');
-        console.log('  plan_tier:', planTier);
-        console.log('  billing_interval:', billingInterval);
-        
-        // Determine if this is first paid membership or a plan change
-        const isFirstPaidMembership = !user.member_since && (!user.plan_tier || user.plan_tier === 'free');
-        console.log('🎯 Is first paid membership:', isFirstPaidMembership);
-
-        // Set member_since if this is first paid membership
-        const memberSince = isFirstPaidMembership ? new Date().toISOString() : user.member_since;
-
-        if (!metadata.plan) {
-          console.warn('⚠️ metadata.plan missing - defaulting to "lite"');
-        }
-        if (!metadata.interval) {
-          console.warn('⚠️ metadata.interval missing - defaulting to "monthly"');
-        }
-
-        // 3) Get subscription renewal date
-        const subscriptionId = session.subscription;
-        let planRenewsAt = null;
-
-        if (subscriptionId) {
-          try {
-            console.log('🔍 Fetching subscription:', subscriptionId);
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            const periodEnd = subscription.current_period_end;
-            
-            if (periodEnd) {
-              planRenewsAt = new Date(periodEnd * 1000).toISOString();
-              console.log('✅ Renewal date:', planRenewsAt);
-            } else {
-              console.warn('⚠️ No current_period_end in subscription');
-            }
-          } catch (err) {
-            console.error('⚠️ Failed to retrieve subscription:', err.message);
-          }
-        } else {
-          console.warn('⚠️ No subscription ID in session');
-        }
-
-        // 4) Calculate included credits
-        const includedCredits = {
-          'lite': 3,
-          'protect': 5,
-          'secure': 10
-        };
-        const creditsToAdd = includedCredits[planTier] || 0;
+        // Update user credits
         const currentCredits = user.letter_credits || 0;
-        const newCreditBalance = currentCredits + creditsToAdd;
+        const newBalance = currentCredits + creditsToAdd;
+        const totalPurchased = (user.total_credits_purchased || 0) + creditsToAdd;
 
-        console.log('💎 CREDITS:');
-        console.log('  Included with tier:', creditsToAdd);
-        console.log('  Current balance:', currentCredits);
-        console.log('  New balance:', newCreditBalance);
-
-        // 5) Update user record
-        console.log('\n🔄 UPDATING USER RECORD...');
-        
-        const updateData = {
-          plan_tier: planTier,
-          billing_interval: billingInterval,
-          plan_renews_at: planRenewsAt,
-          stripe_subscription_id: subscriptionId,
-          stripe_customer_id: customerId,
-          subscription_status: 'active',
-          letter_credits: newCreditBalance,
-          member_since: memberSince
-        };
-
-        console.log('Update payload:', JSON.stringify(updateData, null, 2));
-
-        await base44.asServiceRole.entities.User.update(user.id, updateData);
-
-        console.log('\n✅✅✅ SUBSCRIPTION ACTIVATED ✅✅✅');
-        console.log('User ID:', user.id);
-        console.log('Email:', user.email);
-        console.log('plan_tier:', planTier);
-        console.log('billing_interval:', billingInterval);
-        console.log('plan_renews_at:', planRenewsAt);
-        console.log('subscription_status: active');
-        console.log('letter_credits:', newCreditBalance);
-        console.log('member_since:', memberSince, isFirstPaidMembership ? '(SET NOW - FIRST MEMBERSHIP)' : '(PRESERVED - EXISTING MEMBERSHIP)');
-
-        // ✅ BILLING NOTIFICATIONS FOR SUBSCRIPTION (LINE + EMAIL)
-        const billingEnabled = user.notifications?.billing_payments ?? true;
-
-        console.log('[SUBSCRIPTION_WEBHOOK] Billing notification check:', {
-          email: user.email,
-          lineLinked: !!user.line_messaging_token,
-          lineNotificationsEnabled: user.line_notifications || false,
-          billingPaymentsEnabled: billingEnabled
-        });
-
-        // LINE notification for subscription (non-blocking)
-        if (user.line_messaging_token && user.line_notifications && billingEnabled) {
-          try {
-            const planName = planTier.charAt(0).toUpperCase() + planTier.slice(1);
-            const lineMessage = `✅ Lease Shield – Your plan has been updated!\n\n` +
-              `📦 Plan: ${planName}\n` +
-              `💳 Billing: ${billingInterval === 'annual' ? 'Annual' : 'Monthly'}\n` +
-              `🎫 Letter credits: ${newCreditBalance}\n\n` +
-              `Thank you for choosing Lease Shield!`;
-
-            // CRITICAL: Non-blocking - don't let LINE failure stop subscription processing
-            base44.asServiceRole.functions.invoke('sendLineMessage', {
-              userId: user.line_messaging_token,
-              message: lineMessage
-            }).catch((lineError) => {
-              console.error('[SUBSCRIPTION_WEBHOOK] ⚠️ LINE notification failed (non-critical):', lineError.message);
-            });
-
-            console.log('[SUBSCRIPTION_WEBHOOK] 📤 LINE notification queued (non-blocking)');
-          } catch (lineError) {
-            console.error('[SUBSCRIPTION_WEBHOOK] ⚠️ LINE setup error (non-critical):', lineError.message);
-          }
-        } else {
-          console.log('[SUBSCRIPTION_WEBHOOK] ⏭️ LINE not sent:', {
-            reason: !user.line_messaging_token ? 'no_line_connection'
-              : !user.line_notifications ? 'line_disabled'
-              : !billingEnabled ? 'billing_notifications_disabled'
-              : 'unknown'
+        try {
+          await base44.asServiceRole.entities.User.update(user.id, {
+            letter_credits: newBalance,
+            total_credits_purchased: totalPurchased
           });
+
+          console.log('[CREDITS_WEBHOOK] ✅✅✅ USER CREDITS UPDATED IN DB ✅✅✅');
+          console.log('[CREDITS_WEBHOOK] Previous balance:', currentCredits);
+          console.log('[CREDITS_WEBHOOK] Credits added:', creditsToAdd);
+          console.log('[CREDITS_WEBHOOK] New balance:', newBalance);
+          console.log('[CREDITS_WEBHOOK] Total purchased (lifetime):', totalPurchased);
+        } catch (updateError) {
+          console.error('[CREDITS_WEBHOOK] ❌ Failed to update user credits:', updateError.message);
+          return Response.json({ received: true, error: 'credit_update_failed' }, { status: 200 });
         }
 
-        // 6) Create payment record
+        // Create Payment record
         try {
           await base44.asServiceRole.entities.Payment.create({
-            type: 'subscription',
+            type: 'addon',
             amount: parseFloat((session.amount_total / 100).toFixed(2)),
-            currency: 'THB',
+            currency: session.currency?.toUpperCase() || 'THB',
             provider: 'stripe',
             status: 'paid',
             external_id: session.id,
             created_by: user.email
           });
-          console.log('✅ Payment record created');
-        } catch (paymentErr) {
-          console.error('⚠️ Failed to create payment record:', paymentErr.message);
+
+          console.log('[CREDITS_WEBHOOK] ✅ Payment record created for credit purchase');
+        } catch (paymentError) {
+          console.error('[CREDITS_WEBHOOK] ⚠️ Failed to create Payment record (non-critical):', paymentError.message);
         }
 
-        // 7) Send email notification (existing logic kept)
-        const lang = user.language || 'en';
-        const planLabels = {
-          lite: { en: 'Lite', th: 'ไลท์' },
-          protect: { en: 'Protect', th: 'โปรเทค' },
-          secure: { en: 'Secure', th: 'ซีเคียว' }
-        };
+        // Non-blocking notifications
+        const billingEnabled = user.notifications?.billing_payments ?? true;
 
-        const planLabel = planLabels[planTier]?.[lang] || planTier;
-        const intervalLabel = billingInterval === 'annual'
-          ? (lang === 'th' ? 'รายปี' : 'Annual')
-          : (lang === 'th' ? 'รายเดือน' : 'Monthly');
+        // LINE notification (non-blocking)
+        if (user.line_messaging_token && user.line_notifications && billingEnabled) {
+          try {
+            const lineMessage = `🎫 Lease Shield – Letter credits purchased!\n\n` +
+              `✅ Credits purchased: +${creditsToAdd}\n` +
+              `💳 New balance: ${newBalance} credits\n\n` +
+              `You can now generate legal letters from the Templates page.`;
 
-        const subject = lang === 'th'
-          ? `ยินดีต้อนรับสู่ Lease Shield ${planLabel}!`
-          : `Welcome to Lease Shield ${planLabel}!`;
+            base44.asServiceRole.functions.invoke('sendLineMessage', {
+              userId: user.line_messaging_token,
+              message: lineMessage
+            }).catch((lineError) => {
+              console.error('[CREDITS_WEBHOOK] ⚠️ LINE notification failed (non-critical):', lineError.message);
+            });
 
-        const emailBody = lang === 'th'
-          ? `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
-              <h2 style="color: white; margin: 0;">🎉 ยินดีต้อนรับสู่ ${planLabel}!</h2>
-            </div>
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
-              <p>สวัสดี <strong>${user.full_name}</strong>,</p>
-              <p>การสมัครสมาชิกของคุณเปิดใช้งานแล้ว! 🎉</p>
-              <p style="background: #F0FDF4; padding: 16px; border-radius: 8px; border-left: 4px solid #10B981;">
-                <strong>แผน:</strong> ${planLabel}<br/>
-                <strong>การเรียกเก็บเงิน:</strong> ${intervalLabel}<br/>
-                <strong>ต่ออายุเมื่อ:</strong> ${planRenewsAt ? new Date(planRenewsAt).toLocaleDateString('th-TH') : 'N/A'}<br/>
-                <strong>จำนวนเงิน:</strong> ฿${(session.amount_total / 100).toLocaleString()}<br/>
-                <strong>เครดิตจดหมาย:</strong> ${newCreditBalance}
-              </p>
-              <p>คุณสามารถเข้าถึงฟีเจอร์ทั้งหมดในแผนของคุณได้แล้ว</p>
-              <p><a href="https://app.leaseshield.asia/dashboard" style="color: #0C3B2E; font-weight: bold;">เข้าสู่แดชบอร์ด →</a></p>
-              <p style="margin-top: 24px;">— ทีม Lease Shield</p>
-            </div>
-          </div>
-          `
-          : `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
-              <h2 style="color: white; margin: 0;">🎉 Welcome to ${planLabel}!</h2>
-            </div>
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
-              <p>Hi <strong>${user.full_name}</strong>,</p>
-              <p>Your subscription is now active! 🎉</p>
-              <p style="background: #F0FDF4; padding: 16px; border-radius: 8px; border-left: 4px solid #10B981;">
-                <strong>Plan:</strong> ${planLabel}<br/>
-                <strong>Billing:</strong> ${intervalLabel}<br/>
-                <strong>Renews:</strong> ${planRenewsAt ? new Date(planRenewsAt).toLocaleDateString('en-US') : 'N/A'}<br/>
-                <strong>Amount:</strong> ฿${(session.amount_total / 100).toLocaleString()}<br/>
-                <strong>Letter Credits:</strong> ${newCreditBalance}
-              </p>
-              <p>You now have access to all features in your plan.</p>
-              <p><a href="https://app.leaseshield.asia/dashboard" style="color: #0C3B2E; font-weight: bold;">Go to Dashboard →</a></p>
-              <p style="margin-top: 24px;">— The Lease Shield Team</p>
-            </div>
-          </div>
-          `;
+            console.log('[CREDITS_WEBHOOK] LINE notification queued');
+          } catch (lineError) {
+            console.error('[CREDITS_WEBHOOK] ⚠️ LINE setup error (non-critical):', lineError.message);
+          }
+        }
 
         // Email notification (non-blocking)
-        if (RESEND_API_KEY) {
+        if (user.email_notifications && billingEnabled && RESEND_API_KEY) {
           try {
-            console.log('📧 Sending subscription confirmation email (non-blocking)...');
+            const emailSubject = '🎫 Letter Credits Purchased - Lease Shield';
+            const emailBody = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+                  <h2 style="color: white; margin: 0;">🎫 Letter Credits Purchased</h2>
+                </div>
+                <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+                  <p>Hi <strong>${user.full_name || 'there'}</strong>,</p>
+                  <p>Your letter credits have been successfully added to your account!</p>
+                  <div style="background: #F0FDF4; padding: 16px; border-radius: 8px; border-left: 4px solid #10B981; margin: 20px 0;">
+                    <p style="margin: 8px 0;"><strong>Credits purchased:</strong> +${creditsToAdd}</p>
+                    <p style="margin: 8px 0;"><strong>New balance:</strong> ${newBalance} credits</p>
+                  </div>
+                  <p>You can now generate legal letters from the Templates page.</p>
+                  <p><a href="https://app.leaseshield.asia/templates" style="color: #0C3B2E; font-weight: bold;">Go to Templates →</a></p>
+                  <p style="margin-top: 24px; color: #666; font-size: 12px;">— The Lease Shield Team</p>
+                </div>
+              </div>
+            `;
+
             fetch('https://api.resend.com/emails', {
               method: 'POST',
               headers: {
@@ -385,619 +201,40 @@ Deno.serve(async (req) => {
               body: JSON.stringify({
                 from: 'Lease Shield <no-reply@leaseshield.asia>',
                 to: [user.email],
-                subject: subject,
+                subject: emailSubject,
                 html: emailBody,
               }),
-            }).then(async (resendResponse) => {
-              const resendData = await resendResponse.json();
-              if (resendResponse.ok) {
-                console.log('✅ Email sent. Message ID:', resendData.id);
-              } else {
-                console.error('⚠️ Email failed (non-critical):', resendData);
-              }
             }).catch((emailError) => {
-              console.error('⚠️ Email error (non-critical):', emailError.message);
+              console.error('[CREDITS_WEBHOOK] ⚠️ Email failed (non-critical):', emailError.message);
             });
-            console.log('📧 Email queued successfully');
+
+            console.log('[CREDITS_WEBHOOK] Email notification queued');
           } catch (emailError) {
-            console.error('⚠️ Email setup error (non-critical):', emailError.message);
+            console.error('[CREDITS_WEBHOOK] ⚠️ Email setup error (non-critical):', emailError.message);
           }
         }
 
-        console.log('\n✅ SUBSCRIPTION PATH COMPLETE');
+        console.log('[CREDITS_WEBHOOK] ✅ Credit purchase processing complete');
         return Response.json({ 
           received: true, 
-          processed: 'subscription',
-          user: user.email,
-          plan_tier: planTier,
-          billing_interval: billingInterval
+          processed: 'credits',
+          creditsAdded: creditsToAdd,
+          newBalance: newBalance
         }, { status: 200 });
       }
 
-      // ========================================
-      // RESOLVE CASE PATH
-      // ========================================
-      if (metadata.type === 'resolve_case') {
-        console.log('\n⚖️ RESOLVE CASE CHECKOUT - STARTING PROCESSING');
-        console.log('[RESOLVE_WEBHOOK] event.type:', event.type);
-        console.log('[RESOLVE_WEBHOOK] session.id:', session.id);
-        console.log('[RESOLVE_WEBHOOK] session.metadata:', JSON.stringify(metadata, null, 2));
-        console.log('[RESOLVE_WEBHOOK] session.customer:', session.customer);
-        console.log('[RESOLVE_WEBHOOK] session.mode:', session.mode);
-
-        const userId = metadata.userId;
-        const userEmail = metadata.userEmail;
-        const priceType = metadata.priceType;
-        const amount = parseFloat(metadata.amount);
-        const caseId = metadata.caseId;
-
-        console.log('[RESOLVE_WEBHOOK] Parsed metadata:');
-        console.log('  userId:', userId);
-        console.log('  userEmail:', userEmail);
-        console.log('  priceType:', priceType);
-        console.log('  amount:', amount);
-        console.log('  caseId:', caseId);
-
-        // Find the provisional case
-        console.log('[RESOLVE_WEBHOOK] Looking up case with caseId:', caseId);
-        let caseRecord = null;
-        if (caseId) {
-          try {
-            const allCases = await base44.asServiceRole.entities.Case.filter({ id: caseId });
-            caseRecord = allCases[0];
-            console.log('[RESOLVE_WEBHOOK] Case found BEFORE update:', caseRecord ? {
-              id: caseRecord.id,
-              status: caseRecord.status,
-              user_email: caseRecord.user_email,
-              stripe_session_id: caseRecord.stripe_session_id
-            } : 'NULL');
-          } catch (err) {
-            console.error('[RESOLVE_WEBHOOK] ⚠️ Failed to find case:', err.message);
-          }
-        } else {
-          console.log('[RESOLVE_WEBHOOK] ⚠️ No caseId in metadata');
-        }
-
-        // CRITICAL FIX: Update case PRESERVING user_email for RLS visibility
-        if (caseRecord) {
-          console.log('[RESOLVE_WEBHOOK] Updating case:', caseId);
-          console.log('[RESOLVE_WEBHOOK] BEFORE update - verifying user binding:', {
-            id: caseRecord.id,
-            case_number: caseRecord.case_number,
-            user_email: caseRecord.user_email,
-            created_by: caseRecord.created_by,
-            status: caseRecord.status,
-            type: caseRecord.type,
-            dispute_amount: caseRecord.dispute_amount,
-            summary: caseRecord.summary?.substring(0, 50),
-            property_address: caseRecord.property_address,
-            landlord_name: caseRecord.landlord_name,
-            landlord_email: caseRecord.landlord_email,
-            evidence_count: caseRecord.evidence?.length || 0
-          });
-          
-          // CRITICAL: Preserve user_email - do NOT overwrite, it's already correct from creation
-          const updatedCase = await base44.asServiceRole.entities.Case.update(caseId, {
-            status: 'intake', // Upgrade from awaiting_payment to intake
-            stripe_session_id: session.id,
-            stripe_payment_intent_id: session.payment_intent,
-            pricing_type: priceType,
-            resolve_amount: amount,
-            paid_at: new Date().toISOString(),
-            // DO NOT touch user_email or created_by - already set correctly
-            timeline: [
-              ...(caseRecord.timeline || []),
-              {
-                timestamp: new Date().toISOString(),
-                event: 'Payment completed - case submitted for review',
-                actor: caseRecord.user_email, // Use existing user_email
-                meta: {
-                  stripe_session_id: session.id,
-                  amount: amount,
-                  price_type: priceType
-                }
-              }
-            ]
-          });
-          console.log('[RESOLVE_WEBHOOK] ✅ Case AFTER payment update:', {
-            id: updatedCase.id,
-            case_number: updatedCase.case_number,
-            status: updatedCase.status,
-            user_email: updatedCase.user_email,
-            created_by: updatedCase.created_by,
-            type: updatedCase.type,
-            dispute_amount: updatedCase.dispute_amount,
-            summary: updatedCase.summary?.substring(0, 50),
-            property_address: updatedCase.property_address,
-            landlord_name: updatedCase.landlord_name,
-            landlord_email: updatedCase.landlord_email,
-            evidence_count: updatedCase.evidence?.length || 0,
-            stripe_session_id: updatedCase.stripe_session_id,
-            paid_at: updatedCase.paid_at
-          });
-          
-          // CRITICAL VERIFICATION: Confirm user_email is set for RLS
-          if (!updatedCase.user_email) {
-            console.error('[RESOLVE_WEBHOOK] 🚨 CRITICAL: Case has NO user_email - will be invisible to user!');
-            console.error('[RESOLVE_WEBHOOK] Attempting emergency fix...');
-            
-            // Emergency fix: Set user_email from metadata
-            if (userEmail) {
-              await base44.asServiceRole.entities.Case.update(caseId, {
-                user_email: userEmail
-              });
-              console.log('[RESOLVE_WEBHOOK] ✅ Emergency fix applied - user_email set to:', userEmail);
-            }
-          } else {
-            console.log('[RESOLVE_WEBHOOK] ✅ User binding verified - user_email:', updatedCase.user_email);
-          }
-          
-          caseRecord = updatedCase;
-        } else {
-          console.error('[RESOLVE_WEBHOOK] ❌ Case not found - cannot process payment without case');
-          return Response.json({ 
-            received: true, 
-            error: 'case_not_found',
-            caseId: caseId
-          }, { status: 200 });
-        }
-
-        // Create payment record
-        await base44.asServiceRole.entities.Payment.create({
-          type: 'case',
-          amount: parseFloat((session.amount_total / 100).toFixed(2)),
-          currency: 'THB',
-          provider: 'stripe',
-          status: 'paid',
-          external_id: session.id,
-          created_by: userEmail
-        });
-
-        console.log('✅✅✅ RESOLVE CASE PAYMENT PROCESSED ✅✅✅');
-        console.log('Case ID:', caseRecord.id);
-        console.log('User:', userEmail);
-        console.log('Amount:', amount);
-        console.log('Price Type:', priceType);
-
-        return Response.json({ 
-          received: true, 
-          processed: 'resolve_case',
-          caseId: caseRecord.id,
-          priceType: priceType
-        }, { status: 200 });
-      }
-
-      // ========================================
-      // CREDITS PATH
-      // ========================================
-      if (isCreditsCheckout && !isSubscriptionCheckout) {
-        console.log('\n💰 CREDITS CHECKOUT - STARTING PROCESSING');
-        console.log('[CREDITS_WEBHOOK] Session:', {
-          id: session.id,
-          mode: session.mode,
-          amount_total: session.amount_total,
-          currency: session.currency,
-          payment_status: session.payment_status,
-          metadata: JSON.stringify(metadata, null, 2),
-          customer: session.customer,
-          customer_details: session.customer_details
-        });
-
-        const userId = metadata.userId;
-        const customerId = session.customer;
-        const email = session.customer_details?.email || metadata.email;
-        
-        console.log('[CREDITS_WEBHOOK] User lookup fields:', { userId, customerId, email });
-        
-        const allUsers = await base44.asServiceRole.entities.User.list();
-        let user = null;
-
-        // Priority 1: metadata.userId
-        if (userId) {
-          user = allUsers.find(u => u.id === userId);
-          console.log('🔍 Lookup by metadata.userId:', userId, '→', user ? `✅ ${user.email}` : '❌');
-        }
-
-        // Priority 2: stripe_customer_id
-        if (!user && customerId) {
-          user = allUsers.find(u => u.stripe_customer_id === customerId);
-          console.log('🔍 Lookup by stripe_customer_id:', customerId, '→', user ? `✅ ${user.email}` : '❌');
-        }
-
-        // Priority 3: email fallback
-        if (!user && email) {
-          user = allUsers.find(u => u.email === email);
-          console.log('🔍 Lookup by email:', email, '→', user ? `✅ ${user.email}` : '❌');
-        }
-
-        if (!user) {
-          console.error('[CREDITS_WEBHOOK] ❌ User not found - all methods failed');
-          console.error('[CREDITS_WEBHOOK] Attempted:', { userId, customerId, email });
-          return Response.json({ 
-            received: true, 
-            error: 'user_not_found',
-            attempted: { userId, customerId, email }
-          }, { status: 200 });
-        }
-
-        console.log('[CREDITS_WEBHOOK] ✅ USER RESOLVED:', {
-          id: user.id,
-          email: user.email,
-          currentCredits: user.letter_credits || 0
-        });
-
-        let creditsToAdd = 0;
-
-        // CRITICAL: Always try metadata.credits first (set by createCheckout)
-        if (metadata.credits) {
-          creditsToAdd = parseInt(metadata.credits);
-          console.log('[CREDITS_WEBHOOK] 💰 Credits from metadata.credits:', creditsToAdd);
-        } else {
-          console.log('[CREDITS_WEBHOOK] ⚠️ metadata.credits not found - attempting price ID mapping');
-          
-          try {
-            const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
-              expand: ['line_items.data.price'],
-            });
-
-            const items = fullSession.line_items?.data || [];
-            let totalCredits = 0;
-            
-            console.log('[CREDITS_WEBHOOK] Line items found:', items.length);
-            
-            for (const item of items) {
-              const priceId = item.price?.id;
-              const qty = item.quantity || 1;
-              const perCredits = PRICE_CREDIT_MAP[priceId] || 0;
-              
-              console.log(`[CREDITS_WEBHOOK]   Item: price=${priceId}, qty=${qty}, mapped_credits=${perCredits}`);
-              
-              if (perCredits > 0) {
-                totalCredits += perCredits * qty;
-                console.log(`[CREDITS_WEBHOOK]   ✅ Matched: ${perCredits} × ${qty} = ${perCredits * qty}`);
-              } else {
-                console.warn(`[CREDITS_WEBHOOK]   ⚠️ Price ID ${priceId} not in PRICE_CREDIT_MAP`);
-              }
-            }
-
-            if (totalCredits > 0) {
-              creditsToAdd = totalCredits;
-              console.log('[CREDITS_WEBHOOK] 💰 Credits from price IDs:', creditsToAdd);
-            } else {
-              console.error('[CREDITS_WEBHOOK] ❌ No credits detected from price IDs');
-            }
-          } catch (err) {
-            console.error('[CREDITS_WEBHOOK] ⚠️ Failed to retrieve line items:', err.message);
-          }
-        }
-        
-        // CRITICAL: If still no credits detected, default to 1 for any ฿99 THB payment
-        if (creditsToAdd === 0 && session.amount_total === 9900 && session.currency === 'thb') {
-          console.warn('[CREDITS_WEBHOOK] ⚠️ No credits in metadata/price map - defaulting to 1 credit for ฿99 THB payment');
-          creditsToAdd = 1;
-        }
-
-        if (creditsToAdd > 0) {
-          const currentCredits = user.letter_credits || 0;
-          const totalPurchased = user.total_credits_purchased || 0;
-          const newBalance = currentCredits + creditsToAdd;
-          const newTotalPurchased = totalPurchased + creditsToAdd;
-
-          console.log('[CREDITS_WEBHOOK] 🔄 UPDATING USER CREDITS');
-          console.log('[CREDITS_WEBHOOK]   User ID:', user.id);
-          console.log('[CREDITS_WEBHOOK]   Email:', user.email);
-          console.log('[CREDITS_WEBHOOK]   Current balance:', currentCredits);
-          console.log('[CREDITS_WEBHOOK]   Adding:', creditsToAdd);
-          console.log('[CREDITS_WEBHOOK]   New balance:', newBalance);
-          console.log('[CREDITS_WEBHOOK]   Total purchased (lifetime):', newTotalPurchased);
-
-          await base44.asServiceRole.entities.User.update(user.id, {
-            letter_credits: newBalance,
-            total_credits_purchased: newTotalPurchased
-          });
-
-          console.log('[CREDITS_WEBHOOK] ✅✅✅ USER CREDITS UPDATED IN DB ✅✅✅');
-          console.log('[CREDITS_WEBHOOK]   Session ID:', session.id);
-          console.log('[CREDITS_WEBHOOK]   User:', user.email);
-          console.log('[CREDITS_WEBHOOK]   Credits added:', creditsToAdd);
-          console.log('[CREDITS_WEBHOOK]   Final balance:', newBalance);
-
-          // ✅ PAYMENT RECORD
-          console.log('[CREDITS_WEBHOOK] Creating Payment audit record...');
-          await base44.asServiceRole.entities.Payment.create({
-            type: 'addon',
-            amount: parseFloat((session.amount_total / 100).toFixed(2)),
-            currency: 'THB',
-            provider: 'stripe',
-            status: 'paid',
-            external_id: session.id,
-            created_by: user.email
-          });
-          console.log('[CREDITS_WEBHOOK] ✅ Payment record created');
-
-          // ✅ BILLING NOTIFICATIONS (LINE + EMAIL)
-          console.log('[LETTER_CREDIT_WEBHOOK] User billing notification check:', {
-            email: user.email,
-            userId: user.id,
-            lineLinked: !!user.line_messaging_token,
-            lineUserId: user.line_messaging_token || null,
-            lineNotificationsEnabled: user.line_notifications || false,
-            billingPaymentsEnabled: user.notifications?.billing_payments ?? true,
-            creditsPurchased: creditsToAdd,
-            newBalance: newBalance
-          });
-
-          const billingEnabled = user.notifications?.billing_payments ?? true;
-
-          // LINE notification (non-blocking - CRITICAL: don't let this stop credit processing)
-          if (user.line_messaging_token && user.line_notifications && billingEnabled) {
-            try {
-              console.log('[LETTER_CREDIT_WEBHOOK] 📤 Queueing LINE notification (non-blocking)...');
-
-              const lineMessage = `🎫 Lease Shield – Letter credits purchased!\n\n` +
-                `✅ Credits purchased: +${creditsToAdd}\n` +
-                `💳 New balance: ${newBalance} credits\n\n` +
-                `You can now generate legal letters from the Templates page.`;
-
-              // CRITICAL: Non-blocking invoke - don't await, catch errors silently
-              base44.asServiceRole.functions.invoke('sendLineMessage', {
-                userId: user.line_messaging_token,
-                message: lineMessage
-              }).then(() => {
-                console.log('[LETTER_CREDIT_WEBHOOK] ✅ LINE notification sent', {
-                  email: user.email,
-                  lineUserId: user.line_messaging_token
-                });
-              }).catch((lineError) => {
-                console.error('[LETTER_CREDIT_WEBHOOK] ⚠️ LINE send failed (non-critical):', {
-                  email: user.email,
-                  error: lineError.message
-                });
-              });
-
-              console.log('[LETTER_CREDIT_WEBHOOK] LINE notification queued successfully');
-            } catch (lineError) {
-              console.error('[LETTER_CREDIT_WEBHOOK] ⚠️ LINE setup error (non-critical):', {
-                email: user.email,
-                error: lineError.message
-              });
-            }
-          } else {
-            console.log('[LETTER_CREDIT_WEBHOOK] ⏭️ LINE not sent:', {
-              email: user.email,
-              lineLinked: !!user.line_messaging_token,
-              lineNotificationsEnabled: user.line_notifications || false,
-              billingPaymentsEnabled: billingEnabled,
-              reason: !user.line_messaging_token ? 'no_line_connection' 
-                : !user.line_notifications ? 'line_disabled'
-                : !billingEnabled ? 'billing_notifications_disabled'
-                : 'unknown'
-            });
-          }
-
-          // Email notification (non-blocking - CRITICAL: don't let this stop credit processing)
-          if (user.email_notifications && billingEnabled && RESEND_API_KEY) {
-            try {
-              console.log('[LETTER_CREDIT_WEBHOOK] 📧 Queueing email notification (non-blocking)...');
-
-              const emailSubject = '🎫 Letter Credits Purchased - Lease Shield';
-              const emailBody = `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
-                    <h2 style="color: white; margin: 0;">🎫 Letter Credits Purchased</h2>
-                  </div>
-                  <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
-                    <p>Hi <strong>${user.full_name || 'there'}</strong>,</p>
-                    <p>Your letter credits have been successfully added to your account!</p>
-                    <div style="background: #F0FDF4; padding: 16px; border-radius: 8px; border-left: 4px solid #10B981; margin: 20px 0;">
-                      <p style="margin: 8px 0;"><strong>Credits purchased:</strong> +${creditsToAdd}</p>
-                      <p style="margin: 8px 0;"><strong>New balance:</strong> ${newBalance} credits</p>
-                    </div>
-                    <p>You can now generate legal letters to your landlord and juristic office from the Templates page.</p>
-                    <p><a href="https://app.leaseshield.asia/templates" style="color: #0C3B2E; font-weight: bold;">Go to Templates →</a></p>
-                    <p style="margin-top: 24px; color: #666; font-size: 12px;">— The Lease Shield Team</p>
-                  </div>
-                </div>
-              `;
-
-              // CRITICAL: Non-blocking fetch - don't await
-              fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${RESEND_API_KEY}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  from: 'Lease Shield <no-reply@leaseshield.asia>',
-                  to: [user.email],
-                  subject: emailSubject,
-                  html: emailBody,
-                }),
-              }).then(async (emailResponse) => {
-                if (emailResponse.ok) {
-                  console.log('[LETTER_CREDIT_WEBHOOK] ✅ Email notification sent');
-                } else {
-                  const errorData = await emailResponse.json();
-                  console.error('[LETTER_CREDIT_WEBHOOK] ⚠️ Email send failed (non-critical):', errorData);
-                }
-              }).catch((emailError) => {
-                console.error('[LETTER_CREDIT_WEBHOOK] ⚠️ Email error (non-critical):', {
-                  email: user.email,
-                  error: emailError.message
-                });
-              });
-
-              console.log('[LETTER_CREDIT_WEBHOOK] Email queued successfully');
-            } catch (emailError) {
-              console.error('[LETTER_CREDIT_WEBHOOK] ⚠️ Email setup error (non-critical):', {
-                email: user.email,
-                error: emailError.message
-              });
-            }
-          } else {
-            console.log('[LETTER_CREDIT_WEBHOOK] ⏭️ Email not sent:', {
-              email: user.email,
-              emailNotificationsEnabled: user.email_notifications || false,
-              billingPaymentsEnabled: billingEnabled,
-              resendConfigured: !!RESEND_API_KEY,
-              reason: !user.email_notifications ? 'email_disabled'
-                : !billingEnabled ? 'billing_notifications_disabled'
-                : !RESEND_API_KEY ? 'resend_not_configured'
-                : 'unknown'
-            });
-          }
-
-          console.log('[CREDITS_WEBHOOK] ✅ CREDITS PATH COMPLETE');
-          console.log('[CREDITS_WEBHOOK] Summary:', {
-            sessionId: session.id,
-            user: user.email,
-            creditsAdded: creditsToAdd,
-            finalBalance: newBalance,
-            lineNotificationSent: !!(user.line_messaging_token && user.line_notifications && billingEnabled),
-            emailNotificationSent: !!(user.email_notifications && billingEnabled && RESEND_API_KEY)
-          });
-          
-          return Response.json({ 
-            received: true, 
-            processed: 'credits',
-            user: user.email,
-            userId: user.id,
-            creditsAdded: creditsToAdd,
-            newBalance: newBalance,
-            sessionId: session.id,
-            lineNotificationSent: !!(user.line_messaging_token && user.line_notifications && billingEnabled),
-            emailNotificationSent: !!(user.email_notifications && billingEnabled && RESEND_API_KEY)
-          }, { status: 200 });
-        } else {
-          console.error('[CREDITS_WEBHOOK] ❌ CRITICAL: No credits to add - creditsToAdd is 0');
-          console.error('[CREDITS_WEBHOOK] Debug info:', {
-            sessionId: session.id,
-            metadata: metadata,
-            amount_total: session.amount_total,
-            currency: session.currency,
-            user: user?.email
-          });
-          
-          return Response.json({
-            received: true,
-            error: 'no_credits_detected',
-            debug: {
-              metadata_credits: metadata.credits,
-              amount: session.amount_total,
-              currency: session.currency
-            }
-          }, { status: 200 });
-        }
-      }
-
-      console.log('⚠️ checkout.session.completed but no recognized flow');
+      // Non-credit checkout - ignore
+      console.log('[WEBHOOK] Non-credit checkout, skipping');
       return Response.json({ received: true }, { status: 200 });
     }
 
-    // ========================================
-    // OTHER EVENT TYPES (kept as-is)
-    // ========================================
-    else if (event.type === 'invoice.payment_succeeded') {
-      console.log('\n🔄 PROCESSING: invoice.payment_succeeded (renewal)');
-      
-      const invoice = event.data.object;
-      const subscriptionId = invoice.subscription;
-      const customerId = invoice.customer;
-      const billingReason = invoice.billing_reason;
+    // Other event types - acknowledge
+    console.log('[WEBHOOK] Unhandled event type:', event.type);
+    return Response.json({ received: true }, { status: 200 });
 
-      if (!subscriptionId || billingReason !== 'subscription_cycle') {
-        console.log('⚠️ Not a renewal, skipping');
-        return Response.json({ received: true }, { status: 200 });
-      }
-
-      const users = await base44.asServiceRole.entities.User.list();
-      let user = users.find(u => u.stripe_subscription_id === subscriptionId);
-      if (!user) user = users.find(u => u.stripe_customer_id === customerId);
-
-      if (!user) {
-        console.error('❌ User not found for renewal');
-        return Response.json({ received: true }, { status: 200 });
-      }
-
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      const renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
-
-      await base44.asServiceRole.entities.User.update(user.id, {
-        subscription_status: 'active',
-        plan_renews_at: renewalDate
-      });
-
-      await base44.asServiceRole.entities.Payment.create({
-        type: 'subscription',
-        amount: parseFloat((invoice.amount_paid / 100).toFixed(2)),
-        currency: 'THB',
-        provider: 'stripe',
-        status: 'paid',
-        external_id: invoice.id,
-        created_by: user.email
-      });
-
-      console.log('✅ Renewal recorded:', user.email);
-      return Response.json({ received: true }, { status: 200 });
-    }
-
-    else if (event.type === 'invoice.payment_failed') {
-      console.log('\n❌ PROCESSING: invoice.payment_failed');
-      
-      const invoice = event.data.object;
-      const subscriptionId = invoice.subscription;
-      const customerId = invoice.customer;
-
-      if (!subscriptionId) {
-        return Response.json({ received: true }, { status: 200 });
-      }
-
-      const users = await base44.asServiceRole.entities.User.list();
-      let user = users.find(u => u.stripe_subscription_id === subscriptionId);
-      if (!user) user = users.find(u => u.stripe_customer_id === customerId);
-
-      if (user) {
-        await base44.asServiceRole.entities.User.update(user.id, {
-          subscription_status: 'past_due'
-        });
-        console.log('⚠️ Marked past_due:', user.email);
-      }
-
-      return Response.json({ received: true }, { status: 200 });
-    }
-
-    else if (event.type === 'customer.subscription.deleted') {
-      console.log('\n🚫 PROCESSING: customer.subscription.deleted');
-      
-      const subscription = event.data.object;
-      const subscriptionId = subscription.id;
-      const customerId = subscription.customer;
-
-      const users = await base44.asServiceRole.entities.User.list();
-      let user = users.find(u => u.stripe_subscription_id === subscriptionId);
-      if (!user) user = users.find(u => u.stripe_customer_id === customerId);
-
-      if (user) {
-        await base44.asServiceRole.entities.User.update(user.id, {
-          plan_tier: 'free',
-          subscription_status: 'expired',
-          billing_interval: null,
-          stripe_subscription_id: null
-        });
-        console.log('✅ Downgraded to free:', user.email);
-      }
-
-      return Response.json({ received: true }, { status: 200 });
-    }
-
-    else {
-      console.log('ℹ️ UNHANDLED EVENT TYPE:', event.type);
-      return Response.json({ received: true }, { status: 200 });
-    }
-    
   } catch (error) {
-    console.error('\n❌ WEBHOOK ERROR:', error.message);
-    console.error('Stack:', error.stack);
+    console.error('[WEBHOOK_ERROR] Fatal error:', error.message);
+    console.error('[WEBHOOK_ERROR] Stack:', error.stack);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
