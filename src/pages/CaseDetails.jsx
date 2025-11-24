@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -42,6 +41,7 @@ export default function CaseDetails() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const caseId = urlParams.get('caseId');
+  const fromOps = urlParams.get('from') === 'ops'; // WORKFLOW FIX: Track navigation source
   const queryClient = useQueryClient();
 
   const [compilingPack, setCompilingPack] = useState(false);
@@ -452,9 +452,20 @@ export default function CaseDetails() {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-5xl mx-auto">
-          <Button variant="outline" onClick={() => navigate(createPageUrl("Cases"))} className="mb-6">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(fromOps ? createPageUrl("OpsConsole") : createPageUrl("Cases"))} 
+            className="mb-6"
+          >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            {strings.backToCases}
+            {fromOps 
+              ? (language === 'th' ? 'กลับไปคอนโซลปฏิบัติการ' 
+                : language === 'zh' ? '返回运营控制台'
+                : language === 'ja' ? 'オペレーションコンソールに戻る'
+                : language === 'ko' ? '운영 콘솔로 돌아가기'
+                : 'Back to Ops Console')
+              : strings.backToCases
+            }
           </Button>
           <div className="text-center py-20">
             <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{
@@ -493,12 +504,19 @@ export default function CaseDetails() {
 
         <Button
           variant="outline"
-          onClick={() => navigate(createPageUrl("Cases"))}
+          onClick={() => navigate(fromOps ? createPageUrl("OpsConsole") : createPageUrl("Cases"))}
           className="mb-4 md:mb-6"
           size="sm"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          {strings.backToCases}
+          {fromOps 
+            ? (language === 'th' ? 'กลับไปคอนโซลปฏิบัติการ' 
+              : language === 'zh' ? '返回运营控制台'
+              : language === 'ja' ? 'オペレーションコンソールに戻る'
+              : language === 'ko' ? '운영 콘솔로 돌아가기'
+              : 'Back to Ops Console')
+            : strings.backToCases
+          }
         </Button>
 
         {/* Header */}

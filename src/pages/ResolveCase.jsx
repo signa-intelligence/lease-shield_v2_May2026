@@ -93,6 +93,24 @@ function ResolveCaseContent() {
       console.log('[RESOLVE_FLOW] Creating case with data:', caseData);
       const createdCase = await base44.entities.Case.create(caseData);
       console.log('[RESOLVE_FLOW] Case created successfully:', createdCase);
+      
+      // WORKFLOW FIX: Send admin notification for new intake case
+      try {
+        await base44.functions.invoke('notifyAdminNewCase', {
+          caseNumber: createdCase.case_number,
+          tenantName: user?.full_name,
+          tenantEmail: createdCase.user_email,
+          landlordName: createdCase.landlord_name,
+          propertyAddress: createdCase.property_address,
+          disputeAmount: createdCase.dispute_amount,
+          planTier: user?.plan_tier,
+          caseId: createdCase.id
+        });
+        console.log('[RESOLVE_FLOW] Admin notification sent');
+      } catch (notifyError) {
+        console.error('[RESOLVE_FLOW] Admin notification failed (non-blocking):', notifyError);
+      }
+      
       return { createdCase, userId, userEmail };
     },
     onSuccess: async ({ createdCase, userId, userEmail }) => {

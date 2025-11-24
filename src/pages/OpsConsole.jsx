@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -586,6 +585,7 @@ function OpsConsoleContent() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{strings.allStatuses}</SelectItem>
+                    <SelectItem value="intake">{STATUS_CONFIG.intake.label}</SelectItem>
                     <SelectItem value="pending_review">{STATUS_CONFIG.pending_review.label}</SelectItem>
                     <SelectItem value="under_review">{STATUS_CONFIG.under_review.label}</SelectItem>
                     <SelectItem value="ready_drafts">{STATUS_CONFIG.ready_drafts.label}</SelectItem>
@@ -764,7 +764,7 @@ function OpsConsoleContent() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
+                        onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}&from=ops`)}
                       >
                         {strings.viewDetails}
                       </Button>
@@ -795,6 +795,31 @@ function OpsConsoleContent() {
                     <Select
                       defaultValue={selectedCase.status}
                       onValueChange={(value) => {
+                        // WORKFLOW FIX: Validate allowed transitions
+                        const currentStatus = selectedCase.status;
+                        const allowedTransitions = {
+                          'intake': ['pending_review'],
+                          'pending_review': ['under_review', 'intake'],
+                          'under_review': ['ready_drafts', 'pending_review'],
+                          'ready_drafts': ['client_review', 'under_review'],
+                          'client_review': ['awaiting_landlord', 'ready_drafts'],
+                          'awaiting_landlord': ['in_progress', 'client_review'],
+                          'in_progress': ['resolved', 'awaiting_landlord'],
+                          'resolved': ['closed'],
+                          'closed': []
+                        };
+                        
+                        const allowed = allowedTransitions[currentStatus] || [];
+                        if (!allowed.includes(value)) {
+                          toast.error(language === 'th' 
+                            ? `ไม่สามารถเปลี่ยนจาก ${currentStatus} ไป ${value}` 
+                            : language === 'zh' ? `无法从 ${currentStatus} 更改为 ${value}`
+                            : language === 'ja' ? `${currentStatus}から${value}に変更できません`
+                            : language === 'ko' ? `${currentStatus}에서 ${value}로 변경할 수 없습니다`
+                            : `Cannot transition from ${currentStatus} to ${value}`);
+                          return;
+                        }
+                        
                         handleUpdateStatus(selectedCase.id, value);
                       }}
                     >
@@ -806,6 +831,7 @@ function OpsConsoleContent() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="intake">{STATUS_CONFIG.intake.label}</SelectItem>
                         <SelectItem value="pending_review">{STATUS_CONFIG.pending_review.label}</SelectItem>
                         <SelectItem value="under_review">{STATUS_CONFIG.under_review.label}</SelectItem>
                         <SelectItem value="ready_drafts">{STATUS_CONFIG.ready_drafts.label}</SelectItem>
