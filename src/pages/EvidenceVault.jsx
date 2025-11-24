@@ -885,6 +885,13 @@ function EvidenceVaultContent() {
       upgradeToSecureVideo: "Upgrade to Secure for video evidence",
       upgradeToSecureVideoDesc: "Secure members can upload videos for stronger dispute cases.",
       upgradeToSecure: "Upgrade to Secure",
+      upgradeTitle: "Video uploads require Secure",
+      upgradeDescription: "Video evidence is only available on the Secure plan. Upgrade now to unlock:",
+      upgradeBenefitUnlimitedScans: "• Unlimited lease scans",
+      upgradeBenefitPriorityQueue: "• Priority case handling",
+      upgradeBenefitVideoEvidence: "• Video evidence uploads",
+      upgradeBenefitFullSupport: "• Comprehensive support",
+      maybeLater: "Maybe later",
       maxVoiceReached: "Maximum 3 voice notes",
       maxVideoReached: "Maximum 3 videos",
       fileTooLarge: "File too large",
@@ -970,6 +977,13 @@ function EvidenceVaultContent() {
       upgradeToSecureVideo: "อัปเกรดเป็น Secure สำหรับหลักฐานวิดีโอ",
       upgradeToSecureVideoDesc: "สมาชิก Secure สามารถอัปโหลดวิดีโอเพื่อสร้างหลักฐานที่แข็งแกร่งยิ่งขึ้น",
       upgradeToSecure: "อัปเกรดเป็น Secure",
+      upgradeTitle: "อัปโหลดวิดีโอต้องใช้แผน Secure",
+      upgradeDescription: "หลักฐานวิดีโอใช้ได้เฉพาะแผน Secure เท่านั้น อัปเกรดตอนนี้เพื่อปลดล็อก:",
+      upgradeBenefitUnlimitedScans: "• สแกนสัญญาเช่าไม่จำกัด",
+      upgradeBenefitPriorityQueue: "• การจัดการคดีแบบเร่งด่วน",
+      upgradeBenefitVideoEvidence: "• อัปโหลดหลักฐานวิดีโอ",
+      upgradeBenefitFullSupport: "• การสนับสนุนอย่างครอบคลุม",
+      maybeLater: "ภายหลัง",
       maxVoiceReached: "สูงสุด 3 บันทึกเสียง",
       maxVideoReached: "สูงสุด 3 วิดีโอ",
       fileTooLarge: "ไฟล์ใหญ่เกินไป",
@@ -1055,6 +1069,13 @@ function EvidenceVaultContent() {
       upgradeToSecureVideo: "升级到 Secure 以添加视频证据",
       upgradeToSecureVideoDesc: "Secure 会员可以上传视频以加强争议案件。",
       upgradeToSecure: "升级到 Secure",
+      upgradeTitle: "视频上传需要 Secure 计划",
+      upgradeDescription: "视频证据仅适用于 Secure 计划。立即升级以解锁：",
+      upgradeBenefitUnlimitedScans: "• 无限租约扫描",
+      upgradeBenefitPriorityQueue: "• 优先案件处理",
+      upgradeBenefitVideoEvidence: "• 视频证据上传",
+      upgradeBenefitFullSupport: "• 全面支持",
+      maybeLater: "稍后再说",
       maxVoiceReached: "最多 3 个语音备忘录",
       maxVideoReached: "最多 3 个视频",
       fileTooLarge: "文件过大",
@@ -1140,6 +1161,13 @@ function EvidenceVaultContent() {
       upgradeToSecureVideo: "動画証拠を追加するにはSecureにアップグレード",
       upgradeToSecureVideoDesc: "Secure 会員は、より強力な争議ケースのために動画をアップロードできます。",
       upgradeToSecure: "Secureにアップグレード",
+      upgradeTitle: "動画アップロードにはSecureが必要",
+      upgradeDescription: "動画証拠はSecureプランでのみ利用可能です。今すぐアップグレードしてロック解除：",
+      upgradeBenefitUnlimitedScans: "• 無制限の賃貸契約スキャン",
+      upgradeBenefitPriorityQueue: "• 優先的なケース処理",
+      upgradeBenefitVideoEvidence: "• 動画証拠のアップロード",
+      upgradeBenefitFullSupport: "• 包括的なサポート",
+      maybeLater: "後で",
       maxVoiceReached: "最大3件の音声メモ",
       maxVideoReached: "最大3件の動画",
       fileTooLarge: "ファイルが大きすぎます",
@@ -1225,6 +1253,13 @@ function EvidenceVaultContent() {
       upgradeToSecureVideo: "동영상 증거를 추가하려면 Secure로 업그레이드",
       upgradeToSecureVideoDesc: "Secure 회원은 더 강력한 분쟁 사례를 위해 동영상을 업로드할 수 있습니다.",
       upgradeToSecure: "Secure로 업그레이드",
+      upgradeTitle: "동영상 업로드에는 Secure 필요",
+      upgradeDescription: "동영상 증거는 Secure 플랜에서만 사용할 수 있습니다. 지금 업그레이드하여 잠금 해제:",
+      upgradeBenefitUnlimitedScans: "• 무제한 임대 계약 스캔",
+      upgradeBenefitPriorityQueue: "• 우선 사례 처리",
+      upgradeBenefitVideoEvidence: "• 동영상 증거 업로드",
+      upgradeBenefitFullSupport: "• 포괄적인 지원",
+      maybeLater: "나중에",
       maxVoiceReached: "최대 3개의 음성 메모",
       maxVideoReached: "최대 3개의 동영상",
       fileTooLarge: "파일이 너무 큼",
@@ -1310,6 +1345,13 @@ function EvidenceVaultContent() {
       upgradeToSecureVideo: "Обновитесь до Secure для видеодоказательств",
       upgradeToSecureVideoDesc: "Участники тарифа Secure могут загружать видео для усиления своих дел.",
       upgradeToSecure: "Обновить до Secure",
+      upgradeTitle: "Для загрузки видео требуется Secure",
+      upgradeDescription: "Видеодоказательства доступны только в плане Secure. Обновитесь сейчас, чтобы разблокировать:",
+      upgradeBenefitUnlimitedScans: "• Неограниченные сканы договоров аренды",
+      upgradeBenefitPriorityQueue: "• Приоритетная обработка дел",
+      upgradeBenefitVideoEvidence: "• Загрузка видеодоказательств",
+      upgradeBenefitFullSupport: "• Полная поддержка",
+      maybeLater: "Позже",
       maxVoiceReached: "Максимум 3 голосовые заметки",
       maxVideoReached: "Максимум 3 видео",
       fileTooLarge: "Файл слишком большой",
@@ -1550,7 +1592,7 @@ function EvidenceVaultContent() {
           />
         )}
 
-        {/* Upgrade Modal */}
+        {/* Upgrade Modal - Enhanced Upsell */}
         <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
           <DialogContent
             className="modal-enter"
@@ -1563,52 +1605,88 @@ function EvidenceVaultContent() {
             }}
           >
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-3 text-lg" style={{ color: colors.textPrimary }}>
+              <DialogTitle className="flex items-center gap-3 text-xl font-bold" style={{ color: colors.textPrimary }}>
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: '#EF4444' }}
+                  className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ 
+                    backgroundColor: '#8B5CF6',
+                    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                  }}
                 >
-                  <FileVideo className="w-6 h-6 text-white" />
+                  <FileVideo className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  {strings.upgradeToSecureVideo}
+                  {strings.upgradeTitle}
                 </div>
               </DialogTitle>
             </DialogHeader>
 
-            <div className="mt-4">
-              <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
-                {strings.upgradeToSecureVideoDesc}
+            <div className="mt-6 space-y-6">
+              <p className="text-sm leading-relaxed" style={{ color: colors.textSecondary }}>
+                {strings.upgradeDescription}
               </p>
 
-              <div className="flex gap-3">
+              <div className="space-y-3 p-4 rounded-xl" style={{
+                backgroundColor: isDarkMode ? '#1F2937' : '#F9FAFB',
+                border: `1px solid ${colors.borderColor}`
+              }}>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>
+                    {strings.upgradeBenefitUnlimitedScans}
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>
+                    {strings.upgradeBenefitPriorityQueue}
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>
+                    {strings.upgradeBenefitVideoEvidence}
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>
+                    {strings.upgradeBenefitFullSupport}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Link
+                  to={createPageUrl("Account") + '?showPlans=true&highlight=secure'}
+                  className="w-full"
+                  onClick={() => haptic.medium()}
+                >
+                  <Button
+                    className="w-full"
+                    style={{
+                      backgroundColor: '#8B5CF6',
+                      color: '#FFFFFF',
+                      minHeight: '48px',
+                      fontSize: '15px',
+                      fontWeight: '700',
+                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
+                    }}
+                  >
+                    {strings.upgradeToSecure}
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
                   onClick={() => {
                     haptic.light();
                     setShowUpgradeModal(false);
                   }}
-                  className="flex-1"
+                  className="w-full"
                   style={{ minHeight: '44px' }}
                 >
-                  {strings.cancel}
+                  {strings.maybeLater}
                 </Button>
-                <Link
-                  to={createPageUrl("Account") + '?showPlans=true'}
-                  className="flex-1"
-                >
-                  <Button
-                    onClick={() => haptic.medium()}
-                    className="w-full"
-                    style={{
-                      backgroundColor: '#0C3B2E',
-                      color: '#FFFFFF',
-                      minHeight: '44px'
-                    }}
-                  >
-                    {strings.upgradeToSecure}
-                  </Button>
-                </Link>
               </div>
             </div>
           </DialogContent>
@@ -1809,21 +1887,20 @@ function EvidenceVaultContent() {
                   <button
                     type="button"
                     onClick={handleVideoClick}
-                    disabled={!isSecureTier}
                     className="btn-interaction"
+                    title={!isSecureTier ? strings.upgradeTitle : ''}
                     style={{
                       padding: '8px 14px',
                       borderRadius: '8px',
-                      border: `2px solid ${!isSecureTier ? colors.borderColor : '#EF4444'}`,
-                      backgroundColor: !isSecureTier ? colors.fieldBg : (isDarkMode ? '#7F1D1D' : '#FEE2E2'),
-                      color: !isSecureTier ? colors.textSecondary : '#EF4444',
+                      border: `2px solid ${!isSecureTier ? '#8B5CF6' : '#EF4444'}`,
+                      backgroundColor: !isSecureTier ? (isDarkMode ? '#4C1D95' : '#F3E8FF') : (isDarkMode ? '#7F1D1D' : '#FEE2E2'),
+                      color: !isSecureTier ? '#8B5CF6' : '#EF4444',
                       fontSize: '13px',
                       fontWeight: '600',
-                      cursor: !isSecureTier ? 'not-allowed' : 'pointer',
+                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      opacity: !isSecureTier ? 0.6 : 1,
                       transition: 'all 0.2s',
                       minHeight: '40px'
                     }}
@@ -1831,12 +1908,18 @@ function EvidenceVaultContent() {
                       if (isSecureTier) {
                         e.currentTarget.style.backgroundColor = '#EF4444';
                         e.currentTarget.style.color = '#FFFFFF';
+                      } else {
+                        e.currentTarget.style.backgroundColor = '#8B5CF6';
+                        e.currentTarget.style.color = '#FFFFFF';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (isSecureTier) {
                         e.currentTarget.style.backgroundColor = isDarkMode ? '#7F1D1D' : '#FEE2E2';
                         e.currentTarget.style.color = '#EF4444';
+                      } else {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? '#4C1D95' : '#F3E8FF';
+                        e.currentTarget.style.color = '#8B5CF6';
                       }
                     }}
                   >
