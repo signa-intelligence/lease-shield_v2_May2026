@@ -4,6 +4,11 @@ import Stripe from 'npm:stripe@14.10.0';
 const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
 const webhookSecret = Deno.env.get('webhook_stripe');
 
+console.log('[WEBHOOK_CONFIG] Stripe API Key Mode:', stripeSecretKey?.startsWith('sk_live_') ? '🟢 LIVE' : stripeSecretKey?.startsWith('sk_test_') ? '🟡 TEST' : '❌ UNKNOWN');
+console.log('[WEBHOOK_CONFIG] Using webhook signing secret from env var: webhook_stripe');
+console.log('[WEBHOOK_CONFIG] Webhook secret exists:', !!webhookSecret);
+console.log('[WEBHOOK_CONFIG] Webhook secret format valid:', webhookSecret?.startsWith('whsec_') ? '✅' : '❌ INVALID');
+
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2024-06-20',
 });
@@ -48,10 +53,21 @@ Deno.serve(async (req) => {
       console.log('Event Created:', new Date(event.created * 1000).toISOString());
       console.log('Event Livemode:', event.livemode ? '🟢 LIVE EVENT' : '🟡 TEST EVENT');
     } catch (err) {
-      console.error('❌ SIGNATURE VERIFICATION FAILED:', err.message);
-      console.error('❌ This likely means the webhook signing secret does not match the event mode');
-      console.error('❌ Check: Are you using LIVE signing secret for LIVE events, and TEST signing secret for TEST events?');
-      return Response.json({ error: 'Invalid signature' }, { status: 400 });
+      console.error('\n❌❌❌ SIGNATURE VERIFICATION FAILED ❌❌❌');
+      console.error('[WEBHOOK_ERROR] Error message:', err.message);
+      console.error('[WEBHOOK_ERROR] Error type:', err.type);
+      console.error('[WEBHOOK_ERROR] This means the webhook signing secret in env var "webhook_stripe" does NOT match the Stripe webhook signing secret');
+      console.error('[WEBHOOK_ERROR] Action required:');
+      console.error('  1. Go to Stripe Dashboard → Developers → Webhooks → LIVE mode');
+      console.error('  2. Find webhook for: https://68fd84b6c148652a5512a0a0.base44.com/functions/stripeWebhook');
+      console.error('  3. Click "Reveal signing secret" and copy the whsec_... value');
+      console.error('  4. Go to Base44 → Settings → Secrets → webhook_stripe');
+      console.error('  5. Paste the LIVE signing secret and save');
+      console.error('❌❌❌ RETURNING 400 TO STRIPE ❌❌❌\n');
+      return Response.json({ 
+        error: 'Webhook signature verification failed',
+        details: err.message 
+      }, { status: 400 });
     }
 
     console.log('\n📋 FULL EVENT DATA:');
