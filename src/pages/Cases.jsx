@@ -142,6 +142,10 @@ function CasesContent() {
         setHighlightCaseId(caseId);
       }
       
+      // 🔥 CRITICAL FIX: Force immediate refetch after Stripe redirect
+      console.log('🔄 [RESOLVE_SUCCESS] Forcing cases refetch after successful payment');
+      refetchCases();
+      
       // Clean URL after 5 seconds
       setTimeout(() => {
         if (typeof window !== 'undefined') {
@@ -162,7 +166,7 @@ function CasesContent() {
         window.history.replaceState({}, '', window.location.pathname);
       }
     }
-  }, [user, toast, language]);
+  }, [user, toast, language, refetchCases]);
   const theme = getFeatureCardStyles("cases", isDarkMode);
 
   // Debug logging
