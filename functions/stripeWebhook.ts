@@ -264,7 +264,7 @@ Deno.serve(async (req) => {
           billingPaymentsEnabled: billingEnabled
         });
 
-        // LINE notification for subscription
+        // LINE notification for subscription (non-blocking)
         if (user.line_messaging_token && user.line_notifications && billingEnabled) {
           try {
             const planName = planTier.charAt(0).toUpperCase() + planTier.slice(1);
@@ -274,14 +274,17 @@ Deno.serve(async (req) => {
               `🎫 Letter credits: ${newCreditBalance}\n\n` +
               `Thank you for choosing Lease Shield!`;
 
-            await base44.asServiceRole.functions.invoke('sendLineMessage', {
+            // CRITICAL: Non-blocking - don't let LINE failure stop subscription processing
+            base44.asServiceRole.functions.invoke('sendLineMessage', {
               userId: user.line_messaging_token,
               message: lineMessage
+            }).catch((lineError) => {
+              console.error('[SUBSCRIPTION_WEBHOOK] ⚠️ LINE notification failed (non-critical):', lineError.message);
             });
 
-            console.log('[SUBSCRIPTION_WEBHOOK] ✅ LINE notification sent');
+            console.log('[SUBSCRIPTION_WEBHOOK] 📤 LINE notification queued (non-blocking)');
           } catch (lineError) {
-            console.error('[SUBSCRIPTION_WEBHOOK] ❌ LINE send failed:', lineError.message);
+            console.error('[SUBSCRIPTION_WEBHOOK] ⚠️ LINE setup error (non-critical):', lineError.message);
           }
         } else {
           console.log('[SUBSCRIPTION_WEBHOOK] ⏭️ LINE not sent:', {
@@ -369,10 +372,11 @@ Deno.serve(async (req) => {
           </div>
           `;
 
+        // Email notification (non-blocking)
         if (RESEND_API_KEY) {
           try {
-            console.log('📧 Sending subscription confirmation email...');
-            const resendResponse = await fetch('https://api.resend.com/emails', {
+            console.log('📧 Sending subscription confirmation email (non-blocking)...');
+            fetch('https://api.resend.com/emails', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${RESEND_API_KEY}`,
@@ -384,16 +388,19 @@ Deno.serve(async (req) => {
                 subject: subject,
                 html: emailBody,
               }),
+            }).then(async (resendResponse) => {
+              const resendData = await resendResponse.json();
+              if (resendResponse.ok) {
+                console.log('✅ Email sent. Message ID:', resendData.id);
+              } else {
+                console.error('⚠️ Email failed (non-critical):', resendData);
+              }
+            }).catch((emailError) => {
+              console.error('⚠️ Email error (non-critical):', emailError.message);
             });
-
-            const resendData = await resendResponse.json();
-            if (resendResponse.ok) {
-              console.log('✅ Email sent. Message ID:', resendData.id);
-            } else {
-              console.error('❌ Email failed:', resendData);
-            }
+            console.log('📧 Email queued successfully');
           } catch (emailError) {
-            console.error('❌ Email error:', emailError.message);
+            console.error('⚠️ Email setup error (non-critical):', emailError.message);
           }
         }
 
@@ -722,30 +729,37 @@ Deno.serve(async (req) => {
 
           const billingEnabled = user.notifications?.billing_payments ?? true;
 
-          // LINE notification
+          // LINE notification (non-blocking - CRITICAL: don't let this stop credit processing)
           if (user.line_messaging_token && user.line_notifications && billingEnabled) {
             try {
-              console.log('[LETTER_CREDIT_WEBHOOK] Sending LINE notification...');
+              console.log('[LETTER_CREDIT_WEBHOOK] 📤 Queueing LINE notification (non-blocking)...');
 
               const lineMessage = `🎫 Lease Shield – Letter credits purchased!\n\n` +
                 `✅ Credits purchased: +${creditsToAdd}\n` +
                 `💳 New balance: ${newBalance} credits\n\n` +
                 `You can now generate legal letters from the Templates page.`;
 
-              await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              // CRITICAL: Non-blocking invoke - don't await, catch errors silently
+              base44.asServiceRole.functions.invoke('sendLineMessage', {
                 userId: user.line_messaging_token,
                 message: lineMessage
+              }).then(() => {
+                console.log('[LETTER_CREDIT_WEBHOOK] ✅ LINE notification sent', {
+                  email: user.email,
+                  lineUserId: user.line_messaging_token
+                });
+              }).catch((lineError) => {
+                console.error('[LETTER_CREDIT_WEBHOOK] ⚠️ LINE send failed (non-critical):', {
+                  email: user.email,
+                  error: lineError.message
+                });
               });
 
-              console.log('[LETTER_CREDIT_WEBHOOK] ✅ LINE notification sent', {
-                email: user.email,
-                lineUserId: user.line_messaging_token
-              });
+              console.log('[LETTER_CREDIT_WEBHOOK] LINE notification queued successfully');
             } catch (lineError) {
-              console.error('[LETTER_CREDIT_WEBHOOK] ❌ LINE send failed:', {
+              console.error('[LETTER_CREDIT_WEBHOOK] ⚠️ LINE setup error (non-critical):', {
                 email: user.email,
-                error: lineError.message,
-                stack: lineError.stack
+                error: lineError.message
               });
             }
           } else {
@@ -761,10 +775,10 @@ Deno.serve(async (req) => {
             });
           }
 
-          // Email notification
+          // Email notification (non-blocking - CRITICAL: don't let this stop credit processing)
           if (user.email_notifications && billingEnabled && RESEND_API_KEY) {
             try {
-              console.log('[LETTER_CREDIT_WEBHOOK] Sending email notification...');
+              console.log('[LETTER_CREDIT_WEBHOOK] 📧 Queueing email notification (non-blocking)...');
 
               const emailSubject = '🎫 Letter Credits Purchased - Lease Shield';
               const emailBody = `
@@ -786,7 +800,8 @@ Deno.serve(async (req) => {
                 </div>
               `;
 
-              const emailResponse = await fetch('https://api.resend.com/emails', {
+              // CRITICAL: Non-blocking fetch - don't await
+              fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${RESEND_API_KEY}`,
@@ -798,16 +813,23 @@ Deno.serve(async (req) => {
                   subject: emailSubject,
                   html: emailBody,
                 }),
+              }).then(async (emailResponse) => {
+                if (emailResponse.ok) {
+                  console.log('[LETTER_CREDIT_WEBHOOK] ✅ Email notification sent');
+                } else {
+                  const errorData = await emailResponse.json();
+                  console.error('[LETTER_CREDIT_WEBHOOK] ⚠️ Email send failed (non-critical):', errorData);
+                }
+              }).catch((emailError) => {
+                console.error('[LETTER_CREDIT_WEBHOOK] ⚠️ Email error (non-critical):', {
+                  email: user.email,
+                  error: emailError.message
+                });
               });
 
-              if (emailResponse.ok) {
-                console.log('[LETTER_CREDIT_WEBHOOK] ✅ Email notification sent');
-              } else {
-                const errorData = await emailResponse.json();
-                console.error('[LETTER_CREDIT_WEBHOOK] ❌ Email send failed:', errorData);
-              }
+              console.log('[LETTER_CREDIT_WEBHOOK] Email queued successfully');
             } catch (emailError) {
-              console.error('[LETTER_CREDIT_WEBHOOK] ❌ Email send failed:', {
+              console.error('[LETTER_CREDIT_WEBHOOK] ⚠️ Email setup error (non-critical):', {
                 email: user.email,
                 error: emailError.message
               });
