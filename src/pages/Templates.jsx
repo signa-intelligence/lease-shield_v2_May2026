@@ -19,10 +19,22 @@ const TEMPLATES = [
   {
     id: 'lease_negotiation',
     letterKey: 'N1',
-    name_en: 'Pre-Signing Lease Negotiation',
-    name_th: 'จดหมายทบทวนสัญญาก่อนลงนาม',
-    description_en: 'Request clarification of concerning lease terms before signing',
-    description_th: 'ขอชี้แจงข้อกำหนดที่น่ากังวลก่อนการลงนามสัญญา',
+    name: {
+      en: 'Pre-Signing Lease Negotiation',
+      th: 'จดหมายทบทวนสัญญาก่อนลงนาม',
+      ja: '署名前リース交渉',
+      zh: '签署前租约谈判',
+      ko: '서명 전 임대 협상',
+      ru: 'Переговоры до подписания аренды'
+    },
+    description: {
+      en: 'Request clarification of concerning lease terms before signing',
+      th: 'ขอชี้แจงข้อกำหนดที่น่ากังวลก่อนการลงนามสัญญา',
+      ja: '署名前に懸念のあるリース条項の説明を求める',
+      zh: '签署前要求澄清令人担忧的租约条款',
+      ko: '서명 전에 우려되는 임대 조건에 대한 설명 요청',
+      ru: 'Запрос разъяснений по вызывающим беспокойство условиям аренды до подписания'
+    },
     icon: FileText,
     color: 'from-amber-400 to-orange-600',
     preSigning: true,
@@ -31,10 +43,22 @@ const TEMPLATES = [
   {
     id: 'deposit',
     letterKey: 'L1',
-    name_en: 'Deposit Return Request',
-    name_th: 'จดหมายขอคืนเงินมัดจำ',
-    description_en: 'Friendly formal request for security deposit return',
-    description_th: 'จดหมายทางการสุภาพขอคืนเงินประกัน',
+    name: {
+      en: 'Deposit Return Request',
+      th: 'จดหมายขอคืนเงินมัดจำ',
+      ja: '敷金返還請求',
+      zh: '押金退还请求',
+      ko: '보증금 반환 요청',
+      ru: 'Запрос возврата депозита'
+    },
+    description: {
+      en: 'Friendly formal request for security deposit return',
+      th: 'จดหมายทางการสุภาพขอคืนเงินประกัน',
+      ja: '友好的な正式な敷金返還請求',
+      zh: '友好的正式保证金退还请求',
+      ko: '우호적인 공식 보증금 반환 요청',
+      ru: 'Дружественный официальный запрос на возврат залога'
+    },
     icon: Shield,
     color: 'from-blue-400 to-blue-600',
     creditCost: 1
@@ -42,10 +66,22 @@ const TEMPLATES = [
   {
     id: 'deductions',
     letterKey: 'L2',
-    name_en: 'Request for Itemised Deductions',
-    name_th: 'ขอรายละเอียดการหักเงิน',
-    description_en: 'Request breakdown of damage charges and deductions',
-    description_th: 'ขอรายละเอียดค่าเสียหายและการหักเงินแบบแยกรายการ',
+    name: {
+      en: 'Request for Itemised Deductions',
+      th: 'ขอรายละเอียดการหักเงิน',
+      ja: '項目別控除要求',
+      zh: '要求逐项扣除',
+      ko: '항목별 공제 요청',
+      ru: 'Запрос детализации вычетов'
+    },
+    description: {
+      en: 'Request breakdown of damage charges and deductions',
+      th: 'ขอรายละเอียดค่าเสียหายและการหักเงินแบบแยกรายการ',
+      ja: '損害料金と控除の内訳を要求',
+      zh: '要求损害费用和扣除的明细',
+      ko: '손해 비용 및 공제 내역 요청',
+      ru: 'Запрос детализации расходов на ущерб и вычетов'
+    },
     icon: FileText,
     color: 'from-amber-400 to-amber-600',
     creditCost: 1
@@ -53,10 +89,22 @@ const TEMPLATES = [
   {
     id: 'reminder',
     letterKey: 'L3',
-    name_en: 'Friendly Reminder',
-    name_th: 'จดหมายเตือนแบบมิตร',
-    description_en: 'Gentle follow-up on pending deposit return',
-    description_th: 'จดหมายติดตามความคืบหน้าอย่างสุภาพ',
+    name: {
+      en: 'Friendly Reminder',
+      th: 'จดหมายเตือนแบบมิตร',
+      ja: '友好的なリマインダー',
+      zh: '友好提醒',
+      ko: '우호적 알림',
+      ru: 'Дружеское напоминание'
+    },
+    description: {
+      en: 'Gentle follow-up on pending deposit return',
+      th: 'จดหมายติดตามความคืบหน้าอย่างสุภาพ',
+      ja: '保留中の敷金返還に関する丁寧なフォローアップ',
+      zh: '对待退还押金的温和跟进',
+      ko: '대기 중인 보증금 반환에 대한 부드러운 후속 조치',
+      ru: 'Мягкое напоминание о возврате залога'
+    },
     icon: Mail,
     color: 'from-purple-400 to-purple-600',
     creditCost: 1
@@ -64,10 +112,22 @@ const TEMPLATES = [
   {
     id: 'dispute',
     letterKey: 'P1',
-    name_en: 'Formal Dispute of Withholding',
-    name_th: 'จดหมายคัดค้านการระงับเงิน',
-    description_en: 'Formal dispute of unfair deposit withholding',
-    description_th: 'จดหมายคัดค้านการระงับเงินประกันอย่างเป็นทางการ',
+    name: {
+      en: 'Formal Dispute of Withholding',
+      th: 'จดหมายคัดค้านการระงับเงิน',
+      ja: '差し止めに対する正式な異議申し立て',
+      zh: '正式扣押争议',
+      ko: '보류에 대한 공식 이의 제기',
+      ru: 'Официальный спор об удержании'
+    },
+    description: {
+      en: 'Formal dispute of unfair deposit withholding',
+      th: 'จดหมายคัดค้านการระงับเงินประกันอย่างเป็นทางการ',
+      ja: '不当な敷金差し止めに対する正式な異議',
+      zh: '对不公平押金扣留的正式争议',
+      ko: '부당한 보증금 보류에 대한 공식 이의 제기',
+      ru: 'Официальный спор о несправедливом удержании депозита'
+    },
     icon: Scale,
     color: 'from-emerald-500 to-emerald-700',
     creditCost: 1
@@ -75,10 +135,22 @@ const TEMPLATES = [
   {
     id: 'early_termination',
     letterKey: 'P2',
-    name_en: 'Early Termination Reconciliation',
-    name_th: 'ประสานยุติสัญญาก่อนกำหนด',
-    description_en: 'Coordinate early lease termination details',
-    description_th: 'ประสานรายละเอียดการยุติสัญญาก่อนกำหนด',
+    name: {
+      en: 'Early Termination Reconciliation',
+      th: 'ประสานยุติสัญญาก่อนกำหนด',
+      ja: '早期終了和解',
+      zh: '提前终止调解',
+      ko: '조기 해지 조정',
+      ru: 'Согласование досрочного расторжения'
+    },
+    description: {
+      en: 'Coordinate early lease termination details',
+      th: 'ประสานรายละเอียดการยุติสัญญาก่อนกำหนด',
+      ja: '早期リース終了の詳細を調整',
+      zh: '协调提前租约终止的细节',
+      ko: '조기 임대 종료 세부 사항 조정',
+      ru: 'Согласование деталей досрочного прекращения аренды'
+    },
     icon: FileX,
     color: 'from-teal-500 to-teal-700',
     creditCost: 1
@@ -86,10 +158,22 @@ const TEMPLATES = [
   {
     id: 'condition_dispute',
     letterKey: 'P3',
-    name_en: 'Property Condition Dispute',
-    name_th: 'โต้แย้งสภาพทรัพย์สิน',
-    description_en: 'Dispute claimed property damages',
-    description_th: 'โต้แย้งการเรียกร้องค่าเสียหายทรัพย์สิน',
+    name: {
+      en: 'Property Condition Dispute',
+      th: 'โต้แย้งสภาพทรัพย์สิน',
+      ja: '物件状態の紛争',
+      zh: '财产状况争议',
+      ko: '부동산 상태 분쟁',
+      ru: 'Спор о состоянии имущества'
+    },
+    description: {
+      en: 'Dispute claimed property damages',
+      th: 'โต้แย้งการเรียกร้องค่าเสียหายทรัพย์สิน',
+      ja: '主張された物件損害に異議を唱える',
+      zh: '对声称的财产损害提出异议',
+      ko: '주장된 부동산 손해에 대한 이의 제기',
+      ru: 'Оспаривание заявленного ущерба имуществу'
+    },
     icon: Camera,
     color: 'from-cyan-500 to-cyan-700',
     creditCost: 1
@@ -97,10 +181,22 @@ const TEMPLATES = [
   {
     id: 'evidence',
     letterKey: 'P4',
-    name_en: 'Request for Evidence',
-    name_th: 'ขอหลักฐานประกอบ',
-    description_en: 'Request supporting documents for claimed damages',
-    description_th: 'ขอเอกสารหลักฐานสำหรับค่าเสียหายที่อ้าง',
+    name: {
+      en: 'Request for Evidence',
+      th: 'ขอหลักฐานประกอบ',
+      ja: '証拠提出要求',
+      zh: '要求提供证据',
+      ko: '증거 요청',
+      ru: 'Запрос доказательств'
+    },
+    description: {
+      en: 'Request supporting documents for claimed damages',
+      th: 'ขอเอกสารหลักฐานสำหรับค่าเสียหายที่อ้าง',
+      ja: '主張された損害の裏付け文書を要求',
+      zh: '要求提供声称损害的支持文件',
+      ko: '주장된 손해에 대한 증빙 서류 요청',
+      ru: 'Запрос подтверждающих документов для заявленного ущерба'
+    },
     icon: FileText,
     color: 'from-sky-500 to-sky-700',
     creditCost: 1
@@ -108,10 +204,22 @@ const TEMPLATES = [
   {
     id: 'final_opportunity',
     letterKey: 'S1',
-    name_en: 'Final Opportunity',
-    name_th: 'โอกาสสุดท้าย',
-    description_en: 'Last chance before formal escalation',
-    description_th: 'โอกาสสุดท้ายก่อนดำเนินการทางกฎหมาย',
+    name: {
+      en: 'Final Opportunity',
+      th: 'โอกาสสุดท้าย',
+      ja: '最終的な機会',
+      zh: '最后机会',
+      ko: '마지막 기회',
+      ru: 'Последняя возможность'
+    },
+    description: {
+      en: 'Last chance before formal escalation',
+      th: 'โอกาสสุดท้ายก่อนดำเนินการทางกฎหมาย',
+      ja: '正式なエスカレーション前の最後のチャンス',
+      zh: '正式升级前的最后机会',
+      ko: '공식적인 확대 전 마지막 기회',
+      ru: 'Последний шанс перед официальной эскалацией'
+    },
     icon: AlertTriangle,
     color: 'from-orange-600 to-red-600',
     creditCost: 1
@@ -119,10 +227,22 @@ const TEMPLATES = [
   {
     id: 'non_compliance',
     letterKey: 'S2',
-    name_en: 'Notice of Non-Compliance',
-    name_th: 'แจ้งไม่ปฏิบัติตามสัญญา',
-    description_en: 'Official notice of contract breach',
-    description_th: 'แจ้งการฝ่าฝืนสัญญาอย่างเป็นทางการ',
+    name: {
+      en: 'Notice of Non-Compliance',
+      th: 'แจ้งไม่ปฏิบัติตามสัญญา',
+      ja: '不履行通知',
+      zh: '违规通知',
+      ko: '미준수 통지',
+      ru: 'Уведомление о несоблюдении'
+    },
+    description: {
+      en: 'Official notice of contract breach',
+      th: 'แจ้งการฝ่าฝืนสัญญาอย่างเป็นทางการ',
+      ja: '契約違反の公式通知',
+      zh: '合同违约正式通知',
+      ko: '계약 위반 공식 통지',
+      ru: 'Официальное уведомление о нарушении договора'
+    },
     icon: Gavel,
     color: 'from-red-600 to-red-800',
     creditCost: 1
@@ -130,10 +250,22 @@ const TEMPLATES = [
   {
     id: 'settlement',
     letterKey: 'S3',
-    name_en: 'Settlement Confirmation',
-    name_th: 'ยืนยันการตกลงชำระเงิน',
-    description_en: 'Confirm successful deposit transfer',
-    description_th: 'ยืนยันการคืนเงินประกันสำเร็จ',
+    name: {
+      en: 'Settlement Confirmation',
+      th: 'ยืนยันการตกลงชำระเงิน',
+      ja: '和解確認',
+      zh: '和解确认',
+      ko: '합의 확인',
+      ru: 'Подтверждение урегулирования'
+    },
+    description: {
+      en: 'Confirm successful deposit transfer',
+      th: 'ยืนยันการคืนเงินประกันสำเร็จ',
+      ja: '敷金返還の成功を確認',
+      zh: '确认成功转账押金',
+      ko: '성공적인 보증금 이체 확인',
+      ru: 'Подтверждение успешного перевода депозита'
+    },
     icon: CheckCircle,
     color: 'from-emerald-600 to-green-700',
     creditCost: 1
@@ -397,7 +529,7 @@ export default function Templates() {
       finalMeasures: "Финальные меры (3 письма)",
       oneLetterPerCredit: "1 письмо = 1 кредит",
       accessTemplateLibrary: "Доступ к библиотеке шаблонов",
-      bilingual: "Двуязычные шаблоны",
+      bilingual: "Многоязычные шаблоны",
       creditsNeverExpire: "Кредиты не истекают",
       purchaseCredits: "Купить кредиты",
       uploadTemplate: "Загрузить шаблон",
@@ -418,6 +550,7 @@ export default function Templates() {
       uploadSuccess: "Шаблон успешно загружен!",
       uploadFailed: "Загрузка не удалась. Попробуйте снова."
     }
+  };
   };
 
   const strings = t[language] || t.en;
@@ -556,14 +689,14 @@ export default function Templates() {
           <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
             {isCustom 
               ? (language === 'th' ? template.title_th : template.title_en)
-              : (language === 'th' ? template.name_th : template.name_en)
+              : (template.name?.[language] || template.name?.en || template.name_en)
             }
           </h3>
 
           <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
             {isCustom
               ? (language === 'th' ? template.description_th : template.description_en)
-              : (language === 'th' ? template.description_th : template.description_en)
+              : (template.description?.[language] || template.description?.en || template.description_en)
             }
           </p>
 

@@ -558,7 +558,19 @@ export default function TemplateForm() {
   };
 
   const handleCancelReview = () => {
-    if (window.confirm(strings.cancelEditConfirm)) {
+    const confirmMsg = language === 'th'
+      ? 'ยกเลิกการแก้ไข? เครดิตถูกหักไปแล้วเมื่อสร้าง หากยกเลิกจะไม่มีการบันทึกจดหมาย'
+      : language === 'zh'
+      ? '取消编辑？生成时已扣除信用。如果取消，信件将不会被保存。'
+      : language === 'ja'
+      ? '編集をキャンセルしますか？生成時にクレジットは既に差し引かれています。キャンセルすると、レターは保存されません。'
+      : language === 'ko'
+      ? '편집을 취소하시겠습니까? 생성 시 크레딧이 이미 차감되었습니다. 취소하면 편지가 저장되지 않습니다.'
+      : language === 'ru'
+      ? 'Отменить редактирование? Кредит уже списан при генерации. Если отменить, письмо не будет сохранено.'
+      : 'Cancel editing? Credit was already deducted on generation. If you cancel, the letter will not be saved.';
+    
+    if (window.confirm(confirmMsg)) {
       setReviewMode(false);
       setGeneratedLetter(null);
       setEditedContent({});
@@ -682,7 +694,17 @@ export default function TemplateForm() {
               </div>
 
               <div className="text-xs text-center pt-2" style={{ color: colors.textSecondary }}>
-                {strings.creditAlreadyDeducted}
+                {language === 'th'
+                  ? 'เมื่อบันทึก จดหมายจะถูกเก็บในคลังหลักฐาน (เครดิตถูกหักไปแล้วเมื่อสร้าง)'
+                  : language === 'zh'
+                  ? '保存时，信件将存储在证据库中（生成时已扣除信用）'
+                  : language === 'ja'
+                  ? '保存時、レターは証拠保管庫に保存されます（生成時にクレジットは既に差し引かれています）'
+                  : language === 'ko'
+                  ? '저장 시 편지가 증거 보관소에 저장됩니다（생성 시 크레딧이 이미 차감됨）'
+                  : language === 'ru'
+                  ? 'При сохранении письмо будет сохранено в хранилище доказательств (кредит уже списан при генерации)'
+                  : 'On save, the letter will be stored in Evidence Vault (credit already deducted on generation)'}
               </div>
             </CardContent>
           </Card>
@@ -1229,7 +1251,17 @@ export default function TemplateForm() {
                 </Button>
               </div>
               <div className="text-xs text-center pt-2 space-y-2" style={{ color: colors.textSecondary }}>
-                <p>{strings.creditsDeductedMessage}</p>
+                <p>{language === 'th' 
+                  ? '1 เครดิตจะถูกหักเมื่อคุณสร้างจดหมาย ครอบคลุมทุกภาษาที่เลือก'
+                  : language === 'zh'
+                  ? '当您生成此信件时将扣除 1 个信用。这包括所有选定的语言。'
+                  : language === 'ja'
+                  ? 'このレターを生成すると 1 クレジットが差し引かれます。選択したすべての言語が含まれます。'
+                  : language === 'ko'
+                  ? '이 편지를 생성하면 1 크레딧이 차감됩니다. 선택한 모든 언어가 포함됩니다.'
+                  : language === 'ru'
+                  ? 'При создании этого письма будет списан 1 кредит. Это покрывает все выбранные языки.'
+                  : '1 credit will be deducted when you generate this letter. This covers all selected languages.'}</p>
                 {formData.recipientType && (
                   <p className="font-semibold" style={{ color: '#C7A338' }}>
                     {(() => {
