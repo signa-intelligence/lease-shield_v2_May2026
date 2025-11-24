@@ -109,10 +109,20 @@ export default function AdminConsole() {
     ),
   });
 
-  // ✅ COMPUTE SUPER ADMIN COUNT - Minimum of 2 required
-  const superAdmins = users.filter(u => u.access_level === 'super_admin' && u.is_active !== false && !u.deleted_at);
-  const superAdminCount = superAdmins.length;
+  // ✅ ROLE LIMITS CONFIGURATION
   const MINIMUM_SUPER_ADMINS = 2;
+  const MAXIMUM_SUPER_ADMINS = 2;
+  const MAXIMUM_ADMINS = 6;
+  const MAXIMUM_VAS = 10;
+  
+  // Compute active role counts
+  const superAdmins = users.filter(u => u.access_level === 'super_admin' && u.is_active !== false && !u.deleted_at);
+  const admins = users.filter(u => u.access_level === 'admin' && u.is_active !== false && !u.deleted_at);
+  const vas = users.filter(u => u.access_level === 'va' && u.is_active !== false && !u.deleted_at);
+  
+  const superAdminCount = superAdmins.length;
+  const adminCount = admins.length;
+  const vaCount = vas.length;
 
   const updateUserMutation = useMutation({
     mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data),
@@ -432,6 +442,13 @@ export default function AdminConsole() {
       revenueAnalyticsDesc: "View revenue, users, and feature purchase insights",
       viewAnalyticsButton: "View Analytics",
       superAdminWarning: "There must be at least two Super Admins at all times. Cannot change this user's role.",
+      maxSuperAdminsReached: "Maximum of 2 Super Admins reached. Cannot assign more.",
+      maxAdminsReached: "Maximum of 6 Admins reached. Cannot assign more.",
+      maxVAsReached: "Maximum of 10 VAs reached. Cannot assign more.",
+      roleLimitsTitle: "Role Limits",
+      superAdmins: "Super Admins",
+      admins: "Admins",
+      vas: "VAs",
       disableUser: "Disable",
       enableUser: "Enable",
       removeUser: "Remove",
@@ -509,6 +526,13 @@ export default function AdminConsole() {
       revenueAnalyticsDesc: "ดูข้อมูลรายได้ ผู้ใช้ และการซื้อฟีเจอร์",
       viewAnalyticsButton: "เปิดดู",
       superAdminWarning: "ต้องมี Super Admin อย่างน้อยสองคนเสมอ ไม่สามารถเปลี่ยนบทบาทของผู้ใช้นี้ได้",
+      maxSuperAdminsReached: "ถึงขีดจำกัด Super Admin 2 คนแล้ว ไม่สามารถเพิ่มได้",
+      maxAdminsReached: "ถึงขีดจำกัด Admin 6 คนแล้ว ไม่สามารถเพิ่มได้",
+      maxVAsReached: "ถึงขีดจำกัด VA 10 คนแล้ว ไม่สามารถเพิ่มได้",
+      roleLimitsTitle: "ขีดจำกัดบทบาท",
+      superAdmins: "Super Admins",
+      admins: "Admins",
+      vas: "VAs",
       disableUser: "ปิดใช้งาน",
       enableUser: "เปิดใช้งาน",
       removeUser: "ลบ",
@@ -586,6 +610,13 @@ export default function AdminConsole() {
       revenueAnalyticsDesc: "查看收入、用户和功能购买洞察",
       viewAnalyticsButton: "查看分析",
       superAdminWarning: "至少需要保留两名超级管理员。无法更改此用户的角色。",
+      maxSuperAdminsReached: "已达到最多2名超级管理员。无法分配更多。",
+      maxAdminsReached: "已达到最多6名管理员。无法分配更多。",
+      maxVAsReached: "已达到最多10名VA。无法分配更多。",
+      roleLimitsTitle: "角色限制",
+      superAdmins: "超级管理员",
+      admins: "管理员",
+      vas: "VA",
       disableUser: "禁用",
       enableUser: "启用",
       removeUser: "移除",
@@ -663,6 +694,13 @@ export default function AdminConsole() {
       revenueAnalyticsDesc: "収益、ユーザー、機能購入の洞察を表示",
       viewAnalyticsButton: "分析を表示",
       superAdminWarning: "常に少なくとも2人のスーパー管理者が必要です。このユーザーの役割を変更することはできません。",
+      maxSuperAdminsReached: "スーパー管理者の上限2人に達しました。これ以上割り当てできません。",
+      maxAdminsReached: "管理者の上限6人に達しました。これ以上割り当てできません。",
+      maxVAsReached: "VAの上限10人に達しました。これ以上割り当てできません。",
+      roleLimitsTitle: "役割制限",
+      superAdmins: "スーパー管理者",
+      admins: "管理者",
+      vas: "VA",
       disableUser: "無効化",
       enableUser: "有効化",
       removeUser: "削除",
@@ -740,6 +778,13 @@ export default function AdminConsole() {
       revenueAnalyticsDesc: "수익, 사용자 및 기능 구매 통찰력 보기",
       viewAnalyticsButton: "분석 보기",
       superAdminWarning: "항상 최소 두 명의 슈퍼 관리자가 있어야 합니다. 이 사용자의 역할을 변경할 수 없습니다.",
+      maxSuperAdminsReached: "슈퍼 관리자 최대 2명에 도달했습니다. 더 이상 할당할 수 없습니다.",
+      maxAdminsReached: "관리자 최대 6명에 도달했습니다. 더 이상 할당할 수 없습니다.",
+      maxVAsReached: "VA 최대 10명에 도달했습니다. 더 이상 할당할 수 없습니다.",
+      roleLimitsTitle: "역할 제한",
+      superAdmins: "슈퍼 관리자",
+      admins: "관리자",
+      vas: "VA",
       disableUser: "비활성화",
       enableUser: "활성화",
       removeUser: "제거",
@@ -1143,6 +1188,94 @@ export default function AdminConsole() {
 
         <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
 
+        {/* ROLE LIMITS INDICATOR */}
+        <Card className="mb-6 border-none shadow-lg" style={{ 
+          backgroundColor: colors.cardBg,
+          borderLeft: '6px solid #8B5CF6'
+        }}>
+          <CardHeader>
+            <CardTitle style={{ color: colors.textPrimary }}>{strings.roleLimitsTitle}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-lg" style={{ 
+                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                border: `2px solid ${superAdminCount >= MAXIMUM_SUPER_ADMINS ? '#EF4444' : '#8B5CF6'}`
+              }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                    {strings.superAdmins}
+                  </span>
+                  <Crown className="w-4 h-4 text-purple-600" />
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold" style={{ 
+                    color: superAdminCount >= MAXIMUM_SUPER_ADMINS ? '#EF4444' : '#8B5CF6' 
+                  }}>
+                    {superAdminCount}
+                  </span>
+                  <span className="text-sm" style={{ color: colors.textSecondary }}>
+                    / {MAXIMUM_SUPER_ADMINS}
+                  </span>
+                </div>
+                <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                  Min: {MINIMUM_SUPER_ADMINS}, Max: {MAXIMUM_SUPER_ADMINS}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg" style={{ 
+                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                border: `2px solid ${adminCount >= MAXIMUM_ADMINS ? '#EF4444' : '#3B82F6'}`
+              }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                    {strings.admins}
+                  </span>
+                  <Shield className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold" style={{ 
+                    color: adminCount >= MAXIMUM_ADMINS ? '#EF4444' : '#3B82F6' 
+                  }}>
+                    {adminCount}
+                  </span>
+                  <span className="text-sm" style={{ color: colors.textSecondary }}>
+                    / {MAXIMUM_ADMINS}
+                  </span>
+                </div>
+                <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                  Max: {MAXIMUM_ADMINS}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg" style={{ 
+                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                border: `2px solid ${vaCount >= MAXIMUM_VAS ? '#EF4444' : '#F59E0B'}`
+              }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                    {strings.vas}
+                  </span>
+                  <Users className="w-4 h-4 text-amber-600" />
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold" style={{ 
+                    color: vaCount >= MAXIMUM_VAS ? '#EF4444' : '#F59E0B' 
+                  }}>
+                    {vaCount}
+                  </span>
+                  <span className="text-sm" style={{ color: colors.textSecondary }}>
+                    / {MAXIMUM_VAS}
+                  </span>
+                </div>
+                <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                  Max: {MAXIMUM_VAS}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* 3. USER MANAGEMENT */}
           <Card className="mb-6 border-none shadow-lg" style={{ 
             backgroundColor: colors.cardBg,
@@ -1543,32 +1676,56 @@ export default function AdminConsole() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-2">
-                            <Select
-                              value={u.access_level || 'user'}
-                              onValueChange={(val) => updateUserMutation.mutate({
-                                userId: u.id,
-                                data: { access_level: val }
-                              })}
-                              disabled={!canChangeRole}
-                            >
-                              <SelectTrigger className="w-32 h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="user">User</SelectItem>
-                                <SelectItem value="va">VA</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
-                                {isSuperAdmin && (
-                                  <SelectItem value="super_admin">Super Admin</SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            {!canChangeRole && (
-                                <div className="flex items-center gap-1 text-red-500 text-xs">
-                                    <AlertCircle className="w-3 h-3" />
-                                    <span>{strings.superAdminWarning}</span>
-                                </div>
-                            )}
+                           <Select
+                             value={u.access_level || 'user'}
+                             onValueChange={(val) => {
+                               // Check maximum limits before allowing role change
+                               const currentRole = u.access_level || 'user';
+
+                               if (val === 'super_admin' && currentRole !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS) {
+                                 alert(strings.maxSuperAdminsReached);
+                                 return;
+                               }
+                               if (val === 'admin' && currentRole !== 'admin' && adminCount >= MAXIMUM_ADMINS) {
+                                 alert(strings.maxAdminsReached);
+                                 return;
+                               }
+                               if (val === 'va' && currentRole !== 'va' && vaCount >= MAXIMUM_VAS) {
+                                 alert(strings.maxVAsReached);
+                                 return;
+                               }
+
+                               updateUserMutation.mutate({
+                                 userId: u.id,
+                                 data: { access_level: val }
+                               });
+                             }}
+                             disabled={!canChangeRole}
+                           >
+                             <SelectTrigger className="w-32 h-8 text-xs">
+                               <SelectValue />
+                             </SelectTrigger>
+                             <SelectContent>
+                               <SelectItem value="user">User</SelectItem>
+                               <SelectItem value="va" disabled={u.access_level !== 'va' && vaCount >= MAXIMUM_VAS}>
+                                 VA {u.access_level !== 'va' && vaCount >= MAXIMUM_VAS && '(Full)'}
+                               </SelectItem>
+                               <SelectItem value="admin" disabled={u.access_level !== 'admin' && adminCount >= MAXIMUM_ADMINS}>
+                                 Admin {u.access_level !== 'admin' && adminCount >= MAXIMUM_ADMINS && '(Full)'}
+                               </SelectItem>
+                               {isSuperAdmin && (
+                                 <SelectItem value="super_admin" disabled={u.access_level !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS}>
+                                   Super Admin {u.access_level !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS && '(Full)'}
+                                 </SelectItem>
+                               )}
+                             </SelectContent>
+                           </Select>
+                           {!canChangeRole && (
+                               <div className="flex items-center gap-1 text-red-500 text-xs">
+                                   <AlertCircle className="w-3 h-3" />
+                                   <span>{strings.superAdminWarning}</span>
+                               </div>
+                           )}
                             <Select
                               value={u.plan_tier || 'free'}
                               onValueChange={(val) => updateUserMutation.mutate({
