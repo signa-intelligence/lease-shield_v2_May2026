@@ -220,26 +220,6 @@ function ResolveCaseContent() {
       // CRITICAL FIX: Use unified pricing system
       const pricing = getResolvePricingForUser(user);
       
-      console.log('[RESOLVE_FLOW] Unified pricing calculation:', {
-        plan: pricing.membershipInfo.plan,
-        membershipDays: pricing.membershipInfo.membershipDays,
-        qualifies: pricing.membershipInfo.qualifiesForMemberBenefits,
-        reason: pricing.membershipInfo.reason,
-        priceType: pricing.priceType,
-        amount: pricing.amount
-      });
-
-      const livePriceId = pricing.priceType === 'member' ? 'PRICE_LIVE_RESOLVE_MEMBER' : 'PRICE_LIVE_RESOLVE_PUBLIC';
-      
-      console.log('🔥 LIVE CHECKOUT - RESOLVE CASE:', {
-        priceId: livePriceId,
-        user: userEmail,
-        tier: pricing.membershipInfo.plan,
-        priceType: pricing.priceType,
-        amount: pricing.amount,
-        caseId: createdCase.id
-      });
-      
       // Create Stripe checkout session (server will re-validate pricing)
       const response = await base44.functions.invoke('createResolveCheckout', {
         userId: userId,
@@ -250,7 +230,6 @@ function ResolveCaseContent() {
       });
       
       if (response.data?.url) {
-        console.log('[RESOLVE_FLOW] Redirecting to Stripe checkout');
         window.location.href = response.data.url;
       } else {
         throw new Error('No checkout URL returned');
@@ -275,8 +254,6 @@ function ResolveCaseContent() {
     if (!files || files.length === 0) return;
     
     setUploading(true);
-    console.log('[RESOLVE_FLOW] Starting file upload, count:', files.length);
-    
     try {
       const uploadResults = [];
       
@@ -290,7 +267,6 @@ function ResolveCaseContent() {
             fileName: file.name
           });
         } catch (uploadError) {
-          console.error('[RESOLVE_FLOW] Individual file upload failed:', uploadError);
           uploadResults.push({
             success: false,
             fileName: file.name,
@@ -302,12 +278,6 @@ function ResolveCaseContent() {
       // Check if any uploads succeeded
       const successfulUploads = uploadResults.filter(r => r.success);
       const failedUploads = uploadResults.filter(r => !r.success);
-      
-      console.log('[RESOLVE_FLOW] Upload complete:', {
-        total: files.length,
-        successful: successfulUploads.length,
-        failed: failedUploads.length
-      });
       
       if (successfulUploads.length > 0) {
         const newFiles = successfulUploads.map((result, idx) => ({
@@ -344,7 +314,6 @@ function ResolveCaseContent() {
         );
       }
     } catch (error) {
-      console.error('[RESOLVE_FLOW] File upload process failed:', error);
       toast.error(
         language === 'th' ? 'เกิดข้อผิดพลาดในการอัปโหลด'
         : language === 'zh' ? '上传出错'
@@ -388,13 +357,6 @@ function ResolveCaseContent() {
       const planTier = user?.plan_tier?.toLowerCase() || 'free';
       const tierLevel = planTier === 'lite' ? 'L' : planTier === 'protect' ? 'P' : planTier === 'secure' ? 'S' : 'F';
       
-      console.log('[RESOLVE_FLOW] Membership check:', {
-        plan: membershipForCase.plan,
-        membershipDays: membershipForCase.membershipDays,
-        qualifies: membershipForCase.qualifiesForMemberBenefits,
-        reason: membershipForCase.reason
-      });
-      
       const caseNumberResponse = await base44.functions.invoke('generateCaseNumber', {
         isMember: isMember,
         fastTrack: false,
@@ -406,7 +368,6 @@ function ResolveCaseContent() {
       }
       
       const caseNumber = caseNumberResponse.data.case_number;
-      console.log('[RESOLVE_FLOW] Generated case number:', caseNumber);
 
       // Map evidence to clean array (no file objects)
       const evidenceData = formData.evidence_files.map(file => ({
@@ -458,34 +419,9 @@ function ResolveCaseContent() {
         ]
       };
 
-      console.log('[RESOLVE_FLOW] ══════════════════════════════════════');
-      console.log('[RESOLVE_FLOW] CASE SUBMISSION STARTING');
-      console.log('[RESOLVE_FLOW] Authenticated user:', {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        plan_tier: user.plan_tier
-      });
-      console.log('[RESOLVE_FLOW] Case data being sent to mutation:', {
-        case_number: caseNumber,
-        user_email: user.email,
-        type: formData.type,
-        dispute_amount: parseFloat(formData.dispute_amount),
-        property_address: formData.property_address,
-        landlord_name: formData.landlord_name,
-        landlord_email: formData.landlord_email,
-        summary: formData.summary?.substring(0, 50) + '...',
-        status: 'awaiting_payment',
-        evidence_count: evidenceData.length,
-        is_member_at_creation: membershipForCase.qualifiesForMemberBenefits
-      });
-      console.log('[RESOLVE_FLOW] ⚠️ NOTE: user_email will be RE-FORCED from auth token in mutation');
-      console.log('[RESOLVE_FLOW] ══════════════════════════════════════');
-
       // Pass case data to mutation (user_email will be re-forced from auth.me())
       createCaseMutation.mutate({ caseData });
     } catch (error) {
-      console.error('[RESOLVE_FLOW] Submit preparation failed:', error);
       toast.error(
         language === 'th' ? 'ไม่สามารถส่งคดีได้: ' + error.message
         : language === 'zh' ? '提交案件失败: ' + error.message

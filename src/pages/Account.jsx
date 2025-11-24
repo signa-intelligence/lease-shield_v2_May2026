@@ -441,8 +441,6 @@ function AccountContent() {
     const subscriptionStatus = urlParams.get('subscription');
     
     if (checkoutSuccess === 'true' || paymentStatus === 'success' || subscriptionStatus === 'success') {
-      console.log('💳 Payment success detected - refetching user...');
-      
       window.history.replaceState({}, '', window.location.pathname);
       
       let pollCount = 0;
@@ -450,12 +448,10 @@ function AccountContent() {
       
       const pollInterval = setInterval(() => {
         pollCount++;
-        console.log(`🔄 Polling for tier update (${pollCount}/${maxPolls})...`);
         refetchUser?.();
         
         if (pollCount >= maxPolls) {
           clearInterval(pollInterval);
-          console.log('✅ Tier refresh polling complete');
         }
       }, 5000);
       
@@ -685,21 +681,7 @@ function AccountContent() {
     const amount = selectedInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
     const billingInterval = selectedInterval === 'annual' ? 'annual' : 'monthly';
 
-    console.log('🔍 SUBSCRIPTION REQUEST:', { 
-      planKey: selectedPlan, 
-      interval: billingInterval, 
-      amount,
-      userId: user.id,
-      email: user.email
-    });
 
-    console.log('🔥 LIVE CHECKOUT - SUBSCRIPTION:', {
-      priceId: selectedInterval === 'annual' ? plan.priceIdAnnual : plan.priceIdMonthly,
-      user: user.email,
-      tier: selectedPlan,
-      interval: billingInterval,
-      amount: amount
-    });
 
     setSubscribing(prev => ({ ...prev, [selectedPlan]: true }));
     try {
@@ -741,20 +723,6 @@ function AccountContent() {
     haptic.medium();
     setBuyingCredits(prev => ({ ...prev, [pkg.id]: true }));
     try {
-      const livePriceId = pkg.id === 'credits_1' ? 'PRICE_LIVE_LETTER_CREDIT_1'
-        : pkg.id === 'credits_3' ? 'PRICE_LIVE_LETTER_CREDIT_3'
-        : pkg.id === 'credits_5' ? 'PRICE_LIVE_LETTER_CREDIT_5'
-        : pkg.id === 'credits_10' ? 'PRICE_LIVE_LETTER_CREDIT_10'
-        : null;
-
-      console.log('🔥 LIVE CHECKOUT - LETTER CREDITS:', {
-        priceId: livePriceId,
-        user: user.email,
-        credits: pkg.credits,
-        price: pkg.price,
-        packageId: pkg.id
-      });
-      
       const response = await base44.functions.invoke('createCheckout', {
         mode: 'payment',
         amount: pkg.price,
