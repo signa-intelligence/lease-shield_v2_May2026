@@ -4,13 +4,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
  * Send LINE message via Messaging API
  * Supports text and flex message formats
  * 
- * ENHANCED DEBUG VERSION - Shows exactly what's being sent
+ * Required Secrets:
+ * - LINE_CHANNEL_ACCESS_TOKEN: LINE Messaging API channel access token
  */
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const channelAccessToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
+    const channelAccessToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN'); // LINE Messaging API token
     
     if (!channelAccessToken) {
       console.error('❌ LINE_CHANNEL_ACCESS_TOKEN not configured');

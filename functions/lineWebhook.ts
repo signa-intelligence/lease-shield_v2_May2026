@@ -5,6 +5,9 @@ import { createHmac } from 'node:crypto';
  * LINE Official Account Webhook Handler
  * Handles friend events (follow/unfollow) and message events
  * Links LINE users to LeaseShield accounts
+ * 
+ * Required Secrets:
+ * - LINE_CHANNEL_SECRET: LINE webhook signature verification secret
  */
 
 Deno.serve(async (req) => {
@@ -15,7 +18,7 @@ Deno.serve(async (req) => {
     const signature = req.headers.get('x-line-signature');
     const body = await req.text();
     
-    const channelSecret = Deno.env.get('LINE_CHANNEL_SECRET');
+    const channelSecret = Deno.env.get('LINE_CHANNEL_SECRET'); // LINE webhook signing secret
     if (!channelSecret) {
       console.error('❌ LINE_CHANNEL_SECRET not set');
       return Response.json({ error: 'Configuration error' }, { status: 500 });

@@ -1,7 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
-const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), {
+/**
+ * STRIPE SUBSCRIPTION CANCELLATION
+ * 
+ * Required Secrets:
+ * - SK_TEST_secret_key: Stripe API key (sk_live_... for production)
+ */
+
+const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), { // ⚠️ Name is misleading - should contain LIVE key for production
   apiVersion: '2023-10-16',
 });
 

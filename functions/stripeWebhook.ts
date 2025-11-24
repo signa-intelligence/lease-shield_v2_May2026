@@ -1,8 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
-const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
-const webhookSecret = Deno.env.get('webhook_stripe');
+/**
+ * STRIPE WEBHOOK HANDLER
+ * 
+ * Required Secrets:
+ * - SK_TEST_secret_key: Stripe API key (sk_live_... for production)
+ * - webhook_stripe: Stripe webhook signing secret (whsec_... from Stripe Dashboard)
+ */
+
+const stripeSecretKey = Deno.env.get('SK_TEST_secret_key'); // ⚠️ Name is misleading - should contain LIVE key for production
+const webhookSecret = Deno.env.get('webhook_stripe'); // Webhook signing secret for signature verification
 
 console.log('[WEBHOOK_CONFIG] Stripe API Key Mode:', stripeSecretKey?.startsWith('sk_live_') ? '🟢 LIVE' : stripeSecretKey?.startsWith('sk_test_') ? '🟡 TEST' : '❌ UNKNOWN');
 console.log('[WEBHOOK_CONFIG] Using webhook signing secret from env var: webhook_stripe');
