@@ -91,15 +91,22 @@ function ResolveCaseContent() {
 
   const createCaseMutation = useMutation({
     mutationFn: async (caseData) => {
-      return await base44.entities.Case.create(caseData);
+      console.log('[RESOLVE_FLOW] Creating case with data:', caseData);
+      const createdCase = await base44.entities.Case.create(caseData);
+      console.log('[RESOLVE_FLOW] Case created successfully:', createdCase);
+      return createdCase;
     },
     onSuccess: async (newCase) => {
       console.log('[RESOLVE_FLOW] Case created:', {
         id: newCase.id,
+        case_number: newCase.case_number,
         status: newCase.status,
         user_email: newCase.user_email,
         dispute_amount: newCase.dispute_amount
       });
+      
+      // Invalidate cases query so it appears in /Cases immediately
+      queryClient.invalidateQueries({ queryKey: ['cases'] });
       
       // Get pricing for this user
       const pricing = {
@@ -125,27 +132,34 @@ function ResolveCaseContent() {
         }
       } catch (error) {
         console.error('[RESOLVE_PAGE] Failed to create checkout:', error);
-        toast.error(language === 'th' ? 'ไม่สามารถเริ่มการชำระเงินได้' : language === 'ru' ? 'Ошибка инициализации оплаты' : 'Failed to initiate payment');
+        toast.error(language === 'th' ? 'ไม่สามารถเริ่มการชำระเงินได้' : language === 'zh' ? '无法启动付款' : language === 'ja' ? '支払い開始に失敗' : language === 'ko' ? '결제 시작 실패' : language === 'ru' ? 'Ошибка инициализации оплаты' : 'Failed to initiate payment');
         setSubmitting(false);
       }
     },
     onError: (error) => {
       console.error('[RESOLVE_PAGE] Case creation failed:', error);
-      toast.error(language === 'th' ? 'ไม่สามารถสร้างคดีได้' : language === 'ru' ? 'Ошибка создания дела' : 'Failed to create case');
+      toast.error(language === 'th' ? 'ไม่สามารถสร้างคดีได้' : language === 'zh' ? '无法创建案件' : language === 'ja' ? 'ケース作成に失敗' : language === 'ko' ? '사례 생성 실패' : language === 'ru' ? 'Ошибка создания дела' : 'Failed to create case');
       setSubmitting(false);
     }
   });
 
   const handleFileUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    
     setUploading(true);
     try {
-      const uploadPromises = Array.from(files).map(file =>
-        base44.integrations.Core.UploadFile({ file })
-      );
+      console.log('[RESOLVE_FLOW] Starting file upload, count:', files.length);
+      
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const result = await base44.integrations.Core.UploadFile({ file });
+        return result;
+      });
+      
       const results = await Promise.all(uploadPromises);
+      console.log('[RESOLVE_FLOW] Upload complete, results:', results);
       
       const newFiles = results.map((result, idx) => ({
-        id: Date.now() + idx,
+        id: `file-${Date.now()}-${idx}`,
         url: result.file_url,
         type: 'photo',
         label: files[idx].name,
@@ -156,9 +170,11 @@ function ResolveCaseContent() {
         ...prev,
         evidence_files: [...prev.evidence_files, ...newFiles]
       }));
+      
+      toast.success(language === 'th' ? 'อัปโหลดสำเร็จ' : language === 'zh' ? '上传成功' : language === 'ja' ? 'アップロード成功' : language === 'ko' ? '업로드 성공' : language === 'ru' ? 'Загрузка успешна' : 'Upload successful');
     } catch (error) {
-      console.error('Upload failed:', error);
-      alert(language === 'th' ? 'ไม่สามารถอัปโหลดไฟล์ได้' : language === 'ru' ? 'Ошибка загрузки файлов' : 'Failed to upload files');
+      console.error('[RESOLVE_FLOW] Upload failed:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถอัปโหลดไฟล์ได้' : language === 'zh' ? '上传文件失败' : language === 'ja' ? 'ファイルのアップロードに失敗' : language === 'ko' ? '파일 업로드 실패' : language === 'ru' ? 'Ошибка загрузки файлов' : 'Failed to upload files');
     } finally {
       setUploading(false);
     }
@@ -198,6 +214,15 @@ function ResolveCaseContent() {
       console.log('[RESOLVE_FLOW] Generated case number:', caseNumber);
 
       // Create case with all details including case_number
+      // Map evidence_files to proper evidence format (with urls, not file objects)
+      const evidenceData = formData.evidence_files.map(file => ({
+        id: file.id,
+        url: file.url,
+        type: file.type,
+        label: file.label,
+        uploaded_date: file.uploaded_date
+      }));
+
       const caseData = {
         case_number: caseNumber,
         user_email: user.email,
@@ -207,8 +232,8 @@ function ResolveCaseContent() {
         landlord_name: formData.landlord_name || user?.landlord_name || '',
         landlord_email: formData.landlord_email || user?.landlord_email || '',
         property_address: formData.property_address || '',
-        evidence: formData.evidence_files,
-        status: 'awaiting_payment',
+        evidence: evidenceData,
+        status: 'intake',
         is_member_at_creation: isMember,
         timeline: [
           {
@@ -225,7 +250,8 @@ function ResolveCaseContent() {
         user_email: caseData.user_email,
         type: caseData.type,
         status: caseData.status,
-        dispute_amount: caseData.dispute_amount
+        dispute_amount: caseData.dispute_amount,
+        evidence_count: evidenceData.length
       });
       createCaseMutation.mutate(caseData);
     } catch (error) {
