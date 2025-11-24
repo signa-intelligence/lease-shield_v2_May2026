@@ -41,12 +41,12 @@ export default function StatsCard({
 
   const content = (
     <div
-      onClick={() => {
+      onClick={(e) => {
         if (onClick) {
+          e.preventDefault();
           onClick();
-        } else {
-          haptic?.light();
         }
+        haptic?.light();
         const iconElement = document.querySelector(`#stat-icon-${title.replace(/\s/g, '-')}`);
         if (iconElement) {
           iconElement.classList.add('icon-shimmer');
@@ -143,5 +143,6 @@ export default function StatsCard({
       </div>
   );
 
-  return route && !onClick ? <Link to={route}>{content}</Link> : content;
+  // BUG FIX: Always wrap in Link if route exists, let onClick work inside
+  return route ? <Link to={route} onClick={(e) => onClick && e.preventDefault()}>{content}</Link> : content;
 }

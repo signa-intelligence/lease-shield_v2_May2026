@@ -242,18 +242,27 @@ function ResolveCaseContent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // ROOT CAUSE FIX #3: Validate required fields
     if (!formData.type || !formData.dispute_amount || !formData.summary) {
-      toast.error(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : language === 'ru' ? 'Пожалуйста, заполните все обязательные поля' : 'Please fill in all required fields');
+      toast.error(
+        language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน'
+        : language === 'zh' ? '请填写所有必填字段'
+        : language === 'ja' ? '必須項目をすべて入力してください'
+        : language === 'ko' ? '모든 필수 항목을 입력하세요'
+        : language === 'ru' ? 'Пожалуйста, заполните все обязательные поля'
+        : 'Please fill in all required fields'
+      );
       return;
     }
 
-    setSubmitting(true);
-    
     try {
-      // Generate case number first
-      const isMember = hasMemberPricing(user);
+      // ROOT CAUSE FIX #4: Generate case number (synchronous step)
+      const eligibility = getMembershipEligibility(user);
+      const isMember = eligibility.isEligible;
       const planTier = user?.plan_tier?.toLowerCase() || 'free';
       const tierLevel = planTier === 'lite' ? 'L' : planTier === 'protect' ? 'P' : planTier === 'secure' ? 'S' : 'F';
+      
+      console.log('[RESOLVE_FLOW] Generating case number for user:', user.email);
       
       const caseNumberResponse = await base44.functions.invoke('generateCaseNumber', {
         isMember: isMember,
@@ -261,20 +270,23 @@ function ResolveCaseContent() {
         tierLevel: tierLevel
       });
       
-      const caseNumber = caseNumberResponse.data?.case_number;
+      if (!caseNumberResponse.data?.case_number) {
+        throw new Error('Failed to generate case number');
+      }
       
+      const caseNumber = caseNumberResponse.data.case_number;
       console.log('[RESOLVE_FLOW] Generated case number:', caseNumber);
 
-      // Create case with all details including case_number
-      // Map evidence_files to proper evidence format (with urls, not file objects)
+      // ROOT CAUSE FIX #5: Map evidence to clean array (no file objects)
       const evidenceData = formData.evidence_files.map(file => ({
         id: file.id,
         url: file.url,
-        type: file.type,
+        type: file.type || 'photo',
         label: file.label,
         uploaded_date: file.uploaded_date
       }));
 
+      // ROOT CAUSE FIX #6: Build complete case payload
       const caseData = {
         case_number: caseNumber,
         user_email: user.email,
@@ -296,20 +308,30 @@ function ResolveCaseContent() {
         ]
       };
 
-      console.log('[RESOLVE_FLOW] Creating case in DB with case_number:', caseNumber);
-      console.log('[RESOLVE_FLOW] Case data:', {
-        case_number: caseData.case_number,
-        user_email: caseData.user_email,
-        type: caseData.type,
-        status: caseData.status,
-        dispute_amount: caseData.dispute_amount,
+      console.log('[RESOLVE_FLOW] Submitting case:', {
+        case_number: caseNumber,
+        user_email: user.email,
+        type: formData.type,
+        status: 'intake',
         evidence_count: evidenceData.length
       });
-      createCaseMutation.mutate(caseData);
+
+      // ROOT CAUSE FIX #7: Pass all data needed for checkout in mutation context
+      createCaseMutation.mutate({ 
+        caseData, 
+        userId: user.id, 
+        userEmail: user.email 
+      });
     } catch (error) {
-      console.error('[RESOLVE_FLOW] Submit failed:', error);
-      toast.error(language === 'th' ? 'ไม่สามารถส่งคดีได้' : language === 'ru' ? 'Не удалось отправить дело' : 'Failed to submit case');
-      setSubmitting(false);
+      console.error('[RESOLVE_FLOW] Submit preparation failed:', error);
+      toast.error(
+        language === 'th' ? 'ไม่สามารถส่งคดีได้: ' + error.message
+        : language === 'zh' ? '提交案件失败: ' + error.message
+        : language === 'ja' ? 'ケース送信失敗: ' + error.message
+        : language === 'ko' ? '사례 제출 실패: ' + error.message
+        : language === 'ru' ? 'Ошибка отправки дела: ' + error.message
+        : 'Failed to submit case: ' + error.message
+      );
     }
   };
 
