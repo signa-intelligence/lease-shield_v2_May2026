@@ -12,12 +12,15 @@ export default function NotificationPreferences({ user, onUpdate, colors }) {
   const [preferences, setPreferences] = useState({
     email_notifications: user?.email_notifications ?? true,
     line_notifications: user?.line_notifications ?? false,
-    deposit_alerts: user?.deposit_alerts ?? true,
-    lease_notices: user?.lease_notices ?? true,
-    rent_reminders: user?.rent_reminders ?? true,
-    maintenance_updates: user?.maintenance_updates ?? true,
-    case_updates: user?.case_updates ?? true,
-    marketing_emails: user?.marketing_emails ?? false
+    notifications: {
+      deposit_alerts: user?.notifications?.deposit_alerts ?? true,
+      lease_end_notices: user?.notifications?.lease_end_notices ?? true,
+      rent_reminders: user?.notifications?.rent_reminders ?? true,
+      maintenance_updates: user?.notifications?.maintenance_updates ?? true,
+      case_updates: user?.notifications?.case_updates ?? true,
+      marketing_tips: user?.notifications?.marketing_tips ?? false,
+      billing_payments: user?.notifications?.billing_payments ?? true
+    }
   });
 
   const language = user?.language || 'en';
@@ -49,6 +52,8 @@ export default function NotificationPreferences({ user, onUpdate, colors }) {
       maintenanceDesc: 'Request status changes',
       caseUpdates: 'Case Updates',
       caseDesc: 'Dispute case progress',
+      billingPayments: 'Billing & Payment Notifications',
+      billingDesc: 'Plan upgrades, credit purchases and payment issues',
       marketing: 'Marketing & Tips',
       marketingDesc: 'Product updates and tips',
       quietHours: 'Quiet Hours (Do Not Disturb)',
@@ -89,6 +94,8 @@ export default function NotificationPreferences({ user, onUpdate, colors }) {
       maintenanceDesc: 'การเปลี่ยนแปลงสถานะคำขอ',
       caseUpdates: 'อัปเดตคดี',
       caseDesc: 'ความคืบหน้าของคดีพิพาท',
+      billingPayments: 'การแจ้งเตือนการชำระเงิน',
+      billingDesc: 'การอัปเกรดแผน การซื้อเครดิต และปัญหาการชำระเงิน',
       marketing: 'การตลาดและเคล็ดลับ',
       marketingDesc: 'อัปเดตผลิตภัณฑ์และเคล็ดลับ',
       quietHours: 'ช่วงเวลาเงียบ (ห้ามรบกวน)',
@@ -129,6 +136,8 @@ export default function NotificationPreferences({ user, onUpdate, colors }) {
       maintenanceDesc: '请求状态变更',
       caseUpdates: '案件更新',
       caseDesc: '争议案件进展',
+      billingPayments: '账单和付款通知',
+      billingDesc: '计划升级、积分购买和付款问题',
       marketing: '营销和提示',
       marketingDesc: '产品更新和提示',
       quietHours: '免打扰时段',
@@ -169,6 +178,8 @@ export default function NotificationPreferences({ user, onUpdate, colors }) {
       maintenanceDesc: 'リクエストステータス変更',
       caseUpdates: 'ケース更新',
       caseDesc: '紛争ケース進捗',
+      billingPayments: '請求と支払いの通知',
+      billingDesc: 'プランアップグレード、クレジット購入、支払い問題',
       marketing: 'マーケティングとヒント',
       marketingDesc: '製品更新とヒント',
       quietHours: '静音時間（お休みモード）',
@@ -209,6 +220,8 @@ export default function NotificationPreferences({ user, onUpdate, colors }) {
       maintenanceDesc: '요청 상태 변경',
       caseUpdates: '사례 업데이트',
       caseDesc: '분쟁 사례 진행 상황',
+      billingPayments: '청구 및 결제 알림',
+      billingDesc: '플랜 업그레이드, 크레딧 구매 및 결제 문제',
       marketing: '마케팅 및 팁',
       marketingDesc: '제품 업데이트 및 팁',
       quietHours: '방해 금지 시간',
@@ -249,6 +262,8 @@ export default function NotificationPreferences({ user, onUpdate, colors }) {
       maintenanceDesc: 'Изменения статуса запроса',
       caseUpdates: 'Обновления дел',
       caseDesc: 'Прогресс по спорным делам',
+      billingPayments: 'Уведомления о платежах',
+      billingDesc: 'Обновления тарифов, покупка кредитов и проблемы с оплатой',
       marketing: 'Маркетинг и советы',
       marketingDesc: 'Обновления продукта и советы',
       quietHours: 'Тихие часы (Не беспокоить)',
@@ -284,7 +299,7 @@ export default function NotificationPreferences({ user, onUpdate, colors }) {
       icon: Bell
     },
     {
-      key: 'lease_notices',
+      key: 'lease_end_notices',
       label: str.leaseNotices,
       description: str.lease30d + ' • ' + str.lease7d + ' • ' + str.lease3d + ' • ' + str.lease0d,
       icon: Bell
@@ -309,7 +324,13 @@ export default function NotificationPreferences({ user, onUpdate, colors }) {
       icon: Bell
     },
     {
-      key: 'marketing_emails',
+      key: 'billing_payments',
+      label: str.billingPayments,
+      description: str.billingDesc,
+      icon: Bell
+    },
+    {
+      key: 'marketing_tips',
       label: str.marketing,
       description: str.marketingDesc,
       icon: Mail
@@ -422,8 +443,14 @@ export default function NotificationPreferences({ user, onUpdate, colors }) {
                     </div>
                   </div>
                   <Switch
-                    checked={preferences[category.key] && !isLocked}
-                    onCheckedChange={(checked) => setPreferences({ ...preferences, [category.key]: checked })}
+                    checked={preferences.notifications[category.key] && !isLocked}
+                    onCheckedChange={(checked) => setPreferences({ 
+                      ...preferences, 
+                      notifications: {
+                        ...preferences.notifications,
+                        [category.key]: checked
+                      }
+                    })}
                     disabled={isLocked}
                   />
                 </div>
