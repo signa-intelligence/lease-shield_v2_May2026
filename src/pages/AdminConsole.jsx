@@ -109,9 +109,10 @@ export default function AdminConsole() {
     ),
   });
 
-  // ✅ COMPUTE SUPER ADMIN COUNT
+  // ✅ COMPUTE SUPER ADMIN COUNT - Minimum of 2 required
   const superAdmins = users.filter(u => u.access_level === 'super_admin' && u.is_active !== false && !u.deleted_at);
   const superAdminCount = superAdmins.length;
+  const MINIMUM_SUPER_ADMINS = 2;
 
   const updateUserMutation = useMutation({
     mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data),
@@ -430,7 +431,7 @@ export default function AdminConsole() {
       revenueAnalyticsTitle: "Revenue & Business Analytics",
       revenueAnalyticsDesc: "View revenue, users, and feature purchase insights",
       viewAnalyticsButton: "View Analytics",
-      superAdminWarning: "There must be at least one Super Admin at all times. Cannot change this user's role.",
+      superAdminWarning: "There must be at least two Super Admins at all times. Cannot change this user's role.",
       disableUser: "Disable",
       enableUser: "Enable",
       removeUser: "Remove",
@@ -507,7 +508,7 @@ export default function AdminConsole() {
       revenueAnalyticsTitle: "วิเคราะห์รายได้และธุรกิจ",
       revenueAnalyticsDesc: "ดูข้อมูลรายได้ ผู้ใช้ และการซื้อฟีเจอร์",
       viewAnalyticsButton: "เปิดดู",
-      superAdminWarning: "ต้องมี Super Admin อย่างน้อยหนึ่งคนเสมอ ไม่สามารถเปลี่ยนบทบาทของผู้ใช้นี้ได้",
+      superAdminWarning: "ต้องมี Super Admin อย่างน้อยสองคนเสมอ ไม่สามารถเปลี่ยนบทบาทของผู้ใช้นี้ได้",
       disableUser: "ปิดใช้งาน",
       enableUser: "เปิดใช้งาน",
       removeUser: "ลบ",
@@ -584,7 +585,7 @@ export default function AdminConsole() {
       revenueAnalyticsTitle: "收入和业务分析",
       revenueAnalyticsDesc: "查看收入、用户和功能购买洞察",
       viewAnalyticsButton: "查看分析",
-      superAdminWarning: "至少需要保留一名超级管理员。无法更改此用户的角色。",
+      superAdminWarning: "至少需要保留两名超级管理员。无法更改此用户的角色。",
       disableUser: "禁用",
       enableUser: "启用",
       removeUser: "移除",
@@ -661,7 +662,7 @@ export default function AdminConsole() {
       revenueAnalyticsTitle: "収益とビジネス分析",
       revenueAnalyticsDesc: "収益、ユーザー、機能購入の洞察を表示",
       viewAnalyticsButton: "分析を表示",
-      superAdminWarning: "常に少なくとも1人のスーパー管理者が必要です。このユーザーの役割を変更することはできません。",
+      superAdminWarning: "常に少なくとも2人のスーパー管理者が必要です。このユーザーの役割を変更することはできません。",
       disableUser: "無効化",
       enableUser: "有効化",
       removeUser: "削除",
@@ -738,7 +739,7 @@ export default function AdminConsole() {
       revenueAnalyticsTitle: "수익 및 비즈니스 분석",
       revenueAnalyticsDesc: "수익, 사용자 및 기능 구매 통찰력 보기",
       viewAnalyticsButton: "분석 보기",
-      superAdminWarning: "항상 최소 한 명의 슈퍼 관리자가 있어야 합니다. 이 사용자의 역할을 변경할 수 없습니다.",
+      superAdminWarning: "항상 최소 두 명의 슈퍼 관리자가 있어야 합니다. 이 사용자의 역할을 변경할 수 없습니다.",
       disableUser: "비활성화",
       enableUser: "활성화",
       removeUser: "제거",
@@ -861,7 +862,7 @@ export default function AdminConsole() {
     }
 
     const isTargetUserSuperAdmin = targetUser.access_level === 'super_admin';
-    if (isTargetUserSuperAdmin && superAdminCount <= 1) {
+    if (isTargetUserSuperAdmin && superAdminCount <= MINIMUM_SUPER_ADMINS) {
       alert(strings.superAdminWarning);
       return;
     }
@@ -900,7 +901,7 @@ export default function AdminConsole() {
     }
 
     const isTargetUserSuperAdmin = targetUser.access_level === 'super_admin';
-    if (isTargetUserSuperAdmin && superAdminCount <= 1) {
+    if (isTargetUserSuperAdmin && superAdminCount <= MINIMUM_SUPER_ADMINS) {
       alert(strings.superAdminWarning);
       return;
     }
@@ -1461,7 +1462,7 @@ export default function AdminConsole() {
                     const isOnline = lastUpdate > fiveMinutesAgo;
                     const isCurrentUserSuperAdmin = user?.access_level === 'super_admin';
                     const isTargetUserSuperAdmin = u.access_level === 'super_admin';
-                    const canChangeRole = !(isTargetUserSuperAdmin && superAdminCount <= 1 && isCurrentUserSuperAdmin);
+                    const canChangeRole = !(isTargetUserSuperAdmin && superAdminCount <= MINIMUM_SUPER_ADMINS);
                     const isDisabled = u.is_active === false;
                     const isDeleted = !!u.deleted_at;
                     const isSelf = u.id === user.id;
