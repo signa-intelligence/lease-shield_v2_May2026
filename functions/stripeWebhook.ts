@@ -224,6 +224,44 @@ Deno.serve(async (req) => {
         console.log('letter_credits:', newCreditBalance);
         console.log('member_since:', memberSince, isFirstPaidMembership ? '(SET NOW - FIRST MEMBERSHIP)' : '(PRESERVED - EXISTING MEMBERSHIP)');
 
+        // ✅ BILLING NOTIFICATIONS FOR SUBSCRIPTION (LINE + EMAIL)
+        const billingEnabled = user.notifications?.billing_payments ?? true;
+
+        console.log('[SUBSCRIPTION_WEBHOOK] Billing notification check:', {
+          email: user.email,
+          lineLinked: !!user.line_messaging_token,
+          lineNotificationsEnabled: user.line_notifications || false,
+          billingPaymentsEnabled: billingEnabled
+        });
+
+        // LINE notification for subscription
+        if (user.line_messaging_token && user.line_notifications && billingEnabled) {
+          try {
+            const planName = planTier.charAt(0).toUpperCase() + planTier.slice(1);
+            const lineMessage = `✅ Lease Shield – Your plan has been updated!\n\n` +
+              `📦 Plan: ${planName}\n` +
+              `💳 Billing: ${billingInterval === 'annual' ? 'Annual' : 'Monthly'}\n` +
+              `🎫 Letter credits: ${newCreditBalance}\n\n` +
+              `Thank you for choosing Lease Shield!`;
+
+            await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              userId: user.line_messaging_token,
+              message: lineMessage
+            });
+
+            console.log('[SUBSCRIPTION_WEBHOOK] ✅ LINE notification sent');
+          } catch (lineError) {
+            console.error('[SUBSCRIPTION_WEBHOOK] ❌ LINE send failed:', lineError.message);
+          }
+        } else {
+          console.log('[SUBSCRIPTION_WEBHOOK] ⏭️ LINE not sent:', {
+            reason: !user.line_messaging_token ? 'no_line_connection'
+              : !user.line_notifications ? 'line_disabled'
+              : !billingEnabled ? 'billing_notifications_disabled'
+              : 'unknown'
+          });
+        }
+
         // 6) Create payment record
         try {
           await base44.asServiceRole.entities.Payment.create({
