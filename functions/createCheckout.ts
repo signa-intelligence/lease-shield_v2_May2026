@@ -11,30 +11,26 @@ import Stripe from 'npm:stripe@14.10.0';
  * to avoid "deploymentNotFound" errors.
  */
 
-const stripeKey = Deno.env.get('SK_TEST_secret_key');
-
-if (!stripeKey) {
-  console.error('❌ CRITICAL: SK_TEST_secret_key not configured at startup');
-}
-
-const stripe = new Stripe(stripeKey, {
-  apiVersion: '2024-06-20',
-});
-
 Deno.serve(async (req) => {
-  console.log('\n\n═══════════════════════════════════════');
-  console.log('🔥 CREATE_CHECKOUT - Entry');
-  console.log('═══════════════════════════════════════');
-  console.log('[CREATE_CHECKOUT] Timestamp:', new Date().toISOString());
-  console.log('[CREATE_CHECKOUT] Stripe mode:', stripeKey?.startsWith('sk_live_') ? '🟢 LIVE' : stripeKey?.startsWith('sk_test_') ? '🟡 TEST' : '❌ INVALID');
+  const stripeKey = Deno.env.get('SK_TEST_secret_key');
   
   if (!stripeKey) {
-    console.error('[CREATE_CHECKOUT] ❌ Stripe key missing');
+    console.error('[CREATE_CHECKOUT] ❌ CRITICAL: SK_TEST_secret_key not configured');
     return Response.json({ 
       error: 'Stripe not configured',
       code: 'stripe_key_missing'
     }, { status: 500 });
   }
+
+  const stripe = new Stripe(stripeKey, {
+    apiVersion: '2024-06-20',
+  });
+
+  console.log('\n\n═══════════════════════════════════════');
+  console.log('🔥 CREATE_CHECKOUT - Entry');
+  console.log('═══════════════════════════════════════');
+  console.log('[CREATE_CHECKOUT] Timestamp:', new Date().toISOString());
+  console.log('[CREATE_CHECKOUT] Stripe mode:', stripeKey?.startsWith('sk_live_') ? '🟢 LIVE' : stripeKey?.startsWith('sk_test_') ? '🟡 TEST' : '❌ INVALID');
   
   try {
     const base44 = createClientFromRequest(req);
