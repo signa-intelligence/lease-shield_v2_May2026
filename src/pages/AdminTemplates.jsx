@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Plus, Edit2, Trash2, Upload, Loader2, CheckCircle2, XCircle, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { FileText, Plus, Edit2, Trash2, Upload, Loader2, CheckCircle2, XCircle, ArrowLeft, Eye, EyeOff, Globe, Languages } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { getLanguageLabel } from "../components/shared/languageRules";
 
 export default function AdminTemplates() {
   const navigate = useNavigate();
@@ -20,6 +21,9 @@ export default function AdminTemplates() {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [formData, setFormData] = useState({
+    template_key: '',
+    recipient_type: 'landlord',
+    language_code: 'en',
     category: 'friendly',
     title_en: '',
     title_th: '',
@@ -28,7 +32,10 @@ export default function AdminTemplates() {
     credit_cost: 1,
     icon_name: 'FileText',
     is_active: true,
-    file: null
+    file: null,
+    subject_template: '',
+    body_template: '',
+    format: 'html'
   });
 
   const { data: user } = useQuery({
@@ -169,6 +176,9 @@ export default function AdminTemplates() {
 
   const resetForm = () => {
     setFormData({
+      template_key: '',
+      recipient_type: 'landlord',
+      language_code: 'en',
       category: 'friendly',
       title_en: '',
       title_th: '',
@@ -177,7 +187,10 @@ export default function AdminTemplates() {
       credit_cost: 1,
       icon_name: 'FileText',
       is_active: true,
-      file: null
+      file: null,
+      subject_template: '',
+      body_template: '',
+      format: 'html'
     });
   };
 
@@ -199,6 +212,9 @@ export default function AdminTemplates() {
       const { file_url } = await base44.integrations.Core.UploadFile({ file: formData.file });
 
       await createTemplateMutation.mutateAsync({
+        template_key: formData.template_key,
+        recipient_type: formData.recipient_type,
+        language_code: formData.language_code,
         category: formData.category,
         title_en: formData.title_en,
         title_th: formData.title_th,
@@ -207,7 +223,10 @@ export default function AdminTemplates() {
         credit_cost: formData.credit_cost,
         icon_name: formData.icon_name,
         is_active: formData.is_active,
-        file_url: file_url
+        file_url: file_url,
+        subject_template: formData.subject_template,
+        body_template: formData.body_template,
+        format: formData.format
       });
     } catch (error) {
       console.error('Failed to create template:', error);
@@ -235,6 +254,9 @@ export default function AdminTemplates() {
       await updateTemplateMutation.mutateAsync({
         id: editingTemplate.id,
         data: {
+          template_key: formData.template_key,
+          recipient_type: formData.recipient_type,
+          language_code: formData.language_code,
           category: formData.category,
           title_en: formData.title_en,
           title_th: formData.title_th,
@@ -243,7 +265,10 @@ export default function AdminTemplates() {
           credit_cost: formData.credit_cost,
           icon_name: formData.icon_name,
           is_active: formData.is_active,
-          file_url: fileUrl
+          file_url: fileUrl,
+          subject_template: formData.subject_template,
+          body_template: formData.body_template,
+          format: formData.format
         }
       });
     } catch (error) {
@@ -257,6 +282,9 @@ export default function AdminTemplates() {
   const handleEdit = (template) => {
     setEditingTemplate(template);
     setFormData({
+      template_key: template.template_key || '',
+      recipient_type: template.recipient_type || 'landlord',
+      language_code: template.language_code || 'en',
       category: template.category,
       title_en: template.title_en,
       title_th: template.title_th,
@@ -265,7 +293,10 @@ export default function AdminTemplates() {
       credit_cost: template.credit_cost || 1,
       icon_name: template.icon_name || 'FileText',
       is_active: template.is_active !== false,
-      file: null
+      file: null,
+      subject_template: template.subject_template || '',
+      body_template: template.body_template || '',
+      format: template.format || 'html'
     });
     setShowCreateDialog(true);
   };
@@ -347,6 +378,53 @@ export default function AdminTemplates() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
+              <div>
+                <Label style={{ color: colors.textPrimary }}>Template Key (Identifier)</Label>
+                <Input
+                  value={formData.template_key}
+                  onChange={(e) => setFormData({...formData, template_key: e.target.value})}
+                  placeholder="e.g., deposit_demand_v1"
+                  className="mt-2"
+                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label style={{ color: colors.textPrimary }}>Recipient Type</Label>
+                  <Select value={formData.recipient_type} onValueChange={(val) => setFormData({...formData, recipient_type: val})}>
+                    <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                      <SelectItem value="tenant">Tenant</SelectItem>
+                      <SelectItem value="landlord">Landlord</SelectItem>
+                      <SelectItem value="juristic">Juristic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label style={{ color: colors.textPrimary }}>
+                    <Globe className="w-4 h-4 inline mr-1" />
+                    Language
+                  </Label>
+                  <Select value={formData.language_code} onValueChange={(val) => setFormData({...formData, language_code: val})}>
+                    <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                      <SelectItem value="en">🇬🇧 English</SelectItem>
+                      <SelectItem value="th">🇹🇭 Thai (ไทย)</SelectItem>
+                      <SelectItem value="ja">🇯🇵 Japanese (日本語)</SelectItem>
+                      <SelectItem value="zh">🇨🇳 Chinese (中文)</SelectItem>
+                      <SelectItem value="ko">🇰🇷 Korean (한국어)</SelectItem>
+                      <SelectItem value="ru">🇷🇺 Russian (Русский)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div>
                 <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
                 <Select value={formData.category} onValueChange={(val) => setFormData({...formData, category: val})}>
@@ -511,9 +589,10 @@ export default function AdminTemplates() {
                 <table className="w-full">
                   <thead style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Category</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Template Key</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Recipient</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Language</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Title (EN)</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Title (TH)</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Cost</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Actions</th>
@@ -529,13 +608,21 @@ export default function AdminTemplates() {
                         }}
                       >
                         <td className="px-4 py-3">
-                          <Badge variant="outline">{categoryLabels[template.category] || template.category}</Badge>
+                          <p className="text-xs font-mono" style={{ color: colors.textPrimary }}>{template.template_key || 'legacy'}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="outline" className="text-xs">
+                            {template.recipient_type || 'tenant'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className="bg-blue-100 text-blue-700 text-xs flex items-center gap-1 w-fit">
+                            <Globe className="w-3 h-3" />
+                            {(template.language_code || 'en').toUpperCase()}
+                          </Badge>
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{template.title_en}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-sm" style={{ color: colors.textPrimary }}>{template.title_th}</p>
                         </td>
                         <td className="px-4 py-3">
                           <Badge className="bg-amber-100 text-amber-800">{template.credit_cost || 1}</Badge>
