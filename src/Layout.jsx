@@ -307,6 +307,27 @@ export default function Layout({ children, currentPageName }) {
     return <>{children}</>;
   }
 
+  // Show loading state while fetching user to prevent flash
+  if (userLoading && !user) {
+    return (
+      <div style={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F3F6F5'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
+            alt="Loading..."
+            style={{ width: '64px', height: '64px', marginBottom: '16px' }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ 
       minHeight: '100vh',
