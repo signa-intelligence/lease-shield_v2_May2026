@@ -68,10 +68,11 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const mainContentRef = useRef(null);
   
-  // Check if current page is public (no auth, no nav)
-  const isPublicPage = PUBLIC_PAGES.includes(currentPageName);
+  // Check if current page is public (no auth, no nav) - also check pathname
+  const isPublicPage = PUBLIC_PAGES.includes(currentPageName) || 
+    location.pathname.toLowerCase() === '/welcome';
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000,
