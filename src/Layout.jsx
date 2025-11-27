@@ -72,12 +72,16 @@ export default function Layout({ children, currentPageName }) {
     pathname === '/' ||
     currentPageName === 'Welcome';
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000,
     enabled: !isPublicPage,
   });
+
+  // Don't render authenticated layout until we know if user exists
+  // This prevents nav from rendering without proper user context
+  const shouldShowAuthLayout = !isPublicPage && (user || !userLoading);
 
   React.useEffect(() => {
     if (mainContentRef.current) {
