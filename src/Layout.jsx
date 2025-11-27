@@ -65,15 +65,12 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const mainContentRef = useRef(null);
   
-  // Check if current page is public (no auth, no nav)
-  // Only Welcome page should have no navigation - check both prop and URL
-  const isPublicPage = currentPageName === 'Welcome' || 
-    location.pathname.toLowerCase() === '/welcome';
-
-  // Debug log to verify currentPageName is being passed correctly
-  React.useEffect(() => {
-    console.log('[Layout] currentPageName:', currentPageName, 'pathname:', location.pathname, 'isPublicPage:', isPublicPage);
-  }, [currentPageName, location.pathname, isPublicPage]);
+  // PUBLIC ROUTES - Only these should have no navigation
+  // Use pathname as primary check since currentPageName may not always be passed
+  const pathname = location.pathname.toLowerCase();
+  const isPublicPage = pathname === '/welcome' || 
+    pathname === '/' ||
+    currentPageName === 'Welcome';
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
