@@ -311,6 +311,17 @@ export default function Layout({ children, currentPageName }) {
     return <>{children}</>;
   }
 
+  // While loading user, show loading screen (prevents flash)
+  if (userLoading && !user) {
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <img 
+        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
+        alt="Loading..."
+        style={{ width: '64px', height: '64px' }}
+      />
+    </div>;
+  }
+
   // AUTHENTICATED LAYOUT - Always render with top bar and bottom nav for ALL other pages
   return (
     <div style={{ 
