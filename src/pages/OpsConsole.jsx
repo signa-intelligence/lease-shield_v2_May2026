@@ -68,9 +68,33 @@ function OpsConsoleContent() {
   const { data: cases = [] } = useQuery({
     queryKey: ['allCases'],
     queryFn: async () => {
-      const result = await base44.entities.Case.list('-created_date', 100);
-      // Filter out soft-deleted cases
-      return result.filter(c => !c.is_deleted);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔍 [OPS_CONSOLE] RAW QUERY STARTING');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('👤 Admin user:', user?.email);
+      console.log('🔑 Access level:', user?.access_level);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      // 🔥 RAW QUERY - NO FILTERS
+      const rawResult = await base44.entities.Case.list('-created_date', 100);
+      
+      console.log('📊 [OPS_CONSOLE] RAW QUERY RESULT:', rawResult.length, 'cases returned');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      // Log every case
+      rawResult.forEach((c, idx) => {
+        console.log(`📄 CASE ${idx + 1}:`, {
+          id: c.id.slice(0, 8),
+          case_number: c.case_number,
+          user_email: c.user_email,
+          status: c.status,
+          is_deleted: c.is_deleted
+        });
+      });
+      
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      return rawResult;
     },
     enabled: hasOpsAccess,
   });
@@ -490,6 +514,29 @@ function OpsConsoleContent() {
                 <List className="w-4 h-4" />
                 List
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 🔍 FORENSIC DEBUG PANEL */}
+        <div className="mb-6 p-4 rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/20">
+          <h3 className="font-bold text-red-700 dark:text-red-400 mb-2">
+            🔍 OPS CONSOLE FORENSIC DEBUG (Remove after investigation)
+          </h3>
+          <div className="text-xs space-y-2">
+            <p><strong>Admin user:</strong> {user?.email}</p>
+            <p><strong>Access level:</strong> {user?.access_level}</p>
+            <p><strong>Raw query returned:</strong> {cases.length} cases</p>
+            <div className="mt-2 p-2 bg-white dark:bg-gray-900 rounded border border-red-300 max-h-96 overflow-auto">
+              <pre className="text-xs whitespace-pre-wrap">
+                {JSON.stringify(cases.map(c => ({
+                  id: c.id,
+                  case_number: c.case_number,
+                  user_email: c.user_email,
+                  status: c.status,
+                  is_deleted: c.is_deleted
+                })), null, 2)}
+              </pre>
             </div>
           </div>
         </div>
