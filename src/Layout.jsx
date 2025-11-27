@@ -304,13 +304,10 @@ export default function Layout({ children, currentPageName }) {
 
   // For public pages only (Welcome), render children without any navigation
   if (isPublicPage) {
-    console.log('[Layout] Rendering PUBLIC layout (no nav) for:', currentPageName);
     return <>{children}</>;
   }
 
-  // AUTHENTICATED LAYOUT - Always render with top bar and bottom nav
-  console.log('[Layout] Rendering AUTHENTICATED layout (with nav) for:', currentPageName);
-  
+  // AUTHENTICATED LAYOUT - Always render with top bar and bottom nav for ALL other pages
   return (
     <div style={{ 
       minHeight: '100vh',
