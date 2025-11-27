@@ -64,24 +64,15 @@ const createRipple = (event, element) => {
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const mainContentRef = useRef(null);
-  
-  // PUBLIC ROUTES - Only these should have no navigation
-  // Use pathname as primary check since currentPageName may not always be passed
-  const pathname = location.pathname.toLowerCase();
-  const isPublicPage = pathname === '/welcome' || 
-    pathname === '/' ||
-    currentPageName === 'Welcome';
 
-  const { data: user, isLoading: userLoading } = useQuery({
+  // MINIMAL PUBLIC PAGE CHECK: Only Welcome page has no nav
+  const isWelcomePage = currentPageName === 'Welcome';
+
+  const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000,
-    enabled: !isPublicPage,
   });
-
-  // Don't render authenticated layout until we know if user exists
-  // This prevents nav from rendering without proper user context
-  const shouldShowAuthLayout = !isPublicPage && (user || !userLoading);
 
   React.useEffect(() => {
     if (mainContentRef.current) {
@@ -306,23 +297,12 @@ export default function Layout({ children, currentPageName }) {
     hoverBg: '#F1F5F9'
   };
 
-  // For public pages only (Welcome), render children without any navigation
-  if (isPublicPage) {
+  // Welcome page: no nav, just render children
+  if (isWelcomePage) {
     return <>{children}</>;
   }
 
-  // While loading user, show loading screen (prevents flash)
-  if (userLoading && !user) {
-    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <img 
-        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
-        alt="Loading..."
-        style={{ width: '64px', height: '64px' }}
-      />
-    </div>;
-  }
-
-  // AUTHENTICATED LAYOUT - Always render with top bar and bottom nav for ALL other pages
+  // ALL OTHER PAGES: Full layout with top bar and bottom nav
   return (
     <div style={{ 
       minHeight: '100vh',
