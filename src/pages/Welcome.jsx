@@ -1,12 +1,132 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Shield, Calendar, FolderLock, X, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Welcome() {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const navigate = useNavigate();
+
+  // Get user language preference (defaults to 'en' for unauthenticated users)
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const language = user?.language || 'en';
+
+  // Translations
+  const t = {
+    en: {
+      title: "Welcome to Lease Shield",
+      subtitle: "Protect your rental deposit, track payments, and manage disputes in one secure app.",
+      depositTitle: "Deposit Shield",
+      depositBody: "Record your deposit, photos, and agreements.",
+      rentTitle: "Rent & Reminders",
+      rentBody: "Track due dates and never miss a payment.",
+      evidenceTitle: "Evidence Vault",
+      evidenceBody: "Store move-in/out photos and case notes.",
+      continueButton: "Continue to app",
+      installHelp: "How to install on your phone",
+      modalTitle: "Install Lease Shield on your phone",
+      step1: "Open app.leaseshield.asia in your mobile browser.",
+      step2iPhone: "iPhone: Tap Share → Add to Home Screen.",
+      step2Android: "Android: Tap menu (⋮) → Install app or Add to Home Screen.",
+      openApp: "Open app"
+    },
+    th: {
+      title: "ยินดีต้อนรับสู่ Lease Shield",
+      subtitle: "ปกป้องเงินมัดจำค่าเช่า ติดตามการชำระเงิน และจัดการข้อพิพาทได้ในแอปที่ปลอดภัยเดียว",
+      depositTitle: "Deposit Shield",
+      depositBody: "บันทึกเงินมัดจำ รูปถ่าย และสัญญาเช่า",
+      rentTitle: "ค่าเช่าและการเตือน",
+      rentBody: "ติดตามวันครบกำหนด ไม่พลาดการจ่าย",
+      evidenceTitle: "Evidence Vault",
+      evidenceBody: "เก็บรูปถ่ายเข้า–ออกห้อง และบันทึกกรณีพิพาท",
+      continueButton: "ดำเนินการต่อไปยังแอป",
+      installHelp: "วิธีติดตั้งบนโทรศัพท์ของคุณ",
+      modalTitle: "ติดตั้ง Lease Shield บนโทรศัพท์ของคุณ",
+      step1: "เปิด app.leaseshield.asia ในเบราว์เซอร์บนมือถือของคุณ",
+      step2iPhone: "iPhone: แตะ แชร์ → เพิ่มไปยังหน้าจอหลัก",
+      step2Android: "Android: แตะเมนู (⋮) → ติดตั้งแอป หรือ เพิ่มไปยังหน้าจอหลัก",
+      openApp: "เปิดแอป"
+    },
+    ja: {
+      title: "Lease Shield へようこそ",
+      subtitle: "この安全なアプリひとつで、賃貸保証金を守り、支払いを管理し、トラブルを整理できます。",
+      depositTitle: "デポジットシールド",
+      depositBody: "保証金・写真・契約書を記録",
+      rentTitle: "家賃 & リマインダー",
+      rentBody: "期日を追跡し、支払い忘れを防止",
+      evidenceTitle: "エビデンスボールト",
+      evidenceBody: "入退去の写真やケースメモを保存",
+      continueButton: "アプリに進む",
+      installHelp: "スマホへのインストール方法",
+      modalTitle: "スマホに Lease Shield をインストール",
+      step1: "モバイルブラウザで app.leaseshield.asia を開きます。",
+      step2iPhone: "iPhone：共有 → ホーム画面に追加 をタップ",
+      step2Android: "Android：メニュー (⋮) → アプリをインストール または ホーム画面に追加 をタップ",
+      openApp: "アプリを開く"
+    },
+    ko: {
+      title: "Lease Shield에 오신 것을 환영합니다",
+      subtitle: "하나의 안전한 앱에서 보증금을 보호하고, 납부 내역을 추적하고, 분쟁을 관리하세요.",
+      depositTitle: "보증금 보호",
+      depositBody: "보증금, 사진, 계약서를 기록",
+      rentTitle: "임대료 & 알림",
+      rentBody: "납부일을 추적하고 연체를 방지",
+      evidenceTitle: "증거 보관함",
+      evidenceBody: "입·퇴실 사진과 메모를 보관",
+      continueButton: "앱으로 계속",
+      installHelp: "휴대폰에 설치하는 방법",
+      modalTitle: "휴대폰에 Lease Shield 설치",
+      step1: "모바일 브라우저에서 app.leaseshield.asia 를 엽니다.",
+      step2iPhone: "iPhone: 공유 → 홈 화면에 추가 를 탭",
+      step2Android: "Android: 메뉴(⋮) → 앱 설치 또는 홈 화면에 추가 선택",
+      openApp: "앱 열기"
+    },
+    zh: {
+      title: "欢迎使用 Lease Shield",
+      subtitle: "在这一个安全的应用中保护押金、跟踪付款并管理租赁纠纷。",
+      depositTitle: "押金防护",
+      depositBody: "记录押金、照片和合同",
+      rentTitle: "房租与提醒",
+      rentBody: "跟踪到期日，不再错过付款",
+      evidenceTitle: "证据库",
+      evidenceBody: "保存入住/退租照片和案例备注",
+      continueButton: "继续进入应用",
+      installHelp: "如何在手机上安装",
+      modalTitle: "在手机上安装 Lease Shield",
+      step1: "在手机浏览器中打开 app.leaseshield.asia。",
+      step2iPhone: "iPhone：点击 共享 → 添加到主屏幕",
+      step2Android: "Android：点击菜单 (⋮) → 安装应用 或 添加到主屏幕",
+      openApp: "打开应用"
+    },
+    ru: {
+      title: "Добро пожаловать в Lease Shield",
+      subtitle: "Защищайте залог, отслеживайте платежи и управляйте спорами в одном защищённом приложении.",
+      depositTitle: "Deposit Shield",
+      depositBody: "фиксируйте залог, фото и договоры",
+      rentTitle: "Аренда и напоминания",
+      rentBody: "отслеживайте сроки и не пропускайте платежи",
+      evidenceTitle: "Хранилище доказательств",
+      evidenceBody: "храните фото въезда/выезда и заметки по делу",
+      continueButton: "Перейти в приложение",
+      installHelp: "Как установить на телефон",
+      modalTitle: "Установите Lease Shield на телефон",
+      step1: "Откройте app.leaseshield.asia в мобильном браузере.",
+      step2iPhone: "iPhone: нажмите Поделиться → На экран «Домой».",
+      step2Android: "Android: нажмите меню (⋮) → Установить приложение или Добавить на главный экран.",
+      openApp: "Открыть приложение"
+    }
+  };
+
+  const strings = t[language] || t.en;
 
   // Preserve query params (source, plan, etc.) for tracking
   const queryParams = window.location.search;
@@ -24,18 +144,18 @@ export default function Welcome() {
   const features = [
     {
       icon: Shield,
-      title: "Deposit Shield",
-      description: "Record your deposit, photos, and agreements."
+      title: strings.depositTitle,
+      description: strings.depositBody
     },
     {
       icon: Calendar,
-      title: "Rent & Reminders",
-      description: "Track due dates and never miss a payment."
+      title: strings.rentTitle,
+      description: strings.rentBody
     },
     {
       icon: FolderLock,
-      title: "Evidence Vault",
-      description: "Store move-in/out photos and case notes."
+      title: strings.evidenceTitle,
+      description: strings.evidenceBody
     }
   ];
 
@@ -59,12 +179,12 @@ export default function Welcome() {
 
           {/* Heading */}
           <h1 className="text-2xl sm:text-3xl font-bold text-center mb-3" style={{ color: '#0C3B2E' }}>
-            Welcome to Lease Shield
+            {strings.title}
           </h1>
 
           {/* Subheading */}
           <p className="text-center text-gray-600 mb-8 text-sm sm:text-base leading-relaxed">
-            Protect your rental deposit, track payments, and manage disputes in one secure app.
+            {strings.subtitle}
           </p>
 
           {/* Feature Bullets */}
@@ -100,7 +220,7 @@ export default function Welcome() {
               boxShadow: '0 4px 12px rgba(12, 59, 46, 0.25)'
             }}
           >
-            Continue to app
+            {strings.continueButton}
           </Button>
 
           {/* Secondary Link */}
@@ -116,7 +236,7 @@ export default function Welcome() {
             }}
           >
             <Smartphone className="w-4 h-4" />
-            How to install on your phone
+            {strings.installHelp}
           </button>
         </CardContent>
       </Card>
@@ -151,7 +271,7 @@ export default function Welcome() {
                   <Smartphone className="w-6 h-6 text-white" />
                 </div>
                 <h2 className="text-xl font-bold" style={{ color: '#0C3B2E' }}>
-                  Install Lease Shield on your phone
+                  {strings.modalTitle}
                 </h2>
               </div>
 
@@ -162,7 +282,7 @@ export default function Welcome() {
                     1
                   </div>
                   <p className="text-gray-700">
-                    Open <strong>app.leaseshield.asia</strong> in your mobile browser.
+                    {strings.step1}
                   </p>
                 </div>
 
@@ -170,14 +290,18 @@ export default function Welcome() {
                   <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 text-sm font-semibold text-gray-700">
                     2
                   </div>
-                  <div className="text-gray-700">
-                    <p className="mb-1">
-                      <strong>iPhone:</strong> Tap <em>Share</em> → <em>Add to Home Screen</em>.
-                    </p>
-                    <p>
-                      <strong>Android:</strong> Tap the menu (⋮) → <em>Install app</em> or <em>Add to Home Screen</em>.
-                    </p>
+                  <p className="text-gray-700">
+                    {strings.step2iPhone}
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 text-sm font-semibold text-gray-700">
+                    3
                   </div>
+                  <p className="text-gray-700">
+                    {strings.step2Android}
+                  </p>
                 </div>
               </div>
 
@@ -195,7 +319,7 @@ export default function Welcome() {
                   border: '2px solid #C7A338'
                 }}
               >
-                Open app
+                {strings.openApp}
               </Button>
             </div>
           </div>
