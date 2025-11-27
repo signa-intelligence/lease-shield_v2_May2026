@@ -159,7 +159,8 @@ export default function Welcome() {
     if (isAuthenticated) {
       window.location.href = createPageUrl("Dashboard") + queryParams;
     } else {
-      window.location.href = `/login${queryParams}`;
+      const separator = queryParams ? '&' : '?';
+      window.location.href = `/login${queryParams}${separator}from=Welcome`;
     }
   };
 
@@ -168,7 +169,8 @@ export default function Welcome() {
     if (isAuthenticated) {
       window.location.href = createPageUrl("Dashboard") + queryParams;
     } else {
-      window.location.href = `/login${queryParams}`;
+      const separator = queryParams ? '&' : '?';
+      window.location.href = `/login${queryParams}${separator}from=Welcome`;
     }
   };
 
