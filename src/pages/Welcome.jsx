@@ -132,12 +132,12 @@ export default function Welcome() {
   const queryParams = window.location.search;
 
   const handleContinue = () => {
-    navigate(`/login${queryParams}`);
+    window.location.href = `/login${queryParams}`;
   };
 
   const handleOpenApp = () => {
     setShowInstallModal(false);
-    navigate(`/login${queryParams}`);
+    window.location.href = `/login${queryParams}`;
   };
 
   // Feature bullets
