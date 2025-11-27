@@ -61,22 +61,18 @@ const createRipple = (event, element) => {
   setTimeout(() => ripple.remove(), 600);
 };
 
-// Public pages that don't require authentication and don't show navigation
-const PUBLIC_PAGES = ['Welcome'];
-
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const mainContentRef = useRef(null);
   
-  // Check if current page is public (no auth, no nav) - also check pathname
-  const isPublicPage = PUBLIC_PAGES.includes(currentPageName) || 
-    location.pathname.toLowerCase() === '/welcome';
+  // Check if current page is public (no auth, no nav)
+  const isPublicPage = currentPageName === 'Welcome';
 
-  const { data: user, isLoading: userLoading } = useQuery({
+  const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000,
-    enabled: !isPublicPage, // Don't fetch user on public pages
+    enabled: !isPublicPage,
   });
 
   React.useEffect(() => {
