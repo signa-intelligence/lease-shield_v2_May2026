@@ -5,16 +5,6 @@ import { X, Download } from 'lucide-react';
 export default function PWAInstallPrompt({ language = 'en', isDarkMode = false }) {
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
-
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobileOrTablet(window.innerWidth < 1024);
-    };
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
 
   const t = {
     en: {
@@ -89,7 +79,7 @@ export default function PWAInstallPrompt({ language = 'en', isDarkMode = false }
     setIsVisible(false);
   };
 
-  if (!isVisible || !isMobileOrTablet) {
+  if (!isVisible) {
     return null;
   }
 

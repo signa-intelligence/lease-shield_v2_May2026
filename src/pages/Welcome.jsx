@@ -1,37 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shield, Calendar, FolderLock, X, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { createPageUrl } from "@/utils";
 
 export default function Welcome() {
   const [showInstallModal, setShowInstallModal] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
-
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const authenticated = await base44.auth.isAuthenticated();
-        setIsAuthenticated(authenticated);
-        if (authenticated) {
-          // Redirect authenticated users to Dashboard
-          const queryParams = window.location.search;
-          window.location.href = createPageUrl("Dashboard") + queryParams;
-        }
-      } catch (e) {
-        setIsAuthenticated(false);
-      } finally {
-        setAuthChecked(true);
-      }
-    };
-    checkAuth();
-  }, []);
 
   // Get user language preference (defaults to 'en' for unauthenticated users)
   const { data: user } = useQuery({
@@ -39,7 +16,6 @@ export default function Welcome() {
     queryFn: () => base44.auth.me(),
     retry: false,
     staleTime: 5 * 60 * 1000,
-    enabled: isAuthenticated,
   });
 
   const language = user?.language || 'en';
@@ -156,28 +132,13 @@ export default function Welcome() {
   const queryParams = window.location.search;
 
   const handleContinue = () => {
-    if (isAuthenticated) {
-      window.location.href = createPageUrl("Dashboard") + queryParams;
-    } else {
-      const separator = queryParams ? '&' : '?';
-      window.location.href = `/login${queryParams}${separator}from=Welcome`;
-    }
+    navigate(`/login${queryParams}`);
   };
 
   const handleOpenApp = () => {
     setShowInstallModal(false);
-    if (isAuthenticated) {
-      window.location.href = createPageUrl("Dashboard") + queryParams;
-    } else {
-      const separator = queryParams ? '&' : '?';
-      window.location.href = `/login${queryParams}${separator}from=Welcome`;
-    }
+    navigate(`/login${queryParams}`);
   };
-
-  // Show nothing while checking auth to prevent flash
-  if (!authChecked) {
-    return null;
-  }
 
   // Feature bullets
   const features = [

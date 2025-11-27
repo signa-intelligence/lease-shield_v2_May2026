@@ -65,9 +65,6 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const mainContentRef = useRef(null);
 
-  // MINIMAL PUBLIC PAGE CHECK: Only Welcome page has no nav
-  const isWelcomePage = currentPageName === 'Welcome';
-
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -297,12 +294,6 @@ export default function Layout({ children, currentPageName }) {
     hoverBg: '#F1F5F9'
   };
 
-  // Welcome page: no nav, just render children
-  if (isWelcomePage) {
-    return <>{children}</>;
-  }
-
-  // ALL OTHER PAGES: Full layout with top bar and bottom nav
   return (
     <div style={{ 
       minHeight: '100vh',
