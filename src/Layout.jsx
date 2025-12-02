@@ -86,6 +86,13 @@ export default function Layout({ children, currentPageName }) {
   }, [user?.theme]);
 
   React.useEffect(() => {
+    // Auto-trigger PWA install prompt on first load
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      e.prompt();
+    };
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
         .then((registration) => {
