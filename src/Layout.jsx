@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
+import { InstallBanner } from "./components/InstallBanner";
 
 // Animation utilities inlined
 const animationKeyframes = `
