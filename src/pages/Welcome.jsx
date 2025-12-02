@@ -11,17 +11,8 @@ export default function Welcome() {
     const handleRedirect = async () => {
       const queryString = window.location.search;
       
-      try {
-        const isAuthenticated = await base44.auth.isAuthenticated();
-        
-        if (isAuthenticated) {
-          navigate(createPageUrl("Dashboard") + queryString, { replace: true });
-        } else {
-          base44.auth.redirectToLogin(createPageUrl("Dashboard") + queryString);
-        }
-      } catch (error) {
-        base44.auth.redirectToLogin(createPageUrl("Dashboard") + queryString);
-      }
+      // Always redirect to login first - user must authenticate
+      base44.auth.redirectToLogin(createPageUrl("Dashboard") + queryString);
     };
     
     handleRedirect();
