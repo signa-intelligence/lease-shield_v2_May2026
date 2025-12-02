@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
-import { InstallBanner } from "./components/InstallBanner";
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -303,7 +302,6 @@ export default function Layout({ children, currentPageName }) {
       position: 'relative',
       paddingBottom: 'env(safe-area-inset-bottom)'
     }}>
-      <InstallBanner />
       <style>{`
         :root {
           --ls-forest: #0C3B2E;
