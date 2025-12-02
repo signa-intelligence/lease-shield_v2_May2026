@@ -176,7 +176,7 @@ function ResolveCaseContent() {
       
       console.log('[CASE_CREATION] ✅ OWNERSHIP VERIFIED - case belongs to:', authenticatedUser.email);
       
-      // WORKFLOW FIX: Send admin notification (email + LINE)
+      // WORKFLOW FIX: Send admin notification
       try {
         await base44.functions.invoke('notifyAdminNewCase', {
           caseNumber: createdCase.case_number,
@@ -186,14 +186,11 @@ function ResolveCaseContent() {
           propertyAddress: createdCase.property_address,
           disputeAmount: createdCase.dispute_amount,
           planTier: authenticatedUser.plan_tier,
-          caseId: createdCase.id,
-          caseType: createdCase.type,
-          summary: createdCase.summary
+          caseId: createdCase.id
         });
-        console.log('[RESOLVE_FLOW] ✅ Admin notification sent (email + LINE)');
+        console.log('[RESOLVE_FLOW] Admin notification sent');
       } catch (notifyError) {
-        // Non-blocking: case is already saved, notification failure shouldn't fail the submission
-        console.error('[RESOLVE_FLOW] ⚠️ Admin notification failed (non-blocking):', notifyError.message);
+        console.error('[RESOLVE_FLOW] Admin notification failed (non-blocking):', notifyError);
       }
       
       return { 

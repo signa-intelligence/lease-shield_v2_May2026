@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
-import InstallInstructionBar from "./components/shared/InstallInstructionBar";
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -87,13 +86,6 @@ export default function Layout({ children, currentPageName }) {
   }, [user?.theme]);
 
   React.useEffect(() => {
-    // Auto-trigger PWA install prompt on first load
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      e.prompt();
-    };
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
         .then((registration) => {
@@ -310,7 +302,6 @@ export default function Layout({ children, currentPageName }) {
       position: 'relative',
       paddingBottom: 'env(safe-area-inset-bottom)'
     }}>
-      <InstallInstructionBar />
       <style>{`
         :root {
           --ls-forest: #0C3B2E;
