@@ -303,6 +303,7 @@ export default function Layout({ children, currentPageName }) {
       position: 'relative',
       paddingBottom: 'env(safe-area-inset-bottom)'
     }}>
+      <InstallBanner />
       <style>{`
         :root {
           --ls-forest: #0C3B2E;
