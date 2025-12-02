@@ -310,6 +310,7 @@ export default function Layout({ children, currentPageName }) {
       position: 'relative',
       paddingBottom: 'env(safe-area-inset-bottom)'
     }}>
+      <InstallInstructionBar />
       <style>{`
         :root {
           --ls-forest: #0C3B2E;
