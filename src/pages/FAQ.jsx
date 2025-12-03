@@ -295,6 +295,46 @@ function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel }) {
   const question = item.q[language] || item.q.en;
   const answer = item.a[language] || item.a.en;
 
+  // Convert markdown links [text](url) to clickable <a> tags
+  const renderAnswer = (text) => {
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = linkRegex.exec(text)) !== null) {
+      // Add text before the link
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      // Add the link
+      parts.push(
+        <a
+          key={match.index}
+          href={match[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ 
+            color: '#0C3B2E', 
+            textDecoration: 'underline',
+            fontWeight: '600'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {match[1]}
+        </a>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
+
   return (
     <div
       id={`faq-${item.id}`}
@@ -335,36 +375,13 @@ function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel }) {
           className="px-4 pb-4 animate-in slide-in-from-top-2 duration-200"
         >
           <div 
-            className="pt-3 border-t text-sm leading-relaxed"
+            className="pt-3 border-t whitespace-pre-line text-sm leading-relaxed"
             style={{ 
               borderColor: colors.borderColor,
               color: colors.textSecondary
             }}
           >
-            {answer.split('\n').map((line, idx) => {
-              // Check if line contains markdown link [text](url)
-              const linkMatch = line.match(/\[([^\]]+)\]\(([^)]+)\)/);
-              if (linkMatch) {
-                const [fullMatch, linkText, url] = linkMatch;
-                const parts = line.split(fullMatch);
-                return (
-                  <div key={idx} className="mb-2">
-                    {parts[0]}
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold underline hover:no-underline"
-                      style={{ color: '#0C3B2E' }}
-                    >
-                      {linkText}
-                    </a>
-                    {parts[1]}
-                  </div>
-                );
-              }
-              return <div key={idx} className="mb-2">{line}</div>;
-            })}
+            {renderAnswer(answer)}
           </div>
         </div>
       )}
