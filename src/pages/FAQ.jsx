@@ -12,7 +12,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { faqData, faqStrings } from "../components/faq/faqData";
-import { MarkdownLink } from "../components/faq/MarkdownLink";
 
 const iconMap = {
   Rocket, Scan, Wallet, Wrench, FolderOpen, Scale, MessageCircle, CreditCard, Shield
@@ -342,7 +341,7 @@ function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel }) {
               color: colors.textSecondary
             }}
           >
-            <MarkdownLink text={answer} colors={colors} />
+            {answer}
           </div>
         </div>
       )}
