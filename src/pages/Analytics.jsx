@@ -20,8 +20,12 @@ import {
   BarChart3,
   AlertTriangle,
   TrendingDown,
-  Loader2
+  Loader2,
+  ThumbsUp,
+  ThumbsDown,
+  HelpCircle
 } from "lucide-react";
+import { faqData } from "../components/faq/faqData";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from "recharts";
 import { format, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths, addDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -69,6 +73,12 @@ function AnalyticsContent() {
   const { data: maintenanceRequests = [] } = useQuery({
     queryKey: ['maintenance'],
     queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date'),
+    enabled: !!user,
+  });
+
+  const { data: faqFeedback = [] } = useQuery({
+    queryKey: ['faqFeedback'],
+    queryFn: () => base44.entities.FAQFeedback.list(),
     enabled: !!user,
   });
 
@@ -160,6 +170,12 @@ function AnalyticsContent() {
       riskFactors: "Risk Factors",
       dueIn: "Due in",
       overdue: "Overdue by",
+      faqInsights: "FAQ Insights",
+      question: "Question",
+      helpful: "Helpful",
+      notHelpful: "Not Helpful",
+      helpRate: "Help Rate",
+      noFeedbackYet: "No feedback yet",
     },
     th: {
       title: "การวิเคราะห์และข้อมูลเชิงลึก",
@@ -234,6 +250,12 @@ function AnalyticsContent() {
       riskFactors: "ปัจจัยความเสี่ยง",
       dueIn: "ครบกำหนดใน",
       overdue: "เกินกำหนดไป",
+      faqInsights: "ข้อมูลเชิงลึก FAQ",
+      question: "คำถาม",
+      helpful: "เป็นประโยชน์",
+      notHelpful: "ไม่เป็นประโยชน์",
+      helpRate: "อัตราความเป็นประโยชน์",
+      noFeedbackYet: "ยังไม่มีความคิดเห็น",
     },
     zh: {
       title: "分析与洞察",
@@ -308,6 +330,12 @@ function AnalyticsContent() {
       riskFactors: "风险因素",
       dueIn: "到期于",
       overdue: "逾期",
+      faqInsights: "FAQ 见解",
+      question: "问题",
+      helpful: "有帮助",
+      notHelpful: "无帮助",
+      helpRate: "帮助率",
+      noFeedbackYet: "暂无反馈",
     },
     ja: {
       title: "分析とインサイト",
@@ -382,6 +410,12 @@ function AnalyticsContent() {
       riskFactors: "リスク要因",
       dueIn: "期日まで",
       overdue: "期限超過",
+      faqInsights: "FAQ インサイト",
+      question: "質問",
+      helpful: "役立つ",
+      notHelpful: "役立たない",
+      helpRate: "役立ち率",
+      noFeedbackYet: "まだフィードバックがありません",
     },
     ko: {
       title: "분석 및 인사이트",
@@ -456,6 +490,12 @@ function AnalyticsContent() {
       riskFactors: "위험 요인",
       dueIn: "만기까지",
       overdue: "연체",
+      faqInsights: "FAQ 인사이트",
+      question: "질문",
+      helpful: "도움됨",
+      notHelpful: "도움 안 됨",
+      helpRate: "도움 비율",
+      noFeedbackYet: "아직 피드백 없음",
     },
     ru: {
       title: "Аналитика и Инсайты",
@@ -530,6 +570,12 @@ function AnalyticsContent() {
       riskFactors: "Факторы риска",
       dueIn: "Срок через",
       overdue: "Просрочено на",
+      faqInsights: "Инсайты FAQ",
+      question: "Вопрос",
+      helpful: "Полезно",
+      notHelpful: "Не полезно",
+      helpRate: "Уровень полезности",
+      noFeedbackYet: "Отзывов пока нет",
     }
   };
 
@@ -857,6 +903,41 @@ function AnalyticsContent() {
 
   const hasData = deposits.length > 0 || cases.length > 0 || documents.length > 0;
   const activeMaintenanceCount = maintenanceRequests.filter(r => r.status !== 'completed' && r.status !== 'rejected').length;
+
+  // FAQ Insights - Calculate stats per question
+  const getFaqInsights = () => {
+    const allQuestions = [];
+    faqData.categories.forEach(category => {
+      category.items.forEach(item => {
+        allQuestions.push({
+          id: item.id,
+          question: item.q[language] || item.q.en,
+          category: category.title[language] || category.title.en
+        });
+      });
+    });
+
+    const insights = allQuestions.map(q => {
+      const feedbacks = faqFeedback.filter(f => f.faq_id === q.id);
+      const helpfulCount = feedbacks.filter(f => f.helpful === true).length;
+      const notHelpfulCount = feedbacks.filter(f => f.helpful === false).length;
+      const total = helpfulCount + notHelpfulCount;
+      const helpRate = total > 0 ? Math.round((helpfulCount / total) * 100) : 0;
+
+      return {
+        ...q,
+        helpfulCount,
+        notHelpfulCount,
+        total,
+        helpRate
+      };
+    });
+
+    // Sort by lowest help rate (to find weak answers)
+    return insights.filter(i => i.total > 0).sort((a, b) => a.helpRate - b.helpRate);
+  };
+
+  const faqInsights = getFaqInsights();
 
   return (
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
@@ -1367,6 +1448,84 @@ function AnalyticsContent() {
                   </Card>
                 )}
               </div>
+
+              {/* FAQ Insights */}
+              {faqInsights.length > 0 && (
+                <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg" style={{ color: colors.textPrimary }}>
+                      <HelpCircle className="w-5 h-5 text-ls-forest" />
+                      {strings.faqInsights}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+                            <th className="text-left py-2 px-2 font-semibold" style={{ color: colors.textPrimary }}>
+                              {strings.question}
+                            </th>
+                            <th className="text-center py-2 px-2 font-semibold" style={{ color: colors.textPrimary }}>
+                              <ThumbsUp className="w-4 h-4 inline" />
+                            </th>
+                            <th className="text-center py-2 px-2 font-semibold" style={{ color: colors.textPrimary }}>
+                              <ThumbsDown className="w-4 h-4 inline" />
+                            </th>
+                            <th className="text-center py-2 px-2 font-semibold" style={{ color: colors.textPrimary }}>
+                              {strings.helpRate}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {faqInsights.map((insight, idx) => (
+                            <tr 
+                              key={insight.id}
+                              style={{ borderBottom: `1px solid ${colors.borderColor}` }}
+                            >
+                              <td className="py-3 px-2" style={{ color: colors.textPrimary }}>
+                                <div className="max-w-md">
+                                  <p className="font-medium text-xs mb-1">{insight.question}</p>
+                                  <p className="text-xs" style={{ color: colors.textSecondary }}>{insight.category}</p>
+                                </div>
+                              </td>
+                              <td className="py-3 px-2 text-center">
+                                <Badge className="bg-emerald-100 text-emerald-800">
+                                  {insight.helpfulCount}
+                                </Badge>
+                              </td>
+                              <td className="py-3 px-2 text-center">
+                                <Badge className="bg-red-100 text-red-800">
+                                  {insight.notHelpfulCount}
+                                </Badge>
+                              </td>
+                              <td className="py-3 px-2 text-center">
+                                <Badge
+                                  style={{
+                                    backgroundColor: insight.helpRate >= 70 ? '#10B981' : insight.helpRate >= 40 ? '#F59E0B' : '#EF4444',
+                                    color: '#FFFFFF',
+                                    fontWeight: 'bold'
+                                  }}
+                                >
+                                  {insight.helpRate}%
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {faqInsights.length === 0 && (
+                      <div className="text-center py-8">
+                        <HelpCircle className="w-12 h-12 mx-auto mb-2" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                        <p className="text-sm" style={{ color: colors.textSecondary }}>
+                          {strings.noFeedbackYet}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Achievements */}
               <Card className="border-none shadow-xl mb-6" style={{

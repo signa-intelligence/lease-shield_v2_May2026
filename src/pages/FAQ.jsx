@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { 
   ChevronLeft, ChevronDown, ChevronRight, Search, 
   HelpCircle, Rocket, Scan, Wallet, Wrench, FolderOpen, 
-  Scale, MessageCircle, CreditCard, Shield, X
+  Scale, MessageCircle, CreditCard, Shield, X, ThumbsUp, ThumbsDown
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -209,6 +209,8 @@ export default function FAQ() {
                   onToggle={() => toggleItem(item.id)}
                   colors={colors}
                   categoryLabel={item.categoryTitle}
+                  user={user}
+                  isDarkMode={isDarkMode}
                 />
               ))
             )}
@@ -259,6 +261,8 @@ export default function FAQ() {
                 isOpen={openItemId === item.id}
                 onToggle={() => toggleItem(item.id)}
                 colors={colors}
+                user={user}
+                isDarkMode={isDarkMode}
               />
             ))}
           </div>
@@ -291,9 +295,38 @@ export default function FAQ() {
   );
 }
 
-function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel }) {
+function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel, user, isDarkMode }) {
+  const queryClient = useQueryClient();
+  const [feedbackGiven, setFeedbackGiven] = useState(null);
   const question = item.q[language] || item.q.en;
   const answer = item.a[language] || item.a.en;
+
+  const feedbackMutation = useMutation({
+    mutationFn: (helpful) => base44.entities.FAQFeedback.create({
+      faq_id: item.id,
+      user_email: user?.email,
+      helpful: helpful
+    }),
+    onSuccess: (data, helpful) => {
+      setFeedbackGiven(helpful);
+      queryClient.invalidateQueries({ queryKey: ['faqFeedback'] });
+    }
+  });
+
+  const handleFeedback = (helpful) => {
+    if (!user) return;
+    feedbackMutation.mutate(helpful);
+  };
+
+  const feedbackStrings = {
+    en: { didThisHelp: "Did this help?", yes: "Yes", no: "No", thanks: "Thank you!" },
+    th: { didThisHelp: "มีประโยชน์หรือไม่?", yes: "ใช่", no: "ไม่", thanks: "ขอบคุณ!" },
+    zh: { didThisHelp: "这有帮助吗？", yes: "是", no: "否", thanks: "谢谢！" },
+    ja: { didThisHelp: "役に立ちましたか？", yes: "はい", no: "いいえ", thanks: "ありがとう！" },
+    ko: { didThisHelp: "도움이 되었나요?", yes: "예", no: "아니오", thanks: "감사합니다!" },
+    ru: { didThisHelp: "Помогло ли это?", yes: "Да", no: "Нет", thanks: "Спасибо!" }
+  };
+  const fbStrings = feedbackStrings[language] || feedbackStrings.en;
 
   // Convert markdown links [text](url) to clickable <a> tags or internal navigation
   const renderAnswer = (text) => {
@@ -409,6 +442,56 @@ function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel }) {
             }}
           >
             {renderAnswer(answer)}
+          </div>
+
+          {/* Feedback Section */}
+          <div 
+            className="mt-4 pt-3 border-t flex items-center justify-between"
+            style={{ borderColor: colors.borderColor }}
+          >
+            <p className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+              {fbStrings.didThisHelp}
+            </p>
+            <div className="flex gap-2">
+              {feedbackGiven === null ? (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFeedback(true);
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all hover:scale-105"
+                    style={{
+                      backgroundColor: isDarkMode ? '#1F4428' : '#ECFDF5',
+                      border: `1px solid ${isDarkMode ? '#10B981' : '#6EE7B7'}`,
+                      color: '#10B981'
+                    }}
+                  >
+                    <ThumbsUp className="w-3.5 h-3.5" />
+                    <span className="text-xs font-semibold">{fbStrings.yes}</span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFeedback(false);
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all hover:scale-105"
+                    style={{
+                      backgroundColor: isDarkMode ? '#3F1F1F' : '#FEE2E2',
+                      border: `1px solid ${isDarkMode ? '#EF4444' : '#FCA5A5'}`,
+                      color: '#EF4444'
+                    }}
+                  >
+                    <ThumbsDown className="w-3.5 h-3.5" />
+                    <span className="text-xs font-semibold">{fbStrings.no}</span>
+                  </button>
+                </>
+              ) : (
+                <p className="text-xs font-medium" style={{ color: '#10B981' }}>
+                  {fbStrings.thanks}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
