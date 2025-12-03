@@ -8,6 +8,7 @@ import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
 import QuickGuide from "./components/onboarding/QuickGuide";
 import { Info } from "lucide-react";
+import AuthGuard from "./components/shared/AuthGuard";
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -339,7 +340,8 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <div style={{ 
+    <AuthGuard>
+      <div style={{ 
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
@@ -801,5 +803,6 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </nav>
     </div>
+    </AuthGuard>
   );
 }
