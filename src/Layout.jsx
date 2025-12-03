@@ -1,11 +1,12 @@
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, Download } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, Download, HelpCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
+import QuickGuide from "./components/onboarding/QuickGuide";
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -65,6 +66,7 @@ export default function Layout({ children, currentPageName }) {
   const mainContentRef = useRef(null);
   const [deferredPrompt, setDeferredPrompt] = React.useState(null);
   const [showInstallButton, setShowInstallButton] = React.useState(false);
+  const [showQuickGuide, setShowQuickGuide] = React.useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -99,6 +101,16 @@ export default function Layout({ children, currentPageName }) {
     setShowInstallButton(false);
     setDeferredPrompt(null);
   };
+
+  // Auto-trigger Quick Guide for first-time users
+  React.useEffect(() => {
+    if (user) {
+      const guideDone = localStorage.getItem('leaseshield_quick_guide_done');
+      if (!guideDone) {
+        setShowQuickGuide(true);
+      }
+    }
+  }, [user]);
 
   React.useEffect(() => {
     if (mainContentRef.current) {
@@ -544,6 +556,34 @@ export default function Layout({ children, currentPageName }) {
                 <span className="hidden sm:inline">Install App</span>
               </button>
             )}
+            <button
+              onClick={() => {
+                haptic.light();
+                setShowQuickGuide(true);
+              }}
+              aria-label="Quick Guide"
+              className="btn-interaction"
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+              }}
+            >
+              <HelpCircle 
+                className="w-4 h-4 sm:w-5 sm:h-5" 
+                style={{ 
+                  color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
+                  transition: 'color 0.2s'
+                }}
+              />
+            </button>
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
@@ -635,6 +675,14 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
       </div>
+
+      {/* Quick Guide Modal */}
+      <QuickGuide 
+        open={showQuickGuide}
+        onClose={() => setShowQuickGuide(false)}
+        language={language}
+        isDarkMode={isDarkMode}
+      />
 
       {/* Main Content */}
       <main 
