@@ -662,7 +662,17 @@ export default function Timeline() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle style={{ color: colors.textPrimary }}>
-                  {format(currentDate, 'MMMM yyyy')}
+                  {language === 'th' 
+                    ? format(currentDate, 'MMMM yyyy', { locale: require('date-fns/locale/th') })
+                    : language === 'zh'
+                      ? `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月`
+                      : language === 'ja'
+                        ? `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月`
+                        : language === 'ko'
+                          ? `${currentDate.getFullYear()}년 ${currentDate.getMonth() + 1}월`
+                          : language === 'ru'
+                            ? format(currentDate, 'LLLL yyyy', { locale: require('date-fns/locale/ru') }) + ' г.'
+                            : format(currentDate, 'MMMM yyyy')}
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
@@ -753,7 +763,19 @@ export default function Timeline() {
               {monthEvents.length > 0 && (
                 <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
                   <h3 className="font-bold mb-4 text-sm" style={{ color: colors.textPrimary }}>
-                    {strings.eventsOn} {format(currentDate, 'MMMM')} ({monthEvents.length})
+                    {strings.eventsOn} {
+                      language === 'th' 
+                        ? format(currentDate, 'MMMM', { locale: require('date-fns/locale/th') })
+                        : language === 'zh'
+                          ? `${currentDate.getMonth() + 1}月`
+                          : language === 'ja'
+                            ? `${currentDate.getMonth() + 1}月`
+                            : language === 'ko'
+                              ? `${currentDate.getMonth() + 1}월`
+                              : language === 'ru'
+                                ? format(currentDate, 'LLLL', { locale: require('date-fns/locale/ru') })
+                                : format(currentDate, 'MMMM')
+                    } ({monthEvents.length})
                   </h3>
                   <div className="space-y-3">
                     {monthEvents.slice(0, 5).map(event => (
