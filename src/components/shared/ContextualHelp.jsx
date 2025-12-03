@@ -54,39 +54,39 @@ export default function ContextualHelp({
  */
 export const HelpLinks = {
   // AI Scanner
-  scanner: { category: "ai-scanner", question: "how-scanner-works" },
+  scanner: { category: "ai-scanner", question: "how-upload-scan" },
   scannerLanguages: { category: "ai-scanner", question: "supported-languages" },
   scannerAccuracy: { category: "ai-scanner", question: "scan-accuracy" },
   
   // Deposits
-  deposits: { category: "deposits", question: "deposit-tracking-how" },
-  depositNotReturned: { category: "deposits", question: "deposit-not-returned" },
+  deposits: { category: "deposits-moveout", question: "how-track-deposit-return" },
+  depositNotReturned: { category: "deposits-moveout", question: "get-deposit-back" },
   
   // Maintenance
-  maintenance: { category: "maintenance", question: "report-maintenance" },
-  landlordNotResponding: { category: "maintenance", question: "landlord-not-responding" },
+  maintenance: { category: "maintenance", question: "how-log-track-maintenance" },
+  landlordNotResponding: { category: "maintenance", question: "who-receives-report" },
   
   // Evidence
-  evidence: { category: "evidence", question: "what-to-store" },
-  storageLimit: { category: "evidence", question: "storage-limit" },
+  evidence: { category: "evidence-vault", question: "what-upload-evidence" },
+  storageLimit: { category: "evidence-vault", question: "evidence-timestamped" },
   
   // Disputes
-  resolve: { category: "disputes", question: "resolve-service" },
-  resolveCost: { category: "disputes", question: "resolve-cost" },
+  resolve: { category: "cases-disputes", question: "open-case-for" },
+  resolveCost: { category: "cases-disputes", question: "after-submit-case" },
   
   // LINE
-  connectLine: { category: "communication", question: "connect-line" },
+  connectLine: { category: "communication", question: "connect-line-tenant" },
   landlordLine: { category: "communication", question: "landlord-line" },
-  notifications: { category: "communication", question: "notification-types" },
+  notifications: { category: "communication", question: "what-notifications" },
   
   // Billing
-  changePlan: { category: "billing", question: "change-plan" },
+  changePlan: { category: "billing", question: "upgrade-plan" },
   cancelSubscription: { category: "billing", question: "cancel-subscription" },
-  letterCredits: { category: "billing", question: "letter-credits" },
+  letterCredits: { category: "billing", question: "paid-features" },
   
   // Privacy
-  dataSecurity: { category: "privacy-security", question: "data-security" },
-  deleteAccount: { category: "privacy-security", question: "delete-account" }
+  dataSecurity: { category: "privacy-security", question: "data-protection" },
+  deleteAccount: { category: "privacy-security", question: "delete-data" }
 };
 
 /**

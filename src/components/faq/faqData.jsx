@@ -322,12 +322,12 @@ export const faqData = {
             ru: "Как отслеживать мой депозит?"
           },
           a: {
-            en: "Add your deposit amount, payment date, and expected return date in the Deposit Tracker.",
-            th: "เพิ่มจำนวนเงินมัดจำ วันที่จ่าย และวันที่คาดว่าจะได้รับคืนในตัวติดตามเงินมัดจำ",
-            ja: "敷金トラッカーに敷金額、支払日、返還予定日を追加します。",
-            ko: "보증금 추적기에 보증금 금액, 지불 날짜 및 예상 반환 날짜를 추가하세요.",
-            zh: "在押金追踪器中添加您的押金金额、支付日期和预计退还日期。",
-            ru: "Добавьте сумму депозита, дату оплаты и ожидаемую дату возврата в трекер депозитов."
+            en: "Add your deposit amount, payment date, and expected return date in the Deposit Tracker.\n\n[Back to Deposit & Returns](propertytracker#deposit)",
+            th: "เพิ่มจำนวนเงินมัดจำ วันที่จ่าย และวันที่คาดว่าจะได้รับคืนในตัวติดตามเงินมัดจำ\n\n[กลับไปที่เงินมัดจำและการคืน](propertytracker#deposit)",
+            ja: "敷金トラッカーに敷金額、支払日、返還予定日を追加します。\n\n[敷金と返還に戻る](propertytracker#deposit)",
+            ko: "보증금 추적기에 보증금 금액, 지불 날짜 및 예상 반환 날짜를 추가하세요.\n\n[보증금 및 반환으로 돌아가기](propertytracker#deposit)",
+            zh: "在押金追踪器中添加您的押金金额、支付日期和预计退还日期。\n\n[返回押金与退还](propertytracker#deposit)",
+            ru: "Добавьте сумму депозита, дату оплаты и ожидаемую дату возврата в трекер депозитов.\n\n[Вернуться к депозиту и возврату](propertytracker#deposit)"
           }
         },
         {
@@ -341,12 +341,12 @@ export const faqData = {
             ru: "Как работают удержания из депозита?"
           },
           a: {
-            en: "You can record deductions, add notes, and upload supporting photos or videos.",
-            th: "คุณสามารถบันทึกการหัก เพิ่มหมายเหตุ และอัปโหลดรูปภาพหรือวิดีโอสนับสนุนได้",
-            ja: "控除を記録し、メモを追加し、サポート写真やビデオをアップロードできます。",
-            ko: "공제를 기록하고, 메모를 추가하며, 지원 사진이나 동영상을 업로드할 수 있습니다.",
-            zh: "您可以记录扣除、添加备注并上传支持照片或视频。",
-            ru: "Вы можете записывать удержания, добавлять заметки и загружать подтверждающие фото или видео."
+            en: "You can record deductions, add notes, and upload supporting photos or videos.\n\n[Back to Deposit & Returns](propertytracker#deposit)",
+            th: "คุณสามารถบันทึกการหัก เพิ่มหมายเหตุ และอัปโหลดรูปภาพหรือวิดีโอสนับสนุนได้\n\n[กลับไปที่เงินมัดจำและการคืน](propertytracker#deposit)",
+            ja: "控除を記録し、メモを追加し、サポート写真やビデオをアップロードできます。\n\n[敷金と返還に戻る](propertytracker#deposit)",
+            ko: "공제를 기록하고, 메모를 추가하며, 지원 사진이나 동영상을 업로드할 수 있습니다.\n\n[보증금 및 반환으로 돌아가기](propertytracker#deposit)",
+            zh: "您可以记录扣除、添加备注并上传支持照片或视频。\n\n[返回押金与退还](propertytracker#deposit)",
+            ru: "Вы можете записывать удержания, добавлять заметки и загружать подтверждающие фото или видео.\n\n[Вернуться к депозиту и возврату](propertytracker#deposit)"
           }
         },
         {
@@ -360,12 +360,12 @@ export const faqData = {
             ru: "Поможет ли LeaseShield вернуть мой депозит?"
           },
           a: {
-            en: "Yes — you can submit a case if there is a dispute, and our team will help with documentation and formal letters.",
-            th: "ใช่ — คุณสามารถส่งคดีหากมีข้อพิพาท และทีมของเราจะช่วยด้านเอกสารและจดหมายอย่างเป็นทางการ",
-            ja: "はい — 紛争がある場合はケースを提出でき、チームが文書化と正式な手紙を支援します。",
-            ko: "네 — 분쟁이 있으면 케이스를 제출할 수 있으며, 저희 팀이 문서화 및 공식 서신을 도와드립니다.",
-            zh: "是的 — 如果有纠纷，您可以提交案件，我们的团队将协助提供文档和正式信函。",
-            ru: "Да — вы можете подать дело в случае спора, и наша команда поможет с документацией и официальными письмами."
+            en: "Yes — you can submit a case if there is a dispute, and our team will help with documentation and formal letters.\n\n[Back to Deposit & Returns](propertytracker#deposit)",
+            th: "ใช่ — คุณสามารถส่งคดีหากมีข้อพิพาท และทีมของเราจะช่วยด้านเอกสารและจดหมายอย่างเป็นทางการ\n\n[กลับไปที่เงินมัดจำและการคืน](propertytracker#deposit)",
+            ja: "はい — 紛争がある場合はケースを提出でき、チームが文書化と正式な手紙を支援します。\n\n[敷金と返還に戻る](propertytracker#deposit)",
+            ko: "네 — 분쟁이 있으면 케이스를 제출할 수 있으며, 저희 팀이 문서화 및 공식 서신을 도와드립니다.\n\n[보증금 및 반환으로 돌아가기](propertytracker#deposit)",
+            zh: "是的 — 如果有纠纷，您可以提交案件，我们的团队将协助提供文档和正式信函。\n\n[返回押金与退还](propertytracker#deposit)",
+            ru: "Да — вы можете подать дело в случае спора, и наша команда поможет с документацией и официальными письмами.\n\n[Вернуться к депозиту и возврату](propertytracker#deposit)"
           }
         },
         {
@@ -379,12 +379,12 @@ export const faqData = {
             ru: "Когда следует загружать доказательства заселения?"
           },
           a: {
-            en: "As early as possible — ideally before or on the first day of your tenancy.",
-            th: "เร็วที่สุดเท่าที่จะเป็นไปได้ — เหมาะที่สุดคือก่อนหรือในวันแรกของการเช่า",
-            ja: "できるだけ早く — 理想的には賃貸開始前または初日に。",
-            ko: "가능한 한 빨리 — 이상적으로는 임대 시작 전이나 첫날에.",
-            zh: "越早越好 — 理想情况下是在租期开始之前或第一天。",
-            ru: "Как можно раньше — в идеале до или в первый день аренды."
+            en: "As early as possible — ideally before or on the first day of your tenancy.\n\n[Back to Deposit & Returns](propertytracker#deposit)",
+            th: "เร็วที่สุดเท่าที่จะเป็นไปได้ — เหมาะที่สุดคือก่อนหรือในวันแรกของการเช่า\n\n[กลับไปที่เงินมัดจำและการคืน](propertytracker#deposit)",
+            ja: "できるだけ早く — 理想的には賃貸開始前または初日に。\n\n[敷金と返還に戻る](propertytracker#deposit)",
+            ko: "가능한 한 빨리 — 이상적으로는 임대 시작 전이나 첫날에.\n\n[보증금 및 반환으로 돌아가기](propertytracker#deposit)",
+            zh: "越早越好 — 理想情况下是在租期开始之前或第一天。\n\n[返回押金与退还](propertytracker#deposit)",
+            ru: "Как можно раньше — в идеале до или в первый день аренды.\n\n[Вернуться к депозиту и возврату](propertytracker#deposit)"
           }
         },
         {
@@ -398,12 +398,12 @@ export const faqData = {
             ru: "Что следует записывать при выселении?"
           },
           a: {
-            en: "Upload photos, videos, and notes about the property condition to ensure transparency and prevent unfair deductions.",
-            th: "อัปโหลดรูปภาพ วิดีโอ และบันทึกเกี่ยวกับสภาพทรัพย์สินเพื่อความโปร่งใสและป้องกันการหักเงินที่ไม่เป็นธรรม",
-            ja: "透明性を確保し、不当な控除を防ぐために、物件の状態に関する写真、ビデオ、メモをアップロードします。",
-            ko: "투명성을 보장하고 불공정한 공제를 방지하기 위해 부동산 상태에 대한 사진, 동영상 및 메모를 업로드하세요.",
-            zh: "上传有关物业状况的照片、视频和备注，以确保透明度并防止不公平的扣除。",
-            ru: "Загрузите фото, видео и заметки о состоянии объекта, чтобы обеспечить прозрачность и предотвратить несправедливые удержания."
+            en: "Upload photos, videos, and notes about the property condition to ensure transparency and prevent unfair deductions.\n\n[Back to Deposit & Returns](propertytracker#deposit)",
+            th: "อัปโหลดรูปภาพ วิดีโอ และบันทึกเกี่ยวกับสภาพทรัพย์สินเพื่อความโปร่งใสและป้องกันการหักเงินที่ไม่เป็นธรรม\n\n[กลับไปที่เงินมัดจำและการคืน](propertytracker#deposit)",
+            ja: "透明性を確保し、不当な控除を防ぐために、物件の状態に関する写真、ビデオ、メモをアップロードします。\n\n[敷金と返還に戻る](propertytracker#deposit)",
+            ko: "투명성을 보장하고 불공정한 공제를 방지하기 위해 부동산 상태에 대한 사진, 동영상 및 메모를 업로드하세요.\n\n[보증금 및 반환으로 돌아가기](propertytracker#deposit)",
+            zh: "上传有关物业状况的照片、视频和备注，以确保透明度并防止不公平的扣除。\n\n[返回押金与退还](propertytracker#deposit)",
+            ru: "Загрузите фото, видео и заметки о состоянии объекта, чтобы обеспечить прозрачность и предотвратить несправедливые удержания.\n\n[Вернуться к депозиту и возврату](propertytracker#deposit)"
           }
         }
       ]
@@ -450,12 +450,12 @@ export const faqData = {
             ru: "Что проверяет AI сканер?"
           },
           a: {
-            en: "Key terms, responsibilities, dates, risks, and potential problem areas in your lease.",
-            th: "เงื่อนไขสำคัญ ความรับผิดชอบ วันที่ ความเสี่ยง และพื้นที่ปัญหาที่อาจเกิดขึ้นในสัญญาเช่าของคุณ",
-            ja: "主要な条件、責任、日付、リスク、リース内の潜在的な問題領域。",
-            ko: "임대 계약의 주요 조건, 책임, 날짜, 위험 및 잠재적 문제 영역.",
-            zh: "租约中的关键条款、责任、日期、风险和潜在问题区域。",
-            ru: "Ключевые условия, обязанности, даты, риски и потенциальные проблемные области в вашем договоре."
+            en: "Key terms, responsibilities, dates, risks, and potential problem areas in your lease.\n\n[Back to Upload & Scan](uploadscan)",
+            th: "เงื่อนไขสำคัญ ความรับผิดชอบ วันที่ ความเสี่ยง และพื้นที่ปัญหาที่อาจเกิดขึ้นในสัญญาเช่าของคุณ\n\n[กลับไปที่อัปโหลดและสแกน](uploadscan)",
+            ja: "主要な条件、責任、日付、リスク、リース内の潜在的な問題領域。\n\n[アップロードとスキャンに戻る](uploadscan)",
+            ko: "임대 계약의 주요 조건, 책임, 날짜, 위험 및 잠재적 문제 영역.\n\n[업로드 및 스캔으로 돌아가기](uploadscan)",
+            zh: "租约中的关键条款、责任、日期、风险和潜在问题区域。\n\n[返回上传与扫描](uploadscan)",
+            ru: "Ключевые условия, обязанности, даты, риски и потенциальные проблемные области в вашем договоре.\n\n[Вернуться к загрузке и сканированию](uploadscan)"
           }
         },
         {
@@ -469,12 +469,12 @@ export const faqData = {
             ru: "Предоставляет ли AI сканер юридические консультации?"
           },
           a: {
-            en: "No. It provides clarity and risk scoring, but not legal interpretation or legal advice.",
-            th: "ไม่ มันให้ความชัดเจนและคะแนนความเสี่ยง แต่ไม่ใช่การตีความทางกฎหมายหรือคำแนะนำทางกฎหมาย",
-            ja: "いいえ。明確さとリスクスコアリングを提供しますが、法的解釈や法的アドバイスは提供しません。",
-            ko: "아니요. 명확성과 위험 점수를 제공하지만 법적 해석이나 법률 자문은 제공하지 않습니다.",
-            zh: "不。它提供清晰度和风险评分，但不提供法律解释或法律建议。",
-            ru: "Нет. Он обеспечивает ясность и оценку рисков, но не юридическую интерпретацию или юридические консультации."
+            en: "No. It provides clarity and risk scoring, but not legal interpretation or legal advice.\n\n[Back to Upload & Scan](uploadscan)",
+            th: "ไม่ มันให้ความชัดเจนและคะแนนความเสี่ยง แต่ไม่ใช่การตีความทางกฎหมายหรือคำแนะนำทางกฎหมาย\n\n[กลับไปที่อัปโหลดและสแกน](uploadscan)",
+            ja: "いいえ。明確さとリスクスコアリングを提供しますが、法的解釈や法的アドバイスは提供しません。\n\n[アップロードとスキャンに戻る](uploadscan)",
+            ko: "아니요. 명확성과 위험 점수를 제공하지만 법적 해석이나 법률 자문은 제공하지 않습니다.\n\n[업로드 및 스캔으로 돌아가기](uploadscan)",
+            zh: "不。它提供清晰度和风险评分，但不提供法律解释或法律建议。\n\n[返回上传与扫描](uploadscan)",
+            ru: "Нет. Он обеспечивает ясность и оценку рисков, но не юридическую интерпретацию или юридические консультации.\n\n[Вернуться к загрузке и сканированию](uploadscan)"
           }
         },
         {
@@ -488,12 +488,12 @@ export const faqData = {
             ru: "Могу ли я сканировать фотографии моего договора?"
           },
           a: {
-            en: "Yes. Photos, PDFs, and screenshots are supported.",
-            th: "ได้ รองรับรูปภาพ PDF และภาพหน้าจอ",
-            ja: "はい。写真、PDF、スクリーンショットがサポートされています。",
-            ko: "네. 사진, PDF 및 스크린샷이 지원됩니다.",
-            zh: "可以。支持照片、PDF和截图。",
-            ru: "Да. Поддерживаются фотографии, PDF и скриншоты."
+            en: "Yes. Photos, PDFs, and screenshots are supported.\n\n[Back to Upload & Scan](uploadscan)",
+            th: "ได้ รองรับรูปภาพ PDF และภาพหน้าจอ\n\n[กลับไปที่อัปโหลดและสแกน](uploadscan)",
+            ja: "はい。写真、PDF、スクリーンショットがサポートされています。\n\n[アップロードとスキャンに戻る](uploadscan)",
+            ko: "네. 사진, PDF 및 스크린샷이 지원됩니다.\n\n[업로드 및 스캔으로 돌아가기](uploadscan)",
+            zh: "可以。支持照片、PDF和截图。\n\n[返回上传与扫描](uploadscan)",
+            ru: "Да. Поддерживаются фотографии, PDF и скриншоты.\n\n[Вернуться к загрузке и сканированию](uploadscan)"
           }
         },
         {
@@ -507,12 +507,12 @@ export const faqData = {
             ru: "Сохраняется ли анализ?"
           },
           a: {
-            en: "Yes. Your scan results remain linked to your lease unless you delete them.",
-            th: "ใช่ ผลการสแกนของคุณยังคงเชื่อมโยงกับสัญญาเช่าของคุณจนกว่าคุณจะลบ",
-            ja: "はい。スキャン結果は削除しない限りリースにリンクされたままです。",
-            ko: "네. 스캔 결과는 삭제하지 않는 한 임대 계약에 연결된 상태로 유지됩니다.",
-            zh: "是的。除非您删除，否则扫描结果将保持链接到您的租约。",
-            ru: "Да. Результаты сканирования остаются привязанными к вашему договору, пока вы их не удалите."
+            en: "Yes. Your scan results remain linked to your lease unless you delete them.\n\n[Back to Upload & Scan](uploadscan)",
+            th: "ใช่ ผลการสแกนของคุณยังคงเชื่อมโยงกับสัญญาเช่าของคุณจนกว่าคุณจะลบ\n\n[กลับไปที่อัปโหลดและสแกน](uploadscan)",
+            ja: "はい。スキャン結果は削除しない限りリースにリンクされたままです。\n\n[アップロードとスキャンに戻る](uploadscan)",
+            ko: "네. 스캔 결과는 삭제하지 않는 한 임대 계약에 연결된 상태로 유지됩니다.\n\n[업로드 및 스캔으로 돌아가기](uploadscan)",
+            zh: "是的。除非您删除，否则扫描结果将保持链接到您的租约。\n\n[返回上传与扫描](uploadscan)",
+            ru: "Да. Результаты сканирования остаются привязанными к вашему договору, пока вы их не удалите.\n\n[Вернуться к загрузке и сканированию](uploadscan)"
           }
         }
       ]
@@ -668,12 +668,12 @@ export const faqData = {
             ru: "Как сообщить о проблеме с обслуживанием?"
           },
           a: {
-            en: "Go to the Maintenance section and upload photos, videos, or voice notes with a description.",
-            th: "ไปที่ส่วนการซ่อมบำรุงและอัปโหลดรูปภาพ วิดีโอ หรือบันทึกเสียงพร้อมคำอธิบาย",
-            ja: "メンテナンスセクションに移動し、説明とともに写真、ビデオ、または音声メモをアップロードします。",
-            ko: "유지보수 섹션으로 이동하여 설명과 함께 사진, 동영상 또는 음성 메모를 업로드하세요.",
-            zh: "转到维护部分并上传照片、视频或语音备忘录及描述。",
-            ru: "Перейдите в раздел обслуживания и загрузите фотографии, видео или голосовые заметки с описанием."
+            en: "Go to the Maintenance section and upload photos, videos, or voice notes with a description.\n\n[Back to maintenance request](propertytracker#maintenance)",
+            th: "ไปที่ส่วนการซ่อมบำรุงและอัปโหลดรูปภาพ วิดีโอ หรือบันทึกเสียงพร้อมคำอธิบาย\n\n[กลับไปที่คำขอซ่อมบำรุง](propertytracker#maintenance)",
+            ja: "メンテナンスセクションに移動し、説明とともに写真、ビデオ、または音声メモをアップロードします。\n\n[メンテナンスリクエストに戻る](propertytracker#maintenance)",
+            ko: "유지보수 섹션으로 이동하여 설명과 함께 사진, 동영상 또는 음성 메모를 업로드하세요.\n\n[유지보수 요청으로 돌아가기](propertytracker#maintenance)",
+            zh: "转到维护部分并上传照片、视频或语音备忘录及描述。\n\n[返回维护请求](propertytracker#maintenance)",
+            ru: "Перейдите в раздел обслуживания и загрузите фотографии, видео или голосовые заметки с описанием.\n\n[Вернуться к запросу на обслуживание](propertytracker#maintenance)"
           }
         },
         {
@@ -687,12 +687,12 @@ export const faqData = {
             ru: "Кто получает мой отчет об обслуживании?"
           },
           a: {
-            en: "It is stored in your property record. You may also share it with your landlord or juristic.",
-            th: "มันถูกเก็บไว้ในบันทึกทรัพย์สินของคุณ คุณยังสามารถแชร์กับเจ้าของบ้านหรือนิติบุคคลได้",
-            ja: "プロパティ記録に保存されます。家主や管理会社と共有することもできます。",
-            ko: "부동산 기록에 저장됩니다. 집주인이나 관리사무소와 공유할 수도 있습니다.",
-            zh: "它存储在您的物业记录中。您也可以与房东或物业分享。",
-            ru: "Он хранится в записи вашего объекта. Вы также можете поделиться им с арендодателем или управляющей."
+            en: "It is stored in your property record. You may also share it with your landlord or juristic.\n\n[Back to maintenance request](propertytracker#maintenance)",
+            th: "มันถูกเก็บไว้ในบันทึกทรัพย์สินของคุณ คุณยังสามารถแชร์กับเจ้าของบ้านหรือนิติบุคคลได้\n\n[กลับไปที่คำขอซ่อมบำรุง](propertytracker#maintenance)",
+            ja: "プロパティ記録に保存されます。家主や管理会社と共有することもできます。\n\n[メンテナンスリクエストに戻る](propertytracker#maintenance)",
+            ko: "부동산 기록에 저장됩니다. 집주인이나 관리사무소와 공유할 수도 있습니다.\n\n[유지보수 요청으로 돌아가기](propertytracker#maintenance)",
+            zh: "它存储在您的物业记录中。您也可以与房东或物业分享。\n\n[返回维护请求](propertytracker#maintenance)",
+            ru: "Он хранится в записи вашего объекта. Вы также можете поделиться им с арендодателем или управляющей.\n\n[Вернуться к запросу на обслуживание](propertytracker#maintenance)"
           }
         },
         {
@@ -706,12 +706,12 @@ export const faqData = {
             ru: "Могу ли я отслеживать прогресс?"
           },
           a: {
-            en: "Yes — each issue includes status updates and a timeline.",
-            th: "ได้ — แต่ละปัญหามีการอัปเดตสถานะและไทม์ไลน์",
-            ja: "はい — 各問題にはステータスの更新とタイムラインが含まれています。",
-            ko: "네 — 각 문제에는 상태 업데이트와 타임라인이 포함됩니다.",
-            zh: "可以 — 每个问题都包括状态更新和时间表。",
-            ru: "Да — каждая проблема включает обновления статуса и хронологию."
+            en: "Yes — each issue includes status updates and a timeline.\n\n[Back to maintenance request](propertytracker#maintenance)",
+            th: "ได้ — แต่ละปัญหามีการอัปเดตสถานะและไทม์ไลน์\n\n[กลับไปที่คำขอซ่อมบำรุง](propertytracker#maintenance)",
+            ja: "はい — 各問題にはステータスの更新とタイムラインが含まれています。\n\n[メンテナンスリクエストに戻る](propertytracker#maintenance)",
+            ko: "네 — 각 문제에는 상태 업데이트와 타임라인이 포함됩니다.\n\n[유지보수 요청으로 돌아가기](propertytracker#maintenance)",
+            zh: "可以 — 每个问题都包括状态更新和时间表。\n\n[返回维护请求](propertytracker#maintenance)",
+            ru: "Да — каждая проблема включает обновления статуса и хронологию.\n\n[Вернуться к запросу на обслуживание](propertytracker#maintenance)"
           }
         },
         {
@@ -725,12 +725,12 @@ export const faqData = {
             ru: "Какие типы проблем следует сообщать?"
           },
           a: {
-            en: "Any repair needs, damage, safety concerns, or property access issues.",
-            th: "ความต้องการซ่อมแซม ความเสียหาย ข้อกังวลด้านความปลอดภัย หรือปัญหาการเข้าถึงทรัพย์สิน",
-            ja: "修理の必要性、損傷、安全上の懸念、または物件アクセスの問題。",
-            ko: "수리 필요, 손상, 안전 문제 또는 부동산 접근 문제.",
-            zh: "任何维修需求、损坏、安全问题或物业访问问题。",
-            ru: "Любые потребности в ремонте, повреждения, проблемы безопасности или проблемы с доступом к объекту."
+            en: "Any repair needs, damage, safety concerns, or property access issues.\n\n[Back to maintenance request](propertytracker#maintenance)",
+            th: "ความต้องการซ่อมแซม ความเสียหาย ข้อกังวลด้านความปลอดภัย หรือปัญหาการเข้าถึงทรัพย์สิน\n\n[กลับไปที่คำขอซ่อมบำรุง](propertytracker#maintenance)",
+            ja: "修理の必要性、損傷、安全上の懸念、または物件アクセスの問題。\n\n[メンテナンスリクエストに戻る](propertytracker#maintenance)",
+            ko: "수리 필요, 손상, 안전 문제 또는 부동산 접근 문제.\n\n[유지보수 요청으로 돌아가기](propertytracker#maintenance)",
+            zh: "任何维修需求、损坏、安全问题或物业访问问题。\n\n[返回维护请求](propertytracker#maintenance)",
+            ru: "Любые потребности в ремонте, повреждения, проблемы безопасности или проблемы с доступом к объекту.\n\n[Вернуться к запросу на обслуживание](propertytracker#maintenance)"
           }
         }
       ]
