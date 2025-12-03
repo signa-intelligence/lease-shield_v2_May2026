@@ -63,12 +63,42 @@ const createRipple = (event, element) => {
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const mainContentRef = useRef(null);
+  const [deferredPrompt, setDeferredPrompt] = React.useState(null);
+  const [showInstallButton, setShowInstallButton] = React.useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000,
   });
+
+  // Capture beforeinstallprompt event for PWA install
+  React.useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      // Only show on Android/Chrome-like browsers
+      const isAndroid = /android/i.test(navigator.userAgent);
+      const isChrome = /chrome/i.test(navigator.userAgent) && !/edge|edg/i.test(navigator.userAgent);
+      if (isAndroid || isChrome) {
+        setShowInstallButton(true);
+      }
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    // Hide button after user makes a choice (accept or dismiss)
+    setShowInstallButton(false);
+    setDeferredPrompt(null);
+  };
 
   React.useEffect(() => {
     if (mainContentRef.current) {
