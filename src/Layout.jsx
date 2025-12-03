@@ -69,6 +69,7 @@ export default function Layout({ children, currentPageName }) {
   const [deferredPrompt, setDeferredPrompt] = React.useState(null);
   const [showInstallButton, setShowInstallButton] = React.useState(false);
   const [showQuickGuide, setShowQuickGuide] = React.useState(false);
+  const [hasCheckedGuide, setHasCheckedGuide] = React.useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -106,15 +107,21 @@ export default function Layout({ children, currentPageName }) {
 
   // Auto-trigger Quick Guide for first-time users (unless hidden)
   React.useEffect(() => {
-    if (user) {
+    if (user && !hasCheckedGuide) {
+      setHasCheckedGuide(true);
+      
       const guideDone = localStorage.getItem('leaseshield_quick_guide_done');
       const hideGuide = user.hide_quick_guide;
 
+      // Only auto-open if BOTH conditions are false
       if (!guideDone && !hideGuide) {
-        setShowQuickGuide(true);
+        // Small delay to ensure page is loaded
+        setTimeout(() => {
+          setShowQuickGuide(true);
+        }, 800);
       }
     }
-  }, [user]);
+  }, [user, hasCheckedGuide]);
 
   React.useEffect(() => {
     if (mainContentRef.current) {
@@ -561,6 +568,35 @@ export default function Layout({ children, currentPageName }) {
                 <span className="hidden sm:inline">Install App</span>
               </button>
             )}
+            <button
+              onClick={() => {
+                haptic.light();
+                setShowQuickGuide(true);
+              }}
+              aria-label="Quick Guide"
+              title="Quick Guide"
+              className="btn-interaction"
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+              }}
+            >
+              <Info 
+                className="w-4 h-4 sm:w-5 sm:h-5" 
+                style={{ 
+                  color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
+                  transition: 'color 0.2s'
+                }}
+              />
+            </button>
             <Link to={createPageUrl("FAQ")}>
               <button
                 onClick={() => haptic.light()}
