@@ -1758,10 +1758,7 @@ function PropertyTrackerContent() {
                     <Wallet className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold">{strings.depositSection}</span>
-                      <QuickHelp link="deposits" size="sm" />
-                    </div>
+                    <div className="text-lg font-bold">{strings.depositSection}</div>
                     {deposit && deposit.deposit_amount > 0 && (
                       <div className="text-sm font-normal flex items-center gap-2 mt-1">
                         <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>

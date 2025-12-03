@@ -32,10 +32,6 @@ export default function FAQ() {
   const isDarkMode = user?.theme === 'dark';
   const strings = faqStrings[language] || faqStrings.en;
 
-  const params = new URLSearchParams(window.location.search);
-  const backTo = params.get('backTo');
-  const backLabel = params.get('backLabel');
-
   // Check URL for direct question link
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -133,16 +129,6 @@ export default function FAQ() {
               <ChevronLeft className="w-4 h-4" />
               {strings.backToCategories}
             </button>
-          ) : backTo && backLabel ? (
-            <Link to={backTo}>
-              <button
-                className="flex items-center gap-2 mb-4 text-sm font-medium transition-colors"
-                style={{ color: '#0C3B2E' }}
-              >
-                <ChevronLeft className="w-4 h-4" />
-                {backLabel}
-              </button>
-            </Link>
           ) : (
             <Link to={createPageUrl("Dashboard")}>
               <button
@@ -355,21 +341,7 @@ function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel }) {
               color: colors.textSecondary
             }}
           >
-            {answer.split(/(https?:\/\/[^\s]+)/g).map((part, i) => 
-              part.match(/^https?:\/\//) ? (
-                <a 
-                  key={i} 
-                  href={part} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ color: '#3B82F6', textDecoration: 'underline' }}
-                  onMouseEnter={(e) => e.target.style.color = '#1D4ED8'}
-                  onMouseLeave={(e) => e.target.style.color = '#3B82F6'}
-                >
-                  {part}
-                </a>
-              ) : part
-            )}
+            {answer}
           </div>
         </div>
       )}
