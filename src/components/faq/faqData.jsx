@@ -1164,7 +1164,8 @@ export const faqStrings = {
     backToCategories: "All Categories",
     categories: "Categories",
     contactSupport: "Still need help?",
-    contactSupportBtn: "Contact Support"
+    contactSupportBtn: "Contact Support",
+    questions: "questions"
   },
   th: {
     title: "ช่วยเหลือและคำถามที่พบบ่อย",
@@ -1174,7 +1175,8 @@ export const faqStrings = {
     backToCategories: "หมวดหมู่ทั้งหมด",
     categories: "หมวดหมู่",
     contactSupport: "ยังต้องการความช่วยเหลือ?",
-    contactSupportBtn: "ติดต่อฝ่ายสนับสนุน"
+    contactSupportBtn: "ติดต่อฝ่ายสนับสนุน",
+    questions: "คำถาม"
   },
   ja: {
     title: "ヘルプとFAQ",
@@ -1184,7 +1186,8 @@ export const faqStrings = {
     backToCategories: "すべてのカテゴリ",
     categories: "カテゴリ",
     contactSupport: "まだ助けが必要ですか？",
-    contactSupportBtn: "サポートに連絡"
+    contactSupportBtn: "サポートに連絡",
+    questions: "質問"
   },
   ko: {
     title: "도움말 및 FAQ",
@@ -1194,7 +1197,8 @@ export const faqStrings = {
     backToCategories: "모든 카테고리",
     categories: "카테고리",
     contactSupport: "여전히 도움이 필요하신가요?",
-    contactSupportBtn: "지원팀에 문의"
+    contactSupportBtn: "지원팀에 문의",
+    questions: "질문"
   },
   zh: {
     title: "帮助与常见问题",
@@ -1204,7 +1208,8 @@ export const faqStrings = {
     backToCategories: "所有分类",
     categories: "分类",
     contactSupport: "仍需要帮助？",
-    contactSupportBtn: "联系支持"
+    contactSupportBtn: "联系支持",
+    questions: "问题"
   },
   ru: {
     title: "Справка и FAQ",
@@ -1214,6 +1219,7 @@ export const faqStrings = {
     backToCategories: "Все категории",
     categories: "Категории",
     contactSupport: "Все еще нужна помощь?",
-    contactSupportBtn: "Связаться с поддержкой"
+    contactSupportBtn: "Связаться с поддержкой",
+    questions: "вопросов"
   }
 };

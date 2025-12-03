@@ -242,7 +242,7 @@ export default function FAQ() {
                     {category.title[language] || category.title.en}
                   </p>
                   <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                    {category.items.length} {language === 'th' ? 'คำถาม' : 'questions'}
+                    {category.items.length} {strings.questions}
                   </p>
                 </button>
               );
