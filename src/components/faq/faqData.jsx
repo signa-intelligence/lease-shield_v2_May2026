@@ -431,12 +431,12 @@ export const faqData = {
             ru: "Как загрузить и отсканировать мой договор?"
           },
           a: {
-            en: "1. Go to the Scan tab or Dashboard\n2. Tap Upload Lease or drag files to the upload zone\n3. Select your lease document (PDF, photos, or Word files)\n4. The AI will analyze it automatically within 30 seconds\n5. Review your risk score and lease details\n\n[Back to Upload & Scan](uploadscan)",
-            th: "1. ไปที่แท็บสแกนหรือหน้าหลัก\n2. แตะอัปโหลดสัญญาเช่าหรือลากไฟล์ไปที่โซนอัปโหลด\n3. เลือกเอกสารสัญญาเช่าของคุณ (PDF, รูปภาพ, หรือไฟล์ Word)\n4. AI จะวิเคราะห์โดยอัตโนมัติภายใน 30 วินาที\n5. ตรวจสอบคะแนนความเสี่ยงและรายละเอียดสัญญาเช่าของคุณ\n\n[กลับไปที่อัปโหลดและสแกน](uploadscan)",
-            ja: "1. スキャンタブまたはダッシュボードに移動\n2. リースをアップロードをタップするか、アップロードゾーンにファイルをドラッグ\n3. リース文書を選択（PDF、写真、またはWordファイル）\n4. AIが30秒以内に自動的に分析\n5. リスクスコアとリース詳細を確認\n\n[アップロードとスキャンに戻る](uploadscan)",
-            ko: "1. 스캔 탭 또는 대시보드로 이동\n2. 임대 계약 업로드를 탭하거나 업로드 영역으로 파일 드래그\n3. 임대 계약서 선택 (PDF, 사진 또는 Word 파일)\n4. AI가 30초 이내에 자동으로 분석\n5. 위험 점수 및 임대 계약 세부 정보 검토\n\n[업로드 및 스캔으로 돌아가기](uploadscan)",
-            zh: "1. 转到扫描选项卡或仪表板\n2. 点击上传租约或将文件拖到上传区域\n3. 选择您的租约文档（PDF、照片或Word文件）\n4. AI将在30秒内自动分析\n5. 查看您的风险评分和租约详情\n\n[返回上传与扫描](uploadscan)",
-            ru: "1. Перейдите на вкладку Сканирование или Главную\n2. Нажмите Загрузить договор или перетащите файлы в зону загрузки\n3. Выберите документ договора (PDF, фото или Word файлы)\n4. AI автоматически проанализирует за 30 секунд\n5. Просмотрите оценку риска и детали договора\n\n[Вернуться к загрузке и сканированию](uploadscan)"
+            en: "1. Go to the Scan tab or Dashboard\n2. Tap Upload Lease or drag files to the upload zone\n3. Select your lease document (PDF, photos, or Word files)\n4. The AI will analyze it automatically within 30 seconds\n5. Review your risk score and lease details\n\n↩ [Back to Upload & Scan](uploadscan)",
+            th: "1. ไปที่แท็บสแกนหรือหน้าหลัก\n2. แตะอัปโหลดสัญญาเช่าหรือลากไฟล์ไปที่โซนอัปโหลด\n3. เลือกเอกสารสัญญาเช่าของคุณ (PDF, รูปภาพ, หรือไฟล์ Word)\n4. AI จะวิเคราะห์โดยอัตโนมัติภายใน 30 วินาที\n5. ตรวจสอบคะแนนความเสี่ยงและรายละเอียดสัญญาเช่าของคุณ\n\n↩ [กลับไปที่อัปโหลดและสแกน](uploadscan)",
+            ja: "1. スキャンタブまたはダッシュボードに移動\n2. リースをアップロードをタップするか、アップロードゾーンにファイルをドラッグ\n3. リース文書を選択（PDF、写真、またはWordファイル）\n4. AIが30秒以内に自動的に分析\n5. リスクスコアとリース詳細を確認\n\n↩ [アップロードとスキャンに戻る](uploadscan)",
+            ko: "1. 스캔 탭 또는 대시보드로 이동\n2. 임대 계약 업로드를 탭하거나 업로드 영역으로 파일 드래그\n3. 임대 계약서 선택 (PDF, 사진 또는 Word 파일)\n4. AI가 30초 이내에 자동으로 분석\n5. 위험 점수 및 임대 계약 세부 정보 검토\n\n↩ [업로드 및 스캔으로 돌아가기](uploadscan)",
+            zh: "1. 转到扫描选项卡或仪表板\n2. 点击上传租约或将文件拖到上传区域\n3. 选择您的租约文档（PDF、照片或Word文件）\n4. AI将在30秒内自动分析\n5. 查看您的风险评分和租约详情\n\n↩ [返回上传与扫描](uploadscan)",
+            ru: "1. Перейдите на вкладку Сканирование или Главную\n2. Нажмите Загрузить договор или перетащите файлы в зону загрузки\n3. Выберите документ договора (PDF, фото или Word файлы)\n4. AI автоматически проанализирует за 30 секунд\n5. Просмотрите оценку риска и детали договора\n\n↩ [Вернуться к загрузке и сканированию](uploadscan)"
           }
         },
         {
@@ -450,12 +450,12 @@ export const faqData = {
             ru: "Что проверяет AI сканер?"
           },
           a: {
-            en: "Key terms, responsibilities, dates, risks, and potential problem areas in your lease.\n\n[Back to Upload & Scan](uploadscan)",
-            th: "เงื่อนไขสำคัญ ความรับผิดชอบ วันที่ ความเสี่ยง และพื้นที่ปัญหาที่อาจเกิดขึ้นในสัญญาเช่าของคุณ\n\n[กลับไปที่อัปโหลดและสแกน](uploadscan)",
-            ja: "主要な条件、責任、日付、リスク、リース内の潜在的な問題領域。\n\n[アップロードとスキャンに戻る](uploadscan)",
-            ko: "임대 계약의 주요 조건, 책임, 날짜, 위험 및 잠재적 문제 영역.\n\n[업로드 및 스캔으로 돌아가기](uploadscan)",
-            zh: "租约中的关键条款、责任、日期、风险和潜在问题区域。\n\n[返回上传与扫描](uploadscan)",
-            ru: "Ключевые условия, обязанности, даты, риски и потенциальные проблемные области в вашем договоре.\n\n[Вернуться к загрузке и сканированию](uploadscan)"
+            en: "Key terms, responsibilities, dates, risks, and potential problem areas in your lease.\n\n↩ [Back to Upload & Scan](uploadscan)",
+            th: "เงื่อนไขสำคัญ ความรับผิดชอบ วันที่ ความเสี่ยง และพื้นที่ปัญหาที่อาจเกิดขึ้นในสัญญาเช่าของคุณ\n\n↩ [กลับไปที่อัปโหลดและสแกน](uploadscan)",
+            ja: "主要な条件、責任、日付、リスク、リース内の潜在的な問題領域。\n\n↩ [アップロードとスキャンに戻る](uploadscan)",
+            ko: "임대 계약의 주요 조건, 책임, 날짜, 위험 및 잠재적 문제 영역.\n\n↩ [업로드 및 스캔으로 돌아가기](uploadscan)",
+            zh: "租约中的关键条款、责任、日期、风险和潜在问题区域。\n\n↩ [返回上传与扫描](uploadscan)",
+            ru: "Ключевые условия, обязанности, даты, риски и потенциальные проблемные области в вашем договоре.\n\n↩ [Вернуться к загрузке и сканированию](uploadscan)"
           }
         },
         {
@@ -469,12 +469,12 @@ export const faqData = {
             ru: "Предоставляет ли AI сканер юридические консультации?"
           },
           a: {
-            en: "No. It provides clarity and risk scoring, but not legal interpretation or legal advice.\n\n[Back to Upload & Scan](uploadscan)",
-            th: "ไม่ มันให้ความชัดเจนและคะแนนความเสี่ยง แต่ไม่ใช่การตีความทางกฎหมายหรือคำแนะนำทางกฎหมาย\n\n[กลับไปที่อัปโหลดและสแกน](uploadscan)",
-            ja: "いいえ。明確さとリスクスコアリングを提供しますが、法的解釈や法的アドバイスは提供しません。\n\n[アップロードとスキャンに戻る](uploadscan)",
-            ko: "아니요. 명확성과 위험 점수를 제공하지만 법적 해석이나 법률 자문은 제공하지 않습니다.\n\n[업로드 및 스캔으로 돌아가기](uploadscan)",
-            zh: "不。它提供清晰度和风险评分，但不提供法律解释或法律建议。\n\n[返回上传与扫描](uploadscan)",
-            ru: "Нет. Он обеспечивает ясность и оценку рисков, но не юридическую интерпретацию или юридические консультации.\n\n[Вернуться к загрузке и сканированию](uploadscan)"
+            en: "No. It provides clarity and risk scoring, but not legal interpretation or legal advice.\n\n↩ [Back to Upload & Scan](uploadscan)",
+            th: "ไม่ มันให้ความชัดเจนและคะแนนความเสี่ยง แต่ไม่ใช่การตีความทางกฎหมายหรือคำแนะนำทางกฎหมาย\n\n↩ [กลับไปที่อัปโหลดและสแกน](uploadscan)",
+            ja: "いいえ。明確さとリスクスコアリングを提供しますが、法的解釈や法的アドバイスは提供しません。\n\n↩ [アップロードとスキャンに戻る](uploadscan)",
+            ko: "아니요. 명확성과 위험 점수를 제공하지만 법적 해석이나 법률 자문은 제공하지 않습니다.\n\n↩ [업로드 및 스캔으로 돌아가기](uploadscan)",
+            zh: "不。它提供清晰度和风险评分，但不提供法律解释或法律建议。\n\n↩ [返回上传与扫描](uploadscan)",
+            ru: "Нет. Он обеспечивает ясность и оценку рисков, но не юридическую интерпретацию или юридические консультации.\n\n↩ [Вернуться к загрузке и сканированию](uploadscan)"
           }
         },
         {
@@ -488,12 +488,12 @@ export const faqData = {
             ru: "Могу ли я сканировать фотографии моего договора?"
           },
           a: {
-            en: "Yes. Photos, PDFs, and screenshots are supported.\n\n[Back to Upload & Scan](uploadscan)",
-            th: "ได้ รองรับรูปภาพ PDF และภาพหน้าจอ\n\n[กลับไปที่อัปโหลดและสแกน](uploadscan)",
-            ja: "はい。写真、PDF、スクリーンショットがサポートされています。\n\n[アップロードとスキャンに戻る](uploadscan)",
-            ko: "네. 사진, PDF 및 스크린샷이 지원됩니다.\n\n[업로드 및 스캔으로 돌아가기](uploadscan)",
-            zh: "可以。支持照片、PDF和截图。\n\n[返回上传与扫描](uploadscan)",
-            ru: "Да. Поддерживаются фотографии, PDF и скриншоты.\n\n[Вернуться к загрузке и сканированию](uploadscan)"
+            en: "Yes. Photos, PDFs, and screenshots are supported.\n\n↩ [Back to Upload & Scan](uploadscan)",
+            th: "ได้ รองรับรูปภาพ PDF และภาพหน้าจอ\n\n↩ [กลับไปที่อัปโหลดและสแกน](uploadscan)",
+            ja: "はい。写真、PDF、スクリーンショットがサポートされています。\n\n↩ [アップロードとスキャンに戻る](uploadscan)",
+            ko: "네. 사진, PDF 및 스크린샷이 지원됩니다.\n\n↩ [업로드 및 스캔으로 돌아가기](uploadscan)",
+            zh: "可以。支持照片、PDF和截图。\n\n↩ [返回上传与扫描](uploadscan)",
+            ru: "Да. Поддерживаются фотографии, PDF и скриншоты.\n\n↩ [Вернуться к загрузке и сканированию](uploadscan)"
           }
         },
         {
@@ -507,12 +507,12 @@ export const faqData = {
             ru: "Сохраняется ли анализ?"
           },
           a: {
-            en: "Yes. Your scan results remain linked to your lease unless you delete them.\n\n[Back to Upload & Scan](uploadscan)",
-            th: "ใช่ ผลการสแกนของคุณยังคงเชื่อมโยงกับสัญญาเช่าของคุณจนกว่าคุณจะลบ\n\n[กลับไปที่อัปโหลดและสแกน](uploadscan)",
-            ja: "はい。スキャン結果は削除しない限りリースにリンクされたままです。\n\n[アップロードとスキャンに戻る](uploadscan)",
-            ko: "네. 스캔 결과는 삭제하지 않는 한 임대 계약에 연결된 상태로 유지됩니다.\n\n[업로드 및 스캔으로 돌아가기](uploadscan)",
-            zh: "是的。除非您删除，否则扫描结果将保持链接到您的租约。\n\n[返回上传与扫描](uploadscan)",
-            ru: "Да. Результаты сканирования остаются привязанными к вашему договору, пока вы их не удалите.\n\n[Вернуться к загрузке и сканированию](uploadscan)"
+            en: "Yes. Your scan results remain linked to your lease unless you delete them.\n\n↩ [Back to Upload & Scan](uploadscan)",
+            th: "ใช่ ผลการสแกนของคุณยังคงเชื่อมโยงกับสัญญาเช่าของคุณจนกว่าคุณจะลบ\n\n↩ [กลับไปที่อัปโหลดและสแกน](uploadscan)",
+            ja: "はい。スキャン結果は削除しない限りリースにリンクされたままです。\n\n↩ [アップロードとスキャンに戻る](uploadscan)",
+            ko: "네. 스캔 결果는 삭제하지 않는 한 임대 계약에 연결된 상태로 유지됩니다.\n\n↩ [업로드 및 스캔으로 돌아가기](uploadscan)",
+            zh: "是的。除非您删除，否则扫描结果将保持链接到您的租约。\n\n↩ [返回上传与扫描](uploadscan)",
+            ru: "Да. Результаты сканирования остаются привязанными к вашему договору, пока вы их не удалите.\n\n↩ [Вернуться к загрузке и сканированию](uploadscan)"
           }
         }
       ]
@@ -540,12 +540,12 @@ export const faqData = {
             ru: "Что я могу загрузить как доказательство?"
           },
           a: {
-            en: "Photos, videos, voice notes, PDFs, receipts, and communication records.",
-            th: "รูปภาพ วิดีโอ บันทึกเสียง PDF ใบเสร็จ และบันทึกการสื่อสาร",
-            ja: "写真、ビデオ、音声メモ、PDF、領収書、通信記録。",
-            ko: "사진, 동영상, 음성 메모, PDF, 영수증 및 통신 기록.",
-            zh: "照片、视频、语音备忘录、PDF、收据和通信记录。",
-            ru: "Фотографии, видео, голосовые заметки, PDF, чеки и записи переписки."
+            en: "Photos, videos, voice notes, PDFs, receipts, and communication records.\n\n↩ [Back to Evidence & Timeline](evidencevault)",
+            th: "รูปภาพ วิดีโอ บันทึกเสียง PDF ใบเสร็จ และบันทึกการสื่อสาร\n\n↩ [กลับไปที่หลักฐานและไทม์ไลน์](evidencevault)",
+            ja: "写真、ビデオ、音声メモ、PDF、領収書、通信記録。\n\n↩ [証拠とタイムラインに戻る](evidencevault)",
+            ko: "사진, 동영상, 음성 메모, PDF, 영수증 및 통신 기록.\n\n↩ [증거 및 타임라인으로 돌아가기](evidencevault)",
+            zh: "照片、视频、语音备忘录、PDF、收据和通信记录。\n\n↩ [返回证据与时间线](evidencevault)",
+            ru: "Фотографии, видео, голосовые заметки, PDF, чеки и записи переписки.\n\n↩ [Вернуться к доказательствам и хронологии](evidencevault)"
           }
         },
         {
@@ -559,12 +559,12 @@ export const faqData = {
             ru: "Имеют ли доказательства временные метки?"
           },
           a: {
-            en: "Yes. Evidence is automatically timestamped when uploaded.",
-            th: "ใช่ หลักฐานจะถูกประทับเวลาอัตโนมัติเมื่ออัปโหลด",
-            ja: "はい。証拠はアップロード時に自動的にタイムスタンプが付けられます。",
-            ko: "네. 증거는 업로드 시 자동으로 타임스탬프가 찍힙니다.",
-            zh: "是的。证据在上传时会自动添加时间戳。",
-            ru: "Да. Доказательства автоматически получают временные метки при загрузке."
+            en: "Yes. Evidence is automatically timestamped when uploaded.\n\n↩ [Back to Evidence & Timeline](evidencevault)",
+            th: "ใช่ หลักฐานจะถูกประทับเวลาอัตโนมัติเมื่ออัปโหลด\n\n↩ [กลับไปที่หลักฐานและไทม์ไลน์](evidencevault)",
+            ja: "はい。証拠はアップロード時に自動的にタイムスタンプが付けられます。\n\n↩ [証拠とタイムラインに戻る](evidencevault)",
+            ko: "네. 증거는 업로드 시 자동으로 타임스탬프가 찍힙니다.\n\n↩ [증거 및 타임라인으로 돌아가기](evidencevault)",
+            zh: "是的。证据在上传时会自动添加时间戳。\n\n↩ [返回证据与时间线](evidencevault)",
+            ru: "Да. Доказательства автоматически получают временные метки при загрузке.\n\n↩ [Вернуться к доказательствам и хронологии](evidencevault)"
           }
         },
         {
@@ -578,12 +578,12 @@ export const faqData = {
             ru: "Кто может видеть мои доказательства?"
           },
           a: {
-            en: "Only you, unless you choose to share it or open a case.",
-            th: "เฉพาะคุณเท่านั้น เว้นแต่คุณเลือกที่จะแชร์หรือเปิดคดี",
-            ja: "あなただけです。共有するかケースを開くことを選択しない限り。",
-            ko: "귀하만 볼 수 있습니다. 공유하거나 케이스를 열지 않는 한.",
-            zh: "只有您，除非您选择分享或开启案件。",
-            ru: "Только вы, если вы не решите поделиться или открыть дело."
+            en: "Only you, unless you choose to share it or open a case.\n\n↩ [Back to Evidence & Timeline](evidencevault)",
+            th: "เฉพาะคุณเท่านั้น เว้นแต่คุณเลือกที่จะแชร์หรือเปิดคดี\n\n↩ [กลับไปที่หลักฐานและไทม์ไลน์](evidencevault)",
+            ja: "あなただけです。共有するかケースを開くことを選択しない限り。\n\n↩ [証拠とタイムラインに戻る](evidencevault)",
+            ko: "귀하만 볼 수 있습니다. 공유하거나 케이스를 열지 않는 한.\n\n↩ [증거 및 타임라인으로 돌아가기](evidencevault)",
+            zh: "只有您，除非您选择分享或开启案件。\n\n↩ [返回证据与时间线](evidencevault)",
+            ru: "Только вы, если вы не решите поделиться или открыть дело.\n\n↩ [Вернуться к доказательствам и хронологии](evidencevault)"
           }
         },
         {
@@ -597,12 +597,12 @@ export const faqData = {
             ru: "Как используются доказательства в спорах?"
           },
           a: {
-            en: "It provides a clear, neutral record of property condition, communications, repairs, and agreements.",
-            th: "มันให้บันทึกที่ชัดเจนและเป็นกลางเกี่ยวกับสภาพทรัพย์สิน การสื่อสาร การซ่อมแซม และข้อตกลง",
-            ja: "物件の状態、コミュニケーション、修理、合意の明確で中立的な記録を提供します。",
-            ko: "부동산 상태, 커뮤니케이션, 수리 및 계약에 대한 명확하고 중립적인 기록을 제공합니다.",
-            zh: "它提供了关于物业状况、通信、维修和协议的清晰、中立的记录。",
-            ru: "Это обеспечивает четкую, нейтральную запись состояния объекта, коммуникаций, ремонтов и соглашений."
+            en: "It provides a clear, neutral record of property condition, communications, repairs, and agreements.\n\n↩ [Back to Evidence & Timeline](evidencevault)",
+            th: "มันให้บันทึกที่ชัดเจนและเป็นกลางเกี่ยวกับสภาพทรัพย์สิน การสื่อสาร การซ่อมแซม และข้อตกลง\n\n↩ [กลับไปที่หลักฐานและไทม์ไลน์](evidencevault)",
+            ja: "物件の状態、コミュニケーション、修理、合意の明確で中立的な記録を提供します。\n\n↩ [証拠とタイムラインに戻る](evidencevault)",
+            ko: "부동산 상태, 커뮤니케이션, 수리 및 계약에 대한 명확하고 중립적인 기록을 제공합니다.\n\n↩ [증거 및 타임라인으로 돌아가기](evidencevault)",
+            zh: "它提供了关于物业状况、通信、维修和协议的清晰、中立的记录。\n\n↩ [返回证据与时间线](evidencevault)",
+            ru: "Это обеспечивает четкую, нейтральную запись состояния объекта, коммуникаций, ремонтов и соглашений.\n\n↩ [Вернуться к доказательствам и хронологии](evidencevault)"
           }
         },
         {
@@ -616,12 +616,12 @@ export const faqData = {
             ru: "Следует ли загружать доказательства как при заселении, так и при выселении?"
           },
           a: {
-            en: "Yes. It creates a complete timeline that protects both tenant and landlord.",
-            th: "ใช่ มันสร้างไทม์ไลน์ที่สมบูรณ์ซึ่งปกป้องทั้งผู้เช่าและเจ้าของบ้าน",
-            ja: "はい。テナントと家主の両方を保護する完全なタイムラインを作成します。",
-            ko: "네. 세입자와 집주인 모두를 보호하는 완전한 타임라인을 생성합니다.",
-            zh: "是的。它创建了保护租户和房东双方的完整时间线。",
-            ru: "Да. Это создает полную хронологию, которая защищает и арендатора, и арендодателя."
+            en: "Yes. It creates a complete timeline that protects both tenant and landlord.\n\n↩ [Back to Evidence & Timeline](evidencevault)",
+            th: "ใช่ มันสร้างไทม์ไลน์ที่สมบูรณ์ซึ่งปกป้องทั้งผู้เช่าและเจ้าของบ้าน\n\n↩ [กลับไปที่หลักฐานและไทม์ไลน์](evidencevault)",
+            ja: "はい。テナントと家主の両方を保護する完全なタイムラインを作成します。\n\n↩ [証拠とタイムラインに戻る](evidencevault)",
+            ko: "네. 세입자와 집주인 모두를 보호하는 완전한 타임라인을 생성합니다.\n\n↩ [증거 및 타임라인으로 돌아가기](evidencevault)",
+            zh: "是的。它创建了保护租户和房东双方的完整时间线。\n\n↩ [返回证据与时间线](evidencevault)",
+            ru: "Да. Это создает полную хронологию, которая защищает и арендатора, и арендодателя.\n\n↩ [Вернуться к доказательствам и хронологии](evidencevault)"
           }
         }
       ]
@@ -649,12 +649,12 @@ export const faqData = {
             ru: "Как регистрировать и отслеживать проблемы с обслуживанием?"
           },
           a: {
-            en: "1. Go to Property Tracker → Maintenance section\n2. Tap New Request\n3. Add a clear title and detailed description\n4. Select category (plumbing, electrical, structural, etc.) and priority\n5. Upload photos, voice notes (Protect plan), or videos (Secure plan)\n6. Save to create a timestamped record\n\nYour landlord or juristic (if connected via LINE) will be notified automatically. You can track status updates and communication in the request timeline.\n\n[Back to maintenance request](propertytracker#maintenance)",
-            th: "1. ไปที่ตัวติดตามทรัพย์สิน → ส่วนการซ่อมบำรุง\n2. แตะคำขอใหม่\n3. เพิ่มชื่อที่ชัดเจนและรายละเอียดโดยละเอียด\n4. เลือกหมวดหมู่ (ประปา, ไฟฟ้า, โครงสร้าง ฯลฯ) และความสำคัญ\n5. อัปโหลดรูปภาพ บันทึกเสียง (แผน Protect) หรือวิดีโอ (แผน Secure)\n6. บันทึกเพื่อสร้างบันทึกที่มีการประทับเวลา\n\nเจ้าของบ้านหรือนิติบุคคลของคุณ (หากเชื่อมต่อผ่าน LINE) จะได้รับการแจ้งเตือนโดยอัตโนมัติ คุณสามารถติดตามการอัปเดตสถานะและการสื่อสารในไทม์ไลน์คำขอ\n\n[กลับไปที่คำขอซ่อมบำรุง](propertytracker#maintenance)",
-            ja: "1. 物件トラッカー → メンテナンスセクションに移動\n2. 新しいリクエストをタップ\n3. 明確なタイトルと詳細な説明を追加\n4. カテゴリ（配管、電気、構造など）と優先度を選択\n5. 写真、音声メモ（Protectプラン）、またはビデオ（Secureプラン）をアップロード\n6. 保存してタイムスタンプ付き記録を作成\n\n家主または管理会社（LINEで接続されている場合）に自動的に通知されます。リクエストのタイムラインでステータスの更新とコミュニケーションを追跡できます。\n\n[メンテナンスリクエストに戻る](propertytracker#maintenance)",
-            ko: "1. 부동산 추적기 → 유지보수 섹션으로 이동\n2. 새 요청 탭\n3. 명확한 제목과 자세한 설명 추가\n4. 카테고리(배관, 전기, 구조 등) 및 우선순위 선택\n5. 사진, 음성 메모(Protect 플랜) 또는 동영상(Secure 플랜) 업로드\n6. 저장하여 타임스탬프가 있는 기록 생성\n\n집주인 또는 관리사무소(LINE을 통해 연결된 경우)에게 자동으로 알림이 전송됩니다. 요청 타임라인에서 상태 업데이트 및 커뮤니케이션을 추적할 수 있습니다.\n\n[유지보수 요청으로 돌아가기](propertytracker#maintenance)",
-            zh: "1. 转到物业追踪器 → 维护部分\n2. 点击新请求\n3. 添加清晰的标题和详细描述\n4. 选择类别（管道、电气、结构等）和优先级\n5. 上传照片、语音备忘录（Protect套餐）或视频（Secure套餐）\n6. 保存以创建带时间戳的记录\n\n您的房东或物业（如果通过LINE连接）将自动收到通知。您可以在请求时间表中追踪状态更新和通信。\n\n[返回维护请求](propertytracker#maintenance)",
-            ru: "1. Перейдите в Управление недвижимостью → раздел Обслуживание\n2. Нажмите Новый запрос\n3. Добавьте четкое название и подробное описание\n4. Выберите категорию (сантехника, электрика, конструкция и т.д.) и приоритет\n5. Загрузите фото, голосовые заметки (план Protect) или видео (план Secure)\n6. Сохраните для создания записи с временной меткой\n\nВаш арендодатель или управляющая (если подключены через LINE) будут автоматически уведомлены. Вы можете отслеживать обновления статуса и коммуникации в хронологии запроса.\n\n[Вернуться к запросу на обслуживание](propertytracker#maintenance)"
+            en: "1. Go to Property Tracker → Maintenance section\n2. Tap New Request\n3. Add a clear title and detailed description\n4. Select category (plumbing, electrical, structural, etc.) and priority\n5. Upload photos, voice notes (Protect plan), or videos (Secure plan)\n6. Save to create a timestamped record\n\nYour landlord or juristic (if connected via LINE) will be notified automatically. You can track status updates and communication in the request timeline.\n\n↩ [Back to maintenance request](maintenancetracker)",
+            th: "1. ไปที่ตัวติดตามทรัพย์สิน → ส่วนการซ่อมบำรุง\n2. แตะคำขอใหม่\n3. เพิ่มชื่อที่ชัดเจนและรายละเอียดโดยละเอียด\n4. เลือกหมวดหมู่ (ประปา, ไฟฟ้า, โครงสร้าง ฯลฯ) และความสำคัญ\n5. อัปโหลดรูปภาพ บันทึกเสียง (แผน Protect) หรือวิดีโอ (แผน Secure)\n6. บันทึกเพื่อสร้างบันทึกที่มีการประทับเวลา\n\nเจ้าของบ้านหรือนิติบุคคลของคุณ (หากเชื่อมต่อผ่าน LINE) จะได้รับการแจ้งเตือนโดยอัตโนมัติ คุณสามารถติดตามการอัปเดตสถานะและการสื่อสารในไทม์ไลน์คำขอ\n\n↩ [กลับไปที่คำขอซ่อมบำรุง](maintenancetracker)",
+            ja: "1. 物件トラッカー → メンテナンスセクションに移動\n2. 新しいリクエストをタップ\n3. 明確なタイトルと詳細な説明を追加\n4. カテゴリ（配管、電気、構造など）と優先度を選択\n5. 写真、音声メモ（Protectプラン）、またはビデオ（Secureプラン）をアップロード\n6. 保存してタイムスタンプ付き記録を作成\n\n家主または管理会社（LINEで接続されている場合）に自動的に通知されます。リクエストのタイムラインでステータスの更新とコミュニケーションを追跡できます。\n\n↩ [メンテナンスリクエストに戻る](maintenancetracker)",
+            ko: "1. 부동산 추적기 → 유지보수 섹션으로 이동\n2. 새 요청 탭\n3. 명확한 제목과 자세한 설명 추가\n4. 카테고리(배관, 전기, 구조 등) 및 우선순위 선택\n5. 사진, 음성 메모(Protect 플랜) 또는 동영상(Secure 플랜) 업로드\n6. 저장하여 타임스탬프가 있는 기록 생성\n\n집주인 또는 관리사무소(LINE을 통해 연결된 경우)에게 자동으로 알림이 전송됩니다. 요청 타임라인에서 상태 업데이트 및 커뮤니케이션을 추적할 수 있습니다.\n\n↩ [유지보수 요청으로 돌아가기](maintenancetracker)",
+            zh: "1. 转到物业追踪器 → 维护部分\n2. 点击新请求\n3. 添加清晰的标题和详细描述\n4. 选择类别（管道、电气、结构等）和优先级\n5. 上传照片、语音备忘录（Protect套餐）或视频（Secure套餐）\n6. 保存以创建带时间戳的记录\n\n您的房东或物业（如果通过LINE连接）将自动收到通知。您可以在请求时间表中追踪状态更新和通信。\n\n↩ [返回维护请求](maintenancetracker)",
+            ru: "1. Перейдите в Управление недвижимостью → раздел Обслуживание\n2. Нажмите Новый запрос\n3. Добавьте четкое название и подробное описание\n4. Выберите категорию (сантехника, электрика, конструкция и т.д.) и приоритет\n5. Загрузите фото, голосовые заметки (план Protect) или видео (план Secure)\n6. Сохраните для создания записи с временной меткой\n\nВаш арендодатель или управляющая (если подключены через LINE) будут автоматически уведомлены. Вы можете отслеживать обновления статуса и коммуникации в хронологии запроса.\n\n↩ [Вернуться к запросу на обслуживание](maintenancetracker)"
           }
         },
         {
@@ -668,12 +668,12 @@ export const faqData = {
             ru: "Как сообщить о проблеме с обслуживанием?"
           },
           a: {
-            en: "Go to the Maintenance section and upload photos, videos, or voice notes with a description.\n\n[Back to maintenance request](propertytracker#maintenance)",
-            th: "ไปที่ส่วนการซ่อมบำรุงและอัปโหลดรูปภาพ วิดีโอ หรือบันทึกเสียงพร้อมคำอธิบาย\n\n[กลับไปที่คำขอซ่อมบำรุง](propertytracker#maintenance)",
-            ja: "メンテナンスセクションに移動し、説明とともに写真、ビデオ、または音声メモをアップロードします。\n\n[メンテナンスリクエストに戻る](propertytracker#maintenance)",
-            ko: "유지보수 섹션으로 이동하여 설명과 함께 사진, 동영상 또는 음성 메모를 업로드하세요.\n\n[유지보수 요청으로 돌아가기](propertytracker#maintenance)",
-            zh: "转到维护部分并上传照片、视频或语音备忘录及描述。\n\n[返回维护请求](propertytracker#maintenance)",
-            ru: "Перейдите в раздел обслуживания и загрузите фотографии, видео или голосовые заметки с описанием.\n\n[Вернуться к запросу на обслуживание](propertytracker#maintenance)"
+            en: "Go to the Maintenance section and upload photos, videos, or voice notes with a description.\n\n↩ [Back to maintenance request](maintenancetracker)",
+            th: "ไปที่ส่วนการซ่อมบำรุงและอัปโหลดรูปภาพ วิดีโอ หรือบันทึกเสียงพร้อมคำอธิบาย\n\n↩ [กลับไปที่คำขอซ่อมบำรุง](maintenancetracker)",
+            ja: "メンテナンスセクションに移動し、説明とともに写真、ビデオ、または音声メモをアップロードします。\n\n↩ [メンテナンスリクエストに戻る](maintenancetracker)",
+            ko: "유지보수 섹션으로 이동하여 설명과 함께 사진, 동영상 또는 음성 메모를 업로드하세요.\n\n↩ [유지보수 요청으로 돌아가기](maintenancetracker)",
+            zh: "转到维护部分并上传照片、视频或语音备忘录及描述。\n\n↩ [返回维护请求](maintenancetracker)",
+            ru: "Перейдите в раздел обслуживания и загрузите фотографии, видео или голосовые заметки с описанием.\n\n↩ [Вернуться к запросу на обслуживание](maintenancetracker)"
           }
         },
         {
@@ -687,12 +687,12 @@ export const faqData = {
             ru: "Кто получает мой отчет об обслуживании?"
           },
           a: {
-            en: "It is stored in your property record. You may also share it with your landlord or juristic.\n\n[Back to maintenance request](propertytracker#maintenance)",
-            th: "มันถูกเก็บไว้ในบันทึกทรัพย์สินของคุณ คุณยังสามารถแชร์กับเจ้าของบ้านหรือนิติบุคคลได้\n\n[กลับไปที่คำขอซ่อมบำรุง](propertytracker#maintenance)",
-            ja: "プロパティ記録に保存されます。家主や管理会社と共有することもできます。\n\n[メンテナンスリクエストに戻る](propertytracker#maintenance)",
-            ko: "부동산 기록에 저장됩니다. 집주인이나 관리사무소와 공유할 수도 있습니다.\n\n[유지보수 요청으로 돌아가기](propertytracker#maintenance)",
-            zh: "它存储在您的物业记录中。您也可以与房东或物业分享。\n\n[返回维护请求](propertytracker#maintenance)",
-            ru: "Он хранится в записи вашего объекта. Вы также можете поделиться им с арендодателем или управляющей.\n\n[Вернуться к запросу на обслуживание](propertytracker#maintenance)"
+            en: "It is stored in your property record. You may also share it with your landlord or juristic.\n\n↩ [Back to maintenance request](maintenancetracker)",
+            th: "มันถูกเก็บไว้ในบันทึกทรัพย์สินของคุณ คุณยังสามารถแชร์กับเจ้าของบ้านหรือนิติบุคคลได้\n\n↩ [กลับไปที่คำขอซ่อมบำรุง](maintenancetracker)",
+            ja: "プロパティ記録に保存されます。家主や管理会社と共有することもできます。\n\n↩ [メンテナンスリクエストに戻る](maintenancetracker)",
+            ko: "부동산 기록에 저장됩니다. 집주인이나 관리사무소와 공유할 수도 있습니다.\n\n↩ [유지보수 요청으로 돌아가기](maintenancetracker)",
+            zh: "它存储在您的物业记录中。您也可以与房东或物业分享。\n\n↩ [返回维护请求](maintenancetracker)",
+            ru: "Он хранится в записи вашего объекта. Вы также можете поделиться им с арендодателем или управляющей.\n\n↩ [Вернуться к запросу на обслуживание](maintenancetracker)"
           }
         },
         {
@@ -706,12 +706,12 @@ export const faqData = {
             ru: "Могу ли я отслеживать прогресс?"
           },
           a: {
-            en: "Yes — each issue includes status updates and a timeline.\n\n[Back to maintenance request](propertytracker#maintenance)",
-            th: "ได้ — แต่ละปัญหามีการอัปเดตสถานะและไทม์ไลน์\n\n[กลับไปที่คำขอซ่อมบำรุง](propertytracker#maintenance)",
-            ja: "はい — 各問題にはステータスの更新とタイムラインが含まれています。\n\n[メンテナンスリクエストに戻る](propertytracker#maintenance)",
-            ko: "네 — 각 문제에는 상태 업데이트와 타임라인이 포함됩니다.\n\n[유지보수 요청으로 돌아가기](propertytracker#maintenance)",
-            zh: "可以 — 每个问题都包括状态更新和时间表。\n\n[返回维护请求](propertytracker#maintenance)",
-            ru: "Да — каждая проблема включает обновления статуса и хронологию.\n\n[Вернуться к запросу на обслуживание](propertytracker#maintenance)"
+            en: "Yes — each issue includes status updates and a timeline.\n\n↩ [Back to maintenance request](maintenancetracker)",
+            th: "ได้ — แต่ละปัญหามีการอัปเดตสถานะและไทม์ไลน์\n\n↩ [กลับไปที่คำขอซ่อมบำรุง](maintenancetracker)",
+            ja: "はい — 各問題にはステータスの更新とタイムラインが含まれています。\n\n↩ [メンテナンスリクエストに戻る](maintenancetracker)",
+            ko: "네 — 각 문제에는 상태 업데이트와 타임라인이 포함됩니다.\n\n↩ [유지보수 요청으로 돌아가기](maintenancetracker)",
+            zh: "可以 — 每个问题都包括状态更新和时间表。\n\n↩ [返回维护请求](maintenancetracker)",
+            ru: "Да — каждая проблема включает обновления статуса и хронологию.\n\n↩ [Вернуться к запросу на обслуживание](maintenancetracker)"
           }
         },
         {
@@ -725,12 +725,12 @@ export const faqData = {
             ru: "Какие типы проблем следует сообщать?"
           },
           a: {
-            en: "Any repair needs, damage, safety concerns, or property access issues.\n\n[Back to maintenance request](propertytracker#maintenance)",
-            th: "ความต้องการซ่อมแซม ความเสียหาย ข้อกังวลด้านความปลอดภัย หรือปัญหาการเข้าถึงทรัพย์สิน\n\n[กลับไปที่คำขอซ่อมบำรุง](propertytracker#maintenance)",
-            ja: "修理の必要性、損傷、安全上の懸念、または物件アクセスの問題。\n\n[メンテナンスリクエストに戻る](propertytracker#maintenance)",
-            ko: "수리 필요, 손상, 안전 문제 또는 부동산 접근 문제.\n\n[유지보수 요청으로 돌아가기](propertytracker#maintenance)",
-            zh: "任何维修需求、损坏、安全问题或物业访问问题。\n\n[返回维护请求](propertytracker#maintenance)",
-            ru: "Любые потребности в ремонте, повреждения, проблемы безопасности или проблемы с доступом к объекту.\n\n[Вернуться к запросу на обслуживание](propertytracker#maintenance)"
+            en: "Any repair needs, damage, safety concerns, or property access issues.\n\n↩ [Back to maintenance request](maintenancetracker)",
+            th: "ความต้องการซ่อมแซม ความเสียหาย ข้อกังวลด้านความปลอดภัย หรือปัญหาการเข้าถึงทรัพย์สิน\n\n↩ [กลับไปที่คำขอซ่อมบำรุง](maintenancetracker)",
+            ja: "修理の必要性、損傷、安全上の懸念、または物件アクセスの問題。\n\n↩ [メンテナンスリクエストに戻る](maintenancetracker)",
+            ko: "수리 필요, 손상, 안전 문제 또는 부동산 접근 문제.\n\n↩ [유지보수 요청으로 돌아가기](maintenancetracker)",
+            zh: "任何维修需求、损坏、安全问题或物业访问问题。\n\n↩ [返回维护请求](maintenancetracker)",
+            ru: "Любые потребности в ремонте, повреждения, проблемы безопасности или проблемы с доступом к объекту.\n\n↩ [Вернуться к запросу на обслуживание](maintenancetracker)"
           }
         }
       ]
@@ -758,12 +758,12 @@ export const faqData = {
             ru: "Для чего я могу открыть дело?"
           },
           a: {
-            en: "Deposit problems, repair delays, communication issues, and unclear contract matters.",
-            th: "ปัญหาเงินมัดจำ ความล่าช้าในการซ่อมแซม ปัญหาการสื่อสาร และเรื่องสัญญาที่ไม่ชัดเจน",
-            ja: "敷金の問題、修理の遅延、コミュニケーションの問題、不明確な契約事項。",
-            ko: "보증금 문제, 수리 지연, 커뮤니케이션 문제 및 불명확한 계약 사항.",
-            zh: "押金问题、维修延误、沟通问题和不明确的合同事项。",
-            ru: "Проблемы с депозитом, задержки ремонта, проблемы связи и неясные вопросы договора."
+            en: "Deposit problems, repair delays, communication issues, and unclear contract matters.\n\n↩ [Back to Open Case](resolvecase)",
+            th: "ปัญหาเงินมัดจำ ความล่าช้าในการซ่อมแซม ปัญหาการสื่อสาร และเรื่องสัญญาที่ไม่ชัดเจน\n\n↩ [กลับไปที่เปิดคดี](resolvecase)",
+            ja: "敷金の問題、修理の遅延、コミュニケーションの問題、不明確な契約事項。\n\n↩ [ケースを開くに戻る](resolvecase)",
+            ko: "보증금 문제, 수리 지연, 커뮤니케이션 문제 및 불명확한 계약 사항.\n\n↩ [케이스 열기로 돌아가기](resolvecase)",
+            zh: "押金问题、维修延误、沟通问题和不明确的合同事项。\n\n↩ [返回开启案件](resolvecase)",
+            ru: "Проблемы с депозитом, задержки ремонта, проблемы связи и неясные вопросы договора.\n\n↩ [Вернуться к открытию дела](resolvecase)"
           }
         },
         {
@@ -777,12 +777,12 @@ export const faqData = {
             ru: "Что происходит после подачи дела?"
           },
           a: {
-            en: "Our team reviews your documents and helps draft neutral, professional messages or letters.",
-            th: "ทีมของเราตรวจสอบเอกสารของคุณและช่วยร่างข้อความหรือจดหมายที่เป็นกลางและเป็นมืออาชีพ",
-            ja: "チームが文書を確認し、中立的で専門的なメッセージや手紙の作成を支援します。",
-            ko: "저희 팀이 귀하의 문서를 검토하고 중립적이고 전문적인 메시지나 서신을 작성하도록 도와드립니다.",
-            zh: "我们的团队审查您的文档并帮助起草中立、专业的消息或信函。",
-            ru: "Наша команда проверяет ваши документы и помогает составить нейтральные, профессиональные сообщения или письма."
+            en: "Our team reviews your documents and helps draft neutral, professional messages or letters.\n\n↩ [Back to Open Case](resolvecase)",
+            th: "ทีมของเราตรวจสอบเอกสารของคุณและช่วยร่างข้อความหรือจดหมายที่เป็นกลังและเป็นมืออาชีพ\n\n↩ [กลับไปที่เปิดคดี](resolvecase)",
+            ja: "チームが文書を確認し、中立的で専門的なメッセージや手紙の作成を支援します。\n\n↩ [ケースを開くに戻る](resolvecase)",
+            ko: "저희 팀이 귀하의 문서를 검토하고 중립적이고 전문적인 메시지나 서신을 작성하도록 도와드립니다.\n\n↩ [케이스 열기로 돌아가기](resolvecase)",
+            zh: "我们的团队审查您的文档并帮助起草中立、专业的消息或信函。\n\n↩ [返回开启案件](resolvecase)",
+            ru: "Наша команда проверяет ваши документы и помогает составить нейтральные, профессиональные сообщения или письма.\n\n↩ [Вернуться к открытию дела](resolvecase)"
           }
         },
         {
@@ -796,12 +796,12 @@ export const faqData = {
             ru: "Сколько времени занимает дело?"
           },
           a: {
-            en: "It depends on the issue and the evidence available. Each case is handled individually.",
-            th: "ขึ้นอยู่กับปัญหาและหลักฐานที่มีอยู่ แต่ละคดีได้รับการจัดการแยกกัน",
-            ja: "問題と利用可能な証拠によります。各ケースは個別に処理されます。",
-            ko: "문제와 이용 가능한 증거에 따라 다릅니다. 각 케이스는 개별적으로 처리됩니다.",
-            zh: "取决于问题和可用的证据。每个案件都单独处理。",
-            ru: "Это зависит от проблемы и доступных доказательств. Каждое дело рассматривается индивидуально."
+            en: "It depends on the issue and the evidence available. Each case is handled individually.\n\n↩ [Back to Open Case](resolvecase)",
+            th: "ขึ้นอยู่กับปัญหาและหลักฐานที่มีอยู่ แต่ละคดีได้รับการจัดการแยกกัน\n\n↩ [กลับไปที่เปิดคดี](resolvecase)",
+            ja: "問題と利用可能な証拠によります。各ケースは個別に処理されます。\n\n↩ [ケースを開くに戻る](resolvecase)",
+            ko: "문제와 이용 가능한 증거에 따라 다릅니다. 각 케이스는 개별적으로 처리됩니다.\n\n↩ [케이스 열기로 돌아가기](resolvecase)",
+            zh: "取决于问题和可用的证据。每个案件都单独处理。\n\n↩ [返回开启案件](resolvecase)",
+            ru: "Это зависит от проблемы и доступных доказательств. Каждое дело рассматривается индивидуально.\n\n↩ [Вернуться к открытию дела](resolvecase)"
           }
         },
         {
@@ -815,12 +815,12 @@ export const faqData = {
             ru: "Вы предоставляете юридические консультации?"
           },
           a: {
-            en: "No. LeaseShield provides documentation and guidance, not legal advice or legal representation.",
-            th: "ไม่ LeaseShield ให้บริการเอกสารและคำแนะนำ ไม่ใช่คำแนะนำทางกฎหมายหรือการเป็นตัวแทนทางกฎหมาย",
-            ja: "いいえ。LeaseShieldは文書化とガイダンスを提供しますが、法的アドバイスや法的代理は提供しません。",
-            ko: "아니요. LeaseShield는 문서화 및 안내를 제공하지만 법률 자문이나 법적 대리는 제공하지 않습니다.",
-            zh: "不。LeaseShield提供文档和指导，而非法律建议或法律代理。",
-            ru: "Нет. LeaseShield предоставляет документацию и руководство, но не юридические консультации или представительство."
+            en: "No. LeaseShield provides documentation and guidance, not legal advice or legal representation.\n\n↩ [Back to Open Case](resolvecase)",
+            th: "ไม่ LeaseShield ให้บริการเอกสารและคำแนะนำ ไม่ใช่คำแนะนำทางกฎหมายหรือการเป็นตัวแทนทางกฎหมาย\n\n↩ [กลับไปที่เปิดคดี](resolvecase)",
+            ja: "いいえ。LeaseShieldは文書化とガイダンスを提供しますが、法的アドバイスや法的代理は提供しません。\n\n↩ [ケースを開くに戻る](resolvecase)",
+            ko: "아니요. LeaseShield는 문서화 및 안내를 제공하지만 법률 자문이나 법적 대리는 제공하지 않습니다.\n\n↩ [케이스 열기로 돌아가기](resolvecase)",
+            zh: "不。LeaseShield提供文档和指导，而非法律建议或法律代理。\n\n↩ [返回开启案件](resolvecase)",
+            ru: "Нет. LeaseShield предоставляет документацию и руководство, но не юридические консультации или представительство.\n\n↩ [Вернуться к открытию дела](resolvecase)"
           }
         }
       ]
