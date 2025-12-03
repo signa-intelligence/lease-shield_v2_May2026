@@ -335,13 +335,36 @@ function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel }) {
           className="px-4 pb-4 animate-in slide-in-from-top-2 duration-200"
         >
           <div 
-            className="pt-3 border-t whitespace-pre-line text-sm leading-relaxed"
+            className="pt-3 border-t text-sm leading-relaxed"
             style={{ 
               borderColor: colors.borderColor,
               color: colors.textSecondary
             }}
           >
-            {answer}
+            {answer.split('\n').map((line, idx) => {
+              // Check if line contains markdown link [text](url)
+              const linkMatch = line.match(/\[([^\]]+)\]\(([^)]+)\)/);
+              if (linkMatch) {
+                const [fullMatch, linkText, url] = linkMatch;
+                const parts = line.split(fullMatch);
+                return (
+                  <div key={idx} className="mb-2">
+                    {parts[0]}
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold underline hover:no-underline"
+                      style={{ color: '#0C3B2E' }}
+                    >
+                      {linkText}
+                    </a>
+                    {parts[1]}
+                  </div>
+                );
+              }
+              return <div key={idx} className="mb-2">{line}</div>;
+            })}
           </div>
         </div>
       )}
