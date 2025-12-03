@@ -852,6 +852,7 @@ function DashboardContent() {
       uploadFirstLease: "Upload First Lease",
       noDataYet: "No Data Yet",
       getStartedDesc: "Start protecting your rental rights by uploading your lease agreement",
+      getStarted: "Get started with Lease Shield",
       testEmail: "Test Email",
       sending: "Sending...",
       runFullCheck: "Run Full Check",
@@ -996,6 +997,7 @@ function DashboardContent() {
       uploadFirstLease: "上传第一份租约",
       noDataYet: "暂无数据",
       getStartedDesc: "通过上传租赁协议开始保护您的租赁权利",
+      getStarted: "开始使用 Lease Shield",
       testEmail: "测试电子邮件",
       sending: "发送中...",
       runFullCheck: "运行完整检查",
@@ -1067,6 +1069,7 @@ function DashboardContent() {
       uploadFirstLease: "最初の賃貸契約をアップロード",
       noDataYet: "データなし",
       getStartedDesc: "賃貸契約をアップロードして賃貸権の保護を開始",
+      getStarted: "Lease Shieldを始める",
       testEmail: "メールをテスト",
       sending: "送信中...",
       runFullCheck: "完全チェックを実行",
@@ -1138,6 +1141,7 @@ function DashboardContent() {
       uploadFirstLease: "Загрузить первый договор",
       noDataYet: "Данных пока нет",
       getStartedDesc: "Начните защищать свои права арендатора, загрузив договор аренды",
+      getStarted: "Начните с Lease Shield",
       testEmail: "Тест Email",
       sending: "Отправка...",
       runFullCheck: "Полная проверка",
@@ -1208,6 +1212,7 @@ function DashboardContent() {
       uploadFirstLease: "첫 임대 계약 업로드",
       noDataYet: "아직 데이터 없음",
       getStartedDesc: "임대 계약을 업로드하여 임대 권리 보호 시작",
+      getStarted: "Lease Shield 시작하기",
       testEmail: "이메일 테스트",
       sending: "전송 중...",
       runFullCheck: "전체 확인 실행",
@@ -1838,7 +1843,7 @@ function DashboardContent() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-lg mb-1 text-gray-900 dark:text-gray-50">
-                      {language === 'th' ? 'เริ่มต้นกับ Lease Shield' : language === 'ru' ? 'Начните с Lease Shield' : 'Get started with Lease Shield'}
+                      {strings.getStarted}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                       {strings.getStartedDesc}

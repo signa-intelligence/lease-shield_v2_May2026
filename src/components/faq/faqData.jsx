@@ -137,12 +137,12 @@ export const faqData = {
             ru: "Как арендодатель подключает LINE?"
           },
           a: {
-            en: "1. Tenant taps Share Connection\n2. Landlord adds @leaseshield\n3. Landlord sends:\nconfirm landlord TENANT_EMAIL\n\nExample: confirm landlord anna.wong@gmail.com",
-            th: "1. ผู้เช่าแตะ แชร์การเชื่อมต่อ\n2. เจ้าของบ้านเพิ่ม @leaseshield\n3. เจ้าของบ้านส่ง:\nconfirm landlord อีเมลผู้เช่า\n\nตัวอย่าง: confirm landlord anna.wong@gmail.com",
-            ja: "1. テナントが接続を共有をタップ\n2. 家主が@leaseshieldを追加\n3. 家主が送信:\nconfirm landlord テナントメール\n\n例: confirm landlord anna.wong@gmail.com",
-            ko: "1. 세입자가 연결 공유 탭\n2. 집주인이 @leaseshield 추가\n3. 집주인이 보내기:\nconfirm landlord 세입자이메일\n\n예: confirm landlord anna.wong@gmail.com",
-            zh: "1. 租户点击 分享连接\n2. 房东添加 @leaseshield\n3. 房东发送:\nconfirm landlord 租户邮箱\n\n示例: confirm landlord anna.wong@gmail.com",
-            ru: "1. Арендатор нажимает Поделиться подключением\n2. Арендодатель добавляет @leaseshield\n3. Арендодатель отправляет:\nconfirm landlord EMAIL_АРЕНДАТОРА\n\nПример: confirm landlord anna.wong@gmail.com"
+            en: "1. Tenant taps Share Connection\n2. Landlord adds @leaseshield on LINE\n3. Landlord sends:\nconfirm landlord TENANT_EMAIL\n\nExample:\nconfirm landlord anna.wong@gmail.com",
+            th: "1. ผู้เช่าแตะ แชร์การเชื่อมต่อ\n2. เจ้าของบ้านเพิ่ม @leaseshield ใน LINE\n3. เจ้าของบ้านส่ง:\nconfirm landlord อีเมลผู้เช่า\n\nตัวอย่าง:\nconfirm landlord anna.wong@gmail.com",
+            ja: "1. テナントが「接続を共有」をタップ\n2. 家主がLINEで @leaseshield を追加\n3. 家主が送信:\nconfirm landlord テナントのメール\n\n例:\nconfirm landlord anna.wong@gmail.com",
+            ko: "1. 세입자가 '연결 공유'를 탭\n2. 집주인이 LINE에서 @leaseshield 추가\n3. 집주인이 보내기:\nconfirm landlord 세입자_이메일\n\n예:\nconfirm landlord anna.wong@gmail.com",
+            zh: "1. 租户点击「分享连接」\n2. 房东在 LINE 添加 @leaseshield\n3. 房东发送:\nconfirm landlord 租户邮箱\n\n示例:\nconfirm landlord anna.wong@gmail.com",
+            ru: "1. Арендатор нажимает «Поделиться подключением»\n2. Арендодатель добавляет @leaseshield в LINE\n3. Арендодатель отправляет:\nconfirm landlord ПОЧТА_АРЕНДАТОРА\n\nПример:\nconfirm landlord anna.wong@gmail.com"
           }
         },
         {
@@ -156,12 +156,12 @@ export const faqData = {
             ru: "Как управляющая компания подключает LINE?"
           },
           a: {
-            en: "1. Tenant taps Share Connection\n2. Juristic adds @leaseshield\n3. Juristic sends:\nconfirm juristic TENANT_EMAIL\n\nExample: confirm juristic anna.wong@gmail.com",
-            th: "1. ผู้เช่าแตะ แชร์การเชื่อมต่อ\n2. นิติบุคคลเพิ่ม @leaseshield\n3. นิติบุคคลส่ง:\nconfirm juristic อีเมลผู้เช่า\n\nตัวอย่าง: confirm juristic anna.wong@gmail.com",
-            ja: "1. テナントが接続を共有をタップ\n2. 管理会社が@leaseshieldを追加\n3. 管理会社が送信:\nconfirm juristic テナントメール\n\n例: confirm juristic anna.wong@gmail.com",
-            ko: "1. 세입자가 연결 공유 탭\n2. 관리사무소가 @leaseshield 추가\n3. 관리사무소가 보내기:\nconfirm juristic 세입자이메일\n\n예: confirm juristic anna.wong@gmail.com",
-            zh: "1. 租户点击 分享连接\n2. 物业添加 @leaseshield\n3. 物业发送:\nconfirm juristic 租户邮箱\n\n示例: confirm juristic anna.wong@gmail.com",
-            ru: "1. Арендатор нажимает Поделиться подключением\n2. Управляющая добавляет @leaseshield\n3. Управляющая отправляет:\nconfirm juristic EMAIL_АРЕНДАТОРА\n\nПример: confirm juristic anna.wong@gmail.com"
+            en: "1. Tenant taps Share Connection\n2. Juristic/Property Manager adds @leaseshield on LINE\n3. Juristic sends:\nconfirm juristic TENANT_EMAIL\n\nExample:\nconfirm juristic anna.wong@gmail.com",
+            th: "1. ผู้เช่าแตะ แชร์การเชื่อมต่อ\n2. นิติบุคคล/ผู้จัดการอาคารเพิ่ม @leaseshield ใน LINE\n3. นิติบุคคลส่ง:\nconfirm juristic อีเมลผู้เช่า\n\nตัวอย่าง:\nconfirm juristic anna.wong@gmail.com",
+            ja: "1. テナントが「接続を共有」をタップ\n2. 管理会社/建物管理者がLINEで @leaseshield を追加\n3. 管理会社が送信:\nconfirm juristic テナントのメール\n\n例:\nconfirm juristic anna.wong@gmail.com",
+            ko: "1. 세입자가 '연결 공유'를 탭\n2. 관리사무소/건물 관리자가 LINE에서 @leaseshield 추가\n3. 관리사무소가 보내기:\nconfirm juristic 세입자_이메일\n\n예:\nconfirm juristic anna.wong@gmail.com",
+            zh: "1. 租户点击「分享连接」\n2. 物业/建筑管理员在 LINE 添加 @leaseshield\n3. 物业发送:\nconfirm juristic 租户邮箱\n\n示例:\nconfirm juristic anna.wong@gmail.com",
+            ru: "1. Арендатор нажимает «Поделиться подключением»\n2. Управляющая/Менеджер здания добавляет @leaseshield в LINE\n3. Управляющая отправляет:\nconfirm juristic ПОЧТА_АРЕНДАТОРА\n\nПример:\nconfirm juristic anna.wong@gmail.com"
           }
         },
         {
@@ -253,9 +253,9 @@ export const faqData = {
           a: {
             en: "Tenant:\n• Delete or block LeaseShield on LINE\n• Then open Account → LINE Notifications → Disconnect LINE\n\nLandlord/Juristic:\n• Tenant removes their contact from property settings\n• They may also send stop in LINE to remove connection",
             th: "ผู้เช่า:\n• ลบหรือบลอก LeaseShield ใน LINE\n• จากนั้นเปิด บัญชี → การแจ้งเตือน LINE → ยกเลิกการเชื่อมต่อ LINE\n\nเจ้าของบ้าน/นิติบุคคล:\n• ผู้เช่าลบข้อมูลติดต่อออกจากการตั้งค่าทรัพย์สิน\n• พวกเขาอาจส่ง stop ใน LINE เพื่อลบการเชื่อมต่อ",
-            ja: "テナント:\n• LINEでLeaseShieldを削除またはブロック\n• その後、アカウント → LINE通知 → LINEを切断を開く\n\n家主/管理会社:\n• テナントがプロパティ設定から連絡先を削除\n• LINEでstopを送信して接続を削除することもできます",
-            ko: "세입자:\n• LINE에서 LeaseShield 삭제 또는 차단\n• 그런 다음 계정 → LINE 알림 → LINE 연결 해제 열기\n\n집주인/관리사무소:\n• 세입자가 부동산 설정에서 연락처 제거\n• LINE에서 stop을 보내 연결을 제거할 수도 있습니다",
-            zh: "租户:\n• 在LINE中删除或屏蔽LeaseShield\n• 然后打开 账户 → LINE通知 → 断开LINE\n\n房东/物业:\n• 租户从物业设置中删除其联系方式\n• 他们也可以在LINE中发送stop来删除连接",
+            ja: "テナント:\n• LINEでLeaseShieldを削除またはブロック\n• その後、アカウント → LINE通知 → LINEを切断 を開く\n\n家主/管理会社:\n• テナントがプロパティ設定から連絡先を削除\n• LINEで stop を送信して接続を削除することもできます",
+            ko: "세입자:\n• LINE에서 LeaseShield 삭제 또는 차단\n• 그런 다음 계정 → LINE 알림 → LINE 연결 해제 열기\n\n집주인/관리사무소:\n• 세입자가 부동산 설정에서 연락처 제거\n• LINE에서 stop 을 보내 연결을 제거할 수도 있습니다",
+            zh: "租户:\n• 在LINE中删除或屏蔽LeaseShield\n• 然后打开 账户 → LINE通知 → 断开LINE\n\n房东/物业:\n• 租户从物业设置中删除其联系方式\n• 他们也可以在LINE中发送 stop 来删除连接",
             ru: "Арендатор:\n• Удалите или заблокируйте LeaseShield в LINE\n• Затем откройте Аккаунт → Уведомления LINE → Отключить LINE\n\nАрендодатель/Управляющая:\n• Арендатор удаляет их контакт из настроек объекта\n• Они также могут отправить stop в LINE для удаления подключения"
           }
         },
