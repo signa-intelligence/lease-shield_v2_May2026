@@ -27,6 +27,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
+import { QuickHelp } from "../components/shared/ContextualHelp";
 
 // Maintenance Request Card Component (extracted to avoid hooks in loops)
 function MaintenanceRequestCard({
@@ -1633,16 +1634,19 @@ function PropertyTrackerContent() {
       <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-7xl mx-auto">
 
-          <PageHeader
-            title={strings.title}
-            subtitle={strings.subtitle}
-            icon={Wrench}
-            iconColor={maintenanceTheme.accent}
-            showBack={true}
-            backLabel={strings.back}
-            colors={colors}
-            backTo={createPageUrl("Dashboard")}
-          />
+          <div className="mb-6">
+            <PageHeader
+              title={strings.title}
+              subtitle={strings.subtitle}
+              icon={Wrench}
+              iconColor={maintenanceTheme.accent}
+              showBack={true}
+              backLabel={strings.back}
+              colors={colors}
+              backTo={createPageUrl("Dashboard")}
+              actions={<QuickHelp link="deposits" size="md" />}
+            />
+          </div>
 
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:justify-end mb-6">
             <button
@@ -2148,7 +2152,10 @@ function PropertyTrackerContent() {
                     <Wrench className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-lg font-bold">{strings.maintenanceSection}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold">{strings.maintenanceSection}</span>
+                      <QuickHelp link="maintenance" size="sm" />
+                    </div>
                     {activeRequests.length > 0 && (
                       <div className="text-sm font-normal mt-1">
                         <Badge style={{ backgroundColor: `${colors.maintenanceAccent}20`, color: colors.maintenanceAccent, border: `1px solid ${colors.maintenanceAccent}` }}>
