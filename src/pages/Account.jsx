@@ -1013,8 +1013,10 @@ function AccountContent() {
       freeBenefit3: "3 Files (100MB storage)",
       freeBenefit4: "Read-only Deposit Tracker",
       upgradeNow: "Upgrade Now",
-      allActive: "All features active",
-      lineEnabled: "LINE reminders enabled",
+      allActive: "All Features Activated",
+      lineEnabled: "LINE Notifications Enabled",
+      managePlan: "Manage Plan",
+      perMonthShort: "/month",
       helpSupport: "Help & Support",
       helpDesc: "Need assistance? Submit a request and we'll respond via email",
       submitRequest: "Submit Support Request",
@@ -1181,8 +1183,10 @@ function AccountContent() {
       freeBenefit3: "3 ไฟล์ (พื้นที่ 100MB)",
       freeBenefit4: "เครื่องมือติดตามเงินมัดจำแบบอ่านอย่างเดียว",
       upgradeNow: "อัปเกรดเลย",
-      allActive: "ฟีเจอร์ทั้งหมดใช้งานได้",
-      lineEnabled: "การแจ้งเตือน LINE เปิดใช้งาน",
+      allActive: "ฟีเจอร์ทั้งหมดเปิดใช้งานแล้ว",
+      lineEnabled: "การแจ้งเตือน LINE เปิดใช้งานแล้ว",
+      managePlan: "จัดการแผน",
+      perMonthShort: "/เดือน",
       helpSupport: "ช่วยเหลือและการสนับสนุน",
       helpDesc: "ต้องการความช่วยเหลือ? ส่งคำขอและเราจะตอบกลับทางอีเมล",
       submitRequest: "ส่งคำขอช่วยเหลือ",
@@ -1350,7 +1354,9 @@ function AccountContent() {
       freeBenefit4: "只读押金追踪器",
       upgradeNow: "立即升级",
       allActive: "所有功能已激活",
-      lineEnabled: "LINE提醒已启用",
+      lineEnabled: "LINE通知已启用",
+      managePlan: "管理计划",
+      perMonthShort: "/月",
       helpSupport: "帮助与支持",
       helpDesc: "需要帮助？提交请求，我们将通过电子邮件回复",
       submitRequest: "提交支持请求",
@@ -1524,8 +1530,10 @@ function AccountContent() {
       freeBenefit3: "3ファイル（100MBストレージ）",
       freeBenefit4: "読み取り専用敷金トラッカー",
       upgradeNow: "今すぐアップグレード",
-      allActive: "すべての機能が有効",
-      lineEnabled: "LINEリマインダーが有効",
+      allActive: "すべての機能が有効化されました",
+      lineEnabled: "LINE通知が有効化されました",
+      managePlan: "プランを管理",
+      perMonthShort: "/月",
       helpSupport: "ヘルプとサポート",
       helpDesc: "サポートが必要ですか？リクエストを送信すると、メールで返信します",
       submitRequest: "サポートリクエストを送信",
@@ -1699,8 +1707,10 @@ function AccountContent() {
       freeBenefit3: "3개 파일（100MB 저장소）",
       freeBenefit4: "읽기 전용 보증금 추적기",
       upgradeNow: "지금 업그레이드",
-      allActive: "모든 기능 활성화",
-      lineEnabled: "LINE 알림 활성화됨",
+      allActive: "모든 기능이 활성화되었습니다",
+      lineEnabled: "LINE 알림이 활성화되었습니다",
+      managePlan: "플랜 관리",
+      perMonthShort: "/월",
       helpSupport: "도움말 및 지원",
       helpDesc: "도움이 필요하신가요? 요청을 제출하면 이메일로 답변드립니다",
       submitRequest: "지원 요청 제출",
@@ -1874,8 +1884,10 @@ function AccountContent() {
       freeBenefit3: "3 файла (100MB хранилище)",
       freeBenefit4: "Отслеживание депозита (только чтение)",
       upgradeNow: "Обновить сейчас",
-      allActive: "Все функции активны",
-      lineEnabled: "Напоминания LINE включены",
+      allActive: "Все функции активированы",
+      lineEnabled: "Уведомления LINE включены",
+      managePlan: "Управление планом",
+      perMonthShort: "/месяц",
       helpSupport: "Помощь и поддержка",
       helpDesc: "Нужна помощь? Отправьте запрос, и мы ответим по email",
       submitRequest: "Отправить запрос",
@@ -2640,7 +2652,10 @@ function AccountContent() {
                   </p>
                   {!isFreePlan && userBillingInterval && (
                     <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-                      {userBillingInterval === 'annual' ? strings.billedAnnually : strings.billedMonthly}
+                      {userBillingInterval === 'annual' 
+                        ? strings.billedAnnually 
+                        : (language === 'th' ? 'เรียกเก็บรายเดือน' : language === 'zh' ? '按月计费' : language === 'ja' ? '月額請求' : language === 'ko' ? '월별 청구' : language === 'ru' ? 'Ежемесячная оплата' : strings.billedMonthly)
+                      }
                     </p>
                   )}
                   {user?.plan_renews_at && (
@@ -2698,8 +2713,8 @@ function AccountContent() {
                         <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
                           <Bell className="w-3 h-3 text-ls-gold" />
                           {user?.line_messaging_token 
-                            ? (language === 'th' ? 'การแจ้งเตือน LINE เปิดใช้งาน' : language === 'zh' ? 'LINE提醒已启用' : language === 'ja' ? 'LINEリマインダーが有効' : language === 'ko' ? 'LINE 알림 활성화됨' : language === 'ru' ? 'Напоминания LINE включены' : 'LINE reminders enabled')
-                            : (language === 'th' ? 'การแจ้งเตือน LINE พร้อมใช้งาน' : language === 'zh' ? 'LINE提醒可用' : language === 'ja' ? 'LINEリマインダー利用可能' : language === 'ko' ? 'LINE 알림 사용 가능' : language === 'ru' ? 'Напоминания LINE доступны' : 'LINE reminders available')
+                            ? strings.lineEnabled
+                            : (language === 'th' ? 'การแจ้งเตือน LINE พร้อมใช้งาน' : language === 'zh' ? 'LINE通知可用' : language === 'ja' ? 'LINE通知利用可能' : language === 'ko' ? 'LINE 알림 사용 가능' : language === 'ru' ? 'Уведомления LINE доступны' : 'LINE notifications available')
                           }
                         </p>
                       </div>
@@ -2736,7 +2751,7 @@ function AccountContent() {
                       onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                     >
                       <Settings className="w-4 h-4" />
-                      {language === 'th' ? 'จัดการแผน' : language === 'ru' ? 'Управление планом' : 'Manage Plan'}
+                      {strings.managePlan}
                     </button>
                   </div>
                 )}
@@ -4327,7 +4342,7 @@ function AccountContent() {
                       <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {billingInterval === 'annual' && !isFreeplanLocal && (
                           <p className="text-xs" style={{ color: colors.textSecondary }}>
-                            ฿{effectiveMonthly}{strings.perMonth}
+                            ฿{effectiveMonthly}{strings.perMonthShort}
                           </p>
                         )}
                         {isFreeplanLocal && (
