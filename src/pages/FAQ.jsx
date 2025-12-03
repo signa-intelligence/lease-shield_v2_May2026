@@ -341,7 +341,19 @@ function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel }) {
               color: colors.textSecondary
             }}
           >
-            {answer}
+            {answer.split(/(https?:\/\/[^\s]+)/g).map((part, i) => 
+              part.match(/^https?:\/\//) ? (
+                <a 
+                  key={i} 
+                  href={part} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  {part}
+                </a>
+              ) : part
+            )}
           </div>
         </div>
       )}
