@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, Download, HelpCircle } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, Download, HelpCircle, BookOpen } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
@@ -556,34 +556,61 @@ export default function Layout({ children, currentPageName }) {
                 <span className="hidden sm:inline">Install App</span>
               </button>
             )}
-            <button
-              onClick={() => {
-                haptic.light();
-                setShowQuickGuide(true);
-              }}
-              aria-label="Quick Guide"
-              className="btn-interaction"
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
-              }}
-            >
-              <HelpCircle 
-                className="w-4 h-4 sm:w-5 sm:h-5" 
-                style={{ 
-                  color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
-                  transition: 'color 0.2s'
+            <Link to={createPageUrl("FAQ")}>
+              <button
+                onClick={() => haptic.light()}
+                aria-label="Help & FAQ"
+                className="btn-interaction"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: isActiveTab(createPageUrl("FAQ")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
                 }}
-              />
-            </button>
+              >
+                <BookOpen 
+                  className="w-4 h-4 sm:w-5 sm:h-5" 
+                  style={{ 
+                    color: isActiveTab(createPageUrl("FAQ")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
+                    transition: 'color 0.2s'
+                  }}
+                />
+              </button>
+            </Link>
+            <button
+                onClick={() => {
+                  haptic.light();
+                  setShowQuickGuide(true);
+                }}
+                aria-label="Quick Guide"
+                className="btn-interaction"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+                }}
+              >
+                <HelpCircle 
+                  className="w-4 h-4 sm:w-5 sm:h-5" 
+                  style={{ 
+                    color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
+                    transition: 'color 0.2s'
+                  }}
+                />
+              </button>
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
