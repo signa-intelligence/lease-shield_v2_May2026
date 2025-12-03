@@ -28,50 +28,363 @@ export const faqData = {
             ru: "Что такое LeaseShield?"
           },
           a: {
-            en: "LeaseShield is a tenant protection platform that helps you manage your rental journey. We provide AI-powered lease scanning, deposit tracking, maintenance reporting, evidence storage, and dispute resolution services.",
-            th: "LeaseShield คือแพลตฟอร์มคุ้มครองผู้เช่าที่ช่วยจัดการเรื่องการเช่าของคุณ เราให้บริการสแกนสัญญาเช่าด้วย AI ติดตามเงินมัดจำ รายงานการซ่อมบำรุง จัดเก็บหลักฐาน และบริการระงับข้อพิพาท",
-            ja: "LeaseShieldは、賃貸生活を管理するためのテナント保護プラットフォームです。AI搭載のリーススキャン、敷金追跡、メンテナンス報告、証拠保管、紛争解決サービスを提供しています。",
-            ko: "LeaseShield는 임대 생활을 관리하는 데 도움이 되는 세입자 보호 플랫폼입니다. AI 기반 임대 계약 스캔, 보증금 추적, 유지보수 보고, 증거 저장 및 분쟁 해결 서비스를 제공합니다.",
-            zh: "LeaseShield是一个租户保护平台，帮助您管理租赁旅程。我们提供AI驱动的租约扫描、押金追踪、维护报告、证据存储和纠纷解决服务。",
-            ru: "LeaseShield — это платформа защиты арендаторов, которая помогает управлять арендой. Мы предоставляем AI-сканирование договоров, отслеживание депозитов, отчеты о техобслуживании, хранение доказательств и услуги по разрешению споров."
+            en: "LeaseShield is a digital platform that helps tenants, landlords, and juristic/building managers document rentals clearly, prevent disputes, and handle issues fairly.",
+            th: "LeaseShield คือแพลตฟอร์มดิจิทัลที่ช่วยผู้เช่า เจ้าของบ้าน และนิติบุคคล/ผู้จัดการอาคารในการบันทึกการเช่าอย่างชัดเจน ป้องกันข้อพิพาท และจัดการปัญหาอย่างยุติธรรม",
+            ja: "LeaseShieldは、テナント、家主、管理会社/建物管理者が賃貸を明確に記録し、紛争を防ぎ、問題を公平に処理するのを支援するデジタルプラットフォームです。",
+            ko: "LeaseShield는 세입자, 집주인, 관리사무소/건물 관리자가 임대를 명확하게 기록하고 분쟁을 예방하며 문제를 공정하게 처리할 수 있도록 돕는 디지털 플랫폼입니다.",
+            zh: "LeaseShield是一个数字平台，帮助租户、房东和物业/建筑管理者清晰记录租赁、预防纠纷并公平处理问题。",
+            ru: "LeaseShield — это цифровая платформа, которая помогает арендаторам, арендодателям и управляющим зданиями четко документировать аренду, предотвращать споры и справедливо решать проблемы."
           }
         },
         {
-          id: "how-to-start",
+          id: "who-can-use",
           q: {
-            en: "How do I get started?",
-            th: "ฉันจะเริ่มต้นใช้งานอย่างไร?",
-            ja: "どのように始めればいいですか？",
-            ko: "어떻게 시작하나요?",
-            zh: "如何开始使用？",
-            ru: "Как начать?"
+            en: "Who can use LeaseShield?",
+            th: "ใครสามารถใช้ LeaseShield ได้บ้าง?",
+            ja: "誰がLeaseShieldを使用できますか？",
+            ko: "누가 LeaseShield를 사용할 수 있나요?",
+            zh: "谁可以使用LeaseShield？",
+            ru: "Кто может использовать LeaseShield?"
           },
           a: {
-            en: "1. Create an account and complete your profile\n2. Upload your lease for AI analysis\n3. Set up deposit tracking\n4. Connect LINE for notifications\n5. Start documenting your rental with photos and notes",
-            th: "1. สร้างบัญชีและกรอกโปรไฟล์\n2. อัปโหลดสัญญาเช่าเพื่อวิเคราะห์ด้วย AI\n3. ตั้งค่าการติดตามเงินมัดจำ\n4. เชื่อมต่อ LINE สำหรับการแจ้งเตือน\n5. เริ่มบันทึกการเช่าด้วยรูปภาพและบันทึก",
-            ja: "1. アカウントを作成してプロフィールを完成させる\n2. AI分析のためにリースをアップロード\n3. 敷金追跡を設定\n4. 通知のためにLINEを接続\n5. 写真とメモで賃貸を記録開始",
-            ko: "1. 계정을 만들고 프로필을 완성하세요\n2. AI 분석을 위해 임대 계약서를 업로드하세요\n3. 보증금 추적을 설정하세요\n4. 알림을 위해 LINE을 연결하세요\n5. 사진과 메모로 임대 기록을 시작하세요",
-            zh: "1. 创建账户并完善个人资料\n2. 上传租约进行AI分析\n3. 设置押金追踪\n4. 连接LINE接收通知\n5. 开始用照片和备注记录您的租赁情况",
-            ru: "1. Создайте аккаунт и заполните профиль\n2. Загрузите договор для AI-анализа\n3. Настройте отслеживание депозита\n4. Подключите LINE для уведомлений\n5. Начните документировать аренду фото и заметками"
+            en: "Tenants, landlords, and juristic managers. The system is designed to stay neutral for all sides.",
+            th: "ผู้เช่า เจ้าของบ้าน และนิติบุคคล ระบบออกแบบมาเพื่อความเป็นกลางสำหรับทุกฝ่าย",
+            ja: "テナント、家主、管理会社。システムはすべての側に対して中立的に設計されています。",
+            ko: "세입자, 집주인, 관리사무소. 시스템은 모든 당사자에게 중립적으로 설계되었습니다.",
+            zh: "租户、房东和物业管理者。系统设计为对所有方保持中立。",
+            ru: "Арендаторы, арендодатели и управляющие. Система разработана для нейтральности ко всем сторонам."
           }
         },
         {
-          id: "free-vs-paid",
+          id: "need-account",
           q: {
-            en: "What's the difference between free and paid plans?",
-            th: "แผนฟรีและแผนเสียเงินต่างกันอย่างไร?",
-            ja: "無料プランと有料プランの違いは何ですか？",
-            ko: "무료 플랜과 유료 플랜의 차이점은 무엇인가요?",
-            zh: "免费版和付费版有什么区别？",
-            ru: "В чем разница между бесплатным и платным планами?"
+            en: "Do I need an account to use the app?",
+            th: "ฉันต้องมีบัญชีเพื่อใช้แอปหรือไม่?",
+            ja: "アプリを使用するにはアカウントが必要ですか？",
+            ko: "앱을 사용하려면 계정이 필요한가요?",
+            zh: "我需要账户才能使用应用程序吗？",
+            ru: "Нужен ли мне аккаунт для использования приложения?"
           },
           a: {
-            en: "Free plan includes basic lease scanning (preview only), 1 deposit tracker, and limited evidence storage. Paid plans (Lite, Protect, Secure) unlock full scan reports, unlimited deposits, LINE notifications, priority support, letter credits, and dispute resolution services.",
-            th: "แผนฟรีรวมการสแกนสัญญาเช่าพื้นฐาน (ดูตัวอย่างเท่านั้น) ติดตามเงินมัดจำ 1 รายการ และพื้นที่จัดเก็บหลักฐานจำกัด แผนเสียเงิน (Lite, Protect, Secure) ปลดล็อกรายงานสแกนเต็มรูปแบบ เงินมัดจำไม่จำกัด การแจ้งเตือน LINE การสนับสนุนพิเศษ เครดิตจดหมาย และบริการระงับข้อพิพาท",
-            ja: "無料プランには基本的なリーススキャン（プレビューのみ）、1つの敷金トラッカー、限定的な証拠保管が含まれます。有料プラン（Lite、Protect、Secure）では、完全なスキャンレポート、無制限の敷金、LINE通知、優先サポート、レタークレジット、紛争解決サービスがアンロックされます。",
-            ko: "무료 플랜에는 기본 임대 스캔(미리보기만), 1개의 보증금 추적기, 제한된 증거 저장이 포함됩니다. 유료 플랜(Lite, Protect, Secure)은 전체 스캔 보고서, 무제한 보증금, LINE 알림, 우선 지원, 편지 크레딧 및 분쟁 해결 서비스를 잠금 해제합니다.",
-            zh: "免费版包括基本租约扫描（仅预览）、1个押金追踪器和有限的证据存储。付费版（Lite、Protect、Secure）解锁完整扫描报告、无限押金、LINE通知、优先支持、信件积分和纠纷解决服务。",
-            ru: "Бесплатный план включает базовое сканирование договора (только предпросмотр), 1 трекер депозита и ограниченное хранилище. Платные планы (Lite, Protect, Secure) открывают полные отчеты, неограниченные депозиты, уведомления LINE, приоритетную поддержку, кредиты на письма и услуги по разрешению споров."
+            en: "Yes. Creating an account allows you to store documents, track deposits, receive notifications, and manage your rental securely.",
+            th: "ใช่ การสร้างบัญชีช่วยให้คุณจัดเก็บเอกสาร ติดตามเงินมัดจำ รับการแจ้งเตือน และจัดการการเช่าของคุณอย่างปลอดภัย",
+            ja: "はい。アカウントを作成すると、ドキュメントを保存し、敷金を追跡し、通知を受け取り、賃貸を安全に管理できます。",
+            ko: "네. 계정을 만들면 문서를 저장하고, 보증금을 추적하며, 알림을 받고, 임대를 안전하게 관리할 수 있습니다.",
+            zh: "是的。创建账户可以让您存储文档、追踪押金、接收通知并安全管理您的租赁。",
+            ru: "Да. Создание аккаунта позволяет хранить документы, отслеживать депозиты, получать уведомления и безопасно управлять арендой."
+          }
+        },
+        {
+          id: "multi-language",
+          q: {
+            en: "Is LeaseShield available in multiple languages?",
+            th: "LeaseShield มีหลายภาษาหรือไม่?",
+            ja: "LeaseShieldは複数の言語で利用できますか？",
+            ko: "LeaseShield는 여러 언어로 제공되나요?",
+            zh: "LeaseShield有多种语言吗？",
+            ru: "Доступен ли LeaseShield на нескольких языках?"
+          },
+          a: {
+            en: "Yes — English, Thai, Japanese, Korean, Chinese, and Russian.",
+            th: "ใช่ — อังกฤษ ไทย ญี่ปุ่น เกาหลี จีน และรัสเซีย",
+            ja: "はい — 英語、タイ語、日本語、韓国語、中国語、ロシア語。",
+            ko: "네 — 영어, 태국어, 일본어, 한국어, 중국어, 러시아어.",
+            zh: "是的 — 英语、泰语、日语、韩语、中文和俄语。",
+            ru: "Да — английский, тайский, японский, корейский, китайский и русский."
+          }
+        }
+      ]
+    },
+    {
+      id: "communication",
+      icon: "MessageCircle",
+      title: {
+        en: "Communication & Notifications (LINE, Landlord, Juristic)",
+        th: "การสื่อสารและการแจ้งเตือน (LINE, เจ้าของบ้าน, นิติบุคคล)",
+        ja: "コミュニケーションと通知（LINE、家主、管理会社）",
+        ko: "통신 및 알림 (LINE, 집주인, 관리사무소)",
+        zh: "通信与通知（LINE、房东、物业）",
+        ru: "Связь и уведомления (LINE, Арендодатель, Управляющая)"
+      },
+      items: [
+        {
+          id: "connect-line-tenant",
+          q: {
+            en: "How do I connect LINE as a tenant?",
+            th: "ฉันจะเชื่อมต่อ LINE ในฐานะผู้เช่าอย่างไร?",
+            ja: "テナントとしてLINEを接続するにはどうすればいいですか？",
+            ko: "세입자로 LINE을 연결하려면 어떻게 하나요?",
+            zh: "作为租户，我如何连接LINE？",
+            ru: "Как подключить LINE как арендатор?"
+          },
+          a: {
+            en: "1. Go to Account → LINE Notifications\n2. Tap Connect LINE\n3. Add @leaseshield\n4. Send: confirm\n\nYou will then receive rent reminders, deposit alerts, maintenance updates, and case notifications.",
+            th: "1. ไปที่ บัญชี → การแจ้งเตือน LINE\n2. แตะ เชื่อมต่อ LINE\n3. เพิ่ม @leaseshield\n4. ส่ง: confirm\n\nคุณจะได้รับการแจ้งเตือนค่าเช่า การแจ้งเตือนเงินมัดจำ อัปเดตการซ่อมบำรุง และการแจ้งเตือนคดี",
+            ja: "1. アカウント → LINE通知に移動\n2. LINEを接続をタップ\n3. @leaseshieldを追加\n4. 送信: confirm\n\n家賃リマインダー、敷金アラート、メンテナンス更新、ケース通知を受け取ります。",
+            ko: "1. 계정 → LINE 알림으로 이동\n2. LINE 연결 탭\n3. @leaseshield 추가\n4. 보내기: confirm\n\n임대료 알림, 보증금 알림, 유지보수 업데이트 및 케이스 알림을 받게 됩니다.",
+            zh: "1. 转到 账户 → LINE通知\n2. 点击 连接LINE\n3. 添加 @leaseshield\n4. 发送: confirm\n\n您将收到租金提醒、押金提醒、维护更新和案件通知。",
+            ru: "1. Перейдите в Аккаунт → Уведомления LINE\n2. Нажмите Подключить LINE\n3. Добавьте @leaseshield\n4. Отправьте: confirm\n\nВы будете получать напоминания об аренде, уведомления о депозите, обновления по обслуживанию и уведомления о делах."
+          }
+        },
+        {
+          id: "landlord-line",
+          q: {
+            en: "How does a landlord connect LINE?",
+            th: "เจ้าของบ้านจะเชื่อมต่อ LINE อย่างไร?",
+            ja: "家主はLINEをどのように接続しますか？",
+            ko: "집주인은 LINE을 어떻게 연결하나요?",
+            zh: "房东如何连接LINE？",
+            ru: "Как арендодатель подключает LINE?"
+          },
+          a: {
+            en: "1. Tenant taps Share Connection\n2. Landlord adds @leaseshield\n3. Landlord sends:\nconfirm landlord TENANT_EMAIL\n\nExample: confirm landlord anna.wong@gmail.com",
+            th: "1. ผู้เช่าแตะ แชร์การเชื่อมต่อ\n2. เจ้าของบ้านเพิ่ม @leaseshield\n3. เจ้าของบ้านส่ง:\nconfirm landlord อีเมลผู้เช่า\n\nตัวอย่าง: confirm landlord anna.wong@gmail.com",
+            ja: "1. テナントが接続を共有をタップ\n2. 家主が@leaseshieldを追加\n3. 家主が送信:\nconfirm landlord テナントメール\n\n例: confirm landlord anna.wong@gmail.com",
+            ko: "1. 세입자가 연결 공유 탭\n2. 집주인이 @leaseshield 추가\n3. 집주인이 보내기:\nconfirm landlord 세입자이메일\n\n예: confirm landlord anna.wong@gmail.com",
+            zh: "1. 租户点击 分享连接\n2. 房东添加 @leaseshield\n3. 房东发送:\nconfirm landlord 租户邮箱\n\n示例: confirm landlord anna.wong@gmail.com",
+            ru: "1. Арендатор нажимает Поделиться подключением\n2. Арендодатель добавляет @leaseshield\n3. Арендодатель отправляет:\nconfirm landlord EMAIL_АРЕНДАТОРА\n\nПример: confirm landlord anna.wong@gmail.com"
+          }
+        },
+        {
+          id: "juristic-line",
+          q: {
+            en: "How does juristic connect LINE?",
+            th: "นิติบุคคลจะเชื่อมต่อ LINE อย่างไร?",
+            ja: "管理会社はLINEをどのように接続しますか？",
+            ko: "관리사무소는 LINE을 어떻게 연결하나요?",
+            zh: "物业如何连接LINE？",
+            ru: "Как управляющая компания подключает LINE?"
+          },
+          a: {
+            en: "1. Tenant taps Share Connection\n2. Juristic adds @leaseshield\n3. Juristic sends:\nconfirm juristic TENANT_EMAIL\n\nExample: confirm juristic anna.wong@gmail.com",
+            th: "1. ผู้เช่าแตะ แชร์การเชื่อมต่อ\n2. นิติบุคคลเพิ่ม @leaseshield\n3. นิติบุคคลส่ง:\nconfirm juristic อีเมลผู้เช่า\n\nตัวอย่าง: confirm juristic anna.wong@gmail.com",
+            ja: "1. テナントが接続を共有をタップ\n2. 管理会社が@leaseshieldを追加\n3. 管理会社が送信:\nconfirm juristic テナントメール\n\n例: confirm juristic anna.wong@gmail.com",
+            ko: "1. 세입자가 연결 공유 탭\n2. 관리사무소가 @leaseshield 추가\n3. 관리사무소가 보내기:\nconfirm juristic 세입자이메일\n\n예: confirm juristic anna.wong@gmail.com",
+            zh: "1. 租户点击 分享连接\n2. 物业添加 @leaseshield\n3. 物业发送:\nconfirm juristic 租户邮箱\n\n示例: confirm juristic anna.wong@gmail.com",
+            ru: "1. Арендатор нажимает Поделиться подключением\n2. Управляющая добавляет @leaseshield\n3. Управляющая отправляет:\nconfirm juristic EMAIL_АРЕНДАТОРА\n\nПример: confirm juristic anna.wong@gmail.com"
+          }
+        },
+        {
+          id: "why-add-landlord",
+          q: {
+            en: "Why should I add my landlord or juristic?",
+            th: "ทำไมฉันต้องเพิ่มเจ้าของบ้านหรือนิติบุคคล?",
+            ja: "なぜ家主や管理会社を追加する必要がありますか？",
+            ko: "왜 집주인이나 관리사무소를 추가해야 하나요?",
+            zh: "为什么我需要添加房东或物业？",
+            ru: "Зачем добавлять арендодателя или управляющую?"
+          },
+          a: {
+            en: "It creates clear, logged communication about maintenance, deposit matters, access, and case updates — benefiting both sides.",
+            th: "สร้างการสื่อสารที่ชัดเจนและมีบันทึกเกี่ยวกับการซ่อมบำรุง เรื่องเงินมัดจำ การเข้าถึง และอัปเดตคดี — เป็นประโยชน์ต่อทั้งสองฝ่าย",
+            ja: "メンテナンス、敷金の問題、アクセス、ケース更新について明確でログに記録されたコミュニケーションを作成します — 双方に利益をもたらします。",
+            ko: "유지보수, 보증금 문제, 접근 및 케이스 업데이트에 대한 명확하고 기록된 커뮤니케이션을 생성합니다 — 양쪽 모두에게 이익이 됩니다.",
+            zh: "它创建了关于维护、押金事宜、访问和案件更新的清晰记录的沟通 — 对双方都有利。",
+            ru: "Это создает четкую, зарегистрированную коммуникацию об обслуживании, вопросах депозита, доступе и обновлениях дел — приносит пользу обеим сторонам."
+          }
+        },
+        {
+          id: "what-notifications",
+          q: {
+            en: "What notifications will I receive?",
+            th: "ฉันจะได้รับการแจ้งเตือนอะไรบ้าง?",
+            ja: "どのような通知を受け取りますか？",
+            ko: "어떤 알림을 받게 되나요?",
+            zh: "我会收到什么通知？",
+            ru: "Какие уведомления я буду получать?"
+          },
+          a: {
+            en: "You will receive rent reminders, deposit timeline updates, maintenance notifications, case progress alerts, and important tenancy reminders.",
+            th: "คุณจะได้รับการแจ้งเตือนค่าเช่า อัปเดตไทม์ไลน์เงินมัดจำ การแจ้งเตือนการซ่อมบำรุง การแจ้งเตือนความคืบหน้าคดี และการแจ้งเตือนการเช่าที่สำคัญ",
+            ja: "家賃リマインダー、敷金タイムライン更新、メンテナンス通知、ケース進捗アラート、重要な賃貸リマインダーを受け取ります。",
+            ko: "임대료 알림, 보증금 타임라인 업데이트, 유지보수 알림, 케이스 진행 알림 및 중요한 임대 알림을 받게 됩니다.",
+            zh: "您将收到租金提醒、押金时间表更新、维护通知、案件进展提醒和重要的租赁提醒。",
+            ru: "Вы будете получать напоминания об аренде, обновления графика депозита, уведомления об обслуживании, оповещения о ходе дела и важные напоминания об аренде."
+          }
+        },
+        {
+          id: "line-troubleshooting",
+          q: {
+            en: "Troubleshooting: LINE connection not working",
+            th: "การแก้ปัญหา: การเชื่อมต่อ LINE ใช้งานไม่ได้",
+            ja: "トラブルシューティング: LINE接続が機能しない",
+            ko: "문제 해결: LINE 연결이 작동하지 않음",
+            zh: "故障排除：LINE连接无法使用",
+            ru: "Устранение неполадок: подключение LINE не работает"
+          },
+          a: {
+            en: "• Ensure LINE is installed\n• Use exactly confirm or the correct command format\n• Unblock @leaseshield in LINE\n• Check for correct tenant email (for landlord/juristic)\n• Reconnect via Account → LINE Notifications",
+            th: "• ตรวจสอบว่าติดตั้ง LINE แล้ว\n• ใช้คำสั่ง confirm หรือรูปแบบคำสั่งที่ถูกต้อง\n• ยกเลิกการบลอก @leaseshield ใน LINE\n• ตรวจสอบอีเมลผู้เช่าที่ถูกต้อง (สำหรับเจ้าของบ้าน/นิติบุคคล)\n• เชื่อมต่อใหม่ผ่าน บัญชี → การแจ้งเตือน LINE",
+            ja: "• LINEがインストールされていることを確認\n• confirmまたは正しいコマンド形式を使用\n• LINEで@leaseshieldのブロックを解除\n• 正しいテナントメールを確認（家主/管理会社の場合）\n• アカウント → LINE通知から再接続",
+            ko: "• LINE이 설치되어 있는지 확인\n• confirm 또는 올바른 명령 형식 사용\n• LINE에서 @leaseshield 차단 해제\n• 올바른 세입자 이메일 확인 (집주인/관리사무소의 경우)\n• 계정 → LINE 알림을 통해 재연결",
+            zh: "• 确保已安装LINE\n• 使用confirm或正确的命令格式\n• 在LINE中取消屏蔽@leaseshield\n• 检查正确的租户邮箱（针对房东/物业）\n• 通过 账户 → LINE通知 重新连接",
+            ru: "• Убедитесь, что LINE установлен\n• Используйте точно confirm или правильный формат команды\n• Разблокируйте @leaseshield в LINE\n• Проверьте правильность email арендатора (для арендодателя/управляющей)\n• Переподключитесь через Аккаунт → Уведомления LINE"
+          }
+        },
+        {
+          id: "multi-property-line",
+          q: {
+            en: "Multi-property: How LINE works with several rentals",
+            th: "หลายทรัพย์สิน: LINE ทำงานกับการเช่าหลายแห่งอย่างไร",
+            ja: "複数物件: LINEが複数の賃貸でどのように機能するか",
+            ko: "다중 부동산: LINE이 여러 임대와 어떻게 작동하는지",
+            zh: "多物业：LINE如何处理多个租赁",
+            ru: "Несколько объектов: как LINE работает с несколькими арендами"
+          },
+          a: {
+            en: "• You can link multiple properties\n• Notifications include the property name in each message\n• Landlords and juristic only receive notifications for their assigned property",
+            th: "• คุณสามารถเชื่อมโยงทรัพย์สินหลายแห่งได้\n• การแจ้งเตือนรวมชื่อทรัพย์สินในแต่ละข้อความ\n• เจ้าของบ้านและนิติบุคคลจะได้รับการแจ้งเตือนเฉพาะทรัพย์สินที่กำหนดให้เท่านั้น",
+            ja: "• 複数の物件をリンクできます\n• 通知には各メッセージに物件名が含まれます\n• 家主と管理会社は、割り当てられた物件の通知のみを受け取ります",
+            ko: "• 여러 부동산을 연결할 수 있습니다\n• 알림에는 각 메시지에 부동산 이름이 포함됩니다\n• 집주인과 관리사무소는 할당된 부동산에 대한 알림만 받습니다",
+            zh: "• 您可以链接多个物业\n• 通知在每条消息中包含物业名称\n• 房东和物业仅接收其分配物业的通知",
+            ru: "• Вы можете связать несколько объектов\n• Уведомления включают название объекта в каждом сообщении\n• Арендодатели и управляющие получают уведомления только по назначенным объектам"
+          }
+        },
+        {
+          id: "remove-line",
+          q: {
+            en: "How do I remove LINE access?",
+            th: "ฉันจะลบการเข้าถึง LINE ได้อย่างไร?",
+            ja: "LINEアクセスを削除するにはどうすればいいですか？",
+            ko: "LINE 접근 권한을 어떻게 제거하나요?",
+            zh: "如何删除LINE访问权限？",
+            ru: "Как удалить доступ LINE?"
+          },
+          a: {
+            en: "Tenant:\n• Delete or block LeaseShield on LINE\n• Then open Account → LINE Notifications → Disconnect LINE\n\nLandlord/Juristic:\n• Tenant removes their contact from property settings\n• They may also send stop in LINE to remove connection",
+            th: "ผู้เช่า:\n• ลบหรือบลอก LeaseShield ใน LINE\n• จากนั้นเปิด บัญชี → การแจ้งเตือน LINE → ยกเลิกการเชื่อมต่อ LINE\n\nเจ้าของบ้าน/นิติบุคคล:\n• ผู้เช่าลบข้อมูลติดต่อออกจากการตั้งค่าทรัพย์สิน\n• พวกเขาอาจส่ง stop ใน LINE เพื่อลบการเชื่อมต่อ",
+            ja: "テナント:\n• LINEでLeaseShieldを削除またはブロック\n• その後、アカウント → LINE通知 → LINEを切断を開く\n\n家主/管理会社:\n• テナントがプロパティ設定から連絡先を削除\n• LINEでstopを送信して接続を削除することもできます",
+            ko: "세입자:\n• LINE에서 LeaseShield 삭제 또는 차단\n• 그런 다음 계정 → LINE 알림 → LINE 연결 해제 열기\n\n집주인/관리사무소:\n• 세입자가 부동산 설정에서 연락처 제거\n• LINE에서 stop을 보내 연결을 제거할 수도 있습니다",
+            zh: "租户:\n• 在LINE中删除或屏蔽LeaseShield\n• 然后打开 账户 → LINE通知 → 断开LINE\n\n房东/物业:\n• 租户从物业设置中删除其联系方式\n• 他们也可以在LINE中发送stop来删除连接",
+            ru: "Арендатор:\n• Удалите или заблокируйте LeaseShield в LINE\n• Затем откройте Аккаунт → Уведомления LINE → Отключить LINE\n\nАрендодатель/Управляющая:\n• Арендатор удаляет их контакт из настроек объекта\n• Они также могут отправить stop в LINE для удаления подключения"
+          }
+        },
+        {
+          id: "line-privacy",
+          q: {
+            en: "Does LeaseShield read my LINE chats?",
+            th: "LeaseShield อ่านแชท LINE ของฉันหรือไม่?",
+            ja: "LeaseShieldは私のLINEチャットを読みますか？",
+            ko: "LeaseShield가 내 LINE 채팅을 읽나요?",
+            zh: "LeaseShield会读取我的LINE聊天记录吗？",
+            ru: "Читает ли LeaseShield мои чаты LINE?"
+          },
+          a: {
+            en: "No. LeaseShield only receives the confirm message you send when linking. All your private LINE conversations remain private.",
+            th: "ไม่ LeaseShield รับเฉพาะข้อความ confirm ที่คุณส่งเมื่อเชื่อมต่อเท่านั้น การสนทนาส่วนตัวทั้งหมดใน LINE ของคุณยังคงเป็นส่วนตัว",
+            ja: "いいえ。LeaseShieldはリンク時に送信するconfirmメッセージのみを受信します。すべてのプライベートなLINE会話はプライベートのままです。",
+            ko: "아니요. LeaseShield는 연결할 때 보내는 confirm 메시지만 받습니다. 모든 개인 LINE 대화는 비공개로 유지됩니다.",
+            zh: "不会。LeaseShield只接收您在链接时发送的confirm消息。您所有的私人LINE对话仍然是私密的。",
+            ru: "Нет. LeaseShield получает только сообщение confirm, которое вы отправляете при подключении. Все ваши личные разговоры в LINE остаются конфиденциальными."
+          }
+        }
+      ]
+    },
+    {
+      id: "deposits-moveout",
+      icon: "Wallet",
+      title: {
+        en: "Deposits & Move-In / Move-Out",
+        th: "เงินมัดจำและการย้ายเข้า/ย้ายออก",
+        ja: "敷金と入居/退去",
+        ko: "보증금 및 입주/퇴거",
+        zh: "押金与入住/退房",
+        ru: "Депозиты и заселение/выселение"
+      },
+      items: [
+        {
+          id: "track-deposit",
+          q: {
+            en: "How do I track my deposit?",
+            th: "ฉันจะติดตามเงินมัดจำได้อย่างไร?",
+            ja: "敷金を追跡するにはどうすればいいですか？",
+            ko: "보증금을 어떻게 추적하나요?",
+            zh: "如何追踪我的押金？",
+            ru: "Как отслеживать мой депозит?"
+          },
+          a: {
+            en: "Add your deposit amount, payment date, and expected return date in the Deposit Tracker.",
+            th: "เพิ่มจำนวนเงินมัดจำ วันที่จ่าย และวันที่คาดว่าจะได้รับคืนในตัวติดตามเงินมัดจำ",
+            ja: "敷金トラッカーに敷金額、支払日、返還予定日を追加します。",
+            ko: "보증금 추적기에 보증금 금액, 지불 날짜 및 예상 반환 날짜를 추가하세요.",
+            zh: "在押金追踪器中添加您的押金金额、支付日期和预计退还日期。",
+            ru: "Добавьте сумму депозита, дату оплаты и ожидаемую дату возврата в трекер депозитов."
+          }
+        },
+        {
+          id: "deposit-deductions",
+          q: {
+            en: "How do deposit deductions work?",
+            th: "การหักเงินมัดจำทำงานอย่างไร?",
+            ja: "敷金の控除はどのように機能しますか？",
+            ko: "보증금 공제는 어떻게 작동하나요?",
+            zh: "押金扣除是如何运作的？",
+            ru: "Как работают удержания из депозита?"
+          },
+          a: {
+            en: "You can record deductions, add notes, and upload supporting photos or videos.",
+            th: "คุณสามารถบันทึกการหัก เพิ่มหมายเหตุ และอัปโหลดรูปภาพหรือวิดีโอสนับสนุนได้",
+            ja: "控除を記録し、メモを追加し、サポート写真やビデオをアップロードできます。",
+            ko: "공제를 기록하고, 메모를 추가하며, 지원 사진이나 동영상을 업로드할 수 있습니다.",
+            zh: "您可以记录扣除、添加备注并上传支持照片或视频。",
+            ru: "Вы можете записывать удержания, добавлять заметки и загружать подтверждающие фото или видео."
+          }
+        },
+        {
+          id: "get-deposit-back",
+          q: {
+            en: "Will LeaseShield help me get my deposit back?",
+            th: "LeaseShield จะช่วยให้ฉันได้เงินมัดจำคืนหรือไม่?",
+            ja: "LeaseShieldは敷金の返還を手伝ってくれますか？",
+            ko: "LeaseShield가 보증금을 돌려받는 데 도움을 주나요?",
+            zh: "LeaseShield会帮助我拿回押金吗？",
+            ru: "Поможет ли LeaseShield вернуть мой депозит?"
+          },
+          a: {
+            en: "Yes — you can submit a case if there is a dispute, and our team will help with documentation and formal letters.",
+            th: "ใช่ — คุณสามารถส่งคดีหากมีข้อพิพาท และทีมของเราจะช่วยด้านเอกสารและจดหมายอย่างเป็นทางการ",
+            ja: "はい — 紛争がある場合はケースを提出でき、チームが文書化と正式な手紙を支援します。",
+            ko: "네 — 분쟁이 있으면 케이스를 제출할 수 있으며, 저희 팀이 문서화 및 공식 서신을 도와드립니다.",
+            zh: "是的 — 如果有纠纷，您可以提交案件，我们的团队将协助提供文档和正式信函。",
+            ru: "Да — вы можете подать дело в случае спора, и наша команда поможет с документацией и официальными письмами."
+          }
+        },
+        {
+          id: "when-upload-movein",
+          q: {
+            en: "When should I upload move-in evidence?",
+            th: "ฉันควรอัปโหลดหลักฐานการย้ายเข้าเมื่อไหร่?",
+            ja: "入居証拠はいつアップロードすべきですか？",
+            ko: "입주 증거는 언제 업로드해야 하나요?",
+            zh: "我应该何时上传入住证据？",
+            ru: "Когда следует загружать доказательства заселения?"
+          },
+          a: {
+            en: "As early as possible — ideally before or on the first day of your tenancy.",
+            th: "เร็วที่สุดเท่าที่จะเป็นไปได้ — เหมาะที่สุดคือก่อนหรือในวันแรกของการเช่า",
+            ja: "できるだけ早く — 理想的には賃貸開始前または初日に。",
+            ko: "가능한 한 빨리 — 이상적으로는 임대 시작 전이나 첫날에.",
+            zh: "越早越好 — 理想情况下是在租期开始之前或第一天。",
+            ru: "Как можно раньше — в идеале до или в первый день аренды."
+          }
+        },
+        {
+          id: "record-moveout",
+          q: {
+            en: "What should I record during move-out?",
+            th: "ฉันควรบันทึกอะไรระหว่างการย้ายออก?",
+            ja: "退去時に何を記録すべきですか？",
+            ko: "퇴거 시 무엇을 기록해야 하나요?",
+            zh: "退房时我应该记录什么？",
+            ru: "Что следует записывать при выселении?"
+          },
+          a: {
+            en: "Upload photos, videos, and notes about the property condition to ensure transparency and prevent unfair deductions.",
+            th: "อัปโหลดรูปภาพ วิดีโอ และบันทึกเกี่ยวกับสภาพทรัพย์สินเพื่อความโปร่งใสและป้องกันการหักเงินที่ไม่เป็นธรรม",
+            ja: "透明性を確保し、不当な控除を防ぐために、物件の状態に関する写真、ビデオ、メモをアップロードします。",
+            ko: "투명성을 보장하고 불공정한 공제를 방지하기 위해 부동산 상태에 대한 사진, 동영상 및 메모를 업로드하세요.",
+            zh: "上传有关物业状况的照片、视频和备注，以确保透明度并防止不公平的扣除。",
+            ru: "Загрузите фото, видео и заметки о состоянии объекта, чтобы обеспечить прозрачность и предотвратить несправедливые удержания."
           }
         }
       ]
@@ -89,112 +402,188 @@ export const faqData = {
       },
       items: [
         {
-          id: "how-scanner-works",
+          id: "scanner-checks",
           q: {
-            en: "How does the AI lease scanner work?",
-            th: "สแกนสัญญาเช่า AI ทำงานอย่างไร?",
-            ja: "AIリーススキャナーはどのように機能しますか？",
-            ko: "AI 임대 스캐너는 어떻게 작동하나요?",
-            zh: "AI租约扫描器是如何工作的？",
-            ru: "Как работает AI сканер договора?"
+            en: "What does the AI scanner check?",
+            th: "AI สแกนเนอร์ตรวจสอบอะไรบ้าง?",
+            ja: "AIスキャナーは何をチェックしますか？",
+            ko: "AI 스캐너는 무엇을 확인하나요?",
+            zh: "AI扫描器检查什么？",
+            ru: "Что проверяет AI сканер?"
           },
           a: {
-            en: "Upload photos or PDFs of your lease. Our AI extracts key terms like rent amount, deposit, notice periods, and termination clauses. It then flags potential risks and unfair terms, giving you a risk score and plain-language summary.",
-            th: "อัปโหลดรูปภาพหรือ PDF ของสัญญาเช่า AI ของเราจะดึงข้อมูลสำคัญเช่น ค่าเช่า เงินมัดจำ ระยะเวลาแจ้งล่วงหน้า และเงื่อนไขการยกเลิก จากนั้นจะแจ้งเตือนความเสี่ยงและเงื่อนไขที่ไม่เป็นธรรม พร้อมให้คะแนนความเสี่ยงและสรุปภาษาง่าย",
-            ja: "リースの写真やPDFをアップロードします。AIが家賃、敷金、通知期間、解約条項などの重要な条件を抽出します。潜在的なリスクや不公平な条件にフラグを立て、リスクスコアとわかりやすい要約を提供します。",
-            ko: "임대 계약서의 사진이나 PDF를 업로드하세요. AI가 임대료, 보증금, 통지 기간, 해지 조항 등 주요 조건을 추출합니다. 잠재적 위험과 불공정한 조건에 플래그를 지정하고 위험 점수와 이해하기 쉬운 요약을 제공합니다.",
-            zh: "上传租约的照片或PDF。我们的AI会提取关键条款，如租金、押金、通知期限和终止条款。然后标记潜在风险和不公平条款，给出风险评分和简明摘要。",
-            ru: "Загрузите фото или PDF договора. AI извлекает ключевые условия: аренду, депозит, сроки уведомления и условия расторжения. Затем отмечает потенциальные риски и нечестные условия, выдавая оценку риска и понятное резюме."
+            en: "Key terms, responsibilities, dates, risks, and potential problem areas in your lease.",
+            th: "เงื่อนไขสำคัญ ความรับผิดชอบ วันที่ ความเสี่ยง และพื้นที่ปัญหาที่อาจเกิดขึ้นในสัญญาเช่าของคุณ",
+            ja: "主要な条件、責任、日付、リスク、リース内の潜在的な問題領域。",
+            ko: "임대 계약의 주요 조건, 책임, 날짜, 위험 및 잠재적 문제 영역.",
+            zh: "租约中的关键条款、责任、日期、风险和潜在问题区域。",
+            ru: "Ключевые условия, обязанности, даты, риски и потенциальные проблемные области в вашем договоре."
           }
         },
         {
-          id: "supported-languages",
+          id: "scanner-legal-advice",
           q: {
-            en: "What languages does the scanner support?",
-            th: "สแกนเนอร์รองรับภาษาอะไรบ้าง?",
-            ja: "スキャナーはどの言語をサポートしていますか？",
-            ko: "스캐너는 어떤 언어를 지원하나요?",
-            zh: "扫描器支持哪些语言？",
-            ru: "Какие языки поддерживает сканер?"
+            en: "Does the AI scanner give legal advice?",
+            th: "AI สแกนเนอร์ให้คำแนะนำทางกฎหมายหรือไม่?",
+            ja: "AIスキャナーは法的アドバイスを提供しますか？",
+            ko: "AI 스캐너가 법률 자문을 제공하나요?",
+            zh: "AI扫描器提供法律建议吗？",
+            ru: "Предоставляет ли AI сканер юридические консультации?"
           },
           a: {
-            en: "The scanner supports English, Thai, and mixed-language documents. Reports are generated in your preferred app language.",
-            th: "สแกนเนอร์รองรับเอกสารภาษาอังกฤษ ไทย และเอกสารหลายภาษา รายงานจะสร้างในภาษาที่คุณเลือกในแอป",
-            ja: "スキャナーは英語、タイ語、および混合言語のドキュメントをサポートしています。レポートはアプリの優先言語で生成されます。",
-            ko: "스캐너는 영어, 태국어 및 혼합 언어 문서를 지원합니다. 보고서는 앱에서 선호하는 언어로 생성됩니다.",
-            zh: "扫描器支持英语、泰语和混合语言文档。报告以您在应用中首选的语言生成。",
-            ru: "Сканер поддерживает английский, тайский и смешанные документы. Отчеты генерируются на выбранном вами языке приложения."
+            en: "No. It provides clarity and risk scoring, but not legal interpretation or legal advice.",
+            th: "ไม่ มันให้ความชัดเจนและคะแนนความเสี่ยง แต่ไม่ใช่การตีความทางกฎหมายหรือคำแนะนำทางกฎหมาย",
+            ja: "いいえ。明確さとリスクスコアリングを提供しますが、法的解釈や法的アドバイスは提供しません。",
+            ko: "아니요. 명확성과 위험 점수를 제공하지만 법적 해석이나 법률 자문은 제공하지 않습니다.",
+            zh: "不。它提供清晰度和风险评分，但不提供法律解释或法律建议。",
+            ru: "Нет. Он обеспечивает ясность и оценку рисков, но не юридическую интерпретацию или юридические консультации."
           }
         },
         {
-          id: "scan-accuracy",
+          id: "scan-photos",
           q: {
-            en: "How accurate is the AI analysis?",
-            th: "การวิเคราะห์ AI แม่นยำแค่ไหน?",
-            ja: "AI分析はどの程度正確ですか？",
-            ko: "AI 분석은 얼마나 정확한가요?",
-            zh: "AI分析有多准确？",
-            ru: "Насколько точен AI-анализ?"
+            en: "Can I scan photos of my lease?",
+            th: "ฉันสามารถสแกนรูปภาพสัญญาเช่าได้หรือไม่?",
+            ja: "リースの写真をスキャンできますか？",
+            ko: "임대 계약서 사진을 스캔할 수 있나요?",
+            zh: "我可以扫描租约的照片吗？",
+            ru: "Могу ли я сканировать фотографии моего договора?"
           },
           a: {
-            en: "Our AI is trained on Thai rental law and common lease terms. While highly accurate for standard contracts, we recommend reviewing flagged items carefully. The scan is for informational purposes and does not constitute legal advice.",
-            th: "AI ของเราได้รับการฝึกฝนเกี่ยวกับกฎหมายเช่าของไทยและเงื่อนไขสัญญาเช่าทั่วไป แม้จะแม่นยำสูงสำหรับสัญญามาตรฐาน เราแนะนำให้ตรวจสอบรายการที่แจ้งเตือนอย่างระมัดระวัง การสแกนเป็นเพียงข้อมูลและไม่ใช่คำแนะนำทางกฎหมาย",
-            ja: "AIはタイの賃貸法と一般的なリース条件でトレーニングされています。標準契約では非常に正確ですが、フラグ付きの項目は慎重に確認することをお勧めします。スキャンは情報提供目的であり、法的アドバイスではありません。",
-            ko: "AI는 태국 임대법과 일반적인 임대 조건에 대해 훈련되어 있습니다. 표준 계약에 대해서는 매우 정확하지만, 플래그가 지정된 항목은 신중하게 검토하는 것이 좋습니다. 스캔은 정보 제공 목적이며 법적 조언이 아닙니다.",
-            zh: "我们的AI经过泰国租赁法和常见租约条款的训练。虽然对标准合同非常准确，但我们建议仔细审查标记的项目。扫描仅供参考，不构成法律建议。",
-            ru: "AI обучен на тайском арендном праве и стандартных условиях аренды. Хотя для типовых договоров он очень точен, рекомендуем внимательно проверять отмеченные пункты. Сканирование носит информационный характер и не является юридической консультацией."
+            en: "Yes. Photos, PDFs, and screenshots are supported.",
+            th: "ได้ รองรับรูปภาพ PDF และภาพหน้าจอ",
+            ja: "はい。写真、PDF、スクリーンショットがサポートされています。",
+            ko: "네. 사진, PDF 및 스크린샷이 지원됩니다.",
+            zh: "可以。支持照片、PDF和截图。",
+            ru: "Да. Поддерживаются фотографии, PDF и скриншоты."
+          }
+        },
+        {
+          id: "analysis-stored",
+          q: {
+            en: "Is the analysis stored?",
+            th: "การวิเคราะห์ถูกเก็บไว้หรือไม่?",
+            ja: "分析は保存されますか？",
+            ko: "분석이 저장되나요?",
+            zh: "分析结果会保存吗？",
+            ru: "Сохраняется ли анализ?"
+          },
+          a: {
+            en: "Yes. Your scan results remain linked to your lease unless you delete them.",
+            th: "ใช่ ผลการสแกนของคุณยังคงเชื่อมโยงกับสัญญาเช่าของคุณจนกว่าคุณจะลบ",
+            ja: "はい。スキャン結果は削除しない限りリースにリンクされたままです。",
+            ko: "네. 스캔 결과는 삭제하지 않는 한 임대 계약에 연결된 상태로 유지됩니다.",
+            zh: "是的。除非您删除，否则扫描结果将保持链接到您的租约。",
+            ru: "Да. Результаты сканирования остаются привязанными к вашему договору, пока вы их не удалите."
           }
         }
       ]
     },
     {
-      id: "deposits",
-      icon: "Wallet",
+      id: "evidence-vault",
+      icon: "FolderOpen",
       title: {
-        en: "Deposit Tracking",
-        th: "ติดตามเงินมัดจำ",
-        ja: "敷金追跡",
-        ko: "보증금 추적",
-        zh: "押金追踪",
-        ru: "Отслеживание депозита"
+        en: "Evidence Vault & Documentation",
+        th: "คลังหลักฐานและเอกสาร",
+        ja: "証拠保管庫と文書化",
+        ko: "증거 보관함 및 문서화",
+        zh: "证据库与文档",
+        ru: "Хранилище доказательств и документация"
       },
       items: [
         {
-          id: "deposit-tracking-how",
+          id: "what-upload-evidence",
           q: {
-            en: "How does deposit tracking work?",
-            th: "การติดตามเงินมัดจำทำงานอย่างไร?",
-            ja: "敷金追跡はどのように機能しますか？",
-            ko: "보증금 추적은 어떻게 작동하나요?",
-            zh: "押金追踪是如何工作的？",
-            ru: "Как работает отслеживание депозита?"
+            en: "What can I upload as evidence?",
+            th: "ฉันสามารถอัปโหลดอะไรเป็นหลักฐานได้บ้าง?",
+            ja: "証拠として何をアップロードできますか？",
+            ko: "증거로 무엇을 업로드할 수 있나요?",
+            zh: "我可以上传什么作为证据？",
+            ru: "Что я могу загрузить как доказательство?"
           },
           a: {
-            en: "Enter your deposit amount and expected return date. We'll send you automated reminders at 30, 7, and 3 days before the deadline. If your deposit is overdue, we'll alert you and offer dispute resolution options.",
-            th: "ป้อนจำนวนเงินมัดจำและวันที่คาดว่าจะได้คืน เราจะส่งการแจ้งเตือนอัตโนมัติที่ 30, 7 และ 3 วันก่อนกำหนด หากเงินมัดจำเกินกำหนด เราจะแจ้งเตือนคุณและเสนอตัวเลือกการระงับข้อพิพาท",
-            ja: "敷金額と返還予定日を入力します。期限の30日、7日、3日前に自動リマインダーを送信します。敷金が延滞している場合は、通知して紛争解決オプションを提供します。",
-            ko: "보증금 금액과 예상 반환일을 입력하세요. 마감일 30일, 7일, 3일 전에 자동 알림을 보내드립니다. 보증금이 연체되면 알려드리고 분쟁 해결 옵션을 제공합니다.",
-            zh: "输入您的押金金额和预计退还日期。我们会在截止日期前30天、7天和3天自动发送提醒。如果押金逾期，我们会提醒您并提供纠纷解决选项。",
-            ru: "Введите сумму депозита и ожидаемую дату возврата. Мы отправим автоматические напоминания за 30, 7 и 3 дня до срока. Если депозит просрочен, мы уведомим вас и предложим варианты разрешения спора."
+            en: "Photos, videos, voice notes, PDFs, receipts, and communication records.",
+            th: "รูปภาพ วิดีโอ บันทึกเสียง PDF ใบเสร็จ และบันทึกการสื่อสาร",
+            ja: "写真、ビデオ、音声メモ、PDF、領収書、通信記録。",
+            ko: "사진, 동영상, 음성 메모, PDF, 영수증 및 통신 기록.",
+            zh: "照片、视频、语音备忘录、PDF、收据和通信记录。",
+            ru: "Фотографии, видео, голосовые заметки, PDF, чеки и записи переписки."
           }
         },
         {
-          id: "deposit-not-returned",
+          id: "evidence-timestamped",
           q: {
-            en: "What if my deposit isn't returned?",
-            th: "ถ้าไม่ได้เงินมัดจำคืนจะทำอย่างไร?",
-            ja: "敷金が返還されない場合はどうすればいいですか？",
-            ko: "보증금이 반환되지 않으면 어떻게 하나요?",
-            zh: "如果押金没有退还怎么办？",
-            ru: "Что делать, если депозит не возвращают?"
+            en: "Is the evidence timestamped?",
+            th: "หลักฐานมีการประทับเวลาหรือไม่?",
+            ja: "証拠にはタイムスタンプが付けられますか？",
+            ko: "증거에 타임스탬프가 찍히나요?",
+            zh: "证据是否带有时间戳？",
+            ru: "Имеют ли доказательства временные метки?"
           },
           a: {
-            en: "Use our Resolve service to escalate the dispute. We'll generate professional demand letters, help you gather evidence, and guide you through the resolution process. Members get discounted rates and priority handling.",
-            th: "ใช้บริการ Resolve ของเราเพื่อยกระดับข้อพิพาท เราจะสร้างจดหมายเรียกร้องอย่างเป็นทางการ ช่วยคุณรวบรวมหลักฐาน และแนะนำกระบวนการแก้ไข สมาชิกจะได้รับอัตราส่วนลดและการจัดการพิเศษ",
-            ja: "Resolveサービスを使用して紛争をエスカレートします。専門的な請求書を作成し、証拠の収集を支援し、解決プロセスをガイドします。メンバーは割引料金と優先処理を受けられます。",
-            ko: "Resolve 서비스를 사용하여 분쟁을 에스컬레이션하세요. 전문적인 요구 서신을 생성하고, 증거 수집을 도와드리며, 해결 과정을 안내해 드립니다. 회원은 할인 요금과 우선 처리를 받습니다.",
-            zh: "使用我们的Resolve服务升级纠纷。我们会生成专业的催款信、帮助您收集证据，并指导您完成解决流程。会员享有折扣价格和优先处理。",
-            ru: "Используйте наш сервис Resolve для эскалации спора. Мы создадим профессиональные письма-требования, поможем собрать доказательства и проведем вас через процесс разрешения. Участники получают скидки и приоритетную обработку."
+            en: "Yes. Evidence is automatically timestamped when uploaded.",
+            th: "ใช่ หลักฐานจะถูกประทับเวลาอัตโนมัติเมื่ออัปโหลด",
+            ja: "はい。証拠はアップロード時に自動的にタイムスタンプが付けられます。",
+            ko: "네. 증거는 업로드 시 자동으로 타임스탬프가 찍힙니다.",
+            zh: "是的。证据在上传时会自动添加时间戳。",
+            ru: "Да. Доказательства автоматически получают временные метки при загрузке."
+          }
+        },
+        {
+          id: "who-sees-evidence",
+          q: {
+            en: "Who can see my evidence?",
+            th: "ใครสามารถเห็นหลักฐานของฉันได้บ้าง?",
+            ja: "誰が私の証拠を見ることができますか？",
+            ko: "누가 내 증거를 볼 수 있나요?",
+            zh: "谁可以看到我的证据？",
+            ru: "Кто может видеть мои доказательства?"
+          },
+          a: {
+            en: "Only you, unless you choose to share it or open a case.",
+            th: "เฉพาะคุณเท่านั้น เว้นแต่คุณเลือกที่จะแชร์หรือเปิดคดี",
+            ja: "あなただけです。共有するかケースを開くことを選択しない限り。",
+            ko: "귀하만 볼 수 있습니다. 공유하거나 케이스를 열지 않는 한.",
+            zh: "只有您，除非您选择分享或开启案件。",
+            ru: "Только вы, если вы не решите поделиться или открыть дело."
+          }
+        },
+        {
+          id: "evidence-in-disputes",
+          q: {
+            en: "How is evidence used in disputes?",
+            th: "หลักฐานถูกใช้ในข้อพิพาทอย่างไร?",
+            ja: "証拠は紛争でどのように使用されますか？",
+            ko: "분쟁에서 증거는 어떻게 사용되나요?",
+            zh: "证据在纠纷中如何使用？",
+            ru: "Как используются доказательства в спорах?"
+          },
+          a: {
+            en: "It provides a clear, neutral record of property condition, communications, repairs, and agreements.",
+            th: "มันให้บันทึกที่ชัดเจนและเป็นกลางเกี่ยวกับสภาพทรัพย์สิน การสื่อสาร การซ่อมแซม และข้อตกลง",
+            ja: "物件の状態、コミュニケーション、修理、合意の明確で中立的な記録を提供します。",
+            ko: "부동산 상태, 커뮤니케이션, 수리 및 계약에 대한 명확하고 중립적인 기록을 제공합니다.",
+            zh: "它提供了关于物业状况、通信、维修和协议的清晰、中立的记录。",
+            ru: "Это обеспечивает четкую, нейтральную запись состояния объекта, коммуникаций, ремонтов и соглашений."
+          }
+        },
+        {
+          id: "upload-movein-moveout",
+          q: {
+            en: "Should I upload both move-in and move-out evidence?",
+            th: "ฉันควรอัปโหลดหลักฐานการย้ายเข้าและย้ายออกทั้งคู่หรือไม่?",
+            ja: "入居時と退去時の両方の証拠をアップロードすべきですか？",
+            ko: "입주 및 퇴거 증거를 모두 업로드해야 하나요?",
+            zh: "我应该上传入住和退房证据吗？",
+            ru: "Следует ли загружать доказательства как при заселении, так и при выселении?"
+          },
+          a: {
+            en: "Yes. It creates a complete timeline that protects both tenant and landlord.",
+            th: "ใช่ มันสร้างไทม์ไลน์ที่สมบูรณ์ซึ่งปกป้องทั้งผู้เช่าและเจ้าของบ้าน",
+            ja: "はい。テナントと家主の両方を保護する完全なタイムラインを作成します。",
+            ko: "네. 세입자와 집주인 모두를 보호하는 완전한 타임라인을 생성합니다.",
+            zh: "是的。它创建了保护租户和房东双方的完整时间线。",
+            ru: "Да. Это создает полную хронологию, которая защищает и арендатора, и арендодателя."
           }
         }
       ]
@@ -203,12 +592,12 @@ export const faqData = {
       id: "maintenance",
       icon: "Wrench",
       title: {
-        en: "Maintenance Reporting",
-        th: "รายงานการซ่อมบำรุง",
-        ja: "メンテナンス報告",
-        ko: "유지보수 보고",
-        zh: "维护报告",
-        ru: "Отчеты о техобслуживании"
+        en: "Maintenance & Issues",
+        th: "การซ่อมบำรุงและปัญหา",
+        ja: "メンテナンスと問題",
+        ko: "유지보수 및 문제",
+        zh: "维护与问题",
+        ru: "Обслуживание и проблемы"
       },
       items: [
         {
@@ -222,206 +611,159 @@ export const faqData = {
             ru: "Как сообщить о проблеме с обслуживанием?"
           },
           a: {
-            en: "Go to Property → Maintenance → New Request. Add photos, videos, or voice notes to document the issue. Select the category and priority. Your landlord/juristic will be notified automatically if they're connected via LINE.",
-            th: "ไปที่ ทรัพย์สิน → การซ่อมบำรุง → คำขอใหม่ เพิ่มรูปภาพ วิดีโอ หรือบันทึกเสียงเพื่อบันทึกปัญหา เลือกหมวดหมู่และความสำคัญ เจ้าของบ้าน/นิติบุคคลจะได้รับแจ้งอัตโนมัติหากเชื่อมต่อผ่าน LINE",
-            ja: "プロパティ → メンテナンス → 新規リクエストに移動します。写真、ビデオ、または音声メモを追加して問題を記録します。カテゴリと優先度を選択します。家主/管理会社がLINEで接続している場合、自動的に通知されます。",
-            ko: "부동산 → 유지보수 → 새 요청으로 이동하세요. 사진, 동영상 또는 음성 메모를 추가하여 문제를 기록하세요. 카테고리와 우선순위를 선택하세요. 집주인/관리사무소가 LINE으로 연결되어 있으면 자동으로 알림을 받습니다.",
-            zh: "转到 房产 → 维护 → 新请求。添加照片、视频或语音备注来记录问题。选择类别和优先级。如果房东/物业通过LINE连接，将自动收到通知。",
-            ru: "Перейдите в Недвижимость → Обслуживание → Новый запрос. Добавьте фото, видео или голосовые заметки для документирования проблемы. Выберите категорию и приоритет. Арендодатель/управляющая компания будут уведомлены автоматически, если подключены через LINE."
+            en: "Go to the Maintenance section and upload photos, videos, or voice notes with a description.",
+            th: "ไปที่ส่วนการซ่อมบำรุงและอัปโหลดรูปภาพ วิดีโอ หรือบันทึกเสียงพร้อมคำอธิบาย",
+            ja: "メンテナンスセクションに移動し、説明とともに写真、ビデオ、または音声メモをアップロードします。",
+            ko: "유지보수 섹션으로 이동하여 설명과 함께 사진, 동영상 또는 음성 메모를 업로드하세요.",
+            zh: "转到维护部分并上传照片、视频或语音备忘录及描述。",
+            ru: "Перейдите в раздел обслуживания и загрузите фотографии, видео или голосовые заметки с описанием."
           }
         },
         {
-          id: "landlord-not-responding",
+          id: "who-receives-report",
           q: {
-            en: "What if my landlord doesn't respond?",
-            th: "ถ้าเจ้าของบ้านไม่ตอบจะทำอย่างไร?",
-            ja: "家主が応答しない場合はどうすればいいですか？",
-            ko: "집주인이 응답하지 않으면 어떻게 하나요?",
-            zh: "如果房东不回应怎么办？",
-            ru: "Что делать, если арендодатель не отвечает?"
+            en: "Who receives my maintenance report?",
+            th: "ใครจะได้รับรายงานการซ่อมบำรุงของฉัน?",
+            ja: "誰が私のメンテナンスレポートを受け取りますか？",
+            ko: "누가 내 유지보수 보고서를 받나요?",
+            zh: "谁会收到我的维护报告？",
+            ru: "Кто получает мой отчет об обслуживании?"
           },
           a: {
-            en: "All maintenance requests are timestamped and stored as evidence. If issues persist, you can escalate to a formal dispute case with documented proof of your attempts to resolve the issue.",
-            th: "คำขอซ่อมบำรุงทั้งหมดมีการประทับเวลาและจัดเก็บเป็นหลักฐาน หากปัญหายังคงอยู่ คุณสามารถยกระดับเป็นกรณีพิพาทอย่างเป็นทางการพร้อมหลักฐานที่บันทึกความพยายามแก้ไขปัญหาของคุณ",
-            ja: "すべてのメンテナンスリクエストはタイムスタンプが付けられ、証拠として保存されます。問題が続く場合は、解決の試みを文書化した証拠とともに正式な紛争ケースにエスカレートできます。",
-            ko: "모든 유지보수 요청은 타임스탬프가 찍혀 증거로 저장됩니다. 문제가 지속되면 문제 해결 시도를 문서화한 증거와 함께 공식 분쟁 사례로 에스컬레이션할 수 있습니다.",
-            zh: "所有维护请求都带有时间戳并作为证据存储。如果问题持续存在，您可以将其升级为正式纠纷案件，并提供您尝试解决问题的书面证明。",
-            ru: "Все запросы на обслуживание имеют временные метки и хранятся как доказательства. Если проблемы сохраняются, вы можете эскалировать до официального спора с документальными доказательствами ваших попыток решить проблему."
+            en: "It is stored in your property record. You may also share it with your landlord or juristic.",
+            th: "มันถูกเก็บไว้ในบันทึกทรัพย์สินของคุณ คุณยังสามารถแชร์กับเจ้าของบ้านหรือนิติบุคคลได้",
+            ja: "プロパティ記録に保存されます。家主や管理会社と共有することもできます。",
+            ko: "부동산 기록에 저장됩니다. 집주인이나 관리사무소와 공유할 수도 있습니다.",
+            zh: "它存储在您的物业记录中。您也可以与房东或物业分享。",
+            ru: "Он хранится в записи вашего объекта. Вы также можете поделиться им с арендодателем или управляющей."
+          }
+        },
+        {
+          id: "track-progress",
+          q: {
+            en: "Can I track the progress?",
+            th: "ฉันสามารถติดตามความคืบหน้าได้หรือไม่?",
+            ja: "進捗を追跡できますか？",
+            ko: "진행 상황을 추적할 수 있나요?",
+            zh: "我可以追踪进度吗？",
+            ru: "Могу ли я отслеживать прогресс?"
+          },
+          a: {
+            en: "Yes — each issue includes status updates and a timeline.",
+            th: "ได้ — แต่ละปัญหามีการอัปเดตสถานะและไทม์ไลน์",
+            ja: "はい — 各問題にはステータスの更新とタイムラインが含まれています。",
+            ko: "네 — 각 문제에는 상태 업데이트와 타임라인이 포함됩니다.",
+            zh: "可以 — 每个问题都包括状态更新和时间表。",
+            ru: "Да — каждая проблема включает обновления статуса и хронологию."
+          }
+        },
+        {
+          id: "what-issues-report",
+          q: {
+            en: "What types of issues should I report?",
+            th: "ฉันควรรายงานปัญหาประเภทใดบ้าง?",
+            ja: "どのような問題を報告すべきですか？",
+            ko: "어떤 유형의 문제를 보고해야 하나요?",
+            zh: "我应该报告哪些类型的问题？",
+            ru: "Какие типы проблем следует сообщать?"
+          },
+          a: {
+            en: "Any repair needs, damage, safety concerns, or property access issues.",
+            th: "ความต้องการซ่อมแซม ความเสียหาย ข้อกังวลด้านความปลอดภัย หรือปัญหาการเข้าถึงทรัพย์สิน",
+            ja: "修理の必要性、損傷、安全上の懸念、または物件アクセスの問題。",
+            ko: "수리 필요, 손상, 안전 문제 또는 부동산 접근 문제.",
+            zh: "任何维修需求、损坏、安全问题或物业访问问题。",
+            ru: "Любые потребности в ремонте, повреждения, проблемы безопасности или проблемы с доступом к объекту."
           }
         }
       ]
     },
     {
-      id: "evidence",
-      icon: "FolderOpen",
-      title: {
-        en: "Evidence Vault",
-        th: "คลังหลักฐาน",
-        ja: "証拠保管庫",
-        ko: "증거 보관함",
-        zh: "证据库",
-        ru: "Хранилище доказательств"
-      },
-      items: [
-        {
-          id: "what-to-store",
-          q: {
-            en: "What should I store in the Evidence Vault?",
-            th: "ฉันควรเก็บอะไรในคลังหลักฐาน?",
-            ja: "証拠保管庫には何を保存すべきですか？",
-            ko: "증거 보관함에 무엇을 저장해야 하나요?",
-            zh: "我应该在证据库中存储什么？",
-            ru: "Что следует хранить в хранилище доказательств?"
-          },
-          a: {
-            en: "Store move-in/move-out photos, receipts, chat screenshots, contracts, repair bills, and any communication with your landlord. This creates a timestamped record that can be crucial for disputes.",
-            th: "เก็บรูปภาพย้ายเข้า/ย้ายออก ใบเสร็จ ภาพหน้าจอแชท สัญญา ใบเรียกเก็บค่าซ่อม และการสื่อสารใดๆ กับเจ้าของบ้าน สิ่งนี้สร้างบันทึกที่มีการประทับเวลาซึ่งอาจสำคัญสำหรับข้อพิพาท",
-            ja: "入居時/退去時の写真、領収書、チャットのスクリーンショット、契約書、修理請求書、家主とのコミュニケーションを保存します。これにより、紛争に不可欠なタイムスタンプ付きの記録が作成されます。",
-            ko: "입주/퇴거 사진, 영수증, 채팅 스크린샷, 계약서, 수리 청구서 및 집주인과의 모든 커뮤니케이션을 저장하세요. 이는 분쟁에 중요할 수 있는 타임스탬프가 찍힌 기록을 생성합니다.",
-            zh: "存储入住/退房照片、收据、聊天截图、合同、维修账单以及与房东的任何通信。这会创建一个带时间戳的记录，对于纠纷至关重要。",
-            ru: "Храните фото при заселении/выселении, чеки, скриншоты чатов, договоры, счета за ремонт и любую переписку с арендодателем. Это создает запись с временными метками, которая может быть важна для споров."
-          }
-        },
-        {
-          id: "storage-limit",
-          q: {
-            en: "Is there a storage limit?",
-            th: "มีขีดจำกัดพื้นที่จัดเก็บหรือไม่?",
-            ja: "ストレージ制限はありますか？",
-            ko: "저장 공간 제한이 있나요?",
-            zh: "有存储限制吗？",
-            ru: "Есть ли ограничение на хранилище?"
-          },
-          a: {
-            en: "Free users can store up to 50 files. Paid plans offer expanded storage: Lite (200 files), Protect (500 files), Secure (unlimited).",
-            th: "ผู้ใช้ฟรีสามารถเก็บได้ถึง 50 ไฟล์ แผนเสียเงินมีพื้นที่เก็บข้อมูลขยาย: Lite (200 ไฟล์), Protect (500 ไฟล์), Secure (ไม่จำกัด)",
-            ja: "無料ユーザーは最大50ファイルを保存できます。有料プランでは拡張ストレージを提供: Lite (200ファイル)、Protect (500ファイル)、Secure (無制限)。",
-            ko: "무료 사용자는 최대 50개의 파일을 저장할 수 있습니다. 유료 플랜은 확장 저장 공간을 제공합니다: Lite (200개 파일), Protect (500개 파일), Secure (무제한).",
-            zh: "免费用户最多可存储50个文件。付费版提供扩展存储：Lite（200个文件）、Protect（500个文件）、Secure（无限制）。",
-            ru: "Бесплатные пользователи могут хранить до 50 файлов. Платные планы предлагают расширенное хранилище: Lite (200 файлов), Protect (500 файлов), Secure (неограниченно)."
-          }
-        }
-      ]
-    },
-    {
-      id: "disputes",
+      id: "cases-disputes",
       icon: "Scale",
       title: {
-        en: "Dispute Resolution",
-        th: "การระงับข้อพิพาท",
-        ja: "紛争解決",
-        ko: "분쟁 해결",
-        zh: "纠纷解决",
-        ru: "Разрешение споров"
+        en: "Cases & Disputes",
+        th: "คดีและข้อพิพาท",
+        ja: "ケースと紛争",
+        ko: "케이스 및 분쟁",
+        zh: "案件与纠纷",
+        ru: "Дела и споры"
       },
       items: [
         {
-          id: "resolve-service",
+          id: "open-case-for",
           q: {
-            en: "What is the Resolve service?",
-            th: "บริการ Resolve คืออะไร?",
-            ja: "Resolveサービスとは何ですか？",
-            ko: "Resolve 서비스란 무엇인가요?",
-            zh: "Resolve服务是什么？",
-            ru: "Что такое сервис Resolve?"
+            en: "What can I open a case for?",
+            th: "ฉันสามารถเปิดคดีเพื่ออะไรได้บ้าง?",
+            ja: "何のためにケースを開くことができますか？",
+            ko: "어떤 경우에 케이스를 열 수 있나요?",
+            zh: "我可以为什么开启案件？",
+            ru: "Для чего я могу открыть дело?"
           },
           a: {
-            en: "Resolve is our dispute resolution service. We review your case, generate professional demand letters in multiple languages, and guide you through escalation steps. Our team helps negotiate with landlords to recover your deposit or resolve issues.",
-            th: "Resolve คือบริการระงับข้อพิพาทของเรา เราตรวจสอบกรณีของคุณ สร้างจดหมายเรียกร้องอย่างเป็นทางการในหลายภาษา และแนะนำขั้นตอนการยกระดับ ทีมของเราช่วยเจรจากับเจ้าของบ้านเพื่อเรียกคืนเงินมัดจำหรือแก้ไขปัญหา",
-            ja: "Resolveは紛争解決サービスです。ケースを確認し、複数言語で専門的な請求書を作成し、エスカレーション手順をガイドします。チームが家主と交渉して敷金を回収したり問題を解決したりするのを支援します。",
-            ko: "Resolve는 분쟁 해결 서비스입니다. 케이스를 검토하고, 여러 언어로 전문적인 요구 서신을 생성하며, 에스컬레이션 단계를 안내합니다. 저희 팀이 집주인과 협상하여 보증금을 회수하거나 문제를 해결하도록 돕습니다.",
-            zh: "Resolve是我们的纠纷解决服务。我们审查您的案件，生成多种语言的专业催款信，并指导您完成升级步骤。我们的团队帮助与房东协商以收回押金或解决问题。",
-            ru: "Resolve — это наш сервис разрешения споров. Мы рассматриваем ваше дело, создаем профессиональные письма-требования на нескольких языках и направляем вас через этапы эскалации. Наша команда помогает вести переговоры с арендодателями для возврата депозита или решения проблем."
+            en: "Deposit problems, repair delays, communication issues, and unclear contract matters.",
+            th: "ปัญหาเงินมัดจำ ความล่าช้าในการซ่อมแซม ปัญหาการสื่อสาร และเรื่องสัญญาที่ไม่ชัดเจน",
+            ja: "敷金の問題、修理の遅延、コミュニケーションの問題、不明確な契約事項。",
+            ko: "보증금 문제, 수리 지연, 커뮤니케이션 문제 및 불명확한 계약 사항.",
+            zh: "押金问题、维修延误、沟通问题和不明确的合同事项。",
+            ru: "Проблемы с депозитом, задержки ремонта, проблемы связи и неясные вопросы договора."
           }
         },
         {
-          id: "resolve-cost",
+          id: "after-submit-case",
           q: {
-            en: "How much does Resolve cost?",
-            th: "บริการ Resolve ราคาเท่าไหร่?",
-            ja: "Resolveの費用はいくらですか？",
-            ko: "Resolve 비용은 얼마인가요?",
-            zh: "Resolve的费用是多少？",
-            ru: "Сколько стоит Resolve?"
+            en: "What happens after I submit a case?",
+            th: "หลังจากฉันส่งคดีจะเกิดอะไรขึ้น?",
+            ja: "ケースを提出した後、何が起こりますか？",
+            ko: "케이스를 제출한 후 무슨 일이 일어나나요?",
+            zh: "提交案件后会发生什么？",
+            ru: "Что происходит после подачи дела?"
           },
           a: {
-            en: "Members pay ฿2,490 (all-inclusive). Non-members pay ฿3,490. This covers case review, letter generation, and ongoing support until resolution. No hidden fees or success fees.",
-            th: "สมาชิกจ่าย ฿2,490 (รวมทุกอย่าง) ไม่ใช่สมาชิกจ่าย ฿3,490 รวมการตรวจสอบกรณี การสร้างจดหมาย และการสนับสนุนต่อเนื่องจนกว่าจะแก้ไขได้ ไม่มีค่าธรรมเนียมแอบแฝงหรือค่าธรรมเนียมความสำเร็จ",
-            ja: "メンバーは฿2,490（オールインクルーシブ）を支払います。非メンバーは฿3,490です。これにはケースレビュー、レター作成、解決までの継続的なサポートが含まれます。隠れた料金や成功報酬はありません。",
-            ko: "회원은 ฿2,490(올인클루시브)를 지불합니다. 비회원은 ฿3,490입니다. 케이스 검토, 서신 생성, 해결까지의 지속적인 지원이 포함됩니다. 숨겨진 비용이나 성공 수수료가 없습니다.",
-            zh: "会员支付฿2,490（全包）。非会员支付฿3,490。这包括案件审查、信件生成和解决前的持续支持。没有隐藏费用或成功费。",
-            ru: "Участники платят ฿2,490 (все включено). Не-участники — ฿3,490. Это покрывает проверку дела, создание писем и постоянную поддержку до разрешения. Никаких скрытых или комиссий за успех."
-          }
-        }
-      ]
-    },
-    {
-      id: "communication",
-      icon: "MessageCircle",
-      title: {
-        en: "LINE & Notifications",
-        th: "LINE และการแจ้งเตือน",
-        ja: "LINEと通知",
-        ko: "LINE 및 알림",
-        zh: "LINE与通知",
-        ru: "LINE и уведомления"
-      },
-      items: [
-        {
-          id: "connect-line",
-          q: {
-            en: "How do I connect LINE?",
-            th: "ฉันจะเชื่อมต่อ LINE อย่างไร?",
-            ja: "LINEをどのように接続しますか？",
-            ko: "LINE을 어떻게 연결하나요?",
-            zh: "如何连接LINE？",
-            ru: "Как подключить LINE?"
-          },
-          a: {
-            en: "Go to Account → LINE Notifications → Click 'Connect LINE'. Add @leaseshield as a friend and send the message 'confirm'. You'll receive a confirmation once connected.",
-            th: "ไปที่ บัญชี → การแจ้งเตือน LINE → คลิก 'เชื่อมต่อ LINE' เพิ่ม @leaseshield เป็นเพื่อนและส่งข้อความ 'confirm' คุณจะได้รับการยืนยันเมื่อเชื่อมต่อแล้ว",
-            ja: "アカウント → LINE通知 → 'LINEを接続'をクリックします。@leaseshieldを友達に追加し、'confirm'メッセージを送信します。接続されると確認を受け取ります。",
-            ko: "계정 → LINE 알림 → 'LINE 연결'을 클릭하세요. @leaseshield를 친구로 추가하고 'confirm' 메시지를 보내세요. 연결되면 확인 메시지를 받게 됩니다.",
-            zh: "转到 账户 → LINE通知 → 点击'连接LINE'。添加@leaseshield为好友并发送消息'confirm'。连接后您将收到确认。",
-            ru: "Перейдите в Аккаунт → Уведомления LINE → Нажмите 'Подключить LINE'. Добавьте @leaseshield в друзья и отправьте сообщение 'confirm'. После подключения вы получите подтверждение."
+            en: "Our team reviews your documents and helps draft neutral, professional messages or letters.",
+            th: "ทีมของเราตรวจสอบเอกสารของคุณและช่วยร่างข้อความหรือจดหมายที่เป็นกลางและเป็นมืออาชีพ",
+            ja: "チームが文書を確認し、中立的で専門的なメッセージや手紙の作成を支援します。",
+            ko: "저희 팀이 귀하의 문서를 검토하고 중립적이고 전문적인 메시지나 서신을 작성하도록 도와드립니다.",
+            zh: "我们的团队审查您的文档并帮助起草中立、专业的消息或信函。",
+            ru: "Наша команда проверяет ваши документы и помогает составить нейтральные, профессиональные сообщения или письма."
           }
         },
         {
-          id: "landlord-line",
+          id: "case-duration",
           q: {
-            en: "Can my landlord receive LINE notifications?",
-            th: "เจ้าของบ้านสามารถรับการแจ้งเตือน LINE ได้หรือไม่?",
-            ja: "家主はLINE通知を受け取ることができますか？",
-            ko: "집주인도 LINE 알림을 받을 수 있나요?",
-            zh: "房东可以接收LINE通知吗？",
-            ru: "Может ли арендодатель получать уведомления LINE?"
+            en: "How long does a case take?",
+            th: "คดีใช้เวลานานเท่าไหร่?",
+            ja: "ケースにはどのくらい時間がかかりますか？",
+            ko: "케이스는 얼마나 걸리나요?",
+            zh: "案件需要多长时间？",
+            ru: "Сколько времени занимает дело?"
           },
           a: {
-            en: "Yes! Share the connection link with your landlord. They add @leaseshield and send 'confirm landlord your@email.com'. They'll receive maintenance request notifications and other relevant updates.",
-            th: "ได้! แชร์ลิงก์การเชื่อมต่อกับเจ้าของบ้าน พวกเขาเพิ่ม @leaseshield และส่ง 'confirm landlord your@email.com' พวกเขาจะได้รับการแจ้งเตือนคำขอซ่อมบำรุงและอัปเดตที่เกี่ยวข้องอื่นๆ",
-            ja: "はい！接続リンクを家主と共有します。@leaseshieldを追加して'confirm landlord your@email.com'を送信します。メンテナンスリクエストの通知やその他の関連更新を受け取ります。",
-            ko: "네! 집주인과 연결 링크를 공유하세요. @leaseshield를 추가하고 'confirm landlord your@email.com'을 보내면 됩니다. 유지보수 요청 알림 및 기타 관련 업데이트를 받게 됩니다.",
-            zh: "可以！与房东分享连接链接。他们添加@leaseshield并发送'confirm landlord your@email.com'。他们将收到维护请求通知和其他相关更新。",
-            ru: "Да! Поделитесь ссылкой для подключения с арендодателем. Они добавляют @leaseshield и отправляют 'confirm landlord your@email.com'. Они будут получать уведомления о запросах на обслуживание и другие обновления."
+            en: "It depends on the issue and the evidence available. Each case is handled individually.",
+            th: "ขึ้นอยู่กับปัญหาและหลักฐานที่มีอยู่ แต่ละคดีได้รับการจัดการแยกกัน",
+            ja: "問題と利用可能な証拠によります。各ケースは個別に処理されます。",
+            ko: "문제와 이용 가능한 증거에 따라 다릅니다. 각 케이스는 개별적으로 처리됩니다.",
+            zh: "取决于问题和可用的证据。每个案件都单独处理。",
+            ru: "Это зависит от проблемы и доступных доказательств. Каждое дело рассматривается индивидуально."
           }
         },
         {
-          id: "notification-types",
+          id: "legal-advice",
           q: {
-            en: "What notifications will I receive?",
-            th: "ฉันจะได้รับการแจ้งเตือนอะไรบ้าง?",
-            ja: "どのような通知を受け取りますか？",
-            ko: "어떤 알림을 받게 되나요?",
-            zh: "我会收到哪些通知？",
-            ru: "Какие уведомления я буду получать?"
+            en: "Do you offer legal advice?",
+            th: "คุณให้คำแนะนำทางกฎหมายหรือไม่?",
+            ja: "法的アドバイスを提供しますか？",
+            ko: "법률 자문을 제공하나요?",
+            zh: "你们提供法律建议吗？",
+            ru: "Вы предоставляете юридические консультации?"
           },
           a: {
-            en: "Deposit return reminders (30/7/3 days before), lease end notices, rent payment reminders, maintenance updates, case status changes, and billing notifications. You can customize these in Account → Notifications.",
-            th: "การแจ้งเตือนการคืนเงินมัดจำ (30/7/3 วันก่อน) การแจ้งเตือนสิ้นสุดสัญญาเช่า การแจ้งเตือนการชำระค่าเช่า อัปเดตการซ่อมบำรุง การเปลี่ยนแปลงสถานะกรณี และการแจ้งเตือนการเรียกเก็บเงิน คุณสามารถปรับแต่งได้ใน บัญชี → การแจ้งเตือน",
-            ja: "敷金返還リマインダー（30/7/3日前）、リース終了通知、家賃支払いリマインダー、メンテナンス更新、ケースステータス変更、請求通知。アカウント → 通知でカスタマイズできます。",
-            ko: "보증금 반환 알림(30/7/3일 전), 임대 종료 통지, 임대료 납부 알림, 유지보수 업데이트, 케이스 상태 변경, 청구 알림. 계정 → 알림에서 맞춤 설정할 수 있습니다.",
-            zh: "押金退还提醒（提前30/7/3天）、租约到期通知、租金支付提醒、维护更新、案件状态变更和账单通知。您可以在 账户 → 通知 中自定义这些设置。",
-            ru: "Напоминания о возврате депозита (за 30/7/3 дня), уведомления об окончании аренды, напоминания об оплате аренды, обновления по обслуживанию, изменения статуса дел и уведомления о счетах. Вы можете настроить их в Аккаунт → Уведомления."
+            en: "No. LeaseShield provides documentation and guidance, not legal advice or legal representation.",
+            th: "ไม่ LeaseShield ให้บริการเอกสารและคำแนะนำ ไม่ใช่คำแนะนำทางกฎหมายหรือการเป็นตัวแทนทางกฎหมาย",
+            ja: "いいえ。LeaseShieldは文書化とガイダンスを提供しますが、法的アドバイスや法的代理は提供しません。",
+            ko: "아니요. LeaseShield는 문서화 및 안내를 제공하지만 법률 자문이나 법적 대리는 제공하지 않습니다.",
+            zh: "不。LeaseShield提供文档和指导，而非法律建议或法律代理。",
+            ru: "Нет. LeaseShield предоставляет документацию и руководство, но не юридические консультации или представительство."
           }
         }
       ]
@@ -430,69 +772,126 @@ export const faqData = {
       id: "billing",
       icon: "CreditCard",
       title: {
-        en: "Billing & Plans",
-        th: "การเรียกเก็บเงินและแผน",
-        ja: "請求とプラン",
-        ko: "청구 및 플랜",
-        zh: "账单与套餐",
-        ru: "Оплата и планы"
+        en: "Subscriptions, Billing & Refunds",
+        th: "การสมัครสมาชิก การเรียกเก็บเงิน และการคืนเงิน",
+        ja: "サブスクリプション、請求、返金",
+        ko: "구독, 청구 및 환불",
+        zh: "订阅、账单与退款",
+        ru: "Подписки, Оплата и Возвраты"
       },
       items: [
         {
-          id: "change-plan",
+          id: "subscription-payments",
           q: {
-            en: "How do I upgrade or downgrade my plan?",
-            th: "ฉันจะอัปเกรดหรือดาวน์เกรดแผนได้อย่างไร?",
-            ja: "プランをアップグレードまたはダウングレードするにはどうすればいいですか？",
-            ko: "플랜을 업그레이드하거나 다운그레이드하려면 어떻게 하나요?",
-            zh: "如何升级或降级我的套餐？",
-            ru: "Как повысить или понизить план?"
+            en: "How do subscription payments work?",
+            th: "การชำระเงินสมัครสมาชิกทำงานอย่างไร?",
+            ja: "サブスクリプション支払いはどのように機能しますか？",
+            ko: "구독 결제는 어떻게 작동하나요?",
+            zh: "订阅付款如何运作？",
+            ru: "Как работают платежи по подписке?"
           },
           a: {
-            en: "Go to Account → Your Plan → Change Plan. Upgrades take effect immediately with prorated billing. Downgrades take effect at the end of your current billing period.",
-            th: "ไปที่ บัญชี → แผนของคุณ → เปลี่ยนแผน การอัปเกรดมีผลทันทีพร้อมการเรียกเก็บเงินตามสัดส่วน การดาวน์เกรดมีผลเมื่อสิ้นสุดรอบการเรียกเก็บเงินปัจจุบัน",
-            ja: "アカウント → プラン → プラン変更に移動します。アップグレードは日割り計算ですぐに有効になります。ダウングレードは現在の請求期間の終了時に有効になります。",
-            ko: "계정 → 플랜 → 플랜 변경으로 이동하세요. 업그레이드는 일할 계산된 청구와 함께 즉시 적용됩니다. 다운그레이드는 현재 청구 기간이 끝나면 적용됩니다.",
-            zh: "转到 账户 → 您的套餐 → 更改套餐。升级立即生效，按比例计费。降级在当前计费周期结束时生效。",
-            ru: "Перейдите в Аккаунт → Ваш план → Изменить план. Повышения вступают в силу немедленно с пропорциональной оплатой. Понижения вступают в силу в конце текущего расчетного периода."
+            en: "Subscriptions are billed automatically at the start of each billing cycle. Your plan activates immediately after payment.",
+            th: "การสมัครสมาชิกจะถูกเรียกเก็บโดยอัตโนมัติที่เริ่มต้นของแต่ละรอบการเรียกเก็บเงิน แผนของคุณจะเปิดใช้งานทันทีหลังจากการชำระเงิน",
+            ja: "サブスクリプションは各請求サイクルの開始時に自動的に請求されます。支払い後すぐにプランがアクティブになります。",
+            ko: "구독은 각 청구 주기 시작 시 자동으로 청구됩니다. 결제 후 즉시 플랜이 활성화됩니다.",
+            zh: "订阅在每个计费周期开始时自动收费。付款后您的套餐立即激活。",
+            ru: "Подписки автоматически оплачиваются в начале каждого расчетного периода. Ваш план активируется сразу после оплаты."
           }
         },
         {
           id: "cancel-subscription",
           q: {
-            en: "How do I cancel my subscription?",
-            th: "ฉันจะยกเลิกการสมัครได้อย่างไร?",
-            ja: "サブスクリプションをキャンセルするにはどうすればいいですか？",
-            ko: "구독을 취소하려면 어떻게 하나요?",
-            zh: "如何取消订阅？",
-            ru: "Как отменить подписку?"
+            en: "Can I cancel my subscription?",
+            th: "ฉันสามารถยกเลิกการสมัครได้หรือไม่?",
+            ja: "サブスクリプションをキャンセルできますか？",
+            ko: "구독을 취소할 수 있나요?",
+            zh: "我可以取消订阅吗？",
+            ru: "Могу ли я отменить подписку?"
           },
           a: {
-            en: "Go to Account → Your Plan → Cancel Subscription. You'll retain access until the end of your current billing period. Your data remains stored and accessible on the free plan.",
-            th: "ไปที่ บัญชี → แผนของคุณ → ยกเลิกการสมัคร คุณยังคงเข้าถึงได้จนกว่าจะสิ้นสุดรอบการเรียกเก็บเงินปัจจุบัน ข้อมูลของคุณยังคงจัดเก็บและเข้าถึงได้ในแผนฟรี",
-            ja: "アカウント → プラン → サブスクリプションをキャンセルに移動します。現在の請求期間の終了までアクセスを保持します。データは無料プランで保存され、アクセス可能です。",
-            ko: "계정 → 플랜 → 구독 취소로 이동하세요. 현재 청구 기간이 끝날 때까지 접근 권한이 유지됩니다. 데이터는 무료 플랜에서 저장되고 접근 가능합니다.",
-            zh: "转到 账户 → 您的套餐 → 取消订阅。您将保留访问权限直到当前计费周期结束。您的数据在免费版中仍然存储和可访问。",
-            ru: "Перейдите в Аккаунт → Ваш план → Отменить подписку. Вы сохраните доступ до конца текущего расчетного периода. Ваши данные остаются сохраненными и доступными на бесплатном плане."
+            en: "Yes — you can cancel at any time in Account → Subscription. You will keep access until the end of the current billing period.",
+            th: "ได้ — คุณสามารถยกเลิกได้ตลอดเวลาใน บัญชี → การสมัครสมาชิก คุณจะยังคงเข้าถึงได้จนกว่าจะสิ้นสุดรอบการเรียกเก็บเงินปัจจุบัน",
+            ja: "はい — アカウント → サブスクリプションでいつでもキャンセルできます。現在の請求期間の終了までアクセスを維持します。",
+            ko: "네 — 계정 → 구독에서 언제든지 취소할 수 있습니다. 현재 청구 기간이 끝날 때까지 접근 권한이 유지됩니다.",
+            zh: "可以 — 您可以随时在 账户 → 订阅 中取消。您将保留访问权限直到当前计费周期结束。",
+            ru: "Да — вы можете отменить в любое время в Аккаунт → Подписка. Вы сохраните доступ до конца текущего расчетного периода."
           }
         },
         {
-          id: "letter-credits",
+          id: "refunds",
           q: {
-            en: "What are letter credits?",
-            th: "เครดิตจดหมายคืออะไร?",
-            ja: "レタークレジットとは何ですか？",
-            ko: "편지 크레딧이란 무엇인가요?",
-            zh: "什么是信件积分？",
-            ru: "Что такое кредиты на письма?"
+            en: "Do you offer refunds?",
+            th: "คุณคืนเงินหรือไม่?",
+            ja: "返金は提供していますか？",
+            ko: "환불을 제공하나요?",
+            zh: "你们提供退款吗？",
+            ru: "Вы предоставляете возвраты?"
           },
           a: {
-            en: "Letter credits are used to generate formal demand letters (deposit return, damages, early termination). Each credit generates a letter pack in multiple languages. Credits are included with paid plans or can be purchased separately.",
-            th: "เครดิตจดหมายใช้สำหรับสร้างจดหมายเรียกร้องอย่างเป็นทางการ (การคืนเงินมัดจำ ค่าเสียหาย การยกเลิกก่อนกำหนด) เครดิตแต่ละเครดิตสร้างชุดจดหมายในหลายภาษา เครดิตรวมอยู่ในแผนเสียเงินหรือสามารถซื้อแยกได้",
-            ja: "レタークレジットは、正式な請求書（敷金返還、損害賠償、早期解約）を生成するために使用されます。各クレジットは複数言語でレターパックを生成します。クレジットは有料プランに含まれるか、別途購入できます。",
-            ko: "편지 크레딧은 공식 요구 서신(보증금 반환, 손해, 조기 해지)을 생성하는 데 사용됩니다. 각 크레딧은 여러 언어로 편지 팩을 생성합니다. 크레딧은 유료 플랜에 포함되어 있거나 별도로 구매할 수 있습니다.",
-            zh: "信件积分用于生成正式催款信（押金退还、损害赔偿、提前终止）。每个积分生成多种语言的信件包。积分包含在付费版中或可单独购买。",
-            ru: "Кредиты на письма используются для создания официальных писем-требований (возврат депозита, возмещение ущерба, досрочное расторжение). Каждый кредит создает пакет писем на нескольких языках. Кредиты включены в платные планы или могут быть приобретены отдельно."
+            en: "Subscriptions are non-refundable once activated.",
+            th: "การสมัครสมาชิกไม่สามารถขอคืนเงินได้เมื่อเปิดใช้งานแล้ว",
+            ja: "サブスクリプションは一度アクティブ化されると返金不可です。",
+            ko: "구독은 활성화되면 환불되지 않습니다.",
+            zh: "订阅一旦激活即不可退款。",
+            ru: "Подписки не подлежат возврату после активации."
+          }
+        },
+        {
+          id: "payment-fails",
+          q: {
+            en: "What happens if my payment fails?",
+            th: "จะเกิดอะไรขึ้นถ้าการชำระเงินล้มเหลว?",
+            ja: "支払いが失敗した場合はどうなりますか？",
+            ko: "결제가 실패하면 어떻게 되나요?",
+            zh: "如果我的付款失败会怎样？",
+            ru: "Что произойдет, если мой платеж не пройдет?"
+          },
+          a: {
+            en: "Your account will return to the Free plan until a successful payment is made.",
+            th: "บัญชีของคุณจะกลับไปเป็นแผนฟรีจนกว่าจะมีการชำระเงินสำเร็จ",
+            ja: "支払いが成功するまで、アカウントは無料プランに戻ります。",
+            ko: "성공적인 결제가 이루어질 때까지 계정이 무료 플랜으로 돌아갑니다.",
+            zh: "您的账户将恢复到免费版，直到成功付款。",
+            ru: "Ваш аккаунт вернется к бесплатному плану до успешного платежа."
+          }
+        },
+        {
+          id: "upgrade-plan",
+          q: {
+            en: "How do I upgrade my plan?",
+            th: "ฉันจะอัปเกรดแผนได้อย่างไร?",
+            ja: "プランをアップグレードするにはどうすればいいですか？",
+            ko: "플랜을 어떻게 업그레이드하나요?",
+            zh: "如何升级我的套餐？",
+            ru: "Как обновить мой план?"
+          },
+          a: {
+            en: "Go to Account → Subscription and select a higher plan. Upgrades apply immediately.",
+            th: "ไปที่ บัญชี → การสมัครสมาชิก และเลือกแผนที่สูงขึ้น การอัปเกรดจะมีผลทันที",
+            ja: "アカウント → サブスクリプションに移動し、上位プランを選択します。アップグレードはすぐに適用されます。",
+            ko: "계정 → 구독으로 이동하여 상위 플랜을 선택하세요. 업그레이드가 즉시 적용됩니다.",
+            zh: "转到 账户 → 订阅 并选择更高的套餐。升级立即生效。",
+            ru: "Перейдите в Аккаунт → Подписка и выберите более высокий план. Обновления применяются немедленно."
+          }
+        },
+        {
+          id: "paid-features",
+          q: {
+            en: "Which features require a paid plan?",
+            th: "ฟีเจอร์ใดที่ต้องการแผนเสียเงิน?",
+            ja: "どの機能が有料プランを必要としますか？",
+            ko: "어떤 기능이 유료 플랜이 필요한가요?",
+            zh: "哪些功能需要付费套餐？",
+            ru: "Какие функции требуют платного плана?"
+          },
+          a: {
+            en: "LINE notifications, case support, advanced AI scanning features, and enhanced deposit tools.",
+            th: "การแจ้งเตือน LINE การสนับสนุนคดี ฟีเจอร์สแกน AI ขั้นสูง และเครื่องมือเงินมัดจำขั้นสูง",
+            ja: "LINE通知、ケースサポート、高度なAIスキャン機能、拡張敷金ツール。",
+            ko: "LINE 알림, 케이스 지원, 고급 AI 스캔 기능 및 향상된 보증금 도구.",
+            zh: "LINE通知、案件支持、高级AI扫描功能和增强的押金工具。",
+            ru: "Уведомления LINE, поддержка дел, расширенные функции AI-сканирования и улучшенные инструменты депозита."
           }
         }
       ]
@@ -501,50 +900,197 @@ export const faqData = {
       id: "privacy-security",
       icon: "Shield",
       title: {
-        en: "Privacy & Security",
-        th: "ความเป็นส่วนตัวและความปลอดภัย",
-        ja: "プライバシーとセキュリティ",
-        ko: "개인정보 및 보안",
-        zh: "隐私与安全",
-        ru: "Конфиденциальность и безопасность"
+        en: "Privacy, PDPA & Data Security",
+        th: "ความเป็นส่วนตัว PDPA และความปลอดภัยข้อมูล",
+        ja: "プライバシー、PDPA、データセキュリティ",
+        ko: "개인정보, PDPA 및 데이터 보안",
+        zh: "隐私、PDPA与数据安全",
+        ru: "Конфиденциальность, PDPA и безопасность данных"
       },
       items: [
         {
-          id: "data-security",
+          id: "data-protection",
           q: {
-            en: "Is my data secure?",
-            th: "ข้อมูลของฉันปลอดภัยหรือไม่?",
-            ja: "私のデータは安全ですか？",
-            ko: "내 데이터는 안전한가요?",
-            zh: "我的数据安全吗？",
-            ru: "Мои данные в безопасности?"
+            en: "How does LeaseShield protect my data?",
+            th: "LeaseShield ปกป้องข้อมูลของฉันอย่างไร?",
+            ja: "LeaseShieldは私のデータをどのように保護しますか？",
+            ko: "LeaseShield는 내 데이터를 어떻게 보호하나요?",
+            zh: "LeaseShield如何保护我的数据？",
+            ru: "Как LeaseShield защищает мои данные?"
           },
           a: {
-            en: "Yes. We use industry-standard encryption for all data in transit and at rest. Your documents are stored securely and only accessible to you. We never share your personal information with landlords or third parties without your consent.",
-            th: "ใช่ เราใช้การเข้ารหัสมาตรฐานอุตสาหกรรมสำหรับข้อมูลทั้งหมดระหว่างการส่งและเมื่อจัดเก็บ เอกสารของคุณถูกจัดเก็บอย่างปลอดภัยและเข้าถึงได้เฉพาะคุณเท่านั้น เราไม่เคยแชร์ข้อมูลส่วนตัวของคุณกับเจ้าของบ้านหรือบุคคลที่สามโดยไม่ได้รับความยินยอมจากคุณ",
-            ja: "はい。すべてのデータの転送中と保存中に業界標準の暗号化を使用しています。ドキュメントは安全に保存され、あなただけがアクセスできます。同意なしに家主やサードパーティと個人情報を共有することはありません。",
-            ko: "네. 전송 중 및 저장 중인 모든 데이터에 대해 업계 표준 암호화를 사용합니다. 문서는 안전하게 저장되며 귀하만 접근할 수 있습니다. 동의 없이 집주인이나 제3자와 개인 정보를 공유하지 않습니다.",
-            zh: "是的。我们对所有传输中和静态数据使用行业标准加密。您的文档安全存储，只有您可以访问。未经您同意，我们绝不会与房东或第三方共享您的个人信息。",
-            ru: "Да. Мы используем отраслевое стандартное шифрование для всех данных при передаче и хранении. Ваши документы хранятся безопасно и доступны только вам. Мы никогда не передаем вашу личную информацию арендодателям или третьим лицам без вашего согласия."
+            en: "All information is encrypted and stored securely. We never sell or share your data without your consent.",
+            th: "ข้อมูลทั้งหมดถูกเข้ารหัสและจัดเก็บอย่างปลอดภัย เราไม่เคยขายหรือแชร์ข้อมูลของคุณโดยไม่ได้รับความยินยอม",
+            ja: "すべての情報は暗号化され、安全に保存されます。同意なしにデータを販売または共有することはありません。",
+            ko: "모든 정보는 암호화되어 안전하게 저장됩니다. 동의 없이 귀하의 데이터를 판매하거나 공유하지 않습니다.",
+            zh: "所有信息都经过加密并安全存储。未经您的同意，我们绝不会出售或分享您的数据。",
+            ru: "Вся информация зашифрована и надежно хранится. Мы никогда не продаем и не делимся вашими данными без вашего согласия."
           }
         },
         {
-          id: "delete-account",
+          id: "pdpa-compliant",
           q: {
-            en: "Can I delete my account and data?",
-            th: "ฉันสามารถลบบัญชีและข้อมูลได้หรือไม่?",
-            ja: "アカウントとデータを削除できますか？",
-            ko: "계정과 데이터를 삭제할 수 있나요?",
-            zh: "我可以删除账户和数据吗？",
-            ru: "Могу ли я удалить свой аккаунт и данные?"
+            en: "Is LeaseShield PDPA compliant?",
+            th: "LeaseShield เป็นไปตาม PDPA หรือไม่?",
+            ja: "LeaseShieldはPDPA準拠ですか？",
+            ko: "LeaseShield는 PDPA를 준수하나요?",
+            zh: "LeaseShield符合PDPA吗？",
+            ru: "Соответствует ли LeaseShield PDPA?"
           },
           a: {
-            en: "Yes. Go to Account → Privacy → Delete Account. This permanently removes all your data. You can also export your data before deletion. Note: Active dispute cases must be closed first.",
-            th: "ได้ ไปที่ บัญชี → ความเป็นส่วนตัว → ลบบัญชี การดำเนินการนี้จะลบข้อมูลทั้งหมดของคุณอย่างถาวร คุณยังสามารถส่งออกข้อมูลก่อนลบได้ หมายเหตุ: กรณีพิพาทที่ดำเนินการอยู่ต้องปิดก่อน",
-            ja: "はい。アカウント → プライバシー → アカウント削除に移動します。これにより、すべてのデータが完全に削除されます。削除前にデータをエクスポートすることもできます。注意：アクティブな紛争ケースは先に閉じる必要があります。",
-            ko: "네. 계정 → 개인정보 → 계정 삭제로 이동하세요. 이렇게 하면 모든 데이터가 영구적으로 제거됩니다. 삭제 전에 데이터를 내보낼 수도 있습니다. 참고: 활성 분쟁 사례는 먼저 종료해야 합니다.",
-            zh: "可以。转到 账户 → 隐私 → 删除账户。这将永久删除您的所有数据。您也可以在删除前导出数据。注意：活跃的纠纷案件必须先关闭。",
-            ru: "Да. Перейдите в Аккаунт → Конфиденциальность → Удалить аккаунт. Это навсегда удалит все ваши данные. Вы также можете экспортировать данные перед удалением. Примечание: Активные споры должны быть сначала закрыты."
+            en: "Yes — LeaseShield follows PDPA principles for data storage, access, deletion, and consent.",
+            th: "ใช่ — LeaseShield ปฏิบัติตามหลักการ PDPA สำหรับการจัดเก็บข้อมูล การเข้าถึง การลบ และความยินยอม",
+            ja: "はい — LeaseShieldはデータストレージ、アクセス、削除、同意についてPDPA原則に従っています。",
+            ko: "네 — LeaseShield는 데이터 저장, 접근, 삭제 및 동의에 대한 PDPA 원칙을 따릅니다.",
+            zh: "是的 — LeaseShield遵循PDPA关于数据存储、访问、删除和同意的原则。",
+            ru: "Да — LeaseShield следует принципам PDPA в отношении хранения, доступа, удаления данных и согласия."
+          }
+        },
+        {
+          id: "who-sees-files",
+          q: {
+            en: "Who can see my files and evidence?",
+            th: "ใครสามารถเห็นไฟล์และหลักฐานของฉันได้?",
+            ja: "誰が私のファイルと証拠を見ることができますか？",
+            ko: "누가 내 파일과 증거를 볼 수 있나요?",
+            zh: "谁可以看到我的文件和证据？",
+            ru: "Кто может видеть мои файлы и доказательства?"
+          },
+          a: {
+            en: "Only you, unless you choose to share them or open a case.",
+            th: "เฉพาะคุณเท่านั้น เว้นแต่คุณเลือกที่จะแชร์หรือเปิดคดี",
+            ja: "あなただけです。共有するかケースを開くことを選択しない限り。",
+            ko: "귀하만 볼 수 있습니다. 공유하거나 케이스를 열지 않는 한.",
+            zh: "只有您，除非您选择分享或开启案件。",
+            ru: "Только вы, если вы не решите поделиться ими или открыть дело."
+          }
+        },
+        {
+          id: "delete-data",
+          q: {
+            en: "Can I delete my data?",
+            th: "ฉันสามารถลบข้อมูลของฉันได้หรือไม่?",
+            ja: "データを削除できますか？",
+            ko: "내 데이터를 삭제할 수 있나요?",
+            zh: "我可以删除我的数据吗？",
+            ru: "Могу ли я удалить свои данные?"
+          },
+          a: {
+            en: "Yes — you can request full account deletion, which permanently removes all stored information.",
+            th: "ได้ — คุณสามารถขอลบบัญชีทั้งหมด ซึ่งจะลบข้อมูลที่จัดเก็บทั้งหมดอย่างถาวร",
+            ja: "はい — 完全なアカウント削除をリクエストでき、保存されたすべての情報が完全に削除されます。",
+            ko: "네 — 전체 계정 삭제를 요청할 수 있으며, 저장된 모든 정보가 영구적으로 제거됩니다.",
+            zh: "可以 — 您可以请求完全删除账户，这将永久删除所有存储的信息。",
+            ru: "Да — вы можете запросить полное удаление аккаунта, которое навсегда удалит всю сохраненную информацию."
+          }
+        },
+        {
+          id: "line-chats-privacy",
+          q: {
+            en: "Does LeaseShield read my LINE chats?",
+            th: "LeaseShield อ่านแชท LINE ของฉันหรือไม่?",
+            ja: "LeaseShieldは私のLINEチャットを読みますか？",
+            ko: "LeaseShield가 내 LINE 채팅을 읽나요?",
+            zh: "LeaseShield会读取我的LINE聊天记录吗？",
+            ru: "Читает ли LeaseShield мои чаты LINE?"
+          },
+          a: {
+            en: "No. LeaseShield cannot read your LINE conversations — only the confirm command for linking.",
+            th: "ไม่ LeaseShield ไม่สามารถอ่านการสนทนา LINE ของคุณได้ — เฉพาะคำสั่ง confirm สำหรับการเชื่อมต่อเท่านั้น",
+            ja: "いいえ。LeaseShieldはあなたのLINE会話を読むことはできません — リンクのためのconfirmコマンドのみです。",
+            ko: "아니요. LeaseShield는 귀하의 LINE 대화를 읽을 수 없습니다 — 연결을 위한 confirm 명령만 읽습니다.",
+            zh: "不会。LeaseShield无法读取您的LINE对话 — 仅能读取用于链接的confirm命令。",
+            ru: "Нет. LeaseShield не может читать ваши разговоры в LINE — только команду confirm для подключения."
+          }
+        }
+      ]
+    },
+    {
+      id: "policies",
+      icon: "FileText",
+      title: {
+        en: "Policies & Terms",
+        th: "นโยบายและข้อกำหนด",
+        ja: "ポリシーと規約",
+        ko: "정책 및 약관",
+        zh: "政策与条款",
+        ru: "Политики и условия"
+      },
+      items: [
+        {
+          id: "read-terms",
+          q: {
+            en: "Where can I read LeaseShield's Terms & Conditions?",
+            th: "ฉันสามารถอ่านข้อกำหนดและเงื่อนไขของ LeaseShield ได้ที่ไหน?",
+            ja: "LeaseShieldの利用規約はどこで読めますか？",
+            ko: "LeaseShield의 이용약관은 어디서 읽을 수 있나요?",
+            zh: "我可以在哪里阅读LeaseShield的条款和条件？",
+            ru: "Где я могу прочитать Условия использования LeaseShield?"
+          },
+          a: {
+            en: "You can read the full Terms & Conditions here:\nhttps://www.leaseshield.asia/terms",
+            th: "คุณสามารถอ่านข้อกำหนดและเงื่อนไขฉบับเต็มได้ที่:\nhttps://www.leaseshield.asia/terms",
+            ja: "利用規約の全文はこちらで読めます:\nhttps://www.leaseshield.asia/terms",
+            ko: "전체 이용약관은 여기에서 읽을 수 있습니다:\nhttps://www.leaseshield.asia/terms",
+            zh: "您可以在此处阅读完整的条款和条件:\nhttps://www.leaseshield.asia/terms",
+            ru: "Вы можете прочитать полные Условия использования здесь:\nhttps://www.leaseshield.asia/terms"
+          }
+        },
+        {
+          id: "read-privacy",
+          q: {
+            en: "Where can I read the Privacy Policy?",
+            th: "ฉันสามารถอ่านนโยบายความเป็นส่วนตัวได้ที่ไหน?",
+            ja: "プライバシーポリシーはどこで読めますか？",
+            ko: "개인정보 보호정책은 어디서 읽을 수 있나요?",
+            zh: "我可以在哪里阅读隐私政策？",
+            ru: "Где я могу прочитать Политику конфиденциальности?"
+          },
+          a: {
+            en: "You can read the Privacy Policy here:\nhttps://www.leaseshield.asia/privacy",
+            th: "คุณสามารถอ่านนโยบายความเป็นส่วนตัวได้ที่:\nhttps://www.leaseshield.asia/privacy",
+            ja: "プライバシーポリシーはこちらで読めます:\nhttps://www.leaseshield.asia/privacy",
+            ko: "개인정보 보호정책은 여기에서 읽을 수 있습니다:\nhttps://www.leaseshield.asia/privacy",
+            zh: "您可以在此处阅读隐私政策:\nhttps://www.leaseshield.asia/privacy",
+            ru: "Вы можете прочитать Политику конфиденциальности здесь:\nhttps://www.leaseshield.asia/privacy"
+          }
+        },
+        {
+          id: "terms-apply-all",
+          q: {
+            en: "Do the Terms apply to all users?",
+            th: "ข้อกำหนดมีผลกับผู้ใช้ทุกคนหรือไม่?",
+            ja: "規約はすべてのユーザーに適用されますか？",
+            ko: "약관이 모든 사용자에게 적용되나요?",
+            zh: "条款适用于所有用户吗？",
+            ru: "Условия применяются ко всем пользователям?"
+          },
+          a: {
+            en: "Yes — all users must accept the Terms & Conditions to use LeaseShield.",
+            th: "ใช่ — ผู้ใช้ทุกคนต้องยอมรับข้อกำหนดและเงื่อนไขเพื่อใช้ LeaseShield",
+            ja: "はい — すべてのユーザーはLeaseShieldを使用するために利用規約に同意する必要があります。",
+            ko: "네 — 모든 사용자는 LeaseShield를 사용하려면 이용약관에 동의해야 합니다.",
+            zh: "是的 — 所有用户必须接受条款和条件才能使用LeaseShield。",
+            ru: "Да — все пользователи должны принять Условия использования для использования LeaseShield."
+          }
+        },
+        {
+          id: "policy-updates",
+          q: {
+            en: "How are policy updates communicated?",
+            th: "การอัปเดตนโยบายถูกสื่อสารอย่างไร?",
+            ja: "ポリシーの更新はどのように通知されますか？",
+            ko: "정책 업데이트는 어떻게 전달되나요?",
+            zh: "政策更新如何传达？",
+            ru: "Как сообщается об обновлениях политик?"
+          },
+          a: {
+            en: "You will be notified in the app or via LINE/email when policies change.",
+            th: "คุณจะได้รับแจ้งในแอปหรือผ่าน LINE/อีเมลเมื่อนโยบายเปลี่ยนแปลง",
+            ja: "ポリシーが変更されると、アプリ内またはLINE/メールで通知されます。",
+            ko: "정책이 변경되면 앱 내 또는 LINE/이메일을 통해 알림을 받게 됩니다.",
+            zh: "当政策变更时，您将在应用内或通过LINE/电子邮件收到通知。",
+            ru: "Вы будете уведомлены в приложении или через LINE/email при изменении политик."
           }
         }
       ]
