@@ -293,6 +293,25 @@ export const faqData = {
       },
       items: [
         {
+          id: "how-track-deposit-return",
+          q: {
+            en: "How do I track my deposit and scheduled return?",
+            th: "ฉันจะติดตามเงินมัดจำและกำหนดการคืนได้อย่างไร?",
+            ja: "敷金と返還予定日を追跡するにはどうすればいいですか？",
+            ko: "보증금과 예정된 반환을 어떻게 추적하나요?",
+            zh: "如何追踪我的押金和预定退还？",
+            ru: "Как отслеживать мой депозит и запланированный возврат?"
+          },
+          a: {
+            en: "1. Go to Property Tracker\n2. Tap the Deposit & Returns section\n3. Add your deposit amount, payment date, and expected return date\n4. Enable alerts to receive reminders 30, 7, and 3 days before your scheduled return\n5. Update the status when you receive your deposit back\n\nThe system will automatically track days remaining and alert you if the return becomes overdue.\n\n[Back to Property Tracker](propertytracker#deposit)",
+            th: "1. ไปที่ตัวติดตามทรัพย์สิน\n2. แตะส่วนเงินมัดจำและการคืน\n3. เพิ่มจำนวนเงินมัดจำ วันที่จ่าย และวันที่คาดว่าจะได้รับคืน\n4. เปิดการแจ้งเตือนเพื่อรับการแจ้งเตือน 30, 7 และ 3 วันก่อนกำหนดคืน\n5. อัปเดตสถานะเมื่อคุณได้รับเงินมัดจำคืน\n\nระบบจะติดตามวันที่เหลืออยู่โดยอัตโนมัติและแจ้งเตือนหากการคืนเงินล่าช้า\n\n[กลับไปที่ตัวติดตามทรัพย์สิน](propertytracker#deposit)",
+            ja: "1. 物件トラッカーに移動\n2. 敷金と返還セクションをタップ\n3. 敷金額、支払日、返還予定日を追加\n4. アラートを有効にして、予定返還の30日前、7日前、3日前にリマインダーを受け取る\n5. 敷金を受け取ったらステータスを更新\n\nシステムは残り日数を自動的に追跡し、返還が遅れた場合に通知します。\n\n[物件トラッカーに戻る](propertytracker#deposit)",
+            ko: "1. 부동산 추적기로 이동\n2. 보증금 및 반환 섹션 탭\n3. 보증금 금액, 지불 날짜 및 예상 반환 날짜 추가\n4. 예정된 반환 30일, 7일, 3일 전에 알림을 받으려면 알림 활성화\n5. 보증금을 받으면 상태 업데이트\n\n시스템은 남은 일수를 자동으로 추적하고 반환이 지연되면 알림을 보냅니다.\n\n[부동산 추적기로 돌아가기](propertytracker#deposit)",
+            zh: "1. 转到物业追踪器\n2. 点击押金与退还部分\n3. 添加您的押金金额、支付日期和预计退还日期\n4. 启用提醒以在预定退还前30天、7天和3天接收提醒\n5. 收到押金后更新状态\n\n系统将自动追踪剩余天数，如果退还逾期将提醒您。\n\n[返回物业追踪器](propertytracker#deposit)",
+            ru: "1. Перейдите в Управление недвижимостью\n2. Нажмите на раздел Депозит и возврат\n3. Добавьте сумму депозита, дату оплаты и ожидаемую дату возврата\n4. Включите уведомления для получения напоминаний за 30, 7 и 3 дня до запланированного возврата\n5. Обновите статус, когда получите депозит обратно\n\nСистема автоматически отслеживает оставшиеся дни и уведомит вас, если возврат просрочен.\n\n[Вернуться к управлению недвижимостью](propertytracker#deposit)"
+          }
+        },
+        {
           id: "track-deposit",
           q: {
             en: "How do I track my deposit?",
@@ -401,6 +420,25 @@ export const faqData = {
         ru: "AI сканер договора"
       },
       items: [
+        {
+          id: "how-upload-scan",
+          q: {
+            en: "How do I upload and scan my lease?",
+            th: "ฉันจะอัปโหลดและสแกนสัญญาเช่าอย่างไร?",
+            ja: "リースをアップロードしてスキャンするにはどうすればいいですか？",
+            ko: "임대 계약서를 어떻게 업로드하고 스캔하나요?",
+            zh: "如何上传和扫描我的租约？",
+            ru: "Как загрузить и отсканировать мой договор?"
+          },
+          a: {
+            en: "1. Go to the Scan tab or Dashboard\n2. Tap Upload Lease or drag files to the upload zone\n3. Select your lease document (PDF, photos, or Word files)\n4. The AI will analyze it automatically within 30 seconds\n5. Review your risk score and lease details\n\n[Back to Upload & Scan](uploadscan)",
+            th: "1. ไปที่แท็บสแกนหรือหน้าหลัก\n2. แตะอัปโหลดสัญญาเช่าหรือลากไฟล์ไปที่โซนอัปโหลด\n3. เลือกเอกสารสัญญาเช่าของคุณ (PDF, รูปภาพ, หรือไฟล์ Word)\n4. AI จะวิเคราะห์โดยอัตโนมัติภายใน 30 วินาที\n5. ตรวจสอบคะแนนความเสี่ยงและรายละเอียดสัญญาเช่าของคุณ\n\n[กลับไปที่อัปโหลดและสแกน](uploadscan)",
+            ja: "1. スキャンタブまたはダッシュボードに移動\n2. リースをアップロードをタップするか、アップロードゾーンにファイルをドラッグ\n3. リース文書を選択（PDF、写真、またはWordファイル）\n4. AIが30秒以内に自動的に分析\n5. リスクスコアとリース詳細を確認\n\n[アップロードとスキャンに戻る](uploadscan)",
+            ko: "1. 스캔 탭 또는 대시보드로 이동\n2. 임대 계약 업로드를 탭하거나 업로드 영역으로 파일 드래그\n3. 임대 계약서 선택 (PDF, 사진 또는 Word 파일)\n4. AI가 30초 이내에 자동으로 분석\n5. 위험 점수 및 임대 계약 세부 정보 검토\n\n[업로드 및 스캔으로 돌아가기](uploadscan)",
+            zh: "1. 转到扫描选项卡或仪表板\n2. 点击上传租约或将文件拖到上传区域\n3. 选择您的租约文档（PDF、照片或Word文件）\n4. AI将在30秒内自动分析\n5. 查看您的风险评分和租约详情\n\n[返回上传与扫描](uploadscan)",
+            ru: "1. Перейдите на вкладку Сканирование или Главную\n2. Нажмите Загрузить договор или перетащите файлы в зону загрузки\n3. Выберите документ договора (PDF, фото или Word файлы)\n4. AI автоматически проанализирует за 30 секунд\n5. Просмотрите оценку риска и детали договора\n\n[Вернуться к загрузке и сканированию](uploadscan)"
+          }
+        },
         {
           id: "scanner-checks",
           q: {
@@ -600,6 +638,25 @@ export const faqData = {
         ru: "Обслуживание и проблемы"
       },
       items: [
+        {
+          id: "how-log-track-maintenance",
+          q: {
+            en: "How do I log and track a maintenance issue?",
+            th: "ฉันจะบันทึกและติดตามปัญหาการซ่อมบำรุงอย่างไร?",
+            ja: "メンテナンスの問題をどのようにログに記録して追跡しますか？",
+            ko: "유지보수 문제를 어떻게 기록하고 추적하나요?",
+            zh: "如何记录和追踪维护问题？",
+            ru: "Как регистрировать и отслеживать проблемы с обслуживанием?"
+          },
+          a: {
+            en: "1. Go to Property Tracker → Maintenance section\n2. Tap New Request\n3. Add a clear title and detailed description\n4. Select category (plumbing, electrical, structural, etc.) and priority\n5. Upload photos, voice notes (Protect plan), or videos (Secure plan)\n6. Save to create a timestamped record\n\nYour landlord or juristic (if connected via LINE) will be notified automatically. You can track status updates and communication in the request timeline.\n\n[Back to maintenance request](propertytracker#maintenance)",
+            th: "1. ไปที่ตัวติดตามทรัพย์สิน → ส่วนการซ่อมบำรุง\n2. แตะคำขอใหม่\n3. เพิ่มชื่อที่ชัดเจนและรายละเอียดโดยละเอียด\n4. เลือกหมวดหมู่ (ประปา, ไฟฟ้า, โครงสร้าง ฯลฯ) และความสำคัญ\n5. อัปโหลดรูปภาพ บันทึกเสียง (แผน Protect) หรือวิดีโอ (แผน Secure)\n6. บันทึกเพื่อสร้างบันทึกที่มีการประทับเวลา\n\nเจ้าของบ้านหรือนิติบุคคลของคุณ (หากเชื่อมต่อผ่าน LINE) จะได้รับการแจ้งเตือนโดยอัตโนมัติ คุณสามารถติดตามการอัปเดตสถานะและการสื่อสารในไทม์ไลน์คำขอ\n\n[กลับไปที่คำขอซ่อมบำรุง](propertytracker#maintenance)",
+            ja: "1. 物件トラッカー → メンテナンスセクションに移動\n2. 新しいリクエストをタップ\n3. 明確なタイトルと詳細な説明を追加\n4. カテゴリ（配管、電気、構造など）と優先度を選択\n5. 写真、音声メモ（Protectプラン）、またはビデオ（Secureプラン）をアップロード\n6. 保存してタイムスタンプ付き記録を作成\n\n家主または管理会社（LINEで接続されている場合）に自動的に通知されます。リクエストのタイムラインでステータスの更新とコミュニケーションを追跡できます。\n\n[メンテナンスリクエストに戻る](propertytracker#maintenance)",
+            ko: "1. 부동산 추적기 → 유지보수 섹션으로 이동\n2. 새 요청 탭\n3. 명확한 제목과 자세한 설명 추가\n4. 카테고리(배관, 전기, 구조 등) 및 우선순위 선택\n5. 사진, 음성 메모(Protect 플랜) 또는 동영상(Secure 플랜) 업로드\n6. 저장하여 타임스탬프가 있는 기록 생성\n\n집주인 또는 관리사무소(LINE을 통해 연결된 경우)에게 자동으로 알림이 전송됩니다. 요청 타임라인에서 상태 업데이트 및 커뮤니케이션을 추적할 수 있습니다.\n\n[유지보수 요청으로 돌아가기](propertytracker#maintenance)",
+            zh: "1. 转到物业追踪器 → 维护部分\n2. 点击新请求\n3. 添加清晰的标题和详细描述\n4. 选择类别（管道、电气、结构等）和优先级\n5. 上传照片、语音备忘录（Protect套餐）或视频（Secure套餐）\n6. 保存以创建带时间戳的记录\n\n您的房东或物业（如果通过LINE连接）将自动收到通知。您可以在请求时间表中追踪状态更新和通信。\n\n[返回维护请求](propertytracker#maintenance)",
+            ru: "1. Перейдите в Управление недвижимостью → раздел Обслуживание\n2. Нажмите Новый запрос\n3. Добавьте четкое название и подробное описание\n4. Выберите категорию (сантехника, электрика, конструкция и т.д.) и приоритет\n5. Загрузите фото, голосовые заметки (план Protect) или видео (план Secure)\n6. Сохраните для создания записи с временной меткой\n\nВаш арендодатель или управляющая (если подключены через LINE) будут автоматически уведомлены. Вы можете отслеживать обновления статуса и коммуникации в хронологии запроса.\n\n[Вернуться к запросу на обслуживание](propertytracker#maintenance)"
+          }
+        },
         {
           id: "report-maintenance",
           q: {

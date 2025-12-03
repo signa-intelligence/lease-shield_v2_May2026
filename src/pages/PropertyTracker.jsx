@@ -1634,19 +1634,16 @@ function PropertyTrackerContent() {
       <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-7xl mx-auto">
 
-          <div className="mb-6">
-            <PageHeader
-              title={strings.title}
-              subtitle={strings.subtitle}
-              icon={Wrench}
-              iconColor={maintenanceTheme.accent}
-              showBack={true}
-              backLabel={strings.back}
-              colors={colors}
-              backTo={createPageUrl("Dashboard")}
-              actions={<QuickHelp link="deposits" size="md" />}
-            />
-          </div>
+          <PageHeader
+            title={strings.title}
+            subtitle={strings.subtitle}
+            icon={Wrench}
+            iconColor={maintenanceTheme.accent}
+            showBack={true}
+            backLabel={strings.back}
+            colors={colors}
+            backTo={createPageUrl("Dashboard")}
+          />
 
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:justify-end mb-6">
             <button
@@ -1758,7 +1755,10 @@ function PropertyTrackerContent() {
                     <Wallet className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-lg font-bold">{strings.depositSection}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold">{strings.depositSection}</span>
+                      <QuickHelp link="deposits" size="sm" />
+                    </div>
                     {deposit && deposit.deposit_amount > 0 && (
                       <div className="text-sm font-normal flex items-center gap-2 mt-1">
                         <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>

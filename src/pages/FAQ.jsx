@@ -295,7 +295,7 @@ function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel }) {
   const question = item.q[language] || item.q.en;
   const answer = item.a[language] || item.a.en;
 
-  // Convert markdown links [text](url) to clickable <a> tags
+  // Convert markdown links [text](url) to clickable <a> tags or internal navigation
   const renderAnswer = (text) => {
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
     const parts = [];
@@ -307,23 +307,50 @@ function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel }) {
       if (match.index > lastIndex) {
         parts.push(text.substring(lastIndex, match.index));
       }
-      // Add the link
-      parts.push(
-        <a
-          key={match.index}
-          href={match[2]}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ 
-            color: '#0C3B2E', 
-            textDecoration: 'underline',
-            fontWeight: '600'
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {match[1]}
-        </a>
-      );
+      
+      const linkText = match[1];
+      const url = match[2];
+      
+      // Check if it's an internal page route (no http/https)
+      const isInternal = !url.startsWith('http://') && !url.startsWith('https://');
+      
+      if (isInternal) {
+        // Internal navigation link
+        parts.push(
+          <Link
+            key={match.index}
+            to={createPageUrl(url)}
+            style={{ 
+              color: '#0C3B2E', 
+              textDecoration: 'underline',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {linkText}
+          </Link>
+        );
+      } else {
+        // External link
+        parts.push(
+          <a
+            key={match.index}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ 
+              color: '#0C3B2E', 
+              textDecoration: 'underline',
+              fontWeight: '600'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {linkText}
+          </a>
+        );
+      }
+      
       lastIndex = match.index + match[0].length;
     }
 
