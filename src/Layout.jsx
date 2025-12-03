@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
 import QuickGuide from "./components/onboarding/QuickGuide";
+import { Info } from "lucide-react";
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -102,11 +103,13 @@ export default function Layout({ children, currentPageName }) {
     setDeferredPrompt(null);
   };
 
-  // Auto-trigger Quick Guide for first-time users
+  // Auto-trigger Quick Guide for first-time users (unless hidden)
   React.useEffect(() => {
     if (user) {
       const guideDone = localStorage.getItem('leaseshield_quick_guide_done');
-      if (!guideDone) {
+      const hideGuide = user.hide_quick_guide;
+
+      if (!guideDone && !hideGuide) {
         setShowQuickGuide(true);
       }
     }
@@ -584,33 +587,34 @@ export default function Layout({ children, currentPageName }) {
               </button>
             </Link>
             <button
-                onClick={() => {
-                  haptic.light();
-                  setShowQuickGuide(true);
+              onClick={() => {
+                haptic.light();
+                setShowQuickGuide(true);
+              }}
+              aria-label="Quick Guide"
+              title="Quick Guide"
+              className="btn-interaction"
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+              }}
+            >
+              <Info 
+                className="w-4 h-4 sm:w-5 sm:h-5" 
+                style={{ 
+                  color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
+                  transition: 'color 0.2s'
                 }}
-                aria-label="Quick Guide"
-                className="btn-interaction"
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
-                }}
-              >
-                <HelpCircle 
-                  className="w-4 h-4 sm:w-5 sm:h-5" 
-                  style={{ 
-                    color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
-                    transition: 'color 0.2s'
-                  }}
-                />
-              </button>
+              />
+            </button>
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
@@ -709,6 +713,7 @@ export default function Layout({ children, currentPageName }) {
         onClose={() => setShowQuickGuide(false)}
         language={language}
         isDarkMode={isDarkMode}
+        user={user}
       />
 
       {/* Main Content */}

@@ -315,7 +315,8 @@ const TRANSLATIONS = {
     next: "Next",
     getStarted: "Get Started",
     stepOf: "of",
-    quickGuide: "Quick Guide"
+    quickGuide: "Quick Guide",
+    dontShowAgain: "Don't show this again"
   },
   th: {
     intro: "LeaseShield คือแอปคุ้มครองการเช่าที่ช่วยผู้เช่า ผู้ให้เช่า และนิติบุคคลจัดการสัญญาเช่า ติดตามเงินประกัน เก็บหลักฐาน และแก้ไขปัญหาอย่างโปร่งใส",
@@ -323,7 +324,8 @@ const TRANSLATIONS = {
     next: "ถัดไป",
     getStarted: "เริ่มต้นใช้งาน",
     stepOf: "จาก",
-    quickGuide: "คู่มือเริ่มต้น"
+    quickGuide: "คู่มือเริ่มต้น",
+    dontShowAgain: "ไม่ต้องแสดงอีก"
   },
   zh: {
     intro: "LeaseShield 是一款租赁保护应用，帮助租客、房东和物业管理记录租约、追踪押金、存储证据并透明解决问题。",
@@ -331,7 +333,8 @@ const TRANSLATIONS = {
     next: "下一步",
     getStarted: "开始使用",
     stepOf: "/",
-    quickGuide: "快速指南"
+    quickGuide: "快速指南",
+    dontShowAgain: "不再显示"
   },
   ja: {
     intro: "LeaseShield は賃貸保護アプリで、借主・貸主・管理会社が賃貸契約の管理、敷金追跡、証拠保存、問題の透明な解決をサポートします。",
@@ -339,7 +342,8 @@ const TRANSLATIONS = {
     next: "次へ",
     getStarted: "始める",
     stepOf: "/",
-    quickGuide: "クイックガイド"
+    quickGuide: "クイックガイド",
+    dontShowAgain: "今後表示しない"
   },
   ko: {
     intro: "LeaseShield는 임차인, 임대인, 관리 사무소가 임대 계약 관리, 보증금 추적, 증거 저장, 문제의 투명한 해결을 돕는 임대 보호 앱입니다.",
@@ -347,7 +351,8 @@ const TRANSLATIONS = {
     next: "다음",
     getStarted: "시작하기",
     stepOf: "/",
-    quickGuide: "빠른 가이드"
+    quickGuide: "빠른 가이드",
+    dontShowAgain: "다시 표시 안 함"
   },
   ru: {
     intro: "LeaseShield — приложение для защиты аренды, которое помогает арендаторам, арендодателям и управляющим компаниям документировать договоры, отслеживать депозиты, хранить доказательства и прозрачно решать проблемы.",
@@ -355,12 +360,14 @@ const TRANSLATIONS = {
     next: "Далее",
     getStarted: "Начать",
     stepOf: "из",
-    quickGuide: "Краткое руководство"
+    quickGuide: "Краткое руководство",
+    dontShowAgain: "Больше не показывать"
   }
 };
 
-export default function QuickGuide({ open, onClose, language = 'en', isDarkMode = false }) {
+export default function QuickGuide({ open, onClose, language = 'en', isDarkMode = false, user }) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   const lang = TRANSLATIONS[language] ? language : 'en';
   const strings = TRANSLATIONS[lang];
 
@@ -380,9 +387,20 @@ export default function QuickGuide({ open, onClose, language = 'en', isDarkMode 
   const isLastStep = currentStep === STEP_KEYS.length - 1;
   const isFirstStep = currentStep === 0;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (isLastStep) {
       localStorage.setItem('leaseshield_quick_guide_done', 'true');
+      
+      // Save "Don't show again" preference to user record
+      if (dontShowAgain && user) {
+        try {
+          const { base44 } = await import('@/api/base44Client');
+          await base44.auth.updateMe({ hide_quick_guide: true });
+        } catch (error) {
+          console.error('Failed to save Quick Guide preference:', error);
+        }
+      }
+      
       onClose();
     } else {
       setCurrentStep(prev => prev + 1);
@@ -492,23 +510,44 @@ export default function QuickGuide({ open, onClose, language = 'en', isDarkMode 
 
         {/* Footer */}
         <div 
-          className="p-4 flex items-center justify-between border-t"
+          className="p-4 border-t"
           style={{ borderColor: isDarkMode ? '#374151' : '#E5E7EB' }}
         >
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={isFirstStep}
-            className="gap-2"
-            style={{
-              opacity: isFirstStep ? 0.5 : 1,
-              borderColor: isDarkMode ? '#4B5563' : '#D1D5DB',
-              color: isDarkMode ? '#E5E7EB' : '#374151'
-            }}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            {strings.back}
-          </Button>
+          {/* Checkbox row */}
+          <div className="flex items-center gap-2 mb-3">
+            <input
+              type="checkbox"
+              id="dontShowAgain"
+              checked={dontShowAgain}
+              onChange={(e) => setDontShowAgain(e.target.checked)}
+              className="w-4 h-4 rounded cursor-pointer"
+              style={{ accentColor: '#0C3B2E' }}
+            />
+            <label 
+              htmlFor="dontShowAgain" 
+              className="text-sm cursor-pointer"
+              style={{ color: isDarkMode ? '#9CA3AF' : '#6B7280' }}
+            >
+              {strings.dontShowAgain}
+            </label>
+          </div>
+
+          {/* Navigation buttons */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={isFirstStep}
+              className="gap-2"
+              style={{
+                opacity: isFirstStep ? 0.5 : 1,
+                borderColor: isDarkMode ? '#4B5563' : '#D1D5DB',
+                color: isDarkMode ? '#E5E7EB' : '#374151'
+              }}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              {strings.back}
+            </Button>
 
           {/* Step indicators */}
           <div className="flex gap-1.5">
@@ -527,17 +566,18 @@ export default function QuickGuide({ open, onClose, language = 'en', isDarkMode 
             ))}
           </div>
 
-          <Button
-            onClick={handleNext}
-            className="gap-2"
-            style={{
-              backgroundColor: isLastStep ? '#C7A338' : '#0C3B2E',
-              color: '#FFFFFF'
-            }}
-          >
-            {isLastStep ? strings.getStarted : strings.next}
-            {!isLastStep && <ChevronRight className="w-4 h-4" />}
-          </Button>
+            <Button
+              onClick={handleNext}
+              className="gap-2"
+              style={{
+                backgroundColor: isLastStep ? '#C7A338' : '#0C3B2E',
+                color: '#FFFFFF'
+              }}
+            >
+              {isLastStep ? strings.getStarted : strings.next}
+              {!isLastStep && <ChevronRight className="w-4 h-4" />}
+            </Button>
+          </div>
         </div>
       </div>
 
