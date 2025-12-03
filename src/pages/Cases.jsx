@@ -734,30 +734,6 @@ function CasesContent() {
             color="#C7A338"
           />
 
-          {/* 🔍 FORENSIC DEBUG PANEL */}
-          <div className="mb-6 p-4 rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/20">
-            <h3 className="font-bold text-red-700 dark:text-red-400 mb-2">
-              🔍 FORENSIC DEBUG (Remove after investigation)
-            </h3>
-            <div className="text-xs space-y-2">
-              <p><strong>Logged in as:</strong> {user?.email}</p>
-              <p><strong>User ID:</strong> {user?.id}</p>
-              <p><strong>Raw query returned:</strong> {cases.length} cases</p>
-              <div className="mt-2 p-2 bg-white dark:bg-gray-900 rounded border border-red-300 max-h-96 overflow-auto">
-                <pre className="text-xs whitespace-pre-wrap">
-                  {JSON.stringify(cases.map(c => ({
-                    id: c.id,
-                    case_number: c.case_number,
-                    user_email: c.user_email,
-                    created_by: c.created_by,
-                    status: c.status,
-                    is_deleted: c.is_deleted
-                  })), null, 2)}
-                </pre>
-              </div>
-            </div>
-          </div>
-
           <Button
             variant="ghost"
             onClick={() => {
