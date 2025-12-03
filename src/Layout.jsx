@@ -520,6 +520,30 @@ export default function Layout({ children, currentPageName }) {
             )}
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            {showInstallButton && (
+              <button
+                onClick={handleInstallClick}
+                className="btn-interaction"
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 9999,
+                  backgroundColor: '#10B981',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Install App</span>
+              </button>
+            )}
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
