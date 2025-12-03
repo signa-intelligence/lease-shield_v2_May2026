@@ -1028,12 +1028,12 @@ export const faqData = {
             ru: "Где я могу прочитать Условия использования LeaseShield?"
           },
           a: {
-            en: "You can read the full Terms & Conditions here:\nhttps://leaseshield.asia/legal#terms",
-            th: "คุณสามารถอ่านข้อกำหนดและเงื่อนไขฉบับเต็มได้ที่:\nhttps://leaseshield.asia/legal#terms",
-            ja: "利用規約の全文はこちらで読めます:\nhttps://leaseshield.asia/legal#terms",
-            ko: "전체 이용약관은 여기에서 읽을 수 있습니다:\nhttps://leaseshield.asia/legal#terms",
-            zh: "您可以在此处阅读完整的条款和条件:\nhttps://leaseshield.asia/legal#terms",
-            ru: "Вы можете прочитать полные Условия использования здесь:\nhttps://leaseshield.asia/legal#terms"
+            en: "You can read the full Terms & Conditions here:\nhttps://www.leaseshield.asia/terms",
+            th: "คุณสามารถอ่านข้อกำหนดและเงื่อนไขฉบับเต็มได้ที่:\nhttps://www.leaseshield.asia/terms",
+            ja: "利用規約の全文はこちらで読めます:\nhttps://www.leaseshield.asia/terms",
+            ko: "전체 이용약관은 여기에서 읽을 수 있습니다:\nhttps://www.leaseshield.asia/terms",
+            zh: "您可以在此处阅读完整的条款和条件:\nhttps://www.leaseshield.asia/terms",
+            ru: "Вы можете прочитать полные Условия использования здесь:\nhttps://www.leaseshield.asia/terms"
           }
         },
         {
@@ -1047,12 +1047,12 @@ export const faqData = {
             ru: "Где я могу прочитать Политику конфиденциальности?"
           },
           a: {
-            en: "You can read the Privacy Policy here:\nhttps://leaseshield.asia/legal#terms",
-            th: "คุณสามารถอ่านนโยบายความเป็นส่วนตัวได้ที่:\nhttps://leaseshield.asia/legal#terms",
-            ja: "プライバシーポリシーはこちらで読めます:\nhttps://leaseshield.asia/legal#terms",
-            ko: "개인정보 보호정책은 여기에서 읽을 수 있습니다:\nhttps://leaseshield.asia/legal#terms",
-            zh: "您可以在此处阅读隐私政策:\nhttps://leaseshield.asia/legal#terms",
-            ru: "Вы можете прочитать Политику конфиденциальности здесь:\nhttps://leaseshield.asia/legal#terms"
+            en: "You can read the Privacy Policy here:\nhttps://www.leaseshield.asia/privacy",
+            th: "คุณสามารถอ่านนโยบายความเป็นส่วนตัวได้ที่:\nhttps://www.leaseshield.asia/privacy",
+            ja: "プライバシーポリシーはこちらで読めます:\nhttps://www.leaseshield.asia/privacy",
+            ko: "개인정보 보호정책은 여기에서 읽을 수 있습니다:\nhttps://www.leaseshield.asia/privacy",
+            zh: "您可以在此处阅读隐私政策:\nhttps://www.leaseshield.asia/privacy",
+            ru: "Вы можете прочитать Политику конфиденциальности здесь:\nhttps://www.leaseshield.asia/privacy"
           }
         },
         {

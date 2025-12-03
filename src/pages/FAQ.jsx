@@ -335,38 +335,13 @@ function FAQItem({ item, language, isOpen, onToggle, colors, categoryLabel }) {
           className="px-4 pb-4 animate-in slide-in-from-top-2 duration-200"
         >
           <div 
-            className="pt-3 border-t text-sm leading-relaxed"
+            className="pt-3 border-t whitespace-pre-line text-sm leading-relaxed"
             style={{ 
               borderColor: colors.borderColor,
               color: colors.textSecondary
             }}
           >
-            {answer.split('\n').map((line, idx) => {
-              // Convert URLs to clickable links
-              if (line.includes('https://')) {
-                const parts = line.split(/(https:\/\/[^\s]+)/g);
-                return (
-                  <p key={idx} className="mb-2">
-                    {parts.map((part, i) => 
-                      part.startsWith('https://') ? (
-                        <a 
-                          key={i}
-                          href={part} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline font-medium"
-                        >
-                          {part}
-                        </a>
-                      ) : (
-                        part
-                      )
-                    )}
-                  </p>
-                );
-              }
-              return <p key={idx} className="mb-2">{line}</p>;
-            })}
+            {answer}
           </div>
         </div>
       )}
