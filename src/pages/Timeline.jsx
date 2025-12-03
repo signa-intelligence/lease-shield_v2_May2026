@@ -41,6 +41,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import PageHeader from "../components/shared/PageHeader";
 import { FEATURE_COLORS } from "../components/shared/featureTheme";
+import { QuickHelp } from "../components/shared/ContextualHelp";
 
 export default function Timeline() {
   const navigate = useNavigate();
@@ -531,7 +532,11 @@ export default function Timeline() {
           onBack={() => navigate(createPageUrl("Dashboard"))}
           colors={colors}
           actions={
-            <div className="flex flex-wrap items-center justify-between gap-4 w-full">
+            <div className="w-full">
+              <div className="flex items-center justify-end mb-3">
+                <QuickHelp link="timeline" size="md" />
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-4 w-full">
               <div className="flex gap-2 p-1 rounded-lg" style={{ backgroundColor: colors.cardBg, border: `2px solid ${colors.borderColor}` }}>
                 <button
                   onClick={() => setViewMode('upcoming')}

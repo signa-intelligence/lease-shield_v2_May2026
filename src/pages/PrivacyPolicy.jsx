@@ -1,9 +1,9 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Lock, FileText, Globe, Mail, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { QuickHelp } from "../components/shared/ContextualHelp";
 
 export default function PrivacyPolicy() {
   const { data: user } = useQuery({
@@ -675,23 +675,26 @@ PDPA에서 요구하는 대로 30일 이내에 모든 요청에 응답합니다.
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: '#0C3B2E',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 6px rgba(12, 59, 46, 0.2)'
-            }}>
-              <Shield className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-3">
+              <div style={{
+                width: '48px',
+                height: '48px',
+                backgroundColor: '#0C3B2E',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 6px rgba(12, 59, 46, 0.2)'
+              }}>
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
+                <p className="text-slate-600">{strings.lastUpdated}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
-              <p className="text-slate-600">{strings.lastUpdated}</p>
-            </div>
+            <QuickHelp link="privacyPolicy" size="md" />
           </div>
         </div>
 

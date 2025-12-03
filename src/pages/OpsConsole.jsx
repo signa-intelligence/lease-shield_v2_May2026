@@ -29,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import CaseKanban from "../components/admin/CaseKanban";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import { QuickHelp } from "../components/shared/ContextualHelp";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -441,9 +442,10 @@ function OpsConsoleContent() {
                 </p>
               </div>
             </div>
-
-            <div 
-              className="flex rounded-lg p-1"
+            <div className="flex items-center gap-3">
+              <QuickHelp link="resolve" size="md" />
+              <div 
+                className="flex rounded-lg p-1"
               style={{ 
                 backgroundColor: colors.cardBg,
                 border: `2px solid ${colors.borderColor}`,

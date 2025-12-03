@@ -13,6 +13,7 @@ import { Shield, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown } from "l
 import { Badge } from "@/components/ui/badge";
 import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import { QuickHelp } from "../components/shared/ContextualHelp";
 
 function ResolveCaseContent() {
   const navigate = useNavigate();
@@ -733,25 +734,28 @@ function ResolveCaseContent() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: '#DC2626',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 6px rgba(220, 38, 38, 0.3)'
-            }}>
-              <Shield className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-3">
+              <div style={{
+                width: '48px',
+                height: '48px',
+                backgroundColor: '#DC2626',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 6px rgba(220, 38, 38, 0.3)'
+              }}>
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>
+                  {str.title}
+                </h1>
+                <p style={{ color: colors.textSecondary }}>{str.subtitle}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                {str.title}
-              </h1>
-              <p style={{ color: colors.textSecondary }}>{str.subtitle}</p>
-            </div>
+            <QuickHelp link="resolve" size="md" />
           </div>
 
           {/* Auto-fill indicator */}

@@ -24,6 +24,7 @@ import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import { QuickHelp } from "../components/shared/ContextualHelp";
 
 const PLAN_DETAILS = [
   {
@@ -1985,6 +1986,7 @@ function AccountContent() {
           icon={User}
           iconColor="#0C3B2E"
           colors={colors}
+          actions={<QuickHelp link="account" size="md" />}
         />
 
         <div className="grid lg:grid-cols-3 gap-6 mb-6">

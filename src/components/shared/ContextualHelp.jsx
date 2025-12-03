@@ -68,9 +68,10 @@ export const HelpLinks = {
   
   // Evidence
   evidence: { category: "evidence-vault", question: "what-upload-evidence" },
+  timeline: { category: "evidence-vault", question: "evidence-timestamped" },
   storageLimit: { category: "evidence-vault", question: "evidence-timestamped" },
   
-  // Disputes
+  // Disputes / Cases
   resolve: { category: "cases-disputes", question: "open-case-for" },
   resolveCost: { category: "cases-disputes", question: "after-submit-case" },
   
@@ -79,14 +80,16 @@ export const HelpLinks = {
   landlordLine: { category: "communication", question: "landlord-line" },
   notifications: { category: "communication", question: "what-notifications" },
   
-  // Billing
+  // Billing / Account
   changePlan: { category: "billing", question: "upgrade-plan" },
   cancelSubscription: { category: "billing", question: "cancel-subscription" },
   letterCredits: { category: "billing", question: "paid-features" },
+  account: { category: "billing", question: "subscription-payments" },
   
   // Privacy
   dataSecurity: { category: "privacy-security", question: "data-protection" },
-  deleteAccount: { category: "privacy-security", question: "delete-data" }
+  deleteAccount: { category: "privacy-security", question: "delete-data" },
+  privacyPolicy: { category: "privacy-security", question: "data-protection" }
 };
 
 /**

@@ -27,6 +27,7 @@ import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
+import { QuickHelp } from "../components/shared/ContextualHelp";
 import {
   FEATURE_COLORS,
   CTA_COLOR,
@@ -2111,6 +2112,7 @@ function EvidenceVaultContent() {
             onBack={() => navigate(createPageUrl("Dashboard"))}
             actions={
               <div className="flex flex-col sm:flex-row gap-3 items-center">
+                <QuickHelp link="evidence" size="md" />
                 {/* Upload Evidence CTA */}
                 <button
                   type="button"
