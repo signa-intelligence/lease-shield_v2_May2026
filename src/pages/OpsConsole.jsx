@@ -446,7 +446,7 @@ function OpsConsoleContent() {
               <QuickHelp link="resolve" size="md" />
               <div 
                 className="flex rounded-lg p-1"
-              style={{ 
+                style={{ 
                 backgroundColor: colors.cardBg,
                 border: `2px solid ${colors.borderColor}`,
               }}
