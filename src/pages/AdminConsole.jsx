@@ -1984,10 +1984,11 @@ export default function AdminConsole() {
                       </tr>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </div>
         </Card>
 
         {/* 4. RECENT LEASES */}
