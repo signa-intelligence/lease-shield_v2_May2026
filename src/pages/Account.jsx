@@ -1219,7 +1219,8 @@ function AccountContent() {
       confirmDowngradeWarning: "You'll lose Unlimited Lease Scans, Advanced Reminders, extra Letter Credits and other premium protections.",
       reasonForDowngrade: "Reason for downgrading",
       goBack: "Go back",
-      confirmDowngradeBtn: "Confirm downgrade to Free"
+      confirmDowngradeBtn: "Confirm downgrade to Free",
+      referralTooltip: "Refer a friend and receive one free month after they complete their first paid month. Free months match the referred user's tier value. Credits cannot be exchanged for cash. See Terms & Conditions for full details."
     },
     th: {
       pageTitle: "บัญชีของฉัน",
