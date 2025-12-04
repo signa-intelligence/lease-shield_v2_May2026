@@ -212,7 +212,11 @@ export default function Layout({ children, currentPageName }) {
       search: "Search",
       timeline: "Timeline",
       upgrade: "Upgrade",
-      tagline: "Fair. Transparent. Protected."
+      tagline: "Fair. Transparent. Protected.",
+      installApp: "Install Lease Shield",
+      account: "Account & Settings",
+      helpFaq: "Help & FAQ",
+      language: "Language",
     },
     th: {
       appName: "ลีสชีลด์",
@@ -224,7 +228,11 @@ export default function Layout({ children, currentPageName }) {
       search: "ค้นหา",
       timeline: "ไทม์ไลน์",
       upgrade: "อัปเกรด",
-      tagline: "ยุติธรรม • โปร่งใส • ปลอดภัย"
+      tagline: "ยุติธรรม • โปร่งใส • ปลอดภัย",
+      installApp: "ติดตั้ง Lease Shield",
+      account: "บัญชีและการตั้งค่า",
+      helpFaq: "ช่วยเหลือและคำถามที่พบบ่อย",
+      language: "ภาษา",
     },
     zh: {
       appName: "租约盾",
@@ -236,7 +244,11 @@ export default function Layout({ children, currentPageName }) {
       search: "搜索",
       timeline: "时间线",
       upgrade: "升级",
-      tagline: "公平 • 透明 • 保护"
+      tagline: "公平 • 透明 • 保护",
+      installApp: "安装 Lease Shield",
+      account: "账户和设置",
+      helpFaq: "帮助与常见问题",
+      language: "语言",
     },
     ru: {
       appName: "ЛИС ЩИТ",
@@ -248,7 +260,11 @@ export default function Layout({ children, currentPageName }) {
       search: "Поиск",
       timeline: "Хронология",
       upgrade: "Обновить",
-      tagline: "Справедливо • Прозрачно • Защищено"
+      tagline: "Справедливо • Прозрачно • Защищено",
+      installApp: "Установить Lease Shield",
+      account: "Аккаунт и настройки",
+      helpFaq: "Помощь и FAQ",
+      language: "Язык",
     },
     ja: {
       appName: "リースシールド",
@@ -260,7 +276,11 @@ export default function Layout({ children, currentPageName }) {
       search: "検索",
       timeline: "タイムライン",
       upgrade: "アップグレード",
-      tagline: "公正 • 透明 • 保護"
+      tagline: "公正 • 透明 • 保護",
+      installApp: "Lease Shieldをインストール",
+      account: "アカウントと設定",
+      helpFaq: "ヘルプとFAQ",
+      language: "言語",
     },
     ko: {
       appName: "리스실드",
@@ -272,7 +292,11 @@ export default function Layout({ children, currentPageName }) {
       search: "검색",
       timeline: "타임라인",
       upgrade: "업그레이드",
-      tagline: "공정 • 투명 • 보호"
+      tagline: "공정 • 투명 • 보호",
+      installApp: "Lease Shield 설치",
+      account: "계정 및 설정",
+      helpFaq: "도움말 및 FAQ",
+      language: "언어",
     }
   };
 
