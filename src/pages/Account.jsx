@@ -622,7 +622,8 @@ function AccountContent() {
     tenant_address: user?.tenant_address || '',
     tenant_city: user?.tenant_city || '',
     tenant_state: user?.tenant_state || '',
-    tenant_zip: user?.tenant_zip || ''
+    tenant_zip: user?.tenant_zip || '',
+    user_type: user?.user_type || 'other'
   });
 
   const [landlordData, setLandlordData] = useState({
