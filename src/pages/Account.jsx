@@ -622,8 +622,7 @@ function AccountContent() {
     tenant_address: user?.tenant_address || '',
     tenant_city: user?.tenant_city || '',
     tenant_state: user?.tenant_state || '',
-    tenant_zip: user?.tenant_zip || '',
-    user_type: user?.user_type || 'other'
+    tenant_zip: user?.tenant_zip || ''
   });
 
   const [landlordData, setLandlordData] = useState({
@@ -655,8 +654,7 @@ function AccountContent() {
         tenant_address: user.tenant_address || '',
         tenant_city: user.tenant_city || '',
         tenant_state: user.tenant_state || '',
-        tenant_zip: user.tenant_zip || '',
-        user_type: user.user_type || 'other'
+        tenant_zip: user.tenant_zip || ''
       });
       setLandlordData({
         landlord_name: user.landlord_name || '',
@@ -1206,15 +1204,7 @@ function AccountContent() {
       confirmDowngradeWarning: "You'll lose Unlimited Lease Scans, Advanced Reminders, extra Letter Credits and other premium protections.",
       reasonForDowngrade: "Reason for downgrading",
       goBack: "Go back",
-      confirmDowngradeBtn: "Confirm downgrade to Free",
-      userType: "User Type",
-      selectUserType: "Select your type",
-      userTypeTenant: "Tenant",
-      userTypeLandlord: "Landlord",
-      userTypeBuildingManager: "Building / Juristic Manager",
-      userTypeAgentBroker: "Agent / Broker",
-      userTypeLawyerConsultant: "Lawyer / Consultant",
-      userTypeOther: "Other",
+      confirmDowngradeBtn: "Confirm downgrade to Free"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -1561,15 +1551,7 @@ function AccountContent() {
       landlordLanguage: "房东语言",
       selectLandlordLanguage: "选择房东的首选语言",
       notificationPreferences: "通知偏好",
-      notificationInsights: "通知统计",
-      userType: "用户类型",
-      selectUserType: "选择您的类型",
-      userTypeTenant: "租户",
-      userTypeLandlord: "房东",
-      userTypeBuildingManager: "大楼/物业经理",
-      userTypeAgentBroker: "中介/经纪人",
-      userTypeLawyerConsultant: "律师/顾问",
-      userTypeOther: "其他",
+      notificationInsights: "通知统计"
     },
     ja: {
       pageTitle: "マイアカウント",
@@ -1746,15 +1728,7 @@ function AccountContent() {
       landlordLanguage: "家主の言語",
       selectLandlordLanguage: "家主の好みの言語を選択",
       notificationPreferences: "通知設定",
-      notificationInsights: "通知インサイト",
-      userType: "ユーザータイプ",
-      selectUserType: "タイプを選択",
-      userTypeTenant: "テナント",
-      userTypeLandlord: "家主",
-      userTypeBuildingManager: "建物/管理事務所マネージャー",
-      userTypeAgentBroker: "エージェント/ブローカー",
-      userTypeLawyerConsultant: "弁護士/コンサルタント",
-      userTypeOther: "その他",
+      notificationInsights: "通知インサイト"
     },
     ko: {
       pageTitle: "내 계정",
