@@ -1746,7 +1746,15 @@ function AccountContent() {
       landlordLanguage: "家主の言語",
       selectLandlordLanguage: "家主の好みの言語を選択",
       notificationPreferences: "通知設定",
-      notificationInsights: "通知インサイト"
+      notificationInsights: "通知インサイト",
+      userType: "ユーザータイプ",
+      selectUserType: "タイプを選択",
+      userTypeTenant: "テナント",
+      userTypeLandlord: "家主",
+      userTypeBuildingManager: "建物/管理事務所マネージャー",
+      userTypeAgentBroker: "エージェント/ブローカー",
+      userTypeLawyerConsultant: "弁護士/コンサルタント",
+      userTypeOther: "その他",
     },
     ko: {
       pageTitle: "내 계정",
