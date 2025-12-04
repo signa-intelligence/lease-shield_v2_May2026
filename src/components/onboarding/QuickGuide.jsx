@@ -459,6 +459,10 @@ export default function QuickGuide({ open, onClose, language = 'en', isDarkMode 
   };
 
   const handleClose = () => {
+    // If "Don't show again" is checked, persist to localStorage
+    if (dontShowAgain) {
+      localStorage.setItem('ls_quick_guide_hidden', 'true');
+    }
     onClose();
   };
 
