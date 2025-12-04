@@ -2320,7 +2320,7 @@ function AccountContent() {
                                 wordBreak: 'break-all'
                               }}
                             >
-                              app.leaseshield.asia/?ref=${user.referral_code}
+                              app.leaseshield.asia/?ref={user.referral_code}
                             </code>
                             <button
                               onClick={handleCopyReferralLink}
