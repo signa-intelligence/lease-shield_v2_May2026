@@ -1746,7 +1746,8 @@ function AccountContent() {
       landlordLanguage: "家主の言語",
       selectLandlordLanguage: "家主の好みの言語を選択",
       notificationPreferences: "通知設定",
-      notificationInsights: "通知インサイト"
+      notificationInsights: "通知インサイト",
+      referralTooltip: "友達を紹介し、彼らが最初の有料月を完了した後、1ヶ月無料を受け取ります。無料月は紹介されたユーザーのティア価値と一致します。クレジットは現金と交換できません。完全な詳細については利用規約を参照してください。"
     },
     ko: {
       pageTitle: "내 계정",
