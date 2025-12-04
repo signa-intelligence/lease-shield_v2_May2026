@@ -431,7 +431,12 @@ export default function QuickGuide({ open, onClose, language = 'en', isDarkMode 
     if (isLastStep) {
       localStorage.setItem('leaseshield_quick_guide_done', 'true');
       
-      // Save "Don't show again" preference to user record
+      // Save "Don't show again" preference to localStorage (persistent)
+      if (dontShowAgain) {
+        localStorage.setItem('ls_quick_guide_hidden', 'true');
+      }
+      
+      // Also save to user record for cross-device sync
       if (dontShowAgain && user) {
         try {
           const { base44 } = await import('@/api/base44Client');
