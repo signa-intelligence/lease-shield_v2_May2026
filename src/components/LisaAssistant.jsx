@@ -503,12 +503,12 @@ assistant:`;
 
             {/* Messages */}
             <div
-              className="flex-1 overflow-y-auto p-4 space-y-4"
+              className="lisa-modal-content flex-1 overflow-y-auto space-y-4"
               style={{ 
                 backgroundColor: colors.cardBg, 
-                minHeight: '200px', 
-                maxHeight: 'calc(100vh - 280px - env(safe-area-inset-bottom))',
-                overflowY: 'auto',
+                minHeight: '200px',
+                padding: window.innerWidth < 1280 ? '12px' : '16px',
+                WebkitOverflowScrolling: 'touch',
               }}
             >
               {messages.map((message, index) => (
