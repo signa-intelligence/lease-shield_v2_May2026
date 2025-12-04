@@ -422,7 +422,12 @@ assistant:`;
             {/* Messages */}
             <div
               className="flex-1 overflow-y-auto p-4 space-y-4"
-              style={{ backgroundColor: colors.cardBg, minHeight: '300px', maxHeight: 'calc(100vh - 200px)' }}
+              style={{ 
+                backgroundColor: colors.cardBg, 
+                minHeight: '200px', 
+                maxHeight: 'calc(100vh - 280px - env(safe-area-inset-bottom))',
+                overflowY: 'auto',
+              }}
             >
               {messages.map((message, index) => (
                 <div
