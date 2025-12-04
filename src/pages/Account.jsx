@@ -434,25 +434,48 @@ function AccountContent() {
     staleTime: 0,
   });
 
-  // Auto-generate referral code if missing
+  // Auto-generate referral code if missing AND capture referred_by_code from URL
   React.useEffect(() => {
-    const generateReferralCode = async () => {
-      if (user && !user.referral_code) {
-        // Generate 6-char alphanumeric code
+    const initReferral = async () => {
+      if (!user) return;
+      
+      const updates = {};
+      
+      // 1. Generate referral code if missing
+      if (!user.referral_code) {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluded confusing chars
         let code = '';
         for (let i = 0; i < 6; i++) {
           code += chars.charAt(Math.floor(Math.random() * chars.length));
         }
+        updates.referral_code = code;
+      }
+      
+      // 2. Capture referred_by_code from URL (only if not already set)
+      if (!user.referred_by_code) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        if (refCode && refCode.length >= 4 && refCode.length <= 8) {
+          // Don't allow self-referral
+          if (refCode !== user.referral_code) {
+            updates.referred_by_code = refCode.toUpperCase();
+          }
+          // Clean URL after capturing
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      }
+      
+      // Apply updates if any
+      if (Object.keys(updates).length > 0) {
         try {
-          await base44.auth.updateMe({ referral_code: code });
+          await base44.auth.updateMe(updates);
           refetchUser();
         } catch (err) {
-          console.error('Failed to generate referral code:', err);
+          console.error('Failed to update referral data:', err);
         }
       }
     };
-    generateReferralCode();
+    initReferral();
   }, [user, refetchUser]);
 
   const [referralCopied, setReferralCopied] = React.useState(false);
