@@ -43,6 +43,9 @@ export default function AdminConsole() {
   const [debugData, setDebugData] = useState(null);
   const [loadingDebug, setLoadingDebug] = useState(false);
   const [restoringUsers, setRestoringUsers] = useState(false);
+  const [userManagementExpanded, setUserManagementExpanded] = useState(
+    typeof window !== 'undefined' && window.innerWidth >= 1024
+  );
 
   const queryClient = useQueryClient();
 
