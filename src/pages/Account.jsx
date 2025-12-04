@@ -2106,6 +2106,27 @@ function AccountContent() {
 
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46460_M_gainfriends_2dbarcodes_GW.png";
 
+  // Filter users based on search term
+  const matchesSearch = (u, term) => {
+    if (!term) return true;
+    const lowerTerm = term.toLowerCase();
+    const searchable = [
+      u.full_name || '',
+      u.email || '',
+      u.id || '',
+      u.referral_code || ''
+    ].join(' ').toLowerCase();
+    return searchable.includes(lowerTerm);
+  };
+
+  const filteredUsers = allUsers.filter(u => matchesSearch(u, userSearchTerm));
+
+  // Check if user is admin
+  const isAdmin = user && (
+    ['admin', 'super_admin', 'va'].includes(user.access_level) ||
+    ['admin', 'super_admin', 'va'].includes(user.role)
+  );
+
   return (
     <div className="min-h-screen p-4 md:p-6 pb-36 md:pb-40 lg:pb-16 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
