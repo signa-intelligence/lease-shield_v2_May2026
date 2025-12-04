@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight, Home, FileText, Wallet, FolderOpen, Wrench, Scale, Bell } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Home, FileText, Wallet, FolderOpen, Wrench, Scale, Bell, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const QUICK_GUIDE_CONTENT = {
