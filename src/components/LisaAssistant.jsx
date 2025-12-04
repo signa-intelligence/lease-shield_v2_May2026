@@ -490,8 +490,13 @@ assistant:`;
 
             {/* Input */}
             <div
-              className="p-3 border-t"
-              style={{ borderColor: colors.border, backgroundColor: colors.bg }}
+              className="p-3 border-t flex-shrink-0"
+              style={{ 
+                borderColor: colors.border, 
+                backgroundColor: colors.bg,
+                position: 'sticky',
+                bottom: 0,
+              }}
             >
               <div className="flex items-end gap-2">
                 <textarea
