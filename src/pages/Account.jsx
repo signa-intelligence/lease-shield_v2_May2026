@@ -434,6 +434,43 @@ function AccountContent() {
     staleTime: 0,
   });
 
+  // Auto-generate referral code if missing
+  React.useEffect(() => {
+    const generateReferralCode = async () => {
+      if (user && !user.referral_code) {
+        // Generate 6-char alphanumeric code
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluded confusing chars
+        let code = '';
+        for (let i = 0; i < 6; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        try {
+          await base44.auth.updateMe({ referral_code: code });
+          refetchUser();
+        } catch (err) {
+          console.error('Failed to generate referral code:', err);
+        }
+      }
+    };
+    generateReferralCode();
+  }, [user, refetchUser]);
+
+  const [referralCopied, setReferralCopied] = React.useState(false);
+  
+  const handleCopyReferralLink = async () => {
+    if (!user?.referral_code) return;
+    const link = `https://app.leaseshield.asia/signup?ref=${user.referral_code}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setReferralCopied(true);
+      haptic.success();
+      setTimeout(() => setReferralCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy referral link:', err);
+      haptic.error();
+    }
+  };
+
   // Handle post-checkout refresh
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -2225,6 +2262,77 @@ function AccountContent() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Referral Link Section */}
+                  {user?.referral_code && (
+                    <div style={{
+                      padding: '16px',
+                      backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                      borderRadius: '12px',
+                      borderLeft: '4px solid #3B82F6'
+                    }}>
+                      <div className="flex items-start gap-3">
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          backgroundColor: '#3B82F6',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <Gift className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
+                            {language === 'th' ? 'ลิงก์แนะนำของคุณ' : language === 'zh' ? '您的推荐链接' : language === 'ja' ? 'あなたの紹介リンク' : language === 'ko' ? '추천 링크' : language === 'ru' ? 'Ваша реферальная ссылка' : 'Your Referral Link'}
+                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <code 
+                              className="text-xs px-2 py-1 rounded"
+                              style={{ 
+                                backgroundColor: isDarkMode ? '#374151' : '#FFFFFF',
+                                color: colors.textPrimary,
+                                border: `1px solid ${colors.borderColor}`,
+                                wordBreak: 'break-all'
+                              }}
+                            >
+                              app.leaseshield.asia/signup?ref={user.referral_code}
+                            </code>
+                            <button
+                              onClick={handleCopyReferralLink}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                backgroundColor: referralCopied ? '#10B981' : '#3B82F6',
+                                color: '#FFFFFF',
+                                border: 'none',
+                                fontWeight: '600',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              {referralCopied ? (
+                                <>
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  {language === 'th' ? 'คัดลอกแล้ว!' : language === 'zh' ? '已复制!' : language === 'ja' ? 'コピー済み!' : language === 'ko' ? '복사됨!' : language === 'ru' ? 'Скопировано!' : 'Copied!'}
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  {language === 'th' ? 'คัดลอก' : language === 'zh' ? '复制' : language === 'ja' ? 'コピー' : language === 'ko' ? '복사' : language === 'ru' ? 'Копировать' : 'Copy'}
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div style={{
                     padding: '16px',
