@@ -1568,7 +1568,8 @@ function AccountContent() {
       landlordLanguage: "房东语言",
       selectLandlordLanguage: "选择房东的首选语言",
       notificationPreferences: "通知偏好",
-      notificationInsights: "通知统计"
+      notificationInsights: "通知统计",
+      referralTooltip: "推荐朋友，在他们完成第一个付费月后，您将获得一个免费月。免费月的价值与被推荐用户的等级相匹配。积分不能兑换现金。请参阅完整的条款和条件。"
     },
     ja: {
       pageTitle: "マイアカウント",
