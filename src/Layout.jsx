@@ -568,7 +568,8 @@ export default function Layout({ children, currentPageName }) {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          {/* Desktop Actions - hidden on mobile */}
+          <div className="hidden md:flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {showInstallButton && (
               <button
                 onClick={handleInstallClick}
@@ -590,7 +591,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">Install App</span>
+                <span>Install App</span>
               </button>
             )}
             <button
@@ -615,7 +616,7 @@ export default function Layout({ children, currentPageName }) {
               }}
             >
               <Info 
-                className="w-4 h-4 sm:w-5 sm:h-5" 
+                className="w-5 h-5" 
                 style={{ 
                   color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
                   transition: 'color 0.2s'
@@ -641,7 +642,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <BookOpen 
-                  className="w-4 h-4 sm:w-5 sm:h-5" 
+                  className="w-5 h-5" 
                   style={{ 
                     color: isActiveTab(createPageUrl("FAQ")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
                     transition: 'color 0.2s'
@@ -649,35 +650,6 @@ export default function Layout({ children, currentPageName }) {
                 />
               </button>
             </Link>
-            <button
-              onClick={() => {
-                haptic.light();
-                setShowQuickGuide(true);
-              }}
-              aria-label="Quick Guide"
-              title="Quick Guide"
-              className="btn-interaction"
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
-              }}
-            >
-              <Info 
-                className="w-4 h-4 sm:w-5 sm:h-5" 
-                style={{ 
-                  color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
-                  transition: 'color 0.2s'
-                }}
-              />
-            </button>
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
@@ -697,7 +669,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <Search 
-                  className="w-4 h-4 sm:w-5 sm:h-5" 
+                  className="w-5 h-5" 
                   style={{ 
                     color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
                     transition: 'color 0.2s'
@@ -711,7 +683,7 @@ export default function Layout({ children, currentPageName }) {
                 <button
                   aria-label="Upgrade"
                   onClick={() => haptic.medium()}
-                  className="btn-interaction hidden sm:inline-flex"
+                  className="btn-interaction"
                   style={{
                     padding: '6px 14px',
                     borderRadius: 9999,
@@ -758,7 +730,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <User 
-                  className="w-4 h-4 sm:w-5 sm:h-5" 
+                  className="w-5 h-5" 
                   style={{ 
                     color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
                     transition: 'color 0.2s'
@@ -766,6 +738,89 @@ export default function Layout({ children, currentPageName }) {
                 />
               </button>
             </Link>
+          </div>
+
+          {/* Mobile Actions - only 3 icons: Quick Guide, Search, Profile Menu */}
+          <div className="flex md:hidden items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => {
+                haptic.light();
+                setShowQuickGuide(true);
+              }}
+              aria-label="Quick Guide"
+              className="btn-interaction"
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+              }}
+            >
+              <Info 
+                className="w-5 h-5" 
+                style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }}
+              />
+            </button>
+            <Link to={createPageUrl("Search")}>
+              <button
+                aria-label={strings.search || "Search"}
+                onClick={() => haptic.light()}
+                className="btn-interaction"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: isActiveTab(createPageUrl("Search")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+                }}
+              >
+                <Search 
+                  className="w-5 h-5" 
+                  style={{ 
+                    color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E')
+                  }}
+                />
+              </button>
+            </Link>
+            {/* Profile Menu Trigger */}
+            <button
+              aria-label="Menu"
+              onClick={() => {
+                haptic.light();
+                setShowProfileMenu(true);
+              }}
+              className="btn-interaction"
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: showProfileMenu || isActiveTab(createPageUrl("Account")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+              }}
+            >
+              <User 
+                className="w-5 h-5" 
+                style={{ 
+                  color: showProfileMenu || isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E')
+                }}
+              />
+            </button>
           </div>
         </div>
       </div>
