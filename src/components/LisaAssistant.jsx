@@ -433,23 +433,26 @@ assistant:`;
       {/* Chat Modal */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          className="fixed inset-0 z-50 flex items-end justify-center"
           style={{ 
             backgroundColor: 'rgba(0,0,0,0.5)',
-            paddingBottom: 'calc(80px + env(safe-area-inset-bottom))', // Space for bottom nav
+            paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsOpen(false);
           }}
         >
           <div
-            className="w-full sm:w-[400px] sm:rounded-2xl overflow-hidden flex flex-col"
+            className="lisa-modal w-full sm:rounded-2xl overflow-hidden flex flex-col"
             style={{
               backgroundColor: colors.bg,
               boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
               animation: 'slideUp 0.3s ease-out',
-              maxHeight: 'calc(100vh - 100px - env(safe-area-inset-bottom))', // Leave room for nav + padding
+              width: window.innerWidth < 768 ? '92vw' : window.innerWidth < 1280 ? '460px' : '400px',
+              maxWidth: window.innerWidth < 768 ? '420px' : window.innerWidth < 1280 ? '460px' : '400px',
+              maxHeight: window.innerWidth < 768 ? 'calc(100vh - 120px)' : window.innerWidth < 1280 ? 'calc(100vh - 140px)' : 'calc(100vh - 100px - env(safe-area-inset-bottom))',
               height: 'auto',
+              marginBottom: window.innerWidth < 768 ? '110px' : window.innerWidth < 1280 ? '90px' : '0',
             }}
           >
             <style>{`
