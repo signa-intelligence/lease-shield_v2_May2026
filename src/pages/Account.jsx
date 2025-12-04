@@ -1206,7 +1206,15 @@ function AccountContent() {
       confirmDowngradeWarning: "You'll lose Unlimited Lease Scans, Advanced Reminders, extra Letter Credits and other premium protections.",
       reasonForDowngrade: "Reason for downgrading",
       goBack: "Go back",
-      confirmDowngradeBtn: "Confirm downgrade to Free"
+      confirmDowngradeBtn: "Confirm downgrade to Free",
+      userType: "User Type",
+      selectUserType: "Select your type",
+      userTypeTenant: "Tenant",
+      userTypeLandlord: "Landlord",
+      userTypeBuildingManager: "Building / Juristic Manager",
+      userTypeAgentBroker: "Agent / Broker",
+      userTypeLawyerConsultant: "Lawyer / Consultant",
+      userTypeOther: "Other",
     },
     th: {
       pageTitle: "บัญชีของฉัน",
