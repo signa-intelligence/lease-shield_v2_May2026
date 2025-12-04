@@ -436,6 +436,19 @@ function AccountContent() {
     staleTime: 0,
   });
 
+  // Fetch all users for admin User Management section
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getAllUsers');
+      return response.data?.users || response.data || [];
+    },
+    enabled: !!user && (
+      ['admin', 'super_admin', 'va'].includes(user.access_level) ||
+      ['admin', 'super_admin', 'va'].includes(user.role)
+    ),
+  });
+
   // Auto-generate referral code if missing AND capture referred_by_code from URL
   React.useEffect(() => {
     const initReferral = async () => {
