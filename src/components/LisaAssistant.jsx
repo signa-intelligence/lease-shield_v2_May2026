@@ -479,13 +479,23 @@ assistant:`;
                   <p className="text-xs text-emerald-200">AI-Powered Support</p>
                 </div>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
-              >
-                <X className="w-5 h-5 text-white" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={clearChatHistory}
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                  title="New chat"
+                >
+                  <RotateCcw className="w-4 h-4 text-white" />
+                </button>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
             </div>
 
             {/* Messages */}
