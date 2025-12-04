@@ -365,17 +365,22 @@ assistant:`;
       {isOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          style={{ 
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            paddingBottom: 'calc(80px + env(safe-area-inset-bottom))', // Space for bottom nav
+          }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsOpen(false);
           }}
         >
           <div
-            className="w-full sm:w-[400px] sm:max-h-[600px] h-full sm:h-auto sm:rounded-2xl overflow-hidden flex flex-col"
+            className="w-full sm:w-[400px] sm:rounded-2xl overflow-hidden flex flex-col"
             style={{
               backgroundColor: colors.bg,
               boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
               animation: 'slideUp 0.3s ease-out',
+              maxHeight: 'calc(100vh - 100px - env(safe-area-inset-bottom))', // Leave room for nav + padding
+              height: 'auto',
             }}
           >
             <style>{`
