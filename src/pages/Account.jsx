@@ -482,7 +482,7 @@ function AccountContent() {
   
   const handleCopyReferralLink = async () => {
     if (!user?.referral_code) return;
-    const link = `https://app.leaseshield.asia/signup?ref=${user.referral_code}`;
+    const link = `https://app.leaseshield.asia/?ref=${user.referral_code}`;
     try {
       await navigator.clipboard.writeText(link);
       setReferralCopied(true);
@@ -2320,7 +2320,7 @@ function AccountContent() {
                                 wordBreak: 'break-all'
                               }}
                             >
-                              app.leaseshield.asia/signup?ref={user.referral_code}
+                              app.leaseshield.asia/?ref={user.referral_code}
                             </code>
                             <button
                               onClick={handleCopyReferralLink}
