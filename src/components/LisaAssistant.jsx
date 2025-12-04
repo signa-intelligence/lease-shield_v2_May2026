@@ -572,12 +572,13 @@ assistant:`;
 
             {/* Input */}
             <div
-              className="p-3 border-t flex-shrink-0"
+              className="lisa-input-bar p-3 border-t flex-shrink-0"
               style={{ 
                 borderColor: colors.border, 
                 backgroundColor: colors.bg,
                 position: 'sticky',
                 bottom: 0,
+                zIndex: 10,
               }}
             >
               <div className="flex items-end gap-2">
