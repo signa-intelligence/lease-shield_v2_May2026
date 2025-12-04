@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins, TrendingUp, ChevronUp, ChevronDown, BarChart3, Database, Trash2, ArrowRight } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins, TrendingUp, ChevronUp, ChevronDown, BarChart3, Database, Trash2, ArrowRight, Search, Users } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationPreferences from "../components/settings/NotificationPreferences";
 import NotificationAnalytics from "../components/dashboard/NotificationAnalytics";
