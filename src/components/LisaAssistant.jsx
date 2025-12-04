@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, MessageCircle, Shield, Loader2, ChevronRight } from 'lucide-react';
+import { X, Send, MessageCircle, Shield, Loader2, ChevronRight, RotateCcw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
