@@ -1637,27 +1637,66 @@ export default function AdminConsole() {
           </Card>
         )}
 
-        {/* 3. USER MANAGEMENT */}
+        {/* 3. USER MANAGEMENT - COLLAPSIBLE */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle style={{ color: colors.textPrimary }}>{strings.userManagement}</CardTitle>
+          <CardHeader 
+            className="cursor-pointer select-none"
+            style={{ borderBottom: userManagementExpanded ? `1px solid ${colors.borderColor}` : 'none' }}
+            onClick={() => setUserManagementExpanded(!userManagementExpanded)}
+          >
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <Users className="w-5 h-5" />
+                {strings.userManagement}
+                <span className="text-sm font-normal" style={{ color: colors.textSecondary }}>
+                  ({users.length} users)
+                </span>
+              </CardTitle>
+              <button 
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                style={{ 
+                  backgroundColor: isDarkMode ? '#353A3D' : '#F1F5F9',
+                  color: colors.textSecondary
+                }}
+              >
+                {userManagementExpanded ? (
+                  <>
+                    Hide
+                    <ChevronUp className="w-4 h-4" />
+                  </>
+                ) : (
+                  <>
+                    Show
+                    <ChevronDown className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
           </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.letterCredits}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
-                  </tr>
-                </thead>
-                <tbody>
+          <div
+            style={{
+              maxHeight: userManagementExpanded ? '2000px' : '0px',
+              overflow: 'hidden',
+              transition: 'max-height 0.2s ease-in-out, opacity 0.15s ease-in-out',
+              opacity: userManagementExpanded ? 1 : 0
+            }}
+          >
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.letterCredits}</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                   {sortedUsers.map((u, idx) => {
                     const lastUpdate = new Date(u.updated_date || u.created_date);
                     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
