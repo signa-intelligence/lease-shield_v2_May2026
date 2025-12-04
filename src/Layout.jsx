@@ -834,6 +834,167 @@ export default function Layout({ children, currentPageName }) {
         user={user}
       />
 
+      {/* Mobile Profile Menu Sheet */}
+      {showProfileMenu && (
+        <div 
+          className="fixed inset-0 z-[60]"
+          onClick={() => setShowProfileMenu(false)}
+        >
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50"
+            style={{ animation: 'fadeIn 0.2s ease-out' }}
+          />
+          
+          {/* Menu Sheet */}
+          <div 
+            className="absolute bottom-0 left-0 right-0 rounded-t-2xl overflow-hidden"
+            style={{
+              backgroundColor: colors.cardBg,
+              animation: 'slideUp 0.3s ease-out',
+              maxHeight: '70vh',
+              paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <style>{`
+              @keyframes slideUp {
+                from { transform: translateY(100%); }
+                to { transform: translateY(0); }
+              }
+            `}</style>
+
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div 
+                className="w-10 h-1 rounded-full"
+                style={{ backgroundColor: isDarkMode ? '#4B5563' : '#D1D5DB' }}
+              />
+            </div>
+
+            {/* Menu Items */}
+            <div className="px-4 pb-4 space-y-1">
+              {/* Account & Settings */}
+              <Link 
+                to={createPageUrl("Account")}
+                onClick={() => {
+                  haptic.light();
+                  setShowProfileMenu(false);
+                }}
+              >
+                <div 
+                  className="flex items-center justify-between p-3 rounded-xl"
+                  style={{
+                    backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <User className="w-5 h-5" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
+                    <span className="font-medium" style={{ color: colors.textPrimary }}>
+                      {strings.account}
+                    </span>
+                  </div>
+                  <ChevronRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                </div>
+              </Link>
+
+              {/* Help & FAQ */}
+              <Link 
+                to={createPageUrl("FAQ")}
+                onClick={() => {
+                  haptic.light();
+                  setShowProfileMenu(false);
+                }}
+              >
+                <div 
+                  className="flex items-center justify-between p-3 rounded-xl"
+                  style={{
+                    backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <BookOpen className="w-5 h-5" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
+                    <span className="font-medium" style={{ color: colors.textPrimary }}>
+                      {strings.helpFaq}
+                    </span>
+                  </div>
+                  <ChevronRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                </div>
+              </Link>
+
+              {/* Install App - only if available */}
+              {showInstallButton && (
+                <button
+                  onClick={() => {
+                    haptic.medium();
+                    handleInstallClick();
+                    setShowProfileMenu(false);
+                  }}
+                  className="w-full"
+                >
+                  <div 
+                    className="flex items-center justify-between p-3 rounded-xl"
+                    style={{
+                      backgroundColor: '#10B981',
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Download className="w-5 h-5 text-white" />
+                      <span className="font-medium text-white">
+                        {strings.installApp}
+                      </span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-white/70" />
+                  </div>
+                </button>
+              )}
+
+              {/* Language Selector */}
+              <div 
+                className="flex items-center justify-between p-3 rounded-xl"
+                style={{
+                  backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <Globe className="w-5 h-5" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
+                  <span className="font-medium" style={{ color: colors.textPrimary }}>
+                    {strings.language}
+                  </span>
+                </div>
+                <LanguageToggle />
+              </div>
+
+              {/* Upgrade - only if not on Secure plan */}
+              {user && user.plan_tier !== 'secure' && (
+                <Link 
+                  to={createPageUrl("Account") + '?showPlans=true'}
+                  onClick={() => {
+                    haptic.medium();
+                    setShowProfileMenu(false);
+                  }}
+                >
+                  <div 
+                    className="flex items-center justify-between p-3 rounded-xl mt-2"
+                    style={{
+                      background: 'linear-gradient(135deg, #C7A338 0%, #D4B451 100%)',
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Star className="w-5 h-5 text-white" />
+                      <span className="font-bold text-white">
+                        {strings.upgrade}
+                      </span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-white/70" />
+                  </div>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main 
         ref={mainContentRef} 
