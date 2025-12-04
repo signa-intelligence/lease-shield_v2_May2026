@@ -769,6 +769,9 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </main>
 
+      {/* LISA Assistant */}
+      <LisaAssistant />
+
       {/* Bottom Navigation */}
       <nav 
         className="bottom-tabs fixed bottom-0 left-0 right-0 border-t" 
