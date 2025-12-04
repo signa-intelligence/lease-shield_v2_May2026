@@ -414,7 +414,10 @@ export default function QuickGuide({ open, onClose, language = 'en', isDarkMode 
     }
   }, [open]);
 
-  if (!open) return null;
+  // Check localStorage on mount - if hidden, never show
+  const isHiddenInStorage = typeof window !== 'undefined' && localStorage.getItem('ls_quick_guide_hidden') === 'true';
+  
+  if (!open || isHiddenInStorage) return null;
 
   const stepKey = STEP_KEYS[currentStep];
   const stepData = QUICK_GUIDE_CONTENT[stepKey];
