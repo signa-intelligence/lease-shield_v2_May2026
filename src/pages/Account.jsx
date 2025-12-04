@@ -1924,7 +1924,8 @@ function AccountContent() {
       landlordLanguage: "집주인 언어",
       selectLandlordLanguage: "집주인의 선호 언어 선택",
       notificationPreferences: "알림 설정",
-      notificationInsights: "알림 통계"
+      notificationInsights: "알림 통계",
+      referralTooltip: "친구를 추천하고 그들이 첫 유료 월을 완료한 후 1개월 무료를 받으세요. 무료 월은 추천된 사용자의 등급 가치와 일치합니다. 크레딧은 현금으로 교환할 수 없습니다. 전체 세부 정보는 약관을 참조하세요."
     },
     ru: {
       pageTitle: "Мой аккаунт",
