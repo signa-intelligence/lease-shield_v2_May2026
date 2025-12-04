@@ -1,13 +1,12 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, Download, HelpCircle, BookOpen } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, Download, HelpCircle, BookOpen, Menu, X, ChevronRight, Globe, Info } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
 import QuickGuide from "./components/onboarding/QuickGuide";
-import { Info } from "lucide-react";
 import AuthGuard from "./components/shared/AuthGuard";
 import LisaAssistant from "./components/LisaAssistant";
 
