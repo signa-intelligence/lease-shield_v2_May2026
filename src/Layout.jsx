@@ -70,6 +70,7 @@ export default function Layout({ children, currentPageName }) {
   const [showInstallButton, setShowInstallButton] = React.useState(false);
   const [showQuickGuide, setShowQuickGuide] = React.useState(false);
   const [hasCheckedGuide, setHasCheckedGuide] = React.useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
