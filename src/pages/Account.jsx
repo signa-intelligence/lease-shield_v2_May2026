@@ -5115,6 +5115,119 @@ function AccountContent() {
           </CardContent>
         </Card>
 
+        {/* USER MANAGEMENT SECTION (Admin Only) */}
+        {isAdmin && allUsers.length > 0 && (
+          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader 
+              className="cursor-pointer"
+              onClick={() => {
+                haptic.light();
+                setIsUserManagementOpen(!isUserManagementOpen);
+              }}
+              style={{ borderBottom: isUserManagementOpen ? `1px solid ${colors.borderColor}` : 'none' }}
+            >
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <Users className="w-5 h-5 text-ls-forest" />
+                  {language === 'th' ? 'การจัดการผู้ใช้' : language === 'zh' ? '用户管理' : language === 'ja' ? 'ユーザー管理' : language === 'ko' ? '사용자 관리' : language === 'ru' ? 'Управление пользователями' : 'User Management'}
+                  <span className="text-sm font-normal" style={{ color: colors.textSecondary }}>
+                    ({allUsers.length})
+                  </span>
+                </CardTitle>
+                {isUserManagementOpen ? <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} /> : <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />}
+              </div>
+            </CardHeader>
+            {isUserManagementOpen && (
+              <CardContent className="p-6">
+                {/* Search Box */}
+                <div className="mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: colors.textSecondary }} />
+                    <Input
+                      type="text"
+                      placeholder={language === 'th' ? 'ค้นหาผู้ใช้ (ชื่อ, อีเมล, ID)' : language === 'zh' ? '搜索用户（姓名、电子邮件、ID）' : language === 'ja' ? 'ユーザーを検索（名前、メール、ID）' : language === 'ko' ? '사용자 검색（이름、이메일、ID）' : language === 'ru' ? 'Поиск пользователей (имя, email, ID)' : 'Search users (name, email, ID)'}
+                      value={userSearchTerm}
+                      onChange={(e) => setUserSearchTerm(e.target.value)}
+                      style={{
+                        paddingLeft: '40px',
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* User List */}
+                {filteredUsers.length === 0 ? (
+                  <div className="text-center py-8" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'ไม่พบผู้ใช้สำหรับการค้นหานี้' : language === 'zh' ? '未找到此搜索的用户' : language === 'ja' ? 'この検索に該当するユーザーが見つかりません' : language === 'ko' ? '이 검색에 대한 사용자를 찾을 수 없습니다' : language === 'ru' ? 'Пользователи не найдены' : 'No users found for this search.'}
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {filteredUsers.map((u) => (
+                      <div
+                        key={u.id}
+                        className="p-3 rounded-lg border"
+                        style={{
+                          backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                          borderColor: colors.borderColor
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate" style={{ color: colors.textPrimary }}>
+                              {u.full_name || language === 'th' ? 'ไม่ระบุชื่อ' : language === 'ru' ? 'Без имени' : 'No name'}
+                            </p>
+                            <p className="text-xs truncate" style={{ color: colors.textSecondary }}>
+                              {u.email}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="text-xs font-mono px-2 py-0.5 rounded" style={{
+                                backgroundColor: isDarkMode ? '#2A2D30' : '#E5E7EB',
+                                color: colors.textSecondary
+                              }}>
+                                ID: {u.id?.slice(0, 8)}
+                              </span>
+                              {u.referral_code && (
+                                <span className="text-xs font-mono px-2 py-0.5 rounded" style={{
+                                  backgroundColor: isDarkMode ? '#1E3A5F' : '#DBEAFE',
+                                  color: isDarkMode ? '#93C5FD' : '#1E40AF'
+                                }}>
+                                  Ref: {u.referral_code}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            <Badge className={
+                              u.plan_tier === 'secure' ? 'bg-purple-100 text-purple-800' :
+                              u.plan_tier === 'protect' ? 'bg-emerald-100 text-emerald-800' :
+                              u.plan_tier === 'lite' ? 'bg-blue-100 text-blue-800' :
+                              'bg-slate-100 text-slate-800'
+                            }>
+                              {u.plan_tier || 'free'}
+                            </Badge>
+                            {u.access_level && u.access_level !== 'user' && (
+                              <Badge className={
+                                u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+                                u.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
+                                'bg-amber-100 text-amber-800'
+                              }>
+                                {u.access_level}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            )}
+          </Card>
+        )}
+
         <div className="mt-8 mb-4">
           <Button
             variant="outline"
