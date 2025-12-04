@@ -94,41 +94,35 @@ const QUICK_GUIDE_CONTENT = {
     title: {
       en: "Meet LISA — Your LeaseShield Assistant",
       th: "พบกับ LISA — ผู้ช่วย LeaseShield ของคุณ",
-      ja: "LISA に会いましょう — あなたの LeaseShield アシスタント",
-      ko: "LISA를 만나보세요 — 당신의 LeaseShield 어시스턴트",
+      ja: "LISA に会おう — LeaseShield アシスタント",
+      ko: "LISA를 만나보세요 — LeaseShield 어시스턴트",
       zh: "认识 LISA — 您的 LeaseShield 助手",
       ru: "Познакомьтесь с LISA — вашим помощником LeaseShield"
     },
     bullets: {
       en: [
-        "LISA can help explain features, guide you through the app, and answer questions in multiple languages",
-        "Get assistance with deposit disputes, find the right letter templates, and receive suggested next steps",
-        "You can open LISA anytime using the green shield icon at the bottom-right of the screen"
+        "LISA can help explain features, guide you through the app, assist with deposit disputes, find the right letter templates, suggest next steps, and answer questions in multiple languages",
+        "You can open LISA anytime using the green shield icon at the bottom right of the app"
       ],
       th: [
-        "LISA สามารถอธิบายฟีเจอร์ต่างๆ แนะนำการใช้แอป และตอบคำถามได้หลายภาษา",
-        "รับความช่วยเหลือเรื่องข้อพิพาทเงินประกัน ค้นหาเทมเพลตจดหมายที่เหมาะสม และรับคำแนะนำขั้นตอนถัดไป",
-        "คุณสามารถเปิด LISA ได้ทุกเมื่อโดยแตะไอคอนโล่สีเขียวที่มุมขวาล่างของหน้าจอ"
+        "LISA ช่วยอธิบายฟีเจอร์ แนะนำการใช้งานแอป ช่วยเรื่องข้อพิพาทเงินประกัน ค้นหาเทมเพลตจดหมาย แนะนำขั้นตอนถัดไป และตอบคำถามได้หลายภาษา",
+        "คุณสามารถเปิด LISA ได้ตลอดเวลาโดยแตะไอคอนโล่สีเขียวที่มุมขวาล่างของแอป"
       ],
       ja: [
-        "LISA は機能の説明、アプリの使い方のガイド、多言語での質問への回答ができます",
-        "デポジット紛争の支援、適切な手紙テンプレートの検索、次のステップの提案を受けられます",
-        "画面右下の緑色のシールドアイコンをタップすることで、いつでも LISA を開けます"
+        "LISA は機能の説明、アプリの案内、敷金トラブルのサポート、適切なレターテンプレートの検索、次のステップの提案、多言語での質問対応ができます",
+        "アプリ右下の緑のシールドアイコンをタップすると、いつでも LISA を開けます"
       ],
       ko: [
-        "LISA는 기능 설명, 앱 안내, 여러 언어로 질문에 답변할 수 있습니다",
-        "보증금 분쟁 지원, 적절한 편지 템플릿 찾기, 다음 단계 제안을 받을 수 있습니다",
-        "화면 오른쪽 하단의 녹색 방패 아이콘을 탭하여 언제든지 LISA를 열 수 있습니다"
+        "LISA는 기능 설명, 앱 안내, 보증금 분쟁 지원, 적합한 편지 템플릿 찾기, 다음 단계 제안, 다국어 질문 응답을 도와줍니다",
+        "앱 오른쪽 하단의 녹색 방패 아이콘을 탭하면 언제든지 LISA를 열 수 있습니다"
       ],
       zh: [
-        "LISA 可以解释功能、引导您使用应用，并以多种语言回答问题",
-        "获取押金纠纷帮助、找到合适的信函模板，并获得下一步建议",
-        "您可以随时点击屏幕右下角的绿色盾牌图标打开 LISA"
+        "LISA 可以解释功能、引导您使用应用、协助押金纠纷、查找正确的信函模板、建议下一步并以多种语言回答问题",
+        "您可以随时点击应用右下角的绿色盾牌图标打开 LISA"
       ],
       ru: [
-        "LISA поможет объяснить функции, проведёт вас по приложению и ответит на вопросы на разных языках",
-        "Получите помощь по спорам о депозите, найдите подходящие шаблоны писем и рекомендации по дальнейшим шагам",
-        "Вы можете открыть LISA в любое время, нажав на зелёную иконку щита в правом нижнем углу экрана"
+        "LISA может объяснить функции, провести вас по приложению, помочь с депозитными спорами, найти подходящие шаблоны писем, предложить следующие шаги и ответить на вопросы на разных языках",
+        "Вы можете открыть LISA в любое время, нажав на зеленый значок щита в правом нижнем углу приложения"
       ]
     }
   },
@@ -518,7 +512,7 @@ export default function QuickGuide({ open, onClose, language = 'en', isDarkMode 
         </div>
 
         {/* Content */}
-        <div className="p-6 flex-1 overflow-y-auto">
+        <div className="p-6 overflow-y-auto flex-1">
           {isFirstStep && (
             <p 
               className="text-sm mb-6 pb-4 border-b"
