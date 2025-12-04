@@ -9,6 +9,7 @@ import { haptic } from "./components/shared/HapticFeedback";
 import QuickGuide from "./components/onboarding/QuickGuide";
 import { Info } from "lucide-react";
 import AuthGuard from "./components/shared/AuthGuard";
+import LisaAssistant from "./components/LisaAssistant";
 
 // Animation utilities inlined
 const animationKeyframes = `
