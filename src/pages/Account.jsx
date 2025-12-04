@@ -2349,9 +2349,37 @@ function AccountContent() {
                           <Gift className="w-5 h-5 text-white" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>
-                            {language === 'th' ? 'ลิงก์แนะนำของคุณ' : language === 'zh' ? '您的推荐链接' : language === 'ja' ? 'あなたの紹介リンク' : language === 'ko' ? '추천 링크' : language === 'ru' ? 'Ваша реферальная ссылка' : 'Your Referral Link'}
-                          </p>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                              {language === 'th' ? 'ลิงก์แนะนำของคุณ' : language === 'zh' ? '您的推荐链接' : language === 'ja' ? 'あなたの紹介リンク' : language === 'ko' ? '추천 링크' : language === 'ru' ? 'Ваша реферальная ссылка' : 'Your Referral Link'}
+                            </p>
+                            <div className="relative group">
+                              <Info 
+                                className="w-3.5 h-3.5 cursor-help" 
+                                style={{ color: colors.textSecondary }}
+                              />
+                              <div 
+                                className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
+                                style={{
+                                  backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
+                                  border: `1px solid ${colors.borderColor}`,
+                                  pointerEvents: 'none'
+                                }}
+                              >
+                                <p className="text-xs leading-relaxed" style={{ color: colors.textPrimary }}>
+                                  {strings.referralTooltip}
+                                </p>
+                                <div 
+                                  className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0"
+                                  style={{
+                                    borderLeft: '6px solid transparent',
+                                    borderRight: '6px solid transparent',
+                                    borderTop: `6px solid ${isDarkMode ? '#1F2937' : '#FFFFFF'}`
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <code 
                               className="text-xs px-2 py-1 rounded"
