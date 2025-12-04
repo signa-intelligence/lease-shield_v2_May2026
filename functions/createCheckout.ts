@@ -11,6 +11,17 @@ import Stripe from 'npm:stripe@14.10.0';
  * to avoid "deploymentNotFound" errors.
  */
 
+// Helper: Create one-time coupon for reward credits
+async function createRewardCoupon(stripe, amountOffCents) {
+  const coupon = await stripe.coupons.create({
+    amount_off: amountOffCents,
+    currency: 'thb',
+    duration: 'once',
+    name: 'Referral Reward Credit',
+  });
+  return coupon.id;
+}
+
 Deno.serve(async (req) => {
   const stripeKey = Deno.env.get('SK_TEST_secret_key');
   
@@ -62,6 +73,20 @@ Deno.serve(async (req) => {
       savedCustomerId: customerId?.substring(0, 20) || 'none',
       mode: isLiveMode ? 'LIVE' : 'TEST'
     });
+
+    // Apply reward credits to subscription/payment if available
+    let appliedCredit = 0;
+    if (user.reward_credit_balance && user.reward_credit_balance > 0 && amount) {
+      const invoiceAmount = Math.round(amount * 100); // Convert to cents
+      const availableCredit = Math.round(user.reward_credit_balance * 100);
+      appliedCredit = Math.min(availableCredit, invoiceAmount);
+      
+      console.log('[CREATE_CHECKOUT] 💰 Applying reward credits:', {
+        availableBalance: user.reward_credit_balance,
+        invoiceAmount: amount,
+        creditToApply: appliedCredit / 100
+      });
+    }
     
     // Validate customer exists in current mode
     if (customerId && isLiveMode) {
@@ -115,6 +140,20 @@ Deno.serve(async (req) => {
       cancel_url: finalCancelUrl,
       allow_promotion_codes: true,
     };
+
+    // Apply discounts from reward credits if available
+    if (appliedCredit > 0) {
+      sessionConfig.discounts = [{
+        coupon: await createRewardCoupon(stripe, appliedCredit)
+      }];
+      
+      // Deduct applied credit from user's balance
+      const newRewardBalance = user.reward_credit_balance - (appliedCredit / 100);
+      await base44.auth.updateMe({ reward_credit_balance: newRewardBalance });
+      
+      console.log('[CREATE_CHECKOUT] ✅ Applied ฿' + (appliedCredit / 100) + ' credit');
+      console.log('[CREATE_CHECKOUT] New reward balance:', newRewardBalance);
+    }
 
     // ========================================
     // CREDITS: One-time payment

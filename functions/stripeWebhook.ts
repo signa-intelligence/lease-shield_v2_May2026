@@ -66,6 +66,26 @@ Deno.serve(async (req) => {
       console.log('[WEBHOOK] Metadata type:', metadata.type);
 
       // ========================================
+      // SUBSCRIPTION FLOW - Process referral reward
+      // ========================================
+      if (metadata.type === 'subscription' && metadata.userId) {
+        console.log('[WEBHOOK] 🎯 Subscription detected - checking referral reward');
+        
+        try {
+          // Non-blocking call to process referral reward
+          base44.asServiceRole.functions.invoke('processReferralReward', {
+            referredUserId: metadata.userId
+          }).catch(err => {
+            console.error('[WEBHOOK] ⚠️ Referral reward processing failed (non-critical):', err.message);
+          });
+          
+          console.log('[WEBHOOK] Referral reward check queued');
+        } catch (refError) {
+          console.error('[WEBHOOK] ⚠️ Referral reward setup error (non-critical):', refError.message);
+        }
+      }
+
+      // ========================================
       // CREDITS PURCHASE FLOW
       // ========================================
       if (metadata.type === 'credits') {
