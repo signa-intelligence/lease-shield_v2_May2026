@@ -1561,7 +1561,15 @@ function AccountContent() {
       landlordLanguage: "房东语言",
       selectLandlordLanguage: "选择房东的首选语言",
       notificationPreferences: "通知偏好",
-      notificationInsights: "通知统计"
+      notificationInsights: "通知统计",
+      userType: "用户类型",
+      selectUserType: "选择您的类型",
+      userTypeTenant: "租户",
+      userTypeLandlord: "房东",
+      userTypeBuildingManager: "大楼/物业经理",
+      userTypeAgentBroker: "中介/经纪人",
+      userTypeLawyerConsultant: "律师/顾问",
+      userTypeOther: "其他",
     },
     ja: {
       pageTitle: "マイアカウント",
