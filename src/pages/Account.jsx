@@ -2353,14 +2353,12 @@ function AccountContent() {
                             </button>
                           </div>
                           {/* Reward Balance Display */}
-                          {(user?.reward_credit_balance > 0) && (
-                            <div className="mt-3 flex items-center gap-2">
-                              <TrendingUp className="w-4 h-4 text-emerald-500" />
-                              <span className="text-sm font-semibold" style={{ color: '#10B981' }}>
-                                {language === 'th' ? 'ยอดรางวัลของคุณ:' : language === 'zh' ? '您的奖励余额:' : language === 'ja' ? 'あなたの報酬残高:' : language === 'ko' ? '보상 잔액:' : language === 'ru' ? 'Ваш баланс наград:' : 'Your Reward Balance:'} ฿{user.reward_credit_balance.toLocaleString()}
-                              </span>
-                            </div>
-                          )}
+                          <div className="mt-3 flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-emerald-500" />
+                            <span className="text-sm font-semibold" style={{ color: '#10B981' }}>
+                              {language === 'th' ? 'ยอดเครดิตรางวัลของคุณ:' : language === 'zh' ? '您的奖励余额:' : language === 'ja' ? 'あなたの報酬残高:' : language === 'ko' ? '보유한 리워드 크레딧:' : language === 'ru' ? 'Ваш баланс бонусов:' : 'Your Reward Balance:'} ฿{(user?.reward_credit_balance || 0).toLocaleString()} THB
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
