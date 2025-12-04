@@ -423,6 +423,8 @@ function AccountContent() {
   const [downgradeFeedback, setDowngradeFeedback] = useState('');
   const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false); // New state for Notification Preferences expansion
   const [expandedNotifAnalytics, setExpandedNotifAnalytics] = useState(false); // New state for Notification Analytics expansion
+  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false); // Collapsible User Management
+  const [userSearchTerm, setUserSearchTerm] = useState(''); // Search filter for users
   
   const plansSectionRef = React.useRef(null);
 
