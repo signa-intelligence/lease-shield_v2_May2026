@@ -180,11 +180,16 @@ const TRANSLATIONS = {
   },
 };
 
+// Constants for localStorage persistence
+const MAX_STORED_MESSAGES = 50;
+const STORAGE_KEY_PREFIX = 'lisa_chat_';
+
 export default function LisaAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const navigate = useNavigate();
@@ -199,16 +204,73 @@ export default function LisaAssistant() {
   const strings = TRANSLATIONS[language] || TRANSLATIONS.en;
   const isDarkMode = user?.theme === 'dark';
 
-  // Initialize greeting message
+  // Get storage key based on user
+  const getStorageKey = () => {
+    return user?.id ? `${STORAGE_KEY_PREFIX}${user.id}` : `${STORAGE_KEY_PREFIX}anon`;
+  };
+
+  // Load messages from localStorage on mount/user change
   useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([{
-        role: 'assistant',
-        content: strings.greeting,
-        timestamp: new Date(),
-      }]);
+    if (!user) return;
+    
+    try {
+      const storageKey = getStorageKey();
+      const stored = localStorage.getItem(storageKey);
+      
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Restore timestamps as Date objects
+          const restored = parsed.map(msg => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }));
+          setMessages(restored);
+          setIsHydrated(true);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to restore LISA chat history:', e);
     }
-  }, [strings.greeting]);
+    
+    // No stored messages - show greeting
+    setMessages([{
+      role: 'assistant',
+      content: strings.greeting,
+      timestamp: new Date(),
+    }]);
+    setIsHydrated(true);
+  }, [user?.id]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (!isHydrated || messages.length === 0) return;
+    
+    try {
+      const storageKey = getStorageKey();
+      // Trim to max stored messages (keep most recent)
+      const toStore = messages.slice(-MAX_STORED_MESSAGES);
+      localStorage.setItem(storageKey, JSON.stringify(toStore));
+    } catch (e) {
+      console.warn('Failed to save LISA chat history:', e);
+    }
+  }, [messages, isHydrated, user?.id]);
+
+  // Clear chat history (can be called for reset functionality)
+  const clearChatHistory = () => {
+    try {
+      const storageKey = getStorageKey();
+      localStorage.removeItem(storageKey);
+    } catch (e) {
+      console.warn('Failed to clear LISA chat history:', e);
+    }
+    setMessages([{
+      role: 'assistant',
+      content: strings.greeting,
+      timestamp: new Date(),
+    }]);
+  };
 
   // Scroll to bottom on new messages
   useEffect(() => {
