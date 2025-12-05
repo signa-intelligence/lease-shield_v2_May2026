@@ -476,216 +476,390 @@ assistant:`;
 
       {/* Chat Modal */}
       {isOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ 
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsOpen(false);
-          }}
-        >
-          <div
-            className="lisa-modal w-full sm:rounded-2xl overflow-hidden flex flex-col"
-            style={{
-              backgroundColor: colors.bg,
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-              animation: 'slideUp 0.3s ease-out',
-              width: window.innerWidth < 768 ? '92vw' : window.innerWidth < 1280 ? '460px' : '400px',
-              maxWidth: window.innerWidth < 768 ? '420px' : window.innerWidth < 1280 ? '460px' : '400px',
-              maxHeight: window.innerWidth < 768 ? 'calc(100vh - 120px)' : window.innerWidth < 1280 ? 'calc(100vh - 140px)' : 'calc(100vh - 100px - env(safe-area-inset-bottom))',
-              height: 'auto',
-              marginBottom: window.innerWidth < 768 ? '110px' : window.innerWidth < 1280 ? '90px' : '0',
-            }}
-          >
-            <style>{`
-              @keyframes slideUp {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
-              }
-            `}</style>
-
-            {/* Header */}
+        <>
+          {/* Prevent background scroll on mobile */}
+          <style>{`
+            @media (max-width: 767px) {
+              body.lisa-open { overflow: hidden !important; }
+            }
+            @keyframes slideUp {
+              from { opacity: 0; transform: translateY(20px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+          <script dangerouslySetInnerHTML={{ __html: `document.body.classList.add('lisa-open');` }} />
+          
+          {/* Mobile: Full-screen sheet */}
+          <div className="md:hidden">
             <div
-              className="flex items-center justify-between px-4 py-3"
+              className="fixed inset-0 z-[60] flex flex-col"
               style={{
-                background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-                borderBottom: '2px solid #C7A338',
+                backgroundColor: colors.bg,
+                paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
               }}
             >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
-                >
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-sm">{strings.title}</h3>
-                  <p className="text-xs text-emerald-200">AI-Powered Support</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={clearChatHistory}
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
-                  title="New chat"
-                >
-                  <RotateCcw className="w-4 h-4 text-white" />
-                </button>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
-                >
-                  <X className="w-5 h-5 text-white" />
-                </button>
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div
-              className="lisa-modal-content flex-1 overflow-y-auto space-y-4"
-              style={{ 
-                backgroundColor: colors.cardBg, 
-                minHeight: '200px',
-                padding: window.innerWidth < 1280 ? '12px' : '16px',
-                WebkitOverflowScrolling: 'touch',
-              }}
-            >
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+              {/* Fixed Header */}
+              <div
+                className="flex-shrink-0 flex items-center justify-between px-4 py-3"
+                style={{
+                  background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+                  borderBottom: '2px solid #C7A338',
+                  paddingTop: 'max(env(safe-area-inset-top), 12px)',
+                }}
+              >
+                <div className="flex items-center gap-3">
                   <div
-                    className="max-w-[85%] rounded-2xl px-4 py-3"
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                  >
+                    <Shield className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-sm">{strings.title}</h3>
+                    <p className="text-xs text-emerald-200">AI-Powered Support</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={clearChatHistory}
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                    title="New chat"
+                  >
+                    <RotateCcw className="w-4 h-4 text-white" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      document.body.classList.remove('lisa-open');
+                      setIsOpen(false);
+                    }}
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                  >
+                    <X className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable Messages */}
+              <div
+                className="flex-1 overflow-y-auto space-y-4 p-3"
+                style={{ 
+                  backgroundColor: colors.cardBg,
+                  WebkitOverflowScrolling: 'touch',
+                }}
+              >
+                {messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className="max-w-[85%] rounded-2xl px-4 py-3"
+                      style={{
+                        backgroundColor: message.role === 'user' ? '#0C3B2E' : colors.bg,
+                        color: message.role === 'user' ? '#FFFFFF' : colors.text,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      }}
+                    >
+                      {parseMessageContent(message.role === 'assistant' ? sanitizeLisaMessage(message.content) : message.content).map((part, i) => (
+                        part.type === 'button' ? (
+                          <button
+                            key={i}
+                            onClick={() => handleButtonClick(part.page)}
+                            className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg text-sm font-semibold"
+                            style={{
+                              backgroundColor: '#C7A338',
+                              color: '#0C3B2E',
+                              border: 'none',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {part.label}
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        ) : part.type === 'blog' ? (
+                          <a
+                            key={i}
+                            href={part.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline"
+                            style={{
+                              backgroundColor: '#0C3B2E',
+                              color: '#FFFFFF',
+                              border: '2px solid #C7A338',
+                              display: 'inline-flex',
+                            }}
+                          >
+                            {strings.readFullGuide}
+                            <ChevronRight className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <span key={i} className="text-sm whitespace-pre-wrap">{part.content}</span>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div
+                      className="rounded-2xl px-4 py-3 flex items-center gap-2"
+                      style={{ backgroundColor: colors.bg, color: colors.textSecondary }}
+                    >
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm">{strings.thinking}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Fixed Input Bar */}
+              <div
+                className="flex-shrink-0 p-3 border-t"
+                style={{ 
+                  borderColor: colors.border, 
+                  backgroundColor: colors.bg,
+                }}
+              >
+                <div className="flex items-end gap-2">
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={strings.placeholder}
+                    rows={1}
+                    className="flex-1 resize-none rounded-xl px-4 py-3 text-sm"
                     style={{
-                      backgroundColor: message.role === 'user' ? '#0C3B2E' : colors.bg,
-                      color: message.role === 'user' ? '#FFFFFF' : colors.text,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      backgroundColor: colors.inputBg,
+                      color: colors.text,
+                      border: `1px solid ${colors.border}`,
+                      outline: 'none',
+                      maxHeight: '120px',
+                    }}
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={!input.trim() || isLoading}
+                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: input.trim() && !isLoading
+                        ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
+                        : '#9CA3AF',
+                      border: 'none',
+                      cursor: input.trim() && !isLoading ? 'pointer' : 'not-allowed',
                     }}
                   >
-                    {parseMessageContent(message.role === 'assistant' ? sanitizeLisaMessage(message.content) : message.content).map((part, i) => (
-                      part.type === 'button' ? (
-                        <button
-                          key={i}
-                          onClick={() => handleButtonClick(part.page)}
-                          className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg text-sm font-semibold"
-                          style={{
-                            backgroundColor: '#C7A338',
-                            color: '#0C3B2E',
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#D4B44A';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#C7A338';
-                          }}
-                        >
-                          {part.label}
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      ) : part.type === 'blog' ? (
-                        <a
-                          key={i}
-                          href={part.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline"
-                          style={{
-                            backgroundColor: '#0C3B2E',
-                            color: '#FFFFFF',
-                            border: '2px solid #C7A338',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'inline-flex',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#0F4D3A';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#0C3B2E';
-                          }}
-                        >
-                          {strings.readFullGuide}
-                          <ChevronRight className="w-4 h-4" />
-                        </a>
-                      ) : (
-                        <span key={i} className="text-sm whitespace-pre-wrap">{part.content}</span>
-                      )
-                    ))}
-                  </div>
+                    <Send className="w-5 h-5 text-white" />
+                  </button>
                 </div>
-              ))}
-
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div
-                    className="rounded-2xl px-4 py-3 flex items-center gap-2"
-                    style={{ backgroundColor: colors.bg, color: colors.textSecondary }}
-                  >
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">{strings.thinking}</span>
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div
-              className="lisa-input-bar p-3 border-t flex-shrink-0"
-              style={{ 
-                borderColor: colors.border, 
-                backgroundColor: colors.bg,
-                position: 'sticky',
-                bottom: 0,
-                zIndex: 10,
-              }}
-            >
-              <div className="flex items-end gap-2">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={strings.placeholder}
-                  rows={1}
-                  className="flex-1 resize-none rounded-xl px-4 py-3 text-sm"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    color: colors.text,
-                    border: `1px solid ${colors.border}`,
-                    outline: 'none',
-                    maxHeight: '120px',
-                  }}
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={!input.trim() || isLoading}
-                  className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: input.trim() && !isLoading
-                      ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
-                      : '#9CA3AF',
-                    border: 'none',
-                    cursor: input.trim() && !isLoading ? 'pointer' : 'not-allowed',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <Send className="w-5 h-5 text-white" />
-                </button>
               </div>
             </div>
           </div>
-        </div>
+
+          {/* Desktop: Centered modal (unchanged behavior) */}
+          <div className="hidden md:flex fixed inset-0 z-50 items-end justify-center"
+            style={{ 
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsOpen(false);
+            }}
+          >
+            <div
+              className="rounded-2xl overflow-hidden flex flex-col"
+              style={{
+                backgroundColor: colors.bg,
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                animation: 'slideUp 0.3s ease-out',
+                width: '420px',
+                maxWidth: '420px',
+                maxHeight: 'calc(100vh - 140px)',
+              }}
+            >
+              {/* Header */}
+              <div
+                className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+                style={{
+                  background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+                  borderBottom: '2px solid #C7A338',
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                  >
+                    <Shield className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-sm">{strings.title}</h3>
+                    <p className="text-xs text-emerald-200">AI-Powered Support</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={clearChatHistory}
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                    title="New chat"
+                  >
+                    <RotateCcw className="w-4 h-4 text-white" />
+                  </button>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                  >
+                    <X className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div
+                className="flex-1 overflow-y-auto space-y-4 p-4"
+                style={{ 
+                  backgroundColor: colors.cardBg, 
+                  minHeight: '200px',
+                  WebkitOverflowScrolling: 'touch',
+                }}
+              >
+                {messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className="max-w-[85%] rounded-2xl px-4 py-3"
+                      style={{
+                        backgroundColor: message.role === 'user' ? '#0C3B2E' : colors.bg,
+                        color: message.role === 'user' ? '#FFFFFF' : colors.text,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      }}
+                    >
+                      {parseMessageContent(message.role === 'assistant' ? sanitizeLisaMessage(message.content) : message.content).map((part, i) => (
+                        part.type === 'button' ? (
+                          <button
+                            key={i}
+                            onClick={() => handleButtonClick(part.page)}
+                            className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg text-sm font-semibold"
+                            style={{
+                              backgroundColor: '#C7A338',
+                              color: '#0C3B2E',
+                              border: 'none',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#D4B44A';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#C7A338';
+                            }}
+                          >
+                            {part.label}
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        ) : part.type === 'blog' ? (
+                          <a
+                            key={i}
+                            href={part.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline"
+                            style={{
+                              backgroundColor: '#0C3B2E',
+                              color: '#FFFFFF',
+                              border: '2px solid #C7A338',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              display: 'inline-flex',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#0F4D3A';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#0C3B2E';
+                            }}
+                          >
+                            {strings.readFullGuide}
+                            <ChevronRight className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <span key={i} className="text-sm whitespace-pre-wrap">{part.content}</span>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div
+                      className="rounded-2xl px-4 py-3 flex items-center gap-2"
+                      style={{ backgroundColor: colors.bg, color: colors.textSecondary }}
+                    >
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm">{strings.thinking}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <div
+                className="p-3 border-t flex-shrink-0"
+                style={{ 
+                  borderColor: colors.border, 
+                  backgroundColor: colors.bg,
+                }}
+              >
+                <div className="flex items-end gap-2">
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={strings.placeholder}
+                    rows={1}
+                    className="flex-1 resize-none rounded-xl px-4 py-3 text-sm"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      color: colors.text,
+                      border: `1px solid ${colors.border}`,
+                      outline: 'none',
+                      maxHeight: '120px',
+                    }}
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={!input.trim() || isLoading}
+                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: input.trim() && !isLoading
+                        ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
+                        : '#9CA3AF',
+                      border: 'none',
+                      cursor: input.trim() && !isLoading ? 'pointer' : 'not-allowed',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <Send className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </>
   );
