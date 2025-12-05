@@ -879,8 +879,8 @@ export default function Layout({ children, currentPageName }) {
               />
             </div>
 
-            {/* Menu Items */}
-            <div className="px-4 pb-4 space-y-1">
+            {/* Menu Items - consistent 12px gap between all rows */}
+            <div className="px-4 pb-4" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {/* Account & Settings */}
               <Link 
                 to={createPageUrl("Account")}
@@ -896,12 +896,12 @@ export default function Layout({ children, currentPageName }) {
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    <User className="w-5 h-5" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
+                    <User className="w-5 h-5 flex-shrink-0" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
                     <span className="font-medium" style={{ color: colors.textPrimary }}>
                       {strings.account}
                     </span>
                   </div>
-                  <ChevronRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                  <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: colors.textSecondary }} />
                 </div>
               </Link>
 
@@ -920,12 +920,12 @@ export default function Layout({ children, currentPageName }) {
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    <BookOpen className="w-5 h-5" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
+                    <BookOpen className="w-5 h-5 flex-shrink-0" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
                     <span className="font-medium" style={{ color: colors.textPrimary }}>
                       {strings.helpFaq}
                     </span>
                   </div>
-                  <ChevronRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                  <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: colors.textSecondary }} />
                 </div>
               </Link>
 
@@ -946,12 +946,12 @@ export default function Layout({ children, currentPageName }) {
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <Download className="w-5 h-5 text-white" />
+                      <Download className="w-5 h-5 flex-shrink-0 text-white" />
                       <span className="font-medium text-white">
                         {strings.installApp}
                       </span>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-white/70" />
+                    <ChevronRight className="w-5 h-5 flex-shrink-0 text-white/70" />
                   </div>
                 </button>
               )}
@@ -964,7 +964,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <div className="flex items-center gap-3">
-                  <Globe className="w-5 h-5" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
+                  <Globe className="w-5 h-5 flex-shrink-0" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
                   <span className="font-medium" style={{ color: colors.textPrimary }}>
                     {strings.language}
                   </span>
@@ -982,18 +982,18 @@ export default function Layout({ children, currentPageName }) {
                   }}
                 >
                   <div 
-                    className="flex items-center justify-between p-3 rounded-xl mt-2"
+                    className="flex items-center justify-between p-3 rounded-xl"
                     style={{
                       background: 'linear-gradient(135deg, #C7A338 0%, #D4B451 100%)',
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <Star className="w-5 h-5 text-white" />
+                      <Star className="w-5 h-5 flex-shrink-0 text-white" />
                       <span className="font-bold text-white">
                         {strings.upgrade}
                       </span>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-white/70" />
+                    <ChevronRight className="w-5 h-5 flex-shrink-0 text-white/70" />
                   </div>
                 </Link>
               )}
