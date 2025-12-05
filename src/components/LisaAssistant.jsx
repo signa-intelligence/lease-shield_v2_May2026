@@ -591,6 +591,31 @@ assistant:`;
                           {part.label}
                           <ChevronRight className="w-4 h-4" />
                         </button>
+                      ) : part.type === 'blog' ? (
+                        <a
+                          key={i}
+                          href={part.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline"
+                          style={{
+                            backgroundColor: '#0C3B2E',
+                            color: '#FFFFFF',
+                            border: '2px solid #C7A338',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'inline-flex',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#0F4D3A';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#0C3B2E';
+                          }}
+                        >
+                          {strings.readFullGuide}
+                          <ChevronRight className="w-4 h-4" />
+                        </a>
                       ) : (
                         <span key={i} className="text-sm whitespace-pre-wrap">{part.content}</span>
                       )
