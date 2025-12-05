@@ -499,7 +499,6 @@ assistant:`;
               to { opacity: 1; transform: translateY(0); }
             }
           `}</style>
-          <script dangerouslySetInnerHTML={{ __html: `document.body.classList.add('lisa-open');` }} />
           
           {/* Mobile: Full-screen sheet */}
           <div className="md:hidden">
