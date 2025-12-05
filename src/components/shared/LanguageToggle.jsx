@@ -27,10 +27,10 @@ export default function LanguageToggle() {
   const languages = [
     { code: 'en', name: 'English', flag: 'EN', nativeName: 'English' },
     { code: 'th', name: 'Thai', flag: 'TH', nativeName: 'ไทย' },
-    { code: 'zh', name: 'Chinese', flag: 'CN', nativeName: '简体中文' },
-    { code: 'ja', name: 'Japanese', flag: 'JP', nativeName: '日本語' },
-    { code: 'ko', name: 'Korean', flag: 'KR', nativeName: '한국어' },
-    { code: 'ru', name: 'Russian', flag: 'RU', nativeName: 'Русский' }
+    { code: 'zh', name: 'Simplified Chinese', flag: 'ZH', nativeName: '中文（简体）' },
+    { code: 'ru', name: 'Russian', flag: 'RU', nativeName: 'Русский' },
+    { code: 'ja', name: 'Japanese', flag: 'JA', nativeName: '日本語' },
+    { code: 'ko', name: 'Korean', flag: 'KO', nativeName: '한국어' }
   ];
 
   const currentLang = languages.find(l => l.code === currentLanguage);
