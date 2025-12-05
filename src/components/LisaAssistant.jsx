@@ -160,6 +160,7 @@ const TRANSLATIONS = {
     greeting: "Hi! I'm LISA, your LeaseShield assistant. How can I help you today?",
     thinking: 'Thinking...',
     error: 'Sorry, I encountered an error. Please try again.',
+    readFullGuide: 'Read full guide',
   },
   th: {
     title: 'LISA — ผู้ช่วย LeaseShield',
@@ -167,6 +168,7 @@ const TRANSLATIONS = {
     greeting: 'สวัสดี! ฉันคือ LISA ผู้ช่วย LeaseShield ของคุณ ฉันช่วยอะไรคุณได้บ้างวันนี้?',
     thinking: 'กำลังคิด...',
     error: 'ขออภัย เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+    readFullGuide: 'อ่านคู่มือฉบับเต็ม',
   },
   zh: {
     title: 'LISA — LeaseShield 助手',
@@ -174,6 +176,7 @@ const TRANSLATIONS = {
     greeting: '你好！我是 LISA，您的 LeaseShield 助手。今天我能帮您什么？',
     thinking: '思考中...',
     error: '抱歉，遇到错误。请重试。',
+    readFullGuide: '阅读完整指南',
   },
   ja: {
     title: 'LISA — LeaseShield アシスタント',
@@ -181,6 +184,7 @@ const TRANSLATIONS = {
     greeting: 'こんにちは！LeaseShieldアシスタントのLISAです。今日はどのようにお手伝いしましょうか？',
     thinking: '考え中...',
     error: '申し訳ありません、エラーが発生しました。もう一度お試しください。',
+    readFullGuide: '完全ガイドを読む',
   },
   ko: {
     title: 'LISA — LeaseShield 어시스턴트',
@@ -188,6 +192,7 @@ const TRANSLATIONS = {
     greeting: '안녕하세요! LeaseShield 어시스턴트 LISA입니다. 오늘 무엇을 도와드릴까요?',
     thinking: '생각 중...',
     error: '죄송합니다. 오류가 발생했습니다. 다시 시도해 주세요.',
+    readFullGuide: '전체 가이드 읽기',
   },
   ru: {
     title: 'LISA — Ассистент LeaseShield',
@@ -195,6 +200,7 @@ const TRANSLATIONS = {
     greeting: 'Привет! Я LISA, ваш ассистент LeaseShield. Чем могу помочь сегодня?',
     thinking: 'Думаю...',
     error: 'Извините, произошла ошибка. Пожалуйста, попробуйте снова.',
+    readFullGuide: 'Читать полное руководство',
   },
 };
 
