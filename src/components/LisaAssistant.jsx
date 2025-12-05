@@ -321,12 +321,31 @@ export default function LisaAssistant() {
     let lastIndex = 0;
     let match;
 
+    // First pass: collect all matches with their positions
+    const allMatches = [];
+    
     while ((match = buttonRegex.exec(content)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+      allMatches.push({ type: 'button', label: match[1], page: match[2], index: match.index, length: match[0].length });
+    }
+    
+    while ((match = blogRegex.exec(content)) !== null) {
+      allMatches.push({ type: 'blog', label: match[1], url: match[2], index: match.index, length: match[0].length });
+    }
+    
+    // Sort by position
+    allMatches.sort((a, b) => a.index - b.index);
+    
+    // Build parts array
+    for (const m of allMatches) {
+      if (m.index > lastIndex) {
+        parts.push({ type: 'text', content: content.slice(lastIndex, m.index) });
       }
-      parts.push({ type: 'button', label: match[1], page: match[2] });
-      lastIndex = match.index + match[0].length;
+      if (m.type === 'button') {
+        parts.push({ type: 'button', label: m.label, page: m.page });
+      } else if (m.type === 'blog') {
+        parts.push({ type: 'blog', label: m.label, url: m.url });
+      }
+      lastIndex = m.index + m.length;
     }
 
     if (lastIndex < content.length) {
