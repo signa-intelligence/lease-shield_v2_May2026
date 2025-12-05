@@ -316,6 +316,7 @@ export default function LisaAssistant() {
 
   const parseMessageContent = (content) => {
     const buttonRegex = /\[BUTTON:([^:]+):([^\]]+)\]/g;
+    const blogRegex = /\[BLOG:([^:]+):([^\]]+)\]/g;
     const parts = [];
     let lastIndex = 0;
     let match;
