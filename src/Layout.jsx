@@ -741,7 +741,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
 
           {/* Mobile Actions - only 3 icons: Quick Guide, Search, Profile Menu */}
-          <div className="flex md:hidden items-center gap-2 flex-shrink-0">
+          <div className="flex md:hidden items-center gap-1 flex-shrink-0 mr-1">
             <button
               onClick={() => {
                 haptic.light();
@@ -750,8 +750,10 @@ export default function Layout({ children, currentPageName }) {
               aria-label="Quick Guide"
               className="btn-interaction"
               style={{
-                width: '36px',
-                height: '36px',
+                width: '44px',
+                height: '44px',
+                minWidth: '44px',
+                minHeight: '44px',
                 borderRadius: '50%',
                 backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
                 border: 'none',
@@ -773,8 +775,10 @@ export default function Layout({ children, currentPageName }) {
                 onClick={() => haptic.light()}
                 className="btn-interaction"
                 style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '44px',
+                  height: '44px',
+                  minWidth: '44px',
+                  minHeight: '44px',
                   borderRadius: '50%',
                   backgroundColor: isActiveTab(createPageUrl("Search")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
                   border: 'none',
@@ -793,7 +797,7 @@ export default function Layout({ children, currentPageName }) {
                 />
               </button>
             </Link>
-            {/* Profile Menu Trigger */}
+            {/* Profile Menu Trigger - 44x44 tap target with edge padding */}
             <button
               aria-label="Menu"
               onClick={() => {
@@ -802,8 +806,10 @@ export default function Layout({ children, currentPageName }) {
               }}
               className="btn-interaction"
               style={{
-                width: '36px',
-                height: '36px',
+                width: '44px',
+                height: '44px',
+                minWidth: '44px',
+                minHeight: '44px',
                 borderRadius: '50%',
                 backgroundColor: showProfileMenu || isActiveTab(createPageUrl("Account")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
                 border: 'none',
@@ -811,7 +817,8 @@ export default function Layout({ children, currentPageName }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)',
+                marginRight: '4px'
               }}
             >
               <User 
