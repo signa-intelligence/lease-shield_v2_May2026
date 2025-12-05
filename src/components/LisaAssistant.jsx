@@ -301,6 +301,18 @@ export default function LisaAssistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Prevent background scroll when LISA is open on mobile
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('lisa-open');
+    } else {
+      document.body.classList.remove('lisa-open');
+    }
+    return () => {
+      document.body.classList.remove('lisa-open');
+    };
+  }, [isOpen]);
+
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
