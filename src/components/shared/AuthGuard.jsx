@@ -56,35 +56,7 @@ const AuthGuard = ({ children }) => {
   // CRITICAL: Render NOTHING until auth is verified
   // This prevents ANY protected content from flashing
   if (loading) {
-    return (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: '#0C3B2E',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999
-      }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid rgba(199, 163, 56, 0.3)',
-          borderTop: '4px solid #C7A338',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }} />
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
+    return null;
   }
   
   if (!isAuthed) return null;
