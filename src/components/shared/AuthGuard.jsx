@@ -136,24 +136,52 @@ function LoginPage() {
 
 // AuthGuard - protects routes, relies on Base44 SDK persistence
 const AuthGuard = ({ children }) => {
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['authGuardUser'],
-    queryFn: async () => {
-      try {
-        const userData = await base44.auth.me();
-        console.log('🔐 [AUTH_GUARD] User:', userData?.email);
-        return userData;
-      } catch (err) {
-        console.log('🔐 [AUTH_GUARD] No session');
-        return null;
-      }
-    },
-    retry: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
+  const [authState, setAuthState] = React.useState({
+    loading: true,
+    user: null,
   });
 
-  if (isLoading) {
+  React.useEffect(() => {
+    console.log('🔐 [AUTH_GUARD] Component mounted, checking session...');
+    
+    let mounted = true;
+
+    const checkAuth = async () => {
+      try {
+        console.log('🔐 [AUTH_GUARD] Calling base44.auth.me()...');
+        const userData = await base44.auth.me();
+        
+        if (!mounted) return;
+
+        if (userData) {
+          console.log('✅ [AUTH_GUARD] Session restored successfully:', {
+            email: userData.email,
+            id: userData.id,
+            plan: userData.plan_tier
+          });
+          setAuthState({ loading: false, user: userData });
+        } else {
+          console.log('❌ [AUTH_GUARD] No user returned from base44.auth.me()');
+          setAuthState({ loading: false, user: null });
+        }
+      } catch (error) {
+        if (!mounted) return;
+        
+        console.log('❌ [AUTH_GUARD] Auth check failed:', error.message);
+        setAuthState({ loading: false, user: null });
+      }
+    };
+
+    checkAuth();
+
+    return () => {
+      mounted = false;
+      console.log('🔐 [AUTH_GUARD] Component unmounting (normal cleanup)');
+    };
+  }, []);
+
+  if (authState.loading) {
+    console.log('⏳ [AUTH_GUARD] Showing loading screen...');
     return (
       <div style={{
         display: 'flex',
@@ -181,10 +209,12 @@ const AuthGuard = ({ children }) => {
     );
   }
 
-  if (!user) {
+  if (!authState.user) {
+    console.log('🔓 [AUTH_GUARD] No authenticated user, showing login page');
     return <LoginPage />;
   }
 
+  console.log('🔒 [AUTH_GUARD] User authenticated, rendering protected content');
   return <>{children}</>;
 };
 
