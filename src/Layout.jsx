@@ -108,6 +108,12 @@ export default function Layout({ children, currentPageName }) {
 
   // Auto-trigger Quick Guide for first-time users (unless hidden)
   React.useEffect(() => {
+    console.log('🔍 [QUICK_GUIDE] useEffect triggered', { 
+      hasUser: !!user, 
+      hasCheckedGuide,
+      userEmail: user?.email 
+    });
+    
     if (user && !hasCheckedGuide) {
       setHasCheckedGuide(true);
       
@@ -120,18 +126,27 @@ export default function Layout({ children, currentPageName }) {
         guideHiddenPermanently,
         hideGuide,
         userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        isMobile: /android|iphone|ipad|ipod/i.test(navigator.userAgent),
+        localStorage: {
+          all: Object.keys(localStorage).filter(k => k.includes('guide') || k.includes('lease'))
+        },
         willShow: !guideDone && !hideGuide && !guideHiddenPermanently
       });
 
       // Only auto-open if ALL conditions are false
       if (!guideDone && !hideGuide && !guideHiddenPermanently) {
-        // Small delay to ensure page is loaded
+        console.log('✅ [QUICK_GUIDE] Conditions met, will show in 800ms...');
         setTimeout(() => {
-          console.log('✅ [QUICK_GUIDE] Opening guide...');
+          console.log('✅ [QUICK_GUIDE] Opening guide NOW');
           setShowQuickGuide(true);
         }, 800);
       } else {
-        console.log('❌ [QUICK_GUIDE] Not showing guide due to previous conditions');
+        console.log('❌ [QUICK_GUIDE] Blocked by:', {
+          becauseGuideDone: !!guideDone,
+          becauseHiddenInStorage: !!guideHiddenPermanently,
+          becauseUserPreference: !!hideGuide
+        });
       }
     }
   }, [user, hasCheckedGuide]);
