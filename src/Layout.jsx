@@ -437,6 +437,9 @@ export default function Layout({ children, currentPageName }) {
         }
         
         .top-bar {
+          position: sticky;
+          top: 0;
+          z-index: 1000;
           height: auto;
           min-height: 64px;
           box-shadow: ${isDarkMode ? '0 4px 12px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.04)'};
