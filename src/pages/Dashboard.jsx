@@ -2034,8 +2034,7 @@ function DashboardContent() {
           })()}
 
           {/* Main Content - Stats and Features */}
-          {!showOnboarding && (
-            <div className="content-fade-in">
+          <div className="content-fade-in">
               <style>
                 {`
                   @keyframes slideDown {
@@ -2160,7 +2159,6 @@ function DashboardContent() {
                 </>
               )}
             </div>
-          )}
 
           <div className="space-y-4 sm:space-y-6 mb-8">
             {isLoading ? (
