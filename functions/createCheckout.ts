@@ -56,10 +56,10 @@ async function createRewardCoupon(stripe, amountOffCents) {
 }
 
 Deno.serve(async (req) => {
-  const stripeKey = Deno.env.get('SK_TEST_secret_key');
+  const stripeKey = Deno.env.get('SK_LIVE_secret_key');
   
   if (!stripeKey) {
-    console.error('[CREATE_CHECKOUT] ❌ CRITICAL: SK_TEST_secret_key not configured');
+    console.error('[CREATE_CHECKOUT] ❌ CRITICAL: SK_LIVE_secret_key not configured');
     return Response.json({ 
       error: 'Stripe not configured',
       code: 'stripe_key_missing'
@@ -71,10 +71,9 @@ Deno.serve(async (req) => {
   });
 
   console.log('\n\n═══════════════════════════════════════');
-  console.log('🔥 CREATE_CHECKOUT - Entry');
+  console.log('🔥 CREATE_CHECKOUT - Entry (LIVE MODE)');
   console.log('═══════════════════════════════════════');
   console.log('[CREATE_CHECKOUT] Timestamp:', new Date().toISOString());
-  console.log('[CREATE_CHECKOUT] Stripe mode:', stripeKey?.startsWith('sk_live_') ? '🟢 LIVE' : stripeKey?.startsWith('sk_test_') ? '🟡 TEST' : '❌ INVALID');
   
   try {
     const base44 = createClientFromRequest(req);
@@ -99,11 +98,9 @@ Deno.serve(async (req) => {
     }, null, 2));
 
     // Get or create Stripe customer
-    const isLiveMode = stripeKey?.startsWith('sk_live_');
-    let customerId = null;
+    let customerId = user.stripe_customer_id;
     
-    console.log('[CREATE_CHECKOUT] Stripe mode:', isLiveMode ? 'LIVE' : 'TEST');
-    console.log('[CREATE_CHECKOUT] Saved customer ID:', user.stripe_customer_id?.substring(0, 20) || 'none');
+    console.log('[CREATE_CHECKOUT] Saved customer ID:', customerId?.substring(0, 20) || 'none');
 
     // Apply reward credits to subscription/payment if available
     let appliedCredit = 0;
@@ -119,46 +116,31 @@ Deno.serve(async (req) => {
       });
     }
     
-    // TEST MODE: Always create new customer (never reuse live customer IDs)
-    if (!isLiveMode) {
-      console.log('[CREATE_CHECKOUT] 🧪 TEST MODE - Creating new test customer');
+    // Reuse or create customer
+    if (customerId) {
+      try {
+        await stripe.customers.retrieve(customerId);
+        console.log('[CREATE_CHECKOUT] ✅ Customer validated:', customerId.substring(0, 20));
+      } catch (customerError) {
+        if (customerError.code === 'resource_missing') {
+          console.warn('[CREATE_CHECKOUT] ⚠️ Customer not found - creating new');
+          customerId = null;
+        } else {
+          throw customerError;
+        }
+      }
+    }
+    
+    if (!customerId) {
+      console.log('[CREATE_CHECKOUT] Creating new customer...');
       const customer = await stripe.customers.create({
         email: user.email,
         name: user.full_name,
-        metadata: { user_id: user.id, mode: 'test' }
+        metadata: { user_id: user.id }
       });
       customerId = customer.id;
-      console.log('[CREATE_CHECKOUT] ✅ Test customer created:', customerId);
-    } 
-    // LIVE MODE: Reuse saved customer ID if exists
-    else {
-      customerId = user.stripe_customer_id;
-      
-      if (customerId) {
-        try {
-          await stripe.customers.retrieve(customerId);
-          console.log('[CREATE_CHECKOUT] ✅ Live customer validated:', customerId.substring(0, 20));
-        } catch (customerError) {
-          if (customerError.code === 'resource_missing') {
-            console.warn('[CREATE_CHECKOUT] ⚠️ Customer not found in LIVE - creating new');
-            customerId = null;
-          } else {
-            throw customerError;
-          }
-        }
-      }
-      
-      if (!customerId) {
-        console.log('[CREATE_CHECKOUT] Creating new live customer...');
-        const customer = await stripe.customers.create({
-          email: user.email,
-          name: user.full_name,
-          metadata: { user_id: user.id }
-        });
-        customerId = customer.id;
-        console.log('[CREATE_CHECKOUT] ✅ Live customer created:', customerId);
-        await base44.auth.updateMe({ stripe_customer_id: customerId });
-      }
+      console.log('[CREATE_CHECKOUT] ✅ Customer created:', customerId);
+      await base44.auth.updateMe({ stripe_customer_id: customerId });
     }
 
     // Success/Cancel URLs
