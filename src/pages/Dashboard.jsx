@@ -46,71 +46,36 @@ function DashboardContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: leases = [], isLoading: leasesLoading } = useQuery({
-    queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
-    enabled: !!user,
-  });
-
-  const { data: deposits = [], isLoading: depositsLoading } = useQuery({
-    queryKey: ['deposits'],
-    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
-    enabled: !!user,
-  });
-
-  const { data: cases = [] } = useQuery({
-    queryKey: ['cases', user?.email],
+  // PERFORMANCE: Single batched query instead of 6 separate queries
+  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
+    queryKey: ['dashboardData', user?.email],
     queryFn: async () => {
-      if (!user?.email) {
-        console.error('🔍 [DASHBOARD] No user email - cannot fetch cases');
-        return [];
-      }
+      if (!user?.email) return null;
+      
+      const [leases, deposits, cases, documents, maintenanceRequests, notificationLogs] = await Promise.all([
+        base44.entities.Lease.filter({ created_by: user.email }, '-created_date', 10),
+        base44.entities.DepositTracker.filter({ created_by: user.email }, '-created_date'),
+        base44.entities.Case.filter({ is_deleted: { $ne: true } }),
+        base44.entities.Document.filter({ created_by: user.email }),
+        base44.entities.MaintenanceRequest.filter({ created_by: user.email }),
+        base44.entities.NotificationLog.filter({ user_email: user.email }, '-created_date', 10),
+      ]);
 
-      console.log('🔍 [DASHBOARD] Fetching cases for user:', user.email);
-
-      // CRITICAL: RLS filters by user_email = {{user.email}}
-      const result = await base44.entities.Case.filter({ 
-        is_deleted: { $ne: true }
-      });
-
-      console.log('📊 [DASHBOARD] RLS-filtered cases:', result.length);
-      console.log('📊 [DASHBOARD] Case user binding verification:');
-      result.forEach(c => {
-        console.log({
-          id: c.id.slice(0, 8),
-          case_number: c.case_number,
-          user_email: c.user_email,
-          created_by: c.created_by,
-          matches_user: c.user_email === user.email,
-          status: c.status
-        });
-      });
-
-      return result;
+      return { leases, deposits, cases, documents, maintenanceRequests, notificationLogs };
     },
     enabled: !!user?.email,
-    staleTime: 0,
-    cacheTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 2 * 60 * 1000,
   });
 
-  const { data: documents = [] } = useQuery({
-    queryKey: ['documents'],
-    queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
-
-  const { data: maintenanceRequests = [] } = useQuery({
-    queryKey: ['maintenance'],
-    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
-
-  const { data: notificationLogs = [] } = useQuery({
-    queryKey: ['notificationLogs'],
-    queryFn: () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 10),
-    enabled: !!user,
-  });
+  const leases = dashboardData?.leases || [];
+  const deposits = dashboardData?.deposits || [];
+  const cases = dashboardData?.cases || [];
+  const documents = dashboardData?.documents || [];
+  const maintenanceRequests = dashboardData?.maintenanceRequests || [];
+  const notificationLogs = dashboardData?.notificationLogs || [];
+  
+  const leasesLoading = dashboardLoading;
+  const depositsLoading = dashboardLoading;
 
   const language = user?.language || 'en';
   const accessLevel = user?.access_level || 'user';
@@ -1647,30 +1612,34 @@ function DashboardContent() {
                   />
                   </div>
 
-                  {/* First Session Progress - Shows in first 24 hours */}
-                  <FirstSessionProgress
-                  user={user}
-                  leases={leases}
-                  deposits={deposits}
-                  documents={documents}
-                  isDarkMode={isDarkMode}
-                  language={language}
-                  />
+                  {/* First Session Progress - Lazy Loaded */}
+                  <React.Suspense fallback={<div style={{ height: 120 }} />}>
+                    <FirstSessionProgress
+                      user={user}
+                      leases={leases}
+                      deposits={deposits}
+                      documents={documents}
+                      isDarkMode={isDarkMode}
+                      language={language}
+                    />
+                  </React.Suspense>
 
-                  {/* Onboarding Checklist - Persistent collapsible checklist */}
+                  {/* Onboarding Checklist - Lazy Loaded */}
                   {shouldShowOnboardingChecklist && (
-                  <div className="mb-6">
-                  <OnboardingChecklist
-                  user={user}
-                  leases={leases}
-                  deposits={deposits}
-                  documents={documents}
-                  cases={cases}
-                  maintenanceRequests={maintenanceRequests}
-                  isDarkMode={isDarkMode}
-                  language={language}
-                  />
-                  </div>
+                    <div className="mb-6">
+                      <React.Suspense fallback={<div style={{ height: 200 }} />}>
+                        <OnboardingChecklist
+                          user={user}
+                          leases={leases}
+                          deposits={deposits}
+                          documents={documents}
+                          cases={cases}
+                          maintenanceRequests={maintenanceRequests}
+                          isDarkMode={isDarkMode}
+                          language={language}
+                        />
+                      </React.Suspense>
+                    </div>
                   )}
 
                   {urgentLeaseNotices.length > 0 && (
