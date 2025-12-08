@@ -56,22 +56,36 @@ async function createRewardCoupon(stripe, amountOffCents) {
 }
 
 Deno.serve(async (req) => {
-  const stripeKey = Deno.env.get('SK_LIVE_secret_key');
-  
+  // ENV DIAGNOSTICS - Check all possible Stripe key locations
+  const live = Deno.env.get('SK_LIVE_secret_key');
+  const test = Deno.env.get('SK_TEST_secret_key');
+  const generic = Deno.env.get('STRIPE_SECRET_KEY');
+
+  console.log('[ENV_DIAG] SK_LIVE_secret_key:', live ? 'SET:' + live.substring(0, 7) : 'MISSING');
+  console.log('[ENV_DIAG] SK_TEST_secret_key:', test ? 'SET:' + test.substring(0, 7) : 'MISSING');
+  console.log('[ENV_DIAG] STRIPE_SECRET_KEY:', generic ? 'SET:' + generic.substring(0, 7) : 'MISSING');
+
+  const stripeKey = live ?? generic ?? test ?? null;
+
   if (!stripeKey) {
-    console.error('[CREATE_CHECKOUT] ❌ CRITICAL: SK_LIVE_secret_key not configured');
+    console.error('[CREATE_CHECKOUT] ❌ CRITICAL: No Stripe key found in environment');
+    console.error('[CREATE_CHECKOUT] Expected: SK_LIVE_secret_key (primary) or STRIPE_SECRET_KEY or SK_TEST_secret_key (fallback)');
     return Response.json({ 
       error: 'Stripe not configured',
-      code: 'stripe_key_missing'
+      code: 'stripe_key_missing',
+      diagnostic: 'No Stripe secret key found in Deno.env'
     }, { status: 500 });
   }
+
+  console.log('[CREATE_CHECKOUT] ✅ Stripe key loaded:', stripeKey.substring(0, 7) + '...');
+  console.log('[CREATE_CHECKOUT] Mode:', stripeKey.startsWith('sk_live_') ? '🟢 LIVE' : '🟡 TEST');
 
   const stripe = new Stripe(stripeKey, {
     apiVersion: '2024-06-20',
   });
 
   console.log('\n\n═══════════════════════════════════════');
-  console.log('🔥 CREATE_CHECKOUT - Entry (LIVE MODE)');
+  console.log('🔥 CREATE_CHECKOUT - Entry');
   console.log('═══════════════════════════════════════');
   console.log('[CREATE_CHECKOUT] Timestamp:', new Date().toISOString());
   
