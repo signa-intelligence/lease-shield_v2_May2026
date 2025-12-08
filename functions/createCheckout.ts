@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
+import { getStripePriceId } from '../config/stripePrices.js';
 
 /**
  * STRIPE CHECKOUT CREATOR - Standalone, no external dependencies
@@ -193,18 +194,20 @@ Deno.serve(async (req) => {
     // SUBSCRIPTIONS: Card only (PromptPay not supported)
     // ========================================
     else if (mode === 'subscription' && amount) {
-      const finalAmount = Math.round(amount * 100);
       const planTier = (metadata?.plan || 'lite').toLowerCase();
       const intervalRaw = metadata?.interval || 'monthly';
       const billingInterval = intervalRaw === 'year' || intervalRaw === 'annual' ? 'annual' : 'monthly';
       
-      console.log('✅ SUBSCRIPTION - Creating with explicit metadata:', {
-        userId: user.id,
-        email: user.email,
-        plan: planTier,
-        interval: billingInterval,
-        amount: finalAmount
-      });
+      // Get Stripe price ID from centralized config
+      const stripePriceId = getStripePriceId(planTier, billingInterval);
+      
+      if (!stripePriceId) {
+        console.error('[CREATE_CHECKOUT] ❌ Invalid plan/interval:', planTier, billingInterval);
+        return Response.json({ error: 'Invalid plan or interval' }, { status: 400 });
+      }
+      
+      console.log('✅ SUBSCRIPTION - Creating with Stripe price ID:', stripePriceId);
+      console.log('✅ Plan:', planTier, '| Interval:', billingInterval);
       
       sessionConfig.metadata = {
         type: 'subscription',
@@ -215,18 +218,7 @@ Deno.serve(async (req) => {
       };
 
       sessionConfig.line_items = [{
-        price_data: {
-          currency: currency || 'thb',
-          unit_amount: finalAmount,
-          recurring: {
-            interval: intervalRaw === 'year' || intervalRaw === 'annual' ? 'year' : 'month',
-            interval_count: 1
-          },
-          product_data: {
-            name: description || `Lease Shield ${planTier.charAt(0).toUpperCase() + planTier.slice(1)} Plan`,
-            description: description || 'Professional subscription service',
-          },
-        },
+        price: stripePriceId,
         quantity: 1,
       }];
 
