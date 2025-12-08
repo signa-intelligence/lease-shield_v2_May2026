@@ -5,73 +5,27 @@ import { sessionStorage } from "../sessionStorage";
 
 // LoginPage - fullscreen, no scroll, mobile-optimized
 function LoginPage() {
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [submitting, setSubmitting] = React.useState(false);
-  const [error, setError] = React.useState('');
-
   // Detect Android WebView
   const ua = navigator.userAgent || "";
   const isAndroidWebView = /Android/i.test(ua) && /wv|Version\/\d+\.\d+ Chrome\/\d+/i.test(ua);
 
   console.log('[LoginPage] WebView detection:', { ua, isAndroidWebView });
+  console.log('[LoginPage] base44.auth methods:', Object.keys(base44.auth || {}));
 
-  const handleWebViewLogin = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    
-    console.log('[LoginPage] WebView inline login attempt for:', email);
-    
-    setSubmitting(true);
-    setError('');
-
-    try {
-      // Use Base44 auth API for email/password login in WebView
-      const { data, error: authError } = await base44.auth.signInWithPassword({ 
-        email: email.trim(), 
-        password: password 
-      });
-      
-      console.log('[LoginPage] signInWithPassword response:', { data, authError });
-
-      if (authError) {
-        console.error('[LoginPage] Auth error:', authError);
-        setError(authError.message || 'Login failed. Check your email and password.');
-        setSubmitting(false);
-        return;
-      }
-
-      if (data?.user) {
-        console.log('[LoginPage] Login success, user:', data.user);
-        sessionStorage.save(data.user);
-        
-        // Verify auth state
-        const verifyUser = await base44.auth.me();
-        console.log('[LoginPage] Verification auth.me():', verifyUser);
-        
-        // Force reload to trigger AuthGuard recheck with new cookie
-        console.log('[LoginPage] Reloading to / to pick up auth cookie');
-        window.location.href = '/';
-      } else {
-        console.error('[LoginPage] No user in response');
-        setError('Login failed - no user returned');
-        setSubmitting(false);
-      }
-    } catch (err) {
-      console.error('[LoginPage] WebView login exception:', err);
-      setError(err.message || 'Login failed. Please try again.');
-      setSubmitting(false);
-    }
-  };
-
-  const handleSignInDesktop = async () => {
-    console.log('[LoginPage] Desktop redirect login');
+  const handleSignIn = async () => {
+    console.log('[LoginPage] Sign in triggered, WebView:', isAndroidWebView);
     const nextUrl = window.location.pathname + window.location.search + window.location.hash;
+    
+    // For WebView: redirect to login in SAME window (no external browser)
+    // For Desktop: redirect to login (normal OAuth flow)
+    // Both use the same method - the difference is WebView keeps cookies in same context
     
     // Listen for auth state change and update localStorage when login succeeds
     const checkAuthAfterRedirect = setInterval(async () => {
       try {
         const user = await base44.auth.me();
         if (user) {
+          console.log('[LoginPage] Auth success detected:', user);
           sessionStorage.save(user);
           clearInterval(checkAuthAfterRedirect);
         }
@@ -83,6 +37,7 @@ function LoginPage() {
     // Clear after 30 seconds to prevent memory leak
     setTimeout(() => clearInterval(checkAuthAfterRedirect), 30000);
     
+    console.log('[LoginPage] Calling redirectToLogin with nextUrl:', nextUrl);
     base44.auth.redirectToLogin(nextUrl !== '/login' ? nextUrl : '/dashboard');
   };
 
