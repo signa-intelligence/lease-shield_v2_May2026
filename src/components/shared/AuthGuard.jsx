@@ -7,7 +7,7 @@ import { sessionStorage } from "../sessionStorage";
 function LoginPage() {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState('');
 
   // Detect Android WebView
@@ -16,35 +16,50 @@ function LoginPage() {
 
   console.log('[LoginPage] WebView detection:', { ua, isAndroidWebView });
 
-  const handleSignInWebView = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleWebViewLogin = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    
+    console.log('[LoginPage] WebView inline login attempt for:', email);
+    
+    setSubmitting(true);
     setError('');
 
-    console.log('[LoginPage] WebView inline login attempt');
-
     try {
-      // Inline login for WebView - stays in same window
-      const result = await base44.auth.signInWithPassword(email, password);
-      console.log('[LoginPage] signInWithPassword result:', result);
+      // Use Base44 auth API for email/password login in WebView
+      const { data, error: authError } = await base44.auth.signInWithPassword({ 
+        email: email.trim(), 
+        password: password 
+      });
+      
+      console.log('[LoginPage] signInWithPassword response:', { data, authError });
 
-      // Verify authentication
-      const user = await base44.auth.me();
-      console.log('[LoginPage] post-login auth.me():', user);
+      if (authError) {
+        console.error('[LoginPage] Auth error:', authError);
+        setError(authError.message || 'Login failed. Check your email and password.');
+        setSubmitting(false);
+        return;
+      }
 
-      if (user) {
-        sessionStorage.save(user);
-        // Reload to trigger AuthGuard recheck
-        console.log('[LoginPage] Login success, reloading to /');
+      if (data?.user) {
+        console.log('[LoginPage] Login success, user:', data.user);
+        sessionStorage.save(data.user);
+        
+        // Verify auth state
+        const verifyUser = await base44.auth.me();
+        console.log('[LoginPage] Verification auth.me():', verifyUser);
+        
+        // Force reload to trigger AuthGuard recheck with new cookie
+        console.log('[LoginPage] Reloading to / to pick up auth cookie');
         window.location.href = '/';
       } else {
+        console.error('[LoginPage] No user in response');
         setError('Login failed - no user returned');
-        setLoading(false);
+        setSubmitting(false);
       }
     } catch (err) {
-      console.error('[LoginPage] WebView login error:', err);
+      console.error('[LoginPage] WebView login exception:', err);
       setError(err.message || 'Login failed. Please try again.');
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
