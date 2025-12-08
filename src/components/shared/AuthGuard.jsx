@@ -206,6 +206,8 @@ const AuthGuard = ({ children }) => {
 
     async function checkAuth() {
       console.log("[AuthGuard] mount at", window.location.href);
+      console.log("[AuthGuard] base44.auth available methods:", Object.keys(base44.auth || {}));
+      
       try {
         const me = await base44.auth.me();
         console.log("[AuthGuard] base44.auth.me() =>", me);
