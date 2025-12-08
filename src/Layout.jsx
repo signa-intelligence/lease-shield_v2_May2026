@@ -112,14 +112,26 @@ export default function Layout({ children, currentPageName }) {
       setHasCheckedGuide(true);
       
       const guideDone = localStorage.getItem('leaseshield_quick_guide_done');
+      const guideHiddenPermanently = localStorage.getItem('ls_quick_guide_hidden');
       const hideGuide = user.hide_quick_guide;
 
-      // Only auto-open if BOTH conditions are false
-      if (!guideDone && !hideGuide) {
+      console.log('🔍 [QUICK_GUIDE] Auto-trigger check:', {
+        guideDone,
+        guideHiddenPermanently,
+        hideGuide,
+        userAgent: navigator.userAgent,
+        willShow: !guideDone && !hideGuide && !guideHiddenPermanently
+      });
+
+      // Only auto-open if ALL conditions are false
+      if (!guideDone && !hideGuide && !guideHiddenPermanently) {
         // Small delay to ensure page is loaded
         setTimeout(() => {
+          console.log('✅ [QUICK_GUIDE] Opening guide...');
           setShowQuickGuide(true);
         }, 800);
+      } else {
+        console.log('❌ [QUICK_GUIDE] Not showing guide due to previous conditions');
       }
     }
   }, [user, hasCheckedGuide]);
