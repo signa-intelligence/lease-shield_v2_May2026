@@ -623,6 +623,7 @@ export default function Layout({ children, currentPageName }) {
             )}
             <button
               onClick={() => {
+                console.log('🔴 [MANUAL] Quick Guide button clicked, forcing open...');
                 haptic.light();
                 setShowQuickGuide(true);
               }}
