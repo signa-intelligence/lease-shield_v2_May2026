@@ -26,6 +26,7 @@ import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import { QuickHelp } from "../components/shared/ContextualHelp";
 import { STRIPE_PRICES } from "../components/shared/stripePrices";
+import AuthGuard from "../components/shared/AuthGuard";
 
 const PLAN_DETAILS = [
   {
@@ -5319,8 +5320,10 @@ function AccountContent() {
 
 export default function Account() {
   return (
-    <ToastProvider>
-      <AccountContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <AccountContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }

@@ -28,6 +28,7 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import { QuickHelp } from "../components/shared/ContextualHelp";
+import AuthGuard from "../components/shared/AuthGuard";
 
 // Maintenance Request Card Component (extracted to avoid hooks in loops)
 function MaintenanceRequestCard({
@@ -2905,8 +2906,10 @@ function PropertyTrackerContent() {
 
 export default function PropertyTracker() {
   return (
-    <ToastProvider>
-      <PropertyTrackerContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <PropertyTrackerContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }

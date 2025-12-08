@@ -34,6 +34,7 @@ import {
   primaryCtaStyle,
   primaryCtaHover
 } from "../components/shared/featureTheme";
+import AuthGuard from "../components/shared/AuthGuard";
 
 const evidenceAccent = FEATURE_COLORS.evidence.accent;
 
@@ -2492,8 +2493,10 @@ function EvidenceVaultContent() {
 
 export default function EvidenceVault() {
   return (
-    <ToastProvider>
-      <EvidenceVaultContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <EvidenceVaultContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }
