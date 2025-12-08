@@ -1245,44 +1245,42 @@ export default function AdminConsole() {
         </Card>
 
         {/* 2. MANAGE LETTER TEMPLATES */}
-        {isSuperAdmin && (
-          <Card className="mb-6 border-none shadow-lg" style={{ 
-            backgroundColor: colors.cardBg,
-            borderLeft: '6px solid #8B5CF6'
-          }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    backgroundColor: '#8B5CF6',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-                      {strings.manageTemplates}
-                    </h3>
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>
-                      {strings.manageTemplatesDesc}
-                    </p>
-                  </div>
+        <Card className="mb-6 border-none shadow-lg" style={{ 
+          backgroundColor: colors.cardBg,
+          borderLeft: '6px solid #8B5CF6'
+        }}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  backgroundColor: '#8B5CF6',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <FileText className="w-6 h-6 text-white" />
                 </div>
-                <Link to={createPageUrl("AdminTemplates")}>
-                  <Button className="bg-purple-600 hover:bg-purple-700">
-                    <FileText className="w-4 h-4 mr-2" />
-                    {strings.goToTemplates}
-                  </Button>
-                </Link>
+                <div>
+                  <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                    {strings.manageTemplates}
+                  </h3>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {strings.manageTemplatesDesc}
+                  </p>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <Link to={createPageUrl("AdminLetterTemplates")}>
+                <Button className="bg-purple-600 hover:bg-purple-700">
+                  <FileText className="w-4 h-4 mr-2" />
+                  {strings.goToTemplates}
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
 
