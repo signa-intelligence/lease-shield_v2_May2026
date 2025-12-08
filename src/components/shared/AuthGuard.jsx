@@ -5,7 +5,51 @@ import { sessionStorage } from "../sessionStorage";
 
 // LoginPage - fullscreen, no scroll, mobile-optimized
 function LoginPage() {
-  const handleSignIn = async () => {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  // Detect Android WebView
+  const ua = navigator.userAgent || "";
+  const isAndroidWebView = /Android/i.test(ua) && /wv|Version\/\d+\.\d+ Chrome\/\d+/i.test(ua);
+
+  console.log('[LoginPage] WebView detection:', { ua, isAndroidWebView });
+
+  const handleSignInWebView = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    console.log('[LoginPage] WebView inline login attempt');
+
+    try {
+      // Inline login for WebView - stays in same window
+      const result = await base44.auth.signInWithPassword(email, password);
+      console.log('[LoginPage] signInWithPassword result:', result);
+
+      // Verify authentication
+      const user = await base44.auth.me();
+      console.log('[LoginPage] post-login auth.me():', user);
+
+      if (user) {
+        sessionStorage.save(user);
+        // Reload to trigger AuthGuard recheck
+        console.log('[LoginPage] Login success, reloading to /');
+        window.location.href = '/';
+      } else {
+        setError('Login failed - no user returned');
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('[LoginPage] WebView login error:', err);
+      setError(err.message || 'Login failed. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const handleSignInDesktop = async () => {
+    console.log('[LoginPage] Desktop redirect login');
     const nextUrl = window.location.pathname + window.location.search + window.location.hash;
     
     // Listen for auth state change and update localStorage when login succeeds
@@ -110,32 +154,102 @@ function LoginPage() {
           </div>
         </div>
 
-        <button
-          onClick={handleSignIn}
-          style={{
-            width: '100%',
-            padding: '13px',
-            backgroundColor: '#0C3B2E',
-            color: '#FFFFFF',
-            border: '2px solid #C7A338',
-            borderRadius: '10px',
-            fontSize: '15px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(12, 59, 46, 0.3)',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 8px 16px rgba(12, 59, 46, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 12px rgba(12, 59, 46, 0.3)';
-          }}
-        >
-          Sign In to Continue
-        </button>
+        {isAndroidWebView ? (
+          // WebView: Show email/password form for inline login
+          <form onSubmit={handleSignInWebView} style={{ textAlign: 'left' }}>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '12px',
+                marginBottom: '12px',
+                border: '1px solid #E2E8F0',
+                borderRadius: '8px',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '12px',
+                marginBottom: '12px',
+                border: '1px solid #E2E8F0',
+                borderRadius: '8px',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
+            />
+            {error && (
+              <div style={{
+                padding: '10px',
+                marginBottom: '12px',
+                backgroundColor: '#FEE2E2',
+                color: '#991B1B',
+                borderRadius: '8px',
+                fontSize: '12px'
+              }}>
+                {error}
+              </div>
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '13px',
+                backgroundColor: loading ? '#9CA3AF' : '#0C3B2E',
+                color: '#FFFFFF',
+                border: '2px solid #C7A338',
+                borderRadius: '10px',
+                fontSize: '15px',
+                fontWeight: 'bold',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 12px rgba(12, 59, 46, 0.3)',
+                transition: 'all 0.2s'
+              }}
+            >
+              {loading ? 'Signing In...' : 'Sign In to Continue'}
+            </button>
+          </form>
+        ) : (
+          // Desktop/Mobile Browser: Use OAuth redirect flow
+          <button
+            onClick={handleSignInDesktop}
+            style={{
+              width: '100%',
+              padding: '13px',
+              backgroundColor: '#0C3B2E',
+              color: '#FFFFFF',
+              border: '2px solid #C7A338',
+              borderRadius: '10px',
+              fontSize: '15px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(12, 59, 46, 0.3)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 8px 16px rgba(12, 59, 46, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 12px rgba(12, 59, 46, 0.3)';
+            }}
+          >
+            Sign In to Continue
+          </button>
+        )}
 
         <p style={{
           fontSize: '9px',
