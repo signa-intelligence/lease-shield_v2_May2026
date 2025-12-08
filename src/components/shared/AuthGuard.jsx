@@ -1,12 +1,29 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { Shield } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { sessionStorage } from "@/utils/sessionStorage";
 
 // LoginPage - fullscreen, no scroll, mobile-optimized
 function LoginPage() {
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     const nextUrl = window.location.pathname + window.location.search + window.location.hash;
+    
+    // Listen for auth state change and update localStorage when login succeeds
+    const checkAuthAfterRedirect = setInterval(async () => {
+      try {
+        const user = await base44.auth.me();
+        if (user) {
+          sessionStorage.save(user);
+          clearInterval(checkAuthAfterRedirect);
+        }
+      } catch (e) {
+        // Still waiting for login
+      }
+    }, 1000);
+    
+    // Clear after 30 seconds to prevent memory leak
+    setTimeout(() => clearInterval(checkAuthAfterRedirect), 30000);
+    
     base44.auth.redirectToLogin(nextUrl !== '/login' ? nextUrl : '/dashboard');
   };
 
@@ -134,55 +151,71 @@ function LoginPage() {
   );
 }
 
-// AuthGuard - protects routes, relies on Base44 SDK persistence
+// AuthGuard - protects routes with manual persistent session layer
 const AuthGuard = ({ children }) => {
-  const [authState, setAuthState] = React.useState({
-    loading: true,
-    user: null,
+  const [authState, setAuthState] = React.useState(() => {
+    // Stage 1: Check localStorage immediately on mount
+    const persistedSession = sessionStorage.get();
+    if (persistedSession && persistedSession.isAuthenticated && sessionStorage.isValid()) {
+      console.log('🚀 [AUTH_GUARD] Found valid persisted session, provisionally authenticated');
+      return { loading: true, user: { provisional: true }, skipLoginFlash: true };
+    }
+    console.log('🔍 [AUTH_GUARD] No persisted session, will check SDK');
+    return { loading: true, user: null, skipLoginFlash: false };
   });
 
   React.useEffect(() => {
-    console.log('🔐 [AUTH_GUARD] Mounted - waiting for SDK token restoration...');
+    console.log('🔐 [AUTH_GUARD] Validating session with Base44 SDK...');
     
     let mounted = true;
 
-    const checkAuth = async () => {
+    const validateAuth = async () => {
       try {
-        // Give SDK time to restore token from storage (critical for WebView)
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        console.log('🔐 [AUTH_GUARD] Calling base44.auth.me()...');
+        // Stage 2: Validate with SDK
         const userData = await base44.auth.me();
         
         if (!mounted) return;
 
         if (userData) {
-          console.log('✅ [AUTH_GUARD] Session restored:', {
+          console.log('✅ [AUTH_GUARD] SDK confirmed session:', {
             email: userData.email,
             plan: userData.plan_tier
           });
-          setAuthState({ loading: false, user: userData });
+          
+          // Update localStorage with fresh session
+          sessionStorage.save(userData);
+          
+          setAuthState({ loading: false, user: userData, skipLoginFlash: false });
         } else {
-          console.log('⚠️ [AUTH_GUARD] No valid session found');
-          setAuthState({ loading: false, user: null });
+          console.log('⚠️ [AUTH_GUARD] SDK reports no valid session');
+          
+          // Clear localStorage - this is a true logout
+          sessionStorage.clear();
+          
+          setAuthState({ loading: false, user: null, skipLoginFlash: false });
         }
       } catch (error) {
         if (!mounted) return;
         
-        console.log('❌ [AUTH_GUARD] Auth check error:', error.message);
-        setAuthState({ loading: false, user: null });
+        console.error('❌ [AUTH_GUARD] SDK validation error:', error.message);
+        
+        // Clear localStorage on error
+        sessionStorage.clear();
+        
+        setAuthState({ loading: false, user: null, skipLoginFlash: false });
       }
     };
 
-    checkAuth();
+    validateAuth();
 
     return () => {
       mounted = false;
     };
   }, []);
 
-  if (authState.loading) {
-    console.log('⏳ [AUTH_GUARD] Showing loading screen...');
+  // Show loading while SDK validates (but only if we don't have a provisional session)
+  if (authState.loading && !authState.skipLoginFlash) {
+    console.log('⏳ [AUTH_GUARD] SDK validation in progress...');
     return (
       <div style={{
         display: 'flex',
@@ -210,6 +243,13 @@ const AuthGuard = ({ children }) => {
     );
   }
 
+  // If we have a provisional session, render content immediately while SDK validates
+  if (authState.loading && authState.skipLoginFlash) {
+    console.log('🎯 [AUTH_GUARD] Rendering protected content with provisional session...');
+    return <>{children}</>;
+  }
+
+  // Final decision: show login only if SDK confirmed no user
   if (!authState.user) {
     console.log('🔓 [AUTH_GUARD] No authenticated user, showing login page');
     return <LoginPage />;

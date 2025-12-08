@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
+import { sessionStorage } from "./utils/sessionStorage";
 
 
 import QuickGuide from "./components/onboarding/QuickGuide";
@@ -75,7 +76,14 @@ export default function Layout({ children, currentPageName }) {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      const userData = await base44.auth.me();
+      // Update localStorage whenever user data is fetched
+      if (userData) {
+        sessionStorage.save(userData);
+      }
+      return userData;
+    },
     staleTime: 5 * 60 * 1000,
   });
 
@@ -711,7 +719,11 @@ export default function Layout({ children, currentPageName }) {
             <Link to={createPageUrl("Account")}>
               <button
                 aria-label="Account Settings"
-                onClick={() => haptic.light()}
+                onClick={() => {
+                  haptic.light();
+                  // Save session on navigation
+                  if (user) sessionStorage.save(user);
+                }}
                 className="btn-interaction"
                 style={{
                   width: '36px',
