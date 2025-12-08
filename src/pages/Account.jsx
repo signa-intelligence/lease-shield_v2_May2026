@@ -25,6 +25,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import { QuickHelp } from "../components/shared/ContextualHelp";
+import { STRIPE_PRICES } from "../components/shared/stripePrices";
 
 const PLAN_DETAILS = [
   {
@@ -99,8 +100,8 @@ const PLAN_DETAILS = [
     label: 'Lite',
     priceMonthly: 190,
     priceAnnual: 1900,
-    priceIdMonthly: 'PRICE_LIVE_LITE_MONTHLY',
-    priceIdAnnual: 'PRICE_LIVE_LITE_ANNUAL',
+    priceIdMonthly: STRIPE_PRICES.lite.monthly,
+    priceIdAnnual: STRIPE_PRICES.lite.annual,
     savingsAnnual: 380,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
@@ -184,8 +185,8 @@ const PLAN_DETAILS = [
     label: 'Protect',
     priceMonthly: 390,
     priceAnnual: 3900,
-    priceIdMonthly: 'PRICE_LIVE_PROTECT_MONTHLY',
-    priceIdAnnual: 'PRICE_LIVE_PROTECT_ANNUAL',
+    priceIdMonthly: STRIPE_PRICES.protect.monthly,
+    priceIdAnnual: STRIPE_PRICES.protect.annual,
     savingsAnnual: 780,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
@@ -276,8 +277,8 @@ const PLAN_DETAILS = [
     label: 'Secure',
     priceMonthly: 990,
     priceAnnual: 9900,
-    priceIdMonthly: 'PRICE_LIVE_SECURE_MONTHLY',
-    priceIdAnnual: 'PRICE_LIVE_SECURE_ANNUAL',
+    priceIdMonthly: STRIPE_PRICES.secure.monthly,
+    priceIdAnnual: STRIPE_PRICES.secure.annual,
     savingsAnnual: 1980,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
