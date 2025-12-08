@@ -160,24 +160,6 @@ export default function Layout({ children, currentPageName }) {
   }, [user?.theme]);
 
   React.useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then((registration) => {
-          console.log('✅ Service Worker registered:', registration.scope);
-        })
-        .catch((error) => {
-          console.error('❌ Service Worker registration failed:', error);
-        });
-    }
-
-    const link = document.querySelector('link[rel="manifest"]');
-    if (!link) {
-      const manifestLink = document.createElement('link');
-      manifestLink.rel = 'manifest';
-      manifestLink.href = '/manifest.json';
-      document.head.appendChild(manifestLink);
-    }
-
     const metaTags = [
       { name: 'theme-color', content: '#0C3B2E' },
       { name: 'mobile-web-app-capable', content: 'yes' },
