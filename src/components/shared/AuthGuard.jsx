@@ -171,13 +171,15 @@ function LoginPage() {
 
         {isAndroidWebView ? (
           // WebView: Show email/password form for inline login
-          <form onSubmit={handleSignInWebView} style={{ textAlign: 'left' }}>
+          <form onSubmit={handleWebViewLogin} style={{ textAlign: 'left' }}>
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={submitting}
               required
+              autoComplete="email"
               style={{
                 width: '100%',
                 padding: '12px',
@@ -185,7 +187,8 @@ function LoginPage() {
                 border: '1px solid #E2E8F0',
                 borderRadius: '8px',
                 fontSize: '14px',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                opacity: submitting ? 0.6 : 1
               }}
             />
             <input
@@ -193,7 +196,9 @@ function LoginPage() {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={submitting}
               required
+              autoComplete="current-password"
               style={{
                 width: '100%',
                 padding: '12px',
@@ -201,7 +206,8 @@ function LoginPage() {
                 border: '1px solid #E2E8F0',
                 borderRadius: '8px',
                 fontSize: '14px',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                opacity: submitting ? 0.6 : 1
               }}
             />
             {error && (
@@ -211,29 +217,31 @@ function LoginPage() {
                 backgroundColor: '#FEE2E2',
                 color: '#991B1B',
                 borderRadius: '8px',
-                fontSize: '12px'
+                fontSize: '12px',
+                textAlign: 'left'
               }}>
                 {error}
               </div>
             )}
             <button
               type="submit"
-              disabled={loading}
+              disabled={submitting}
               style={{
                 width: '100%',
                 padding: '13px',
-                backgroundColor: loading ? '#9CA3AF' : '#0C3B2E',
+                backgroundColor: submitting ? '#9CA3AF' : '#0C3B2E',
                 color: '#FFFFFF',
                 border: '2px solid #C7A338',
                 borderRadius: '10px',
                 fontSize: '15px',
                 fontWeight: 'bold',
-                cursor: loading ? 'not-allowed' : 'pointer',
+                cursor: submitting ? 'not-allowed' : 'pointer',
                 boxShadow: '0 4px 12px rgba(12, 59, 46, 0.3)',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                opacity: submitting ? 0.8 : 1
               }}
             >
-              {loading ? 'Signing In...' : 'Sign In to Continue'}
+              {submitting ? 'Signing In...' : 'Sign In to Continue'}
             </button>
           </form>
         ) : (
