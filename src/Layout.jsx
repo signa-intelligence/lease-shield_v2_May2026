@@ -108,53 +108,40 @@ export default function Layout({ children, currentPageName }) {
 
   // Auto-trigger Quick Guide for first-time users (unless hidden)
   React.useEffect(() => {
-    // Wait for user to be fully loaded
-    if (!user || !user.email) {
-      console.log('🔍 [QUICK_GUIDE] Waiting for user to load...', { hasUser: !!user, hasEmail: !!user?.email });
+    // Wait for user to be fully loaded with email
+    if (!user?.email) {
       return;
     }
 
+    // Only check once per session
     if (hasCheckedGuide) {
-      console.log('🔍 [QUICK_GUIDE] Already checked, skipping');
       return;
     }
-
-    console.log('🔍 [QUICK_GUIDE] User loaded, checking conditions...', { 
-      userEmail: user.email,
-      hasCheckedGuide
-    });
-    
-    setHasCheckedGuide(true);
     
     const guideDone = localStorage.getItem('leaseshield_quick_guide_done');
     const guideHiddenPermanently = localStorage.getItem('ls_quick_guide_hidden');
     const hideGuide = user.hide_quick_guide;
 
-    console.log('🔍 [QUICK_GUIDE] Auto-trigger check:', {
+    console.log('🔍 [QUICK_GUIDE] Checking auto-trigger:', {
+      userEmail: user.email,
       guideDone,
       guideHiddenPermanently,
       hideGuide,
-      userAgent: navigator.userAgent,
-      platform: navigator.platform,
-      isMobile: /android|iphone|ipad|ipod/i.test(navigator.userAgent),
       willShow: !guideDone && !hideGuide && !guideHiddenPermanently
     });
 
+    // Mark as checked AFTER we have all the data we need
+    setHasCheckedGuide(true);
+
     // Only auto-open if ALL conditions are false
     if (!guideDone && !hideGuide && !guideHiddenPermanently) {
-      console.log('✅ [QUICK_GUIDE] Conditions met, will show in 800ms...');
+      console.log('✅ [QUICK_GUIDE] Opening in 1000ms...');
       setTimeout(() => {
-        console.log('✅ [QUICK_GUIDE] Opening guide NOW');
+        console.log('✅ [QUICK_GUIDE] Opening NOW');
         setShowQuickGuide(true);
-      }, 800);
-    } else {
-      console.log('❌ [QUICK_GUIDE] Blocked by:', {
-        becauseGuideDone: !!guideDone,
-        becauseHiddenInStorage: !!guideHiddenPermanently,
-        becauseUserPreference: !!hideGuide
-      });
+      }, 1000);
     }
-  }, [user, hasCheckedGuide]);
+  }, [user?.email, hasCheckedGuide]);
 
   React.useEffect(() => {
     if (mainContentRef.current) {
