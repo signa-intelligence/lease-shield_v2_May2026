@@ -27,9 +27,19 @@ import FloatingActionButton from "../components/shared/FloatingActionButton";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
 import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
-import AuthGuard from "../components/shared/AuthGuard";
-
 function DashboardContent() {
+  const [expandedSections, setExpandedSections] = React.useState({
+    stats: true,
+    quickActions: true,
+    content: true,
+    recentLeases: false,
+    notifications: false,
+    depositAlerts: false,
+  });
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -49,22 +59,6 @@ function DashboardContent() {
     };
     checkAuth();
   }, []);
-  const [expandedSections, setExpandedSections] = React.useState({
-    stats: true,
-    quickActions: true,
-    content: true,
-    recentLeases: false,
-    notifications: false,
-    depositAlerts: false,
-  });
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const toast = useToast();
-
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
 
   // PERFORMANCE: Single batched query instead of 6 separate queries
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
