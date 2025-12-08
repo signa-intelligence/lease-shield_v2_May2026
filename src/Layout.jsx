@@ -108,46 +108,51 @@ export default function Layout({ children, currentPageName }) {
 
   // Auto-trigger Quick Guide for first-time users (unless hidden)
   React.useEffect(() => {
-    console.log('🔍 [QUICK_GUIDE] useEffect triggered', { 
-      hasUser: !!user, 
-      hasCheckedGuide,
-      userEmail: user?.email 
+    // Wait for user to be fully loaded
+    if (!user || !user.email) {
+      console.log('🔍 [QUICK_GUIDE] Waiting for user to load...', { hasUser: !!user, hasEmail: !!user?.email });
+      return;
+    }
+
+    if (hasCheckedGuide) {
+      console.log('🔍 [QUICK_GUIDE] Already checked, skipping');
+      return;
+    }
+
+    console.log('🔍 [QUICK_GUIDE] User loaded, checking conditions...', { 
+      userEmail: user.email,
+      hasCheckedGuide
     });
     
-    if (user && !hasCheckedGuide) {
-      setHasCheckedGuide(true);
-      
-      const guideDone = localStorage.getItem('leaseshield_quick_guide_done');
-      const guideHiddenPermanently = localStorage.getItem('ls_quick_guide_hidden');
-      const hideGuide = user.hide_quick_guide;
+    setHasCheckedGuide(true);
+    
+    const guideDone = localStorage.getItem('leaseshield_quick_guide_done');
+    const guideHiddenPermanently = localStorage.getItem('ls_quick_guide_hidden');
+    const hideGuide = user.hide_quick_guide;
 
-      console.log('🔍 [QUICK_GUIDE] Auto-trigger check:', {
-        guideDone,
-        guideHiddenPermanently,
-        hideGuide,
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        isMobile: /android|iphone|ipad|ipod/i.test(navigator.userAgent),
-        localStorage: {
-          all: Object.keys(localStorage).filter(k => k.includes('guide') || k.includes('lease'))
-        },
-        willShow: !guideDone && !hideGuide && !guideHiddenPermanently
+    console.log('🔍 [QUICK_GUIDE] Auto-trigger check:', {
+      guideDone,
+      guideHiddenPermanently,
+      hideGuide,
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      isMobile: /android|iphone|ipad|ipod/i.test(navigator.userAgent),
+      willShow: !guideDone && !hideGuide && !guideHiddenPermanently
+    });
+
+    // Only auto-open if ALL conditions are false
+    if (!guideDone && !hideGuide && !guideHiddenPermanently) {
+      console.log('✅ [QUICK_GUIDE] Conditions met, will show in 800ms...');
+      setTimeout(() => {
+        console.log('✅ [QUICK_GUIDE] Opening guide NOW');
+        setShowQuickGuide(true);
+      }, 800);
+    } else {
+      console.log('❌ [QUICK_GUIDE] Blocked by:', {
+        becauseGuideDone: !!guideDone,
+        becauseHiddenInStorage: !!guideHiddenPermanently,
+        becauseUserPreference: !!hideGuide
       });
-
-      // Only auto-open if ALL conditions are false
-      if (!guideDone && !hideGuide && !guideHiddenPermanently) {
-        console.log('✅ [QUICK_GUIDE] Conditions met, will show in 800ms...');
-        setTimeout(() => {
-          console.log('✅ [QUICK_GUIDE] Opening guide NOW');
-          setShowQuickGuide(true);
-        }, 800);
-      } else {
-        console.log('❌ [QUICK_GUIDE] Blocked by:', {
-          becauseGuideDone: !!guideDone,
-          becauseHiddenInStorage: !!guideHiddenPermanently,
-          becauseUserPreference: !!hideGuide
-        });
-      }
     }
   }, [user, hasCheckedGuide]);
 
