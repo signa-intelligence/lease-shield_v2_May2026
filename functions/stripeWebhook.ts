@@ -5,13 +5,15 @@ import Stripe from 'npm:stripe@14.10.0';
  * STRIPE WEBHOOK HANDLER - Clean minimal implementation
  * 
  * Required Secrets:
- * - SK_TEST_secret_key: Stripe API key (contains LIVE sk_live_... key)
+ * - SK_LIVE_secret_key: Stripe API key (LIVE mode)
  * - webhook_stripe: Stripe webhook signing secret (whsec_...)
  * - RESEND_API_KEY: Email service (optional for notifications)
  */
 
-const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
+const stripeSecretKey = Deno.env.get('SK_LIVE_secret_key') ?? Deno.env.get('SK_TEST_secret_key');
 const webhookSecret = Deno.env.get('webhook_stripe');
+
+console.log('[STRIPE_WEBHOOK] Secret key loaded:', stripeSecretKey ? stripeSecretKey.substring(0, 7) + '...' : 'MISSING');
 
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2024-06-20',

@@ -5,10 +5,14 @@ import Stripe from 'npm:stripe@14.10.0';
  * STRIPE SUBSCRIPTION CANCELLATION
  * 
  * Required Secrets:
- * - SK_TEST_secret_key: Stripe API key (sk_live_... for production)
+ * - SK_LIVE_secret_key: Stripe API key (LIVE mode)
  */
 
-const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), { // ⚠️ Name is misleading - should contain LIVE key for production
+const stripeSecretKey = Deno.env.get('SK_LIVE_secret_key') ?? Deno.env.get('SK_TEST_secret_key');
+
+console.log('[CANCEL_SUB] Stripe key loaded:', stripeSecretKey ? stripeSecretKey.substring(0, 7) + '...' : 'MISSING');
+
+const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2023-10-16',
 });
 
