@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
-import { getStripePriceId } from '../components/shared/stripePrices.js';
 
 /**
  * STRIPE CHECKOUT CREATOR - Standalone, no external dependencies
@@ -11,6 +10,39 @@ import { getStripePriceId } from '../components/shared/stripePrices.js';
  * CRITICAL: This function must NOT depend on any other functions or deployments
  * to avoid "deploymentNotFound" errors.
  */
+
+// Centralized Stripe Price IDs
+const STRIPE_PRICES = {
+  lite: {
+    monthly: "price_1SbtXQQwoI6NhlUxKMlyoEbs",
+    annual: "price_1SbtXQQwoI6NhlUxXqxUROyx",
+  },
+  protect: {
+    monthly: "price_1SbtZ4QwoI6NhlUxxxUML4Un",
+    annual: "price_1SbtZ4QwoI6NhlUxUwsvYbkS",
+  },
+  secure: {
+    monthly: "price_1SbtaWQwoI6NhlUxJboFevsu",
+    annual: "price_1SbtaWQwoI6NhlUxAfPLTDeE",
+  },
+  oneTimeScan: "price_1SbtbfQwoI6NhlUx2dHjb5jC",
+};
+
+function getStripePriceId(plan, interval) {
+  const normalizedPlan = plan?.toLowerCase();
+  const normalizedInterval = (interval === 'year' || interval === 'annual') ? 'annual' : 'monthly';
+  
+  if (normalizedPlan === 'onetimescan' || normalizedPlan === 'one_time_scan') {
+    return STRIPE_PRICES.oneTimeScan;
+  }
+  
+  if (!STRIPE_PRICES[normalizedPlan]) {
+    console.warn(`[STRIPE_PRICES] Unknown plan: ${plan}`);
+    return null;
+  }
+  
+  return STRIPE_PRICES[normalizedPlan][normalizedInterval] || null;
+}
 
 // Helper: Create one-time coupon for reward credits
 async function createRewardCoupon(stripe, amountOffCents) {
