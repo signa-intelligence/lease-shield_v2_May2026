@@ -177,14 +177,6 @@ export default function Layout({ children, currentPageName }) {
       }
       meta.content = content;
     });
-
-    let appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
-    if (!appleIcon) {
-      appleIcon = document.createElement('link');
-      appleIcon.rel = 'apple-touch-icon';
-      appleIcon.href = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png';
-      document.head.appendChild(appleIcon);
-    }
   }, []);
 
   const language = user?.language || 'en';
