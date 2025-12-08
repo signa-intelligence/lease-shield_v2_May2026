@@ -27,6 +27,7 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import { QuickHelp } from "../components/shared/ContextualHelp";
 import { STRIPE_PRICES } from "../components/shared/stripePrices";
 import AuthGuard from "../components/shared/AuthGuard";
+import { sessionStorage } from "../components/sessionStorage";
 
 const PLAN_DETAILS = [
   {
@@ -498,7 +499,13 @@ function AccountContent() {
 
   const { data: user, refetch: refetchUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      const userData = await base44.auth.me();
+      if (userData) {
+        sessionStorage.save(userData);
+      }
+      return userData;
+    },
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     staleTime: 0,
@@ -5291,7 +5298,11 @@ function AccountContent() {
           <Button
             variant="outline"
             className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-            onClick={() => base44.auth.logout('https://leaseshield.asia/')}
+            onClick={() => {
+              console.log('🚪 [LOGOUT] User clicked logout, clearing localStorage...');
+              sessionStorage.clear();
+              base44.auth.logout('https://leaseshield.asia/');
+            }}
             style={{ 
               backgroundColor: colors.cardBg, 
               borderColor: isDarkMode ? '#EF4444' : '#FECACA', 

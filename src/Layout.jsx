@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
-import { sessionStorage } from "./utils/sessionStorage";
+import { sessionStorage } from "./components/sessionStorage";
 
 
 import QuickGuide from "./components/onboarding/QuickGuide";

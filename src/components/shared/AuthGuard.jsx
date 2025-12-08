@@ -1,7 +1,7 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { Shield } from "lucide-react";
-import { sessionStorage } from "@/utils/sessionStorage";
+import { sessionStorage } from "../sessionStorage";
 
 // LoginPage - fullscreen, no scroll, mobile-optimized
 function LoginPage() {
