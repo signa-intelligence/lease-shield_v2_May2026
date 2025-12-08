@@ -48,9 +48,64 @@ const AuthGuard = ({ children }) => {
     };
   }, []);
 
-  // Don't render anything until auth is ready
+  // Show branded loader while auth is initializing
   if (!authReady) {
-    return null;
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#063F2C',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '24px'
+        }}>
+          <div style={{
+            width: '120px',
+            height: '120px',
+            borderRadius: '24px',
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '72px', height: '72px' }}>
+              <path d="M12 2L4 5V11C4 16 7 20.5 12 22C17 20.5 20 16 20 11V5L12 2Z" fill="#063F2C" stroke="#C7A338" strokeWidth="2"/>
+              <rect x="9" y="11" width="6" height="5" rx="1" fill="#C7A338"/>
+              <path d="M10 11V9.5C10 8.67 10.67 8 11.5 8H12.5C13.33 8 14 8.67 14 9.5V11" stroke="#C7A338" strokeWidth="2"/>
+            </svg>
+          </div>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid rgba(199, 163, 56, 0.3)',
+            borderTopColor: '#C7A338',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+        </div>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(0.95); }
+          }
+        `}</style>
+      </div>
+    );
   }
 
   // Show login inline instead of redirecting
@@ -61,7 +116,7 @@ const AuthGuard = ({ children }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+        backgroundColor: '#063F2C',
         padding: '20px'
       }}>
         <div style={{

@@ -45,6 +45,11 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: #063F2C !important;
+  }
+
+  #root {
+    background-color: #063F2C !important;
   }
 }
 
