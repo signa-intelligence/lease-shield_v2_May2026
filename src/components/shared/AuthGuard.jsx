@@ -150,111 +150,55 @@ function LoginPage() {
   );
 }
 
-// AuthGuard - protects routes with manual persistent session layer
+// AuthGuard - protects routes with state machine: "loading" | "authed" | "guest"
 const AuthGuard = ({ children }) => {
-  const [authState, setAuthState] = React.useState(() => {
-    // Stage 1: Check localStorage immediately on mount
-    const persistedSession = sessionStorage.get();
-    if (persistedSession && persistedSession.isAuthenticated && sessionStorage.isValid()) {
-      console.log('🚀 [AUTH_GUARD] Found valid persisted session, provisionally authenticated');
-      return { loading: true, user: { provisional: true }, skipLoginFlash: true };
-    }
-    console.log('🔍 [AUTH_GUARD] No persisted session, will check SDK');
-    return { loading: true, user: null, skipLoginFlash: false };
-  });
-
+  const [status, setStatus] = React.useState('loading');
+  
   React.useEffect(() => {
-    console.log('🔐 [AUTH_GUARD] Validating session with Base44 SDK...');
-    
     let mounted = true;
 
-    const validateAuth = async () => {
+    const checkAuth = async () => {
       try {
-        // Stage 2: Validate with SDK
         const userData = await base44.auth.me();
         
         if (!mounted) return;
 
         if (userData) {
-          console.log('✅ [AUTH_GUARD] SDK confirmed session:', {
-            email: userData.email,
-            plan: userData.plan_tier
-          });
-          
-          // Update localStorage with fresh session
+          // User is authenticated
           sessionStorage.save(userData);
-          
-          setAuthState({ loading: false, user: userData, skipLoginFlash: false });
+          setStatus('authed');
         } else {
-          console.log('⚠️ [AUTH_GUARD] SDK reports no valid session');
-          
-          // Clear localStorage - this is a true logout
+          // No valid session
           sessionStorage.clear();
-          
-          setAuthState({ loading: false, user: null, skipLoginFlash: false });
+          setStatus('guest');
         }
       } catch (error) {
         if (!mounted) return;
         
-        console.error('❌ [AUTH_GUARD] SDK validation error:', error.message);
-        
-        // Clear localStorage on error
+        // Error checking auth - treat as guest
         sessionStorage.clear();
-        
-        setAuthState({ loading: false, user: null, skipLoginFlash: false });
+        setStatus('guest');
       }
     };
 
-    validateAuth();
+    checkAuth();
 
     return () => {
       mounted = false;
     };
   }, []);
 
-  // Show loading while SDK validates (but only if we don't have a provisional session)
-  if (authState.loading && !authState.skipLoginFlash) {
-    console.log('⏳ [AUTH_GUARD] SDK validation in progress...');
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        backgroundColor: '#063F2C'
-      }}>
-        <img 
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
-          alt="Lease Shield"
-          style={{ 
-            height: '80px', 
-            width: '80px',
-            animation: 'spin 2s linear infinite'
-          }}
-        />
-        <style>{`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
+  // Loading state - render nothing
+  if (status === 'loading') {
+    return null;
   }
 
-  // If we have a provisional session, render content immediately while SDK validates
-  if (authState.loading && authState.skipLoginFlash) {
-    console.log('🎯 [AUTH_GUARD] Rendering protected content with provisional session...');
-    return <>{children}</>;
-  }
-
-  // Final decision: show login only if SDK confirmed no user
-  if (!authState.user) {
-    console.log('🔓 [AUTH_GUARD] No authenticated user, showing login page');
+  // Guest state - render welcome/login page
+  if (status === 'guest') {
     return <LoginPage />;
   }
 
-  console.log('🔒 [AUTH_GUARD] User authenticated, rendering protected content');
+  // Authed state - render protected content
   return <>{children}</>;
 };
 
