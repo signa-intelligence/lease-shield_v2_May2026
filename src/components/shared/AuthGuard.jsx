@@ -142,32 +142,34 @@ const AuthGuard = ({ children }) => {
   });
 
   React.useEffect(() => {
-    console.log('🔐 [AUTH_GUARD] Component mounted, checking session...');
+    console.log('🔐 [AUTH_GUARD] Mounted - waiting for SDK token restoration...');
     
     let mounted = true;
 
     const checkAuth = async () => {
       try {
+        // Give SDK time to restore token from storage (critical for WebView)
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         console.log('🔐 [AUTH_GUARD] Calling base44.auth.me()...');
         const userData = await base44.auth.me();
         
         if (!mounted) return;
 
         if (userData) {
-          console.log('✅ [AUTH_GUARD] Session restored successfully:', {
+          console.log('✅ [AUTH_GUARD] Session restored:', {
             email: userData.email,
-            id: userData.id,
             plan: userData.plan_tier
           });
           setAuthState({ loading: false, user: userData });
         } else {
-          console.log('❌ [AUTH_GUARD] No user returned from base44.auth.me()');
+          console.log('⚠️ [AUTH_GUARD] No valid session found');
           setAuthState({ loading: false, user: null });
         }
       } catch (error) {
         if (!mounted) return;
         
-        console.log('❌ [AUTH_GUARD] Auth check failed:', error.message);
+        console.log('❌ [AUTH_GUARD] Auth check error:', error.message);
         setAuthState({ loading: false, user: null });
       }
     };
@@ -176,7 +178,6 @@ const AuthGuard = ({ children }) => {
 
     return () => {
       mounted = false;
-      console.log('🔐 [AUTH_GUARD] Component unmounting (normal cleanup)');
     };
   }, []);
 
