@@ -475,7 +475,6 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
               </div>
             );
           })}
-        </div>
 
           {isAllComplete && (
             <div 
@@ -513,7 +512,6 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
             <EyeOff className="w-4 h-4" />
             {strings.hideFor7Days}
           </button>
-        </div>
         </CardContent>
       )}
     </Card>
