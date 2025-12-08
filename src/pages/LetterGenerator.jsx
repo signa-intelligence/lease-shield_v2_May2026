@@ -19,6 +19,22 @@ export default function LetterGenerator() {
   const toast = useToast();
   const navigate = useNavigate();
 
+  // Check for template ID in URL
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const templateId = urlParams.get('id');
+    
+    if (templateId && templates.length > 0) {
+      const template = templates.find(t => t.template_id === templateId);
+      if (template) {
+        setSelectedTemplate(template);
+        setEditedBodyEn(applyMergeFields(template.body_en));
+        setEditedBodyTh(applyMergeFields(template.body_th));
+        setStep(3);
+      }
+    }
+  }, [templates]);
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),

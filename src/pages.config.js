@@ -29,6 +29,7 @@ import AdminTemplates from './pages/AdminTemplates';
 import RecycleBin from './pages/RecycleBin';
 import FAQ from './pages/FAQ';
 import LetterGenerator from './pages/LetterGenerator';
+import AdminLetterTemplates from './pages/AdminLetterTemplates';
 import __Layout from './Layout.jsx';
 
 
@@ -64,6 +65,7 @@ export const PAGES = {
     "RecycleBin": RecycleBin,
     "FAQ": FAQ,
     "LetterGenerator": LetterGenerator,
+    "AdminLetterTemplates": AdminLetterTemplates,
 }
 
 export const pagesConfig = {
