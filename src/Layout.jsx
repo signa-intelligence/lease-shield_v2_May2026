@@ -8,9 +8,8 @@ import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
 import AuthGuard from "./components/shared/AuthGuard";
 
-// Lazy load heavy components
-const QuickGuide = React.lazy(() => import("./components/onboarding/QuickGuide"));
-const LisaAssistant = React.lazy(() => import("./components/LisaAssistant"));
+import QuickGuide from "./components/onboarding/QuickGuide";
+import LisaAssistant from "./components/LisaAssistant";
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -854,17 +853,14 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </div>
 
-      {/* Quick Guide Modal - Lazy Loaded */}
       {showQuickGuide && (
-        <React.Suspense fallback={null}>
-          <QuickGuide 
-            open={showQuickGuide}
-            onClose={() => setShowQuickGuide(false)}
-            language={language}
-            isDarkMode={isDarkMode}
-            user={user}
-          />
-        </React.Suspense>
+        <QuickGuide 
+          open={showQuickGuide}
+          onClose={() => setShowQuickGuide(false)}
+          language={language}
+          isDarkMode={isDarkMode}
+          user={user}
+        />
       )}
 
       {/* Mobile Profile Menu Sheet */}
@@ -1042,10 +1038,7 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </main>
 
-      {/* LISA Assistant - Lazy Loaded */}
-      <React.Suspense fallback={null}>
-        <LisaAssistant />
-      </React.Suspense>
+      <LisaAssistant />
 
       {/* Bottom Navigation */}
       <nav 

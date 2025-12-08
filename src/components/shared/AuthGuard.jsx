@@ -1,48 +1,30 @@
-// LeaseShield Auth Guard
-// CRITICAL: Enforces authentication on ALL app routes
-// Unauthenticated users are IMMEDIATELY redirected to login
-// NO content is rendered until authentication is verified
-
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 
 const AuthGuard = ({ children }) => {
-  const [loading, setLoading] = useState(true);
-  const [isAuthed, setIsAuthed] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function checkAuth() {
       try {
-        // CRITICAL: Verify authentication status
         const isAuthenticated = await base44.auth.isAuthenticated();
         
         if (cancelled) return;
 
         if (isAuthenticated) {
-          // Verify we can actually get user data
           const me = await base44.auth.me();
           if (me && me.email) {
             setIsAuthed(true);
-            setLoading(false);
             return;
           }
         }
         
-        // NOT authenticated - redirect immediately
-        if (!cancelled) {
-          const nextUrl = window.location.pathname + window.location.search + window.location.hash;
-          base44.auth.redirectToLogin(nextUrl);
-        }
+        setIsAuthed(false);
       } catch (err) {
-        console.error("🔒 AuthGuard: Authentication check failed", err);
-        
-        // On ANY error, redirect to login for security
-        if (!cancelled) {
-          const nextUrl = window.location.pathname + window.location.search + window.location.hash;
-          base44.auth.redirectToLogin(nextUrl);
-        }
+        console.error("🔒 AuthGuard error:", err);
+        if (!cancelled) setIsAuthed(false);
       }
     }
 
@@ -53,13 +35,105 @@ const AuthGuard = ({ children }) => {
     };
   }, []);
 
-  // CRITICAL: Render NOTHING until auth is verified
-  // This prevents ANY protected content from flashing
-  if (loading) {
+  // Show login inline instead of redirecting
+  if (isAuthed === false) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+        padding: '20px'
+      }}>
+        <div style={{
+          maxWidth: '400px',
+          width: '100%',
+          background: '#FFFFFF',
+          borderRadius: '16px',
+          padding: '32px',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              margin: '0 auto 16px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '48px', height: '48px' }}>
+                <path d="M12 2L4 5V11C4 16 7 20.5 12 22C17 20.5 20 16 20 11V5L12 2Z" fill="#0C3B2E" stroke="#C7A338" strokeWidth="2"/>
+                <rect x="9" y="11" width="6" height="5" rx="1" fill="#C7A338"/>
+                <path d="M10 11V9.5C10 8.67 10.67 8 11.5 8H12.5C13.33 8 14 8.67 14 9.5V11" stroke="#C7A338" strokeWidth="2"/>
+              </svg>
+            </div>
+            <h1 style={{
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#0C3B2E',
+              marginBottom: '8px'
+            }}>
+              LEASE SHIELD
+            </h1>
+            <p style={{
+              fontSize: '14px',
+              color: '#64748b'
+            }}>
+              Fair. Transparent. Protected.
+            </p>
+          </div>
+          
+          <button
+            onClick={() => {
+              const nextUrl = window.location.pathname + window.location.search + window.location.hash;
+              base44.auth.redirectToLogin(nextUrl);
+            }}
+            style={{
+              width: '100%',
+              padding: '14px 24px',
+              background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 8px rgba(12, 59, 46, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
+            }}
+          >
+            Sign In / Sign Up
+          </button>
+
+          <p style={{
+            marginTop: '20px',
+            fontSize: '12px',
+            color: '#94a3b8',
+            textAlign: 'center'
+          }}>
+            Protect your rental rights with AI-powered lease analysis
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Still checking auth
+  if (isAuthed === null) {
     return null;
   }
-  
-  if (!isAuthed) return null;
 
   return <>{children}</>;
 };

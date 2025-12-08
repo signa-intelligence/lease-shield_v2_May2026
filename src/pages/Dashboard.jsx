@@ -1612,33 +1612,27 @@ function DashboardContent() {
                   />
                   </div>
 
-                  {/* First Session Progress - Lazy Loaded */}
-                  <React.Suspense fallback={<div style={{ height: 120 }} />}>
-                    <FirstSessionProgress
-                      user={user}
-                      leases={leases}
-                      deposits={deposits}
-                      documents={documents}
-                      isDarkMode={isDarkMode}
-                      language={language}
-                    />
-                  </React.Suspense>
+                  <FirstSessionProgress
+                    user={user}
+                    leases={leases}
+                    deposits={deposits}
+                    documents={documents}
+                    isDarkMode={isDarkMode}
+                    language={language}
+                  />
 
-                  {/* Onboarding Checklist - Lazy Loaded */}
                   {shouldShowOnboardingChecklist && (
                     <div className="mb-6">
-                      <React.Suspense fallback={<div style={{ height: 200 }} />}>
-                        <OnboardingChecklist
-                          user={user}
-                          leases={leases}
-                          deposits={deposits}
-                          documents={documents}
-                          cases={cases}
-                          maintenanceRequests={maintenanceRequests}
-                          isDarkMode={isDarkMode}
-                          language={language}
-                        />
-                      </React.Suspense>
+                      <OnboardingChecklist
+                        user={user}
+                        leases={leases}
+                        deposits={deposits}
+                        documents={documents}
+                        cases={cases}
+                        maintenanceRequests={maintenanceRequests}
+                        isDarkMode={isDarkMode}
+                        language={language}
+                      />
                     </div>
                   )}
 
