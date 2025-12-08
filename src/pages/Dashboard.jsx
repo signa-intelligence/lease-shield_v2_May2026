@@ -45,21 +45,6 @@ function DashboardContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Redirect to login if not authenticated
-  React.useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (!isAuth) {
-          base44.auth.redirectToLogin(window.location.pathname);
-        }
-      } catch (err) {
-        base44.auth.redirectToLogin(window.location.pathname);
-      }
-    };
-    checkAuth();
-  }, []);
-
   // PERFORMANCE: Single batched query instead of 6 separate queries
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: ['dashboardData', user?.email],
