@@ -99,13 +99,11 @@ Deno.serve(async (req) => {
     }, null, 2));
 
     // Get or create Stripe customer
-    let customerId = user.stripe_customer_id;
     const isLiveMode = stripeKey?.startsWith('sk_live_');
+    let customerId = null;
     
-    console.log('[CREATE_CHECKOUT] Customer resolution:', {
-      savedCustomerId: customerId?.substring(0, 20) || 'none',
-      mode: isLiveMode ? 'LIVE' : 'TEST'
-    });
+    console.log('[CREATE_CHECKOUT] Stripe mode:', isLiveMode ? 'LIVE' : 'TEST');
+    console.log('[CREATE_CHECKOUT] Saved customer ID:', user.stripe_customer_id?.substring(0, 20) || 'none');
 
     // Apply reward credits to subscription/payment if available
     let appliedCredit = 0;
@@ -121,31 +119,46 @@ Deno.serve(async (req) => {
       });
     }
     
-    // Validate customer exists in current mode
-    if (customerId && isLiveMode) {
-      try {
-        await stripe.customers.retrieve(customerId);
-        console.log('[CREATE_CHECKOUT] ✅ Customer validated:', customerId.substring(0, 20));
-      } catch (customerError) {
-        if (customerError.code === 'resource_missing') {
-          console.warn('[CREATE_CHECKOUT] ⚠️ Customer not found in LIVE - creating new');
-          customerId = null;
-        } else {
-          throw customerError;
-        }
-      }
-    }
-    
-    if (!customerId) {
-      console.log('[CREATE_CHECKOUT] Creating new Stripe customer...');
+    // TEST MODE: Always create new customer (never reuse live customer IDs)
+    if (!isLiveMode) {
+      console.log('[CREATE_CHECKOUT] 🧪 TEST MODE - Creating new test customer');
       const customer = await stripe.customers.create({
         email: user.email,
         name: user.full_name,
-        metadata: { user_id: user.id }
+        metadata: { user_id: user.id, mode: 'test' }
       });
       customerId = customer.id;
-      console.log('[CREATE_CHECKOUT] ✅ Customer created:', customerId);
-      await base44.auth.updateMe({ stripe_customer_id: customerId });
+      console.log('[CREATE_CHECKOUT] ✅ Test customer created:', customerId);
+    } 
+    // LIVE MODE: Reuse saved customer ID if exists
+    else {
+      customerId = user.stripe_customer_id;
+      
+      if (customerId) {
+        try {
+          await stripe.customers.retrieve(customerId);
+          console.log('[CREATE_CHECKOUT] ✅ Live customer validated:', customerId.substring(0, 20));
+        } catch (customerError) {
+          if (customerError.code === 'resource_missing') {
+            console.warn('[CREATE_CHECKOUT] ⚠️ Customer not found in LIVE - creating new');
+            customerId = null;
+          } else {
+            throw customerError;
+          }
+        }
+      }
+      
+      if (!customerId) {
+        console.log('[CREATE_CHECKOUT] Creating new live customer...');
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.full_name,
+          metadata: { user_id: user.id }
+        });
+        customerId = customer.id;
+        console.log('[CREATE_CHECKOUT] ✅ Live customer created:', customerId);
+        await base44.auth.updateMe({ stripe_customer_id: customerId });
+      }
     }
 
     // Success/Cancel URLs
