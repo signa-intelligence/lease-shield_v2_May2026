@@ -46,6 +46,8 @@ export default function AdminConsole() {
   const [userManagementExpanded, setUserManagementExpanded] = useState(
     typeof window !== 'undefined' && window.innerWidth >= 1024
   );
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [userManagementPage, setUserManagementPage] = useState(1);
 
   const queryClient = useQueryClient();
 
@@ -1087,7 +1089,22 @@ export default function AdminConsole() {
     }
   };
 
-  const sortedUsers = [...users].sort((a, b) => {
+  // Filter users based on search term
+  const matchesSearch = (u, term) => {
+    if (!term) return true;
+    const lowerTerm = term.toLowerCase();
+    const searchable = [
+      u.full_name || '',
+      u.email || '',
+      u.id || '',
+      u.referral_code || ''
+    ].join(' ').toLowerCase();
+    return searchable.includes(lowerTerm);
+  };
+
+  const filteredUsers = users.filter(u => matchesSearch(u, userSearchTerm));
+
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
     if (sortOrder === 'asc') {
@@ -1095,6 +1112,18 @@ export default function AdminConsole() {
     }
     return aVal < bVal ? 1 : -1;
   });
+
+  // Pagination for User Management
+  const usersPerPage = 10;
+  const totalUserPages = Math.ceil(sortedUsers.length / usersPerPage);
+  const startUserIndex = (userManagementPage - 1) * usersPerPage;
+  const endUserIndex = startUserIndex + usersPerPage;
+  const paginatedUsers = sortedUsers.slice(startUserIndex, endUserIndex);
+
+  // Reset to page 1 when search term changes
+  React.useEffect(() => {
+    setUserManagementPage(1);
+  }, [userSearchTerm]);
 
   const FEATURE_DEFINITIONS = [
     { key: 'manage_users', label: strings.manageUsers, icon: Users, color: 'text-blue-600' },
@@ -1681,23 +1710,50 @@ export default function AdminConsole() {
               opacity: userManagementExpanded ? 1 : 0
             }}
           >
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.letterCredits}</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  {sortedUsers.map((u, idx) => {
+            <CardContent className="p-6">
+              {/* Search Box */}
+              <div className="mb-4">
+                <div className="relative">
+                  <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: colors.textSecondary }} />
+                  <Input
+                    type="text"
+                    placeholder={language === 'th' ? 'ค้นหาผู้ใช้ (ชื่อ, อีเมล, ID)' : language === 'zh' ? '搜索用户（姓名、电子邮件、ID）' : language === 'ja' ? 'ユーザーを検索（名前、メール、ID）' : language === 'ko' ? '사용자 검색（이름、이메일、ID）' : 'Search users (name, email, ID)'}
+                    value={userSearchTerm}
+                    onChange={(e) => setUserSearchTerm(e.target.value)}
+                    style={{
+                      paddingLeft: '40px',
+                      backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary,
+                      borderRadius: '8px',
+                      border: `2px solid ${colors.borderColor}`
+                    }}
+                  />
+                </div>
+              </div>
+
+              {filteredUsers.length === 0 ? (
+                <div className="text-center py-8" style={{ color: colors.textSecondary }}>
+                  {language === 'th' ? 'ไม่พบผู้ใช้สำหรับการค้นหานี้' : language === 'zh' ? '未找到此搜索的用户' : language === 'ja' ? 'この検索に該当するユーザーが見つかりません' : language === 'ko' ? '이 검색에 대한 사용자를 찾을 수 없습니다' : 'No users found for this search.'}
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.letterCredits}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      {paginatedUsers.map((u, idx) => {
                     const lastUpdate = new Date(u.updated_date || u.created_date);
                     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
                     const isOnline = lastUpdate > fiveMinutesAgo;
@@ -1987,6 +2043,89 @@ export default function AdminConsole() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls */}
+              {totalUserPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4" style={{
+                  borderTop: `1px solid ${colors.borderColor}`
+                }}>
+                  <button
+                    onClick={() => {
+                      setUserManagementPage(prev => Math.max(1, prev - 1));
+                    }}
+                    disabled={userManagementPage === 1}
+                    style={{
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      border: `2px solid ${colors.borderColor}`,
+                      backgroundColor: userManagementPage === 1 ? (isDarkMode ? '#353A3D' : '#F1F5F9') : colors.cardBg,
+                      color: userManagementPage === 1 ? colors.textSecondary : '#0C3B2E',
+                      fontWeight: '600',
+                      fontSize: '14px',
+                      cursor: userManagementPage === 1 ? 'not-allowed' : 'pointer',
+                      opacity: userManagementPage === 1 ? 0.5 : 1,
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (userManagementPage !== 1) {
+                        e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.color = '#FFFFFF';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (userManagementPage !== 1) {
+                        e.target.style.backgroundColor = colors.cardBg;
+                        e.target.style.color = '#0C3B2E';
+                      }
+                    }}
+                  >
+                    {language === 'th' ? 'ก่อนหน้า' : language === 'zh' ? '上一页' : language === 'ja' ? '前へ' : language === 'ko' ? '이전' : 'Previous'}
+                  </button>
+
+                  <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? `หน้า ${userManagementPage} จาก ${totalUserPages}` : 
+                     language === 'zh' ? `第 ${userManagementPage} 页 / 共 ${totalUserPages} 页` :
+                     language === 'ja' ? `ページ ${userManagementPage} / ${totalUserPages}` :
+                     language === 'ko' ? `${userManagementPage} / ${totalUserPages} 페이지` :
+                     `Page ${userManagementPage} of ${totalUserPages}`}
+                  </span>
+
+                  <button
+                    onClick={() => {
+                      setUserManagementPage(prev => Math.min(totalUserPages, prev + 1));
+                    }}
+                    disabled={userManagementPage === totalUserPages}
+                    style={{
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      border: `2px solid ${colors.borderColor}`,
+                      backgroundColor: userManagementPage === totalUserPages ? (isDarkMode ? '#353A3D' : '#F1F5F9') : colors.cardBg,
+                      color: userManagementPage === totalUserPages ? colors.textSecondary : '#0C3B2E',
+                      fontWeight: '600',
+                      fontSize: '14px',
+                      cursor: userManagementPage === totalUserPages ? 'not-allowed' : 'pointer',
+                      opacity: userManagementPage === totalUserPages ? 0.5 : 1,
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (userManagementPage !== totalUserPages) {
+                        e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.color = '#FFFFFF';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (userManagementPage !== totalUserPages) {
+                        e.target.style.backgroundColor = colors.cardBg;
+                        e.target.style.color = '#0C3B2E';
+                      }
+                    }}
+                  >
+                    {language === 'th' ? 'ถัดไป' : language === 'zh' ? '下一页' : language === 'ja' ? '次へ' : language === 'ko' ? '다음' : 'Next'}
+                  </button>
+                </div>
+              )}
+                </>
+              )}
             </CardContent>
           </div>
         </Card>

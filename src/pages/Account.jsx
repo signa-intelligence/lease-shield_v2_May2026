@@ -490,11 +490,8 @@ function AccountContent() {
   const [downgradeStep, setDowngradeStep] = useState(1);
   const [downgradeReason, setDowngradeReason] = useState('');
   const [downgradeFeedback, setDowngradeFeedback] = useState('');
-  const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false); // New state for Notification Preferences expansion
-  const [expandedNotifAnalytics, setExpandedNotifAnalytics] = useState(false); // New state for Notification Analytics expansion
-  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false); // Collapsible User Management
-  const [userSearchTerm, setUserSearchTerm] = useState(''); // Search filter for users
-  const [userManagementPage, setUserManagementPage] = useState(1); // Pagination for users
+  const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false);
+  const [expandedNotifAnalytics, setExpandedNotifAnalytics] = useState(false);
   
   const plansSectionRef = React.useRef(null);
 
@@ -506,18 +503,7 @@ function AccountContent() {
     staleTime: 0,
   });
 
-  // Fetch all users for admin User Management section
-  const { data: allUsers = [] } = useQuery({
-    queryKey: ['allUsers'],
-    queryFn: async () => {
-      const response = await base44.functions.invoke('getAllUsers');
-      return response.data?.users || response.data || [];
-    },
-    enabled: !!user && (
-      ['admin', 'super_admin', 'va'].includes(user.access_level) ||
-      ['admin', 'super_admin', 'va'].includes(user.role)
-    ),
-  });
+
 
   // Auto-generate referral code if missing AND capture referred_by_code from URL
   React.useEffect(() => {
@@ -2181,39 +2167,6 @@ function AccountContent() {
   const currentPlan = PLAN_DETAILS.find(p => p.key === planTier);
 
   const lineQRCodeUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/81fb46460_M_gainfriends_2dbarcodes_GW.png";
-
-  // Filter users based on search term
-  const matchesSearch = (u, term) => {
-    if (!term) return true;
-    const lowerTerm = term.toLowerCase();
-    const searchable = [
-      u.full_name || '',
-      u.email || '',
-      u.id || '',
-      u.referral_code || ''
-    ].join(' ').toLowerCase();
-    return searchable.includes(lowerTerm);
-  };
-
-  const filteredUsers = allUsers.filter(u => matchesSearch(u, userSearchTerm));
-  
-  // Pagination for User Management
-  const usersPerPage = 10;
-  const totalUserPages = Math.ceil(filteredUsers.length / usersPerPage);
-  const startUserIndex = (userManagementPage - 1) * usersPerPage;
-  const endUserIndex = startUserIndex + usersPerPage;
-  const paginatedUsers = filteredUsers.slice(startUserIndex, endUserIndex);
-
-  // Reset to page 1 when search term changes
-  React.useEffect(() => {
-    setUserManagementPage(1);
-  }, [userSearchTerm]);
-
-  // Check if user is admin
-  const isAdmin = user && (
-    ['admin', 'super_admin', 'va'].includes(user.access_level) ||
-    ['admin', 'super_admin', 'va'].includes(user.role)
-  );
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-36 md:pb-40 lg:pb-16 page-transition" style={{ backgroundColor: colors.bg }}>
@@ -5331,211 +5284,7 @@ function AccountContent() {
           </CardContent>
         </Card>
 
-        {/* USER MANAGEMENT SECTION (Admin Only) */}
-        {isAdmin && allUsers.length > 0 && (
-          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardHeader 
-              className="cursor-pointer"
-              onClick={() => {
-                haptic.light();
-                setIsUserManagementOpen(!isUserManagementOpen);
-              }}
-              style={{ borderBottom: isUserManagementOpen ? `1px solid ${colors.borderColor}` : 'none' }}
-            >
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <Users className="w-5 h-5 text-ls-forest" />
-                  {language === 'th' ? 'การจัดการผู้ใช้' : language === 'zh' ? '用户管理' : language === 'ja' ? 'ユーザー管理' : language === 'ko' ? '사용자 관리' : language === 'ru' ? 'Управление пользователями' : 'User Management'}
-                  <span className="text-sm font-normal" style={{ color: colors.textSecondary }}>
-                    ({allUsers.length})
-                  </span>
-                </CardTitle>
-                {isUserManagementOpen ? <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} /> : <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />}
-              </div>
-            </CardHeader>
-            {isUserManagementOpen && (
-              <CardContent className="p-6">
-                {/* Search Box */}
-                <div className="mb-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: colors.textSecondary }} />
-                    <Input
-                      type="text"
-                      placeholder={language === 'th' ? 'ค้นหาผู้ใช้ (ชื่อ, อีเมล, ID)' : language === 'zh' ? '搜索用户（姓名、电子邮件、ID）' : language === 'ja' ? 'ユーザーを検索（名前、メール、ID）' : language === 'ko' ? '사용자 검색（이름、이메일、ID）' : language === 'ru' ? 'Поиск пользователей (имя, email, ID)' : 'Search users (name, email, ID)'}
-                      value={userSearchTerm}
-                      onChange={(e) => setUserSearchTerm(e.target.value)}
-                      style={{
-                        paddingLeft: '40px',
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.borderColor,
-                        color: colors.textPrimary
-                      }}
-                    />
-                  </div>
-                </div>
 
-                {/* User List */}
-                {filteredUsers.length === 0 ? (
-                  <div className="text-center py-8" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'ไม่พบผู้ใช้สำหรับการค้นหานี้' : language === 'zh' ? '未找到此搜索的用户' : language === 'ja' ? 'この検索に該当するユーザーが見つかりません' : language === 'ko' ? '이 검색에 대한 사용자를 찾을 수 없습니다' : language === 'ru' ? 'Пользователи не найдены' : 'No users found for this search.'}
-                  </div>
-                ) : (
-                  <>
-                    {/* Scrollable User List Container */}
-                    <div 
-                      className="space-y-2 overflow-y-auto"
-                      style={{
-                        maxHeight: '480px',
-                        paddingRight: '8px'
-                      }}
-                    >
-                      {paginatedUsers.map((u) => (
-                      <div
-                        key={u.id}
-                        className="p-3 rounded-lg border"
-                        style={{
-                          backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                          borderColor: colors.borderColor
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate" style={{ color: colors.textPrimary }}>
-                              {u.full_name || language === 'th' ? 'ไม่ระบุชื่อ' : language === 'ru' ? 'Без имени' : 'No name'}
-                            </p>
-                            <p className="text-xs truncate" style={{ color: colors.textSecondary }}>
-                              {u.email}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              <span className="text-xs font-mono px-2 py-0.5 rounded" style={{
-                                backgroundColor: isDarkMode ? '#2A2D30' : '#E5E7EB',
-                                color: colors.textSecondary
-                              }}>
-                                ID: {u.id?.slice(0, 8)}
-                              </span>
-                              {u.referral_code && (
-                                <span className="text-xs font-mono px-2 py-0.5 rounded" style={{
-                                  backgroundColor: isDarkMode ? '#1E3A5F' : '#DBEAFE',
-                                  color: isDarkMode ? '#93C5FD' : '#1E40AF'
-                                }}>
-                                  Ref: {u.referral_code}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                            <Badge className={
-                              u.plan_tier === 'secure' ? 'bg-purple-100 text-purple-800' :
-                              u.plan_tier === 'protect' ? 'bg-emerald-100 text-emerald-800' :
-                              u.plan_tier === 'lite' ? 'bg-blue-100 text-blue-800' :
-                              'bg-slate-100 text-slate-800'
-                            }>
-                              {u.plan_tier || 'free'}
-                            </Badge>
-                            {u.access_level && u.access_level !== 'user' && (
-                              <Badge className={
-                                u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-                                u.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
-                                'bg-amber-100 text-amber-800'
-                              }>
-                                {u.access_level}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      ))}
-                    </div>
-
-                    {/* Pagination Controls */}
-                    {totalUserPages > 1 && (
-                      <div className="flex items-center justify-between mt-4 pt-4" style={{
-                        borderTop: `1px solid ${colors.borderColor}`
-                      }}>
-                        <button
-                          onClick={() => {
-                            haptic.light();
-                            setUserManagementPage(prev => Math.max(1, prev - 1));
-                          }}
-                          disabled={userManagementPage === 1}
-                          style={{
-                            padding: '8px 16px',
-                            borderRadius: '8px',
-                            border: `2px solid ${colors.borderColor}`,
-                            backgroundColor: userManagementPage === 1 ? colors.fieldBg : colors.cardBg,
-                            color: userManagementPage === 1 ? colors.textSecondary : '#0C3B2E',
-                            fontWeight: '600',
-                            fontSize: '14px',
-                            cursor: userManagementPage === 1 ? 'not-allowed' : 'pointer',
-                            opacity: userManagementPage === 1 ? 0.5 : 1,
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (userManagementPage !== 1) {
-                              e.target.style.backgroundColor = '#0C3B2E';
-                              e.target.style.color = '#FFFFFF';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (userManagementPage !== 1) {
-                              e.target.style.backgroundColor = colors.cardBg;
-                              e.target.style.color = '#0C3B2E';
-                            }
-                          }}
-                        >
-                          {language === 'th' ? 'ก่อนหน้า' : language === 'zh' ? '上一页' : language === 'ja' ? '前へ' : language === 'ko' ? '이전' : language === 'ru' ? 'Назад' : 'Previous'}
-                        </button>
-
-                        <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                          {language === 'th' ? `หน้า ${userManagementPage} จาก ${totalUserPages}` : 
-                           language === 'zh' ? `第 ${userManagementPage} 页 / 共 ${totalUserPages} 页` :
-                           language === 'ja' ? `ページ ${userManagementPage} / ${totalUserPages}` :
-                           language === 'ko' ? `${userManagementPage} / ${totalUserPages} 페이지` :
-                           language === 'ru' ? `Страница ${userManagementPage} из ${totalUserPages}` :
-                           `Page ${userManagementPage} of ${totalUserPages}`}
-                        </span>
-
-                        <button
-                          onClick={() => {
-                            haptic.light();
-                            setUserManagementPage(prev => Math.min(totalUserPages, prev + 1));
-                          }}
-                          disabled={userManagementPage === totalUserPages}
-                          style={{
-                            padding: '8px 16px',
-                            borderRadius: '8px',
-                            border: `2px solid ${colors.borderColor}`,
-                            backgroundColor: userManagementPage === totalUserPages ? colors.fieldBg : colors.cardBg,
-                            color: userManagementPage === totalUserPages ? colors.textSecondary : '#0C3B2E',
-                            fontWeight: '600',
-                            fontSize: '14px',
-                            cursor: userManagementPage === totalUserPages ? 'not-allowed' : 'pointer',
-                            opacity: userManagementPage === totalUserPages ? 0.5 : 1,
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (userManagementPage !== totalUserPages) {
-                              e.target.style.backgroundColor = '#0C3B2E';
-                              e.target.style.color = '#FFFFFF';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (userManagementPage !== totalUserPages) {
-                              e.target.style.backgroundColor = colors.cardBg;
-                              e.target.style.color = '#0C3B2E';
-                            }
-                          }}
-                        >
-                          {language === 'th' ? 'ถัดไป' : language === 'zh' ? '下一页' : language === 'ja' ? '次へ' : language === 'ko' ? '다음' : language === 'ru' ? 'Вперёд' : 'Next'}
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            )}
-          </Card>
-        )}
 
         <div className="mt-8 mb-4">
           <Button
