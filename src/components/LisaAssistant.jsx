@@ -505,12 +505,24 @@ assistant:`;
           
           {/* Mobile: Full-screen sheet */}
           <div className="md:hidden">
+            {/* Backdrop for tap-outside-to-close */}
+            <div
+              className="fixed inset-0 z-[59]"
+              style={{ backgroundColor: 'transparent' }}
+              onClick={() => {
+                document.body.classList.remove('lisa-open');
+                setIsOpen(false);
+              }}
+            />
+            
             <div
               className="fixed inset-0 z-[60] flex flex-col"
               style={{
                 backgroundColor: colors.bg,
                 paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
+                pointerEvents: 'auto',
               }}
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Fixed Header */}
               <div
@@ -536,21 +548,39 @@ assistant:`;
                 <div className="flex items-center gap-2">
                   <button
                     onClick={clearChatHistory}
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                    className="rounded-full flex items-center justify-center"
+                    style={{ 
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      width: '44px',
+                      height: '44px',
+                      minWidth: '44px',
+                      minHeight: '44px',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
                     title="New chat"
+                    aria-label="New chat"
                   >
-                    <RotateCcw className="w-4 h-4 text-white" />
+                    <RotateCcw className="w-5 h-5 text-white" />
                   </button>
                   <button
                     onClick={() => {
                       document.body.classList.remove('lisa-open');
                       setIsOpen(false);
                     }}
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                    className="rounded-full flex items-center justify-center"
+                    style={{ 
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      width: '44px',
+                      height: '44px',
+                      minWidth: '44px',
+                      minHeight: '44px',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                    aria-label="Close LISA"
                   >
-                    <X className="w-5 h-5 text-white" />
+                    <X className="w-6 h-6 text-white" />
                   </button>
                 </div>
               </div>
