@@ -414,16 +414,7 @@ export default function QuickGuide({ open, onClose, language = 'en', isDarkMode 
     }
   }, [open]);
 
-  // Check localStorage on mount - if hidden, never show
-  const isHiddenInStorage = typeof window !== 'undefined' && localStorage.getItem('ls_quick_guide_hidden') === 'true';
-  
-  console.log('🎯 [QuickGuide] Render check:', { 
-    open, 
-    isHiddenInStorage,
-    willRender: open && !isHiddenInStorage 
-  });
-  
-  if (!open || isHiddenInStorage) return null;
+  if (!open) return null;
 
   const stepKey = STEP_KEYS[currentStep];
   const stepData = QUICK_GUIDE_CONTENT[stepKey];
