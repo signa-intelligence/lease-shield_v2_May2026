@@ -124,110 +124,32 @@ function LoginPage() {
           </div>
         </div>
 
-        {isAndroidWebView ? (
-          // WebView: Show email/password form for inline login
-          <form onSubmit={handleWebViewLogin} style={{ textAlign: 'left' }}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={submitting}
-              required
-              autoComplete="email"
-              style={{
-                width: '100%',
-                padding: '12px',
-                marginBottom: '12px',
-                border: '1px solid #E2E8F0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                boxSizing: 'border-box',
-                opacity: submitting ? 0.6 : 1
-              }}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={submitting}
-              required
-              autoComplete="current-password"
-              style={{
-                width: '100%',
-                padding: '12px',
-                marginBottom: '12px',
-                border: '1px solid #E2E8F0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                boxSizing: 'border-box',
-                opacity: submitting ? 0.6 : 1
-              }}
-            />
-            {error && (
-              <div style={{
-                padding: '10px',
-                marginBottom: '12px',
-                backgroundColor: '#FEE2E2',
-                color: '#991B1B',
-                borderRadius: '8px',
-                fontSize: '12px',
-                textAlign: 'left'
-              }}>
-                {error}
-              </div>
-            )}
-            <button
-              type="submit"
-              disabled={submitting}
-              style={{
-                width: '100%',
-                padding: '13px',
-                backgroundColor: submitting ? '#9CA3AF' : '#0C3B2E',
-                color: '#FFFFFF',
-                border: '2px solid #C7A338',
-                borderRadius: '10px',
-                fontSize: '15px',
-                fontWeight: 'bold',
-                cursor: submitting ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 12px rgba(12, 59, 46, 0.3)',
-                transition: 'all 0.2s',
-                opacity: submitting ? 0.8 : 1
-              }}
-            >
-              {submitting ? 'Signing In...' : 'Sign In to Continue'}
-            </button>
-          </form>
-        ) : (
-          // Desktop/Mobile Browser: Use OAuth redirect flow
-          <button
-            onClick={handleSignInDesktop}
-            style={{
-              width: '100%',
-              padding: '13px',
-              backgroundColor: '#0C3B2E',
-              color: '#FFFFFF',
-              border: '2px solid #C7A338',
-              borderRadius: '10px',
-              fontSize: '15px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(12, 59, 46, 0.3)',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 8px 16px rgba(12, 59, 46, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 12px rgba(12, 59, 46, 0.3)';
-            }}
-          >
-            Sign In to Continue
-          </button>
-        )}
+        <button
+          onClick={handleSignIn}
+          style={{
+            width: '100%',
+            padding: '13px',
+            backgroundColor: '#0C3B2E',
+            color: '#FFFFFF',
+            border: '2px solid #C7A338',
+            borderRadius: '10px',
+            fontSize: '15px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(12, 59, 46, 0.3)',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 8px 16px rgba(12, 59, 46, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = '0 4px 12px rgba(12, 59, 46, 0.3)';
+          }}
+        >
+          Sign In to Continue
+        </button>
 
         <p style={{
           fontSize: '9px',
