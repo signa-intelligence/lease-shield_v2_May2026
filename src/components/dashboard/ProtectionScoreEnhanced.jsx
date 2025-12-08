@@ -8,7 +8,7 @@ import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 
-const ProtectionScoreEnhanced = ({
+const ProtectionScoreEnhanced = React.memo(({
   score,
   breakdown,
   recommendations,
@@ -803,6 +803,6 @@ const ProtectionScoreEnhanced = ({
       `}</style>
     </Card>
   );
-};
+});
 
 export default ProtectionScoreEnhanced;
