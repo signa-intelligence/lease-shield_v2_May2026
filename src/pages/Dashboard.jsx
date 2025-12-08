@@ -27,8 +27,28 @@ import FloatingActionButton from "../components/shared/FloatingActionButton";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
 import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
+import AuthGuard from "../components/shared/AuthGuard";
 
 function DashboardContent() {
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  // Redirect to login if not authenticated
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const isAuth = await base44.auth.isAuthenticated();
+        if (!isAuth) {
+          base44.auth.redirectToLogin(window.location.pathname);
+        }
+      } catch (err) {
+        base44.auth.redirectToLogin(window.location.pathname);
+      }
+    };
+    checkAuth();
+  }, []);
   const [expandedSections, setExpandedSections] = React.useState({
     stats: true,
     quickActions: true,

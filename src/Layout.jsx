@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
-import AuthGuard from "./components/shared/AuthGuard";
+
 
 import QuickGuide from "./components/onboarding/QuickGuide";
 import LisaAssistant from "./components/LisaAssistant";
@@ -392,8 +392,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <AuthGuard>
-      <div style={{ 
+    <div style={{ 
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
@@ -1110,7 +1109,7 @@ export default function Layout({ children, currentPageName }) {
           })}
         </div>
       </nav>
-    </div>
-    </AuthGuard>
-  );
-}
+      </div>
+      </div>
+      );
+      }
