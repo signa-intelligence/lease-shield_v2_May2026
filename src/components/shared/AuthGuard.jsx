@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Shield } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 // LoginPage component - shown when user is not authenticated
 function LoginPage() {
@@ -115,34 +116,26 @@ function LoginPage() {
   );
 }
 
-// AuthGuard - protects routes and shows LoginPage if not authenticated
+// AuthGuard - protects routes using base44.auth.me() with React Query
 const AuthGuard = ({ children }) => {
-  const [authState, setAuthState] = useState('loading'); // 'loading' | 'authenticated' | 'unauthenticated'
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    console.log('🔐 [AUTH_GUARD] Setting up onAuthStateChanged...');
-    
-    const unsubscribe = base44.auth.onAuthStateChanged((authUser) => {
-      console.log('🔐 [AUTH_GUARD] Auth state changed:', authUser ? `Logged in as ${authUser.email}` : 'Not logged in');
-      
-      if (authUser) {
-        setUser(authUser);
-        setAuthState('authenticated');
-      } else {
-        setUser(null);
-        setAuthState('unauthenticated');
+  const { data: user, isLoading, error } = useQuery({
+    queryKey: ['authGuardUser'],
+    queryFn: async () => {
+      try {
+        const userData = await base44.auth.me();
+        console.log('🔐 [AUTH_GUARD] User authenticated:', userData?.email);
+        return userData;
+      } catch (err) {
+        console.log('🔐 [AUTH_GUARD] Not authenticated:', err.message);
+        return null;
       }
-    });
-
-    return () => {
-      console.log('🔐 [AUTH_GUARD] Cleaning up listener');
-      unsubscribe();
-    };
-  }, []);
+    },
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Loading state - show spinner
-  if (authState === 'loading') {
+  if (isLoading) {
     return (
       <div style={{
         display: 'flex',
@@ -170,8 +163,8 @@ const AuthGuard = ({ children }) => {
     );
   }
 
-  // Unauthenticated - show login page
-  if (authState === 'unauthenticated') {
+  // Not authenticated or error - show login page
+  if (!user || error) {
     return <LoginPage />;
   }
 
