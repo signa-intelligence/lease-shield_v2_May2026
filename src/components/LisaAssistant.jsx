@@ -607,13 +607,14 @@ assistant:`;
                     }}
                     className="rounded-full flex items-center justify-center active:scale-95 transition-all"
                     style={{ 
-                      backgroundColor: 'rgba(255,255,255,0.25)',
+                      background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
                       width: '44px',
                       height: '44px',
                       minWidth: '44px',
                       minHeight: '44px',
                       border: 'none',
                       cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(12, 59, 46, 0.3)',
                     }}
                     aria-label="Close LISA"
                   >
