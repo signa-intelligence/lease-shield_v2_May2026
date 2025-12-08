@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
-import { getStripePriceId } from '../config/stripePrices.js';
+import { getStripePriceId } from '../components/shared/stripePrices.js';
 
 /**
  * STRIPE CHECKOUT CREATOR - Standalone, no external dependencies
