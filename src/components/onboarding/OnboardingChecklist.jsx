@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,14 +14,22 @@ import {
   Sparkles,
   Trophy,
   ChevronRight,
-  Wrench
+  Wrench,
+  ChevronDown,
+  ChevronUp,
+  X,
+  EyeOff
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getFeatureCardStyles } from "@/components/shared/featureTheme";
+import { base44 } from "@/api/base44Client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { haptic } from "../shared/HapticFeedback";
 
 const OnboardingChecklist = ({ user, leases, deposits, documents, cases, maintenanceRequests = [], isDarkMode = false, language = 'en' }) => {
-
+  const [isExpanded, setIsExpanded] = useState(true);
+  const queryClient = useQueryClient();
 
   const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
   const depositsTheme = getFeatureCardStyles("deposits", isDarkMode);
@@ -37,12 +45,41 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
     enable_notifications: notificationsTheme,
   };
 
+  const hideChecklistMutation = useMutation({
+    mutationFn: async () => {
+      const hideUntil = new Date();
+      hideUntil.setDate(hideUntil.getDate() + 7);
+      await base44.auth.updateMe({ 
+        onboarding_checklist_hidden_until: hideUntil.toISOString() 
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    }
+  });
+
+  const handleHideFor7Days = () => {
+    haptic.light();
+    hideChecklistMutation.mutate();
+  };
+
+  // Check if checklist is hidden
+  if (user?.onboarding_checklist_hidden_until) {
+    const hiddenUntil = new Date(user.onboarding_checklist_hidden_until);
+    if (hiddenUntil > new Date()) {
+      return null; // Don't render if hidden
+    }
+  }
+
   const t = {
     en: {
       title: "Getting Started",
       subtitle: "Complete these steps to maximize your protection",
       progress: "Progress",
       completed: "Completed!",
+      hideFor7Days: "Hide for 7 days",
+      collapse: "Collapse",
+      expand: "Expand",
       tasks: {
         uploadLease: "Upload your first lease",
         uploadLeaseDesc: "Get AI risk analysis",
@@ -73,6 +110,9 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       subtitle: "ทำตามขั้นตอนเหล่านี้เพื่อเพิ่มการป้องกันสูงสุด",
       progress: "ความคืบหน้า",
       completed: "เสร็จสมบูรณ์!",
+      hideFor7Days: "ซ่อน 7 วัน",
+      collapse: "ยุบ",
+      expand: "ขยาย",
       tasks: {
         uploadLease: "อัปโหลดสัญญาเช่าแรก",
         uploadLeaseDesc: "รับการวิเคราะห์ความเสี่ยงจาก AI",
@@ -103,6 +143,9 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       subtitle: "完成这些步骤以最大化您的保护",
       progress: "进度",
       completed: "已完成！",
+      hideFor7Days: "隐藏7天",
+      collapse: "折叠",
+      expand: "展开",
       tasks: {
         uploadLease: "上传您的第一份租约",
         uploadLeaseDesc: "获得AI风险分析",
@@ -133,6 +176,9 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       subtitle: "これらのステップを完了して保護を最大化しましょう",
       progress: "進捗",
       completed: "完了！",
+      hideFor7Days: "7日間非表示",
+      collapse: "折りたたむ",
+      expand: "展開",
       tasks: {
         uploadLease: "最初の賃貸契約をアップロード",
         uploadLeaseDesc: "AIリスク分析を取得",
@@ -163,6 +209,9 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       subtitle: "이 단계를 완료하여 보호를 극대화하세요",
       progress: "진행 상황",
       completed: "완료!",
+      hideFor7Days: "7일간 숨기기",
+      collapse: "접기",
+      expand: "펼치기",
       tasks: {
         uploadLease: "첫 번째 임대 계약 업로드",
         uploadLeaseDesc: "AI 위험 분석 받기",
@@ -193,6 +242,9 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       subtitle: "Выполните эти шаги для максимальной защиты",
       progress: "Прогресс",
       completed: "Завершено!",
+      hideFor7Days: "Скрыть на 7 дней",
+      collapse: "Свернуть",
+      expand: "Развернуть",
       tasks: {
         uploadLease: "Загрузите ваш первый договор",
         uploadLeaseDesc: "Получите AI-анализ рисков",
@@ -289,50 +341,68 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       className="border-none shadow-xl overflow-hidden bg-white dark:bg-gray-800"
     >
       <CardHeader
-        className="pb-4"
+        className="pb-4 cursor-pointer"
+        onClick={() => {
+          haptic.light();
+          setIsExpanded(!isExpanded);
+        }}
         style={{
           background: isAllComplete
             ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
             : 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-          borderBottom: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(12,59,46,0.08)'
+          borderBottom: isExpanded ? (isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(12,59,46,0.08)') : 'none'
         }}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
               {isAllComplete ? (
-                <Trophy className="w-6 h-6 text-white" />
+                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               ) : (
-                <Sparkles className="w-6 h-6 text-white" />
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               )}
             </div>
-            <div>
-              <CardTitle className="text-white text-xl mb-1">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-white text-base sm:text-lg mb-1">
                 {isAllComplete ? strings.allDone : strings.title}
               </CardTitle>
-              <p className="text-white/80 text-sm">
+              <p className="text-white/80 text-xs sm:text-sm line-clamp-1">
                 {isAllComplete ? strings.allDoneDesc : strings.subtitle}
               </p>
             </div>
           </div>
+          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+            <span className="text-white font-bold text-sm">
+              {completedTasks}/{totalTasks}
+            </span>
+            {isExpanded ? (
+              <ChevronUp className="w-5 h-5 text-white" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-white" />
+            )}
+          </div>
         </div>
         
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-white/90 text-sm mb-2">
-            <span>{strings.progress}</span>
-            <span className="font-bold">{completedTasks}/{totalTasks}</span>
+        {isExpanded && (
+          <div className="mt-4">
+            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-white rounded-full transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
           </div>
-          <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-white rounded-full transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        </div>
+        )}
       </CardHeader>
 
-      <CardContent className="p-6">
-        <div className="space-y-3">
+      {isExpanded && (
+        <CardContent className="p-4 sm:p-6">
+          <div 
+            className="space-y-3 overflow-y-auto"
+            style={{
+              maxHeight: totalTasks > 6 ? '400px' : 'none'
+            }}
+          >
           {tasks.map((task) => {
             const TaskIcon = task.icon;
             const theme = taskThemeMap[task.id] || leasesTheme;
@@ -407,20 +477,45 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
           })}
         </div>
 
-        {isAllComplete && (
-          <div 
-            className="mt-6 p-4 rounded-xl text-center animate-pulse"
+          {isAllComplete && (
+            <div 
+              className="mt-4 p-4 rounded-xl text-center"
+              style={{
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+              }}
+            >
+              <Trophy className="w-10 h-10 text-white mx-auto mb-2" />
+              <p className="text-white font-bold text-base">
+                {strings.earnedBadge}
+              </p>
+            </div>
+          )}
+
+          {/* Hide for 7 Days Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleHideFor7Days();
+            }}
+            className="mt-4 w-full px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2"
             style={{
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+              backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+              color: isDarkMode ? '#D1D5DB' : '#6B7280',
+              border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)'}`
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = isDarkMode ? '#4B5563' : '#E5E7EB';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
             }}
           >
-            <Trophy className="w-12 h-12 text-white mx-auto mb-3" />
-            <p className="text-white font-bold text-lg">
-              {strings.earnedBadge}
-            </p>
-          </div>
-        )}
-      </CardContent>
+            <EyeOff className="w-4 h-4" />
+            {strings.hideFor7Days}
+          </button>
+        </div>
+        </CardContent>
+      )}
     </Card>
   );
 };

@@ -20,10 +20,7 @@ import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
-import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
-import OnboardingBanner from "../components/onboarding/OnboardingBanner";
-import FeatureTour from "../components/onboarding/FeatureTour";
 import FirstSessionProgress from "../components/onboarding/FirstSessionProgress";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
@@ -40,8 +37,6 @@ function DashboardContent() {
     notifications: false,
     depositAlerts: false,
   });
-  const [showOnboarding, setShowOnboarding] = React.useState(false);
-  const [showTour, setShowTour] = React.useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -1298,23 +1293,7 @@ function DashboardContent() {
 
   const onboardingProgress = calculateOnboardingProgress();
 
-  const hasNoData = leases.length === 0 && deposits.length === 0 && documents.length === 0 && maintenanceRequests.length === 0;
-  const shouldShowOnboardingChecklist = !user?.onboarding_completed && (hasNoData || !onboardingProgress.allTasksComplete);
-
-  React.useEffect(() => {
-    if (user && !user.onboarding_completed) {
-      const hasAnyActivity = leases.length > 0 || deposits.length > 0 || documents.length > 0 || cases.length > 0;
-
-      if (!hasAnyActivity) {
-      }
-    }
-  }, [user, leases, deposits, documents, cases]);
-
-  const handleOnboardingComplete = async () => {
-    setShowOnboarding(false);
-    await base44.auth.updateMe({ onboarding_completed: true });
-    queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-  };
+  const shouldShowOnboardingChecklist = !onboardingProgress.allTasksComplete;
 
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
 
@@ -1331,14 +1310,6 @@ function DashboardContent() {
             }}
             color="#C7A338"
             position="bottom-right"
-          />
-
-          <OnboardingWizard
-            open={showOnboarding}
-            onClose={handleOnboardingComplete}
-            user={user}
-            isDarkMode={isDarkMode}
-            language={language}
           />
 
           <div className="mb-6">
@@ -1676,16 +1647,6 @@ function DashboardContent() {
                   />
                   </div>
 
-                  {/* Onboarding Banner - Shows for new users who haven't completed onboarding */}
-                  {!user?.onboarding_completed && !user?.onboarding_banner_dismissed && (
-                  <OnboardingBanner
-                  user={user}
-                  isDarkMode={isDarkMode}
-                  language={language}
-                  onStartSetup={() => setShowOnboarding(true)}
-                  />
-                  )}
-
                   {/* First Session Progress - Shows in first 24 hours */}
                   <FirstSessionProgress
                   user={user}
@@ -1696,14 +1657,20 @@ function DashboardContent() {
                   language={language}
                   />
 
-                  {/* Feature Tour - Auto-shows after onboarding */}
-                  {user && !user.has_seen_tour && user.onboarding_completed && (
-                  <FeatureTour
+                  {/* Onboarding Checklist - Persistent collapsible checklist */}
+                  {shouldShowOnboardingChecklist && (
+                  <div className="mb-6">
+                  <OnboardingChecklist
                   user={user}
+                  leases={leases}
+                  deposits={deposits}
+                  documents={documents}
+                  cases={cases}
+                  maintenanceRequests={maintenanceRequests}
                   isDarkMode={isDarkMode}
                   language={language}
-                  onComplete={() => setShowTour(false)}
                   />
+                  </div>
                   )}
 
                   {urgentLeaseNotices.length > 0 && (
@@ -1833,124 +1800,7 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Quick Start Card - Shows for users with no activity yet */}
-          {!isLoading && !hasAnyData && !showOnboarding && (
-            <Card className="mb-6 border-none shadow-lg bg-white dark:bg-gray-800">
-              <CardContent className="p-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#0C3B2E' }}>
-                    <Shield className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg mb-1 text-gray-900 dark:text-gray-50">
-                      {strings.getStarted}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      {strings.getStartedDesc}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => navigate(createPageUrl("uploadscan"))}
-                        className="btn-interaction"
-                        style={{
-                          padding: '8px 14px',
-                          backgroundColor: '#0C3B2E',
-                          color: '#FFFFFF',
-                          borderRadius: '8px',
-                          border: 'none',
-                          fontWeight: '600',
-                          fontSize: '13px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}
-                      >
-                        <Shield className="w-4 h-4" />
-                        {strings.uploadLease}
-                      </button>
-                      <button
-                        onClick={() => navigate(createPageUrl("propertytracker") + "#deposit")}
-                        className="btn-interaction"
-                        style={{
-                          padding: '8px 14px',
-                          backgroundColor: 'transparent',
-                          color: isDarkMode ? '#F9FAFB' : '#0F172A',
-                          borderRadius: '8px',
-                          border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(12,59,46,0.08)',
-                          fontWeight: '600',
-                          fontSize: '13px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}
-                      >
-                        <Wallet className="w-4 h-4" />
-                        {strings.trackDeposit}
-                      </button>
-                      <button
-                        onClick={() => navigate(createPageUrl("propertytracker") + '#maintenance')}
-                        className="btn-interaction"
-                        style={{
-                          padding: '8px 14px',
-                          backgroundColor: 'transparent',
-                          color: isDarkMode ? '#F9FAFB' : '#0F172A',
-                          borderRadius: '8px',
-                          border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(12,59,46,0.08)',
-                          fontWeight: '600',
-                          fontSize: '13px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}
-                      >
-                        <Wrench className="w-4 h-4" />
-                        {strings.reportMaintenance}
-                      </button>
-                      {isFreeTier && (
-                        <button
-                          onClick={() => navigate(createPageUrl("Account") + '?showPlans=true')}
-                          className="btn-interaction"
-                          style={{
-                            padding: '8px 14px',
-                            backgroundColor: 'transparent',
-                            color: '#C7A338',
-                            borderRadius: '8px',
-                            border: '1px solid #C7A338',
-                            fontWeight: '600',
-                            fontSize: '13px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                          }}
-                        >
-                          {strings.viewPlans}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
-          {shouldShowOnboardingChecklist && !showOnboarding && (
-            <div className="mb-6">
-              <OnboardingChecklist
-                user={user}
-                leases={leases}
-                deposits={deposits}
-                documents={documents}
-                cases={cases}
-                maintenanceRequests={maintenanceRequests}
-                isDarkMode={isDarkMode}
-                language={language}
-              />
-            </div>
-          )}
 
           {/* FREE TIER UPSELL BANNER */}
           {isFreeTier && (
