@@ -60,8 +60,7 @@ function LoginPage() {
         }
       `}</style>
       <div style={{
-        maxWidth: '90%',
-        width: '100%',
+        width: '90%',
         maxWidth: '380px',
         backgroundColor: '#FFFFFF',
         borderRadius: '18px',
