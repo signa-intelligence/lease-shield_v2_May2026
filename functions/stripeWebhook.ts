@@ -65,18 +65,108 @@ Deno.serve(async (req) => {
 
       console.log('[WEBHOOK] checkout.session.completed');
       console.log('[WEBHOOK] Session ID:', session.id);
-      console.log('[WEBHOOK] Metadata type:', metadata.type);
+      console.log('[WEBHOOK] Mode:', session.mode);
+      console.log('[WEBHOOK] Customer:', session.customer);
+      console.log('[WEBHOOK] Subscription:', session.subscription);
+      console.log('[WEBHOOK] Metadata:', JSON.stringify(metadata, null, 2));
+      console.log('[WEBHOOK] Full session data:', JSON.stringify(session, null, 2));
 
       // ========================================
-      // SUBSCRIPTION FLOW - Process referral reward
+      // SUBSCRIPTION FLOW - Activate user subscription
       // ========================================
       if (metadata.type === 'subscription' && metadata.userId) {
-        console.log('[WEBHOOK] 🎯 Subscription detected - checking referral reward');
-        
+        console.log('[WEBHOOK] 🎯 SUBSCRIPTION ACTIVATION STARTING');
+        console.log('[WEBHOOK] Plan:', metadata.plan);
+        console.log('[WEBHOOK] Interval:', metadata.interval);
+        console.log('[WEBHOOK] User ID:', metadata.userId);
+
+        const userId = metadata.userId;
+        const planTier = metadata.plan; // lite, protect, secure
+        const billingInterval = metadata.interval; // monthly, annual
+        const subscriptionId = session.subscription;
+        const customerId = session.customer;
+
+        // Fetch user
+        let user;
         try {
-          // Non-blocking call to process referral reward
+          const allUsers = await base44.asServiceRole.entities.User.list();
+          user = allUsers.find(u => u.id === userId);
+
+          if (!user) {
+            console.error('[WEBHOOK] ❌ User not found:', userId);
+            return Response.json({ received: true, error: 'user_not_found' }, { status: 200 });
+          }
+
+          console.log('[WEBHOOK] ✅ User found:', user.email);
+          console.log('[WEBHOOK] Current plan:', user.plan_tier);
+        } catch (fetchError) {
+          console.error('[WEBHOOK] ❌ Failed to fetch user:', fetchError.message);
+          return Response.json({ received: true, error: 'user_fetch_failed' }, { status: 200 });
+        }
+
+        // Calculate plan renewal date (30 days for monthly, 365 for annual)
+        const renewalDate = new Date();
+        if (billingInterval === 'annual') {
+          renewalDate.setFullYear(renewalDate.getFullYear() + 1);
+        } else {
+          renewalDate.setDate(renewalDate.getDate() + 30);
+        }
+
+        // Grant initial letter credits based on plan tier
+        const planCredits = {
+          'lite': 3,
+          'protect': 5,
+          'secure': 10
+        };
+        const creditsToGrant = planCredits[planTier] || 0;
+        const currentCredits = user.letter_credits || 0;
+
+        // Update user entity with subscription details
+        try {
+          await base44.asServiceRole.entities.User.update(user.id, {
+            plan_tier: planTier,
+            billing_interval: billingInterval,
+            subscription_status: 'active',
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            plan_started_at: new Date().toISOString(),
+            plan_renews_at: renewalDate.toISOString(),
+            letter_credits: currentCredits + creditsToGrant
+          });
+
+          console.log('[WEBHOOK] ✅✅✅ SUBSCRIPTION ACTIVATED IN DB ✅✅✅');
+          console.log('[WEBHOOK] Plan tier:', planTier);
+          console.log('[WEBHOOK] Billing interval:', billingInterval);
+          console.log('[WEBHOOK] Subscription ID:', subscriptionId);
+          console.log('[WEBHOOK] Credits granted:', creditsToGrant);
+          console.log('[WEBHOOK] New credit balance:', currentCredits + creditsToGrant);
+          console.log('[WEBHOOK] Renews at:', renewalDate.toISOString());
+        } catch (updateError) {
+          console.error('[WEBHOOK] ❌ Failed to update user subscription:', updateError.message);
+          return Response.json({ received: true, error: 'subscription_update_failed' }, { status: 200 });
+        }
+
+        // Create Payment record
+        try {
+          await base44.asServiceRole.entities.Payment.create({
+            type: 'subscription',
+            amount: parseFloat((session.amount_total / 100).toFixed(2)),
+            currency: session.currency?.toUpperCase() || 'THB',
+            provider: 'stripe',
+            status: 'paid',
+            external_id: session.id,
+            created_by: user.email
+          });
+
+          console.log('[WEBHOOK] ✅ Payment record created for subscription');
+        } catch (paymentError) {
+          console.error('[WEBHOOK] ⚠️ Failed to create Payment record (non-critical):', paymentError.message);
+        }
+
+        // Process referral reward (non-blocking)
+        try {
           base44.asServiceRole.functions.invoke('processReferralReward', {
-            referredUserId: metadata.userId
+            referredUserId: userId
           }).catch(err => {
             console.error('[WEBHOOK] ⚠️ Referral reward processing failed (non-critical):', err.message);
           });
@@ -85,6 +175,14 @@ Deno.serve(async (req) => {
         } catch (refError) {
           console.error('[WEBHOOK] ⚠️ Referral reward setup error (non-critical):', refError.message);
         }
+
+        console.log('[WEBHOOK] ✅ Subscription activation complete');
+        return Response.json({ 
+          received: true, 
+          processed: 'subscription',
+          plan: planTier,
+          interval: billingInterval
+        }, { status: 200 });
       }
 
       // ========================================
@@ -245,8 +343,37 @@ Deno.serve(async (req) => {
         }, { status: 200 });
       }
 
-      // Non-credit checkout - ignore
-      console.log('[WEBHOOK] Non-credit checkout, skipping');
+      // Unknown checkout type
+      console.log('[WEBHOOK] ⚠️ checkout.session.completed with unknown type:', metadata.type);
+      return Response.json({ received: true }, { status: 200 });
+    }
+
+    // ========================================
+    // HANDLE: customer.subscription.created
+    // ========================================
+    if (event.type === 'customer.subscription.created') {
+      const subscription = event.data.object;
+      console.log('[WEBHOOK] customer.subscription.created');
+      console.log('[WEBHOOK] Subscription ID:', subscription.id);
+      console.log('[WEBHOOK] Customer:', subscription.customer);
+      console.log('[WEBHOOK] Status:', subscription.status);
+      console.log('[WEBHOOK] Metadata:', JSON.stringify(subscription.metadata, null, 2));
+      
+      // Subscription created - typically handled via checkout.session.completed
+      // This is a backup in case metadata flows through subscription object
+      return Response.json({ received: true }, { status: 200 });
+    }
+
+    // ========================================
+    // HANDLE: customer.subscription.updated
+    // ========================================
+    if (event.type === 'customer.subscription.updated') {
+      const subscription = event.data.object;
+      console.log('[WEBHOOK] customer.subscription.updated');
+      console.log('[WEBHOOK] Subscription ID:', subscription.id);
+      console.log('[WEBHOOK] Status:', subscription.status);
+      
+      // Handle cancellations or status changes if needed
       return Response.json({ received: true }, { status: 200 });
     }
 
