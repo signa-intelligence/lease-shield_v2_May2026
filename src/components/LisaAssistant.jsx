@@ -503,87 +503,133 @@ assistant:`;
             }
           `}</style>
           
-          {/* Mobile: Full-screen bottom sheet */}
+          {/* Mobile: Bottom sheet that doesn't cover nav */}
           <div className="md:hidden">
+            {/* Backdrop - tap to close */}
             <div
-              className="fixed inset-0 z-[60] flex flex-col"
+              className="fixed inset-0 z-[60]"
+              style={{ 
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                animation: 'fadeIn 0.2s ease-out'
+              }}
+              onClick={() => {
+                document.body.classList.remove('lisa-open');
+                setIsOpen(false);
+              }}
+            />
+
+            {/* Chat Sheet - above bottom nav */}
+            <div
+              className="fixed left-0 right-0 bottom-0 z-[70] flex flex-col"
               style={{
                 backgroundColor: colors.bg,
+                borderTopLeftRadius: '24px',
+                borderTopRightRadius: '24px',
+                maxHeight: 'calc(100vh - 100px)',
+                paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',
+                boxShadow: '0 -10px 40px rgba(0,0,0,0.3)',
+                animation: 'slideUp 0.3s ease-out',
               }}
+              onClick={(e) => e.stopPropagation()}
             >
-              {/* Header with Close Button - Always Visible */}
+              {/* Drag Handle */}
+              <div 
+                className="flex justify-center pt-3 pb-2 cursor-pointer"
+                onClick={() => {
+                  document.body.classList.remove('lisa-open');
+                  setIsOpen(false);
+                }}
+              >
+                <div 
+                  style={{
+                    width: '48px',
+                    height: '5px',
+                    borderRadius: '10px',
+                    backgroundColor: isDarkMode ? '#4B5563' : '#D1D5DB',
+                  }}
+                />
+              </div>
+
+              {/* Header with CLOSE button */}
               <div
-                className="flex-shrink-0 flex items-center justify-between px-3 py-3 border-b"
+                className="flex-shrink-0 flex items-center justify-between px-4 pb-3 border-b"
                 style={{
-                  background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
                   borderBottomColor: '#C7A338',
-                  borderBottomWidth: '3px',
-                  paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
-                  zIndex: 70,
+                  borderBottomWidth: '2px',
                 }}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.25)' }}
+                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ 
+                      background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+                    }}
                   >
                     <Shield className="w-5 h-5 text-white" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-bold text-white text-sm truncate">{strings.title}</h3>
-                    <p className="text-xs text-emerald-200 truncate">AI-Powered Support</p>
+                    <h3 className="font-bold text-base truncate" style={{ color: colors.text }}>
+                      {strings.title}
+                    </h3>
+                    <p className="text-xs truncate" style={{ color: colors.textSecondary }}>
+                      AI-Powered Support
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+
+                {/* Action Buttons - Reset and CLOSE */}
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                   <button
-                    onClick={clearChatHistory}
-                    className="rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearChatHistory();
+                    }}
+                    className="rounded-lg flex items-center justify-center active:scale-95 transition-all"
                     style={{ 
-                      backgroundColor: 'rgba(255,255,255,0.25)',
+                      backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
                       width: '44px',
                       height: '44px',
                       minWidth: '44px',
                       minHeight: '44px',
                       border: 'none',
                       cursor: 'pointer',
-                      padding: 0,
                     }}
-                    title="New chat"
                     aria-label="New chat"
                   >
-                    <RotateCcw className="w-5 h-5 text-white" />
+                    <RotateCcw className="w-5 h-5" style={{ color: colors.text }} />
                   </button>
+
+                  {/* PROMINENT CLOSE BUTTON */}
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       document.body.classList.remove('lisa-open');
                       setIsOpen(false);
                     }}
-                    className="rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                    className="rounded-lg flex items-center justify-center active:scale-95 transition-all"
                     style={{ 
                       backgroundColor: '#EF4444',
-                      width: '48px',
-                      height: '48px',
-                      minWidth: '48px',
-                      minHeight: '48px',
-                      border: '2px solid #FFFFFF',
+                      width: '56px',
+                      height: '56px',
+                      minWidth: '56px',
+                      minHeight: '56px',
+                      border: '3px solid #FFFFFF',
                       cursor: 'pointer',
-                      padding: 0,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                      boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
                     }}
                     aria-label="Close LISA"
                   >
-                    <X className="w-6 h-6 text-white" strokeWidth={3} />
+                    <X className="w-7 h-7 text-white" strokeWidth={3} />
                   </button>
                 </div>
               </div>
 
               {/* Scrollable Messages */}
               <div
-                className="flex-1 overflow-y-auto space-y-4 p-3"
+                className="flex-1 overflow-y-auto space-y-4 p-4"
                 style={{ 
                   backgroundColor: colors.cardBg,
                   WebkitOverflowScrolling: 'touch',
-                  paddingBottom: '16px',
                 }}
               >
                 {messages.map((message, index) => (
@@ -655,13 +701,12 @@ assistant:`;
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Fixed Input Bar - Above Bottom Nav */}
+              {/* Input Bar */}
               <div
-                className="flex-shrink-0 p-3 border-t"
+                className="flex-shrink-0 p-4 border-t"
                 style={{ 
                   borderColor: colors.border, 
                   backgroundColor: colors.bg,
-                  paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
                   boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
                 }}
               >
@@ -679,7 +724,7 @@ assistant:`;
                       color: colors.text,
                       border: `1px solid ${colors.border}`,
                       outline: 'none',
-                      maxHeight: '120px',
+                      maxHeight: '100px',
                     }}
                   />
                   <button
