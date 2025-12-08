@@ -503,60 +503,50 @@ assistant:`;
             }
           `}</style>
           
-          {/* Mobile: Full-screen sheet */}
+          {/* Mobile: Full-screen bottom sheet */}
           <div className="md:hidden">
-            {/* Backdrop for tap-outside-to-close */}
-            <div
-              className="fixed inset-0 z-[59]"
-              style={{ backgroundColor: 'transparent' }}
-              onClick={() => {
-                document.body.classList.remove('lisa-open');
-                setIsOpen(false);
-              }}
-            />
-            
             <div
               className="fixed inset-0 z-[60] flex flex-col"
               style={{
                 backgroundColor: colors.bg,
-                paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
-                pointerEvents: 'auto',
               }}
-              onClick={(e) => e.stopPropagation()}
             >
-              {/* Fixed Header */}
+              {/* Header with Close Button - Always Visible */}
               <div
-                className="flex-shrink-0 flex items-center justify-between px-4 py-3"
+                className="flex-shrink-0 flex items-center justify-between px-3 py-3 border-b"
                 style={{
                   background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-                  borderBottom: '2px solid #C7A338',
-                  paddingTop: 'max(env(safe-area-inset-top), 12px)',
+                  borderBottomColor: '#C7A338',
+                  borderBottomWidth: '3px',
+                  paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+                  zIndex: 70,
                 }}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.25)' }}
                   >
                     <Shield className="w-5 h-5 text-white" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-white text-sm">{strings.title}</h3>
-                    <p className="text-xs text-emerald-200">AI-Powered Support</p>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-white text-sm truncate">{strings.title}</h3>
+                    <p className="text-xs text-emerald-200 truncate">AI-Powered Support</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                   <button
                     onClick={clearChatHistory}
-                    className="rounded-full flex items-center justify-center"
+                    className="rounded-full flex items-center justify-center active:scale-95 transition-transform"
                     style={{ 
-                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      backgroundColor: 'rgba(255,255,255,0.25)',
                       width: '44px',
                       height: '44px',
                       minWidth: '44px',
                       minHeight: '44px',
                       border: 'none',
                       cursor: 'pointer',
+                      padding: 0,
                     }}
                     title="New chat"
                     aria-label="New chat"
@@ -568,19 +558,21 @@ assistant:`;
                       document.body.classList.remove('lisa-open');
                       setIsOpen(false);
                     }}
-                    className="rounded-full flex items-center justify-center"
+                    className="rounded-full flex items-center justify-center active:scale-95 transition-transform"
                     style={{ 
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                      width: '44px',
-                      height: '44px',
-                      minWidth: '44px',
-                      minHeight: '44px',
-                      border: 'none',
+                      backgroundColor: '#EF4444',
+                      width: '48px',
+                      height: '48px',
+                      minWidth: '48px',
+                      minHeight: '48px',
+                      border: '2px solid #FFFFFF',
                       cursor: 'pointer',
+                      padding: 0,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                     }}
                     aria-label="Close LISA"
                   >
-                    <X className="w-6 h-6 text-white" />
+                    <X className="w-6 h-6 text-white" strokeWidth={3} />
                   </button>
                 </div>
               </div>
@@ -591,6 +583,7 @@ assistant:`;
                 style={{ 
                   backgroundColor: colors.cardBg,
                   WebkitOverflowScrolling: 'touch',
+                  paddingBottom: '16px',
                 }}
               >
                 {messages.map((message, index) => (
@@ -662,12 +655,14 @@ assistant:`;
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Fixed Input Bar */}
+              {/* Fixed Input Bar - Above Bottom Nav */}
               <div
                 className="flex-shrink-0 p-3 border-t"
                 style={{ 
                   borderColor: colors.border, 
                   backgroundColor: colors.bg,
+                  paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
+                  boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
                 }}
               >
                 <div className="flex items-end gap-2">
