@@ -2,38 +2,56 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 
 const AuthGuard = ({ children }) => {
+  const [authReady, setAuthReady] = useState(false);
   const [isAuthed, setIsAuthed] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function checkAuth() {
+    async function initAuth() {
       try {
+        // Wait for SDK to rehydrate session from storage
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const isAuthenticated = await base44.auth.isAuthenticated();
         
         if (cancelled) return;
 
         if (isAuthenticated) {
-          const me = await base44.auth.me();
-          if (me && me.email) {
-            setIsAuthed(true);
-            return;
+          try {
+            const me = await base44.auth.me();
+            if (me && me.email) {
+              setIsAuthed(true);
+              setAuthReady(true);
+              return;
+            }
+          } catch (meErr) {
+            console.error("🔒 AuthGuard me() error:", meErr);
           }
         }
         
         setIsAuthed(false);
+        setAuthReady(true);
       } catch (err) {
         console.error("🔒 AuthGuard error:", err);
-        if (!cancelled) setIsAuthed(false);
+        if (!cancelled) {
+          setIsAuthed(false);
+          setAuthReady(true);
+        }
       }
     }
 
-    checkAuth();
+    initAuth();
 
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // Don't render anything until auth is ready
+  if (!authReady) {
+    return null;
+  }
 
   // Show login inline instead of redirecting
   if (isAuthed === false) {
@@ -128,11 +146,6 @@ const AuthGuard = ({ children }) => {
         </div>
       </div>
     );
-  }
-
-  // Still checking auth
-  if (isAuthed === null) {
-    return null;
   }
 
   return <>{children}</>;
