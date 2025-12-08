@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Shield } from "lucide-react";
 import { sessionStorage } from "../sessionStorage";
@@ -150,130 +150,96 @@ function LoginPage() {
   );
 }
 
-// AuthGuard - protects routes with state machine: "loading" | "authed" | "guest"
+const DebugBanner = ({ user }) => {
+  let cookiePreview = "(no document)";
+  if (typeof document !== "undefined") {
+    const c = document.cookie || "";
+    cookiePreview = c.length > 120 ? c.slice(0, 120) + "…" : c || "(no cookies)";
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 99999,
+        background: "rgba(0,0,0,0.9)",
+        color: "#fff",
+        fontSize: 10,
+        padding: "4px 8px",
+        pointerEvents: "none",
+      }}
+    >
+      <div>
+        AuthGuard •{" "}
+        {user
+          ? `LOGGED IN as ${user.email || user.id || "unknown"}`
+          : "NOT LOGGED IN"}
+      </div>
+      <div>Cookies: {cookiePreview}</div>
+    </div>
+  );
+};
+
 const AuthGuard = ({ children }) => {
-  const [status, setStatus] = React.useState('loading');
-  const [debugInfo, setDebugInfo] = React.useState(null);
-  
-  React.useEffect(() => {
-    console.log('🔵 [AUTH_GUARD] ========== MOUNT ==========');
-    console.log('🔵 [AUTH_GUARD] Location:', window.location.href);
-    console.log('🔵 [AUTH_GUARD] document.cookie:', document.cookie);
-    
-    let mounted = true;
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-    const checkAuth = async () => {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkAuth() {
+      console.log("[AuthGuard] mount at", window.location.href);
       try {
-        const userData = await base44.auth.me();
-        
-        console.log('🔵 [AUTH_GUARD] base44.auth.me() result:', {
-          id: userData?.id || 'null',
-          email: userData?.email || 'null',
-          fullObject: userData
-        });
-        
-        if (!mounted) return;
+        const me = await base44.auth.me();
+        console.log("[AuthGuard] base44.auth.me() =>", me);
+        if (cancelled) return;
 
-        if (userData) {
-          // User is authenticated
-          console.log('✅ [AUTH_GUARD] Status: AUTHED');
-          sessionStorage.save(userData);
-          setStatus('authed');
-          setDebugInfo({ 
-            status: 'authed', 
-            email: userData.email,
-            cookie: document.cookie.substring(0, 20)
-          });
+        if (me) {
+          setUser(me);
         } else {
-          // No valid session
-          console.log('⚠️ [AUTH_GUARD] Status: GUEST (no user data)');
-          sessionStorage.clear();
-          setStatus('guest');
-          setDebugInfo({ 
-            status: 'guest', 
-            email: null,
-            cookie: document.cookie.substring(0, 20)
-          });
+          setUser(null);
         }
-      } catch (error) {
-        if (!mounted) return;
-        
-        console.error('❌ [AUTH_GUARD] Status: GUEST (error)', error.message);
-        console.error('❌ [AUTH_GUARD] Full error:', error);
-        
-        // Error checking auth - treat as guest
-        sessionStorage.clear();
-        setStatus('guest');
-        setDebugInfo({ 
-          status: 'guest', 
-          email: null,
-          cookie: document.cookie.substring(0, 20),
-          error: error.message
-        });
+      } catch (err) {
+        console.error("[AuthGuard] auth.me error", err);
+        if (!cancelled) {
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+        if (typeof document !== "undefined") {
+          console.log("[AuthGuard] document.cookie =", document.cookie);
+        }
       }
-    };
+    }
 
     checkAuth();
 
     return () => {
-      mounted = false;
+      cancelled = true;
     };
   }, []);
 
-  // Debug banner (only in dev or when query param present)
-  const showDebug = window.location.hostname === 'localhost' || window.location.search.includes('debug=true');
+  if (loading) return null;
 
-  // Loading state - render nothing
-  if (status === 'loading') {
-    return null;
-  }
-
-  // Guest state - render welcome/login page
-  if (status === 'guest') {
+  const renderGuest = () => {
     return (
       <>
-        {showDebug && debugInfo && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: '#FF6B6B',
-            color: 'white',
-            padding: '8px 12px',
-            fontSize: '11px',
-            fontFamily: 'monospace',
-            zIndex: 99999,
-            borderBottom: '2px solid #C92A2A'
-          }}>
-            🔴 Auth: NOT LOGGED IN | Cookie: "{debugInfo.cookie}..." {debugInfo.error && `| Error: ${debugInfo.error}`}
-          </div>
-        )}
+        <DebugBanner user={null} />
         <LoginPage />
       </>
     );
+  };
+
+  if (!user) {
+    return renderGuest();
   }
 
-  // Authed state - render protected content
   return (
     <>
-      {showDebug && debugInfo && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: '#51CF66',
-          color: '#1A1A1A',
-          padding: '8px 12px',
-          fontSize: '11px',
-          fontFamily: 'monospace',
-          zIndex: 99999,
-          borderBottom: '2px solid #37B24D'
-        }}>
-          ✅ Auth: LOGGED IN as {debugInfo.email} | Cookie: "{debugInfo.cookie}..."
-        </div>
-      )}
+      <DebugBanner user={user} />
       {children}
     </>
   );
