@@ -5,30 +5,26 @@ const AuthGuard = ({ children }) => {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    let unsubscribe;
-
-    const initAuth = async () => {
-      // Listen for auth state changes
-      unsubscribe = base44.auth.onAuthStateChanged((user) => {
-        if (user) {
-          // User is authenticated, allow app to render
+    const checkAuth = async () => {
+      try {
+        const isAuthenticated = await base44.auth.isAuthenticated();
+        
+        if (isAuthenticated) {
           setAuthChecked(true);
         } else {
-          // User is not authenticated, redirect to login
           const nextUrl = window.location.pathname + window.location.search + window.location.hash;
           base44.auth.redirectToLogin(nextUrl);
         }
-      });
+      } catch (err) {
+        console.error("Auth check failed:", err);
+        const nextUrl = window.location.pathname + window.location.search + window.location.hash;
+        base44.auth.redirectToLogin(nextUrl);
+      }
     };
 
-    initAuth();
-
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    checkAuth();
   }, []);
 
-  // Don't render until auth is confirmed (prevents flash)
   if (!authChecked) {
     return null;
   }
