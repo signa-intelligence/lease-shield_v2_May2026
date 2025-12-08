@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
 import { Shield } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
-// LoginPage component - shown when user is not authenticated
+// LoginPage - vertically centered, mobile-optimized
 function LoginPage() {
   const handleSignIn = () => {
     const nextUrl = window.location.pathname + window.location.search + window.location.hash;
@@ -12,67 +12,63 @@ function LoginPage() {
 
   return (
     <div style={{
-      minHeight: '100vh',
       display: 'flex',
-      alignItems: 'center',
+      flexDirection: 'column',
       justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      padding: `env(safe-area-inset-top, 20px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px)`,
       background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-      padding: '20px'
+      overflow: 'hidden',
+      boxSizing: 'border-box'
     }}>
       <div style={{
-        maxWidth: '420px',
+        maxWidth: '400px',
         width: '100%',
         backgroundColor: '#FFFFFF',
-        borderRadius: '24px',
-        padding: '48px 32px',
+        borderRadius: '20px',
+        padding: '32px 24px',
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
         textAlign: 'center'
       }}>
-        <div style={{ marginBottom: '32px' }}>
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
-            alt="Lease Shield"
-            style={{ height: '60px', margin: '0 auto 16px' }}
-          />
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: 'bold',
-            color: '#0C3B2E',
-            marginBottom: '12px'
-          }}>
-            Welcome to Lease Shield
-          </h1>
-          <p style={{
-            fontSize: '16px',
-            color: '#64748B',
-            lineHeight: '1.6'
-          }}>
-            Protect your rental rights with AI-powered lease analysis and expert legal support
-          </p>
-        </div>
+        <img 
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
+          alt="Lease Shield"
+          style={{ height: '50px', margin: '0 auto 16px' }}
+        />
+        <h1 style={{
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: '#0C3B2E',
+          marginBottom: '8px'
+        }}>
+          Welcome to Lease Shield
+        </h1>
+        <p style={{
+          fontSize: '14px',
+          color: '#64748B',
+          lineHeight: '1.5',
+          marginBottom: '24px'
+        }}>
+          Protect your rental rights with AI-powered analysis and legal support
+        </p>
 
         <div style={{
           display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
-          marginBottom: '32px'
+          alignItems: 'center',
+          gap: '10px',
+          padding: '12px',
+          backgroundColor: '#F3F6F5',
+          borderRadius: '10px',
+          marginBottom: '24px'
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '16px',
-            backgroundColor: '#F3F6F5',
-            borderRadius: '12px'
-          }}>
-            <Shield className="w-6 h-6" style={{ color: '#0C3B2E' }} />
-            <div style={{ textAlign: 'left', flex: 1 }}>
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#0C3B2E' }}>
-                Fair. Transparent. Protected.
-              </div>
-              <div style={{ fontSize: '12px', color: '#64748B' }}>
-                Know your rights, protect your deposit
-              </div>
+          <Shield className="w-5 h-5" style={{ color: '#0C3B2E', flexShrink: 0 }} />
+          <div style={{ textAlign: 'left', flex: 1 }}>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#0C3B2E' }}>
+              Fair. Transparent. Protected.
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748B' }}>
+              Know your rights, protect your deposit
             </div>
           </div>
         </div>
@@ -81,12 +77,12 @@ function LoginPage() {
           onClick={handleSignIn}
           style={{
             width: '100%',
-            padding: '16px',
+            padding: '14px',
             backgroundColor: '#0C3B2E',
             color: '#FFFFFF',
             border: '2px solid #C7A338',
-            borderRadius: '12px',
-            fontSize: '16px',
+            borderRadius: '10px',
+            fontSize: '15px',
             fontWeight: 'bold',
             cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(12, 59, 46, 0.3)',
@@ -105,9 +101,10 @@ function LoginPage() {
         </button>
 
         <p style={{
-          fontSize: '12px',
+          fontSize: '10px',
           color: '#94A3B8',
-          marginTop: '24px'
+          marginTop: '16px',
+          lineHeight: '1.4'
         }}>
           By signing in, you agree to our Terms of Service and Privacy Policy
         </p>
@@ -116,25 +113,25 @@ function LoginPage() {
   );
 }
 
-// AuthGuard - protects routes using base44.auth.me() with React Query
+// AuthGuard - protects routes, relies on Base44 SDK persistence
 const AuthGuard = ({ children }) => {
-  const { data: user, isLoading, error } = useQuery({
+  const { data: user, isLoading } = useQuery({
     queryKey: ['authGuardUser'],
     queryFn: async () => {
       try {
         const userData = await base44.auth.me();
-        console.log('🔐 [AUTH_GUARD] User authenticated:', userData?.email);
+        console.log('🔐 [AUTH_GUARD] User:', userData?.email);
         return userData;
       } catch (err) {
-        console.log('🔐 [AUTH_GUARD] Not authenticated:', err.message);
+        console.log('🔐 [AUTH_GUARD] No session');
         return null;
       }
     },
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
-  // Loading state - show spinner
   if (isLoading) {
     return (
       <div style={{
@@ -163,12 +160,10 @@ const AuthGuard = ({ children }) => {
     );
   }
 
-  // Not authenticated or error - show login page
-  if (!user || error) {
+  if (!user) {
     return <LoginPage />;
   }
 
-  // Authenticated - show protected content
   return <>{children}</>;
 };
 
