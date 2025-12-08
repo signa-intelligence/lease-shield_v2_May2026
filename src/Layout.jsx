@@ -398,7 +398,8 @@ export default function Layout({ children, currentPageName }) {
       flexDirection: 'column',
       backgroundColor: colors.bg,
       position: 'relative',
-      paddingBottom: 'env(safe-area-inset-bottom)'
+      paddingTop: 'env(safe-area-inset-top, 0px)',
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)'
     }}>
       <style>{`
         :root {
@@ -436,7 +437,6 @@ export default function Layout({ children, currentPageName }) {
         }
         
         .top-bar {
-          padding-top: env(safe-area-inset-top, 0px);
           height: auto;
           min-height: 64px;
           box-shadow: ${isDarkMode ? '0 4px 12px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.04)'};
@@ -537,7 +537,7 @@ export default function Layout({ children, currentPageName }) {
       `}</style>
 
       {/* Top Bar */}
-      <div className="top-bar fixed top-0 left-0 right-0 border-b z-50" style={{
+      <div className="top-bar border-b" style={{
         backgroundColor: colors.topBarBg,
         borderBottomColor: colors.borderColor
       }}>
@@ -1028,7 +1028,6 @@ export default function Layout({ children, currentPageName }) {
         ref={mainContentRef} 
         className="main-content flex-1 page-transition" 
         style={{
-          marginTop: '64px',
           paddingBottom: '80px',
           width: '100%',
           maxWidth: '100vw'
