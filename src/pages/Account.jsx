@@ -97,11 +97,11 @@ const PLAN_DETAILS = [
   {
     key: 'lite',
     label: 'Lite',
-    priceMonthly: 390,
-    priceAnnual: 3900,
+    priceMonthly: 190,
+    priceAnnual: 1900,
     priceIdMonthly: 'PRICE_LIVE_LITE_MONTHLY',
     priceIdAnnual: 'PRICE_LIVE_LITE_ANNUAL',
-    savingsAnnual: 780,
+    savingsAnnual: 380,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Essential Protection',
@@ -182,11 +182,11 @@ const PLAN_DETAILS = [
   {
     key: 'protect',
     label: 'Protect',
-    priceMonthly: 690,
-    priceAnnual: 6900,
+    priceMonthly: 390,
+    priceAnnual: 3900,
     priceIdMonthly: 'PRICE_LIVE_PROTECT_MONTHLY',
     priceIdAnnual: 'PRICE_LIVE_PROTECT_ANNUAL',
-    savingsAnnual: 1380,
+    savingsAnnual: 780,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Complete Prevention Suite',
@@ -274,11 +274,11 @@ const PLAN_DETAILS = [
   {
     key: 'secure',
     label: 'Secure',
-    priceMonthly: 1290,
-    priceAnnual: 12900,
+    priceMonthly: 990,
+    priceAnnual: 9900,
     priceIdMonthly: 'PRICE_LIVE_SECURE_MONTHLY',
     priceIdAnnual: 'PRICE_LIVE_SECURE_ANNUAL',
-    savingsAnnual: 2580,
+    savingsAnnual: 1980,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Premium Protection',
@@ -364,6 +364,74 @@ const PLAN_DETAILS = [
   }
 ];
 
+const ONE_TIME_PRODUCTS = [
+  {
+    id: 'one_time_scan',
+    title: 'One-Time Lease Scan',
+    titleTh: 'สแกนสัญญาเช่าครั้งเดียว',
+    titleZh: '一次性租约扫描',
+    titleJa: '1回限りのリーススキャン',
+    titleKo: '1회 임대 계약 스캔',
+    titleRu: 'Разовое сканирование договора',
+    price: 590,
+    deliverables: [
+      '1 upload + AI scan',
+      '1 human-reviewed summary',
+      'Risk rating 1–100',
+      'Top 5 risk highlights',
+      '5 recommended actions',
+      '1 letter template (if needed)',
+      '1 follow-up clarification question included'
+    ],
+    deliverablesTh: [
+      '1 ไฟล์อัปโหลด + สแกน AI',
+      '1 สรุปที่ตรวจสอบโดยมนุษย์',
+      'คะแนนความเสี่ยง 1–100',
+      'ความเสี่ยง 5 อันดับแรก',
+      '5 คำแนะนำที่แนะนำ',
+      '1 เทมเพลตจดหมาย (หากจำเป็น)',
+      '1 คำถามชี้แจงติดตามรวมอยู่ด้วย'
+    ],
+    deliverablesZh: [
+      '1次上传 + AI扫描',
+      '1份人工审核摘要',
+      '风险评级 1–100',
+      '前5大风险重点',
+      '5项建议措施',
+      '1个信函模板（如需要）',
+      '包含1个后续澄清问题'
+    ],
+    deliverablesJa: [
+      '1アップロード + AIスキャン',
+      '1人間レビューの要約',
+      'リスク評価 1–100',
+      'トップ5リスクハイライト',
+      '5つの推奨アクション',
+      '1レターテンプレート（必要な場合）',
+      '1フォローアップ質問含む'
+    ],
+    deliverablesKo: [
+      '1회 업로드 + AI 스캔',
+      '1개 인간 검토 요약',
+      '위험 등급 1–100',
+      '상위 5개 위험 하이라이트',
+      '5가지 권장 조치',
+      '1개 편지 템플릿（필요한 경우）',
+      '1개 후속 확인 질문 포함'
+    ],
+    deliverablesRu: [
+      '1 загрузка + сканирование ИИ',
+      '1 резюме с проверкой человеком',
+      'Оценка риска 1–100',
+      'Топ-5 рисков',
+      '5 рекомендуемых действий',
+      '1 шаблон письма (при необходимости)',
+      '1 уточняющий вопрос включён'
+    ],
+    icon: FileText
+  }
+];
+
 const CREDIT_PACKAGES = [
   {
     id: 'credits_1',
@@ -401,7 +469,7 @@ function AccountContent() {
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState({});
   const [exporting, setExporting] = useState(false);
-  const [billingInterval, setBillingInterval] = useState('monthly');
+  const [billingInterval, setBillingInterval] = useState('annual');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -5002,6 +5070,106 @@ function AccountContent() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* One-Time Products Section */}
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                  {language === 'th' ? 'ผลิตภัณฑ์แบบครั้งเดียว' : language === 'zh' ? '一次性产品' : language === 'ja' ? '単発製品' : language === 'ko' ? '일회성 제품' : language === 'ru' ? 'Разовые продукты' : 'One-Time Products'}
+                </h2>
+                <p className="text-sm font-normal" style={{ color: colors.textSecondary }}>
+                  {language === 'th' ? 'ไม่ต้องสมัครสมาชิก' : language === 'zh' ? '无需订阅' : language === 'ja' ? 'サブスクリプション不要' : language === 'ko' ? '구독 불필요' : language === 'ru' ? 'Без подписки' : 'No subscription required'}
+                </p>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 gap-4">
+              {ONE_TIME_PRODUCTS.map((product) => {
+                const ProductIcon = product.icon;
+                const productTitle = language === 'th' ? product.titleTh : language === 'zh' ? product.titleZh : language === 'ja' ? product.titleJa : language === 'ko' ? product.titleKo : language === 'ru' ? product.titleRu : product.title;
+                const deliverables = language === 'th' ? product.deliverablesTh : language === 'zh' ? product.deliverablesZh : language === 'ja' ? product.deliverablesJa : language === 'ko' ? product.deliverablesKo : language === 'ru' ? product.deliverablesRu : product.deliverables;
+                
+                return (
+                  <div
+                    key={product.id}
+                    className="border-2 rounded-xl p-6"
+                    style={{
+                      backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                      borderColor: '#3B82F6'
+                    }}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center">
+                          <ProductIcon className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
+                            {productTitle}
+                          </h3>
+                          <p className="text-2xl font-bold" style={{ color: '#3B82F6' }}>
+                            ฿{product.price}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <p className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                        {language === 'th' ? 'รายการที่ให้บริการ:' : language === 'zh' ? '包含内容：' : language === 'ja' ? '提供内容：' : language === 'ko' ? '제공 내용：' : language === 'ru' ? 'Что входит：' : 'Deliverables:'}
+                      </p>
+                      <ul className="space-y-1">
+                        {deliverables.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm" style={{ color: colors.textPrimary }}>
+                            <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        haptic.medium();
+                        // Navigate to upload scan page for one-time purchase
+                        window.location.href = createPageUrl('UploadScan') + '?oneTime=true';
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '14px 20px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                        color: '#FFFFFF',
+                        fontWeight: '700',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 4px 12px rgba(59,130,246,0.4)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'translateY(-2px)';
+                        e.target.style.boxShadow = '0 6px 16px rgba(59,130,246,0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 4px 12px rgba(59,130,246,0.4)';
+                      }}
+                    >
+                      {language === 'th' ? 'เริ่มสแกน' : language === 'zh' ? '开始扫描' : language === 'ja' ? 'スキャン開始' : language === 'ko' ? '스캔 시작' : language === 'ru' ? 'Начать сканирование' : 'Start Scan'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card id="letter-credits" className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
