@@ -599,27 +599,25 @@ assistant:`;
                     <RotateCcw className="w-5 h-5" style={{ color: colors.text }} />
                   </button>
 
-                  {/* PROMINENT CLOSE BUTTON */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       document.body.classList.remove('lisa-open');
                       setIsOpen(false);
                     }}
-                    className="rounded-lg flex items-center justify-center active:scale-95 transition-all"
+                    className="rounded-full flex items-center justify-center active:scale-95 transition-all"
                     style={{ 
-                      backgroundColor: '#EF4444',
-                      width: '56px',
-                      height: '56px',
-                      minWidth: '56px',
-                      minHeight: '56px',
-                      border: '3px solid #FFFFFF',
+                      backgroundColor: 'rgba(255,255,255,0.25)',
+                      width: '44px',
+                      height: '44px',
+                      minWidth: '44px',
+                      minHeight: '44px',
+                      border: 'none',
                       cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
                     }}
                     aria-label="Close LISA"
                   >
-                    <X className="w-7 h-7 text-white" strokeWidth={3} />
+                    <X className="w-5 h-5 text-white" />
                   </button>
                 </div>
               </div>
