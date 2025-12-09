@@ -3,15 +3,28 @@ import React, { useEffect } from "react";
 const CookieSyncPage = () => {
   useEffect(() => {
     try {
-      // Dump current cookies into localStorage for the WebView bridge
-      localStorage.setItem("lease_cookie_dump", document.cookie || "");
+      const all = document.cookie.split("; ");
+      let auth = "";
 
-      // Small delay so storage write completes
+      for (const c of all) {
+        if (c.startsWith("base44_app_session=")) {
+          auth = c;
+          break;
+        }
+      }
+
+      if (auth) {
+        localStorage.setItem("lease_auth_token", auth);
+      } else {
+        localStorage.setItem("lease_auth_token", "");
+      }
+
       setTimeout(() => {
         window.location.href = "/";
       }, 300);
+
     } catch (err) {
-      console.error("CookieSyncPage error", err);
+      console.error("CookieSync error", err);
       setTimeout(() => {
         window.location.href = "/";
       }, 1000);
