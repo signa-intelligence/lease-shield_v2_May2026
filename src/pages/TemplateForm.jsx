@@ -61,6 +61,19 @@ export default function TemplateForm() {
     queryFn: () => base44.auth.me(),
   });
 
+  // Fetch LetterTemplate from database if subject matches a template_id
+  const { data: letterTemplate } = useQuery({
+    queryKey: ['letterTemplate', formData.subject],
+    queryFn: async () => {
+      const templates = await base44.entities.LetterTemplate.filter({ 
+        template_id: formData.subject,
+        is_active: true 
+      });
+      return templates?.[0] || null;
+    },
+    enabled: !!formData.subject && !!user,
+  });
+
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userCredits = user?.letter_credits || 0;
