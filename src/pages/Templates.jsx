@@ -956,18 +956,24 @@ export default function Templates() {
                   'Move-Out': 'from-purple-400 to-purple-600',
                   'Friendly': 'from-purple-400 to-purple-600',
                   'Formal': 'from-emerald-500 to-emerald-700',
-                  'Final': 'from-orange-600 to-red-600'
+                  'Final': 'from-orange-600 to-red-600',
+                  'Deposit': 'from-blue-400 to-blue-600'
                 };
                 const categoryColor = categoryColorMap[template.category] || 'from-blue-500 to-blue-700';
+                const hasEnoughCredits = userCredits >= 1;
 
                 return (
                   <Card
                     key={template.id}
-                    className="border-none shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+                    className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
                     style={{ backgroundColor: colors.cardBg }}
                     onClick={() => {
-                      haptic.light();
-                      navigate(createPageUrl("LetterGenerator") + `?id=${template.template_id}`);
+                      if (hasEnoughCredits) {
+                        haptic.light();
+                        navigate(createPageUrl("TemplateForm") + `?subject=${template.template_id}`);
+                      } else {
+                        haptic.error();
+                      }
                     }}
                   >
                     <div className={`h-2 bg-gradient-to-r ${categoryColor} rounded-t-xl`} />
@@ -976,8 +982,9 @@ export default function Templates() {
                         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${categoryColor} flex items-center justify-center`}>
                           <FileText className="w-6 h-6 text-white" />
                         </div>
-                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
-                          {template.category}
+                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
+                          <Coins className="w-3 h-3" />
+                          1
                         </Badge>
                       </div>
 
@@ -987,6 +994,15 @@ export default function Templates() {
                       <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
                         {language === 'th' ? template.title_en : template.title_th}
                       </p>
+
+                      {!hasEnoughCredits && (
+                        <div className="text-xs text-center p-2 rounded-lg" style={{
+                          backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                          color: '#DC2626'
+                        }}>
+                          {strings.insufficientCredits}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );
