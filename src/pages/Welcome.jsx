@@ -140,26 +140,14 @@ export default function Welcome() {
   const queryParams = window.location.search;
 
   const handleContinue = async () => {
-    // For WebView, construct full URL to ensure correct domain
-    if (isWebView()) {
-      const nextUrl = `${window.location.origin}/cookie-sync`;
-      await base44.auth.redirectToLogin(nextUrl);
-    } else {
-      // Desktop: use relative path
-      await base44.auth.redirectToLogin("/cookie-sync");
-    }
+    // Always use absolute URL to ensure correct domain on all platforms
+    await base44.auth.redirectToLogin("https://app.leaseshield.asia/cookie-sync");
   };
 
   const handleOpenApp = async () => {
     setShowInstallModal(false);
-    // For WebView, construct full URL to ensure correct domain
-    if (isWebView()) {
-      const nextUrl = `${window.location.origin}/cookie-sync`;
-      await base44.auth.redirectToLogin(nextUrl);
-    } else {
-      // Desktop: use relative path
-      await base44.auth.redirectToLogin("/cookie-sync");
-    }
+    // Always use absolute URL to ensure correct domain on all platforms
+    await base44.auth.redirectToLogin("https://app.leaseshield.asia/cookie-sync");
   };
 
   // Feature bullets

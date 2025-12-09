@@ -32,13 +32,13 @@ export default function CookieSync() {
           
           // Use window.location.href to force full page reload (important for WebView)
           setTimeout(() => {
-            window.location.href = `${window.location.origin}/dashboard`;
+            window.location.href = "/dashboard";
           }, 500);
         } else {
           // Not authenticated yet - redirect back to login
           setStatus('redirect');
           setTimeout(() => {
-            window.location.href = `${window.location.origin}/welcome`;
+            window.location.href = "/welcome";
           }, 1000);
         }
       } catch (err) {
@@ -48,7 +48,7 @@ export default function CookieSync() {
         
         // Redirect to welcome after error
         setTimeout(() => {
-          window.location.href = `${window.location.origin}/welcome`;
+          window.location.href = "/welcome";
         }, 2000);
       }
     }
