@@ -651,8 +651,21 @@ export default function TemplateForm() {
 
     setGenerating(true);
     try {
-      // Call the backend function to generate multi-language letter pack (credit is deducted here)
-      const response = await base44.functions.invoke('generatePhase1Letter', formData);
+      // Check if this is a new LetterTemplate or legacy template
+      let response;
+      
+      if (letterTemplate) {
+        // NEW: LetterTemplate from database - generate using template body
+        response = await base44.functions.invoke('generateLetterFromTemplate', {
+          ...formData,
+          template_id: letterTemplate.template_id,
+          body_en: letterTemplate.body_en,
+          body_th: letterTemplate.body_th
+        });
+      } else {
+        // LEGACY: Use existing phase1 letter generation
+        response = await base44.functions.invoke('generatePhase1Letter', formData);
+      }
 
       if (response.data?.ok) {
         // Refresh user credits immediately
