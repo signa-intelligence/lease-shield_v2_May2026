@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from "@/components/ui/select";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader"; // Added import
+import AuthGuard from "../components/shared/AuthGuard";
 
 const TEMPLATES = [
   {
@@ -272,7 +273,7 @@ const TEMPLATES = [
   }
 ];
 
-export default function Templates() {
+function TemplatesContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showUploadDialog, setShowUploadDialog] = useState(false);

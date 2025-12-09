@@ -31,8 +31,10 @@ import ProgressBreadcrumb from "../components/shared/ProgressBreadcrumb";
 import UploadProgress from "../components/shared/UploadProgress";
 import { haptic } from "../components/shared/HapticFeedback";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
+import AuthGuard from "../components/shared/AuthGuard";
+import { FEATURE_COLORS } from "../components/shared/featureTheme";
 
-export default function UploadScanPage() {
+function UploadScanPageContent() {
   const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
