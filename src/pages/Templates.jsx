@@ -944,68 +944,59 @@ export default function Templates() {
         {letterTemplates.length > 0 && (
           <div className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-1 flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded"></div>
+              <div className="h-1 flex-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded"></div>
               <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
                 {strings.bilingualLetterTemplates}
               </h2>
-              <div className="h-1 flex-1 bg-gradient-to-l from-indigo-500 to-purple-600 rounded"></div>
+              <div className="h-1 flex-1 bg-gradient-to-l from-blue-400 to-blue-600 rounded"></div>
             </div>
             <p className="text-sm mb-6 text-center" style={{ color: colors.textSecondary }}>
               {strings.bilingualSubtitle}
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {letterTemplates.map((template) => (
-                <Card
-                  key={template.id}
-                  className="border-none shadow-lg hover:shadow-xl transition-all duration-300"
-                  style={{ backgroundColor: colors.cardBg }}
-                >
-                  <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-t-xl" />
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-start justify-between mb-3 sm:mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                        <FileText className="w-6 h-6 text-white" />
+              {letterTemplates.map((template) => {
+                const categoryColorMap = {
+                  'Checklist': 'from-blue-400 to-blue-600',
+                  'Pre-Lease': 'from-amber-400 to-orange-600',
+                  'Move-Out': 'from-purple-400 to-purple-600',
+                  'Friendly': 'from-purple-400 to-purple-600',
+                  'Formal': 'from-emerald-500 to-emerald-700',
+                  'Final': 'from-orange-600 to-red-600'
+                };
+                const categoryColor = categoryColorMap[template.category] || 'from-blue-500 to-blue-700';
+
+                return (
+                  <Card
+                    key={template.id}
+                    className="border-none shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+                    style={{ backgroundColor: colors.cardBg }}
+                    onClick={() => {
+                      haptic.light();
+                      navigate(createPageUrl("LetterGenerator") + `?id=${template.template_id}`);
+                    }}
+                  >
+                    <div className={`h-2 bg-gradient-to-r ${categoryColor} rounded-t-xl`} />
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex items-start justify-between mb-3 sm:mb-4">
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${categoryColor} flex items-center justify-center`}>
+                          <FileText className="w-6 h-6 text-white" />
+                        </div>
+                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                          {template.category}
+                        </Badge>
                       </div>
-                      <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 text-xs">
-                        {template.category}
-                      </Badge>
-                    </div>
 
-                    <h3 className="text-base sm:text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? template.title_th : template.title_en}
-                    </h3>
-                    <p className="text-xs mb-1" style={{ color: colors.textSecondary, opacity: 0.8 }}>
-                      {language === 'th' ? template.title_en : template.title_th}
-                    </p>
-                    <p className="text-xs mb-3 font-mono" style={{ color: colors.textSecondary, opacity: 0.6 }}>
-                      {template.template_id}
-                    </p>
-
-                    <Badge variant="outline" className="text-xs mb-4" style={{
-                      borderColor: colors.borderColor,
-                      color: colors.textSecondary
-                    }}>
-                      {template.tone_level}
-                    </Badge>
-
-                    <Button
-                      onClick={() => {
-                        haptic.light();
-                        navigate(createPageUrl("LetterGenerator") + `?id=${template.template_id}`);
-                      }}
-                      className="w-full btn-interaction"
-                      style={{
-                        backgroundColor: '#6366F1',
-                        color: '#FFFFFF'
-                      }}
-                      size="sm"
-                    >
-                      {strings.openInGenerator}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                      <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
+                        {language === 'th' ? template.title_th : template.title_en}
+                      </h3>
+                      <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
+                        {language === 'th' ? template.title_en : template.title_th}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}
