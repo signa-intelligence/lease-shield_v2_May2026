@@ -7,25 +7,11 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 
-// Expose base44 SDK on window for debugging and WebView access
-if (typeof window !== "undefined" && !window.base44) {
-  window.base44 = base44;
-  console.log("[AuthGuard] attached base44 to window", { methods: Object.keys(base44.auth || {}) });
-}
-
 const AuthGuard = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    // Cookie bridge hack
-    const cookieDump = localStorage.getItem("lease_cookie_dump");
-    if (cookieDump) {
-      cookieDump.split(";").forEach(c => {
-        document.cookie = c.trim() + "; path=/; SameSite=None; Secure";
-      });
-    }
-
     let cancelled = false;
 
     async function checkAuth() {
