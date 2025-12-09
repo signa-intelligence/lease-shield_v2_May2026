@@ -26,14 +26,16 @@ export default function CookieSync() {
         if (user) {
           // Successfully authenticated - redirect to dashboard
           setStatus('success');
+          
+          // Force a full page redirect to ensure WebView context is reset
           setTimeout(() => {
-            navigate('/dashboard');
+            window.location.href = '/dashboard';
           }, 500);
         } else {
           // Not authenticated - redirect to login
           setStatus('redirect');
           setTimeout(() => {
-            navigate('/welcome');
+            window.location.href = '/welcome';
           }, 1000);
         }
       } catch (err) {

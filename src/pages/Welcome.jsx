@@ -140,20 +140,15 @@ export default function Welcome() {
   const queryParams = window.location.search;
 
   const handleContinue = async () => {
-    if (isWebView()) {
-      await base44.auth.redirectToLogin('/cookie-sync');
-    } else {
-      navigate(`/login${queryParams}`);
-    }
+    // For WebView, use the full URL with domain to ensure proper OAuth redirect chain
+    const returnUrl = isWebView() ? `${window.location.origin}/cookie-sync` : `/dashboard`;
+    await base44.auth.redirectToLogin(returnUrl);
   };
 
   const handleOpenApp = async () => {
     setShowInstallModal(false);
-    if (isWebView()) {
-      await base44.auth.redirectToLogin('/cookie-sync');
-    } else {
-      navigate(`/login${queryParams}`);
-    }
+    const returnUrl = isWebView() ? `${window.location.origin}/cookie-sync` : `/dashboard`;
+    await base44.auth.redirectToLogin(returnUrl);
   };
 
   // Feature bullets
