@@ -13,7 +13,6 @@ import { Shield, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown } from "l
 import { Badge } from "@/components/ui/badge";
 import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
 import { ToastProvider, useToast } from "../components/shared/Toast";
-import { QuickHelp } from "../components/shared/ContextualHelp";
 
 function ResolveCaseContent() {
   const navigate = useNavigate();
@@ -177,7 +176,7 @@ function ResolveCaseContent() {
       
       console.log('[CASE_CREATION] ✅ OWNERSHIP VERIFIED - case belongs to:', authenticatedUser.email);
       
-      // WORKFLOW FIX: Send admin notification
+      // WORKFLOW FIX: Send admin notification (email + LINE)
       try {
         await base44.functions.invoke('notifyAdminNewCase', {
           caseNumber: createdCase.case_number,
@@ -187,11 +186,14 @@ function ResolveCaseContent() {
           propertyAddress: createdCase.property_address,
           disputeAmount: createdCase.dispute_amount,
           planTier: authenticatedUser.plan_tier,
-          caseId: createdCase.id
+          caseId: createdCase.id,
+          caseType: createdCase.type,
+          summary: createdCase.summary
         });
-        console.log('[RESOLVE_FLOW] Admin notification sent');
+        console.log('[RESOLVE_FLOW] ✅ Admin notification sent (email + LINE)');
       } catch (notifyError) {
-        console.error('[RESOLVE_FLOW] Admin notification failed (non-blocking):', notifyError);
+        // Non-blocking: case is already saved, notification failure shouldn't fail the submission
+        console.error('[RESOLVE_FLOW] ⚠️ Admin notification failed (non-blocking):', notifyError.message);
       }
       
       return { 
@@ -734,28 +736,25 @@ function ResolveCaseContent() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-3">
-              <div style={{
-                width: '48px',
-                height: '48px',
-                backgroundColor: '#DC2626',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 6px rgba(220, 38, 38, 0.3)'
-              }}>
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                  {str.title}
-                </h1>
-                <p style={{ color: colors.textSecondary }}>{str.subtitle}</p>
-              </div>
+          <div className="flex items-center gap-3 mb-2">
+            <div style={{
+              width: '48px',
+              height: '48px',
+              backgroundColor: '#DC2626',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 6px rgba(220, 38, 38, 0.3)'
+            }}>
+              <Shield className="w-6 h-6 text-white" />
             </div>
-            <QuickHelp link="resolve" size="md" />
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>
+                {str.title}
+              </h1>
+              <p style={{ color: colors.textSecondary }}>{str.subtitle}</p>
+            </div>
           </div>
 
           {/* Auto-fill indicator */}

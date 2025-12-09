@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins, TrendingUp, ChevronUp, ChevronDown, BarChart3, Database, Trash2, ArrowRight, Search, Users, Info } from "lucide-react";
+import { User, Mail, Phone, Globe, Shield, LogOut, Save, Crown, Settings, CheckCircle2, Bell, Zap, Lock, Download, FileText, AlertCircle, Loader2, Gift, Star, MessageCircle, HelpCircle, XCircle, Copy, Share2, Coins, TrendingUp, ChevronUp, ChevronDown, BarChart3, Database, Trash2, ArrowRight } from "lucide-react";
 import { PlanBadge } from "../components/shared/FeatureGate";
 import NotificationPreferences from "../components/settings/NotificationPreferences";
 import NotificationAnalytics from "../components/dashboard/NotificationAnalytics";
@@ -24,10 +24,6 @@ import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
-import { QuickHelp } from "../components/shared/ContextualHelp";
-import { STRIPE_PRICES } from "../components/shared/stripePrices";
-import AuthGuard from "../components/shared/AuthGuard";
-import { sessionStorage } from "../components/sessionStorage";
 
 const PLAN_DETAILS = [
   {
@@ -54,45 +50,45 @@ const PLAN_DETAILS = [
     descriptionKo: '자동 임대 계약 분석 체험',
     benefits: [
       '1 Lease Scan (lifetime)',
-      'Basic Risk-Profile Preview',
+      'Basic Risk Score Preview',
       '3 Files (100MB storage)',
-      'Lease Timeline Tracking Only',
-      'Basic Maintenance Tracking'
+      'Read-only Deposit Tracker',
+      'Basic Maintenance Tracker'
     ],
     benefitsTh: [
       '1 การสแกนสัญญาเช่า (ตลอดชีพ)',
-      'ดูโปรไฟล์ความเสี่ยงเบื้องต้น',
+      'ดูคะแนนความเสี่ยงเบื้องต้น',
       '3 ไฟล์ (พื้นที่ 100MB)',
-      'ติดตามไทม์ไลน์สัญญาเช่าเท่านั้น',
+      'ติดตามเงินมัดจำแบบอ่านอย่างเดียว',
       'ติดตามการซ่อมบำรุงเบื้องต้น'
     ],
     benefitsRu: [
       '1 сканирование договора (навсегда)',
-      'Базовый просмотр профиля рисков',
+      'Базовый просмотр рисков',
       '3 файла (100MB хранилище)',
-      'Только отслеживание хронологии договора',
+      'Отслеживание депозита (только чтение)',
       'Базовое отслеживание обслуживания'
     ],
     benefitsZh: [
       '1次租约扫描（终身）',
-      '基本风险档案预览',
+      '基本风险评分预览',
       '3个文件（100MB存储）',
-      '仅租约时间轴追踪',
+      '只读押金追踪',
       '基本维护追踪'
     ],
     benefitsJa: [
       '1回のリーススキャン（生涯）',
-      '基本リスクプロファイルプレビュー',
+      '基本リスクスコアプレビュー',
       '3ファイル（100MBストレージ）',
-      'リースタイムライン追跡のみ',
-      '基本メンテナンス追跡'
+      '読み取り専用敷金トラッカー',
+      '基本メンテナンストラッカー'
     ],
     benefitsKo: [
       '1회 임대 계약 스캔（평생）',
-      '기본 위험 프로필 미리보기',
+      '기본 위험 점수 미리보기',
       '3개 파일（100MB 저장소）',
-      '임대 계약 타임라인 추적만',
-      '기본 유지보수 추적'
+      '읽기 전용 보증금 추적기',
+      '기본 유지보수 추적기'
     ],
     bgColor: '#64748b',
     icon: Gift
@@ -100,11 +96,11 @@ const PLAN_DETAILS = [
   {
     key: 'lite',
     label: 'Lite',
-    priceMonthly: 190,
-    priceAnnual: 1900,
-    priceIdMonthly: STRIPE_PRICES.lite.monthly,
-    priceIdAnnual: STRIPE_PRICES.lite.annual,
-    savingsAnnual: 380,
+    priceMonthly: 390,
+    priceAnnual: 3900,
+    priceIdMonthly: 'PRICE_LIVE_LITE_MONTHLY',
+    priceIdAnnual: 'PRICE_LIVE_LITE_ANNUAL',
+    savingsAnnual: 780,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Essential Protection',
@@ -121,10 +117,10 @@ const PLAN_DETAILS = [
     descriptionKo: '개인을 위한 핵심 예방 도구',
     benefits: [
       'Everything in Free',
-      '6 Lease Scans per Year',
-      'Risk-Profile Reports',
-      'Email Reminders',
-      '3 Credit Points',
+      '6 Lease Scans per annum',
+      '5 Risks Reported',
+      'Email Notifications',
+      '3 Letter Credits',
       '1GB Document Storage',
       'Maintenance Tracker',
       'Deposit Tracker'
@@ -132,29 +128,29 @@ const PLAN_DETAILS = [
     benefitsTh: [
       'ทุกอย่างในแผน Free',
       '6 การสแกนสัญญาต่อปี',
-      'รายงานโปรไฟล์ความเสี่ยง',
+      'รายงานความเสี่ยง 5 จุด',
       'การแจ้งเตือนทางอีเมล',
-      '3 เครดิตพอยต์',
+      'เครดิตจดหมาย 3 ใบ',
       'พื้นที่จัดเก็บ 1GB',
       'ติดตามการซ่อมบำรุง',
       'ติดตามเงินมัดจำ'
     ],
     benefitsRu: [
-      'Всё из тарифа Free',
+      'Все из тарифа Free',
       '6 сканирований договора в год',
-      'Отчёты о профиле рисков',
-      'Email-напоминания',
-      '3 кредитных балла',
+      '5 выявленных рисков',
+      'Уведомления по электронной почте',
+      '3 кредита на письма',
       '1 ГБ хранилища документов',
-      'Трекер обслуживания',
-      'Трекер депозита'
+      'Отслеживание обслуживания',
+      'Отслеживание депозита'
     ],
     benefitsZh: [
-      '包含Free计划所有内容',
+      '包含免费计划所有内容',
       '每年6次租约扫描',
-      '风险档案报告',
-      '电子邮件提醒',
-      '3个积分',
+      '报告5个风险',
+      '电子邮件通知',
+      '3个信件积分',
       '1GB文档存储',
       '维护追踪器',
       '押金追踪器'
@@ -162,9 +158,9 @@ const PLAN_DETAILS = [
     benefitsJa: [
       'Freeの全て',
       '年6回のリーススキャン',
-      'リスクプロファイルレポート',
-      'メールリマインダー',
-      '3クレジットポイント',
+      '5つのリスク報告',
+      'メール通知',
+      '3つのレタークレジット',
       '1GBドキュメントストレージ',
       'メンテナンストラッカー',
       '敷金トラッカー'
@@ -172,9 +168,9 @@ const PLAN_DETAILS = [
     benefitsKo: [
       'Free 플랜의 모든 내용',
       '연간 6회 임대 계약 스캔',
-      '위험 프로필 보고서',
+      '5개 위험 보고',
       '이메일 알림',
-      '3 크레딧 포인트',
+      '3개 레터 크레딧',
       '1GB 문서 저장소',
       '유지보수 추적기',
       '보증금 추적기'
@@ -185,11 +181,11 @@ const PLAN_DETAILS = [
   {
     key: 'protect',
     label: 'Protect',
-    priceMonthly: 390,
-    priceAnnual: 3900,
-    priceIdMonthly: STRIPE_PRICES.protect.monthly,
-    priceIdAnnual: STRIPE_PRICES.protect.annual,
-    savingsAnnual: 780,
+    priceMonthly: 690,
+    priceAnnual: 6900,
+    priceIdMonthly: 'PRICE_LIVE_PROTECT_MONTHLY',
+    priceIdAnnual: 'PRICE_LIVE_PROTECT_ANNUAL',
+    savingsAnnual: 1380,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Complete Prevention Suite',
@@ -205,70 +201,70 @@ const PLAN_DETAILS = [
     descriptionJa: '完全な保護に必要なすべて',
     descriptionKo: '완전한 보호에 필요한 모든 것',
     benefits: [
-      'Everything in Free',
-      '12 Lease Scans per Year',
-      'Full Risk-Profile Reports',
+      'Everything in Lite',
+      '12 Lease Scans per annum',
+      'Full Risk Reports',
       'LINE Notifications',
-      '5 Credit Points',
+      '5 Letter Credits',
       '5GB Document Storage',
-      'Rental Payment Tracking',
-      'Automatic Reminders',
-      'Deposit-Return Automation'
+      'Rent Payment Alerts',
+      'Automated Reminders',
+      'Deposit Shield Automation'
     ],
     benefitsTh: [
-      'ทุกอย่างในแผน Free',
+      'ทุกอย่างในแผน Lite',
       '12 การสแกนสัญญาต่อปี',
-      'รายงานโปรไฟล์ความเสี่ยงฉบับเต็ม',
+      'รายงานความเสี่ยงฉบับเต็ม',
       'การแจ้งเตือนทาง LINE',
-      '5 เครดิตพอยต์',
+      'เครดิตจดหมาย 5 ใบ',
       'พื้นที่จัดเก็บ 5GB',
-      'ติดตามการชำระค่าเช่า',
+      'แจ้งเตือนการชำระค่าเช่า',
       'การแจ้งเตือนอัตโนมัติ',
-      'ระบบอัตโนมัติคืนเงินมัดจำ'
+      'ระบบอัตโนมัติป้องกันเงินมัดจำ'
     ],
     benefitsRu: [
-      'Всё из тарифа Lite',
+      'Все из тарифа Lite',
       '12 сканирований договора в год',
-      'Полные отчёты о профиле рисков',
+      'Полные отчёты о рисках',
       'Уведомления в LINE',
-      '5 кредитных баллов',
+      '5 кредитов на письма',
       '5 ГБ хранилища документов',
-      'Отслеживание платежей за аренду',
+      'Напоминания об оплате аренды',
       'Автоматические напоминания',
-      'Автоматизация возврата депозита'
+      'Автоматизация защиты депозита'
     ],
     benefitsZh: [
       '包含Lite计划所有内容',
       '每年12次租约扫描',
-      '完整风险档案报告',
+      '完整风险报告',
       'LINE通知',
-      '5个积分',
+      '5个信件积分',
       '5GB文档存储',
-      '租金支付追踪',
+      '租金支付提醒',
       '自动提醒',
-      '押金退还自动化'
+      '押金保护自动化'
     ],
     benefitsJa: [
       'Liteの全て',
       '年12回のリーススキャン',
-      '完全なリスクプロファイルレポート',
+      '完全なリスクレポート',
       'LINE通知',
-      '5クレジットポイント',
+      '5つのレタークレジット',
       '5GBドキュメントストレージ',
-      '家賃支払い追跡',
+      '家賃支払いアラート',
       '自動リマインダー',
-      '敷金返還自動化'
+      '敷金保護自動化'
     ],
     benefitsKo: [
       'Lite 플랜의 모든 내용',
       '연간 12회 임대 계약 스캔',
-      '전체 위험 프로필 보고서',
+      '전체 위험 보고서',
       'LINE 알림',
-      '5 크레딧 포인트',
+      '5개 레터 크레딧',
       '5GB 문서 저장소',
-      '임대료 납부 추적',
+      '임대료 납부 알림',
       '자동 알림',
-      '보증금 반환 자동화'
+      '보증금 보호 자동화'
     ],
     bgColor: '#C7A338',
     icon: Shield,
@@ -277,11 +273,11 @@ const PLAN_DETAILS = [
   {
     key: 'secure',
     label: 'Secure',
-    priceMonthly: 990,
-    priceAnnual: 9900,
-    priceIdMonthly: STRIPE_PRICES.secure.monthly,
-    priceIdAnnual: STRIPE_PRICES.secure.annual,
-    savingsAnnual: 1980,
+    priceMonthly: 1290,
+    priceAnnual: 12900,
+    priceIdMonthly: 'PRICE_LIVE_SECURE_MONTHLY',
+    priceIdAnnual: 'PRICE_LIVE_SECURE_ANNUAL',
+    savingsAnnual: 2580,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Premium Protection',
@@ -299,139 +295,71 @@ const PLAN_DETAILS = [
     benefits: [
       'Everything in Protect',
       'Unlimited Lease Scans',
-      'Premium Reports',
-      '10 Credit Points',
+      'Advanced Reminders',
+      '10 Letter Credits',
       '20GB Document Storage',
-      'Deposit Protection',
+      'Deposit Tracker',
       'Priority Case Queue',
       'Priority Scanning',
-      'Priority Support'
+      'Premium Support'
     ],
     benefitsTh: [
       'ทุกอย่างในแผน Protect',
       'สแกนสัญญาได้ไม่จำกัด',
-      'รายงานพรีเมียม',
-      '10 เครดิตพอยต์',
+      'การแจ้งเตือนขั้นสูง',
+      'เครดิตจดหมาย 10 ใบ',
       'พื้นที่จัดเก็บ 20GB',
-      'การป้องกันเงินมัดจำ',
+      'ติดตามเงินมัดจำ',
       'คิวคดีลำดับความสำคัญ',
       'สแกนลำดับความสำคัญ',
-      'การสนับสนุนลำดับความสำคัญ'
+      'การสนับสนุนพรีเมียม'
     ],
     benefitsRu: [
-      'Всё из тарифа Protect',
-      'Неограниченные сканирования договора',
-      'Премиум-отчёты',
-      '10 кредитных баллов',
+      'Все из тарифа Protect',
+      'Неограниченное количество сканирований договора',
+      'Расширенные напоминания',
+      '10 кредитов на письма',
       '20 ГБ хранилища документов',
-      'Защита депозита',
+      'Отслеживание депозита',
       'Приоритетная очередь по делам',
       'Приоритетное сканирование',
-      'Приоритетная поддержка'
+      'Премиальная поддержка'
     ],
     benefitsZh: [
       '包含Protect计划所有内容',
       '无限次租约扫描',
-      '高级报告',
-      '10个积分',
+      '高级提醒',
+      '10个信件积分',
       '20GB文档存储',
-      '押金保护',
+      '押金追踪器',
       '优先案件队列',
       '优先扫描',
-      '优先支持'
+      '高级支持'
     ],
     benefitsJa: [
       'Protectの全て',
       '無制限のリーススキャン',
-      'プレミアムレポート',
-      '10クレジットポイント',
+      '高度なリマインダー',
+      '10のレタークレジット',
       '20GBドキュメントストレージ',
-      '敷金保護',
+      '敷金トラッカー',
       '優先ケースキュー',
       '優先スキャン',
-      '優先サポート'
+      'プレミアムサポート'
     ],
     benefitsKo: [
       'Protect 플랜의 모든 내용',
       '무제한 임대 계약 스캔',
-      '프리미엄 보고서',
-      '10 크레딧 포인트',
+      '고급 알림',
+      '10개 레터 크레딧',
       '20GB 문서 저장소',
-      '보증금 보호',
+      '보증금 추적기',
       '우선 사례 대기열',
       '우선 스캔',
-      '우선 지원'
+      '프리미엄 지원'
     ],
     bgColor: '#1A1D1F',
     icon: Crown
-  }
-];
-
-const ONE_TIME_PRODUCTS = [
-  {
-    id: 'one_time_scan',
-    title: 'One-Time Lease Scan',
-    titleTh: 'สแกนสัญญาเช่าครั้งเดียว',
-    titleZh: '一次性租约扫描',
-    titleJa: '1回限りのリーススキャン',
-    titleKo: '1회 임대 계약 스캔',
-    titleRu: 'Разовое сканирование договора',
-    price: 590,
-    deliverables: [
-      '1 upload + AI scan',
-      '1 human-reviewed summary',
-      'Risk rating 1–100',
-      'Top 5 risk highlights',
-      '5 recommended actions',
-      '1 letter template (if needed)',
-      '1 follow-up clarification question included'
-    ],
-    deliverablesTh: [
-      '1 ไฟล์อัปโหลด + สแกน AI',
-      '1 สรุปที่ตรวจสอบโดยมนุษย์',
-      'คะแนนความเสี่ยง 1–100',
-      'ความเสี่ยง 5 อันดับแรก',
-      '5 คำแนะนำที่แนะนำ',
-      '1 เทมเพลตจดหมาย (หากจำเป็น)',
-      '1 คำถามชี้แจงติดตามรวมอยู่ด้วย'
-    ],
-    deliverablesZh: [
-      '1次上传 + AI扫描',
-      '1份人工审核摘要',
-      '风险评级 1–100',
-      '前5大风险重点',
-      '5项建议措施',
-      '1个信函模板（如需要）',
-      '包含1个后续澄清问题'
-    ],
-    deliverablesJa: [
-      '1アップロード + AIスキャン',
-      '1人間レビューの要約',
-      'リスク評価 1–100',
-      'トップ5リスクハイライト',
-      '5つの推奨アクション',
-      '1レターテンプレート（必要な場合）',
-      '1フォローアップ質問含む'
-    ],
-    deliverablesKo: [
-      '1회 업로드 + AI 스캔',
-      '1개 인간 검토 요약',
-      '위험 등급 1–100',
-      '상위 5개 위험 하이라이트',
-      '5가지 권장 조치',
-      '1개 편지 템플릿（필요한 경우）',
-      '1개 후속 확인 질문 포함'
-    ],
-    deliverablesRu: [
-      '1 загрузка + сканирование ИИ',
-      '1 резюме с проверкой человеком',
-      'Оценка риска 1–100',
-      'Топ-5 рисков',
-      '5 рекомендуемых действий',
-      '1 шаблон письма (при необходимости)',
-      '1 уточняющий вопрос включён'
-    ],
-    icon: FileText
   }
 ];
 
@@ -472,7 +400,7 @@ function AccountContent() {
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState({});
   const [exporting, setExporting] = useState(false);
-  const [billingInterval, setBillingInterval] = useState('annual');
+  const [billingInterval, setBillingInterval] = useState('monthly');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -492,86 +420,18 @@ function AccountContent() {
   const [downgradeStep, setDowngradeStep] = useState(1);
   const [downgradeReason, setDowngradeReason] = useState('');
   const [downgradeFeedback, setDowngradeFeedback] = useState('');
-  const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false);
-  const [expandedNotifAnalytics, setExpandedNotifAnalytics] = useState(false);
+  const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false); // New state for Notification Preferences expansion
+  const [expandedNotifAnalytics, setExpandedNotifAnalytics] = useState(false); // New state for Notification Analytics expansion
   
   const plansSectionRef = React.useRef(null);
 
   const { data: user, refetch: refetchUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: async () => {
-      const userData = await base44.auth.me();
-      if (userData) {
-        sessionStorage.save(userData);
-      }
-      return userData;
-    },
+    queryFn: () => base44.auth.me(),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     staleTime: 0,
   });
-
-
-
-  // Auto-generate referral code if missing AND capture referred_by_code from URL
-  React.useEffect(() => {
-    const initReferral = async () => {
-      if (!user) return;
-      
-      const updates = {};
-      
-      // 1. Generate referral code if missing
-      if (!user.referral_code) {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluded confusing chars
-        let code = '';
-        for (let i = 0; i < 6; i++) {
-          code += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        updates.referral_code = code;
-      }
-      
-      // 2. Capture referred_by_code from URL (only if not already set)
-      if (!user.referred_by_code) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const refCode = urlParams.get('ref');
-        if (refCode && refCode.length >= 4 && refCode.length <= 8) {
-          // Don't allow self-referral
-          if (refCode !== user.referral_code) {
-            updates.referred_by_code = refCode.toUpperCase();
-          }
-          // Clean URL after capturing
-          window.history.replaceState({}, '', window.location.pathname);
-        }
-      }
-      
-      // Apply updates if any
-      if (Object.keys(updates).length > 0) {
-        try {
-          await base44.auth.updateMe(updates);
-          refetchUser();
-        } catch (err) {
-          console.error('Failed to update referral data:', err);
-        }
-      }
-    };
-    initReferral();
-  }, [user, refetchUser]);
-
-  const [referralCopied, setReferralCopied] = React.useState(false);
-  
-  const handleCopyReferralLink = async () => {
-    if (!user?.referral_code) return;
-    const link = `https://app.leaseshield.asia/?ref=${user.referral_code}`;
-    try {
-      await navigator.clipboard.writeText(link);
-      setReferralCopied(true);
-      haptic.success();
-      setTimeout(() => setReferralCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy referral link:', err);
-      haptic.error();
-    }
-  };
 
   // Handle post-checkout refresh
   React.useEffect(() => {
@@ -1152,10 +1012,8 @@ function AccountContent() {
       freeBenefit3: "3 Files (100MB storage)",
       freeBenefit4: "Read-only Deposit Tracker",
       upgradeNow: "Upgrade Now",
-      allActive: "All Features Activated",
-      lineEnabled: "LINE Notifications Enabled",
-      managePlan: "Manage Plan",
-      perMonthShort: "/month",
+      allActive: "All features active",
+      lineEnabled: "LINE reminders enabled",
       helpSupport: "Help & Support",
       helpDesc: "Need assistance? Submit a request and we'll respond via email",
       submitRequest: "Submit Support Request",
@@ -1242,13 +1100,6 @@ function AccountContent() {
       showQR: "Show QR Code",
       hideQR: "Hide QR Code",
       scanQR: "Scan this QR code with LINE app",
-      connected: "Connected",
-      willReceiveMaintenance: "Will receive maintenance notifications",
-      notConnected: "Not Connected",
-      askLandlordAdd: "Ask landlord to add @leaseshield and send the command",
-      askJuristicAdd: "Ask juristic to add @leaseshield and send the command",
-      copyCommand: "Copy Command",
-      share: "Share",
       buyCredits: "Buy Letter Credits",
       creditBalance: "Credit Balance",
       credits: "Credits",
@@ -1283,8 +1134,7 @@ function AccountContent() {
       confirmDowngradeWarning: "You'll lose Unlimited Lease Scans, Advanced Reminders, extra Letter Credits and other premium protections.",
       reasonForDowngrade: "Reason for downgrading",
       goBack: "Go back",
-      confirmDowngradeBtn: "Confirm downgrade to Free",
-      referralTooltip: "Refer a friend and receive one free month after they complete their first paid month. Free months match the referred user's tier value. Credits cannot be exchanged for cash. See Terms & Conditions for full details."
+      confirmDowngradeBtn: "Confirm downgrade to Free"
     },
     th: {
       pageTitle: "บัญชีของฉัน",
@@ -1323,10 +1173,8 @@ function AccountContent() {
       freeBenefit3: "3 ไฟล์ (พื้นที่ 100MB)",
       freeBenefit4: "เครื่องมือติดตามเงินมัดจำแบบอ่านอย่างเดียว",
       upgradeNow: "อัปเกรดเลย",
-      allActive: "ฟีเจอร์ทั้งหมดเปิดใช้งานแล้ว",
-      lineEnabled: "การแจ้งเตือน LINE เปิดใช้งานแล้ว",
-      managePlan: "จัดการแผน",
-      perMonthShort: "/เดือน",
+      allActive: "ฟีเจอร์ทั้งหมดใช้งานได้",
+      lineEnabled: "การแจ้งเตือน LINE เปิดใช้งาน",
       helpSupport: "ช่วยเหลือและการสนับสนุน",
       helpDesc: "ต้องการความช่วยเหลือ? ส่งคำขอและเราจะตอบกลับทางอีเมล",
       submitRequest: "ส่งคำขอช่วยเหลือ",
@@ -1413,13 +1261,6 @@ function AccountContent() {
       showQR: "แสดง QR Code",
       hideQR: "ซ่อน QR Code",
       scanQR: "สแกน QR Code นี้ด้วยแอป LINE",
-      connected: "เชื่อมต่อแล้ว",
-      willReceiveMaintenance: "จะได้รับการแจ้งเตือนการซ่อมบำรุง",
-      notConnected: "ยังไม่ได้เชื่อมต่อ",
-      askLandlordAdd: "ขอให้เจ้าของบ้านเพิ่ม @leaseshield และส่งคำสั่ง",
-      askJuristicAdd: "ขอให้นิติบุคคลเพิ่ม @leaseshield และส่งคำสั่ง",
-      copyCommand: "คัดลอกคำสั่ง",
-      share: "แชร์",
       buyCredits: "ซื้อเครดิตจดหมาย",
       creditBalance: "เครดิตคงเหลือ",
       credits: "เครดิต",
@@ -1454,8 +1295,7 @@ function AccountContent() {
       confirmDowngradeWarning: "คุณจะสูญเสียการสแกนสัญญาไม่จำกัด การแจ้งเตือนขั้นสูง เครดิตจดหมายเพิ่มเติม และการป้องกันพรีเมียมอื่นๆ",
       reasonForDowngrade: "เหตุผลในการลดระดับ",
       goBack: "กลับ",
-      confirmDowngradeBtn: "ยืนยันการลดเป็นฟรี",
-      referralTooltip: "แนะนำเพื่อนและรับฟรี 1 เดือนหลังจากเพื่อนชำระเดือนแรกเสร็จสิ้น เดือนฟรีจะเท่ากับมูลค่าระดับของผู้ที่ถูกแนะนำ เครดิตไม่สามารถแลกเป็นเงินสดได้ ดูข้อกำหนดและเงื่อนไขฉบับเต็ม"
+      confirmDowngradeBtn: "ยืนยันการลดเป็นฟรี"
     },
     zh: {
       pageTitle: "我的账户",
@@ -1495,9 +1335,7 @@ function AccountContent() {
       freeBenefit4: "只读押金追踪器",
       upgradeNow: "立即升级",
       allActive: "所有功能已激活",
-      lineEnabled: "LINE通知已启用",
-      managePlan: "管理计划",
-      perMonthShort: "/月",
+      lineEnabled: "LINE提醒已启用",
       helpSupport: "帮助与支持",
       helpDesc: "需要帮助？提交请求，我们将通过电子邮件回复",
       submitRequest: "提交支持请求",
@@ -1584,13 +1422,6 @@ function AccountContent() {
       showQR: "显示二维码",
       hideQR: "隐藏二维码",
       scanQR: "使用LINE应用扫描此二维码",
-      connected: "已连接",
-      willReceiveMaintenance: "将接收维护通知",
-      notConnected: "未连接",
-      askLandlordAdd: "请房东添加 @leaseshield 并发送命令",
-      askJuristicAdd: "请物业添加 @leaseshield 并发送命令",
-      copyCommand: "复制命令",
-      share: "分享",
       buyCredits: "购买信件积分",
       creditBalance: "积分余额",
       credits: "积分",
@@ -1632,8 +1463,7 @@ function AccountContent() {
       landlordLanguage: "房东语言",
       selectLandlordLanguage: "选择房东的首选语言",
       notificationPreferences: "通知偏好",
-      notificationInsights: "通知统计",
-      referralTooltip: "推荐朋友，在他们完成第一个付费月后，您将获得一个免费月。免费月的价值与被推荐用户的等级相匹配。积分不能兑换现金。请参阅完整的条款和条件。"
+      notificationInsights: "通知统计"
     },
     ja: {
       pageTitle: "マイアカウント",
@@ -1672,10 +1502,8 @@ function AccountContent() {
       freeBenefit3: "3ファイル（100MBストレージ）",
       freeBenefit4: "読み取り専用敷金トラッカー",
       upgradeNow: "今すぐアップグレード",
-      allActive: "すべての機能が有効化されました",
-      lineEnabled: "LINE通知が有効化されました",
-      managePlan: "プランを管理",
-      perMonthShort: "/月",
+      allActive: "すべての機能が有効",
+      lineEnabled: "LINEリマインダーが有効",
       helpSupport: "ヘルプとサポート",
       helpDesc: "サポートが必要ですか？リクエストを送信すると、メールで返信します",
       submitRequest: "サポートリクエストを送信",
@@ -1762,13 +1590,6 @@ function AccountContent() {
       showQR: "QRコードを表示",
       hideQR: "QRコードを非表示",
       scanQR: "LINEアプリでこのQRコードをスキャン",
-      connected: "接続済み",
-      willReceiveMaintenance: "メンテナンス通知を受け取ります",
-      notConnected: "未接続",
-      askLandlordAdd: "家主に @leaseshield を追加してコマンドを送信するよう依頼してください",
-      askJuristicAdd: "管理会社に @leaseshield を追加してコマンドを送信するよう依頼してください",
-      copyCommand: "コマンドをコピー",
-      share: "共有",
       buyCredits: "レタークレジットを購入",
       creditBalance: "クレジット残高",
       credits: "クレジット",
@@ -1810,8 +1631,7 @@ function AccountContent() {
       landlordLanguage: "家主の言語",
       selectLandlordLanguage: "家主の好みの言語を選択",
       notificationPreferences: "通知設定",
-      notificationInsights: "通知インサイト",
-      referralTooltip: "友達を紹介し、彼らが最初の有料月を完了した後、1ヶ月無料を受け取ります。無料月は紹介されたユーザーのティア価値と一致します。クレジットは現金と交換できません。完全な詳細については利用規約を参照してください。"
+      notificationInsights: "通知インサイト"
     },
     ko: {
       pageTitle: "내 계정",
@@ -1850,10 +1670,8 @@ function AccountContent() {
       freeBenefit3: "3개 파일（100MB 저장소）",
       freeBenefit4: "읽기 전용 보증금 추적기",
       upgradeNow: "지금 업그레이드",
-      allActive: "모든 기능이 활성화되었습니다",
-      lineEnabled: "LINE 알림이 활성화되었습니다",
-      managePlan: "플랜 관리",
-      perMonthShort: "/월",
+      allActive: "모든 기능 활성화",
+      lineEnabled: "LINE 알림 활성화됨",
       helpSupport: "도움말 및 지원",
       helpDesc: "도움이 필요하신가요? 요청을 제출하면 이메일로 답변드립니다",
       submitRequest: "지원 요청 제출",
@@ -1940,13 +1758,6 @@ function AccountContent() {
       showQR: "QR 코드 표시",
       hideQR: "QR 코드 숨기기",
       scanQR: "LINE 앱으로 이 QR 코드 스캔",
-      connected: "연결됨",
-      willReceiveMaintenance: "유지보수 알림을 받게 됩니다",
-      notConnected: "연결되지 않음",
-      askLandlordAdd: "집주인에게 @leaseshield 를 추가하고 명령을 보내달라고 요청하세요",
-      askJuristicAdd: "관리 사무소에 @leaseshield 를 추가하고 명령을 보내달라고 요청하세요",
-      copyCommand: "명령 복사",
-      share: "공유",
       buyCredits: "레터 크레딧 구매",
       creditBalance: "크레딧 잔액",
       credits: "크레딧",
@@ -1988,8 +1799,7 @@ function AccountContent() {
       landlordLanguage: "집주인 언어",
       selectLandlordLanguage: "집주인의 선호 언어 선택",
       notificationPreferences: "알림 설정",
-      notificationInsights: "알림 통계",
-      referralTooltip: "친구를 추천하고 그들이 첫 유료 월을 완료한 후 1개월 무료를 받으세요. 무료 월은 추천된 사용자의 등급 가치와 일치합니다. 크레딧은 현금으로 교환할 수 없습니다. 전체 세부 정보는 약관을 참조하세요."
+      notificationInsights: "알림 통계"
     },
     ru: {
       pageTitle: "Мой аккаунт",
@@ -2028,10 +1838,8 @@ function AccountContent() {
       freeBenefit3: "3 файла (100MB хранилище)",
       freeBenefit4: "Отслеживание депозита (только чтение)",
       upgradeNow: "Обновить сейчас",
-      allActive: "Все функции активированы",
-      lineEnabled: "Уведомления LINE включены",
-      managePlan: "Управление планом",
-      perMonthShort: "/месяц",
+      allActive: "Все функции активны",
+      lineEnabled: "Напоминания LINE включены",
       helpSupport: "Помощь и поддержка",
       helpDesc: "Нужна помощь? Отправьте запрос, и мы ответим по email",
       submitRequest: "Отправить запрос",
@@ -2118,13 +1926,6 @@ function AccountContent() {
       showQR: "Показать QR код",
       hideQR: "Скрыть QR код",
       scanQR: "Отсканируйте этот QR код в приложении LINE",
-      connected: "Подключено",
-      willReceiveMaintenance: "Будет получать уведомления об обслуживании",
-      notConnected: "Не подключено",
-      askLandlordAdd: "Попросите арендодателя добавить @leaseshield и отправить команду",
-      askJuristicAdd: "Попросите управляющую компанию добавить @leaseshield и отправить команду",
-      copyCommand: "Копировать команду",
-      share: "Поделиться",
       buyCredits: "Купить кредиты писем",
       creditBalance: "Баланс кредитов",
       credits: "Кредиты",
@@ -2166,8 +1967,7 @@ function AccountContent() {
       landlordLanguage: "Язык арендодателя",
       selectLandlordLanguage: "Выберите предпочтительный язык арендодателя",
       notificationPreferences: "Настройки уведомлений",
-      notificationInsights: "Статистика уведомлений",
-      referralTooltip: "Порекомендуйте друга и получите один бесплатный месяц после того, как он завершит свой первый платный месяц. Бесплатные месяцы соответствуют стоимости тарифа приглашённого пользователя. Кредиты не могут быть обменены на наличные. См. полные условия в Положениях и Условиях."
+      notificationInsights: "Статистика уведомлений"
     }
   };
 
@@ -2185,7 +1985,6 @@ function AccountContent() {
           icon={User}
           iconColor="#0C3B2E"
           colors={colors}
-          actions={<QuickHelp link="account" size="md" />}
         />
 
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
@@ -2370,112 +2169,6 @@ function AccountContent() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Referral Link Section */}
-                  {user?.referral_code && (
-                    <div style={{
-                      padding: '16px',
-                      backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-                      borderRadius: '12px',
-                      borderLeft: '4px solid #3B82F6'
-                    }}>
-                      <div className="flex items-start gap-3">
-                        <div style={{
-                          width: '40px',
-                          height: '40px',
-                          backgroundColor: '#3B82F6',
-                          borderRadius: '10px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <Gift className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                              {language === 'th' ? 'ลิงก์แนะนำของคุณ' : language === 'zh' ? '您的推荐链接' : language === 'ja' ? 'あなたの紹介リンク' : language === 'ko' ? '추천 링크' : language === 'ru' ? 'Ваша реферальная ссылка' : 'Your Referral Link'}
-                            </p>
-                            <div className="relative group">
-                              <Info 
-                                className="w-3.5 h-3.5 cursor-help" 
-                                style={{ color: colors.textSecondary }}
-                              />
-                              <div 
-                                className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
-                                style={{
-                                  backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
-                                  border: `1px solid ${colors.borderColor}`,
-                                  pointerEvents: 'none'
-                                }}
-                              >
-                                <p className="text-xs leading-relaxed" style={{ color: colors.textPrimary }}>
-                                  {strings.referralTooltip}
-                                </p>
-                                <div 
-                                  className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0"
-                                  style={{
-                                    borderLeft: '6px solid transparent',
-                                    borderRight: '6px solid transparent',
-                                    borderTop: `6px solid ${isDarkMode ? '#1F2937' : '#FFFFFF'}`
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <code 
-                              className="text-xs px-2 py-1 rounded"
-                              style={{ 
-                                backgroundColor: isDarkMode ? '#374151' : '#FFFFFF',
-                                color: colors.textPrimary,
-                                border: `1px solid ${colors.borderColor}`,
-                                wordBreak: 'break-all'
-                              }}
-                            >
-                              app.leaseshield.asia/?ref={user.referral_code}
-                            </code>
-                            <button
-                              onClick={handleCopyReferralLink}
-                              style={{
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                backgroundColor: referralCopied ? '#10B981' : '#3B82F6',
-                                color: '#FFFFFF',
-                                border: 'none',
-                                fontWeight: '600',
-                                fontSize: '12px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                              }}
-                            >
-                              {referralCopied ? (
-                                <>
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  {language === 'th' ? 'คัดลอกแล้ว!' : language === 'zh' ? '已复制!' : language === 'ja' ? 'コピー済み!' : language === 'ko' ? '복사됨!' : language === 'ru' ? 'Скопировано!' : 'Copied!'}
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3 h-3" />
-                                  {language === 'th' ? 'คัดลอก' : language === 'zh' ? '复制' : language === 'ja' ? 'コピー' : language === 'ko' ? '복사' : language === 'ru' ? 'Копировать' : 'Copy'}
-                                </>
-                              )}
-                            </button>
-                          </div>
-                          {/* Reward Balance Display */}
-                          <div className="mt-3 flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-emerald-500" />
-                            <span className="text-sm font-semibold" style={{ color: '#10B981' }}>
-                              {language === 'th' ? 'ยอดเครดิตรางวัลของคุณ:' : language === 'zh' ? '您的奖励余额:' : language === 'ja' ? 'あなたの報酬残高:' : language === 'ko' ? '보유한 리워드 크레딧:' : language === 'ru' ? 'Ваш баланс бонусов:' : 'Your Reward Balance:'} ฿{(user?.reward_credit_balance || 0).toLocaleString()} THB
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   <div style={{
                     padding: '16px',
@@ -2903,10 +2596,7 @@ function AccountContent() {
                   </p>
                   {!isFreePlan && userBillingInterval && (
                     <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-                      {userBillingInterval === 'annual' 
-                        ? strings.billedAnnually 
-                        : (language === 'th' ? 'เรียกเก็บรายเดือน' : language === 'zh' ? '按月计费' : language === 'ja' ? '月額請求' : language === 'ko' ? '월별 청구' : language === 'ru' ? 'Ежемесячная оплата' : strings.billedMonthly)
-                      }
+                      {userBillingInterval === 'annual' ? strings.billedAnnually : strings.billedMonthly}
                     </p>
                   )}
                   {user?.plan_renews_at && (
@@ -2964,8 +2654,8 @@ function AccountContent() {
                         <p className="text-xs flex items-center gap-1" style={{ color: colors.textPrimary }}>
                           <Bell className="w-3 h-3 text-ls-gold" />
                           {user?.line_messaging_token 
-                            ? strings.lineEnabled
-                            : (language === 'th' ? 'การแจ้งเตือน LINE พร้อมใช้งาน' : language === 'zh' ? 'LINE通知可用' : language === 'ja' ? 'LINE通知利用可能' : language === 'ko' ? 'LINE 알림 사용 가능' : language === 'ru' ? 'Уведомления LINE доступны' : 'LINE notifications available')
+                            ? (language === 'th' ? 'การแจ้งเตือน LINE เปิดใช้งาน' : language === 'zh' ? 'LINE提醒已启用' : language === 'ja' ? 'LINEリマインダーが有効' : language === 'ko' ? 'LINE 알림 활성화됨' : language === 'ru' ? 'Напоминания LINE включены' : 'LINE reminders enabled')
+                            : (language === 'th' ? 'การแจ้งเตือน LINE พร้อมใช้งาน' : language === 'zh' ? 'LINE提醒可用' : language === 'ja' ? 'LINEリマインダー利用可能' : language === 'ko' ? 'LINE 알림 사용 가능' : language === 'ru' ? 'Напоминания LINE доступны' : 'LINE reminders available')
                           }
                         </p>
                       </div>
@@ -3002,7 +2692,7 @@ function AccountContent() {
                       onMouseLeave={(e) => e.target.style.backgroundColor = '#0C3B2E'}
                     >
                       <Settings className="w-4 h-4" />
-                      {strings.managePlan}
+                      {language === 'th' ? 'จัดการแผน' : language === 'ru' ? 'Управление планом' : 'Manage Plan'}
                     </button>
                   </div>
                 )}
@@ -4593,7 +4283,7 @@ function AccountContent() {
                       <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {billingInterval === 'annual' && !isFreeplanLocal && (
                           <p className="text-xs" style={{ color: colors.textSecondary }}>
-                            ฿{effectiveMonthly}{strings.perMonthShort}
+                            ฿{effectiveMonthly}{strings.perMonth}
                           </p>
                         )}
                         {isFreeplanLocal && (
@@ -5046,106 +4736,6 @@ function AccountContent() {
           </DialogContent>
         </Dialog>
 
-        {/* One-Time Products Section */}
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? 'ผลิตภัณฑ์แบบครั้งเดียว' : language === 'zh' ? '一次性产品' : language === 'ja' ? '単発製品' : language === 'ko' ? '일회성 제품' : language === 'ru' ? 'Разовые продукты' : 'One-Time Products'}
-                </h2>
-                <p className="text-sm font-normal" style={{ color: colors.textSecondary }}>
-                  {language === 'th' ? 'ไม่ต้องสมัครสมาชิก' : language === 'zh' ? '无需订阅' : language === 'ja' ? 'サブスクリプション不要' : language === 'ko' ? '구독 불필요' : language === 'ru' ? 'Без подписки' : 'No subscription required'}
-                </p>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 gap-4">
-              {ONE_TIME_PRODUCTS.map((product) => {
-                const ProductIcon = product.icon;
-                const productTitle = language === 'th' ? product.titleTh : language === 'zh' ? product.titleZh : language === 'ja' ? product.titleJa : language === 'ko' ? product.titleKo : language === 'ru' ? product.titleRu : product.title;
-                const deliverables = language === 'th' ? product.deliverablesTh : language === 'zh' ? product.deliverablesZh : language === 'ja' ? product.deliverablesJa : language === 'ko' ? product.deliverablesKo : language === 'ru' ? product.deliverablesRu : product.deliverables;
-                
-                return (
-                  <div
-                    key={product.id}
-                    className="border-2 rounded-xl p-6"
-                    style={{
-                      backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-                      borderColor: '#3B82F6'
-                    }}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center">
-                          <ProductIcon className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
-                            {productTitle}
-                          </h3>
-                          <p className="text-2xl font-bold" style={{ color: '#3B82F6' }}>
-                            ฿{product.price}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <p className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                        {language === 'th' ? 'รายการที่ให้บริการ:' : language === 'zh' ? '包含内容：' : language === 'ja' ? '提供内容：' : language === 'ko' ? '제공 내용：' : language === 'ru' ? 'Что входит：' : 'Deliverables:'}
-                      </p>
-                      <ul className="space-y-1">
-                        {deliverables.map((item, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm" style={{ color: colors.textPrimary }}>
-                            <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        haptic.medium();
-                        // Navigate to upload scan page for one-time purchase
-                        window.location.href = createPageUrl('UploadScan') + '?oneTime=true';
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '14px 20px',
-                        borderRadius: '10px',
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-                        color: '#FFFFFF',
-                        fontWeight: '700',
-                        fontSize: '16px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 4px 12px rgba(59,130,246,0.4)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 6px 16px rgba(59,130,246,0.5)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(59,130,246,0.4)';
-                      }}
-                    >
-                      {language === 'th' ? 'เริ่มสแกน' : language === 'zh' ? '开始扫描' : language === 'ja' ? 'スキャン開始' : language === 'ko' ? '스캔 시작' : language === 'ru' ? 'Начать сканирование' : 'Start Scan'}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
         <Card id="letter-credits" className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-y-3">
@@ -5292,17 +4882,11 @@ function AccountContent() {
           </CardContent>
         </Card>
 
-
-
         <div className="mt-8 mb-4">
           <Button
             variant="outline"
             className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-            onClick={() => {
-              console.log('🚪 [LOGOUT] User clicked logout, clearing localStorage...');
-              sessionStorage.clear();
-              base44.auth.logout('https://leaseshield.asia/');
-            }}
+            onClick={() => base44.auth.logout('https://leaseshield.asia/')}
             style={{ 
               backgroundColor: colors.cardBg, 
               borderColor: isDarkMode ? '#EF4444' : '#FECACA', 
@@ -5331,10 +4915,8 @@ function AccountContent() {
 
 export default function Account() {
   return (
-    <AuthGuard>
-      <ToastProvider>
-        <AccountContent />
-      </ToastProvider>
-    </AuthGuard>
+    <ToastProvider>
+      <AccountContent />
+    </ToastProvider>
   );
 }

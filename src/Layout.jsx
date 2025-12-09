@@ -1,16 +1,12 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, Download, HelpCircle, BookOpen, Menu, X, ChevronRight, Globe, Info } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
-import { sessionStorage } from "./components/sessionStorage";
-
-
-import QuickGuide from "./components/onboarding/QuickGuide";
-import LisaAssistant from "./components/LisaAssistant";
+import { InstallBanner } from "./components/InstallBanner";
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -68,89 +64,12 @@ const createRipple = (event, element) => {
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const mainContentRef = useRef(null);
-  const [deferredPrompt, setDeferredPrompt] = React.useState(null);
-  const [showInstallButton, setShowInstallButton] = React.useState(false);
-  const [showQuickGuide, setShowQuickGuide] = React.useState(false);
-  const [hasCheckedGuide, setHasCheckedGuide] = React.useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: async () => {
-      const userData = await base44.auth.me();
-      // Update localStorage whenever user data is fetched
-      if (userData) {
-        sessionStorage.save(userData);
-      }
-      return userData;
-    },
+    queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000,
   });
-
-  // Capture beforeinstallprompt event for PWA install
-  React.useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      // Only show on Android/Chrome-like browsers
-      const isAndroid = /android/i.test(navigator.userAgent);
-      const isChrome = /chrome/i.test(navigator.userAgent) && !/edge|edg/i.test(navigator.userAgent);
-      if (isAndroid || isChrome) {
-        setShowInstallButton(true);
-      }
-    };
-
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    // Hide button after user makes a choice (accept or dismiss)
-    setShowInstallButton(false);
-    setDeferredPrompt(null);
-  };
-
-  // Auto-trigger Quick Guide for first-time users (unless hidden)
-  React.useEffect(() => {
-    // Wait for user to be fully loaded with email
-    if (!user?.email) {
-      return;
-    }
-
-    // Only check once per session
-    if (hasCheckedGuide) {
-      return;
-    }
-    
-    const guideDone = localStorage.getItem('leaseshield_quick_guide_done');
-    const guideHiddenPermanently = localStorage.getItem('ls_quick_guide_hidden');
-    const hideGuide = user.hide_quick_guide;
-
-    console.log('🔍 [QUICK_GUIDE] Checking auto-trigger:', {
-      userEmail: user.email,
-      guideDone,
-      guideHiddenPermanently,
-      hideGuide,
-      willShow: !guideDone && !hideGuide && !guideHiddenPermanently
-    });
-
-    // Mark as checked AFTER we have all the data we need
-    setHasCheckedGuide(true);
-
-    // Only auto-open if ALL conditions are false
-    if (!guideDone && !hideGuide && !guideHiddenPermanently) {
-      console.log('✅ [QUICK_GUIDE] Opening in 1000ms...');
-      setTimeout(() => {
-        console.log('✅ [QUICK_GUIDE] Opening NOW');
-        setShowQuickGuide(true);
-      }, 1000);
-    }
-  }, [user?.email, hasCheckedGuide]);
 
   React.useEffect(() => {
     if (mainContentRef.current) {
@@ -168,6 +87,24 @@ export default function Layout({ children, currentPageName }) {
   }, [user?.theme]);
 
   React.useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then((registration) => {
+          console.log('✅ Service Worker registered:', registration.scope);
+        })
+        .catch((error) => {
+          console.error('❌ Service Worker registration failed:', error);
+        });
+    }
+
+    const link = document.querySelector('link[rel="manifest"]');
+    if (!link) {
+      const manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = '/manifest.json';
+      document.head.appendChild(manifestLink);
+    }
+
     const metaTags = [
       { name: 'theme-color', content: '#0C3B2E' },
       { name: 'mobile-web-app-capable', content: 'yes' },
@@ -185,6 +122,14 @@ export default function Layout({ children, currentPageName }) {
       }
       meta.content = content;
     });
+
+    let appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+    if (!appleIcon) {
+      appleIcon = document.createElement('link');
+      appleIcon.rel = 'apple-touch-icon';
+      appleIcon.href = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png';
+      document.head.appendChild(appleIcon);
+    }
   }, []);
 
   const language = user?.language || 'en';
@@ -214,11 +159,7 @@ export default function Layout({ children, currentPageName }) {
       search: "Search",
       timeline: "Timeline",
       upgrade: "Upgrade",
-      tagline: "Fair. Transparent. Protected.",
-      installApp: "Install Lease Shield",
-      account: "Account & Settings",
-      helpFaq: "Help & FAQ",
-      language: "Language",
+      tagline: "Fair. Transparent. Protected."
     },
     th: {
       appName: "ลีสชีลด์",
@@ -230,11 +171,7 @@ export default function Layout({ children, currentPageName }) {
       search: "ค้นหา",
       timeline: "ไทม์ไลน์",
       upgrade: "อัปเกรด",
-      tagline: "ยุติธรรม • โปร่งใส • ปลอดภัย",
-      installApp: "ติดตั้ง Lease Shield",
-      account: "บัญชีและการตั้งค่า",
-      helpFaq: "ช่วยเหลือและคำถามที่พบบ่อย",
-      language: "ภาษา",
+      tagline: "ยุติธรรม • โปร่งใส • ปลอดภัย"
     },
     zh: {
       appName: "租约盾",
@@ -246,11 +183,7 @@ export default function Layout({ children, currentPageName }) {
       search: "搜索",
       timeline: "时间线",
       upgrade: "升级",
-      tagline: "公平 • 透明 • 保护",
-      installApp: "安装 Lease Shield",
-      account: "账户和设置",
-      helpFaq: "帮助与常见问题",
-      language: "语言",
+      tagline: "公平 • 透明 • 保护"
     },
     ru: {
       appName: "ЛИС ЩИТ",
@@ -262,11 +195,7 @@ export default function Layout({ children, currentPageName }) {
       search: "Поиск",
       timeline: "Хронология",
       upgrade: "Обновить",
-      tagline: "Справедливо • Прозрачно • Защищено",
-      installApp: "Установить Lease Shield",
-      account: "Аккаунт и настройки",
-      helpFaq: "Помощь и FAQ",
-      language: "Язык",
+      tagline: "Справедливо • Прозрачно • Защищено"
     },
     ja: {
       appName: "リースシールド",
@@ -278,11 +207,7 @@ export default function Layout({ children, currentPageName }) {
       search: "検索",
       timeline: "タイムライン",
       upgrade: "アップグレード",
-      tagline: "公正 • 透明 • 保護",
-      installApp: "Lease Shieldをインストール",
-      account: "アカウントと設定",
-      helpFaq: "ヘルプとFAQ",
-      language: "言語",
+      tagline: "公正 • 透明 • 保護"
     },
     ko: {
       appName: "리스실드",
@@ -294,11 +219,7 @@ export default function Layout({ children, currentPageName }) {
       search: "검색",
       timeline: "타임라인",
       upgrade: "업그레이드",
-      tagline: "공정 • 투명 • 보호",
-      installApp: "Lease Shield 설치",
-      account: "계정 및 설정",
-      helpFaq: "도움말 및 FAQ",
-      language: "언어",
+      tagline: "공정 • 투명 • 보호"
     }
   };
 
@@ -380,9 +301,9 @@ export default function Layout({ children, currentPageName }) {
       flexDirection: 'column',
       backgroundColor: colors.bg,
       position: 'relative',
-      paddingTop: 'env(safe-area-inset-top, 0px)',
-      paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+      paddingBottom: 'env(safe-area-inset-bottom)'
     }}>
+      <InstallBanner />
       <style>{`
         :root {
           --ls-forest: #0C3B2E;
@@ -419,9 +340,7 @@ export default function Layout({ children, currentPageName }) {
         }
         
         .top-bar {
-          position: sticky;
-          top: 0;
-          z-index: 1000;
+          padding-top: env(safe-area-inset-top, 0px);
           height: auto;
           min-height: 64px;
           box-shadow: ${isDarkMode ? '0 4px 12px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.04)'};
@@ -522,7 +441,7 @@ export default function Layout({ children, currentPageName }) {
       `}</style>
 
       {/* Top Bar */}
-      <div className="top-bar border-b" style={{
+      <div className="top-bar fixed top-0 left-0 right-0 border-b z-50" style={{
         backgroundColor: colors.topBarBg,
         borderBottomColor: colors.borderColor
       }}>
@@ -572,89 +491,7 @@ export default function Layout({ children, currentPageName }) {
               </span>
             )}
           </div>
-          {/* Desktop Actions - hidden on mobile */}
-          <div className="hidden md:flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            {showInstallButton && (
-              <button
-                onClick={handleInstallClick}
-                className="btn-interaction"
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: 9999,
-                  backgroundColor: '#10B981',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                  whiteSpace: 'nowrap',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <Download className="w-4 h-4" />
-                <span>Install App</span>
-              </button>
-            )}
-            <button
-              onClick={() => {
-                console.log('🔴 [MANUAL] Quick Guide button clicked, forcing open...');
-                haptic.light();
-                setShowQuickGuide(true);
-              }}
-              aria-label="Quick Guide"
-              title="Quick Guide"
-              className="btn-interaction"
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
-              }}
-            >
-              <Info 
-                className="w-5 h-5" 
-                style={{ 
-                  color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
-                  transition: 'color 0.2s'
-                }}
-              />
-            </button>
-            <Link to={createPageUrl("FAQ")}>
-              <button
-                onClick={() => haptic.light()}
-                aria-label="Help & FAQ"
-                className="btn-interaction"
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  backgroundColor: isActiveTab(createPageUrl("FAQ")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
-                }}
-              >
-                <BookOpen 
-                  className="w-5 h-5" 
-                  style={{ 
-                    color: isActiveTab(createPageUrl("FAQ")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
-                    transition: 'color 0.2s'
-                  }}
-                />
-              </button>
-            </Link>
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
@@ -674,7 +511,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <Search 
-                  className="w-5 h-5" 
+                  className="w-4 h-4 sm:w-5 sm:h-5" 
                   style={{ 
                     color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
                     transition: 'color 0.2s'
@@ -688,7 +525,7 @@ export default function Layout({ children, currentPageName }) {
                 <button
                   aria-label="Upgrade"
                   onClick={() => haptic.medium()}
-                  className="btn-interaction"
+                  className="btn-interaction hidden sm:inline-flex"
                   style={{
                     padding: '6px 14px',
                     borderRadius: 9999,
@@ -719,11 +556,7 @@ export default function Layout({ children, currentPageName }) {
             <Link to={createPageUrl("Account")}>
               <button
                 aria-label="Account Settings"
-                onClick={() => {
-                  haptic.light();
-                  // Save session on navigation
-                  if (user) sessionStorage.save(user);
-                }}
+                onClick={() => haptic.light()}
                 className="btn-interaction"
                 style={{
                   width: '36px',
@@ -739,7 +572,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <User 
-                  className="w-5 h-5" 
+                  className="w-4 h-4 sm:w-5 sm:h-5" 
                   style={{ 
                     color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
                     transition: 'color 0.2s'
@@ -748,275 +581,15 @@ export default function Layout({ children, currentPageName }) {
               </button>
             </Link>
           </div>
-
-          {/* Mobile Actions - only 3 icons: Quick Guide, Search, Profile Menu */}
-          <div className="flex md:hidden items-center gap-1 flex-shrink-0 mr-1">
-            <button
-              onClick={() => {
-                haptic.light();
-                setShowQuickGuide(true);
-              }}
-              aria-label="Quick Guide"
-              className="btn-interaction"
-              style={{
-                width: '44px',
-                height: '44px',
-                minWidth: '44px',
-                minHeight: '44px',
-                borderRadius: '50%',
-                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
-              }}
-            >
-              <Info 
-                className="w-5 h-5" 
-                style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }}
-              />
-            </button>
-            <Link to={createPageUrl("Search")}>
-              <button
-                aria-label={strings.search || "Search"}
-                onClick={() => haptic.light()}
-                className="btn-interaction"
-                style={{
-                  width: '44px',
-                  height: '44px',
-                  minWidth: '44px',
-                  minHeight: '44px',
-                  borderRadius: '50%',
-                  backgroundColor: isActiveTab(createPageUrl("Search")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
-                }}
-              >
-                <Search 
-                  className="w-5 h-5" 
-                  style={{ 
-                    color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E')
-                  }}
-                />
-              </button>
-            </Link>
-            {/* Profile Menu Trigger - 44x44 tap target with edge padding */}
-            <button
-              aria-label="Menu"
-              onClick={() => {
-                haptic.light();
-                setShowProfileMenu(true);
-              }}
-              className="btn-interaction"
-              style={{
-                width: '44px',
-                height: '44px',
-                minWidth: '44px',
-                minHeight: '44px',
-                borderRadius: '50%',
-                backgroundColor: showProfileMenu || isActiveTab(createPageUrl("Account")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)',
-                marginRight: '4px'
-              }}
-            >
-              <User 
-                className="w-5 h-5" 
-                style={{ 
-                  color: showProfileMenu || isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E')
-                }}
-              />
-            </button>
-          </div>
         </div>
       </div>
-
-      {showQuickGuide && (
-        <QuickGuide 
-          open={showQuickGuide}
-          onClose={() => setShowQuickGuide(false)}
-          language={language}
-          isDarkMode={isDarkMode}
-          user={user}
-        />
-      )}
-
-      {/* Mobile Profile Menu Sheet */}
-      {showProfileMenu && (
-        <div 
-          className="fixed inset-0 z-[60]"
-          onClick={() => setShowProfileMenu(false)}
-        >
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black/50"
-            style={{ animation: 'fadeIn 0.2s ease-out' }}
-          />
-          
-          {/* Menu Sheet */}
-          <div 
-            className="absolute bottom-0 left-0 right-0 rounded-t-2xl overflow-hidden"
-            style={{
-              backgroundColor: colors.cardBg,
-              animation: 'slideUp 0.3s ease-out',
-              maxHeight: '70vh',
-              paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <style>{`
-              @keyframes slideUp {
-                from { transform: translateY(100%); }
-                to { transform: translateY(0); }
-              }
-            `}</style>
-
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div 
-                className="w-10 h-1 rounded-full"
-                style={{ backgroundColor: isDarkMode ? '#4B5563' : '#D1D5DB' }}
-              />
-            </div>
-
-            {/* Menu Items - consistent 12px gap between all rows */}
-            <div className="px-4 pb-4" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {/* Account & Settings */}
-              <Link 
-                to={createPageUrl("Account")}
-                onClick={() => {
-                  haptic.light();
-                  setShowProfileMenu(false);
-                }}
-              >
-                <div 
-                  className="flex items-center justify-between p-3 rounded-xl"
-                  style={{
-                    backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <User className="w-5 h-5 flex-shrink-0" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
-                    <span className="font-medium" style={{ color: colors.textPrimary }}>
-                      {strings.account}
-                    </span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: colors.textSecondary }} />
-                </div>
-              </Link>
-
-              {/* Help & FAQ */}
-              <Link 
-                to={createPageUrl("FAQ")}
-                onClick={() => {
-                  haptic.light();
-                  setShowProfileMenu(false);
-                }}
-              >
-                <div 
-                  className="flex items-center justify-between p-3 rounded-xl"
-                  style={{
-                    backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <BookOpen className="w-5 h-5 flex-shrink-0" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
-                    <span className="font-medium" style={{ color: colors.textPrimary }}>
-                      {strings.helpFaq}
-                    </span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: colors.textSecondary }} />
-                </div>
-              </Link>
-
-              {/* Install App - only if available */}
-              {showInstallButton && (
-                <button
-                  onClick={() => {
-                    haptic.medium();
-                    handleInstallClick();
-                    setShowProfileMenu(false);
-                  }}
-                  className="w-full"
-                >
-                  <div 
-                    className="flex items-center justify-between p-3 rounded-xl"
-                    style={{
-                      backgroundColor: '#10B981',
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Download className="w-5 h-5 flex-shrink-0 text-white" />
-                      <span className="font-medium text-white">
-                        {strings.installApp}
-                      </span>
-                    </div>
-                    <ChevronRight className="w-5 h-5 flex-shrink-0 text-white/70" />
-                  </div>
-                </button>
-              )}
-
-              {/* Language Selector */}
-              <div 
-                className="flex items-center justify-between p-3 rounded-xl"
-                style={{
-                  backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <Globe className="w-5 h-5 flex-shrink-0" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }} />
-                  <span className="font-medium" style={{ color: colors.textPrimary }}>
-                    {strings.language}
-                  </span>
-                </div>
-                <LanguageToggle />
-              </div>
-
-              {/* Upgrade - only if not on Secure plan */}
-              {user && user.plan_tier !== 'secure' && (
-                <Link 
-                  to={createPageUrl("Account") + '?showPlans=true'}
-                  onClick={() => {
-                    haptic.medium();
-                    setShowProfileMenu(false);
-                  }}
-                >
-                  <div 
-                    className="flex items-center justify-between p-3 rounded-xl"
-                    style={{
-                      background: 'linear-gradient(135deg, #C7A338 0%, #D4B451 100%)',
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Star className="w-5 h-5 flex-shrink-0 text-white" />
-                      <span className="font-bold text-white">
-                        {strings.upgrade}
-                      </span>
-                    </div>
-                    <ChevronRight className="w-5 h-5 flex-shrink-0 text-white/70" />
-                  </div>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Content */}
       <main 
         ref={mainContentRef} 
         className="main-content flex-1 page-transition" 
         style={{
+          marginTop: '64px',
           paddingBottom: '80px',
           width: '100%',
           maxWidth: '100vw'
@@ -1024,8 +597,6 @@ export default function Layout({ children, currentPageName }) {
       >
         {children}
       </main>
-
-      <LisaAssistant />
 
       {/* Bottom Navigation */}
       <nav 

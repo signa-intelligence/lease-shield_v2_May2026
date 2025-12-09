@@ -27,8 +27,6 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
-import { QuickHelp } from "../components/shared/ContextualHelp";
-import AuthGuard from "../components/shared/AuthGuard";
 
 // Maintenance Request Card Component (extracted to avoid hooks in loops)
 function MaintenanceRequestCard({
@@ -1756,10 +1754,7 @@ function PropertyTrackerContent() {
                     <Wallet className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold">{strings.depositSection}</span>
-                      <QuickHelp link="deposits" size="sm" />
-                    </div>
+                    <div className="text-lg font-bold">{strings.depositSection}</div>
                     {deposit && deposit.deposit_amount > 0 && (
                       <div className="text-sm font-normal flex items-center gap-2 mt-1">
                         <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>
@@ -2153,10 +2148,7 @@ function PropertyTrackerContent() {
                     <Wrench className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold">{strings.maintenanceSection}</span>
-                      <QuickHelp link="maintenance" size="sm" />
-                    </div>
+                    <div className="text-lg font-bold">{strings.maintenanceSection}</div>
                     {activeRequests.length > 0 && (
                       <div className="text-sm font-normal mt-1">
                         <Badge style={{ backgroundColor: `${colors.maintenanceAccent}20`, color: colors.maintenanceAccent, border: `1px solid ${colors.maintenanceAccent}` }}>
@@ -2906,10 +2898,8 @@ function PropertyTrackerContent() {
 
 export default function PropertyTracker() {
   return (
-    <AuthGuard>
-      <ToastProvider>
-        <PropertyTrackerContent />
-      </ToastProvider>
-    </AuthGuard>
+    <ToastProvider>
+      <PropertyTrackerContent />
+    </ToastProvider>
   );
 }

@@ -61,19 +61,6 @@ export default function TemplateForm() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Fetch LetterTemplate from database if subject matches a template_id
-  const { data: letterTemplate } = useQuery({
-    queryKey: ['letterTemplate', formData.subject],
-    queryFn: async () => {
-      const templates = await base44.entities.LetterTemplate.filter({ 
-        template_id: formData.subject,
-        is_active: true 
-      });
-      return templates?.[0] || null;
-    },
-    enabled: !!formData.subject && !!user,
-  });
-
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userCredits = user?.letter_credits || 0;
@@ -600,29 +587,19 @@ export default function TemplateForm() {
 
   const strings = t[language] || t.en;
 
-  // Build letter type labels dynamically from both legacy + LetterTemplate entities
-  const letterTypeLabels = React.useMemo(() => {
-    const labels = {
-      deposit: strings.depositReturn,
-      deductions: language === 'th' ? 'ขอรายละเอียดการหักเงิน' : language === 'zh' ? '要求逐项扣除' : language === 'ja' ? '明細化された控除要求' : language === 'ko' ? '항목별 공제 요청' : 'Request for Itemised Deductions',
-      reminder: language === 'th' ? 'จดหมายเตือนแบบมิตร' : language === 'zh' ? '友好提醒' : language === 'ja' ? '友好的なリマインダー' : language === 'ko' ? '친근한 알림' : 'Friendly Reminder',
-      dispute: language === 'th' ? 'จดหมายคัดค้านการระงับเงิน' : language === 'zh' ? '正式扣款争议' : language === 'ja' ? '差し止めに対する正式な異議申し立て' : language === 'ko' ? '공식 보류 이의 제기' : 'Formal Dispute of Withholding',
-      early_termination: language === 'th' ? 'ประสานยุติสัญญาก่อนกำหนด' : language === 'zh' ? '提前终止调解' : language === 'ja' ? '早期終了和解' : language === 'ko' ? '조기 해지 조정' : 'Early Termination Reconciliation',
-      condition_dispute: language === 'th' ? 'โต้แย้งสภาพทรัพย์สิน' : language === 'zh' ? '财产状况争议' : language === 'ja' ? '物件状態に関する紛争' : language === 'ko' ? '부동산 상태 분쟁' : 'Property Condition Dispute',
-      evidence: language === 'th' ? 'ขอหลักฐานประกอบ' : language === 'zh' ? '要求提供证据' : language === 'ja' ? '証拠提出要求' : language === 'ko' ? '증거 요청' : 'Request for Evidence',
-      final_opportunity: language === 'th' ? 'โอกาสสุดท้าย' : language === 'zh' ? '最后机会' : language === 'ja' ? '最終的な機会' : language === 'ko' ? '마지막 기회' : 'Final Opportunity',
-      non_compliance: language === 'th' ? 'แจ้งไม่ปฏิบัติตามสัญญา' : language === 'zh' ? '违规通知' : language === 'ja' ? '不履行通知' : language === 'ko' ? '미준수 통지' : 'Notice of Non-Compliance',
-      settlement: language === 'th' ? 'ยืนยันการตกลงชำระเงิน' : language === 'zh' ? '和解确认' : language === 'ja' ? '和解確認' : language === 'ko' ? '합의 확인' : 'Settlement Confirmation',
-      general_concerns: language === 'th' ? 'ข้อกังวลทั่วไป' : language === 'zh' ? '一般关注/问题' : language === 'ja' ? '一般的な懸念/問題' : language === 'ko' ? '일반적인 우려/문제' : 'General Concerns/Issues'
-    };
-    
-    // If we have a letterTemplate loaded, add it dynamically
-    if (letterTemplate) {
-      labels[letterTemplate.template_id] = language === 'th' ? letterTemplate.title_th : letterTemplate.title_en;
-    }
-    
-    return labels;
-  }, [language, letterTemplate]);
+  const letterTypeLabels = {
+    deposit: strings.depositReturn,
+    deductions: language === 'th' ? 'ขอรายละเอียดการหักเงิน' : language === 'zh' ? '要求逐项扣除' : language === 'ja' ? '明細化された控除要求' : language === 'ko' ? '항목별 공제 요청' : 'Request for Itemised Deductions',
+    reminder: language === 'th' ? 'จดหมายเตือนแบบมิตร' : language === 'zh' ? '友好提醒' : language === 'ja' ? '友好的なリマインダー' : language === 'ko' ? '친근한 알림' : 'Friendly Reminder',
+    dispute: language === 'th' ? 'จดหมายคัดค้านการระงับเงิน' : language === 'zh' ? '正式扣款争议' : language === 'ja' ? '差し止めに対する正式な異議申し立て' : language === 'ko' ? '공식 보류 이의 제기' : 'Formal Dispute of Withholding',
+    early_termination: language === 'th' ? 'ประสานยุติสัญญาก่อนกำหนด' : language === 'zh' ? '提前终止调解' : language === 'ja' ? '早期終了和解' : language === 'ko' ? '조기 해지 조정' : 'Early Termination Reconciliation',
+    condition_dispute: language === 'th' ? 'โต้แย้งสภาพทรัพย์สิน' : language === 'zh' ? '财产状况争议' : language === 'ja' ? '物件状態に関する紛争' : language === 'ko' ? '부동산 상태 분쟁' : 'Property Condition Dispute',
+    evidence: language === 'th' ? 'ขอหลักฐานประกอบ' : language === 'zh' ? '要求提供证据' : language === 'ja' ? '証拠提出要求' : language === 'ko' ? '증거 요청' : 'Request for Evidence',
+    final_opportunity: language === 'th' ? 'โอกาสสุดท้าย' : language === 'zh' ? '最后机会' : language === 'ja' ? '最終的な機会' : language === 'ko' ? '마지막 기회' : 'Final Opportunity',
+    non_compliance: language === 'th' ? 'แจ้งไม่ปฏิบัติตามสัญญา' : language === 'zh' ? '违规通知' : language === 'ja' ? '不履行通知' : language === 'ko' ? '미준수 통지' : 'Notice of Non-Compliance',
+    settlement: language === 'th' ? 'ยืนยันการตกลงชำระเงิน' : language === 'zh' ? '和解确认' : language === 'ja' ? '和解確認' : language === 'ko' ? '합의 확인' : 'Settlement Confirmation',
+    general_concerns: language === 'th' ? 'ข้อกังวลทั่วไป' : language === 'zh' ? '一般关注/问题' : language === 'ja' ? '一般的な懸念/問題' : language === 'ko' ? '일반적인 우려/문제' : 'General Concerns/Issues'
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -651,21 +628,8 @@ export default function TemplateForm() {
 
     setGenerating(true);
     try {
-      // Check if this is a new LetterTemplate or legacy template
-      let response;
-      
-      if (letterTemplate) {
-        // NEW: LetterTemplate from database - generate using template body
-        response = await base44.functions.invoke('generateLetterFromTemplate', {
-          ...formData,
-          template_id: letterTemplate.template_id,
-          body_en: letterTemplate.body_en,
-          body_th: letterTemplate.body_th
-        });
-      } else {
-        // LEGACY: Use existing phase1 letter generation
-        response = await base44.functions.invoke('generatePhase1Letter', formData);
-      }
+      // Call the backend function to generate multi-language letter pack (credit is deducted here)
+      const response = await base44.functions.invoke('generatePhase1Letter', formData);
 
       if (response.data?.ok) {
         // Refresh user credits immediately

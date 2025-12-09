@@ -5,15 +5,13 @@ import Stripe from 'npm:stripe@14.10.0';
  * STRIPE WEBHOOK HANDLER - Clean minimal implementation
  * 
  * Required Secrets:
- * - SK_LIVE_secret_key: Stripe API key (LIVE mode)
+ * - SK_TEST_secret_key: Stripe API key (contains LIVE sk_live_... key)
  * - webhook_stripe: Stripe webhook signing secret (whsec_...)
  * - RESEND_API_KEY: Email service (optional for notifications)
  */
 
-const stripeSecretKey = Deno.env.get('SK_LIVE_secret_key') ?? Deno.env.get('SK_TEST_secret_key');
+const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
 const webhookSecret = Deno.env.get('webhook_stripe');
-
-console.log('[STRIPE_WEBHOOK] Secret key loaded:', stripeSecretKey ? stripeSecretKey.substring(0, 7) + '...' : 'MISSING');
 
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2024-06-20',
@@ -65,125 +63,7 @@ Deno.serve(async (req) => {
 
       console.log('[WEBHOOK] checkout.session.completed');
       console.log('[WEBHOOK] Session ID:', session.id);
-      console.log('[WEBHOOK] Mode:', session.mode);
-      console.log('[WEBHOOK] Customer:', session.customer);
-      console.log('[WEBHOOK] Subscription:', session.subscription);
-      console.log('[WEBHOOK] Metadata:', JSON.stringify(metadata, null, 2));
-      console.log('[WEBHOOK] Full session data:', JSON.stringify(session, null, 2));
-
-      // ========================================
-      // SUBSCRIPTION FLOW - Activate user subscription
-      // ========================================
-      if (metadata.type === 'subscription' && metadata.userId) {
-        console.log('[WEBHOOK] 🎯 SUBSCRIPTION ACTIVATION STARTING');
-        console.log('[WEBHOOK] Plan:', metadata.plan);
-        console.log('[WEBHOOK] Interval:', metadata.interval);
-        console.log('[WEBHOOK] User ID:', metadata.userId);
-
-        const userId = metadata.userId;
-        const planTier = metadata.plan; // lite, protect, secure
-        const billingInterval = metadata.interval; // monthly, annual
-        const subscriptionId = session.subscription;
-        const customerId = session.customer;
-
-        // Fetch user
-        let user;
-        try {
-          const allUsers = await base44.asServiceRole.entities.User.list();
-          user = allUsers.find(u => u.id === userId);
-
-          if (!user) {
-            console.error('[WEBHOOK] ❌ User not found:', userId);
-            return Response.json({ received: true, error: 'user_not_found' }, { status: 200 });
-          }
-
-          console.log('[WEBHOOK] ✅ User found:', user.email);
-          console.log('[WEBHOOK] Current plan:', user.plan_tier);
-        } catch (fetchError) {
-          console.error('[WEBHOOK] ❌ Failed to fetch user:', fetchError.message);
-          return Response.json({ received: true, error: 'user_fetch_failed' }, { status: 200 });
-        }
-
-        // Calculate plan renewal date (30 days for monthly, 365 for annual)
-        const renewalDate = new Date();
-        if (billingInterval === 'annual') {
-          renewalDate.setFullYear(renewalDate.getFullYear() + 1);
-        } else {
-          renewalDate.setDate(renewalDate.getDate() + 30);
-        }
-
-        // Grant initial letter credits based on plan tier
-        const planCredits = {
-          'lite': 3,
-          'protect': 5,
-          'secure': 10
-        };
-        const creditsToGrant = planCredits[planTier] || 0;
-        const currentCredits = user.letter_credits || 0;
-
-        // Update user entity with subscription details
-        try {
-          await base44.asServiceRole.entities.User.update(user.id, {
-            plan_tier: planTier,
-            billing_interval: billingInterval,
-            subscription_status: 'active',
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-            plan_started_at: new Date().toISOString(),
-            plan_renews_at: renewalDate.toISOString(),
-            letter_credits: currentCredits + creditsToGrant
-          });
-
-          console.log('[WEBHOOK] ✅✅✅ SUBSCRIPTION ACTIVATED IN DB ✅✅✅');
-          console.log('[WEBHOOK] Plan tier:', planTier);
-          console.log('[WEBHOOK] Billing interval:', billingInterval);
-          console.log('[WEBHOOK] Subscription ID:', subscriptionId);
-          console.log('[WEBHOOK] Credits granted:', creditsToGrant);
-          console.log('[WEBHOOK] New credit balance:', currentCredits + creditsToGrant);
-          console.log('[WEBHOOK] Renews at:', renewalDate.toISOString());
-        } catch (updateError) {
-          console.error('[WEBHOOK] ❌ Failed to update user subscription:', updateError.message);
-          return Response.json({ received: true, error: 'subscription_update_failed' }, { status: 200 });
-        }
-
-        // Create Payment record
-        try {
-          await base44.asServiceRole.entities.Payment.create({
-            type: 'subscription',
-            amount: parseFloat((session.amount_total / 100).toFixed(2)),
-            currency: session.currency?.toUpperCase() || 'THB',
-            provider: 'stripe',
-            status: 'paid',
-            external_id: session.id,
-            created_by: user.email
-          });
-
-          console.log('[WEBHOOK] ✅ Payment record created for subscription');
-        } catch (paymentError) {
-          console.error('[WEBHOOK] ⚠️ Failed to create Payment record (non-critical):', paymentError.message);
-        }
-
-        // Process referral reward (non-blocking)
-        try {
-          base44.asServiceRole.functions.invoke('processReferralReward', {
-            referredUserId: userId
-          }).catch(err => {
-            console.error('[WEBHOOK] ⚠️ Referral reward processing failed (non-critical):', err.message);
-          });
-          
-          console.log('[WEBHOOK] Referral reward check queued');
-        } catch (refError) {
-          console.error('[WEBHOOK] ⚠️ Referral reward setup error (non-critical):', refError.message);
-        }
-
-        console.log('[WEBHOOK] ✅ Subscription activation complete');
-        return Response.json({ 
-          received: true, 
-          processed: 'subscription',
-          plan: planTier,
-          interval: billingInterval
-        }, { status: 200 });
-      }
+      console.log('[WEBHOOK] Metadata type:', metadata.type);
 
       // ========================================
       // CREDITS PURCHASE FLOW
@@ -343,37 +223,165 @@ Deno.serve(async (req) => {
         }, { status: 200 });
       }
 
-      // Unknown checkout type
-      console.log('[WEBHOOK] ⚠️ checkout.session.completed with unknown type:', metadata.type);
-      return Response.json({ received: true }, { status: 200 });
-    }
+      // ========================================
+      // RESOLVE CASE PAYMENT FLOW
+      // ========================================
+      if (metadata.type === 'resolve_case') {
+        console.log('[RESOLVE_WEBHOOK] 🎯 Resolve case payment detected');
 
-    // ========================================
-    // HANDLE: customer.subscription.created
-    // ========================================
-    if (event.type === 'customer.subscription.created') {
-      const subscription = event.data.object;
-      console.log('[WEBHOOK] customer.subscription.created');
-      console.log('[WEBHOOK] Subscription ID:', subscription.id);
-      console.log('[WEBHOOK] Customer:', subscription.customer);
-      console.log('[WEBHOOK] Status:', subscription.status);
-      console.log('[WEBHOOK] Metadata:', JSON.stringify(subscription.metadata, null, 2));
-      
-      // Subscription created - typically handled via checkout.session.completed
-      // This is a backup in case metadata flows through subscription object
-      return Response.json({ received: true }, { status: 200 });
-    }
+        const caseId = metadata.caseId;
+        const userEmail = metadata.userEmail;
+        const priceType = metadata.priceType;
+        const amount = metadata.amount;
 
-    // ========================================
-    // HANDLE: customer.subscription.updated
-    // ========================================
-    if (event.type === 'customer.subscription.updated') {
-      const subscription = event.data.object;
-      console.log('[WEBHOOK] customer.subscription.updated');
-      console.log('[WEBHOOK] Subscription ID:', subscription.id);
-      console.log('[WEBHOOK] Status:', subscription.status);
-      
-      // Handle cancellations or status changes if needed
+        console.log('[RESOLVE_WEBHOOK] Case:', caseId);
+        console.log('[RESOLVE_WEBHOOK] User:', userEmail);
+        console.log('[RESOLVE_WEBHOOK] Price type:', priceType, '| Amount:', amount);
+
+        if (!caseId) {
+          console.error('[RESOLVE_WEBHOOK] ❌ Missing caseId in metadata');
+          return Response.json({ received: true, error: 'missing_case_id' }, { status: 200 });
+        }
+
+        try {
+          // Fetch the case
+          const allCases = await base44.asServiceRole.entities.Case.list();
+          const targetCase = allCases.find(c => c.id === caseId);
+
+          if (!targetCase) {
+            console.error('[RESOLVE_WEBHOOK] ❌ Case not found:', caseId);
+            return Response.json({ received: true, error: 'case_not_found' }, { status: 200 });
+          }
+
+          console.log('[RESOLVE_WEBHOOK] Found case:', targetCase.case_number, '| Current status:', targetCase.status);
+
+          // Update case status from awaiting_payment to intake
+          const updateData = {
+            status: 'intake',
+            stripe_session_id: session.id,
+            stripe_payment_intent_id: session.payment_intent,
+            pricing_type: priceType,
+            resolve_amount: parseFloat(amount),
+            paid_at: new Date().toISOString(),
+            timeline: [
+              ...(targetCase.timeline || []),
+              {
+                timestamp: new Date().toISOString(),
+                event: `Payment confirmed - ฿${parseFloat(amount).toLocaleString()} (${priceType} rate) - Case moved to INTAKE`,
+                actor: 'system',
+                meta: {
+                  stripe_session_id: session.id,
+                  amount: amount,
+                  priceType: priceType
+                }
+              }
+            ]
+          };
+
+          await base44.asServiceRole.entities.Case.update(caseId, updateData);
+          console.log('[RESOLVE_WEBHOOK] ✅ Case status updated to INTAKE');
+
+          // Create Payment record
+          try {
+            await base44.asServiceRole.entities.Payment.create({
+              type: 'case',
+              amount: parseFloat(amount),
+              currency: session.currency?.toUpperCase() || 'THB',
+              provider: 'stripe',
+              status: 'paid',
+              external_id: session.id,
+              created_by: userEmail
+            });
+            console.log('[RESOLVE_WEBHOOK] ✅ Payment record created');
+          } catch (paymentError) {
+            console.error('[RESOLVE_WEBHOOK] ⚠️ Failed to create Payment record (non-critical):', paymentError.message);
+          }
+
+          // Send post-payment admin notification
+          const adminEmail = Deno.env.get('ADMIN_ALERT_EMAIL') || 'support@leaseshield.asia';
+          const lineAccessToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
+          const lineSuperAdminId = Deno.env.get('LINE_SUPERADMIN_USER_ID');
+          const appUrl = Deno.env.get('APP_URL') || 'https://app.leaseshield.asia';
+
+          // Email notification for payment confirmation
+          try {
+            const paidSubject = `✅ Payment Received – ${targetCase.case_number} now INTAKE`;
+            const paidBody = `
+✅ RESOLVE CASE PAYMENT CONFIRMED
+════════════════════════════════════════
+
+📋 Case: ${targetCase.case_number}
+💰 Amount: ฿${parseFloat(amount).toLocaleString()} (${priceType} rate)
+👤 User: ${userEmail}
+🕐 Paid: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' })}
+
+📊 Status Change: awaiting_payment → INTAKE
+
+════════════════════════════════════════
+🔗 View Case: ${appUrl}/CaseDetails?caseId=${caseId}&from=ops
+🔗 Ops Console: ${appUrl}/OpsConsole
+
+⚡ Next Steps:
+1. Review intake case
+2. Update status: intake → pending_review
+3. Assign to team member
+════════════════════════════════════════
+            `.trim();
+
+            await base44.asServiceRole.integrations.Core.SendEmail({
+              from_name: 'Lease Shield Ops',
+              to: adminEmail,
+              subject: paidSubject,
+              body: paidBody
+            });
+            console.log('[RESOLVE_WEBHOOK] ✅ Payment confirmation email sent');
+          } catch (emailError) {
+            console.error('[RESOLVE_WEBHOOK] ⚠️ Payment email failed (non-critical):', emailError.message);
+          }
+
+          // LINE notification for payment confirmation
+          if (lineAccessToken && lineSuperAdminId) {
+            try {
+              const lineMessage = `✅ Payment Received!\n\n` +
+                `📋 Case: ${targetCase.case_number}\n` +
+                `💰 Amount: ฿${parseFloat(amount).toLocaleString()}\n` +
+                `👤 User: ${userEmail}\n` +
+                `📊 Status: INTAKE\n\n` +
+                `🔗 ${appUrl}/CaseDetails?caseId=${caseId}`;
+
+              await fetch('https://api.line.me/v2/bot/message/push', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${lineAccessToken}`
+                },
+                body: JSON.stringify({
+                  to: lineSuperAdminId,
+                  messages: [{ type: 'text', text: lineMessage }]
+                })
+              });
+              console.log('[RESOLVE_WEBHOOK] ✅ Payment LINE notification sent');
+            } catch (lineError) {
+              console.error('[RESOLVE_WEBHOOK] ⚠️ LINE notification failed (non-critical):', lineError.message);
+            }
+          }
+
+          console.log('[RESOLVE_WEBHOOK] ✅ Resolve case payment processing complete');
+          return Response.json({ 
+            received: true, 
+            processed: 'resolve_case',
+            caseId: caseId,
+            newStatus: 'intake'
+          }, { status: 200 });
+
+        } catch (caseError) {
+          console.error('[RESOLVE_WEBHOOK] ❌ Failed to process case:', caseError.message);
+          return Response.json({ received: true, error: caseError.message }, { status: 200 });
+        }
+      }
+
+      // Non-credit, non-resolve checkout - ignore
+      console.log('[WEBHOOK] Unhandled checkout type, skipping');
       return Response.json({ received: true }, { status: 200 });
     }
 

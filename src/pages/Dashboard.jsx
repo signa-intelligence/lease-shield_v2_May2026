@@ -20,14 +20,16 @@ import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
+import OnboardingBanner from "../components/onboarding/OnboardingBanner";
+import FeatureTour from "../components/onboarding/FeatureTour";
 import FirstSessionProgress from "../components/onboarding/FirstSessionProgress";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
 import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
-import AuthGuard from "../components/shared/AuthGuard";
 
 function DashboardContent() {
   const [expandedSections, setExpandedSections] = React.useState({
@@ -38,6 +40,8 @@ function DashboardContent() {
     notifications: false,
     depositAlerts: false,
   });
+  const [showOnboarding, setShowOnboarding] = React.useState(false);
+  const [showTour, setShowTour] = React.useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -47,36 +51,71 @@ function DashboardContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  // PERFORMANCE: Single batched query instead of 6 separate queries
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
-    queryKey: ['dashboardData', user?.email],
-    queryFn: async () => {
-      if (!user?.email) return null;
-      
-      const [leases, deposits, cases, documents, maintenanceRequests, notificationLogs] = await Promise.all([
-        base44.entities.Lease.filter({ created_by: user.email }, '-created_date', 10),
-        base44.entities.DepositTracker.filter({ created_by: user.email }, '-created_date'),
-        base44.entities.Case.filter({ is_deleted: { $ne: true } }),
-        base44.entities.Document.filter({ created_by: user.email }),
-        base44.entities.MaintenanceRequest.filter({ created_by: user.email }),
-        base44.entities.NotificationLog.filter({ user_email: user.email }, '-created_date', 10),
-      ]);
-
-      return { leases, deposits, cases, documents, maintenanceRequests, notificationLogs };
-    },
-    enabled: !!user?.email,
-    staleTime: 2 * 60 * 1000,
+  const { data: leases = [], isLoading: leasesLoading } = useQuery({
+    queryKey: ['leases'],
+    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
+    enabled: !!user,
   });
 
-  const leases = dashboardData?.leases || [];
-  const deposits = dashboardData?.deposits || [];
-  const cases = dashboardData?.cases || [];
-  const documents = dashboardData?.documents || [];
-  const maintenanceRequests = dashboardData?.maintenanceRequests || [];
-  const notificationLogs = dashboardData?.notificationLogs || [];
-  
-  const leasesLoading = dashboardLoading;
-  const depositsLoading = dashboardLoading;
+  const { data: deposits = [], isLoading: depositsLoading } = useQuery({
+    queryKey: ['deposits'],
+    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
+    enabled: !!user,
+  });
+
+  const { data: cases = [] } = useQuery({
+    queryKey: ['cases', user?.email],
+    queryFn: async () => {
+      if (!user?.email) {
+        console.error('🔍 [DASHBOARD] No user email - cannot fetch cases');
+        return [];
+      }
+
+      console.log('🔍 [DASHBOARD] Fetching cases for user:', user.email);
+
+      // CRITICAL: RLS filters by user_email = {{user.email}}
+      const result = await base44.entities.Case.filter({ 
+        is_deleted: { $ne: true }
+      });
+
+      console.log('📊 [DASHBOARD] RLS-filtered cases:', result.length);
+      console.log('📊 [DASHBOARD] Case user binding verification:');
+      result.forEach(c => {
+        console.log({
+          id: c.id.slice(0, 8),
+          case_number: c.case_number,
+          user_email: c.user_email,
+          created_by: c.created_by,
+          matches_user: c.user_email === user.email,
+          status: c.status
+        });
+      });
+
+      return result;
+    },
+    enabled: !!user?.email,
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  const { data: documents = [] } = useQuery({
+    queryKey: ['documents'],
+    queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  const { data: maintenanceRequests = [] } = useQuery({
+    queryKey: ['maintenance'],
+    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  const { data: notificationLogs = [] } = useQuery({
+    queryKey: ['notificationLogs'],
+    queryFn: () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 10),
+    enabled: !!user,
+  });
 
   const language = user?.language || 'en';
   const accessLevel = user?.access_level || 'user';
@@ -813,7 +852,6 @@ function DashboardContent() {
       uploadFirstLease: "Upload First Lease",
       noDataYet: "No Data Yet",
       getStartedDesc: "Start protecting your rental rights by uploading your lease agreement",
-      getStarted: "Get started with Lease Shield",
       testEmail: "Test Email",
       sending: "Sending...",
       runFullCheck: "Run Full Check",
@@ -958,7 +996,6 @@ function DashboardContent() {
       uploadFirstLease: "上传第一份租约",
       noDataYet: "暂无数据",
       getStartedDesc: "通过上传租赁协议开始保护您的租赁权利",
-      getStarted: "开始使用 Lease Shield",
       testEmail: "测试电子邮件",
       sending: "发送中...",
       runFullCheck: "运行完整检查",
@@ -1030,7 +1067,6 @@ function DashboardContent() {
       uploadFirstLease: "最初の賃貸契約をアップロード",
       noDataYet: "データなし",
       getStartedDesc: "賃貸契約をアップロードして賃貸権の保護を開始",
-      getStarted: "Lease Shieldを始める",
       testEmail: "メールをテスト",
       sending: "送信中...",
       runFullCheck: "完全チェックを実行",
@@ -1102,7 +1138,6 @@ function DashboardContent() {
       uploadFirstLease: "Загрузить первый договор",
       noDataYet: "Данных пока нет",
       getStartedDesc: "Начните защищать свои права арендатора, загрузив договор аренды",
-      getStarted: "Начните с Lease Shield",
       testEmail: "Тест Email",
       sending: "Отправка...",
       runFullCheck: "Полная проверка",
@@ -1173,7 +1208,6 @@ function DashboardContent() {
       uploadFirstLease: "첫 임대 계약 업로드",
       noDataYet: "아직 데이터 없음",
       getStartedDesc: "임대 계약을 업로드하여 임대 권리 보호 시작",
-      getStarted: "Lease Shield 시작하기",
       testEmail: "이메일 테스트",
       sending: "전송 중...",
       runFullCheck: "전체 확인 실행",
@@ -1259,7 +1293,23 @@ function DashboardContent() {
 
   const onboardingProgress = calculateOnboardingProgress();
 
-  const shouldShowOnboardingChecklist = !onboardingProgress.allTasksComplete;
+  const hasNoData = leases.length === 0 && deposits.length === 0 && documents.length === 0 && maintenanceRequests.length === 0;
+  const shouldShowOnboardingChecklist = !user?.onboarding_completed && (hasNoData || !onboardingProgress.allTasksComplete);
+
+  React.useEffect(() => {
+    if (user && !user.onboarding_completed) {
+      const hasAnyActivity = leases.length > 0 || deposits.length > 0 || documents.length > 0 || cases.length > 0;
+
+      if (!hasAnyActivity) {
+      }
+    }
+  }, [user, leases, deposits, documents, cases]);
+
+  const handleOnboardingComplete = async () => {
+    setShowOnboarding(false);
+    await base44.auth.updateMe({ onboarding_completed: true });
+    queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+  };
 
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
 
@@ -1276,6 +1326,14 @@ function DashboardContent() {
             }}
             color="#C7A338"
             position="bottom-right"
+          />
+
+          <OnboardingWizard
+            open={showOnboarding}
+            onClose={handleOnboardingComplete}
+            user={user}
+            isDarkMode={isDarkMode}
+            language={language}
           />
 
           <div className="mb-6">
@@ -1613,28 +1671,34 @@ function DashboardContent() {
                   />
                   </div>
 
+                  {/* Onboarding Banner - Shows for new users who haven't completed onboarding */}
+                  {!user?.onboarding_completed && !user?.onboarding_banner_dismissed && (
+                  <OnboardingBanner
+                  user={user}
+                  isDarkMode={isDarkMode}
+                  language={language}
+                  onStartSetup={() => setShowOnboarding(true)}
+                  />
+                  )}
+
+                  {/* First Session Progress - Shows in first 24 hours */}
                   <FirstSessionProgress
-                    user={user}
-                    leases={leases}
-                    deposits={deposits}
-                    documents={documents}
-                    isDarkMode={isDarkMode}
-                    language={language}
+                  user={user}
+                  leases={leases}
+                  deposits={deposits}
+                  documents={documents}
+                  isDarkMode={isDarkMode}
+                  language={language}
                   />
 
-                  {shouldShowOnboardingChecklist && (
-                    <div className="mb-6">
-                      <OnboardingChecklist
-                        user={user}
-                        leases={leases}
-                        deposits={deposits}
-                        documents={documents}
-                        cases={cases}
-                        maintenanceRequests={maintenanceRequests}
-                        isDarkMode={isDarkMode}
-                        language={language}
-                      />
-                    </div>
+                  {/* Feature Tour - Auto-shows after onboarding */}
+                  {user && !user.has_seen_tour && user.onboarding_completed && (
+                  <FeatureTour
+                  user={user}
+                  isDarkMode={isDarkMode}
+                  language={language}
+                  onComplete={() => setShowTour(false)}
+                  />
                   )}
 
                   {urgentLeaseNotices.length > 0 && (
@@ -1764,7 +1828,124 @@ function DashboardContent() {
             </div>
           )}
 
+          {/* Quick Start Card - Shows for users with no activity yet */}
+          {!isLoading && !hasAnyData && !showOnboarding && (
+            <Card className="mb-6 border-none shadow-lg bg-white dark:bg-gray-800">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#0C3B2E' }}>
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg mb-1 text-gray-900 dark:text-gray-50">
+                      {language === 'th' ? 'เริ่มต้นกับ Lease Shield' : language === 'ru' ? 'Начните с Lease Shield' : 'Get started with Lease Shield'}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      {strings.getStartedDesc}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => navigate(createPageUrl("uploadscan"))}
+                        className="btn-interaction"
+                        style={{
+                          padding: '8px 14px',
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF',
+                          borderRadius: '8px',
+                          border: 'none',
+                          fontWeight: '600',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Shield className="w-4 h-4" />
+                        {strings.uploadLease}
+                      </button>
+                      <button
+                        onClick={() => navigate(createPageUrl("propertytracker") + "#deposit")}
+                        className="btn-interaction"
+                        style={{
+                          padding: '8px 14px',
+                          backgroundColor: 'transparent',
+                          color: isDarkMode ? '#F9FAFB' : '#0F172A',
+                          borderRadius: '8px',
+                          border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(12,59,46,0.08)',
+                          fontWeight: '600',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Wallet className="w-4 h-4" />
+                        {strings.trackDeposit}
+                      </button>
+                      <button
+                        onClick={() => navigate(createPageUrl("propertytracker") + '#maintenance')}
+                        className="btn-interaction"
+                        style={{
+                          padding: '8px 14px',
+                          backgroundColor: 'transparent',
+                          color: isDarkMode ? '#F9FAFB' : '#0F172A',
+                          borderRadius: '8px',
+                          border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(12,59,46,0.08)',
+                          fontWeight: '600',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Wrench className="w-4 h-4" />
+                        {strings.reportMaintenance}
+                      </button>
+                      {isFreeTier && (
+                        <button
+                          onClick={() => navigate(createPageUrl("Account") + '?showPlans=true')}
+                          className="btn-interaction"
+                          style={{
+                            padding: '8px 14px',
+                            backgroundColor: 'transparent',
+                            color: '#C7A338',
+                            borderRadius: '8px',
+                            border: '1px solid #C7A338',
+                            fontWeight: '600',
+                            fontSize: '13px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          {strings.viewPlans}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
+          {shouldShowOnboardingChecklist && !showOnboarding && (
+            <div className="mb-6">
+              <OnboardingChecklist
+                user={user}
+                leases={leases}
+                deposits={deposits}
+                documents={documents}
+                cases={cases}
+                maintenanceRequests={maintenanceRequests}
+                isDarkMode={isDarkMode}
+                language={language}
+              />
+            </div>
+          )}
 
           {/* FREE TIER UPSELL BANNER */}
           {isFreeTier && (
@@ -1998,7 +2179,8 @@ function DashboardContent() {
           })()}
 
           {/* Main Content - Stats and Features */}
-          <div className="content-fade-in">
+          {!showOnboarding && (
+            <div className="content-fade-in">
               <style>
                 {`
                   @keyframes slideDown {
@@ -2123,6 +2305,7 @@ function DashboardContent() {
                 </>
               )}
             </div>
+          )}
 
           <div className="space-y-4 sm:space-y-6 mb-8">
             {isLoading ? (
@@ -2356,10 +2539,8 @@ function DashboardContent() {
 
 export default function Dashboard() {
   return (
-    <AuthGuard>
-      <ToastProvider>
-        <DashboardContent />
-      </ToastProvider>
-    </AuthGuard>
+    <ToastProvider>
+      <DashboardContent />
+    </ToastProvider>
   );
 }

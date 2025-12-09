@@ -11,74 +11,16 @@ import Stripe from 'npm:stripe@14.10.0';
  * to avoid "deploymentNotFound" errors.
  */
 
-// Centralized Stripe Price IDs
-const STRIPE_PRICES = {
-  lite: {
-    monthly: "price_1SbtXQQwoI6NhlUxKMlyoEbs",
-    annual: "price_1SbtXQQwoI6NhlUxXqxUROyx",
-  },
-  protect: {
-    monthly: "price_1SbtZ4QwoI6NhlUxxxUML4Un",
-    annual: "price_1SbtZ4QwoI6NhlUxUwsvYbkS",
-  },
-  secure: {
-    monthly: "price_1SbtaWQwoI6NhlUxJboFevsu",
-    annual: "price_1SbtaWQwoI6NhlUxAfPLTDeE",
-  },
-  oneTimeScan: "price_1SbtbfQwoI6NhlUx2dHjb5jC",
-};
-
-function getStripePriceId(plan, interval) {
-  const normalizedPlan = plan?.toLowerCase();
-  const normalizedInterval = (interval === 'year' || interval === 'annual') ? 'annual' : 'monthly';
-  
-  if (normalizedPlan === 'onetimescan' || normalizedPlan === 'one_time_scan') {
-    return STRIPE_PRICES.oneTimeScan;
-  }
-  
-  if (!STRIPE_PRICES[normalizedPlan]) {
-    console.warn(`[STRIPE_PRICES] Unknown plan: ${plan}`);
-    return null;
-  }
-  
-  return STRIPE_PRICES[normalizedPlan][normalizedInterval] || null;
-}
-
-// Helper: Create one-time coupon for reward credits
-async function createRewardCoupon(stripe, amountOffCents) {
-  const coupon = await stripe.coupons.create({
-    amount_off: amountOffCents,
-    currency: 'thb',
-    duration: 'once',
-    name: 'Referral Reward Credit',
-  });
-  return coupon.id;
-}
-
 Deno.serve(async (req) => {
-  // ENV DIAGNOSTICS - Check all possible Stripe key locations
-  const live = Deno.env.get('SK_LIVE_secret_key');
-  const test = Deno.env.get('SK_TEST_secret_key');
-  const generic = Deno.env.get('STRIPE_SECRET_KEY');
-
-  console.log('[ENV_DIAG] SK_LIVE_secret_key:', live ? 'SET:' + live.substring(0, 7) : 'MISSING');
-  console.log('[ENV_DIAG] SK_TEST_secret_key:', test ? 'SET:' + test.substring(0, 7) : 'MISSING');
-  console.log('[ENV_DIAG] STRIPE_SECRET_KEY:', generic ? 'SET:' + generic.substring(0, 7) : 'MISSING');
-
-  const stripeKey = live ?? generic ?? test ?? null;
-
+  const stripeKey = Deno.env.get('SK_TEST_secret_key');
+  
   if (!stripeKey) {
-    console.error('[CREATE_CHECKOUT] ❌ CRITICAL: No Stripe key found in environment');
-    console.error('[CREATE_CHECKOUT] Expected: SK_LIVE_secret_key (primary) or STRIPE_SECRET_KEY or SK_TEST_secret_key (fallback)');
+    console.error('[CREATE_CHECKOUT] ❌ CRITICAL: SK_TEST_secret_key not configured');
     return Response.json({ 
       error: 'Stripe not configured',
-      code: 'stripe_key_missing',
-      diagnostic: 'No Stripe secret key found in Deno.env'
+      code: 'stripe_key_missing'
     }, { status: 500 });
   }
-
-  console.log('[CREATE_CHECKOUT] ✅ Stripe key loaded:', stripeKey.substring(0, 7) + '...');
-  console.log('[CREATE_CHECKOUT] Mode:', stripeKey.startsWith('sk_live_') ? '🟢 LIVE' : '🟡 TEST');
 
   const stripe = new Stripe(stripeKey, {
     apiVersion: '2024-06-20',
@@ -88,6 +30,7 @@ Deno.serve(async (req) => {
   console.log('🔥 CREATE_CHECKOUT - Entry');
   console.log('═══════════════════════════════════════');
   console.log('[CREATE_CHECKOUT] Timestamp:', new Date().toISOString());
+  console.log('[CREATE_CHECKOUT] Stripe mode:', stripeKey?.startsWith('sk_live_') ? '🟢 LIVE' : stripeKey?.startsWith('sk_test_') ? '🟡 TEST' : '❌ INVALID');
   
   try {
     const base44 = createClientFromRequest(req);
@@ -113,31 +56,21 @@ Deno.serve(async (req) => {
 
     // Get or create Stripe customer
     let customerId = user.stripe_customer_id;
+    const isLiveMode = stripeKey?.startsWith('sk_live_');
     
-    console.log('[CREATE_CHECKOUT] Saved customer ID:', customerId?.substring(0, 20) || 'none');
-
-    // Apply reward credits to subscription/payment if available
-    let appliedCredit = 0;
-    if (user.reward_credit_balance && user.reward_credit_balance > 0 && amount) {
-      const invoiceAmount = Math.round(amount * 100); // Convert to cents
-      const availableCredit = Math.round(user.reward_credit_balance * 100);
-      appliedCredit = Math.min(availableCredit, invoiceAmount);
-      
-      console.log('[CREATE_CHECKOUT] 💰 Applying reward credits:', {
-        availableBalance: user.reward_credit_balance,
-        invoiceAmount: amount,
-        creditToApply: appliedCredit / 100
-      });
-    }
+    console.log('[CREATE_CHECKOUT] Customer resolution:', {
+      savedCustomerId: customerId?.substring(0, 20) || 'none',
+      mode: isLiveMode ? 'LIVE' : 'TEST'
+    });
     
-    // Reuse or create customer
-    if (customerId) {
+    // Validate customer exists in current mode
+    if (customerId && isLiveMode) {
       try {
         await stripe.customers.retrieve(customerId);
         console.log('[CREATE_CHECKOUT] ✅ Customer validated:', customerId.substring(0, 20));
       } catch (customerError) {
         if (customerError.code === 'resource_missing') {
-          console.warn('[CREATE_CHECKOUT] ⚠️ Customer not found - creating new');
+          console.warn('[CREATE_CHECKOUT] ⚠️ Customer not found in LIVE - creating new');
           customerId = null;
         } else {
           throw customerError;
@@ -146,7 +79,7 @@ Deno.serve(async (req) => {
     }
     
     if (!customerId) {
-      console.log('[CREATE_CHECKOUT] Creating new customer...');
+      console.log('[CREATE_CHECKOUT] Creating new Stripe customer...');
       const customer = await stripe.customers.create({
         email: user.email,
         name: user.full_name,
@@ -182,20 +115,6 @@ Deno.serve(async (req) => {
       cancel_url: finalCancelUrl,
       allow_promotion_codes: true,
     };
-
-    // Apply discounts from reward credits if available
-    if (appliedCredit > 0) {
-      sessionConfig.discounts = [{
-        coupon: await createRewardCoupon(stripe, appliedCredit)
-      }];
-      
-      // Deduct applied credit from user's balance
-      const newRewardBalance = user.reward_credit_balance - (appliedCredit / 100);
-      await base44.auth.updateMe({ reward_credit_balance: newRewardBalance });
-      
-      console.log('[CREATE_CHECKOUT] ✅ Applied ฿' + (appliedCredit / 100) + ' credit');
-      console.log('[CREATE_CHECKOUT] New reward balance:', newRewardBalance);
-    }
 
     // ========================================
     // CREDITS: One-time payment
@@ -235,20 +154,18 @@ Deno.serve(async (req) => {
     // SUBSCRIPTIONS: Card only (PromptPay not supported)
     // ========================================
     else if (mode === 'subscription' && amount) {
+      const finalAmount = Math.round(amount * 100);
       const planTier = (metadata?.plan || 'lite').toLowerCase();
       const intervalRaw = metadata?.interval || 'monthly';
       const billingInterval = intervalRaw === 'year' || intervalRaw === 'annual' ? 'annual' : 'monthly';
       
-      // Get Stripe price ID from centralized config
-      const stripePriceId = getStripePriceId(planTier, billingInterval);
-      
-      if (!stripePriceId) {
-        console.error('[CREATE_CHECKOUT] ❌ Invalid plan/interval:', planTier, billingInterval);
-        return Response.json({ error: 'Invalid plan or interval' }, { status: 400 });
-      }
-      
-      console.log('✅ SUBSCRIPTION - Creating with Stripe price ID:', stripePriceId);
-      console.log('✅ Plan:', planTier, '| Interval:', billingInterval);
+      console.log('✅ SUBSCRIPTION - Creating with explicit metadata:', {
+        userId: user.id,
+        email: user.email,
+        plan: planTier,
+        interval: billingInterval,
+        amount: finalAmount
+      });
       
       sessionConfig.metadata = {
         type: 'subscription',
@@ -259,7 +176,18 @@ Deno.serve(async (req) => {
       };
 
       sessionConfig.line_items = [{
-        price: stripePriceId,
+        price_data: {
+          currency: currency || 'thb',
+          unit_amount: finalAmount,
+          recurring: {
+            interval: intervalRaw === 'year' || intervalRaw === 'annual' ? 'year' : 'month',
+            interval_count: 1
+          },
+          product_data: {
+            name: description || `Lease Shield ${planTier.charAt(0).toUpperCase() + planTier.slice(1)} Plan`,
+            description: description || 'Professional subscription service',
+          },
+        },
         quantity: 1,
       }];
 

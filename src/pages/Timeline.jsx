@@ -41,10 +41,8 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import PageHeader from "../components/shared/PageHeader";
 import { FEATURE_COLORS } from "../components/shared/featureTheme";
-import { QuickHelp } from "../components/shared/ContextualHelp";
-import AuthGuard from "../components/shared/AuthGuard";
 
-function TimelineContent() {
+export default function Timeline() {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('calendar');
@@ -533,11 +531,7 @@ function TimelineContent() {
           onBack={() => navigate(createPageUrl("Dashboard"))}
           colors={colors}
           actions={
-            <div className="w-full">
-              <div className="flex items-center justify-end mb-3">
-                <QuickHelp link="timeline" size="md" />
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-4 w-full">
+            <div className="flex flex-wrap items-center justify-between gap-4 w-full">
               <div className="flex gap-2 p-1 rounded-lg" style={{ backgroundColor: colors.cardBg, border: `2px solid ${colors.borderColor}` }}>
                 <button
                   onClick={() => setViewMode('upcoming')}
@@ -607,7 +601,6 @@ function TimelineContent() {
                 ))}
               </div>
             </div>
-            </div>
           }
         />
 
@@ -663,17 +656,7 @@ function TimelineContent() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle style={{ color: colors.textPrimary }}>
-                  {language === 'th' 
-                    ? format(currentDate, 'MMMM yyyy', { locale: require('date-fns/locale/th') })
-                    : language === 'zh'
-                      ? `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月`
-                      : language === 'ja'
-                        ? `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月`
-                        : language === 'ko'
-                          ? `${currentDate.getFullYear()}년 ${currentDate.getMonth() + 1}월`
-                          : language === 'ru'
-                            ? format(currentDate, 'LLLL yyyy', { locale: require('date-fns/locale/ru') }) + ' г.'
-                            : format(currentDate, 'MMMM yyyy')}
+                  {format(currentDate, 'MMMM yyyy')}
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
@@ -764,19 +747,7 @@ function TimelineContent() {
               {monthEvents.length > 0 && (
                 <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
                   <h3 className="font-bold mb-4 text-sm" style={{ color: colors.textPrimary }}>
-                    {strings.eventsOn} {
-                      language === 'th' 
-                        ? format(currentDate, 'MMMM', { locale: require('date-fns/locale/th') })
-                        : language === 'zh'
-                          ? `${currentDate.getMonth() + 1}月`
-                          : language === 'ja'
-                            ? `${currentDate.getMonth() + 1}月`
-                            : language === 'ko'
-                              ? `${currentDate.getMonth() + 1}월`
-                              : language === 'ru'
-                                ? format(currentDate, 'LLLL', { locale: require('date-fns/locale/ru') })
-                                : format(currentDate, 'MMMM')
-                    } ({monthEvents.length})
+                    {strings.eventsOn} {format(currentDate, 'MMMM')} ({monthEvents.length})
                   </h3>
                   <div className="space-y-3">
                     {monthEvents.slice(0, 5).map(event => (
@@ -842,13 +813,5 @@ function TimelineContent() {
         )}
       </div>
     </div>
-  );
-}
-
-export default function Timeline() {
-  return (
-    <AuthGuard>
-      <TimelineContent />
-    </AuthGuard>
   );
 }

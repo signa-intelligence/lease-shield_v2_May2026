@@ -1,232 +1,40 @@
+// src/components/shared/AuthGuard.jsx
+//
+// Simple authentication guard for LeaseShield.
+// Uses Base44 built-in auth and does NOT change behaviour
+// except redirecting unauthenticated users to the login page.
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Shield } from "lucide-react";
-import { sessionStorage } from "../sessionStorage";
-
-// LoginPage - fullscreen, no scroll, mobile-optimized
-function LoginPage() {
-  // Detect Android WebView
-  const ua = navigator.userAgent || "";
-  const isAndroidWebView = /Android/i.test(ua) && /wv|Version\/\d+\.\d+ Chrome\/\d+/i.test(ua);
-
-  console.log('[LoginPage] WebView detection:', { ua, isAndroidWebView });
-  console.log('[LoginPage] base44.auth methods:', Object.keys(base44.auth || {}));
-
-  const handleSignIn = async () => {
-    console.log('[LoginPage] Sign in triggered, WebView:', isAndroidWebView);
-    const nextUrl = window.location.pathname + window.location.search + window.location.hash;
-    
-    // For WebView: redirect to login in SAME window (no external browser)
-    // For Desktop: redirect to login (normal OAuth flow)
-    // Both use the same method - the difference is WebView keeps cookies in same context
-    
-    // Listen for auth state change and update localStorage when login succeeds
-    const checkAuthAfterRedirect = setInterval(async () => {
-      try {
-        const user = await base44.auth.me();
-        if (user) {
-          console.log('[LoginPage] Auth success detected:', user);
-          sessionStorage.save(user);
-          clearInterval(checkAuthAfterRedirect);
-        }
-      } catch (e) {
-        // Still waiting for login
-      }
-    }, 1000);
-    
-    // Clear after 30 seconds to prevent memory leak
-    setTimeout(() => clearInterval(checkAuthAfterRedirect), 30000);
-    
-    console.log('[LoginPage] Calling redirectToLogin with nextUrl:', nextUrl);
-    base44.auth.redirectToLogin(nextUrl !== '/login' ? nextUrl : '/dashboard');
-  };
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '100vh',
-      maxHeight: '100vh',
-      overflow: 'hidden',
-      padding: 0,
-      margin: 0,
-      background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-      boxSizing: 'border-box',
-      zIndex: 9999,
-      paddingTop: 'env(safe-area-inset-top, 12px)'
-    }}>
-      <style>{`
-        body.login-active {
-          overflow: hidden !important;
-          position: fixed !important;
-          width: 100% !important;
-          height: 100vh !important;
-        }
-        .bottom-tabs, .top-bar {
-          display: none !important;
-        }
-      `}</style>
-      <div style={{
-        width: '90%',
-        maxWidth: '380px',
-        backgroundColor: '#FFFFFF',
-        borderRadius: '18px',
-        padding: '28px 20px',
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        textAlign: 'center'
-      }}>
-        <img 
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
-          alt="Lease Shield"
-          style={{ height: '48px', margin: '0 auto 14px' }}
-        />
-        <h1 style={{
-          fontSize: '22px',
-          fontWeight: 'bold',
-          color: '#0C3B2E',
-          marginBottom: '6px'
-        }}>
-          Welcome to Lease Shield
-        </h1>
-        <p style={{
-          fontSize: '13px',
-          color: '#64748B',
-          lineHeight: '1.4',
-          marginBottom: '20px'
-        }}>
-          Protect your rental rights with AI-powered analysis and legal support
-        </p>
-
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '10px',
-          backgroundColor: '#F3F6F5',
-          borderRadius: '10px',
-          marginBottom: '20px'
-        }}>
-          <Shield className="w-5 h-5" style={{ color: '#0C3B2E', flexShrink: 0 }} />
-          <div style={{ textAlign: 'left', flex: 1 }}>
-            <div style={{ fontSize: '12px', fontWeight: '600', color: '#0C3B2E' }}>
-              Fair. Transparent. Protected.
-            </div>
-            <div style={{ fontSize: '10px', color: '#64748B' }}>
-              Know your rights, protect your deposit
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={handleSignIn}
-          style={{
-            width: '100%',
-            padding: '13px',
-            backgroundColor: '#0C3B2E',
-            color: '#FFFFFF',
-            border: '2px solid #C7A338',
-            borderRadius: '10px',
-            fontSize: '15px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(12, 59, 46, 0.3)',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 8px 16px rgba(12, 59, 46, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 12px rgba(12, 59, 46, 0.3)';
-          }}
-        >
-          Sign In to Continue
-        </button>
-
-        <p style={{
-          fontSize: '9px',
-          color: '#94A3B8',
-          marginTop: '14px',
-          lineHeight: '1.3'
-        }}>
-          By signing in, you agree to our Terms of Service and Privacy Policy
-        </p>
-      </div>
-    </div>
-  );
-}
-
-const DebugBanner = ({ user }) => {
-  let cookiePreview = "(no document)";
-  if (typeof document !== "undefined") {
-    const c = document.cookie || "";
-    cookiePreview = c.length > 120 ? c.slice(0, 120) + "…" : c || "(no cookies)";
-  }
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 99999,
-        background: "rgba(0,0,0,0.9)",
-        color: "#fff",
-        fontSize: 10,
-        padding: "4px 8px",
-        pointerEvents: "none",
-      }}
-    >
-      <div>
-        AuthGuard •{" "}
-        {user
-          ? `LOGGED IN as ${user.email || user.id || "unknown"}`
-          : "NOT LOGGED IN"}
-      </div>
-      <div>Cookies: {cookiePreview}</div>
-    </div>
-  );
-};
 
 const AuthGuard = ({ children }) => {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function checkAuth() {
-      console.log("[AuthGuard] mount at", window.location.href);
-      console.log("[AuthGuard] base44.auth available methods:", Object.keys(base44.auth || {}));
-      
       try {
         const me = await base44.auth.me();
-        console.log("[AuthGuard] base44.auth.me() =>", me);
         if (cancelled) return;
 
         if (me) {
-          setUser(me);
+          setIsAuthed(true);
         } else {
-          setUser(null);
+          // Redirect to Base44 login, then back to current app
+          const nextUrl = window.location.pathname + window.location.search;
+          await base44.auth.redirectToLogin(nextUrl);
         }
       } catch (err) {
-        console.error("[AuthGuard] auth.me error", err);
+        console.error("AuthGuard: auth check failed", err);
         if (!cancelled) {
-          setUser(null);
+          const nextUrl = window.location.pathname + window.location.search;
+          await base44.auth.redirectToLogin(nextUrl);
         }
       } finally {
-        if (!cancelled) setLoading(false);
-        if (typeof document !== "undefined") {
-          console.log("[AuthGuard] document.cookie =", document.cookie);
+        if (!cancelled) {
+          setLoading(false);
         }
       }
     }
@@ -238,27 +46,11 @@ const AuthGuard = ({ children }) => {
     };
   }, []);
 
+  // While checking auth, render nothing to avoid flicker
   if (loading) return null;
+  if (!isAuthed) return null;
 
-  const renderGuest = () => {
-    return (
-      <>
-        <DebugBanner user={null} />
-        <LoginPage />
-      </>
-    );
-  };
-
-  if (!user) {
-    return renderGuest();
-  }
-
-  return (
-    <>
-      <DebugBanner user={user} />
-      {children}
-    </>
-  );
+  return <>{children}</>;
 };
 
 export default AuthGuard;

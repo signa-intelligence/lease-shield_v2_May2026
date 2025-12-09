@@ -29,7 +29,6 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import CaseKanban from "../components/admin/CaseKanban";
 import { ToastProvider, useToast } from "../components/shared/Toast";
-import { QuickHelp } from "../components/shared/ContextualHelp";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -442,56 +441,54 @@ function OpsConsoleContent() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <QuickHelp link="resolve" size="md" />
-              <div 
-                className="flex rounded-lg p-1"
-                style={{ 
-                  backgroundColor: colors.cardBg,
-                  border: `2px solid ${colors.borderColor}`,
+
+            <div 
+              className="flex rounded-lg p-1"
+              style={{ 
+                backgroundColor: colors.cardBg,
+                border: `2px solid ${colors.borderColor}`,
+              }}
+            >
+              <button
+                onClick={() => setViewMode('kanban')}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: viewMode === 'kanban' ? '#0C3B2E' : 'transparent',
+                  color: viewMode === 'kanban' ? '#FFFFFF' : colors.textPrimary,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
                 }}
               >
-                <button
-                  onClick={() => setViewMode('kanban')}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    backgroundColor: viewMode === 'kanban' ? '#0C3B2E' : 'transparent',
-                    color: viewMode === 'kanban' ? '#FFFFFF' : colors.textPrimary,
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                  Kanban
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    backgroundColor: viewMode === 'list' ? '#0C3B2E' : 'transparent',
-                    color: viewMode === 'list' ? '#FFFFFF' : colors.textPrimary,
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <List className="w-4 h-4" />
-                  List
-                </button>
-              </div>
+                <LayoutGrid className="w-4 h-4" />
+                Kanban
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: viewMode === 'list' ? '#0C3B2E' : 'transparent',
+                  color: viewMode === 'list' ? '#FFFFFF' : colors.textPrimary,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <List className="w-4 h-4" />
+                List
+              </button>
             </div>
           </div>
         </div>

@@ -10,9 +10,8 @@ import { createPageUrl } from "@/utils";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
-import AuthGuard from "../components/shared/AuthGuard";
 
-function SearchContent() {
+export default function Search() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -520,13 +519,5 @@ function SearchContent() {
         )}
       </div>
     </div>
-  );
-}
-
-export default function Search() {
-  return (
-    <AuthGuard>
-      <SearchContent />
-    </AuthGuard>
   );
 }

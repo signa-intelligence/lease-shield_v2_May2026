@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp, AlertCircle, UserX, UserCheck, Scale, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp, AlertCircle, UserX, UserCheck, Scale } from "lucide-react";
 import { format, differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
@@ -43,11 +43,6 @@ export default function AdminConsole() {
   const [debugData, setDebugData] = useState(null);
   const [loadingDebug, setLoadingDebug] = useState(false);
   const [restoringUsers, setRestoringUsers] = useState(false);
-  const [userManagementExpanded, setUserManagementExpanded] = useState(
-    typeof window !== 'undefined' && window.innerWidth >= 1024
-  );
-  const [userSearchTerm, setUserSearchTerm] = useState('');
-  const [userManagementPage, setUserManagementPage] = useState(1);
 
   const queryClient = useQueryClient();
 
@@ -131,22 +126,19 @@ export default function AdminConsole() {
 
   /**
    * ═══════════════════════════════════════════════════════════════════
-   * ROLE UPDATE MUTATION - CLEAN, WORKING IMPLEMENTATION
+   * ROLE UPDATE MUTATION - SECURE SERVER-SIDE IMPLEMENTATION
    * ═══════════════════════════════════════════════════════════════════
    * 
    * Previous Problems:
-   * 1. Mixed 'role' (built-in, readonly) vs 'access_level' (custom field)
-   * 2. Frontend blocked Super Admin option when one existed
-   * 3. RLS prevented regular User.update() calls from working
-   * 4. No error surfacing to UI
+   * 1. asServiceRole requires service token which browser doesn't have
+   * 2. Error: "Service token is required to use asServiceRole"
    * 
    * Current Solution:
-   * 1. Use ONLY 'access_level' field (custom, writable)
-   * 2. Use asServiceRole to bypass RLS restrictions
-   * 3. Support multiple Super Admins (min: 2, max: 2)
-   * 4. Clear logging and error messages at every step
+   * 1. Use server-side function `updateUserRole` for role updates
+   * 2. Server function uses asServiceRole with proper service token
+   * 3. Frontend calls the function instead of direct SDK update
    * 
-   * Flow: UI Select → Validation → asServiceRole.update() → Verify → Refresh
+   * Flow: UI Select → Server Function (updateUserRole) → asServiceRole → Verify → Refresh
    * ═══════════════════════════════════════════════════════════════════
    */
   const updateUserMutation = useMutation({
@@ -158,11 +150,22 @@ export default function AdminConsole() {
         timestamp: new Date().toISOString()
       });
       
-      // CRITICAL: Use asServiceRole to bypass RLS
-      // Regular base44.entities.User.update() is subject to RLS and may fail
-      const result = await base44.asServiceRole.entities.User.update(userId, data);
+      // CRITICAL: Use server-side function for privileged operations
+      // This bypasses RLS and uses service role on the server
+      const response = await base44.functions.invoke('updateUserRole', {
+        targetUserId: userId,
+        newAccessLevel: data.access_level || null,
+        updateData: data
+      });
       
-      console.log('✅ [USER_UPDATE] Database update succeeded:', {
+      if (!response.data?.success) {
+        console.error('❌ [USER_UPDATE] Server function failed:', response.data);
+        throw new Error(response.data?.error || 'Failed to update user');
+      }
+      
+      const result = response.data.user;
+      
+      console.log('✅ [USER_UPDATE] Server update succeeded:', {
         id: result.id,
         email: result.email,
         access_level: result.access_level,
@@ -1089,22 +1092,7 @@ export default function AdminConsole() {
     }
   };
 
-  // Filter users based on search term
-  const matchesSearch = (u, term) => {
-    if (!term) return true;
-    const lowerTerm = term.toLowerCase();
-    const searchable = [
-      u.full_name || '',
-      u.email || '',
-      u.id || '',
-      u.referral_code || ''
-    ].join(' ').toLowerCase();
-    return searchable.includes(lowerTerm);
-  };
-
-  const filteredUsers = users.filter(u => matchesSearch(u, userSearchTerm));
-
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
+  const sortedUsers = [...users].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
     if (sortOrder === 'asc') {
@@ -1112,18 +1100,6 @@ export default function AdminConsole() {
     }
     return aVal < bVal ? 1 : -1;
   });
-
-  // Pagination for User Management
-  const usersPerPage = 10;
-  const totalUserPages = Math.ceil(sortedUsers.length / usersPerPage);
-  const startUserIndex = (userManagementPage - 1) * usersPerPage;
-  const endUserIndex = startUserIndex + usersPerPage;
-  const paginatedUsers = sortedUsers.slice(startUserIndex, endUserIndex);
-
-  // Reset to page 1 when search term changes
-  React.useEffect(() => {
-    setUserManagementPage(1);
-  }, [userSearchTerm]);
 
   const FEATURE_DEFINITIONS = [
     { key: 'manage_users', label: strings.manageUsers, icon: Users, color: 'text-blue-600' },
@@ -1245,42 +1221,44 @@ export default function AdminConsole() {
         </Card>
 
         {/* 2. MANAGE LETTER TEMPLATES */}
-        <Card className="mb-6 border-none shadow-lg" style={{ 
-          backgroundColor: colors.cardBg,
-          borderLeft: '6px solid #8B5CF6'
-        }}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  backgroundColor: '#8B5CF6',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <FileText className="w-6 h-6 text-white" />
+        {isSuperAdmin && (
+          <Card className="mb-6 border-none shadow-lg" style={{ 
+            backgroundColor: colors.cardBg,
+            borderLeft: '6px solid #8B5CF6'
+          }}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    backgroundColor: '#8B5CF6',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                      {strings.manageTemplates}
+                    </h3>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      {strings.manageTemplatesDesc}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-                    {strings.manageTemplates}
-                  </h3>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>
-                    {strings.manageTemplatesDesc}
-                  </p>
-                </div>
+                <Link to={createPageUrl("AdminTemplates")}>
+                  <Button className="bg-purple-600 hover:bg-purple-700">
+                    <FileText className="w-4 h-4 mr-2" />
+                    {strings.goToTemplates}
+                  </Button>
+                </Link>
               </div>
-              <Link to={createPageUrl("AdminLetterTemplates")}>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <FileText className="w-4 h-4 mr-2" />
-                  {strings.goToTemplates}
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
 
@@ -1664,94 +1642,28 @@ export default function AdminConsole() {
           </Card>
         )}
 
-        {/* 3. USER MANAGEMENT - COLLAPSIBLE */}
+        {/* 3. USER MANAGEMENT */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader 
-            className="cursor-pointer select-none"
-            style={{ borderBottom: userManagementExpanded ? `1px solid ${colors.borderColor}` : 'none' }}
-            onClick={() => setUserManagementExpanded(!userManagementExpanded)}
-          >
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Users className="w-5 h-5" />
-                {strings.userManagement}
-                <span className="text-sm font-normal" style={{ color: colors.textSecondary }}>
-                  ({users.length} users)
-                </span>
-              </CardTitle>
-              <button 
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                style={{ 
-                  backgroundColor: isDarkMode ? '#353A3D' : '#F1F5F9',
-                  color: colors.textSecondary
-                }}
-              >
-                {userManagementExpanded ? (
-                  <>
-                    Hide
-                    <ChevronUp className="w-4 h-4" />
-                  </>
-                ) : (
-                  <>
-                    Show
-                    <ChevronDown className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle style={{ color: colors.textPrimary }}>{strings.userManagement}</CardTitle>
           </CardHeader>
-          <div
-            style={{
-              maxHeight: userManagementExpanded ? '2000px' : '0px',
-              overflow: 'hidden',
-              transition: 'max-height 0.2s ease-in-out, opacity 0.15s ease-in-out',
-              opacity: userManagementExpanded ? 1 : 0
-            }}
-          >
-            <CardContent className="p-6">
-              {/* Search Box */}
-              <div className="mb-4">
-                <div className="relative">
-                  <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: colors.textSecondary }} />
-                  <Input
-                    type="text"
-                    placeholder={language === 'th' ? 'ค้นหาผู้ใช้ (ชื่อ, อีเมล, ID)' : language === 'zh' ? '搜索用户（姓名、电子邮件、ID）' : language === 'ja' ? 'ユーザーを検索（名前、メール、ID）' : language === 'ko' ? '사용자 검색（이름、이메일、ID）' : 'Search users (name, email, ID)'}
-                    value={userSearchTerm}
-                    onChange={(e) => setUserSearchTerm(e.target.value)}
-                    style={{
-                      paddingLeft: '40px',
-                      backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary,
-                      borderRadius: '8px',
-                      border: `2px solid ${colors.borderColor}`
-                    }}
-                  />
-                </div>
-              </div>
-
-              {filteredUsers.length === 0 ? (
-                <div className="text-center py-8" style={{ color: colors.textSecondary }}>
-                  {language === 'th' ? 'ไม่พบผู้ใช้สำหรับการค้นหานี้' : language === 'zh' ? '未找到此搜索的用户' : language === 'ja' ? 'この検索に該当するユーザーが見つかりません' : language === 'ko' ? '이 검색에 대한 사용자를 찾을 수 없습니다' : 'No users found for this search.'}
-                </div>
-              ) : (
-                <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.letterCredits}</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                      {paginatedUsers.map((u, idx) => {
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.letterCredits}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedUsers.map((u, idx) => {
                     const lastUpdate = new Date(u.updated_date || u.created_date);
                     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
                     const isOnline = lastUpdate > fiveMinutesAgo;
@@ -2038,94 +1950,10 @@ export default function AdminConsole() {
                       </tr>
                     );
                   })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination Controls */}
-              {totalUserPages > 1 && (
-                <div className="flex items-center justify-between mt-4 pt-4" style={{
-                  borderTop: `1px solid ${colors.borderColor}`
-                }}>
-                  <button
-                    onClick={() => {
-                      setUserManagementPage(prev => Math.max(1, prev - 1));
-                    }}
-                    disabled={userManagementPage === 1}
-                    style={{
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                      border: `2px solid ${colors.borderColor}`,
-                      backgroundColor: userManagementPage === 1 ? (isDarkMode ? '#353A3D' : '#F1F5F9') : colors.cardBg,
-                      color: userManagementPage === 1 ? colors.textSecondary : '#0C3B2E',
-                      fontWeight: '600',
-                      fontSize: '14px',
-                      cursor: userManagementPage === 1 ? 'not-allowed' : 'pointer',
-                      opacity: userManagementPage === 1 ? 0.5 : 1,
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (userManagementPage !== 1) {
-                        e.target.style.backgroundColor = '#0C3B2E';
-                        e.target.style.color = '#FFFFFF';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (userManagementPage !== 1) {
-                        e.target.style.backgroundColor = colors.cardBg;
-                        e.target.style.color = '#0C3B2E';
-                      }
-                    }}
-                  >
-                    {language === 'th' ? 'ก่อนหน้า' : language === 'zh' ? '上一页' : language === 'ja' ? '前へ' : language === 'ko' ? '이전' : 'Previous'}
-                  </button>
-
-                  <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                    {language === 'th' ? `หน้า ${userManagementPage} จาก ${totalUserPages}` : 
-                     language === 'zh' ? `第 ${userManagementPage} 页 / 共 ${totalUserPages} 页` :
-                     language === 'ja' ? `ページ ${userManagementPage} / ${totalUserPages}` :
-                     language === 'ko' ? `${userManagementPage} / ${totalUserPages} 페이지` :
-                     `Page ${userManagementPage} of ${totalUserPages}`}
-                  </span>
-
-                  <button
-                    onClick={() => {
-                      setUserManagementPage(prev => Math.min(totalUserPages, prev + 1));
-                    }}
-                    disabled={userManagementPage === totalUserPages}
-                    style={{
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                      border: `2px solid ${colors.borderColor}`,
-                      backgroundColor: userManagementPage === totalUserPages ? (isDarkMode ? '#353A3D' : '#F1F5F9') : colors.cardBg,
-                      color: userManagementPage === totalUserPages ? colors.textSecondary : '#0C3B2E',
-                      fontWeight: '600',
-                      fontSize: '14px',
-                      cursor: userManagementPage === totalUserPages ? 'not-allowed' : 'pointer',
-                      opacity: userManagementPage === totalUserPages ? 0.5 : 1,
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (userManagementPage !== totalUserPages) {
-                        e.target.style.backgroundColor = '#0C3B2E';
-                        e.target.style.color = '#FFFFFF';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (userManagementPage !== totalUserPages) {
-                        e.target.style.backgroundColor = colors.cardBg;
-                        e.target.style.color = '#0C3B2E';
-                      }
-                    }}
-                  >
-                    {language === 'th' ? 'ถัดไป' : language === 'zh' ? '下一页' : language === 'ja' ? '次へ' : language === 'ko' ? '다음' : 'Next'}
-                  </button>
-                </div>
-              )}
-                </>
-              )}
-            </CardContent>
-          </div>
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
         </Card>
 
         {/* 4. RECENT LEASES */}

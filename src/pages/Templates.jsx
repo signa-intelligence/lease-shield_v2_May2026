@@ -299,13 +299,6 @@ export default function Templates() {
     initialData: []
   });
 
-  const { data: letterTemplates = [] } = useQuery({
-    queryKey: ['letterTemplates'],
-    queryFn: () => base44.entities.LetterTemplate.filter({ is_active: true }),
-    enabled: !!user,
-    initialData: []
-  });
-
   const createTemplateMutation = useMutation({
     mutationFn: async (data) => {
       return await base44.entities.TemplateLibrary.create(data);
@@ -353,11 +346,6 @@ export default function Templates() {
       creditBalance: "Credit Balance",
       credits: "Credits",
       allLetters: "All Letters (11 Templates)",
-      bilingualLetterTemplates: "Bilingual Letter Templates (EN/TH)",
-      bilingualSubtitle: "Professional checklists and formal notices with merge field support",
-      openInGenerator: "Open in Letter Generator",
-      checklist: "Checklist",
-      moveOut: "Move-Out",
       insufficientCredits: "Insufficient credits",
       upgradeForCredits: "Upgrade for more credits",
       preSigningSection: "⭐ Pre-Signing Negotiation",
@@ -393,11 +381,6 @@ export default function Templates() {
       creditBalance: "เครดิตคงเหลือ",
       credits: "เครดิต",
       allLetters: "จดหมายทั้งหมด (11 เทมเพลต)",
-      bilingualLetterTemplates: "เทมเพลตจดหมายสองภาษา (อังกฤษ/ไทย)",
-      bilingualSubtitle: "รายการตรวจสอบและจดหมายทางการพร้อมระบบรวมข้อมูล",
-      openInGenerator: "เปิดในเครื่องมือสร้าง",
-      checklist: "รายการตรวจสอบ",
-      moveOut: "ย้ายออก",
       insufficientCredits: "เครดิตไม่เพียงพอ",
       upgradeForCredits: "อัปเกรดเพื่อรับเครดิตเพิ่ม",
       preSigningSection: "⭐ เจรจาก่อนลงนาม",
@@ -673,6 +656,12 @@ export default function Templates() {
     }
   };
 
+  // Organize templates by category
+  const preSigningTemplates = [...TEMPLATES.filter(t => t.preSigning), ...customTemplates.filter(t => t.category === 'pre_signing')];
+  const liteTemplates = [...TEMPLATES.filter(t => ['deposit', 'deductions', 'reminder'].includes(t.id)), ...customTemplates.filter(t => t.category === 'friendly')];
+  const protectTemplates = [...TEMPLATES.filter(t => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(t.id)), ...customTemplates.filter(t => t.category === 'professional')];
+  const secureTemplates = [...TEMPLATES.filter(t => ['final_opportunity', 'non_compliance', 'settlement'].includes(t.id)), ...customTemplates.filter(t => t.category === 'final')];
+
   const renderTemplateCard = (template, isCustom = false) => {
     const Icon = isCustom ? FileText : template.icon;
     const hasEnoughCredits = userCredits >= (isCustom ? template.credit_cost : template.creditCost);
@@ -934,83 +923,6 @@ export default function Templates() {
           </CardContent>
         </Card>
 
-        {/* BILINGUAL LETTER TEMPLATES SECTION */}
-        {letterTemplates.length > 0 && (
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-1 flex-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded"></div>
-              <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
-                {strings.bilingualLetterTemplates}
-              </h2>
-              <div className="h-1 flex-1 bg-gradient-to-l from-blue-400 to-blue-600 rounded"></div>
-            </div>
-            <p className="text-sm mb-6 text-center" style={{ color: colors.textSecondary }}>
-              {strings.bilingualSubtitle}
-            </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {letterTemplates.map((template) => {
-                const categoryColorMap = {
-                  'Checklist': 'from-blue-400 to-blue-600',
-                  'Pre-Lease': 'from-amber-400 to-orange-600',
-                  'Move-Out': 'from-purple-400 to-purple-600',
-                  'Friendly': 'from-purple-400 to-purple-600',
-                  'Formal': 'from-emerald-500 to-emerald-700',
-                  'Final': 'from-orange-600 to-red-600',
-                  'Deposit': 'from-blue-400 to-blue-600'
-                };
-                const categoryColor = categoryColorMap[template.category] || 'from-blue-500 to-blue-700';
-                const hasEnoughCredits = userCredits >= 1;
-
-                return (
-                  <Card
-                    key={template.id}
-                    className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
-                    style={{ backgroundColor: colors.cardBg }}
-                    onClick={() => {
-                      if (hasEnoughCredits) {
-                        haptic.light();
-                        navigate(createPageUrl("TemplateForm") + `?subject=${template.template_id}`);
-                      } else {
-                        haptic.error();
-                      }
-                    }}
-                  >
-                    <div className={`h-2 bg-gradient-to-r ${categoryColor} rounded-t-xl`} />
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="flex items-start justify-between mb-3 sm:mb-4">
-                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${categoryColor} flex items-center justify-center`}>
-                          <FileText className="w-6 h-6 text-white" />
-                        </div>
-                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
-                          <Coins className="w-3 h-3" />
-                          1
-                        </Badge>
-                      </div>
-
-                      <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
-                        {language === 'th' ? template.title_th : template.title_en}
-                      </h3>
-                      <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
-                        {language === 'th' ? template.title_en : template.title_th}
-                      </p>
-
-                      {!hasEnoughCredits && (
-                        <div className="text-xs text-center p-2 rounded-lg" style={{
-                          backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                          color: '#DC2626'
-                        }}>
-                          {strings.insufficientCredits}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* PRE-SIGNING SECTION */}
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
@@ -1022,7 +934,7 @@ export default function Templates() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {[...TEMPLATES.filter(tmpl => tmpl.preSigning), ...(customTemplates || []).filter(tmpl => tmpl.category === 'pre_signing')].map((template) => renderTemplateCard(template, !template.id))}
+            {preSigningTemplates.map((template) => renderTemplateCard(template, !template.id))}
           </div>
         </div>
 
@@ -1037,7 +949,7 @@ export default function Templates() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {[...TEMPLATES.filter(tmpl => ['deposit', 'deductions', 'reminder'].includes(tmpl.id)), ...(customTemplates || []).filter(tmpl => tmpl.category === 'friendly')].map((template) => renderTemplateCard(template, !template.id))}
+            {liteTemplates.map((template) => renderTemplateCard(template, !template.id))}
           </div>
         </div>
 
@@ -1052,7 +964,7 @@ export default function Templates() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {[...TEMPLATES.filter(tmpl => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(tmpl.id)), ...(customTemplates || []).filter(tmpl => tmpl.category === 'professional')].map((template) => renderTemplateCard(template, !template.id))}
+            {protectTemplates.map((template) => renderTemplateCard(template, !template.id))}
           </div>
         </div>
 
@@ -1067,7 +979,7 @@ export default function Templates() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {[...TEMPLATES.filter(tmpl => ['final_opportunity', 'non_compliance', 'settlement'].includes(tmpl.id)), ...(customTemplates || []).filter(tmpl => tmpl.category === 'final')].map((template) => renderTemplateCard(template, !template.id))}
+            {secureTemplates.map((template) => renderTemplateCard(template, !template.id))}
           </div>
         </div>
       </div>

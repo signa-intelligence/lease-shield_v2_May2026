@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +17,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import ChatLog from "../components/maintenance/ChatLog";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
 import { haptic } from "../components/shared/HapticFeedback";
-import { QuickHelp } from "../components/shared/ContextualHelp";
 
 export default function MaintenanceTrackerPage() {
   const navigate = useNavigate();
@@ -391,13 +391,10 @@ export default function MaintenanceTrackerPage() {
         </Dialog>
 
         <div className="mb-6">
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2" style={{ color: theme.headerColor }}>
-              <Wrench className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
-              {strings.title}
-            </h1>
-            <QuickHelp link="maintenance" size="md" />
-          </div>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
+            <Wrench className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
+            {strings.title}
+          </h1>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
         </div>
 

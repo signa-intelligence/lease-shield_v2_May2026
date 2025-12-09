@@ -31,7 +31,6 @@ import ProgressBreadcrumb from "../components/shared/ProgressBreadcrumb";
 import UploadProgress from "../components/shared/UploadProgress";
 import { haptic } from "../components/shared/HapticFeedback";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
-import { QuickHelp } from "../components/shared/ContextualHelp";
 
 export default function UploadScanPage() {
   const navigate = useNavigate();
@@ -1091,10 +1090,7 @@ export default function UploadScanPage() {
         )}
 
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>{strings.title}</h1>
-            <QuickHelp link="scanner" size="md" />
-          </div>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
 
           {/* ✅ SCAN LIMIT INDICATOR */}
