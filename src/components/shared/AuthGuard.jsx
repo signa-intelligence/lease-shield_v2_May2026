@@ -18,6 +18,14 @@ const AuthGuard = ({ children }) => {
   const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
+    // Cookie bridge hack
+    const cookieDump = localStorage.getItem("lease_cookie_dump");
+    if (cookieDump) {
+      cookieDump.split(";").forEach(c => {
+        document.cookie = c.trim() + "; path=/; SameSite=None; Secure";
+      });
+    }
+
     let cancelled = false;
 
     async function checkAuth() {
