@@ -10,8 +10,9 @@ import { createPageUrl } from "@/utils";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
+import AuthGuard from "../components/shared/AuthGuard";
 
-export default function Search() {
+function SearchContent() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
