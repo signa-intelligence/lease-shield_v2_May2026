@@ -29,6 +29,7 @@ import { createPageUrl } from "@/utils";
 import { haptic } from "../components/shared/HapticFeedback";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import AuthGuard from "../components/shared/AuthGuard";
 
 function AnalyticsContent() {
   const navigate = useNavigate();
@@ -1485,8 +1486,10 @@ function AnalyticsContent() {
 
 export default function Analytics() {
   return (
-    <ToastProvider>
-      <AnalyticsContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <AnalyticsContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }

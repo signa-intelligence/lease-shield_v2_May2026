@@ -27,6 +27,7 @@ import {
 import { format } from "date-fns";
 import LetterPreview from "../components/shared/LetterPreview";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
+import AuthGuard from "../components/shared/AuthGuard";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -1143,5 +1144,13 @@ export default function CaseDetails() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function CaseDetailsPage() {
+  return (
+    <AuthGuard>
+      <CaseDetails />
+    </AuthGuard>
   );
 }

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Clock, CheckCircle2, HelpCircle, Upload } from "lucide-react";
 import { format } from "date-fns";
+import AuthGuard from "../components/shared/AuthGuard";
 
 const STATUS_CONFIG = {
   open: { label: 'Open', color: 'bg-blue-100 text-blue-800', icon: Clock },
@@ -331,5 +331,13 @@ export default function Support() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SupportPage() {
+  return (
+    <AuthGuard>
+      <Support />
+    </AuthGuard>
   );
 }

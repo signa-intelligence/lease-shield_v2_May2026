@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -17,8 +16,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
 import { startOfMonth, endOfMonth, subMonths, format, differenceInDays } from "date-fns";
+import AuthGuard from "../components/shared/AuthGuard";
 
-export default function RevenueAnalytics() {
+function RevenueAnalyticsContent() {
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState('6m');
 
@@ -756,5 +756,13 @@ export default function RevenueAnalytics() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function RevenueAnalytics() {
+  return (
+    <AuthGuard>
+      <RevenueAnalyticsContent />
+    </AuthGuard>
   );
 }

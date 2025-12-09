@@ -13,6 +13,7 @@ import { Shield, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown } from "l
 import { Badge } from "@/components/ui/badge";
 import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import AuthGuard from "../components/shared/AuthGuard";
 
 function ResolveCaseContent() {
   const navigate = useNavigate();
@@ -1116,8 +1117,10 @@ function ResolveCaseContent() {
 
 export default function ResolveCase() {
   return (
-    <ToastProvider>
-      <ResolveCaseContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <ResolveCaseContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }

@@ -12,8 +12,9 @@ import { createPageUrl } from "@/utils";
 import { ArrowLeft, Loader2, FileText, Send, AlertCircle, Edit2, Save, Globe, CheckSquare } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { buildLetterLanguagePack, getLanguageLabel, formatLanguageList } from "../components/shared/languageRules";
+import AuthGuard from "../components/shared/AuthGuard";
 
-export default function TemplateForm() {
+function TemplateFormContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
@@ -1427,5 +1428,13 @@ export default function TemplateForm() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function TemplateForm() {
+  return (
+    <AuthGuard>
+      <TemplateFormContent />
+    </AuthGuard>
   );
 }

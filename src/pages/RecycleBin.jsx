@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import { haptic } from "../components/shared/HapticFeedback";
 import { format } from "date-fns";
+import AuthGuard from "../components/shared/AuthGuard";
 
 function RecycleBinContent() {
   const navigate = useNavigate();
@@ -610,8 +611,10 @@ function RecycleBinContent() {
 
 export default function RecycleBin() {
   return (
-    <ToastProvider>
-      <RecycleBinContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <RecycleBinContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }

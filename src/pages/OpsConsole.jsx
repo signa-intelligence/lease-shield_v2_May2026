@@ -29,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import CaseKanban from "../components/admin/CaseKanban";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import AuthGuard from "../components/shared/AuthGuard";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -993,8 +994,10 @@ function OpsConsoleContent() {
 
 export default function OpsConsole() {
   return (
-    <ToastProvider>
-      <OpsConsoleContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <OpsConsoleContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }
