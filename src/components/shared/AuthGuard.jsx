@@ -22,15 +22,14 @@ const AuthGuard = ({ children }) => {
         if (me) {
           setIsAuthed(true);
         } else {
-          // Redirect to Base44 login, then back to current app
-          const nextUrl = window.location.pathname + window.location.search;
-          await base44.auth.redirectToLogin(nextUrl);
+          // Always redirect to /cookie-sync for WebView OAuth flow
+          await base44.auth.redirectToLogin("/cookie-sync");
         }
       } catch (err) {
         console.error("AuthGuard: auth check failed", err);
         if (!cancelled) {
-          const nextUrl = window.location.pathname + window.location.search;
-          await base44.auth.redirectToLogin(nextUrl);
+          // Always redirect to /cookie-sync for WebView OAuth flow
+          await base44.auth.redirectToLogin("/cookie-sync");
         }
       } finally {
         if (!cancelled) {
