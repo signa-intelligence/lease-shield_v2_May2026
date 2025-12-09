@@ -28,6 +28,7 @@ import RevenueAnalytics from './pages/RevenueAnalytics';
 import AdminTemplates from './pages/AdminTemplates';
 import RecycleBin from './pages/RecycleBin';
 import Welcome from './pages/Welcome';
+import CookieSync from './pages/CookieSync';
 import __Layout from './Layout.jsx';
 
 
@@ -62,6 +63,7 @@ export const PAGES = {
     "AdminTemplates": AdminTemplates,
     "RecycleBin": RecycleBin,
     "Welcome": Welcome,
+    "CookieSync": CookieSync,
 }
 
 export const pagesConfig = {
