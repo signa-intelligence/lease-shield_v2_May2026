@@ -1036,7 +1036,7 @@ export default function Templates() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {protectTemplates.map((template) => renderTemplateCard(template, !template.id))}
+            {[...TEMPLATES.filter(tmpl => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(tmpl.id)), ...(customTemplates || []).filter(tmpl => tmpl.category === 'professional')].map((template) => renderTemplateCard(template, !template.id))}
           </div>
         </div>
 
