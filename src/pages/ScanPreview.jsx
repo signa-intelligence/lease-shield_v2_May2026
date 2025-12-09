@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -9,6 +8,7 @@ import { AlertTriangle, CheckCircle2, FileText, ArrowLeft, ExternalLink, Loader2
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
+import AuthGuard from "../components/shared/AuthGuard";
 
 const SEVERITY_CONFIG = {
   low: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Low' },
@@ -17,7 +17,7 @@ const SEVERITY_CONFIG = {
   critical: { color: 'bg-red-100 text-red-800 border-red-200', label: 'Critical' }
 };
 
-export default function ScanPreview() {
+function ScanPreviewContent() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const scanId = urlParams.get('scanId');
@@ -675,5 +675,13 @@ export default function ScanPreview() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ScanPreview() {
+  return (
+    <AuthGuard>
+      <ScanPreviewContent />
+    </AuthGuard>
   );
 }

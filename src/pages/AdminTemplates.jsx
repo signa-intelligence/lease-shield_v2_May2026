@@ -13,8 +13,9 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { getLanguageLabel } from "../components/shared/languageRules";
+import AuthGuard from "../components/shared/AuthGuard";
 
-export default function AdminTemplates() {
+function AdminTemplatesContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -679,5 +680,13 @@ export default function AdminTemplates() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminTemplates() {
+  return (
+    <AuthGuard>
+      <AdminTemplatesContent />
+    </AuthGuard>
   );
 }

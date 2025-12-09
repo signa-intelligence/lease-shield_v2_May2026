@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Sparkles, Loader2, Crown, Lock } from "lucide-react";
 import { FeatureGate } from "../components/shared/FeatureGate";
+import AuthGuard from "../components/shared/AuthGuard";
 
-export default function ReportFull() {
+function ReportFullContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
@@ -851,5 +851,13 @@ export default function ReportFull() {
         </div>
       </div>
     </FeatureGate>
+  );
+}
+
+export default function ReportFull() {
+  return (
+    <AuthGuard>
+      <ReportFullContent />
+    </AuthGuard>
   );
 }
