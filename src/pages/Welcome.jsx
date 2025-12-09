@@ -140,14 +140,14 @@ export default function Welcome() {
   const queryParams = window.location.search;
 
   const handleContinue = () => {
-    // Redirect to Base44 managed Google OAuth flow
-    window.location.href = "https://app.leaseshield.asia/login?next=/cookie-sync";
+    // Use relative URL to maintain current domain (app.leaseshield.asia)
+    window.location.href = "/login?next=/cookie-sync";
   };
 
   const handleOpenApp = () => {
     setShowInstallModal(false);
-    // Redirect to Base44 managed Google OAuth flow
-    window.location.href = "https://app.leaseshield.asia/login?next=/cookie-sync";
+    // Use relative URL to maintain current domain (app.leaseshield.asia)
+    window.location.href = "/login?next=/cookie-sync";
   };
 
   // Feature bullets
