@@ -22,14 +22,14 @@ const AuthGuard = ({ children }) => {
         if (me) {
           setIsAuthed(true);
         } else {
-          // Always redirect to /cookie-sync for WebView OAuth flow
-          await base44.auth.redirectToLogin("/cookie-sync");
+          // Redirect to Welcome page (which handles login flow)
+          window.location.href = `${window.location.origin}/welcome`;
         }
       } catch (err) {
         console.error("AuthGuard: auth check failed", err);
         if (!cancelled) {
-          // Always redirect to /cookie-sync for WebView OAuth flow
-          await base44.auth.redirectToLogin("/cookie-sync");
+          // Redirect to Welcome page (which handles login flow)
+          window.location.href = `${window.location.origin}/welcome`;
         }
       } finally {
         if (!cancelled) {

@@ -20,22 +20,25 @@ export default function CookieSync() {
   useEffect(() => {
     async function handleAuth() {
       try {
-        // Check if user is already authenticated
+        // Wait a moment for OAuth cookies to settle in WebView
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Check if user is authenticated after OAuth callback
         const user = await base44.auth.me();
         
         if (user) {
           // Successfully authenticated - redirect to dashboard
           setStatus('success');
           
-          // Force a full page redirect to ensure WebView context is reset
+          // Use window.location.href to force full page reload (important for WebView)
           setTimeout(() => {
-            window.location.href = '/dashboard';
+            window.location.href = `${window.location.origin}/dashboard`;
           }, 500);
         } else {
-          // Not authenticated - redirect to login
+          // Not authenticated yet - redirect back to login
           setStatus('redirect');
           setTimeout(() => {
-            window.location.href = '/welcome';
+            window.location.href = `${window.location.origin}/welcome`;
           }, 1000);
         }
       } catch (err) {
@@ -45,7 +48,7 @@ export default function CookieSync() {
         
         // Redirect to welcome after error
         setTimeout(() => {
-          navigate('/welcome');
+          window.location.href = `${window.location.origin}/welcome`;
         }, 2000);
       }
     }

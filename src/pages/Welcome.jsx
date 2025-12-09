@@ -140,14 +140,26 @@ export default function Welcome() {
   const queryParams = window.location.search;
 
   const handleContinue = async () => {
-    // Always redirect to /cookie-sync for WebView OAuth flow
-    await base44.auth.redirectToLogin("/cookie-sync");
+    // For WebView, construct full URL to ensure correct domain
+    if (isWebView()) {
+      const nextUrl = `${window.location.origin}/cookie-sync`;
+      await base44.auth.redirectToLogin(nextUrl);
+    } else {
+      // Desktop: use relative path
+      await base44.auth.redirectToLogin("/cookie-sync");
+    }
   };
 
   const handleOpenApp = async () => {
     setShowInstallModal(false);
-    // Always redirect to /cookie-sync for WebView OAuth flow
-    await base44.auth.redirectToLogin("/cookie-sync");
+    // For WebView, construct full URL to ensure correct domain
+    if (isWebView()) {
+      const nextUrl = `${window.location.origin}/cookie-sync`;
+      await base44.auth.redirectToLogin(nextUrl);
+    } else {
+      // Desktop: use relative path
+      await base44.auth.redirectToLogin("/cookie-sync");
+    }
   };
 
   // Feature bullets
