@@ -38,7 +38,7 @@ const STATUS_CONFIG = {
   closed: { label: 'Closed', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 }
 };
 
-export default function CaseDetails() {
+function CaseDetailsContent() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const caseId = urlParams.get('caseId');
@@ -1147,10 +1147,10 @@ export default function CaseDetails() {
   );
 }
 
-export default function CaseDetailsPage() {
+export default function CaseDetails() {
   return (
     <AuthGuard>
-      <CaseDetails />
+      <CaseDetailsContent />
     </AuthGuard>
   );
 }

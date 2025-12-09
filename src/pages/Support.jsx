@@ -20,7 +20,7 @@ const STATUS_CONFIG = {
   closed: { label: 'Closed', color: 'bg-slate-100 text-slate-800', icon: CheckCircle2 }
 };
 
-export default function Support() {
+function SupportContent() {
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     subject: '',
@@ -334,10 +334,10 @@ export default function Support() {
   );
 }
 
-export default function SupportPage() {
+export default function Support() {
   return (
     <AuthGuard>
-      <Support />
+      <SupportContent />
     </AuthGuard>
   );
 }

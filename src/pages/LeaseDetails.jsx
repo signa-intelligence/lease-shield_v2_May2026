@@ -24,8 +24,9 @@ import {
   Loader2 
 } from "lucide-react";
 import { format } from "date-fns";
+import AuthGuard from "../components/shared/AuthGuard";
 
-export default function LeaseDetails() {
+function LeaseDetailsContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
