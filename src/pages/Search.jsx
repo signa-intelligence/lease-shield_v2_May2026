@@ -521,3 +521,11 @@ export default function Search() {
     </div>
   );
 }
+
+export default function Search() {
+  return (
+    <AuthGuard>
+      <SearchContent />
+    </AuthGuard>
+  );
+}

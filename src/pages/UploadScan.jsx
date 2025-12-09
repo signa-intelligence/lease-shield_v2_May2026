@@ -1727,3 +1727,11 @@ export default function UploadScanPage() {
     </div>
   );
 }
+
+export default function UploadScanPage() {
+  return (
+    <AuthGuard>
+      <UploadScanPageContent />
+    </AuthGuard>
+  );
+}

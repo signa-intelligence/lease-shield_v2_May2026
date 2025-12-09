@@ -2522,8 +2522,10 @@ function EvidenceVaultContent() {
 
 export default function EvidenceVault() {
   return (
-    <ToastProvider>
-      <EvidenceVaultContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <EvidenceVaultContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }

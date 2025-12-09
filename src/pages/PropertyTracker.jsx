@@ -3018,8 +3018,10 @@ function PropertyTrackerContent() {
 
 export default function PropertyTracker() {
   return (
-    <ToastProvider>
-      <PropertyTrackerContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <PropertyTrackerContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }

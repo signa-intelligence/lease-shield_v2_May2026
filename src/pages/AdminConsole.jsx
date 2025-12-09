@@ -28,8 +28,9 @@ import ReminderControl from "../components/admin/ReminderControl";
 import NotificationHistory from "../components/admin/NotificationHistory";
 import CaseKanban from "../components/admin/CaseKanban";
 import UserImpersonation from "../components/admin/UserImpersonation";
+import AuthGuard from "../components/shared/AuthGuard";
 
-export default function AdminConsole() {
+function AdminConsoleContent() {
   const [seedingDemo, setSeedingDemo] = useState(false);
   const [sortField, setSortField] = useState('created_date');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -1981,5 +1982,13 @@ export default function AdminConsole() {
 
       </div>
     </div>
+  );
+}
+
+export default function AdminConsole() {
+  return (
+    <AuthGuard>
+      <AdminConsoleContent />
+    </AuthGuard>
   );
 }

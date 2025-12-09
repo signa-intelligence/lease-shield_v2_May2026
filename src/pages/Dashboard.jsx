@@ -30,6 +30,7 @@ import FloatingActionButton from "../components/shared/FloatingActionButton";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
 import PageHeader from "../components/shared/PageHeader";
 import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
+import AuthGuard from "../components/shared/AuthGuard";
 
 function DashboardContent() {
   const [expandedSections, setExpandedSections] = React.useState({
@@ -2647,8 +2648,10 @@ ja: {
 
 export default function Dashboard() {
   return (
-    <ToastProvider>
-      <DashboardContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <DashboardContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }

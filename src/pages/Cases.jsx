@@ -26,6 +26,7 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
 import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
+import AuthGuard from "../components/shared/AuthGuard";
 
 const STATUS_CONFIG = {
   awaiting_payment: { label: 'Awaiting Payment', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
@@ -1491,8 +1492,10 @@ function CasesContent() {
 
 export default function CasesPage() {
   return (
-    <ToastProvider>
-      <CasesContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <CasesContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }

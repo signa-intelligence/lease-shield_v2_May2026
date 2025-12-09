@@ -41,8 +41,9 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import PageHeader from "../components/shared/PageHeader";
 import { FEATURE_COLORS } from "../components/shared/featureTheme";
+import AuthGuard from "../components/shared/AuthGuard";
 
-export default function Timeline() {
+function TimelineContent() {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('calendar');
@@ -813,5 +814,13 @@ export default function Timeline() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Timeline() {
+  return (
+    <AuthGuard>
+      <TimelineContent />
+    </AuthGuard>
   );
 }

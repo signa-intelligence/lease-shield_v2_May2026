@@ -986,3 +986,11 @@ export default function Templates() {
     </div>
   );
 }
+
+export default function Templates() {
+  return (
+    <AuthGuard>
+      <TemplatesContent />
+    </AuthGuard>
+  );
+}

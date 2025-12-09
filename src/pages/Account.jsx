@@ -24,6 +24,7 @@ import LineConnectionStatus from "../components/shared/LineConnectionStatus";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import AuthGuard from "../components/shared/AuthGuard";
 
 const PLAN_DETAILS = [
   {
@@ -4915,8 +4916,10 @@ function AccountContent() {
 
 export default function Account() {
   return (
-    <ToastProvider>
-      <AccountContent />
-    </ToastProvider>
+    <AuthGuard>
+      <ToastProvider>
+        <AccountContent />
+      </ToastProvider>
+    </AuthGuard>
   );
 }
