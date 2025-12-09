@@ -139,15 +139,15 @@ export default function Welcome() {
   // Preserve query params (source, plan, etc.) for tracking
   const queryParams = window.location.search;
 
-  const handleContinue = async () => {
-    // Always use absolute URL to ensure correct domain on all platforms
-    await base44.auth.redirectToLogin("https://app.leaseshield.asia/cookie-sync");
+  const handleContinue = () => {
+    // Redirect to Base44 managed Google OAuth flow
+    window.location.href = "https://app.leaseshield.asia/login?next=/cookie-sync";
   };
 
-  const handleOpenApp = async () => {
+  const handleOpenApp = () => {
     setShowInstallModal(false);
-    // Always use absolute URL to ensure correct domain on all platforms
-    await base44.auth.redirectToLogin("https://app.leaseshield.asia/cookie-sync");
+    // Redirect to Base44 managed Google OAuth flow
+    window.location.href = "https://app.leaseshield.asia/login?next=/cookie-sync";
   };
 
   // Feature bullets

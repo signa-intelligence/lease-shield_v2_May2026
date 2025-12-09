@@ -22,14 +22,14 @@ const AuthGuard = ({ children }) => {
         if (me) {
           setIsAuthed(true);
         } else {
-          // Redirect to login, always return to cookie-sync on custom domain
-          await base44.auth.redirectToLogin("https://app.leaseshield.asia/cookie-sync");
+          // Redirect to welcome page
+          window.location.href = "/welcome";
         }
       } catch (err) {
         console.error("AuthGuard: auth check failed", err);
         if (!cancelled) {
-          // Redirect to login, always return to cookie-sync on custom domain
-          await base44.auth.redirectToLogin("https://app.leaseshield.asia/cookie-sync");
+          // Redirect to welcome page
+          window.location.href = "/welcome";
         }
       } finally {
         if (!cancelled) {
