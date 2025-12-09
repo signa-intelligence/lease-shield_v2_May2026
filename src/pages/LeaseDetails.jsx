@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -718,11 +717,19 @@ export default function LeaseDetails() {
                     {language === 'th' ? 'สร้างจดหมายอย่างเป็นทางการ' : 'Create formal letters'}
                     </div>
                   </div>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+                  </Button>
+                  </div>
+                  </CardContent>
+                  </Card>
+                  </div>
+                  </div>
+                  );
+                  }
+
+                  export default function LeaseDetails() {
+                  return (
+                  <AuthGuard>
+                  <LeaseDetailsContent />
+                  </AuthGuard>
+                  );
+                  }
